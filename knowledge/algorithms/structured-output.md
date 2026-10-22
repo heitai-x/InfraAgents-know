@@ -24,17 +24,16 @@ JSON、正则和上下文无关语法通常描述字符或字节串，模型却�
 
 ## 来源与推导
 
-- S-XGRAMMAR：[完整原文](../../references/S-XGRAMMAR/reader.html) · [全文文本](../../references/S-XGRAMMAR/fulltext.txt)
-- S-FI-SAMPLE：[完整原文](../../references/S-FI-SAMPLE/reader.html) · [全文文本](../../references/S-FI-SAMPLE/fulltext.txt)
-- S-CHAT：[完整原文](../../references/S-CHAT/reader.html) · [全文文本](../../references/S-CHAT/fulltext.txt)
-
 - [S-XGRAMMAR：XGrammar](../sources/S-XGRAMMAR.md)：XGrammar 以语法状态决定合法 token，并利用可预计算与依赖上下文的部分分离，减少在线合法性判断开销。
+  [完整原文](../../references/S-XGRAMMAR/reader.html) · [全文文本](../../references/S-XGRAMMAR/fulltext.txt)
 
 - [S-FI-SAMPLE：FlashInfer：Sampling](../sources/S-FI-SAMPLE.md)：FlashInfer sampling 接口提供从概率或 logits 的按行采样，以及 top-k、top-p 等相关操作；调用的输入表示和参数决定实际概率处理。
+  [完整原文](../../references/S-FI-SAMPLE/reader.html) · [全文文本](../../references/S-FI-SAMPLE/fulltext.txt)
 
 - [S-CHAT：Transformers：Chat templates](../sources/S-CHAT.md)：Chat template 将消息序列变为包含角色边界、特殊 token 和生成提示的模型输入；tokenizer 自动添加特殊 token 的方式会影响最终序列。
+  [完整原文](../../references/S-CHAT/reader.html) · [全文文本](../../references/S-CHAT/fulltext.txt)
 
-上文的公式展开、容量算例与组合设计是 InfraAgents 在这些机制基础上的推导，具体推导已写在本条正文中。来源入口均为本地释义，可继续读取其定义与使用关系。版本 3，2026-09-20。
+正文中的公式展开、容量算例与组合设计是基于这些来源的推导；设定算例不冒充实测。来源版本受 2026-04-30 上限约束，编辑日期 2026-10-22 不作为事实发布日期。此独立 base 版本内的章节修订号从 1 开始，原章节身份与版本映射保存在版本清单。
 
 ## 延伸阅读
 

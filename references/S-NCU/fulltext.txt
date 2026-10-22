@@ -1,11 +1,11 @@
 2.
-Profiling Guide
-#
+Kernel Profiling Guide
+
 Nsight Compute profiling guide.
-Profiling Guide with metric types and meaning, data collection modes and FAQ for common problems.
+Kernel Profiling Guide with metric types and meaning, data collection modes and FAQ for common problems.
 2.1.
 Introduction
-#
+
 This guide describes various profiling topics related to NVIDIA Nsight Compute and NVIDIA Nsight Compute CLI. Most of these apply to both the UI and the CLI version of the tool.
 To use the tools effectively, it is recommended to read this guide, as well as at least the following chapters of the
 CUDA Programming Guide
@@ -18,17 +18,17 @@ Quickstart
 chapter of the NVIDIA Nsight Compute or NVIDIA Nsight Compute CLI documentation, respectively, to start using the tools.
 2.1.1.
 Profiling Applications
-#
+
 During regular execution, a CUDA application process will be launched by the user. It communicates directly with the CUDA user-mode driver, and potentially with the CUDA runtime library.
 Regular Application Execution
-#
+
 When profiling an application with NVIDIA Nsight Compute, the behavior is different. The user launches the NVIDIA Nsight Compute frontend (either the UI or the CLI) on the host system, which in turn starts the actual application as a new process on the target system. While host and target are often the same machine, the target can also be a remote system with a potentially different operating system.
 The tool inserts its measurement libraries into the application process, which allow the profiler to intercept communication with the CUDA user-mode driver. In addition, when a kernel launch is detected, the libraries can collect the requested performance metrics from the GPU. The results are then transferred back to the frontend.
 Profiled Application Execution
-#
+
 2.2.
 Metric Collection
-#
+
 Collection of performance metrics is the key feature of NVIDIA Nsight Compute. Since there is a huge list of metrics available, it is often easier to use some of the tool’s pre-defined
 sets or sections
 to collect a commonly used subset. Users are free to adjust which metrics are collected for which kernels as needed, but it is important to keep in mind the
@@ -36,7 +36,7 @@ Overhead
 associated with data collection.
 2.2.1.
 Sets and Sections
-#
+
 NVIDIA Nsight Compute uses
 Section Sets
 (short
@@ -85,122 +85,55 @@ recursively
 , even if the file is present, sub-directories are still searched.
 2.2.2.
 Sections and Rules
-#
-Available Sections
-#
-Identifier
-Display Name
+
+Table 1. Available Sections
+
+Identifier and Filename
 Description
-C2CLink
-C2CLink
-High-level summary of C2C link utilization. It shows the total received and transmitted (sent) memory, as well as the overall link peak utilization.
-ComputeWorkloadAnalysis
-Compute Workload Analysis
+ComputeWorkloadAnalysis (Compute Workload Analysis)
 Detailed analysis of the compute resources of the streaming multiprocessors (SM), including the achieved instructions per clock (IPC) and the utilization of each available pipeline. Pipelines with very high utilization might limit the overall performance.
-InstructionStats
-Instruction Statistics
-Statistics of the executed low-level assembly instructions (SASS). The instruction mix provides insight into the types and frequency of the executed instructions. A narrow mix of instruction types implies a dependency on few instruction pipelines, while others remain unused. Using multiple pipelines allows hiding latencies and enables parallel execution. Note that ‘Instructions/Opcode’ and ‘Executed Instructions’ are measured differently and can diverge if cycles are spent in system calls.
-LaunchStats
-Launch Statistics
+InstructionStats (Instruction Statistics)
+Statistics of the executed low-level assembly instructions (SASS). The instruction mix provides insight into the types and frequency of the executed instructions. A narrow mix of instruction types implies a dependency on few instruction pipelines, while others remain unused. Using multiple pipelines allows hiding latencies and enables parallel execution.
+LaunchStats (Launch Statistics)
 Summary of the configuration used to launch the kernel. The launch configuration defines the size of the kernel grid, the division of the grid into blocks, and the GPU resources needed to execute the kernel. Choosing an efficient launch configuration maximizes device utilization.
-MemoryWorkloadAnalysis
-Memory Workload Analysis
+MemoryWorkloadAnalysis (Memory Workload Analysis)
 Detailed analysis of the memory resources of the GPU. Memory can become a limiting factor for the overall kernel performance when fully utilizing the involved hardware units (Mem Busy), exhausting the available communication bandwidth between those units (Max Bandwidth), or by reaching the maximum throughput of issuing memory instructions (Mem Pipes Busy).
-MemoryWorkloadAnalysis_Chart
-extends:
-MemoryWorkloadAnalysis
-Memory Workload Analysis Chart
-Detailed chart of the memory units.
-MemoryWorkloadAnalysis_Tables
-extends:
-MemoryWorkloadAnalysis
-Memory Workload Analysis Tables
-Detailed tables with data for each memory unit.
-NumaAffinity
-NUMA Affinity
+Depending on the limiting factor, the memory chart and tables allow to identify the exact bottleneck in the memory system.
+NUMA Affinity (NumaAffinity)
 Non-uniform memory access (NUMA) affinities based on compute and memory distances for all GPUs.
-Nvlink
-NVLink
+Nvlink (Nvlink)
 High-level summary of NVLink utilization. It shows the total received and transmitted (sent) memory, as well as the overall link peak utilization.
-Nvlink_Tables
-extends:
-Nvlink
-NVLink Tables
+Nvlink_Tables (Nvlink_Tables)
 Detailed tables with properties for each NVLink.
-Nvlink_Topology
-extends:
-Nvlink
-NVLink Topology
+Nvlink_Topology (Nvlink_Topology)
 NVLink Topology diagram shows logical NVLink connections with transmit/receive throughput.
-Occupancy
-Occupancy
-Occupancy is the ratio of the number of active warps per multiprocessor to the maximum number of possible active warps. Another way to view occupancy is the percentage of the hardware’s ability to process warps that is actively in use. Higher occupancy does not always result in higher performance, however, low occupancy always reduces the ability to hide latencies, resulting in overall performance degradation. Large discrepancies between the theoretical and the achieved occupancy during execution typically indicates highly imbalanced workloads.
-PmSampling
-PM Sampling
-Timeline view of PM metrics sampled periodically over the workload duration. Data is collected across multiple passes. Use this section to understand how workload behavior changes over its runtime.
-gr10x_UTCMMA_Inference
-extends:
-PmSampling
-UTCMMA Inference for gr10x
-PM sampling single-pass UTCMMA Inference for gr10x
-gr10x_UTCMMA_Training
-extends:
-PmSampling
-UTCMMA Training for gr10x
-PM sampling single-pass UTCMMA Training for gr10x
-SchedulerStats
-Scheduler Statistics
-Summary of the activity of the schedulers issuing instructions. Each scheduler maintains a pool of warps that it can issue instructions for. The upper bound of warps in the pool (Theoretical Warps) is limited by the launch configuration. On every cycle each scheduler checks the state of the allocated warps in the pool (Active Warps). Active warps that are not stalled (Eligible Warps) are ready to issue their next instruction. From the set of eligible warps the scheduler selects a single warp from which to issue one or more instructions (Issued Warp). On cycles with no eligible warps, the issue slot is skipped and no instruction is issued. Having many skipped issue slots indicates poor latency hiding.
-SourceCounters
-Source Counters
+Occupancy (Occupancy)
+Occupancy is the ratio of the number of active warps per multiprocessor to the maximum number of possible active warps. Another way to view occupancy is the percentage of the hardware’s ability to process warps that is actively in use.
+Higher occupancy does not always result in higher performance, however, low occupancy always reduces the ability to hide latencies, resulting in overall performance degradation. Large discrepancies between the theoretical and the achieved occupancy during execution typically indicates highly imbalanced workloads.
+PM Sampling (PmSampling)
+Timeline view of metrics sampled periodically over the workload duration. Data is collected across multiple passes. Use this section to understand how workload behavior changes over its runtime.
+PM Sampling: Warp States (PmSampling_WarpStates)
+Warp states sampled periodically over the workload duration. Metrics in different groups come from different passes.
+SchedulerStats (Scheduler Statistics)
+Summary of the activity of the schedulers issuing instructions. Each scheduler maintains a pool of warps that it can issue instructions for. The upper bound of warps in the pool (Theoretical Warps) is limited by the launch configuration. On every cycle each scheduler checks the state of the allocated warps in the pool (Active Warps).
+Active warps that are not stalled (Eligible Warps) are ready to issue their next instruction. From the set of eligible warps, the scheduler selects a single warp from which to issue one or more instructions (Issued Warp). On cycles with no eligible warps, the issue slot is skipped and no instruction is issued. Having many skipped issue slots indicates poor latency hiding.
+SourceCounters (Source Counters)
 Source metrics, including branch efficiency and sampled warp stall reasons. Warp Stall Sampling metrics are periodically sampled over the kernel runtime. They indicate when warps were stalled and couldn’t be scheduled. See the documentation for a description of all stall reasons. Only focus on stalls if the schedulers fail to issue every cycle.
-SpeedOfLight
-GPU Speed Of Light Throughput
+SpeedOfLight (GPU Speed Of Light Throughput)
 High-level overview of the throughput for compute and memory resources of the GPU. For each unit, the throughput reports the achieved percentage of utilization with respect to the theoretical maximum. Breakdowns show the throughput for each individual sub-metric of Compute and Memory to clearly identify the highest contributor.
-SpeedOfLight_HierarchicalDoubleRooflineChart
-extends:
-SpeedOfLight
-GPU Speed Of Light Hierarchical Roofline Chart (Double Precision)
-High-level overview of the utilization for compute and memory resources of the GPU presented as a roofline chart.
-SpeedOfLight_HierarchicalHalfRooflineChart
-extends:
-SpeedOfLight
-GPU Speed Of Light Hierarchical Roofline Chart (Half Precision)
-High-level overview of the utilization for compute and memory resources of the GPU presented as a roofline chart.
-SpeedOfLight_HierarchicalSingleRooflineChart
-extends:
-SpeedOfLight
-GPU Speed Of Light Hierarchical Roofline Chart (Single Precision)
-High-level overview of the utilization for compute and memory resources of the GPU presented as a roofline chart.
-SpeedOfLight_HierarchicalTensorRooflineChart
-extends:
-SpeedOfLight
-GPU Speed Of Light Hierarchical Roofline Chart (Tensor Core)
-High-level overview of the utilization for compute and memory resources of the GPU presented as a roofline chart.
-SpeedOfLight_RooflineChart
-extends:
-SpeedOfLight
-GPU Speed Of Light Roofline Chart (Overview)
-High-level overview of the utilization for compute and memory resources of the GPU presented as a roofline chart.
-Tile
-Tile Statistics
-Tile kernel launch configuration, execution information and GPU resource usage. Tile kernels are translated into Tile IR (Tile Intermediate Representation), an extension to the CUDA programming model that enables first-class support for tile programming.
-WarpStateStats
-Warp State Statistics
-Analysis of the states in which all warps spent cycles during the kernel execution. The warp states describe a warp’s readiness or inability to issue its next instruction. The warp cycles per instruction define the latency between two consecutive instructions. The higher the value, the more warp parallelism is required to hide this latency. For each warp state, the chart shows the average number of cycles spent in that state per issued instruction. Stalls are not always impacting the overall performance nor are they completely avoidable. Only focus on stall reasons if the schedulers fail to issue every cycle. When executing a kernel with mixed library and user code, these metrics show the combined values.
-WorkloadDistribution
-GPU and Memory Workload Distribution
-Analysis of workload distribution in active cycles of SM, SMP, SMSP, L1 & L2 caches, and DRAM
+WarpStateStats (Warp State Statistics)
+Analysis of the states in which all warps spent cycles during the kernel execution. The warp states describe a warp’s readiness or inability to issue its next instruction. The warp cycles per instruction define the latency between two consecutive instructions. The higher the value, the more warp parallelism is required to hide this latency.
+For each warp state, the chart shows the average number of cycles spent in that state per issued instruction. Stalls are not always impacting the overall performance nor are they completely avoidable. Only focus on stall reasons if the schedulers fail to issue every cycle.
 2.2.3.
 Replay
-#
+
 Depending on which metrics are to be collected, kernels might need to be
 replayed
 one or more times, since not all metrics can be collected in a single
 pass
 . For example, the number of metrics originating from hardware (HW) performance counters that the GPU can collect at the same time is limited. In addition, patch-based software (SW) performance counters can have a high impact on kernel runtime and would skew results for HW counters.
 Kernel Replay
-#
+
 In
 Kernel Replay
 , all metrics requested for a specific kernel instance in NVIDIA Nsight Compute are grouped into one or more passes. For the first pass, all GPU memory that can be accessed by the kernel is saved. After the first pass, the subset of memory that is written by the kernel is determined. Before each pass (except the first one), this subset is restored in its original location to have the kernel access the same memory contents in each replay pass.
@@ -209,11 +142,11 @@ As explained in
 Overhead
 , the time needed for this increases the more memory is accessed, especially written, by a kernel. If NVIDIA Nsight Compute determines that only a single replay pass is necessary to collect the requested metrics, no save-and-restore is performed at all to reduce overhead.
 Regular Application Execution
-#
+
 Execution with Kernel Replay. All memory is saved, and memory written by the kernel is restored in-between replay passes.
-#
+
 Application Replay
-#
+
 In
 Application Replay
 , all metrics requested for a specific kernel launch in NVIDIA Nsight Compute are grouped into one or more passes. In contrast to
@@ -226,9 +159,9 @@ Cache Control
 In addition, application replay can support profiling kernels that have interdependencies to the host during execution. With kernel replay, this class of kernels typically hangs when being profiled, because the necessary responses from the host are missing in all but the first pass. In contrast, application replay ensures the correct behavior of the program execution in each pass.
 In contrast to kernel replay, multiple passes collected via application replay imply that all host-side activities of the application are duplicated, too. If the application requires significant time for e.g. setup or file-system access, the overhead will increase accordingly.
 Regular Application Execution
-#
+
 Execution with Application Replay. No memory is saved or restored, but the cost of running the application itself is duplicated.
-#
+
 Across application replay passes, NVIDIA Nsight Compute matches metric data for the individual, selected kernel launches. The matching strategy can be selected using the
 --app-replay-match
 option. For matching, only kernels within the same process and running on the same device are considered. By default, the
@@ -237,9 +170,9 @@ strategy is used, which matches launches according to their kernel name and grid
 Kernel matching during application replay using the
 grid
 strategy.
-#
+
 Range Replay
-#
+
 In
 Range Replay
 , all requested metrics in NVIDIA Nsight Compute are grouped into one or more passes. In contrast to
@@ -250,9 +183,9 @@ Application Replay
 Range Replay
 captures and replays complete ranges of CUDA API calls and kernel launches within the profiled application. Metrics are then not associated with individual kernels but with the entire range. This allows the tool to execute kernels without serialization and thereby supports profiling kernels that should be run concurrently for correctness or performance reasons.
 Execution with Range Replay. An entire range of API calls and kernel launches is captured and replayed. Host and device memory is saved and restored as necessary.
-#
+
 Defining Ranges
-#
+
 Range replay requires you to specify the range for profiling in the application. A range is defined by a start and an end marker and includes all CUDA API calls and kernels launched between these markers from any CPU thread. The application is responsible for inserting appropriate synchronization between threads to ensure that the anticipated set of API calls is captured. Range markers can be set using one of the following options:
 Profiler Start/Stop API
 Set the start marker using
@@ -293,7 +226,6 @@ range replay option and optionally use
 --kill
 yes
 to terminate the process after this range.
-Avoid updating device-mapped host memory in between dependent kernel launches. NVIDIA Nsight Compute does not capture host memory state for every kernel which is launched in between dependent kernel launches.
 Defining narrow ranges at local scope helps with avoiding destruction of stack allocations during the range, too.
 When defining the range markers using
 cu(da)ProfilerStart/Stop
@@ -301,7 +233,7 @@ cu(da)ProfilerStart/Stop
 cuProfilerStart/Stop
 . Internally, NVIDIA Nsight Compute only intercepts the CUDA driver API variants and the CUDA runtime API may not trigger these if no CUDA context is active on the calling thread.
 Supported APIs
-#
+
 Range replay supports a subset of the CUDA API for capture and replay. This page lists the supported functions as well as any further, API-specific limitations that may apply. If an unsupported API call is detected in the captured range, an error is reported and the range cannot be profiled. The groups listed below match the ones found in the
 CUDA Driver API documentation
 .
@@ -418,10 +350,9 @@ cuGreenCtxDestroy
 cuGreenCtxRecordEvent
 cuGreenCtxStreamCreate
 cuGreenCtxWaitEvent
-cuStreamGetDevResource
 cuStreamGetGreenCtx
 Application Range Replay
-#
+
 In
 Application Range Replay
 , all requested metrics in NVIDIA Nsight Compute are grouped into one or more passes. Similar to
@@ -432,14 +363,9 @@ Defining ranges to profile is identical to
 Range Replay
 . The CUDA context for which the range should be profiled must be current to the thread defining the start of the range and must be active for the entire range.
 Execution with Application Range Replay. A range of workloads is replayed by re-running the entire application without modifying interactions or saving and restoring memory.
-#
-Limitations
-#
-In
-Application Range Replay
-, instruction-level SASS metrics do not include profiling data for JIT-compiled kernels from the range.
+
 Graph Profiling
-#
+
 In multiple replay modes, NVIDIA Nsight Compute can profile CUDA graphs as single workload entities, rather than profile individual kernel nodes. The behavior can be toggled in the respective
 command line
 or
@@ -447,22 +373,19 @@ UI
 options.
 The primary use cases for enabling this mode are:
 Profile graphs that include mandatory concurrent kernel nodes.
+Profile graphs that include device-sided graph launches.
 Profile graph behavior more accurately across multiple kernel node launches, as caches are not purged in between nodes.
-Additional notes:
-Individual kernel nodes that launch device-sided graphs can be profiled excluding the launched graphs. Requires NVIDIA display driver version 580 or higher.
-Device-launched graphs are supported in node-level graph profiling mode. Note that any pending updates to the instantiated graph (not yet uploaded to the device) will be applied during profiling. Requires driver version 590 or higher.
-Conditional graph nodes are supported in node-level graph profiling mode. Requires driver version 590 or higher.
-When graph profiling is enabled, certain metrics such as instruction-level source metrics are not available. This then also applies to kernels profiled outside of graphs.
+Note that when graph profiling is enabled, certain metrics such as instruction-level source metrics are not available. This then also applies to kernels profiled outside of graphs.
 2.2.4.
 Compatibility
-#
+
 The set of available
 replay modes
 and
 metrics
 depends on the type of GPU workload to profile.
-Replay modes and metric compatibility per workload type
-#
+Table 2. Replay modes and metric compatibility per workload type
+
 Workload Type
 Replay Mode
 Metric Groups
@@ -473,22 +396,16 @@ Application-Range
 Hardware Counters / SMSP
 Unit-Level Source
 Instruction-Level Source
-[
 3
-]
 Launch
 Warp/PM Sampling
 Kernel
 Yes
 Yes
 Yes
-[
 2
-]
 Yes
-[
 2
-]
 Yes
 Yes
 Yes
@@ -515,9 +432,7 @@ Yes
 Some
 Yes
 Graph
-[
 1
-]
 Yes
 No
 No
@@ -528,44 +443,32 @@ No
 Some
 Yes
 Footnotes
-[
 1
-]
 Limitations also apply to kernels profiled outside of graphs.
-[
 2
-]
 (
 1
 ,
 2
 )
 Workload type is supported as part of the profiled range, but not separated in the result. Metric support matches that of Range workloads.
-[
 3
-]
 Instruction-level source metrics do not require profiling permissions on the target device when collected through the command line interface.
 2.2.5.
 Profile Series
-#
+
 The performance of a kernel is highly dependent on the used launch parameters. Small changes to the launch parameters can have a significant effect on the runtime behavior of the kernel. However, identifying the best parameter set for a kernel by manually testing a lot of combinations can be a tedious process.
 To make this workflow faster and more convenient, Profile Series provide the ability to automatically profile a single kernel multiple times with changing parameters. The parameters to be modified and values to be tested can be independently enabled and configured. For each combination of selected parameter values a unique profile result is collected. And the modified parameter values are tracked in the description of the results of a series. By comparing the results of a profile series, the kernel’s behavior on the changing parameters can be seen and the most optimal parameter set can be identified quickly.
 Profile Series action.
-#
+
 Profile Series dialog.
-#
+
 2.2.6.
 Overhead
-#
+
 As with most measurements, collecting performance data using NVIDIA Nsight Compute CLI incurs some runtime overhead on the application. The overhead does depend on a number of different factors:
 Number and type of collected metrics
-Depending on the selected metric, data is collected either through a hardware performance monitor on the GPU, through software patching of the kernel instructions or via a launch or device attribute.
-The overhead between these mechanisms varies greatly, with launch and device attributes being “statically” available and requiring no kernel runtime overhead.
-The overhead incurred by hardware metrics is very low.
-Software-patched metrics incur the highest overhead, as they require the kernel to be modified and all patched instructions to execute additional code.
-The exact overhead depends on the number and type of software-patched metrics being collected.
-It is important though that software-patched metrics are collected in separate replay passes and therefore don’t interfere with the correctness or precision of other metrics.
-Their values are also independent of any overhead they may cause.
+Depending on the selected metric, data is collected either through a hardware performance monitor on the GPU, through software patching of the kernel instructions or via a launch or device attribute. The overhead between these mechanisms varies greatly, with launch and device attributes being “statically” available and requiring no kernel runtime overhead.
 Furthermore, only a limited number of metrics can be collected in a single
 pass
 of the kernel execution. If more metrics are requested, the kernel launch is
@@ -596,12 +499,11 @@ GPU Architecture
 For some metrics, the overhead can vary depending on the exact chip they are collected on, e.g. due to varying number of units on the chip. Similarly, the overhead for resetting the L2 cache in-between kernel replay passes depends on the size of that cache.
 2.3.
 Metrics Guide
-#
+
 2.3.1.
 Hardware Model
-#
+
 Compute Model
-#
 All NVIDIA GPUs are designed to support a general purpose heterogeneous parallel programming model, commonly known as
 Compute
 . This model decouples the GPU from the traditional graphics pipeline and exposes it as a general purpose parallel multi-processor. A heterogeneous computing model implies the existence of a host and a device, which in this case are the CPU and GPU, respectively. At a high level view, the host (CPU) manages resources between itself and the device and will send work off to the device to be executed in parallel.
@@ -633,19 +535,16 @@ The total number of CTAs that can run concurrently on a given GPU is referred to
 Wave
 . Consequently, the size of a Wave scales with the number of available SMs of a GPU, but also with the occupancy of the kernel.
 Streaming Multiprocessor
-#
 The
 Streaming Multiprocessor (SM)
 is the core processing unit in the GPU. The SM is optimized for a wide diversity of workloads, including general-purpose computations, deep learning, ray tracing, as well as lighting and shading. The SM is designed to simultaneously execute multiple CTAs. CTAs can be from different grid launches.
-The SM implements an execution model called Single Instruction Multiple Threads (SIMT), which allows individual threads to have unique control flow while still executing as part of a warp. The Turing SM inherits the independent thread scheduling model. The SM maintains execution state per thread, including a program counter (PC) and call stack. The independent thread scheduling allows the GPU to yield execution of any thread, either to make better use of execution resources or to allow a thread to wait for data produced by another thread possibly in the same warp. Collecting the
+The SM implements an execution model called Single Instruction Multiple Threads (SIMT), which allows individual threads to have unique control flow while still executing as part of a warp. The Turing SM inherits the Volta SM’s independent thread scheduling model. The SM maintains execution state per thread, including a program counter (PC) and call stack. The independent thread scheduling allows the GPU to yield execution of any thread, either to make better use of execution resources or to allow a thread to wait for data produced by another thread possibly in the same warp. Collecting the
 Source Counters
 section allows you to inspect instruction execution and predication details on the
 Source Page
 , along with
 Sampling
 information.
-Simplified model of the SM, with several pipelines shown. Not all units are included.
-#
 Each SM is partitioned into four processing blocks, called
 SM sub partitions
 . The SM sub partitions are the primary processing elements on the SM. Each sub partition contains the following units:
@@ -665,7 +564,7 @@ A warp is allocated to a sub partition and resides on the sub partition from lau
 active
 or
 resident
-when it is mapped to a sub partition. A sub partition manages a fixed size pool of warps. On Turing architectures the size of the pool is 8 warps. Active warps can be in
+when it is mapped to a sub partition. A sub partition manages a fixed size pool of warps. On Volta architectures, the size of the pool is 16 warps. On Turing architectures the size of the pool is 8 warps. Active warps can be in
 eligible
 state if the warp is ready to issue an instruction. This requires the warp to have a decoded instruction, all input dependencies resolved, and for the function unit to be available. Statistics on active, eligible and issuing warps can be collected with the
 Scheduler Statistics
@@ -686,82 +585,25 @@ The most important resource under the compiler’s control is the number of regi
 Launch Statistics
 section shows the kernel’s register usage.
 Compute Preemption
-#
-The execution context (registers, shared memory, etc.) is saved at preemption and restored later. Context switches happen at instruction-level granularity.
+Compute preemption
+avoids long running kernels from monopolizing the GPU, at the risk of context switch overhead. The execution context (registers, shared memory, etc.) is saved at preemption and restored later. Context switches happen at instruction-level granularity.
 The
 exclusive-process
 compute mode may be used on supported systems to avoid context switching.
 Memory
-#
-NVIDIA GPUs typically utilize several different types of memory, including global, local, shared, constant, texture, and surface memory, as well as registers. Each of these memory types has different characteristics, including size, latency, and access patterns. The following paragraphs describe some of these different types of memory.
-Global memory
-is a 49-bit virtual address space that is mapped to physical memory on the device, pinned system memory, or peer memory. Global memory is visible to all threads in the GPU. Global memory is accessed through the SM L1 and GPU L2 caches (see below).
-Local memory
-is thread-private memory: each CUDA thread has its own dedicated portion of local memory.
-Local memory accesses only occur for automatic variables (i.e., variables declared within a function)
-that were specified without any of the
-__device__
-,
-__shared__
-or
-__constant__
-memory space specifiers,
-if they do not fit into registers or the compiler decides to place them in local memory for other reasons.
-Automatic variables that the compiler is likely to place in local memory are:
-Arrays for which it cannot determine that they are indexed with constant quantities,
-Large structures or arrays that would consume too much register space,
-Any variable if the kernel uses more registers than available (this is also known as
-register spilling
-).
-The local memory space resides in device memory, so local memory accesses have similar performance characteristics as accesses to global memory.
-Local memory addresses are translated to global virtual addresses by the AGU unit.
-One difference between global and local memory is that local memory is arranged such that consecutive 32-bit words are
-accessed by consecutive thread IDs. Accesses are therefore fully coalesced as long as all threads in a warp access the
-same relative address (e.g., same index in an array variable, same member in a structure variable, etc.).
-To minimize adverse performance impact of local memory accesses consider the following best practices:
-Prefer Registers:
-For small, thread-private variables that are accessed frequently, aim for them to reside in registers.
-The compiler often does this automatically for scalar variables.
-Utilize Shared Memory:
-For data that is shared and reused by threads within a block,
-shared memory is significantly faster than local memory.
-Explicitly manage data in shared memory to maximize its benefits.
-Increasing the available register count:
-Use a higher limit in
-__maxnreg__
-or a lower thread count in
-__launch_bounds__
-to increase the number of registers available to each thread. This can help reduce register spilling.
-Increasing the L1 cache size:
-If local memory usage is unavoidable, try to cache most local memory accesses
-in L1 by increasing its size with
-cudaFuncSetCacheConfig
-.
-Using non-caching global memory loads:
-If there are many cache misses in the L1 cache,
-consider using non-caching global memory loads to reduce contentions by compiling with the nvcc option
--Xptxas –def-load-cache=cg
-(see the
-nvcc docs
-).
-More information on local memory can be found in the
-CUDA C Programming Guide
-and the
-CUDA Best Practices Guide
-.
-Shared memory
-is located on chip within each Streaming Multiprocessor (SM), so it has much higher bandwidth and much lower latency than either local or global memory. Shared memory can be shared across a compute CTA. Compute CTAs attempting to share data across threads via shared memory must use synchronization operations (such as __syncthreads()) between stores and loads to ensure data written by any one thread is visible to other threads in the CTA. Similarly, threads that need to share data via global memory must use a more heavyweight global memory barrier.
+Global memory is a 49-bit virtual address space that is mapped to physical memory on the device, pinned system memory, or peer memory. Global memory is visible to all threads in the GPU. Global memory is accessed through the SM L1 and GPU L2.
+Local memory is private storage for an executing thread and is not visible outside of that thread. It is intended for thread-local data like thread stacks and register spills. Local memory addresses are translated to global virtual addresses by the AGU unit. Local memory has the same latency as global memory. One difference between global and local memory is that local memory is arranged such that consecutive 32-bit words are accessed by consecutive thread IDs. Accesses are therefore fully coalesced as long as all threads in a warp access the same relative address (e.g., same index in an array variable, same member in a structure variable, etc.).
+Shared memory is located on chip, so it has much higher bandwidth and much lower latency than either local or global memory. Shared memory can be shared across a compute CTA. Compute CTAs attempting to share data across threads via shared memory must use synchronization operations (such as __syncthreads()) between stores and loads to ensure data written by any one thread is visible to other threads in the CTA. Similarly, threads that need to share data via global memory must use a more heavyweight global memory barrier.
 Shared memory has 32 banks that are organized such that successive 32-bit words map to successive banks that can be accessed simultaneously. Any 32-bit memory read or write request made of 32 addresses that fall in 32 distinct memory banks can therefore be serviced simultaneously, yielding an overall bandwidth that is 32 times as high as the bandwidth of a single request. However, if two addresses of a memory request fall in the same memory bank, there is a bank conflict and the access has to be serialized.
 A shared memory request for a warp does not generate a bank conflict between two threads that access any address within the same 32-bit word (even though the two addresses fall in the same bank). When multiple threads make the same read access, one thread receives the data and then broadcasts it to the other threads. When multiple threads write to the same location, only one thread succeeds in the write; which thread that succeeds is undefined.
 Detailed memory metrics are collected by the
 Memory Workload Analysis
 section.
 Caches
-#
 All GPU units communicate to main memory through the Level 2 cache, also known as the L2. The L2 cache sits between on-chip memory clients and the framebuffer. L2 works in physical-address space. In addition to providing caching functionality, L2 also includes hardware to perform compression and global atomics.
 Model of the L2 cache.
-#
-The Level 1 Data Cache, or L1, plays a key role in handling global, local, shared, texture, and surface memory reads and writes, as well as reduction and atomic operations. On Turing architectures, there are two L1 caches per TPC, one for each SM. For more information on how L1 fits into the texturing pipeline, see the
+
+The Level 1 Data Cache, or L1, plays a key role in handling global, local, shared, texture, and surface memory reads and writes, as well as reduction and atomic operations. On Volta and Turing architectures there are , there are two L1 caches per TPC, one for each SM. For more information on how L1 fits into the texturing pipeline, see the
 TEX unit
 description. Also note that while this section often uses the name “L1”, it should be understood that the L1 data cache, shared data, and the Texture data cache are one and the same.
 L1 receives requests from two units: the SM and TEX. L1 receives global and local memory requests from the SM and receives texture and surface requests from TEX. These operations access memory in the global memory space, which L1 sends through a secondary cache, the L2.
@@ -769,9 +611,8 @@ Cache hit and miss rates as well as data transfers are reported in the
 Memory Workload Analysis
 section.
 Model of Load/Store and Texture pipelines for the L1TEX cache.
-#
+
 Texture/Surface
-#
 The TEX unit performs texture fetching and filtering. Beyond plain texture memory access, TEX is responsible for the addressing, LOD, wrap, filter, and format conversion operations necessary to convert a texture read request into a result.
 TEX receives two general categories of requests from the SM via its input interface: texture requests and surface load/store operations. Texture and surface memory space resides in device memory and are cached in L1. Texture and surface memory are allocated as block-linear surfaces (e.g. 2D, 2D Array, 3D). Such surfaces provide a cache-friendly layout of data such that neighboring points on a 2D surface are also located close to each other in memory, which improves access locality. Surface accesses are bounds-checked by the TEX unit prior to accessing memory, which can be used for implementing different texture wrapping modes.
 The L1 cache is optimized for 2D spatial locality, so threads of the same warp that read texture or surface addresses that are close together in 2D space will achieve optimal performance. The L1 cache is also designed for streaming fetches with constant latency; a cache hit reduces DRAM bandwidth demand but not fetch latency. Reading device memory through texture or surface memory presents some benefits that can make it an advantageous alternative to reading memory from global or constant memory.
@@ -780,30 +621,21 @@ Memory Workload Analysis
 section.
 2.3.2.
 Metrics Structure
-#
+
 Metrics Overview
-#
-NVIDIA Nsight Compute uses an advanced metrics calculation system, designed to help you determine what happened (counters and metrics), and how close the program reached to peak GPU performance (throughputs as a percentage).
-Every counter has associated peak rates in the database, to allow computing its throughput as a percentage.
-Throughput metrics return the maximum percentage value of their constituent counters.
-These constituents have been carefully selected to represent the sections of the GPU pipeline that govern peak performance.
-While all counters can be converted to a %-of-peak, not all counters are suitable for peak-performance analysis;
-examples of unsuitable counters include qualified subsets of activity, and workload residency counters. Using throughput metrics ensures meaningful and actionable analysis.
-Sustained rate is the maximum rate achievable over an infinitely long measurement period, for “typical” operations.
-Percentages of sustained rate can occasionally exceed 100% in edge cases.
+NVIDIA Nsight Compute uses an advanced metrics calculation system, designed to help you determine what happened (counters and metrics), and how close the program reached to peak GPU performance (throughputs as a percentage). Every counter has associated peak rates in the database, to allow computing its throughput as a percentage.
+Throughput metrics return the maximum percentage value of their constituent counters. These constituents have been carefully selected to represent the sections of the GPU pipeline that govern peak performance. While all counters can be converted to a %-of-peak, not all counters are suitable for peak-performance analysis; examples of unsuitable counters include qualified subsets of activity, and workload residency counters. Using throughput metrics ensures meaningful and actionable analysis.
+Two types of peak rates are available for every counter: burst and sustained. Burst rate is the maximum rate reportable in a single clock cycle. Sustained rate is the maximum rate achievable over an infinitely long measurement period, for “typical” operations. For many counters, burst equals sustained. Since the burst rate cannot be exceeded, percentages of burst rate will always be less than 100%. Percentages of sustained rate can occasionally exceed 100% in edge cases.
 Metrics Entities
-#
 While in NVIDIA Nsight Compute, all performance counters are named
 metrics
-, they can be split further into groups with specific properties.
-or metrics collected via the
+, they can be split further into groups with specific properties. For metrics collected via the
 PerfWorks
 measurement library, the following entities exist:
 Counters
 may be either a raw counter from the GPU, or a calculated counter value. Every counter has four sub-metrics under it, which are also called
 roll-ups
-.
-These roll-ups aggregate across all instances of a HW unit (e.g., all SMs, all SMSPs, all L2 slices, etc.).
+:
 .sum
 The sum of counter values across all unit instances.
 .avg
@@ -921,7 +753,6 @@ In addition to PerfWorks metrics, NVIDIA Nsight Compute uses several other measu
 Metrics Reference
 .
 Metrics Examples
-#
 ## non-metric names -- *not* directly evaluable
 sm__inst_executed                   # counter
 smsp__average_warp_latency          # ratio
@@ -947,7 +778,6 @@ l1tex__data_bank_conflicts_pipe_lsu.sum.pct_of_peak_sustained_active
 l1tex__data_bank_conflicts_pipe_lsu.sum.pct_of_peak_sustained_elapsed
 ...
 Metrics Naming Conventions
-#
 Counters and metrics
 generally
 obey the naming scheme:
@@ -978,24 +808,7 @@ rollup_metric: One of sum, avg, min, max.
 submetric: refer to section
 Metrics Entities
 Components are not always present. Most top-level counters have no qualifiers. Subunit and pipestage may be absent where irrelevant, or there may be many subunit specifiers for detailed counters.
-Metrics with
-sass_
-in the name are SASS metrics collected with SW-patching. They can be collected at different levels:
-unit-level, e.g.
-here
-or
-here
-instruction-level, e.g.
-here
-There are more instruction-level SASS metrics which don’t have
-sass_
-in the name, e.g.
-here
-.
-device__attribute_sass_level
-is not a SASS metric.
 Cycle Metrics
-#
 Counters using the term
 cycles
 in the name report the number of cycles in the unit’s clock domain. Unit-level cycle metrics include:
@@ -1013,45 +826,32 @@ unit__(interface)_active
 unit__(interface)_stalled
 : Cycles where the source-unit had data, but the destination-unit was unable to accept data.
 Instanced Metrics
-#
-Metrics collected with NVIDIA Nsight Compute can have a single (aggregate) value, multiple instance values, or both.
-Instances allow the metric to have multiple sub-values, e.g. representing the value of a source metric at each instruction offset.
-If a metric has instance values, it often also has a correlation ID for each instance.
-Correlation IDs and values form a mapping that allows the tool to correlate the values within a context.
-For source metrics, that context is commonly the address ranges of the functions executed as part of the workload.
+Metrics collected with NVIDIA Nsight Compute can have a single (aggregate) value, multiple instance values, or both. Instances allow the metric to have multiple sub-values, e.g. representing the value of a source metric at each instruction offset. If a metric has instance values, it often also has a correlation ID for each instance. Correlation IDs and values form a mapping that allows the tool to correlate the values within a context. For source metrics, that context is commonly the address ranges of the functions executed as part of the workload.
 You can find which metrics have instance values in the
 Metrics Reference
-.
-In the UI, the
+. In the UI, the
 Metric Details
-tool window can be used to conveniently view correlation IDs and instance values for each metric.
-Also, both the UI and the command line interface provide options to show instance values in addition to a metric aggregate where applicable.
+tool window can be used to conveniently view correlation IDs and instance values for each metric. Also, both the UI and the command line interface provide options to show instance values in addition to a metric aggregate where applicable.
 2.3.3.
 Metrics Decoder
-#
+
 The following explains terms found in NVIDIA Nsight Compute metric names, as introduced in
 Metrics Structure
 .
-2.3.4.
 Units
-#
 Units
-#
+
 ctc
 Dedicated, high-bandwidth, memory coherent NVLink Chip-2-Chip (C2C) interconnect that can access Extended GPU Memory (EGM).
 See
 https://developer.nvidia.com/blog/nvidia-grace-hopper-superchip-architecture-in-depth/
 for more information.
-dcc
-The Data Constant Cache (DCC) is a SM-level constant data cache accessed by the LDCU instruction. The LDCU instruction loads a value from constant memory into a warp uniform register. The load size can be 1-byte, 2-bytes, 4-bytes, 8-bytes, or 16-bytes. If the warp reaches an instruction dependent on the load prior to completion of the load the warp will report the stall reason short scoreboard. Missed data is fetched from the GCC.
 dram
 Device (main) memory, where the GPUs global and local memory resides.
 fbpa
 The FrameBuffer Partition is a memory controller which sits between the level 2 cache (LTC) and the DRAM. The number of FBPAs varies across GPUs.
 fe
 The Frontend unit is responsible for the overall flow of workloads sent by the driver. FE also facilitates a number of synchronization operations.
-gcc
-The GPC Constant Cache (GCC) is a L1.5 constant cache in the General Processing Cluster (GPC). The GCC is responsible for caching constant data and instructions for all L1 constant caches in the GPC. Any missed data is fetched from the L2 cache.
 gpc
 The General Processing Cluster contains SM, Texture and L1 in the form of TPC(s). It is replicated several times across a chip.
 gpu
@@ -1060,12 +860,8 @@ gr
 Graphics Engine is responsible for all 2D and 3D graphics, compute work, and synchronous graphics copying work.
 gxc
 The GPC XBAR Compressor attempts to compress fully covered 128B writes coming from GPCs before sending them to the L2 cache. On read requests, the L2 cache returns compressed data. GXC decompresses and returns the requested uncompressed sectors.
-icc
-The Instruction Constant Cache (ICC) is a per Texture Processing Cluster (TPC) instruction cache that services all SM sub-partitions in the TPC. Missed data is fetched from the GCC.
 idc
-The Indexed Constant Cache (IDC) is a SM-level constant data cache accessed by the LDC instruction. The LDC instruction loads a value from a per thread specified address in constant memory into a thread registers. If the addresses specified by the active predicated threads are in different cache lines or if requests miss, then the instruction is replayed until all threads have loaded data. The load size can be 1-byte, 2-bytes, 4-bytes, or 8-bytes per thread. If the warp reaches an instruction dependent on the load prior to completion of the load the warp will report the stall reason short scoreboard. Missed data is fetched from the GCC.
-imc
-The Immediate Constant Cache (IMC) is a per SM sub-partition (SMSP) constant data cache accessed by an immediate constant reference in many SASS instructions. In SASS assembly a constant reference takes the form of c[bank][offset] or cx[bank][offset]. If the constant load misses, the instruction is issued but not dispatched and the instruction is re-issued when the IMC miss completes. The warp will report stall reason IMC miss until the miss returns. Missed data is fetched from GCC.
+The InDexed Constant Cache is a subunit of the SM responsible for caching constants that are indexed with a register.
 l1tex
 The Level 1 (L1)/Texture Cache is located within the GPC. It can be used as directed-mapped shared memory and/or store global, local and texture data in its cache portion. l1tex__t refers to its Tag stage. l1tex__m refers to its Miss stage. l1tex__d refers to its Data stage.
 lrc
@@ -1100,11 +896,9 @@ vidlrc
 The LRC for global (video) memory.
 xcomp
 The Crossbar (XBAR) Compressor.
-2.3.5.
 Subunits
-#
 Subunits
-#
+
 aperture_device
 Memory interface to local device memory (dram)
 aperture_peer
@@ -1136,33 +930,24 @@ TEXIN
 texture
 Texture memory
 workid
-ID for a unit of work in a grid that uses cluster launch control (CLC).
+ID for a unit of work in a grid.
 xbar
 The Crossbar (XBAR) is responsible for carrying packets from a given source unit to a specific destination unit.
-2.3.6.
 Pipelines
-#
-Pipelines execute instructions. Some pipelines are physical, i.e. they correspond to physical HW. Other pipelines are logical, i.e. they are an abstraction of one or more physical pipelines. The terms ‘aggregated pipeline’ and ‘sub pipeline’ are used to indicate the hierarchy, but without specifying if it is physical or logical.
-Some instructions can execute in one of multiple pipelines, and the decision is dynamic at runtime. Some instructions execute in both of two pipelines, and the association is static. Other instructions execute in only a single pipeline.
-Pipeline metric names and available pipeline terms vary across GPU architectures. For example, FMA work can be exposed as one pipeline or split into sub-pipelines on newer chips, and tensor-related work can appear through Tensor or Tensor Core pipelines depending on the architecture. Query the metrics available on the target GPU before hard-coding pipeline metrics or thresholds.
 Pipelines
-#
+
 adu
 Address Divergence Unit. The ADU is responsible for address divergence handling for branches/jumps. It also provides support for constant loads and block-level barrier instructions.
 alu
-Arithmetic Logic Unit. The ALU is responsible for execution of most bit manipulation and logic instructions. It also executes integer instructions, excluding IMAD and IMUL. On NVIDIA Ampere architecture chips, the ALU pipeline performs fast FP32-to-FP16 conversion.  ALU is an aggregated pipe composed of ALU Heavy and ALU Lite (part of physical pipe FMA Heavy).
-aluheavy
-Arithmetic Logic Unit Heavy.  ALU Heavy is part of the aggregated pipe ALU.
-alulite
-Arithmetic Logic Unit Lite.  It is part of the aggregated pipe ALU and a subpipe of the physical pipe FMA Heavy.
+Arithmetic Logic Unit. The ALU is responsible for execution of most bit manipulation and logic instructions. It also executes integer instructions, excluding IMAD and IMUL. On NVIDIA Ampere architecture chips, the ALU pipeline performs fast FP32-to-FP16 conversion.
 cbu
 Convergence Barrier Unit. The CBU is responsible for warp-level convergence, barrier, and branch instructions.
 fma
-Fused Multiply Add/Accumulate. The FMA pipeline processes most FP32 arithmetic (FADD, FMUL, FMAD). It also performs integer multiplication operations (IMUL, IMAD), as well as integer dot products. On GA10x, FMA is a logical pipeline that indicates peak FP32 and FP16x2 performance.  It is an aggregated pipe composed of the FMA Heavy and FMA Lite sub-pipelines.
+Fused Multiply Add/Accumulate. The FMA pipeline processes most FP32 arithmetic (FADD, FMUL, FMAD). It also performs integer multiplication operations (IMUL, IMAD), as well as integer dot products. On GA10x, FMA is a logical pipeline that indicates peak FP32 and FP16x2 performance. It is composed of the FMAHeavy and FMALite physical pipelines.
 fmaheavy
-Fused Multiply Add/Accumulate Heavy. FMA Heavy performs FP32 arithmetic (FADD, FMUL, FMAD), FP16 arithmetic (HADD2, HMUL2, HFMA2), integer multiplication operations (IMUL, IMAD), and integer dot products.  Shared FMA Heavy is an aggregated, physical pipe composed of the subpipes FMA Heavy and ALU Lite. Its FMA Heavy subpipe can execute instructions from FMA. Its ALU Lite subpipe can execute instructions from ALU.
+Fused Multiply Add/Accumulate Heavy. FMAHeavy performs FP32 arithmetic (FADD, FMUL, FMAD), FP16 arithmetic (HADD2, HMUL2, HFMA2), integer multiplication operations (IMUL, IMAD), and integer dot products.
 fmalite
-Fused Multiply Add/Accumulate Lite. FMA Lite performs FP32 arithmetic (FADD, FMUL, FMA) and FP16 arithmetic (HADD2, HMUL2, HFMA2).  It is part of the aggregated pipe FMA.
+Fused Multiply Add/Accumulate Lite. FMALite performs FP32 arithmetic (FADD, FMUL, FMA) and FP16 arithmetic (HADD2, HMUL2, HFMA2).
 fp16
 Half-precision floating-point. On Volta, Turing and NVIDIA GA100, the FP16 pipeline performs paired FP16 instructions (FP16x2). It also contains a fast FP32-to-FP16 and FP16-to-FP32 converter. Starting with GA10x chips, this functionality is part of the FMA pipeline.
 fp64
@@ -1171,34 +956,21 @@ lsu
 Load Store Unit. The LSU pipeline issues load, store, atomic, and reduction instructions to the L1TEX unit for global, local, and shared memory. It also issues special register reads (S2R), shuffles, and CTA-level arrive/wait barrier instructions to the L1TEX unit.
 tc
 Tensor Core. The TC pipeline executes UTCBAR, UTCCP, UTC*MMA, UTCSHIFT and UTC*SWS instructions. It is different from the Tensor pipeline.
-For tensor-core MMA interpretation, see
-MMA fundamentals
-in the Compute Triage Guide. On 5th-generation MMA, one issuing thread can drive work across the four warp schedulers, so low active-thread counts on the issuing instruction are expected.
 tensor
 The Tensor pipeline executes various MMA instructions. It is different from the Tensor Core pipeline.
-For MMA fundamentals, WGMMA/GMMA counter behavior, and tensor pipeline utilization guidance, see
-MMA fundamentals
-in the Compute Triage Guide.
 tex
 Texture Unit. The SM texture pipeline forwards texture and surface instructions to the L1TEX unit’s TEXIN stage. On GPUs where FP64 or Tensor pipelines are decoupled, the texture pipeline forwards those types of instructions, too.
 tma
-Tensor Memory Accelerator. (Tensor Memory Access Unit) Provides efficient data transfer mechanisms between global and shared memories with the ability to understand and traverse multidimensional data layouts.
-For TMA usage in tensor pipelines, see
-MMA fundamentals
-in the Compute Triage Guide. For async-copy staging details, see
-Shared-memory fills go through the register file
-.
+Tensor Memory Access Unit. Provides efficient data transfer mechanisms between global and shared memories with the ability to understand and traverse multidimensional data layouts.
 tmem
 Tensor Memory. The TMEM pipeline executes FENCE.VIEW.ASYNC.T, LDT(M) and STT(M) instructions. TMEM also refers to the dedicated tensor memory within the SM sub-partition (SMSP).
 uniform
 Uniform Data Path. This scalar unit executes instructions where all threads use the same input and generate the same output.
 xu
 Transcendental and Data Type Conversion Unit. The XU pipeline is responsible for special functions such as sin, cos, and reciprocal square root. It is also responsible for int-to-float, and float-to-int type conversions.
-2.3.7.
 Quantities
-#
 Quantities
-#
+
 instruction
 An assembly (SASS) instruction. Each executed instruction may generate zero or more requests.
 request
@@ -1209,7 +981,7 @@ tag
 Unique key to a cache line. A request may look up multiple tags, if the thread addresses do not all fall within a single cache line-aligned region. The L1 and L2 both have 128 byte cache lines. Tag accesses may be classified as hits or misses.
 wavefront
 Unique “work package” generated at the end of the processing stage for requests. All work items of a wavefront are processed in parallel, while work items of different wavefronts are serialized and processed on different cycles. At least one wavefront is generated for each request.
-A simplified model for the processing in L1TEX for Turing and newer architectures can be described as follows: When an SM executes a global or local memory instruction for a warp, a single
+A simplified model for the processing in L1TEX for Volta and newer architectures can be described as follows: When an SM executes a global or local memory instruction for a warp, a single
 request
 is sent to L1TEX. This request communicates the information for all participating threads of this warp (up to 32). For local and global memory, based on the access pattern and the participating threads, the request requires to access a number of cache lines, and
 sectors
@@ -1222,101 +994,26 @@ requests:sectors is 1:N, wavefronts:sectors 1:N, and requests:wavefronts is 1:N
 A wavefront is described as a (work) package that can be processed at once, i.e. there is a notion of processing one wavefront per cycle in L1TEX. Wavefronts therefore represent the number of cycles required to process the requests, while the number of sectors per request is a property of the
 access pattern
 of the memory instruction for all participating threads. For example, it is possible to have a memory instruction that requires 4 sectors per request in 1 wavefront. However, you can also have a memory instruction having 4 sectors per request, but requiring 2 or more wavefronts.
-2.3.8.
+2.3.4.
 Range and Precision
-#
+
 Overview
-#
 In general, measurement values that lie outside the expected logical range of a metric can be attributed to one or more of the below root-causes. If values are exceeding such range, they are not clamped by the tool to their expected value on purpose to ensure that the rest of the profiler report remains self-consistent.
 Asynchronous GPU activity
-#
 GPU engines other than the one measured by a metric (display, copy engine, video encoder, video decoder, etc.) potentially access shared resources during profiling. Such chip-global shared resources include L2, DRAM, PCIe, and NVLINK. If the kernel launch is small, the other engine(s) can cause significant confusion in e.g. the DRAM results, since it is not possible to isolate the DRAM traffic of the SM. To reduce the impact of such asynchronous units, consider profiling on a GPU without active display and without other processes that can access the GPU at the time.
 Multi-pass data collection
-#
 Out-of-range metrics often occur when the profiler
 replays
 the kernel launch to collect metrics, and work distribution is significantly different across replay passes. A metric such as hit rate (hits / queries) can have significant error if hits and queries are collected on different passes and the kernel does not saturate the GPU to reach a steady state (generally > 20 µs). Similarly, it can show unexpected values when the workload is inherently variable, as e.g. in the case of spin loops.
 To mitigate the issue, when applicable try to increase the measured workload to allow the GPU to reach a steady state for each launch. Reducing the number of metrics collected at the same time can also improve precision by increasing the likelihood that counters contributing to one metric are collected in a single pass.
-Workload Durations
-#
-Nsight Compute measures the duration of workloads (e.g., CUDA kernels) differently than Nsight Systems (via CUPTI).
-This can lead to discrepancies in the reported duration for the same workload between the two tools.
-The following factors impact the measured duration:
-Clock control
-:
-Nsight Compute locks SM clocks
-by default
-.
-Nsight Systems does not lock clocks.
-When comparing results, we recommend to lock clocks with
-nvidia-smi
-externally before profiling and use
---clock-control
-none
-for ncu.
-Cache control
-:
-Nsight Compute flushes all GPU caches
-by default
-between replay passes.
-Nsight Systems collects data only in a single pass, and therefore also does not flush any caches.
-If the workload is highly sensitive to cache state, it’s recommended to use
---replay-mode
-application
---cache-control
-none
-for ncu to let the application handle priming the caches implicitly.
-Serialization
-:
-Nsight Compute serializes kernel launches, unless a dedicated replay mode is used.
-Nsight Systems does not serialize launches.
-Concurrent kernels on the same device can lead to differences in the reported duration between the two tools.
-Tool overhead
-:
-Nsight Compute introduces varying overhead around and during the execution of a workload for the purpose of metric collection:
-Metrics collected using software-patching introduce significant overhead during the workload execution. For this reason, the workload duration is never collected in such a replay pass.
-Preparing the GPU for metric collection and processing the profiled data adds overhead before and after each replay pass. This overhead is not included in the reported duration.
-It is important though to note that this makes it impossible to derive the workload duration using host-side timers or CUDA events when profiling with Nsight Compute,
-as such methods would include the overhead introduced by the tool.
-Duration measurement
-:
-Nsight Compute and Nsight Systems/CUPTI use different methods to measure the duration of a workload (
-gpu__time_duration
-metric in Nsight Compute):
-For the start timestamp, Nsight Compute inserts a
-WaitForIdle
-and a semaphore timestamp after the launch setup (copy parameters, copy qmd) and before the submission of the command to execute the grid.
-These semaphores are processed by the GPU’s front-end and the timestamp is taken when the semaphore command is executed.
-This timestamp consequently occurs before the grid’s blocks and warps are scheduled and distributed to the SMs.
-Before Blackwell, Nsight Systems measures the start timestamp by replacing the entry point of the kernel with a prolog that all warps execute.
-Logical thread 0 writes out the timestamp. This method is required to trace concurrent kernels.
-From Blackwell onwards, Nsight Systems collects the start timestamp using a HW method. It is taken before the first CTA is launched on the SM.
-For the end timestamp, Nsight Compute inserts a
-WaitForIdle
-followed by another semaphore into the command buffer.
-Before Blackwell, Nsight Systems instead uses a semaphore that instructs the scheduler unit to collect the timestamp upon completion of all blocks of the grid.
-This can occur before or after the semaphore method used by Nsight Compute.
-From Blackwell onwards, Nsight Systems collects the end timestamp using a HW method. It is taken after the final memory barrier is issued.
-In general, Nsight Systems should report shorter durations since the start timestamp is as close as possible (later, never earlier) to the first instruction executed by the kernel on a SM.
-The above method is used in Nsight Compute to be compatible with other ways to measure “duration” in the profiler, such as
-elapsed cycles
-metrics.
-Note that for
-Workload Execution
-rows in the PM Sampling
-timeline
-, Nsight Compute and Nsight Systems use the same method to measure start and end timestamps.
 Tool issue
-#
 If you still observe metric issues after following the guidelines above, please
 reach out to us
 and describe your issue.
 2.4.
 Metrics Reference
-#
-2.4.1.
+
 Overview
-#
 Most metrics in NVIDIA Nsight Compute can be queried using the ncu command line interface’s
 –query-metrics
 option.
@@ -1341,11 +1038,9 @@ launch__graph_*
 and
 launch__occupancy_per_*
 .
-2.4.2.
 Launch Metrics
-#
 Launch Metrics
-#
+
 launch__barrier_count
 Number of barriers in the kernel launch.
 launch__block_dim_x
@@ -1357,37 +1052,29 @@ Maximum number of threads for the kernel launch in Z dimension.
 launch__block_size
 Maximum total number of threads per block for the kernel launch.
 launch__cluster_dim_x
-Number of blocks per cluster for the kernel launch in X dimension.
+Number of clusters for the kernel launch in X dimension.
 launch__cluster_dim_y
-Number of blocks per cluster for the kernel launch in Y dimension.
+Number of clusters for the kernel launch in Y dimension.
 launch__cluster_dim_z
-Number of blocks per cluster for the kernel launch in Z dimension.
+Number of clusters for the kernel launch in Z dimension.
 launch__cluster_max_active
 Maximum number of clusters that can co-exist on the target device. The runtime environment may affect how the hardware schedules the clusters, so the calculated occupancy is not guaranteed to be achievable.
 launch__cluster_max_potential_size
 Largest valid cluster size for the kernel function and launch configuration.
 launch__cluster_scheduling_policy
 Cluster scheduling policy.
-launch__cluster_size
-Number of blocks per cluster for the kernel launch.
 launch__context_id
 CUDA context id for the kernel launch (id of the primary context if launch was on a green context).
 launch__device_id
 CUDA device id for the kernel launch.
-launch__execution_model
-Kernel execution model i.e. SIMT or Tile. For range, the instance values provide information for each kernel.
 launch__func_cache_config
 On devices where the L1 cache and shared memory use the same hardware resources, this is the preferred cache configuration for the CUDA function. The runtime will use the requested configuration if possible, but it is free to choose a different configuration if required.
 launch__function_pcs
 Kernel function entry PCs.
 launch__graph_contains_device_launch
 Set to 1 if any node in the profiled graph can launch a CUDA device graph.
-launch__graph_exec_cuda_id
-Unique identifier of the instantiated executable CUDA graph that performed this graph launch. This ID is obtained via cudaGraphExecGetId() and matches the graph execution ID referenced in debug outputs such as cudaGraphDebugDotPrint().
 launch__graph_is_device_launchable
 Set to 1 if the profiled graph was device-launchable.
-launch__graph_src_cuda_id
-Unique identifier of the source CUDA graph from which the launched graph originated. This ID is obtained via cudaGraphGetId() and matches the graph ID referenced in debug outputs such as cudaGraphDebugDotPrint().
 launch__green_context_id
 CUDA context id of the green context for the kernel launch (if applicable).
 launch__grid_dim_x
@@ -1429,20 +1116,6 @@ Instance values map from number of warps (uint64) to value (uint64).
 launch__occupancy_per_shared_mem_size
 Number of active warps for given shared memory size.
 Instance values map from number of warps (uint64) to value (uint64).
-launch__per_block_memory_size
-Per-block memory size allocated in global memory for kernel execution. For example, to access dynamically populated TMA descriptors.
-launch__per_block_min_memory_size
-Minimum per-block memory size required in global memory for kernel execution. For example, to access dynamically populated TMA descriptors.
-launch__persisting_l2_cache_size
-L2 cache size set-aside for persistent accesses.
-launch__preferred_cluster_size
-Preferred cluster size for the launch. The device attempts - on a best-effort basis - to group thread blocks into preferred clusters over grouping them into regular clusters.
-launch__preferred_cluster_x
-The X dimension of the preferred cluster, in blocks.
-launch__preferred_cluster_y
-The Y dimension of the preferred cluster, in blocks.
-launch__preferred_cluster_z
-The Z dimension of the preferred cluster, in blocks.
 launch__registers_per_thread
 Number of registers allocated per thread.
 launch__registers_per_thread_allocated
@@ -1473,50 +1146,17 @@ launch__tpc_count
 Number of TPCs utilized in the launch.
 launch__tpc_enabled
 Comma-separated list of the IDs of the enabled TPCs.
-launch__user_grid_dim_x
-Maximum number of blocks in X dimension specified during kernel launch, before any adjustments are made at runtime.
-launch__user_grid_dim_y
-Maximum number of blocks in Y dimension specified during kernel launch, before any adjustments are made at runtime.
-launch__user_grid_dim_z
-Maximum number of blocks in Z dimension specified during kernel launch, before any adjustments are made at runtime.
-launch__user_grid_size
-Maximum total number of blocks specified during kernel launch, before any adjustments are made at runtime.
-launch__uses_blocks_as_clusters
-Set to 1 if “Blocks as Clusters” was enabled, where the grid size is interpreted as a grid of clusters, not blocks.
 launch__uses_cdp
 Set to 1 if any function object in the launched workload can use CUDA dynamic parallelism.
 launch__uses_green_context
 Set to 1 if launch was on a green context.
-launch__uses_mps
-Set to 1 if launch was on a device in MPS mode.
-launch__uses_nvlink_centric_scheduling
-Set to 1 if the launch used NVLink-centric scheduling. Some SM resources may not be available to the workload if this is enabled, which can result in lower-than-expected measured utilization.
 launch__uses_vgpu
 Set to 1 if launch was on a vGPU device.
 launch__waves_per_multiprocessor
-Number of waves per SM. Partial waves can lead to tail effects where some SMs become idle while others still have pending work to complete. When using green contexts, this metric is scaled with the number of SMs used by the green context.
-launch__work_queue_concurrency_limit
-Concurrency limit of the workqueue resource used for the kernel launch (for green context launches only).
-launch__work_queue_resource_id
-ID of the workqueue resource used for the kernel launch (for green context launches only).
-launch__work_queue_sharing_scope
-Sharing scope of the workqueue resource used for the kernel launch (for green context launches only).
-2.4.3.
-Occupancy Metrics
-#
-Occupancy Metrics
-#
-sm__maximum_warps_avg_per_active_cycle
-Theoretical Active Warps Per SM
-sm__maximum_warps_per_active_cycle_pct
-Theoretical Occupancy
-smsp__maximum_warps_avg_per_active_cycle
-Theoretical Warps Per Scheduler
-2.4.4.
+Number of waves per SM. Partial waves can lead to tail effects where some SMs become idle while others still have pending work to complete.
 NVLink Topology Metrics
-#
 NVLink Topology Metrics
-#
+
 nvlink__bandwidth
 Link bandwidth in bytes/s.
 Instance values map from logical NVLink ID (uint64) to value (double).
@@ -1569,11 +1209,9 @@ Instance values map from logical NVLink ID (uint64) to value (uint64).
 nvlink__system_atomic
 Indicates if system atomics are supported.
 Instance values map from logical NVLink ID (uint64) to value (uint64).
-2.4.5.
 NUMA Topology Metrics
-#
 NUMA Topology Metrics
-#
+
 numa__cpu_affinity
 CPU affinity for each device.
 Instance values map from device ID (uint64) to comma-separated values (string).
@@ -1586,9 +1224,7 @@ Instance values map from device ID (uint64) to comma-separated values (string).
 numa__id_memory
 NUMA ID of the nearest memory for each device.
 Instance values map from device ID (uint64) to comma-separated values (string).
-2.4.6.
 Device Attributes
-#
 device__attribute_*
 metrics represent
 CUDA device attributes
@@ -1604,8 +1240,6 @@ device__attribute_device_index
 Device index.
 device__attribute_display_name
 Product name of the CUDA device.
-device__attribute_export_control_chip
-Indicates if the device is an export control chip.
 device__attribute_fb_bus_width
 Frame buffer bus width.
 device__attribute_fbp_count
@@ -1638,45 +1272,38 @@ device__attribute_num_tex_per_multiprocessor
 Number of TEX unit per multiprocessor.
 device__attribute_sass_level
 SASS level.
-2.4.7.
 Warp Stall Reasons
-#
 Collected using warp scheduler state sampling. They are incremented regardless if the scheduler issued an instruction in the same cycle or not. These metrics have instance values mapping from the function address (uint64) to the number of samples (uint64).
-Interpretation guidance:
-selected
-and
-not_selected
-are scheduler states, not true stalls. The fundamental optimization target is increasing issue-slot utilization, not driving every stall counter to zero. Stall reductions usually translate to speedups only when low issue activity makes the kernel latency-limited. Warp stall samples are attributed to the consumer instruction that is waiting on a dependency, not the producer; use source and SASS context to find the root cause.
 Warp Stall Reasons
-#
+
 smsp__pcsamp_warps_issue_stalled_barrier
-Warp was stalled waiting for sibling warps at a CTA barrier. A high number of warps waiting at a barrier is commonly caused by diverging code paths before a barrier. This causes some warps to wait a long time until other warps reach the synchronization point. Whenever possible, try to divide up the work into blocks of uniform workloads. If the block size is 512 threads or greater, consider splitting it into smaller groups. This can increase eligible warps without affecting occupancy, unless shared memory becomes a new occupancy limiter. Also, try to identify which barrier instruction causes the most stalls, and optimize the code executed before that synchronization point first. Barriers themselves are cheap when all warps arrive uniformly; most samples accumulate on faster warps waiting for stragglers. In tensor workflows, barrier/group stalls can correspond to expected synchronization phases.
+Warp was stalled waiting for sibling warps at a CTA barrier. A high number of warps waiting at a barrier is commonly caused by diverging code paths before a barrier. This causes some warps to wait a long time until other warps reach the synchronization point. Whenever possible, try to divide up the work into blocks of uniform workloads. If the block size is 512 threads or greater, consider splitting it into smaller groups. This can increase eligible warps without affecting occupancy, unless shared memory becomes a new occupancy limiter. Also, try to identify which barrier instruction causes the most stalls, and optimize the code executed before that synchronization point first.
 smsp__pcsamp_warps_issue_stalled_branch_resolving
-Warp was stalled waiting for a branch target to be computed, and the warp program counter to be updated. To reduce the number of stalled cycles, consider using fewer jump/branch operations and reduce control flow divergence, e.g. by reducing or coalescing conditionals in your code. See also the related No Instructions state. This is program-counter bookkeeping, not time spent deciding which branch to take.
+Warp was stalled waiting for a branch target to be computed, and the warp program counter to be updated. To reduce the number of stalled cycles, consider using fewer jump/branch operations and reduce control flow divergence, e.g. by reducing or coalescing conditionals in your code. See also the related No Instructions state.
 smsp__pcsamp_warps_issue_stalled_dispatch_stall
 Warp was stalled waiting on a dispatch stall. A warp stalled during dispatch has an instruction ready to issue, but the dispatcher holds back issuing the warp due to other conflicts or events.
 smsp__pcsamp_warps_issue_stalled_drain
-Warp was stalled after EXIT waiting for all outstanding memory operations to complete so that warp’s resources can be freed. A high number of stalls due to draining warps typically occurs when a lot of data is written to memory towards the end of a kernel. Make sure the memory access patterns of these store operations are optimal for the target architecture and consider parallelized data reduction, if applicable. These stalls can also reflect tail effects.
+Warp was stalled after EXIT waiting for all outstanding memory operations to complete so that warp’s resources can be freed. A high number of stalls due to draining warps typically occurs when a lot of data is written to memory towards the end of a kernel. Make sure the memory access patterns of these store operations are optimal for the target architecture and consider parallelized data reduction, if applicable.
 smsp__pcsamp_warps_issue_stalled_imc_miss
 Warp was stalled waiting for an immediate constant cache (IMC) miss. A read from constant memory costs one memory read from device memory only on a cache miss; otherwise, it just costs one read from the constant cache. Immediate constants are encoded into the SASS instruction as ‘c[bank][offset]’. Accesses to different addresses by threads within a warp are serialized, thus the cost scales linearly with the number of unique addresses read by all threads within a warp. As such, the constant cache is best when threads in the same warp access only a few distinct locations. If all threads of a warp access the same location, then constant memory can be as fast as a register access.
 smsp__pcsamp_warps_issue_stalled_lg_throttle
-Warp was stalled waiting for the L1 instruction queue for local and global (LG) memory operations to be not full. Typically, this stall occurs only when executing local or global memory instructions extremely frequently. Avoid redundant global memory accesses. Try to avoid using thread-local memory by checking if dynamically indexed arrays are declared in local scope, or if the kernel has excessive register pressure causing spills. If applicable, consider combining multiple lower-width memory operations into fewer wider memory operations and try interleaving memory operations and math instructions.
+Warp was stalled waiting for the L1 instruction queue for local and global (LG) memory operations to be not full. Typically, this stall occurs only when executing local or global memory instructions extremely frequently. Avoid redundant global memory accesses. Try to avoid using thread-local memory by checking if dynamically indexed arrays are declared in local scope, of if the kernel has excessive register pressure causing by spills. If applicable, consider combining multiple lower-width memory operations into fewer wider memory operations and try interleaving memory operations and math instructions.
 smsp__pcsamp_warps_issue_stalled_long_scoreboard
-Warp was stalled waiting for a scoreboard dependency on a L1TEX (local, global, surface, texture) operation. Find the instruction producing the data being waited upon to identify the culprit. To reduce the number of cycles waiting on L1TEX data accesses verify the memory access patterns are optimal for the target architecture, attempt to increase cache hit rates by increasing data locality (coalescing), or by changing the cache configuration. Consider moving frequently used data to shared memory. Stall samples are reported on the consumer instruction waiting for the result, not necessarily on the producer. When this reason dominates, the kernel is memory-latency-bound, which is not necessarily memory-bandwidth-bound; prefer latency-hiding changes such as ILP, unrolling, or pipelining when bandwidth is not saturated.
+Warp was stalled waiting for a scoreboard dependency on a L1TEX (local, global, surface, texture) operation. Find the instruction producing the data being waited upon to identify the culprit. To reduce the number of cycles waiting on L1TEX data accesses verify the memory access patterns are optimal for the target architecture, attempt to increase cache hit rates by increasing data locality (coalescing), or by changing the cache configuration. Consider moving frequently used data to shared memory.
 smsp__pcsamp_warps_issue_stalled_math_pipe_throttle
-Warp was stalled waiting for the execution pipe to be available. This stall occurs when all active warps execute their next instruction on a specific, oversubscribed math pipeline. Try to increase the number of active warps to hide the existent latency or try changing the instruction mix to utilize all available pipelines in a more balanced way. When this reason dominates, the kernel is usually compute-pipeline-bound; otherwise, increasing active warps can help hide latency.
+Warp was stalled waiting for the execution pipe to be available. This stall occurs when all active warps execute their next instruction on a specific, oversubscribed math pipeline. Try to increase the number of active warps to hide the existent latency or try changing the instruction mix to utilize all available pipelines in a more balanced way.
 smsp__pcsamp_warps_issue_stalled_membar
-Warp was stalled waiting on a memory barrier. Avoid executing any unnecessary memory barriers and assure that any outstanding memory operations are fully optimized for the target architecture. This commonly includes __threadfence* operations; reduce fence scope and frequency where possible.
+Warp was stalled waiting on a memory barrier. Avoid executing any unnecessary memory barriers and assure that any outstanding memory operations are fully optimized for the target architecture.
 smsp__pcsamp_warps_issue_stalled_mio_throttle
-Warp was stalled waiting for the MIO (memory input/output) instruction queue to be not full. This stall reason is high in cases of extreme utilization of the MIO pipelines, which include special math instructions, dynamic branches, as well as shared memory instructions. When caused by shared memory accesses, trying to use fewer but wider loads can reduce pipeline pressure. Highly scattered memory accesses can also fill this queue when each access expands into many internal operations; improve access locality when this is the cause.
+Warp was stalled waiting for the MIO (memory input/output) instruction queue to be not full. This stall reason is high in cases of extreme utilization of the MIO pipelines, which include special math instructions, dynamic branches, as well as shared memory instructions. When caused by shared memory accesses, trying to use fewer but wider loads can reduce pipeline pressure.
 smsp__pcsamp_warps_issue_stalled_misc
 Warp was stalled for a miscellaneous hardware reason.
 smsp__pcsamp_warps_issue_stalled_no_instructions
 Warp was stalled waiting to be selected to fetch an instruction or waiting on an instruction cache miss. A high number of warps not having an instruction fetched is typical for very short kernels with less than one full wave of work in the grid. Excessively jumping across large blocks of assembly code can also lead to more warps stalled for this reason, if this causes misses in the instruction cache. See also the related Branch Resolving state.
 smsp__pcsamp_warps_issue_stalled_not_selected
-Not selected warps are eligible warps that were not picked by the micro scheduler to issue that cycle as another warp was selected. This is a scheduler state rather than a true stall. A high number of not selected warps typically means you have sufficient warps to cover warp latencies and you may consider reducing the number of active warps to possibly increase cache coherence and data locality.
+Warp was stalled waiting for the micro scheduler to select the warp to issue. Not selected warps are eligible warps that were not picked by the scheduler to issue that cycle as another warp was selected. A high number of not selected warps typically means you have sufficient warps to cover warp latencies and you may consider reducing the number of active warps to possibly increase cache coherence and data locality.
 smsp__pcsamp_warps_issue_stalled_selected
-Warp was selected by the micro scheduler and issued an instruction. This is not a stall.
+Warp was selected by the micro scheduler and issued an instruction.
 smsp__pcsamp_warps_issue_stalled_short_scoreboard
 Warp was stalled waiting for a scoreboard dependency on a MIO (memory input/output) operation (not to L1TEX). The primary reason for a high number of stalls due to short scoreboards is typically memory operations to shared memory. Other reasons include frequent execution of special math instructions (e.g. MUFU) or dynamic branching (e.g. BRX, JMX). Consult the Memory Workload Analysis section to verify if there are shared memory operations and reduce bank conflicts, if reported. Assigning frequently accessed values to variables can assist the compiler in using low-latency registers instead of direct memory accesses.
 smsp__pcsamp_warps_issue_stalled_sleeping
@@ -1684,48 +1311,41 @@ Warp was stalled due to all threads in the warp being in the blocked, yielded, o
 smsp__pcsamp_warps_issue_stalled_tex_throttle
 Warp was stalled waiting for the L1 instruction queue for texture operations to be not full. This stall reason is high in cases of extreme utilization of the L1TEX pipeline. Try issuing fewer texture fetches, surface loads, surface stores, or decoupled math operations. If applicable, consider combining multiple lower-width memory operations into fewer wider memory operations and try interleaving memory operations and math instructions. Consider converting texture lookups or surface loads into global memory lookups. Texture can accept four threads’ requests per cycle, whereas global accepts 32 threads.
 smsp__pcsamp_warps_issue_stalled_wait
-Warp was stalled waiting on a fixed latency execution dependency. Typically, this stall reason should be very low and only shows up as a top contributor in already highly optimized kernels. Try to hide the corresponding instruction latencies by increasing the number of active warps, restructuring the code or unrolling loops. Furthermore, consider switching to lower-latency instructions, e.g. by making use of fast math compiler options. For example, FFMA-to-FFMA dependency latency is 4 cycles.
+Warp was stalled waiting on a fixed latency execution dependency. Typically, this stall reason should be very low and only shows up as a top contributor in already highly optimized kernels. Try to hide the corresponding instruction latencies by increasing the number of active warps, restructuring the code or unrolling loops. Furthermore, consider switching to lower-latency instructions, e.g. by making use of fast math compiler options.
 smsp__pcsamp_warps_issue_stalled_warpgroup_arrive
-Warp was stalled waiting on a WARPGROUP.ARRIVES or WARPGROUP.WAIT instruction. Warp-group MMA acts like a barrier across the four warp schedulers in the SM, so a late-arriving warp can cause the other participating warps to wait. Frequent samples usually indicate skew across schedulers from non-uniform work or mismatched TMA/MMA pipelining, not inherent WGMMA cost.
-2.4.8.
+Warp was stalled waiting on a WARPGROUP.ARRIVES or WARPGROUP.WAIT instruction.
 Warp Stall Reasons (Not Issued)
-#
 Collected using warp scheduler state sampling. They are incremented only on cycles in which the warp scheduler issued no instruction. These metrics have instance values mapping from the function address (uint64) to the number of samples (uint64).
-Interpretation guidance:
-selected
-and
-not_selected
-are scheduler states, not true stalls. The fundamental optimization target is increasing issue-slot utilization, not driving every stall counter to zero. Stall reductions usually translate to speedups only when low issue activity makes the kernel latency-limited. Warp stall samples are attributed to the consumer instruction that is waiting on a dependency, not the producer; use source and SASS context to find the root cause.
 Warp Stall Reasons (Not Issued)
-#
+
 smsp__pcsamp_warps_issue_stalled_barrier_not_issued
-Warp was stalled waiting for sibling warps at a CTA barrier. A high number of warps waiting at a barrier is commonly caused by diverging code paths before a barrier. This causes some warps to wait a long time until other warps reach the synchronization point. Whenever possible, try to divide up the work into blocks of uniform workloads. If the block size is 512 threads or greater, consider splitting it into smaller groups. This can increase eligible warps without affecting occupancy, unless shared memory becomes a new occupancy limiter. Also, try to identify which barrier instruction causes the most stalls, and optimize the code executed before that synchronization point first. Barriers themselves are cheap when all warps arrive uniformly; most samples accumulate on faster warps waiting for stragglers. In tensor workflows, barrier/group stalls can correspond to expected synchronization phases.
+Warp was stalled waiting for sibling warps at a CTA barrier. A high number of warps waiting at a barrier is commonly caused by diverging code paths before a barrier. This causes some warps to wait a long time until other warps reach the synchronization point. Whenever possible, try to divide up the work into blocks of uniform workloads. If the block size is 512 threads or greater, consider splitting it into smaller groups. This can increase eligible warps without affecting occupancy, unless shared memory becomes a new occupancy limiter. Also, try to identify which barrier instruction causes the most stalls, and optimize the code executed before that synchronization point first.
 smsp__pcsamp_warps_issue_stalled_branch_resolving_not_issued
-Warp was stalled waiting for a branch target to be computed, and the warp program counter to be updated. To reduce the number of stalled cycles, consider using fewer jump/branch operations and reduce control flow divergence, e.g. by reducing or coalescing conditionals in your code. See also the related No Instructions state. This is program-counter bookkeeping, not time spent deciding which branch to take.
+Warp was stalled waiting for a branch target to be computed, and the warp program counter to be updated. To reduce the number of stalled cycles, consider using fewer jump/branch operations and reduce control flow divergence, e.g. by reducing or coalescing conditionals in your code. See also the related No Instructions state.
 smsp__pcsamp_warps_issue_stalled_dispatch_stall_not_issued
 Warp was stalled waiting on a dispatch stall. A warp stalled during dispatch has an instruction ready to issue, but the dispatcher holds back issuing the warp due to other conflicts or events.
 smsp__pcsamp_warps_issue_stalled_drain_not_issued
-Warp was stalled after EXIT waiting for all outstanding memory operations to complete so that warp resources can be freed. A high number of stalls due to draining warps typically occurs when a lot of data is written to memory towards the end of a kernel. Make sure the memory access patterns of these store operations are optimal for the target architecture and consider parallelized data reduction, if applicable. These stalls can also reflect tail effects.
+Warp was stalled after EXIT waiting for all memory operations to complete so that warp resources can be freed. A high number of stalls due to draining warps typically occurs when a lot of data is written to memory towards the end of a kernel. Make sure the memory access patterns of these store operations are optimal for the target architecture and consider parallelized data reduction, if applicable.
 smsp__pcsamp_warps_issue_stalled_imc_miss_not_issued
-Warp was stalled waiting for an immediate constant cache (IMC) miss. A read from constant memory costs one memory read from device memory only on a cache miss; otherwise, it just costs one read from the constant cache. Immediate constants are encoded into the SASS instruction as ‘c[bank][offset]’. Accesses to different addresses by threads within a warp are serialized, thus the cost scales linearly with the number of unique addresses read by all threads within a warp. As such, the constant cache is best when threads in the same warp access only a few distinct locations. If all threads of a warp access the same location, then constant memory can be as fast as a register access.
+Warp was stalled waiting for an immediate constant cache (IMC) miss. A read from constant memory costs one memory read from device memory only on a cache miss; otherwise, it just costs one read from the constant cache. Accesses to different addresses by threads within a warp are serialized, thus the cost scales linearly with the number of unique addresses read by all threads within a warp. As such, the constant cache is best when threads in the same warp access only a few distinct locations. If all threads of a warp access the same location, then constant memory can be as fast as a register access.
 smsp__pcsamp_warps_issue_stalled_lg_throttle_not_issued
-Warp was stalled waiting for the L1 instruction queue for local and global (LG) memory operations to be not full. Typically, this stall occurs only when executing local or global memory instructions extremely frequently. Avoid redundant global memory accesses. Try to avoid using thread-local memory by checking if dynamically indexed arrays are declared in local scope, or if the kernel has excessive register pressure causing spills. If applicable, consider combining multiple lower-width memory operations into fewer wider memory operations and try interleaving memory operations and math instructions.
+Warp was stalled waiting for the L1 instruction queue for local and global (LG) memory operations to be not full. Typically, this stall occurs only when executing local or global memory instructions extremely frequently. Avoid redundant global memory accesses. Try to avoid using thread-local memory by checking if dynamically indexed arrays are declared in local scope, of if the kernel has excessive register pressure causing by spills. If applicable, consider combining multiple lower-width memory operations into fewer wider memory operations and try interleaving memory operations and math instructions.
 smsp__pcsamp_warps_issue_stalled_long_scoreboard_not_issued
-Warp was stalled waiting for a scoreboard dependency on a L1TEX (local, global, surface, texture) operation. Find the instruction producing the data being waited upon to identify the culprit. To reduce the number of cycles waiting on L1TEX data accesses verify the memory access patterns are optimal for the target architecture, attempt to increase cache hit rates by increasing data locality (coalescing), or by changing the cache configuration. Consider moving frequently used data to shared memory. Stall samples are reported on the consumer instruction waiting for the result, not necessarily on the producer. When this reason dominates, the kernel is memory-latency-bound, which is not necessarily memory-bandwidth-bound; prefer latency-hiding changes such as ILP, unrolling, or pipelining when bandwidth is not saturated.
+Warp was stalled waiting for a scoreboard dependency on a L1TEX (local, global, surface, texture) operation. Find the instruction producing the data being waited upon to identify the culprit. To reduce the number of cycles waiting on L1TEX data accesses verify the memory access patterns are optimal for the target architecture, attempt to increase cache hit rates by increasing data locality (coalescing), or by changing the cache configuration. Consider moving frequently used data to shared memory.
 smsp__pcsamp_warps_issue_stalled_math_pipe_throttle_not_issued
-Warp was stalled waiting for the execution pipe to be available. This stall occurs when all active warps execute their next instruction on a specific, oversubscribed math pipeline. Try to increase the number of active warps to hide the existent latency or try changing the instruction mix to utilize all available pipelines in a more balanced way. When this reason dominates, the kernel is usually compute-pipeline-bound; otherwise, increasing active warps can help hide latency.
+Warp was stalled waiting for the execution pipe to be available. This stall occurs when all active warps execute their next instruction on a specific, oversubscribed math pipeline. Try to increase the number of active warps to hide the existent latency or try changing the instruction mix to utilize all available pipelines in a more balanced way.
 smsp__pcsamp_warps_issue_stalled_membar_not_issued
-Warp was stalled waiting on a memory barrier. Avoid executing any unnecessary memory barriers and assure that any outstanding memory operations are fully optimized for the target architecture. This commonly includes __threadfence* operations; reduce fence scope and frequency where possible.
+Warp was stalled waiting on a memory barrier. Avoid executing any unnecessary memory barriers and assure that any outstanding memory operations are fully optimized for the target architecture.
 smsp__pcsamp_warps_issue_stalled_mio_throttle_not_issued
-Warp was stalled waiting for the MIO (memory input/output) instruction queue to be not full. This stall reason is high in cases of extreme utilization of the MIO pipelines, which include special math instructions, dynamic branches, as well as shared memory instructions. When caused by shared memory accesses, trying to use fewer but wider loads can reduce pipeline pressure. Highly scattered memory accesses can also fill this queue when each access expands into many internal operations; improve access locality when this is the cause.
+Warp was stalled waiting for the MIO (memory input/output) instruction queue to be not full. This stall reason is high in cases of extreme utilization of the MIO pipelines, which include special math instructions, dynamic branches, as well as shared memory instructions. When caused by shared memory accesses, trying to use fewer but wider loads can reduce pipeline pressure.
 smsp__pcsamp_warps_issue_stalled_misc_not_issued
 Warp was stalled for a miscellaneous hardware reason.
 smsp__pcsamp_warps_issue_stalled_no_instructions_not_issued
 Warp was stalled waiting to be selected to fetch an instruction or waiting on an instruction cache miss. A high number of warps not having an instruction fetched is typical for very short kernels with less than one full wave of work in the grid. Excessively jumping across large blocks of assembly code can also lead to more warps stalled for this reason, if this causes misses in the instruction cache. See also the related Branch Resolving state.
 smsp__pcsamp_warps_issue_stalled_not_selected_not_issued
-Not selected warps are eligible warps that were not picked by the micro scheduler to issue that cycle as another warp was selected. This is a scheduler state rather than a true stall. A high number of not selected warps typically means you have sufficient warps to cover warp latencies and you may consider reducing the number of active warps to possibly increase cache coherence and data locality.
+Warp was stalled waiting for the micro scheduler to select the warp to issue. Not selected warps are eligible warps that were not picked by the scheduler to issue that cycle as another warp was selected. A high number of not selected warps typically means you have sufficient warps to cover warp latencies and you may consider reducing the number of active warps to possibly increase cache coherence and data locality.
 smsp__pcsamp_warps_issue_stalled_selected_not_issued
-Warp was selected by the micro scheduler and issued an instruction. This is not a stall.
+Warp was selected by the micro scheduler and issued an instruction.
 smsp__pcsamp_warps_issue_stalled_short_scoreboard_not_issued
 Warp was stalled waiting for a scoreboard dependency on a MIO (memory input/output) operation (not to L1TEX). The primary reason for a high number of stalls due to short scoreboards is typically memory operations to shared memory. Other reasons include frequent execution of special math instructions (e.g. MUFU) or dynamic branching (e.g. BRX, JMX). Consult the Memory Workload Analysis section to verify if there are shared memory operations and reduce bank conflicts, if reported. Assigning frequently accessed values to variables can assist the compiler in using low-latency registers instead of direct memory accesses.
 smsp__pcsamp_warps_issue_stalled_sleeping_not_issued
@@ -1733,141 +1353,29 @@ Warp was stalled due to all threads in the warp being in the blocked, yielded, o
 smsp__pcsamp_warps_issue_stalled_tex_throttle_not_issued
 Warp was stalled waiting for the L1 instruction queue for texture operations to be not full. This stall reason is high in cases of extreme utilization of the L1TEX pipeline. Try issuing fewer texture fetches, surface loads, surface stores, or decoupled math operations. If applicable, consider combining multiple lower-width memory operations into fewer wider memory operations and try interleaving memory operations and math instructions. Consider converting texture lookups or surface loads into global memory lookups. Texture can accept four threads’ requests per cycle, whereas global accepts 32 threads.
 smsp__pcsamp_warps_issue_stalled_wait_not_issued
-Warp was stalled waiting on a fixed latency execution dependency. Typically, this stall reason should be very low and only shows up as a top contributor in already highly optimized kernels. Try to hide the corresponding instruction latencies by increasing the number of active warps, restructuring the code or unrolling loops. Furthermore, consider switching to lower-latency instructions, e.g. by making use of fast math compiler options. For example, FFMA-to-FFMA dependency latency is 4 cycles.
+Warp was stalled waiting on a fixed latency execution dependency. Typically, this stall reason should be very low and only shows up as a top contributor in already highly optimized kernels. Try to hide the corresponding instruction latencies by increasing the number of active warps, restructuring the code or unrolling loops. Furthermore, consider switching to lower-latency instructions, e.g. by making use of fast math compiler options.
 smsp__pcsamp_warps_issue_stalled_warpgroup_arrive_not_issued
-Warp was stalled waiting on a WARPGROUP.ARRIVES or WARPGROUP.WAIT instruction. Warp-group MMA acts like a barrier across the four warp schedulers in the SM, so a late-arriving warp can cause the other participating warps to wait. Frequent samples usually indicate skew across schedulers from non-uniform work or mismatched TMA/MMA pipelining, not inherent WGMMA cost.
-2.4.9.
-Warp Stalls per Warp ID
-#
-Collected using warp scheduler state sampling. They are incremented regardless if the scheduler issued an instruction in the same cycle or not. These metrics have instance values mapping from <SMSP ID>:<Warp ID> (string) to the number of samples (uint64).
-Interpretation guidance:
-selected
-and
-not_selected
-are scheduler states, not true stalls. The fundamental optimization target is increasing issue-slot utilization, not driving every stall counter to zero. Stall reductions usually translate to speedups only when low issue activity makes the kernel latency-limited. Warp stall samples are attributed to the consumer instruction that is waiting on a dependency, not the producer; use source and SASS context to find the root cause.
-Warp Stalls per Warp ID
-#
-smsp__warpidsamp_warps_issue_stalled_barrier
-Warp was stalled waiting for sibling warps at a CTA barrier. A high number of warps waiting at a barrier is commonly caused by diverging code paths before a barrier. This causes some warps to wait a long time until other warps reach the synchronization point. Whenever possible, try to divide up the work into blocks of uniform workloads. If the block size is 512 threads or greater, consider splitting it into smaller groups. This can increase eligible warps without affecting occupancy, unless shared memory becomes a new occupancy limiter. Also, try to identify which barrier instruction causes the most stalls, and optimize the code executed before that synchronization point first. Barriers themselves are cheap when all warps arrive uniformly; most samples accumulate on faster warps waiting for stragglers. In tensor workflows, barrier/group stalls can correspond to expected synchronization phases.
-smsp__warpidsamp_warps_issue_stalled_branch_resolving
-Warp was stalled waiting for a branch target to be computed, and the warp program counter to be updated. To reduce the number of stalled cycles, consider using fewer jump/branch operations and reduce control flow divergence, e.g. by reducing or coalescing conditionals in your code. See also the related No Instructions state. This is program-counter bookkeeping, not time spent deciding which branch to take.
-smsp__warpidsamp_warps_issue_stalled_dispatch_stall
-Warp was stalled waiting on a dispatch stall. A warp stalled during dispatch has an instruction ready to issue, but the dispatcher holds back issuing the warp due to other conflicts or events.
-smsp__warpidsamp_warps_issue_stalled_drain
-Warp was stalled after EXIT waiting for all outstanding memory operations to complete so that warp’s resources can be freed. A high number of stalls due to draining warps typically occurs when a lot of data is written to memory towards the end of a kernel. Make sure the memory access patterns of these store operations are optimal for the target architecture and consider parallelized data reduction, if applicable. These stalls can also reflect tail effects.
-smsp__warpidsamp_warps_issue_stalled_imc_miss
-Warp was stalled waiting for an immediate constant cache (IMC) miss. A read from constant memory costs one memory read from device memory only on a cache miss; otherwise, it just costs one read from the constant cache. Immediate constants are encoded into the SASS instruction as ‘c[bank][offset]’. Accesses to different addresses by threads within a warp are serialized, thus the cost scales linearly with the number of unique addresses read by all threads within a warp. As such, the constant cache is best when threads in the same warp access only a few distinct locations. If all threads of a warp access the same location, then constant memory can be as fast as a register access.
-smsp__warpidsamp_warps_issue_stalled_lg_throttle
-Warp was stalled waiting for the L1 instruction queue for local and global (LG) memory operations to be not full. Typically, this stall occurs only when executing local or global memory instructions extremely frequently. Avoid redundant global memory accesses. Try to avoid using thread-local memory by checking if dynamically indexed arrays are declared in local scope, or if the kernel has excessive register pressure causing spills. If applicable, consider combining multiple lower-width memory operations into fewer wider memory operations and try interleaving memory operations and math instructions.
-smsp__warpidsamp_warps_issue_stalled_long_scoreboard
-Warp was stalled waiting for a scoreboard dependency on a L1TEX (local, global, surface, texture) operation. Find the instruction producing the data being waited upon to identify the culprit. To reduce the number of cycles waiting on L1TEX data accesses verify the memory access patterns are optimal for the target architecture, attempt to increase cache hit rates by increasing data locality (coalescing), or by changing the cache configuration. Consider moving frequently used data to shared memory. Stall samples are reported on the consumer instruction waiting for the result, not necessarily on the producer. When this reason dominates, the kernel is memory-latency-bound, which is not necessarily memory-bandwidth-bound; prefer latency-hiding changes such as ILP, unrolling, or pipelining when bandwidth is not saturated.
-smsp__warpidsamp_warps_issue_stalled_math_pipe_throttle
-Warp was stalled waiting for the execution pipe to be available. This stall occurs when all active warps execute their next instruction on a specific, oversubscribed math pipeline. Try to increase the number of active warps to hide the existent latency or try changing the instruction mix to utilize all available pipelines in a more balanced way. When this reason dominates, the kernel is usually compute-pipeline-bound; otherwise, increasing active warps can help hide latency.
-smsp__warpidsamp_warps_issue_stalled_membar
-Warp was stalled waiting on a memory barrier. Avoid executing any unnecessary memory barriers and assure that any outstanding memory operations are fully optimized for the target architecture. This commonly includes __threadfence* operations; reduce fence scope and frequency where possible.
-smsp__warpidsamp_warps_issue_stalled_mio_throttle
-Warp was stalled waiting for the MIO (memory input/output) instruction queue to be not full. This stall reason is high in cases of extreme utilization of the MIO pipelines, which include special math instructions, dynamic branches, as well as shared memory instructions. When caused by shared memory accesses, trying to use fewer but wider loads can reduce pipeline pressure. Highly scattered memory accesses can also fill this queue when each access expands into many internal operations; improve access locality when this is the cause.
-smsp__warpidsamp_warps_issue_stalled_misc
-Warp was stalled for a miscellaneous hardware reason.
-smsp__warpidsamp_warps_issue_stalled_no_instructions
-Warp was stalled waiting to be selected to fetch an instruction or waiting on an instruction cache miss. A high number of warps not having an instruction fetched is typical for very short kernels with less than one full wave of work in the grid. Excessively jumping across large blocks of assembly code can also lead to more warps stalled for this reason, if this causes misses in the instruction cache. See also the related Branch Resolving state.
-smsp__warpidsamp_warps_issue_stalled_not_selected
-Not selected warps are eligible warps that were not picked by the micro scheduler to issue that cycle as another warp was selected. This is a scheduler state rather than a true stall. A high number of not selected warps typically means you have sufficient warps to cover warp latencies and you may consider reducing the number of active warps to possibly increase cache coherence and data locality.
-smsp__warpidsamp_warps_issue_stalled_selected
-Warp was selected by the micro scheduler and issued an instruction. This is not a stall.
-smsp__warpidsamp_warps_issue_stalled_short_scoreboard
-Warp was stalled waiting for a scoreboard dependency on a MIO (memory input/output) operation (not to L1TEX). The primary reason for a high number of stalls due to short scoreboards is typically memory operations to shared memory. Other reasons include frequent execution of special math instructions (e.g. MUFU) or dynamic branching (e.g. BRX, JMX). Consult the Memory Workload Analysis section to verify if there are shared memory operations and reduce bank conflicts, if reported. Assigning frequently accessed values to variables can assist the compiler in using low-latency registers instead of direct memory accesses.
-smsp__warpidsamp_warps_issue_stalled_sleeping
-Warp was stalled due to all threads in the warp being in the blocked, yielded, or sleep state. Reduce the number of executed NANOSLEEP instructions, lower the specified time delay, and attempt to group threads in a way that multiple threads in a warp sleep at the same time.
-smsp__warpidsamp_warps_issue_stalled_tex_throttle
-Warp was stalled waiting for the L1 instruction queue for texture operations to be not full. This stall reason is high in cases of extreme utilization of the L1TEX pipeline. Try issuing fewer texture fetches, surface loads, surface stores, or decoupled math operations. If applicable, consider combining multiple lower-width memory operations into fewer wider memory operations and try interleaving memory operations and math instructions. Consider converting texture lookups or surface loads into global memory lookups. Texture can accept four threads’ requests per cycle, whereas global accepts 32 threads.
-smsp__warpidsamp_warps_issue_stalled_wait
-Warp was stalled waiting on a fixed latency execution dependency. Typically, this stall reason should be very low and only shows up as a top contributor in already highly optimized kernels. Try to hide the corresponding instruction latencies by increasing the number of active warps, restructuring the code or unrolling loops. Furthermore, consider switching to lower-latency instructions, e.g. by making use of fast math compiler options. For example, FFMA-to-FFMA dependency latency is 4 cycles.
-smsp__warpidsamp_warps_issue_stalled_warpgroup_arrive
-Warp was stalled waiting on a WARPGROUP.ARRIVES or WARPGROUP.WAIT instruction. Warp-group MMA acts like a barrier across the four warp schedulers in the SM, so a late-arriving warp can cause the other participating warps to wait. Frequent samples usually indicate skew across schedulers from non-uniform work or mismatched TMA/MMA pipelining, not inherent WGMMA cost.
-2.4.10.
-Warp Stalls per Warp ID (Not Issued)
-#
-Collected using warp scheduler state sampling. They are incremented only on cycles in which the warp scheduler issued no instruction. These metrics have instance values mapping from <SMSP ID>:<Warp ID> (string) to the number of samples (uint64).
-Interpretation guidance:
-selected
-and
-not_selected
-are scheduler states, not true stalls. The fundamental optimization target is increasing issue-slot utilization, not driving every stall counter to zero. Stall reductions usually translate to speedups only when low issue activity makes the kernel latency-limited. Warp stall samples are attributed to the consumer instruction that is waiting on a dependency, not the producer; use source and SASS context to find the root cause.
-Warp Stalls per Warp ID (Not Issued)
-#
-smsp__warpidsamp_warps_issue_stalled_barrier_not_issued
-Warp was stalled waiting for sibling warps at a CTA barrier. A high number of warps waiting at a barrier is commonly caused by diverging code paths before a barrier. This causes some warps to wait a long time until other warps reach the synchronization point. Whenever possible, try to divide up the work into blocks of uniform workloads. If the block size is 512 threads or greater, consider splitting it into smaller groups. This can increase eligible warps without affecting occupancy, unless shared memory becomes a new occupancy limiter. Also, try to identify which barrier instruction causes the most stalls, and optimize the code executed before that synchronization point first. Barriers themselves are cheap when all warps arrive uniformly; most samples accumulate on faster warps waiting for stragglers. In tensor workflows, barrier/group stalls can correspond to expected synchronization phases.
-smsp__warpidsamp_warps_issue_stalled_branch_resolving_not_issued
-Warp was stalled waiting for a branch target to be computed, and the warp program counter to be updated. To reduce the number of stalled cycles, consider using fewer jump/branch operations and reduce control flow divergence, e.g. by reducing or coalescing conditionals in your code. See also the related No Instructions state. This is program-counter bookkeeping, not time spent deciding which branch to take.
-smsp__warpidsamp_warps_issue_stalled_dispatch_stall_not_issued
-Warp was stalled waiting on a dispatch stall. A warp stalled during dispatch has an instruction ready to issue, but the dispatcher holds back issuing the warp due to other conflicts or events.
-smsp__warpidsamp_warps_issue_stalled_drain_not_issued
-Warp was stalled after EXIT waiting for all outstanding memory operations to complete so that warp resources can be freed. A high number of stalls due to draining warps typically occurs when a lot of data is written to memory towards the end of a kernel. Make sure the memory access patterns of these store operations are optimal for the target architecture and consider parallelized data reduction, if applicable. These stalls can also reflect tail effects.
-smsp__warpidsamp_warps_issue_stalled_imc_miss_not_issued
-Warp was stalled waiting for an immediate constant cache (IMC) miss. A read from constant memory costs one memory read from device memory only on a cache miss; otherwise, it just costs one read from the constant cache. Immediate constants are encoded into the SASS instruction as ‘c[bank][offset]’. Accesses to different addresses by threads within a warp are serialized, thus the cost scales linearly with the number of unique addresses read by all threads within a warp. As such, the constant cache is best when threads in the same warp access only a few distinct locations. If all threads of a warp access the same location, then constant memory can be as fast as a register access.
-smsp__warpidsamp_warps_issue_stalled_lg_throttle_not_issued
-Warp was stalled waiting for the L1 instruction queue for local and global (LG) memory operations to be not full. Typically, this stall occurs only when executing local or global memory instructions extremely frequently. Avoid redundant global memory accesses. Try to avoid using thread-local memory by checking if dynamically indexed arrays are declared in local scope, or if the kernel has excessive register pressure causing spills. If applicable, consider combining multiple lower-width memory operations into fewer wider memory operations and try interleaving memory operations and math instructions.
-smsp__warpidsamp_warps_issue_stalled_long_scoreboard_not_issued
-Warp was stalled waiting for a scoreboard dependency on a L1TEX (local, global, surface, texture) operation. Find the instruction producing the data being waited upon to identify the culprit. To reduce the number of cycles waiting on L1TEX data accesses verify the memory access patterns are optimal for the target architecture, attempt to increase cache hit rates by increasing data locality (coalescing), or by changing the cache configuration. Consider moving frequently used data to shared memory. Stall samples are reported on the consumer instruction waiting for the result, not necessarily on the producer. When this reason dominates, the kernel is memory-latency-bound, which is not necessarily memory-bandwidth-bound; prefer latency-hiding changes such as ILP, unrolling, or pipelining when bandwidth is not saturated.
-smsp__warpidsamp_warps_issue_stalled_math_pipe_throttle_not_issued
-Warp was stalled waiting for the execution pipe to be available. This stall occurs when all active warps execute their next instruction on a specific, oversubscribed math pipeline. Try to increase the number of active warps to hide the existent latency or try changing the instruction mix to utilize all available pipelines in a more balanced way. When this reason dominates, the kernel is usually compute-pipeline-bound; otherwise, increasing active warps can help hide latency.
-smsp__warpidsamp_warps_issue_stalled_membar_not_issued
-Warp was stalled waiting on a memory barrier. Avoid executing any unnecessary memory barriers and assure that any outstanding memory operations are fully optimized for the target architecture. This commonly includes __threadfence* operations; reduce fence scope and frequency where possible.
-smsp__warpidsamp_warps_issue_stalled_mio_throttle_not_issued
-Warp was stalled waiting for the MIO (memory input/output) instruction queue to be not full. This stall reason is high in cases of extreme utilization of the MIO pipelines, which include special math instructions, dynamic branches, as well as shared memory instructions. When caused by shared memory accesses, trying to use fewer but wider loads can reduce pipeline pressure. Highly scattered memory accesses can also fill this queue when each access expands into many internal operations; improve access locality when this is the cause.
-smsp__warpidsamp_warps_issue_stalled_misc_not_issued
-Warp was stalled for a miscellaneous hardware reason.
-smsp__warpidsamp_warps_issue_stalled_no_instructions_not_issued
-Warp was stalled waiting to be selected to fetch an instruction or waiting on an instruction cache miss. A high number of warps not having an instruction fetched is typical for very short kernels with less than one full wave of work in the grid. Excessively jumping across large blocks of assembly code can also lead to more warps stalled for this reason, if this causes misses in the instruction cache. See also the related Branch Resolving state.
-smsp__warpidsamp_warps_issue_stalled_not_selected_not_issued
-Not selected warps are eligible warps that were not picked by the micro scheduler to issue that cycle as another warp was selected. This is a scheduler state rather than a true stall. A high number of not selected warps typically means you have sufficient warps to cover warp latencies and you may consider reducing the number of active warps to possibly increase cache coherence and data locality.
-smsp__warpidsamp_warps_issue_stalled_selected_not_issued
-Warp was selected by the micro scheduler and issued an instruction. This is not a stall.
-smsp__warpidsamp_warps_issue_stalled_short_scoreboard_not_issued
-Warp was stalled waiting for a scoreboard dependency on a MIO (memory input/output) operation (not to L1TEX). The primary reason for a high number of stalls due to short scoreboards is typically memory operations to shared memory. Other reasons include frequent execution of special math instructions (e.g. MUFU) or dynamic branching (e.g. BRX, JMX). Consult the Memory Workload Analysis section to verify if there are shared memory operations and reduce bank conflicts, if reported. Assigning frequently accessed values to variables can assist the compiler in using low-latency registers instead of direct memory accesses.
-smsp__warpidsamp_warps_issue_stalled_sleeping_not_issued
-Warp was stalled due to all threads in the warp being in the blocked, yielded, or sleep state. Reduce the number of executed NANOSLEEP instructions, lower the specified time delay, and attempt to group threads in a way that multiple threads in a warp sleep at the same time.
-smsp__warpidsamp_warps_issue_stalled_tex_throttle_not_issued
-Warp was stalled waiting for the L1 instruction queue for texture operations to be not full. This stall reason is high in cases of extreme utilization of the L1TEX pipeline. Try issuing fewer texture fetches, surface loads, surface stores, or decoupled math operations. If applicable, consider combining multiple lower-width memory operations into fewer wider memory operations and try interleaving memory operations and math instructions. Consider converting texture lookups or surface loads into global memory lookups. Texture can accept four threads’ requests per cycle, whereas global accepts 32 threads.
-smsp__warpidsamp_warps_issue_stalled_wait_not_issued
-Warp was stalled waiting on a fixed latency execution dependency. Typically, this stall reason should be very low and only shows up as a top contributor in already highly optimized kernels. Try to hide the corresponding instruction latencies by increasing the number of active warps, restructuring the code or unrolling loops. Furthermore, consider switching to lower-latency instructions, e.g. by making use of fast math compiler options. For example, FFMA-to-FFMA dependency latency is 4 cycles.
-smsp__warpidsamp_warps_issue_stalled_warpgroup_arrive_not_issued
-Warp was stalled waiting on a WARPGROUP.ARRIVES or WARPGROUP.WAIT instruction. Warp-group MMA acts like a barrier across the four warp schedulers in the SM, so a late-arriving warp can cause the other participating warps to wait. Frequent samples usually indicate skew across schedulers from non-uniform work or mismatched TMA/MMA pipelining, not inherent WGMMA cost.
-2.4.11.
+Warp was stalled waiting on a WARPGROUP.ARRIVES or WARPGROUP.WAIT instruction.
 Source Metrics
-#
 Most are collected using SASS-patching
-[
 4
-]
 . These metrics have instance values mapping from function address (uint64) to associated values (uint64). Metrics
 memory_[access_]type
 map to string values.
 Source Metrics
-#
+
 branch_inst_executed
 Number of unique branch targets assigned to the instruction, including both divergent and uniform branches.
 derived__avg_thread_executed
 Average number of thread-level executed instructions per warp (regardless of their predicate). Computed as: thread_inst_executed / inst_executed
 derived__avg_thread_executed_true
 Average number of predicated-on thread-level executed instructions per warp. Computed as: thread_inst_executed_true / inst_executed
-derived__derivative_avg_thread_executed_true
-Derivative of the derived__avg_thread_executed_true metric. Difference between the current and the previous address in average number of predicated-on thread-level executed instructions per warp.
-derived__local_spilling_requests
-Number of executed instructions and requests made to L1 for register spilling to local memory.
-derived__local_spilling_requests_pct
-Percentage of total local memory requests to L1 that are due to register spilling.
 derived__memory_l1_conflicts_shared_nway
 Average N-way conflict in L1 per shared memory instruction. A 1-way access has no conflicts and resolves in a single pass. Computed as: memory_l1_wavefronts_shared / inst_executed
 derived__memory_l1_wavefronts_shared_excessive
 Excessive number of wavefronts in L1 from shared memory instructions, because not all not predicated-off threads performed the operation.
 derived__memory_l2_theoretical_sectors_global_excessive
 Excessive theoretical number of sectors requested in L2 from global memory instructions, because not all not predicated-off threads performed the operation.
-derived__shared_spilling_requests
-Number of executed instructions and requests made to shared memory for register spilling.
-derived__shared_spilling_requests_pct
-Percentage of total requests to shared memory that are due to register spilling.
 inst_executed
 Number of warp-level executed instructions, ignoring instruction predicates. Warp-level means the values increased by one per individual warp executing the instruction, independent of the number of participating threads within each warp.
 memory_access_size_type
@@ -1898,11 +1406,9 @@ thread_inst_executed
 Number of thread-level executed instructions, regardless of predicate presence or evaluation.
 thread_inst_executed_true
 Number of thread-level executed instructions, where the instruction predicate evaluated to true, or no predicate was given.
-2.4.12.
 L2 Cache Eviction Metrics
-#
 L2 Cache Eviction Metrics
-#
+
 smsp__sass_inst_executed_memdesc_explicit_evict_type
 L2 cache eviction policy types.
 smsp__sass_inst_executed_memdesc_explicit_hitprop_evict_first
@@ -1917,38 +1423,26 @@ smsp__sass_inst_executed_memdesc_explicit_missprop_evict_first
 Number of warp-level executed instructions with L2 cache eviction miss property ‘first’.
 smsp__sass_inst_executed_memdesc_explicit_missprop_evict_normal
 Number of warp-level executed instructions with L2 cache eviction miss property ‘normal’.
-2.4.13.
 Instructions Per Opcode Metrics
-#
-Collected using SASS-patching. These metrics have instance values mapping from the SASS opcode or opcode category (string) to the number of executions (uint64).
+Collected using SASS-patching. These metrics have instance values mapping from the SASS opcode (string) to the number of executions (uint64).
 Instructions Per Opcode Metrics
-#
+
 sass__inst_executed_per_opcode
 Number of warp-level executed instructions, instanced by basic SASS opcode.
-sass__inst_executed_per_opcode_category
-Number of warp-level executed instructions, instanced by SASS opcode category.
-sass__inst_executed_per_opcode_pipeline
-Estimated number of warp-level executed instructions, instanced by SASS opcode pipeline. Some instructions can execute in one of multiple pipelines, and the dynamic assignment is not taken into account here.
 sass__inst_executed_per_opcode_with_modifier_all
 Number of warp-level executed instructions, instanced by all SASS opcode modifiers.
 sass__inst_executed_per_opcode_with_modifier_selective
 Number of warp-level executed instructions, instanced by selective SASS opcode modifiers.
-sass__thread_inst_executed_per_opcode_category
-Number of thread-level executed instructions, instanced by SASS opcode category.
-sass__thread_inst_executed_per_opcode_pipeline
-Estimated number of thread-level executed instructions, instanced by SASS opcode pipeline. Some instructions can execute in one of multiple pipelines, and the dynamic assignment is not taken into account here.
 sass__thread_inst_executed_true_per_opcode
 Number of thread-level executed instructions, instanced by basic SASS opcode.
 sass__thread_inst_executed_true_per_opcode_with_modifier_all
 Number of thread-level executed instructions, instanced by all SASS opcode modifiers.
 sass__thread_inst_executed_true_per_opcode_with_modifier_selective
 Number of thread-level executed instructions, instanced by selective SASS opcode modifiers.
-2.4.14.
 SASS Unit-Level Instructions Executed Metrics
-#
 Number of unit-level warp instructions executed.
 SASS Unit-Level Instructions Executed Metrics
-#
+
 sass__inst_executed_global_loads
 Number of global memory load instructions executed.
 sass__inst_executed_global_stores
@@ -1958,30 +1452,14 @@ Number of local memory load instructions executed.
 sass__inst_executed_local_stores
 Number of local memory store instructions executed.
 sass__inst_executed_register_spilling
-Number of store and load instructions executed as a result of register spilling.
-sass__inst_executed_register_spilling_mem_local
-Number of store and load instructions executed as a result of register spilling to local memory.
-sass__inst_executed_register_spilling_mem_shared
-Number of store and load instructions executed as a result of register spilling to shared memory.
-sass__inst_executed_register_spilling_op_read
-Number of register read instructions executed as a result of register spilling.
-sass__inst_executed_register_spilling_op_write
-Number of register write instructions executed as a result of register spilling.
+Number of local store and load instructions generated as a result of register spilling.
 sass__inst_executed_shared_loads
 Number of shared memory load instructions executed.
 sass__inst_executed_shared_stores
 Number of shared memory store instructions executed.
-sass__size
-Total size in bytes of all SASS instructions.
-sass__size_inst_executed
-Total size in bytes of executed SASS instructions.
-sass__size_thread_inst_executed_true
-Total size in bytes of executed SASS thread instructions with predicate true.
-2.4.15.
 Metric Groups
-#
 Metric Groups
-#
+
 group:memory__chart
 Group of metrics for the workload analysis chart.
 group:memory__dram_table
@@ -1998,18 +1476,10 @@ group:smsp__pcsamp_warp_stall_reasons
 Group of metrics for the number of samples from the warp sampler per program location.
 group:smsp__pcsamp_warp_stall_reasons_not_issued
 Group of metrics for the number of samples from the warp sampler per program location on cycles the warp scheduler issued no instructions.
-group:smsp__pmwarpsamp_warp_stall_reasons
-Group of metrics for the number of samples from the warp sampler per program location collected with PM sampling. These metrics can not yet be collected from the command line.
-group:smsp__warpidsamp_warp_stall_reasons
-Group of metrics for the number of samples from the warp sampler per warp ID.
-group:smsp__warpidsamp_warp_stall_reasons_not_issued
-Group of metrics for the number of samples from the warp sampler per warp ID on cycles the warp scheduler issued no instructions.
-2.4.16.
 Profiler Metrics
-#
 Metrics generated by the tool itself to inform about statistics or problems during profiling.
 Profiler Metrics
-#
+
 profiler__perfworks_session_reuse
 Indicates if the PerfWorks session was reused between results.
 profiler__pmsampler_buffer_size_bytes
@@ -2018,6 +1488,9 @@ Instance values map from pass group to bytes.
 profiler__pmsampler_ctxsw_*
 GPU context switch states over time during PM sampling for a specific pass group.
 Instance values map from timestamp to context state (1 - enabled, 0 - disabled).
+profiler__pmsampler_dropped_samples
+Number of samples dropped per pass group during PM sampling due to insufficient buffer size.
+Instance values map from pass group to samples.
 profiler__pmsampler_interval_cycles
 Sampling interval in cycles per pass group used for PM sampling, or zero if time-based interval was used.
 Instance values map from pass group to cycles.
@@ -2052,28 +1525,24 @@ profiler__replayer_passes_type_warmup
 Number of passes the result was replayed to warmup the GPU for profiling.
 smsp__pcsamp_aggregated_passes
 Number of passes required for statistical warp stall sampling.
-smsp__pcsamp_buffer_overflow
-Buffer overflow during statistical warp stall sampling.
 smsp__pcsamp_buffer_size_bytes
 Buffer size in bytes for statistical warp stall sampling.
 smsp__pcsamp_dropped_bytes
-Bytes dropped during statistical warp stall sampling due to backpressure.
+Bytes dropped during statistical warp stall sampling due to insufficient buffer size.
 smsp__pcsamp_interval
 Interval number for warp stall sampling.
 smsp__pcsamp_interval_cycles
 Interval cycles for statistical warp stall sampling.
 Footnotes
-[
 4
-]
 Instruction-level source metrics do not require profiling permissions on the target device when collected through the command line interface.
 2.5.
 Sampling
-#
+
 NVIDIA Nsight Compute can collect certain performance data via sampling at fixed intervals.
 2.5.1.
 PM Sampling
-#
+
 NVIDIA Nsight Compute supports collecting many metrics by sampling the GPU’s performance monitors (PM) periodically at fixed intervals. The resulting metrics are
 instanced
 , with each sample being composed of its value and the (GPU) timestamp when it was collected. This allows the tool to visualize the data on a
@@ -2100,11 +1569,10 @@ starting at ~6.5ms where there is not sufficient work anymore to fill all SMs.
 It also allows you to see the relationship between compute (SM Tensor Pipe Throughput) and data loading (DRAM Throughput and L2 Hit Rate).
 Whenever the L2 cache doesn’t have the needed data anymore readily available, its hit rate decreases, DRAM Throughput increases as the data needs to be loaded from global memory,
 and the SM Tensor Pipe Throughput decreases as the SMs are waiting for the data to arrive.
-#
+
 Support
-#
 Supported Architectures for PM Sampling
-#
+
 Architecture
 Support
 Sampling Intervals
@@ -2117,9 +1585,7 @@ Supported
 GA10x and later
 Supported
 >= 1000 ns
-[
 5
-]
 PM sampling is supported on all platforms except vGPU. See below for further limitations that apply to
 context switch trace
 .
@@ -2131,7 +1597,6 @@ pmsampling
 option.
 Note though that while all listed metrics are available to the PM sampler, only those requiring a single pass can be collected.
 Context Switch Trace
-#
 Since this data collection samples across the entire GPU device, the tool concurrently collects a
 context switch trace
 . The trace is stored as a separate, instanced
@@ -2139,10 +1604,9 @@ metric
 . It tracks when the context of interest was active and can be used to filter the sampling metric to only relevant instances and to better align metrics from multiple passes on the timeline. While it’s generally preferable to have this trace collected, it can be disabled using an
 environment variable
 .
-Note that context switch trace is not supported on Windows Subsystem for Linux (WSL), Multi-Instance GPU (MIG), Multi-Process Service (MPS) with multiple clients, or on mobile platforms.
+Note that context switch trace is not supported on Windows Subsystem for Linux (WSL), Multi-Instance GPU (MIG), or on mobile platforms.
 Context switch trace in containers is supported with CUDA 12.7 drivers or newer.
 Counter Domains
-#
 PM sampling metrics are composed of one or more raw counter dependencies internally. If metrics in the same pass share such a dependency, it is only collected once.
 Each counter is associated with a
 counter domain
@@ -2169,22 +1633,16 @@ CtrDomains:
 field for PM sampling metrics.
 Note that most users should be able to rely on the tool’s automatic selection of counter domains, or the pre-configured domains in section files.
 Known Issues
-#
 You should be aware of the following potential issues when using PM sampling:
 Data collected from different passes may not align perfectly. In the below example, each group of warp stall reasons was collected in a separate pass.
 The total number of warps doesn’t change during the workload execution, i.e., at one timestamp, data from all passes should sum up to the same total number of warps.
 However, due to small misalignments, the aggregate row shows several peaks that are likely flatter in the real execution.
-When collecting PM sampling metrics on MPS, the
-workload execution
-row only shows workloads from the primary client.
 Footnotes
-[
 5
-]
 For some chips or configurations, the minimum sampling interval may be higher.
 2.5.2.
 Warp Sampling
-#
+
 NVIDIA Nsight Compute supports periodic sampling of the warp program counter and warp scheduler state. At a fixed interval of cycles, the sampler in each streaming multiprocessor selects an active warp and outputs the program counter and the warp scheduler state. The tool selects the minimum interval for the device. On small devices, this can be every 32 cycles. On larger chips with more multiprocessors, this may be 2048 cycles. The sampler selects a random active warp. On the same cycle the scheduler may select a different warp to issue.
 The resulting metrics are correlated with the individual executed instructions but don’t have any time resolution.
 See the
@@ -2194,121 +1652,60 @@ Metrics Reference
 for a description of the individual warp scheduler states.
 2.6.
 Reproducibility
-#
-In order to provide actionable and deterministic results across application runs, NVIDIA Nsight Compute applies various methods to adjust how metrics are collected.
-This includes
+
+In order to provide actionable and deterministic results across application runs, NVIDIA Nsight Compute applies various methods to adjust how metrics are collected. This includes
 serializing
 kernel launches,
 purging GPU caches
 before each kernel replay or
 adjusting GPU clocks
 .
-When comparing reports, keep the profiling setup stable unless you are intentionally testing one control variable. In particular:
-Keep capture settings identical across runs.
-Start iteration with the smallest workload that still represents the behavior of interest, but restore the representative workload before drawing final conclusions.
-Compare the same workload scope and synchronization boundaries.
-Use an optimized build for timing and bottleneck analysis. Debug builds can change code generation and timings.
-Enable line-table information, such as
--lineinfo
-, when source-page diagnosis is required.
-Validate optimization results against absolute workload duration. Utilization percentages can change in either direction when total work changes, so duration is the ground truth for performance progress.
-Re-evaluate the dominant limiter on new GPU architectures. Cache sizes, SM counts, register-file sizes, peak FLOP rates, memory bandwidth, and feature support can all shift which part of a workload is limiting performance.
 2.6.1.
 Serialization
-#
+
 NVIDIA Nsight Compute serializes kernel launches within the profiled application, potentially across multiple processes profiled by one or more instances of the tool at the same time.
-Serialization across processes is necessary since for the collection of HW performance metrics, some GPU and driver objects can only be acquired by a single process at a time. This is done on a per-CUDA device or MIG instance
-[
-6
-]
-basis, meaning only one process can profile a given device at a time. To achieve this, on Linux, lock files
-TMPDIR/nvidia/nsight_compute/lock.<UUID>
-are used where
-UUID
-is the unique identifier of a given CUDA device or MIG instance. On other platforms, lock files are located at
-TMPDIR/nsight-compute-lock.<UUID>
-. On Windows,
+Serialization across processes is necessary since for the collection of HW performance metrics, some GPU and driver objects can only be acquired by a single process at a time. To achieve this, the lock file
+TMPDIR/nsight-compute-lock
+is used. On Windows,
 TMPDIR
 is the path returned by the Windows
 GetTempPath
-API function. On QNX, it is
-/storage/nvidia
-, and
-/tmp
-on other platforms. The
-TMPDIR
-path can be overridden by setting the environment variables
-TMPDIR
-,
-TMP
-,
-TEMP
-, or
+API function. On other platforms, it is the path supplied by the first environment variable in the list
+TMPDIR,
+TMP,
+TEMP,
 TEMPDIR
-, read in that order.
+. If none of these is found, it’s
+/var/nvidia
+on QNX and
+/tmp
+otherwise.
 Serialization within the process is required for most metrics to be mapped to the proper kernel. In addition, without serialization, performance metric values might vary widely if kernel execute concurrently on the same device.
-It is possible to force a single global lock to be used for all processes - disabling concurrent profiling across devices - by setting the environment variable
-NV_COMPUTE_PROFILER_DISABLE_CONCURRENT_PROFILING
-. Refer to the
-Environment Variables
+It is currently not possible to disable this tool behavior. Refer to the
+FAQ
 entry on possible workarounds.
-[
-6
-]
-Concurrent MIG profiling is not supported on GA100. Only one process will be allowed to profile on this chip when MIG is enabled.
 2.6.2.
 Clock Control
-#
+
 For many metrics, their value is directly influenced by the current GPU SM and memory clock frequencies. For example, if a kernel instance is profiled that has prior kernel executions in the application, the GPU might already be in a higher clocked state and the measured kernel duration, along with other metrics, will be affected. Likewise, if a kernel instance is the first kernel to be launched in the application, GPU clocks will regularly be lower. In addition, due to kernel replay, the metric value might depend on which replay pass it is collected in, as later passes would result in higher clock states.
 To mitigate this non-determinism, NVIDIA Nsight Compute attempts to limit GPU clock frequencies to their
-boost
-value.
-As a result, metric values are less impacted by the location of the kernel in the application, or by the number of the specific replay pass.
-However, this behavior might be undesirable for analysis of the kernel, e.g. in cases where an external tool is used to fix clock frequencies, or where the behavior of the kernel within the application is analyzed.
-To solve this, users can adjust the
+base
+value. As a result, metric values are less impacted by the location of the kernel in the application, or by the number of the specific replay pass.
+However, this behavior might be undesirable for analysis of the kernel, e.g. in cases where an external tool is used to fix clock frequencies, or where the behavior of the kernel within the application is analyzed. To solve this, users can adjust the
 --clock-control
 option to specify if any clock frequencies should be fixed by the tool.
-Note
-Thermal throttling directed by the hardware or driver cannot be controlled by the tool and always overrides any selected options.
 Factors affecting Clock Control:
-On mobile targets, e.g. L4T or QNX, there may be variations in profiling results due the inability for the tool to lock clocks.
-Using Nsight Compute’s
+Note that thermal throttling directed by the driver cannot be controlled by the tool and always overrides any selected options.
+On mobile targets, e.g. L4T or QNX, there may be variations in profiling results due the inability for the tool to lock clocks. Using Nsight Compute’s
 --clock-control
 to set the GPU clocks will fail or will be silently ignored when profiling on a GPU partition.
 On L4T, you can use the jetson_clocks script to lock the clocks at their maximums during profiling.
-On Linux (aarch64 sbsa), clock control is not supported with Nsight Compute for the following GPUs: GA10b (Orin), GB10b (Thor).
-Instead, for these GPUs, you can manually lock and unlock the clocks with the following commands:
-Save the existing min/max frequency limitation into /tmp/devfreq.config file
-grep
-""
-/sys/class/devfreq/gpu*/
-{
-min,max
-}
-_freq
-|
-tee
-/tmp/devfreq.config
-Lock the frequency to the specified rate in HZ (e.g. 1575000000)
-tee
-/sys/class/devfreq/gpu*/
-{
-min,max
-}
-_freq
-<<<
-1575000000
-Unlock the frequency to restore back the min/max frequency limitation
-awk
--F:
-'{print $2 > $1}'
-/tmp/devfreq.config
 See the
 Special Configurations
 section for MIG and vGPU clock control.
 2.6.3.
 Cache Control
-#
+
 As explained in
 Kernel Replay
 , the kernel might need to be replayed multiple times to collect all requested metrics. While NVIDIA Nsight Compute can save and restore the contents of GPU device memory accessed by the kernel for each pass, it cannot do the same for the contents of HW caches, such as e.g. the L1 and L2 cache.
@@ -2318,17 +1715,9 @@ This behavior might be undesirable for performance analysis, especially if the m
 --cache-control
 none
 to disable flushing of any HW cache by the tool.
-If cache priming or application-managed cache state is part of the behavior you want to measure, use
---replay-mode
-application
-or range replay together with
---cache-control
-none
-.
-Keep cache-control and replay settings identical across compared runs unless the cache policy itself is the variable under test.
 2.6.4.
 Persistence Mode
-#
+
 The NVIDIA kernel mode driver must be running and connected to a target GPU device before any user interactions with that device can take place. The driver behavior differs depending on the OS. Generally, on Linux, if the kernel mode driver is not already running or connected to a target GPU, the invocation of any program that attempts to interact with that GPU will transparently cause the driver to load and/or initialize the GPU. When all GPU clients terminate the driver will then deinitialize the GPU.
 If
 persistence mode
@@ -2336,10 +1725,10 @@ is not enabled (as part of the OS, or by the user), applications triggering GPU 
 It is recommended to enable persistence mode on applicable operating systems before profiling with NVIDIA Nsight Compute for more consistent application behavior.
 2.7.
 Special Configurations
-#
+
 2.7.1.
 Multi Instance GPU
-#
+
 Multi-Instance GPU (MIG) is a feature that allows a GPU to be partitioned into multiple CUDA devices. The partitioning is carried out on two levels: First, a GPU can be split into one or multiple GPU Instances. Each GPU Instance claims ownership of one or more streaming multiprocessors (SM), a subset of the overall GPU memory, and possibly other GPU resources, such as the video encoders/decoders. Second, each GPU Instance can be further partitioned into one or more Compute Instances. Each Compute Instance has exclusive ownership of its assigned SMs of the GPU Instance. However, all Compute Instances within a GPU Instance share the GPU Instance’s memory and memory bandwidth. Every Compute Instance acts and operates as a CUDA device with a unique device ID. See the driver release notes as well as the documentation for the
 nvidia-smi
 CLI tool for more information on how to configure MIG instances.
@@ -2386,7 +1775,6 @@ MIG
 instances
 followed by the list of failing metrics. Collecting only metrics from GPU units that are exclusively owned by a shared Compute Instance is still possible.
 Locking Clocks
-#
 NVIDIA Nsight Compute is not able to set the clock frequency on any Compute Instance for profiling. You can continue analyzing kernels without fixed clock frequencies (using
 --clock-control
 none
@@ -2402,14 +1790,12 @@ nvidia-smi
 --reset-gpu-clocks
 .
 MIG on Baremetal (non-vGPU)
-#
 All Compute Instances on a GPU share the same clock frequencies.
 MIG on NVIDIA vGPU
-#
 Enabling profiling for a VM gives the VM access to the GPU’s global performance counters, which may include activity from other VMs executing on the same GPU. Enabling profiling for a VM also allows the VM to lock clocks on the GPU, which impacts all other VMs executing on the same GPU, including MIG Compute Instances.
 2.7.2.
 CUDA Green Contexts
-#
+
 CUDA Green Contexts
 is a feature of the CUDA driver API
 that allows spacial partitioning of a GPU by assigning a set of resources to a CUDA context on which the context should operate on.
@@ -2439,9 +1825,7 @@ metrics.
 Since it is generally more insightful to analyze the performance of a Green Context application relative to the resources it was assigned, instead of the entire GPU,
 attributable
 metrics are scaled to the number of SMs of the Green Context.
-[
-7
-]
+6
 This is not the case for
 non-attributable
 metrics.
@@ -2461,239 +1845,28 @@ see the
 Command Line Options
 .
 Supported driver versions
-#
 Starting with NVIDIA Nsight Compute 2024.1, profiling of applications using CUDA Green Contexts is fully supported. This requires a minimum driver version of 550.
-Note, however, that with this version metrics were always scaled to the number of all SMs available on the GPU.
+Note, however, that with this version metrics were always scaled with the the number of all SMs available on the GPU.
 From NVIDIA Nsight Compute 2024.3 onwards,
 attributable
 metrics are scaled to the number of SMs used by the Green Context. This requires a minimum driver version of 560.
 Footnotes
-[
-7
-]
+6
 Although not intended as the primary use-case, different Green Contexts can be initialized with overlapping resources.
 When executing and profiling such Green Contexts concurrently,
 attributable
 metrics may contain contributions from multiple Green Contexts,
 although the same metric scaling behavior as described in this section would still apply.
-2.7.3.
-Multi-Process Service
-#
-The Multi-Process Service (MPS) runtime architecture enables cooperative multi-process CUDA applications to utilize Hyper-Q capabilities on NVIDIA GPUs.
-This allows CUDA kernels to be processed concurrently on the same GPU, benefitting performance when the GPU compute capacity is underutilized by a single application process.
-Nsight Compute can be used to profile how the GPU is utilized while executing the work from all MPS clients concurrently. It does generally not support isolating the performance of individual clients.
-Launching MPS Applications
-#
-When profiling MPS applications, Nsight Compute differentiates between
-MPS client processes
-and the
-ncu control process
-.
-Client (application) processes must be launched using the
-ncu
---mps
-client
-command. Each client will be suspended, waiting for the control process to attach.
-The ncu control process is launched as
-ncu
---mps
-control
-. It will wait until the expected number of client processes is active, attach to them and start profiling.
-The arguments to the control process specify how to select and replay workloads (kernel or range), which metrics to collect, the output report file, etc.
-The ncu processes launching the MPS client processes act only as simple launchers. However, if the client processes are expected to trace NVTX (e.g. for defining ranges by NVTX markers), the
---nvtx
-flag is needed.
-A typical set of launch commands may hence look like this:
-$ ncu --mps client --nvtx ./my_mps_client 1
-$ ncu --mps client --nvtx ./my_mps_client 2
-$ ncu --mps control --mps-num-clients 2 --replay-mode range --nvtx-include INNER_RANGE --set full -f -o mps-report
-If only a single MPS client process needs to be launched, it can be started directly from the Nsight Compute control process:
-$ ncu --mps control --replay-mode range --nvtx-include INNER_RANGE ./my_mps_client
-While Nsight Compute supports profiling MPS applications with
---replay-mode
-kernel
-, it is recommended to use
---replay-mode
-range
-whenever possible.
-In the former mode, each MPS client can only contribute a single kernel launch.
-Profiling MPS applications is only supported in the command line interface (CLI). Collected reports can be analyzed in the CLI and UI.
-Observation Window
-#
-When no primary client is specified explicitly using
-primary-client
-, the observation window is the full window across all participating clients,
-regardless which one is chosen as the primary at runtime.
-This applies to both
-kernel
-and
-range
-replay modes.
-Note that all ranges are start-aligned to allow for deterministic replays.
-#
-When a primary client is specified explicitly using
-primary-client
-, the observation window is the limited to the duration of this client,
-as long as it participates in the profile. All concurrent clients are still included for the duration of the window.
-This applies to both
-kernel
-and
-range
-replay modes.
-Note that all ranges are start-aligned to allow for deterministic replays.
-#
-Data Collection
-#
-Data collection for the individual metric groups is as follows:
-Hardware Counters / SMSP
-: Supported
-Unit-Level Source
-: Supported
-Instruction-Level Source
-: Supported, but source and metric data is only shown for the primary client.
-Launch
-: Supported
-Warp Sampling
-: Supported, but only attributed to the primary client’s source.
-PM Sampling
-: Supported
-Limitations
-#
-Only replay modes
-kernel
-and
-range
-are supported.
-Replay mode
-kernel
-only supports a narrow observation window for the primary client.
-All clients are expected to behave homogeneous in the sense that they use the same NVTX or start/stop markers around matching ranges.
-The list of workload filter options during collection is reduced. Only the following are supported:
-kernel-name
-,
-kernel-name-base
-,
-launch-count
-,
-launch-skip
-,
-nvtx-push-pop-scope
-.
 2.8.
-Metric Distributor
-#
-The Metric Distributor distributes the workload of metric collection across multiple NCU processes, reducing the total number of passes required by the profiler. The Metric Distributor is particularly useful when a large number of metrics need to be collected and multiple GPUs are available in the system.
-The actual reduction in profiling overhead depends on the total number of metrics, the number of available GPUs, and the types of metrics being collected.
-To enable this feature, specify the number of distribution groups with
---metric-distribution-groups
-<N>
-. The Metric Distributor will divide the set of metrics to be collected into N groups and will assign each group to a different NCU process.
-The Metric Distributor parallelizes the metric collection task across multiple GPUs. As a result, each NCU process generates a partial report file (e.g.,
-report0.ncu-repz
-).
-These partial reports
-must be merged
-into a single, complete report using
-Report Merge Tool
-.
-For the distributor to work correctly, all participating GPUs must have an identical chip architecture.
-The Metric Distributor requires the communicator option to be set to either
-none
-or
-tcp
-. See
-Multi-Process Support
-.
-Usage and Examples
-To profile a single-GPU application on a shared-memory machine with multiple GPUs, set
---communicator
-none
-. NCU will automatically create processes for the available devices.
-# Distribute metric collection across 4 groups on a shared-memory machine.
-# This generates partial reports: report0.ncu-repz through report3.ncu-repz.
-ncu
---set
-full
---metric-distribution-groups
-4
---communicator
-none
--o
-report
-<app>
-[
-app
-arguments
-]
-# After profiling, merge the partial reports from a report directory into a final report.
-$NCU_INSTALL_PATH
-/extras/ReportUtils/ReportMergeTool
--i
-<report
-directory>
--o
-final_report
-To profile single or multi-GPU applications with the TCP communicator, set
---communicator
-tcp
-. With this option, peer NCU processes should be manually launched if the application is not already a multi-process application (e.g., MPI, NCCL). One of these processes acts as the server, and the others connect as clients. In addition, the total number of peers with
---communicator-tcp-num-peers
-should be specified. This configuration allows for data redundancy. By using more GPUs than distribution groups (i.e.,
---communicator-tcp-num-peers
->
---metric-distribution-groups
-), the same metric groups can be collected redundantly by multiple GPUs, increasing the robustness of the profiling data.
-# Example: Use 4 GPUs to collect 2 metric groups for redundancy.
-# Each metric group will be collected by 2 GPUs.
-ncu
---set
-full
---metric-distribution-groups
-2
---communicator
-tcp
---communicator-tcp-num-peers
-4
-<app>
-[
-app
-arguments
-]
-# Example: Use with a 4-rank MPI application.
-# Each rank saves a unique report using its MPI rank in the filename.
-mpirun
--np
-4
-ncu
---set
-full
---metric-distribution-groups
-4
---communicator
-tcp
---communicator-tcp-num-peers
-4
-\
--o
-report_%q
-{
-OMPI_COMM_WORLD_RANK
-}
-<app>
-[
-app
-arguments
-]
-2.9.
 Roofline Charts
-#
+
 Roofline charts provide a very helpful way to visualize achieved performance on complex processing units, like GPUs. This section introduces the Roofline charts that are presented within a profile report.
 Note
 The values of operations/second calculated from this NVIDIA developer tools site and generated by using the data center monitoring tools are not calculated in the same way as the operations/second
 used for export control purposes and should not be relied upon to assess performance against the export control limits.
-2.9.1.
+2.8.1.
 Overview
-#
+
 Kernel performance is not only dependent on the operational speed of the GPU. Since a kernel requires data to work on, performance is also dependent on the rate at which the GPU can feed data to the kernel. A typical roofline chart combines the peak performance and memory bandwidth of the GPU, with a metric called
 Arithmetic Intensity
 (a ratio between
@@ -2702,7 +1875,7 @@ and
 Memory Traffic
 ), into a single chart, to more realistically represent the achieved performance of the profiled kernel. A simple roofline chart might look like the following:
 Roofline overview.
-#
+
 This chart actually shows two different rooflines. However, the following components can be identified for each:
 Vertical Axis
 - The vertical axis represents
@@ -2732,12 +1905,12 @@ Ridge Point
 - The ridge point is the point at which the memory bandwidth boundary meets the peak performance boundary. This point is a useful reference when analyzing kernel performance.
 Achieved Value
 - The achieved value represents the performance of the profiled kernel. If baselines are being used, the roofline chart will also contain an achieved value for each baseline. The outline color of the plotted achieved value point can be used to determine from which baseline the point came.
-2.9.2.
+2.8.2.
 Analysis
-#
+
 The roofline chart can be very helpful in guiding performance optimization efforts for a particular kernel.
 Roofline anaysis.
-#
+
 As shown here, the
 ridge point
 partitions the roofline chart into two regions. The area shaded in blue under the sloped
@@ -2765,26 +1938,18 @@ would indicate that any further improvements in overall FLOP/s are only possible
 Arithmetic Intensity
 is increased at the same time.
 Using the baseline feature in combination with roofline charts, is a good way to track optimization progress over a number of kernel executions.
-When roofline results do not match the expected instruction path or FLOP count, confirm that the enabled roofline section matches the data path being analyzed, including tensor roofline sections for tensor-core kernels.
-Cross-check the SM frequency reported by the profiler, and use operation counters together with source or SASS inspection to validate the amount of math that actually executed.
-Hierarchical roofline overlays can separate L1, L2, and DRAM bandwidth ceilings. If a kernel sits at the DRAM roof, cache efficiency is often limiting throughput.
-Improving reuse can move the achieved point toward the L2 or L1 ceiling without changing arithmetic intensity.
-See
-Roofline appears inconsistent with expected FLOPs
-in the Compute Triage Guide for related checks.
-2.10.
+2.9.
 Memory Chart
-#
+
 The
 Memory Chart
 shows a graphical, logical representation of performance data for memory subunits on and off the GPU. Performance data includes transfer sizes, hit rates, number of instructions or requests, etc.
-2.10.1.
+2.9.1.
 Overview
-#
+
 Memory chart for an NVIDIA A100 GPU
-#
+
 Logical Units (green)
-#
 Logical units are shown in green (active) or grey (inactive).
 Kernel: The CUDA kernel executing on the GPU’s Streaming Multiprocessors
 Global: CUDA
@@ -2799,7 +1964,6 @@ Shared: CUDA
 shared memory
 Load Global Store Shared: Instructions loading directly from global into shared memory without intermediate register file access
 Physical Units (blue)
-#
 Physical units are shown in blue (active) or grey (inactive).
 L1/TEX Cache: The
 L1/Texture cache
@@ -2825,7 +1989,6 @@ device (GPU) memory
 of other CUDA devices
 Depending on the exact GPU architecture, the exact set of shown units can vary, as not all GPUs have all units.
 Links
-#
 Links between
 Kernel
 and other logical units represent the number of executed instructions (
@@ -2852,17 +2015,12 @@ The color legend to the right of the chart shows the applied color gradient from
 If a link is inactive, it is shown in grey color.
 Triangle markers to the left of the legend correspond to the links in the chart.
 The markers offer a more accurate value estimate for the achieved peak performances than the color gradient alone.
-For an optimization-oriented explanation of cache lines, sectors, wavefronts, sector ratios, and shared-memory banks, see
-Memory analysis fundamentals
-in the Compute Triage Guide.
 Ports
-#
 A unit often shares a common data port for incoming and outgoing traffic. While the links sharing a port might operate well below their individual peak performances, the unit’s data port may have already reached its peak.
 Port utilization is shown in the chart by colored rectangles inside the units located at the incoming and outgoing links.
 Ports use the same color gradient as the data links and have also a corresponding marker to the left of the legend.
 Inactive ports are shown in grey color.
 Metrics
-#
 Metrics from this chart can be collected on the command line using
 --set
 full
@@ -2875,25 +2033,21 @@ group:memory__chart
 .
 An example of the correlation between the peak values reported in the memory tables and the ports in the memory chart is shown below.
 Mapping of peak values between memory tables and memory chart
-#
-2.11.
+
+2.10.
 Memory Tables
-#
+
 The
 Memory Tables
 show detailed metrics for the various memory HW units, such as shared memory, the caches, and device memory. For most table entries, you can hover over it to see the underlying metric name and description. Some entries are generated as derivatives from other cells, and do not show a metric name on their own, but the respective calculation. If a certain metric does not contribute to the generic derivative calculation, it is shown as
 UNUSED
 in the tooltip. You can hover over row or column headers to see a description of this part of the table.
-For an optimization-oriented explanation of cache lines, sectors, wavefronts, sector ratios, and shared-memory banks, see
-Memory analysis fundamentals
-in the Compute Triage Guide.
-2.11.1.
+2.10.1.
 Shared Memory
-#
+
 Example Shared Memory table, collected on an RTX 2080 Ti
-#
+
 Columns
-#
 Instructions
 For each access type, the total number of all actually executed assembly (SASS)
 instructions
@@ -2906,7 +2060,7 @@ Shared Store
 Requests
 The total number of all
 requests
-to shared memory. Each shared memory instruction generates exactly one request.
+to shared memory. On SM 7.0 (Volta) and newer architectures, each shared memory instruction generates exactly one request.
 Wavefronts
 Number of
 wavefronts
@@ -2918,14 +2072,12 @@ Bank
 Conflicts
 If multiple threads’ requested addresses map to different offsets in the same memory bank, the accesses are serialized. The hardware splits a conflicting memory request into as many separate conflict-free requests as necessary, decreasing the effective bandwidth by a factor equal to the number of colliding memory requests.
 Rows
-#
 (Access
 Types)
 Shared memory access operations.
 Total
 The aggregate for all access types in the same column.
 Metrics
-#
 Metrics from this table can be collected on the command line using
 --set
 full
@@ -2936,15 +2088,14 @@ or
 --metrics
 group:memory__shared_table
 .
-2.11.2.
+2.10.2.
 L1/TEX Cache
-#
+
 Example L1/TEX Cache memory table, collected on an RTX 2080 Ti
-#
+
 Model of the Global Load Pipeline for the L1TEX cache on GA100, mapped to the memory table.
-#
+
 Columns
-#
 Instructions
 For each access type, the total number of all actually executed assembly (SASS)
 instructions
@@ -2957,7 +2108,7 @@ Global Loads
 Requests
 The total number of all
 requests
-to L1, generated for each instruction type. Each instruction generates exactly one request for LSU traffic (global, local, …). For texture (TEX) traffic, more than one request may be generated.
+to L1, generated for each instruction type. On SM 7.0 (Volta) and newer architectures, each instruction generates exactly one request for LSU traffic (global, local, …). For texture (TEX) traffic, more than one request may be generated.
 In the example, each of the 65536 global load instructions generates exactly one request.
 Wavefronts
 Number of
@@ -3017,7 +2168,6 @@ warp stalls
 L1 hit rate
 could reduce this utilization.
 Rows
-#
 (Access
 Types)
 The various access types, e.g. loads from global memory or reduction operations on surface memory.
@@ -3028,7 +2178,6 @@ The aggregate of all store access types in the same column.
 Total
 The aggregate of all load and store access types in the same column.
 Metrics
-#
 Metrics from this table can be collected on the command line using
 --set
 full
@@ -3039,15 +2188,14 @@ or
 --metrics
 group:memory__first_level_cache_table
 .
-2.11.3.
+2.10.3.
 L2 Cache
-#
+
 Example L2 Cache memory table, collected on an RTX 2080 Ti
-#
+
 Model of the L2 cache on GA100, mapped to the memory table.
-#
+
 Columns
-#
 Requests
 For each access type, the total number of
 requests
@@ -3102,7 +2250,6 @@ Total number of sectors that miss in L2 and generate subsequent requests in
 peer memory
 .
 Rows
-#
 (Access
 Types)
 The various access types, e.g. loads or reductions originating from L1 cache.
@@ -3120,7 +2267,6 @@ GPU
 Total
 Total for all operations across all clients of the L2 cache. Independent of having them split out separately in this table.
 Metrics
-#
 Metrics from this table can be collected on the command line using
 --set
 full
@@ -3131,13 +2277,12 @@ or
 --metrics
 group:memory__l2_cache_table
 .
-2.11.4.
+2.10.4.
 L2 Cache Eviction Policies
-#
+
 Example L2 Cache Eviction Policies memory table, collected on an A100 GPU
-#
+
 Columns
-#
 First
 Number of sectors accessed in the L2 cache using the
 evict_first
@@ -3180,7 +2325,6 @@ Cache hit rate for sector accesses in the L2 cache using the
 evict_normal_demote
 policy.
 Rows
-#
 (Access
 Types)
 The various access types, e.g. loads or reductions, originating from L1 cache.
@@ -3195,7 +2339,6 @@ GPU
 Total
 Total for all operations across all clients of the L2 cache. Independent of having them split out separately in this table.
 Metrics
-#
 Metrics from this table can be collected on the command line using
 --set
 full
@@ -3206,13 +2349,12 @@ or
 --metrics
 group:memory__l2_cache_evict_policy_table
 . Note that this table is only available on GPUs with GA100 or newer.
-2.11.5.
+2.10.5.
 Device Memory
-#
+
 Example Device Memory table, collected on an RTX 2080 Ti
-#
+
 Columns
-#
 Sectors
 For each access type, the total number of
 sectors
@@ -3227,14 +2369,12 @@ and device memory.
 Throughput
 Achieved device memory throughput in bytes per second. High values indicate high utilization of the unit.
 Rows
-#
 (Access
 Types)
 Device memory loads and stores.
 Total
 The aggregate for all access types in the same column.
 Metrics
-#
 Metrics from this table can be collected on the command line using
 --set
 full
@@ -3245,9 +2385,9 @@ or
 --metrics
 group:memory__dram_table
 .
-2.12.
+2.11.
 FAQ
-#
+
 n/a metric values
 n/a means that the metric value is “not available”. The most common reason is that the requested metric does not exist. This can either be the result of a typo, or a missing
 suffix
@@ -3302,30 +2442,25 @@ an
 error
 code
 (11)
-Failed to open/create lock file (path). Please check that this process has write permissions on it.
+Failed to open/create lock file (path). Please check that this process has write permissions on this file.
 NVIDIA Nsight Compute failed to create or open the file
 (path)
 with write permissions. This file is used for inter-process
 serialization
-. NVIDIA Nsight Compute does not remove this file after profiling by design. The error occurs if the file was created by a profiling process with permissions that prevent the current process from writing to this file, or if the current user can’t acquire this file for other reasons (e.g., certain Linux kernel security settings).
+. NVIDIA Nsight Compute does not remove this file after profiling by design. The error occurs if the file was created by a profiling process with permissions that prevent the current process from writing to this file, or if the current user can’t acquire this file for other reasons (e.g. certain Linux kernel security settings).
 The file is in the current temporary directory, i.e.
-TMPDIR/nvidia/nsight_compute/lock.*
-on Linux and
-TMPDIR/nsight-compute-lock.*
-on other platforms. On Windows,
+TMPDIR/nsight-compute-lock
+. On Windows,
 TMPDIR
 is the path returned by the Windows
 GetTempPath
-API function. On other platforms, it is the path supplied by the first environment variable in the list:
-TMPDIR
-,
-TMP
-,
-TEMP
-,
+API function. On other platforms, it is the path supplied by the first environment variable in the list
+TMPDIR,
+TMP,
+TEMP,
 TEMPDIR
-. If none of these are found, the default path is
-/storage/nvidia
+. If none of these is found, it’s
+/var/nvidia
 on QNX and
 /tmp
 otherwise.
@@ -3334,7 +2469,16 @@ The following workarounds can be used to solve this problem:
 If it is otherwise ensured that no concurrent NVIDIA Nsight Compute instances are active on the same system, set
 TMPDIR
 to a different directory for which the current user has write permissions.
-Ask the user that owns the file, or a system administrator, to remove it or add write permissions for all potential users.
+Ask the user owning the file, or a system administrator, to remove it or add write permissions for all potential users.
+On Linux systems setting
+fs.protected_regular=1
+, root or other users may not be able to access this file, even though the owner can, if the sticky bit is set on the temporary directory. Either disable this setting using
+sudo
+sysctl
+fs.protected_regular=0
+, use a different temporary directory (see above), or enable access to hardware performance counters for non-root users and profile as the same user who owns the file (see
+https://developer.nvidia.com/ERR_NVGPUCTRPERM
+on how to change this setting).
 Profiling failed because a driver resource was unavailable.
 The error indicates that a required CUDA driver resource was unavailable during profiling. Most commonly, this means that NVIDIA Nsight Compute could not reserve the driver’s performance monitor, which is necessary for collecting most metrics.
 This can happen if another application has a concurrent reservation on this resource. Such applications can be e.g.
@@ -3402,6 +2546,25 @@ Failed to load Qt platform plugin
 See
 System Requirements
 for Linux.
+ImportError:
+/lib64/libstdc++.so.6:
+version
+`GLIBCXX_3.4.xx'
+not
+found
+when importing
+ncu_report
+In case the system’s
+libstdc++
+is too old for
+ncu_report
+you can use the version shipped with NVIDIA Nsight Compute.
+To do so, add the respective directory to
+LD_LIBRARY_PATH
+, e.g.,
+export
+LD_LIBRARY_PATH=<ncu_install_dir>/host/<arch>/:$LD_LIBRARY_PATH
+.
 Notices
 Notices
 ALL NVIDIA DESIGN SPECIFICATIONS, REFERENCE BOARDS, FILES, DRAWINGS, DIAGNOSTICS, LISTS, AND OTHER DOCUMENTS (TOGETHER AND SEPARATELY, “MATERIALS”) ARE BEING PROVIDED “AS IS.” NVIDIA MAKES NO WARRANTIES, EXPRESSED, IMPLIED, STATUTORY, OR OTHERWISE WITH RESPECT TO THE MATERIALS, AND EXPRESSLY DISCLAIMS ALL IMPLIED WARRANTIES OF NONINFRINGEMENT, MERCHANTABILITY, AND FITNESS FOR A PARTICULAR PURPOSE.

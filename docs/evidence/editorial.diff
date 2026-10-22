@@ -1,0 +1,1945 @@
+--- input/knowledge/algorithms/iteration-batching.md
++++ version/knowledge/algorithms/iteration-batching.md
+@@ -35,17 +35,16 @@
+ 
+ ## 来源与推导
+ 
+-- S-ORCA：[完整原文](../../references/S-ORCA/reader.html) · [全文文本](../../references/S-ORCA/fulltext.txt)
+-- S-SARATHI：[完整原文](../../references/S-SARATHI/reader.html) · [全文文本](../../references/S-SARATHI/fulltext.txt)
+-- S-VLLM-SCHED：[完整原文](../../references/S-VLLM-SCHED/reader.html) · [全文文本](../../references/S-VLLM-SCHED/fulltext.txt)
+-
+ - [S-ORCA：Orca: A Distributed Serving System for Transformer-Based Generative Models](../sources/S-ORCA.md)：Orca 以生成迭代为调度边界，让完成请求退出并让新请求进入；不同算子依据是否适合聚批采用相应执行组织。请求不必等待原批全部结束才获得资源。
++  [完整原文](../../references/S-ORCA/reader.html) · [全文文本](../../references/S-ORCA/fulltext.txt)
+ 
+ - [S-SARATHI：SARATHI: Efficient LLM Inference by Piggybacking Decodes with Chunked Prefills](../sources/S-SARATHI.md)：SARATHI 将长 prefill 切块，并在合适的批处理中与 decode 组织在一起，以减少两类工作之间的干扰并利用计算资源。
++  [完整原文](../../references/S-SARATHI/reader.html) · [全文文本](../../references/S-SARATHI/fulltext.txt)
+ 
+ - [S-VLLM-SCHED：vLLM — V1 Scheduler source reference](../sources/S-VLLM-SCHED.md)：vLLM V1 的调度入口根据请求所需 token 与已计算进度分配本轮工作，结合计算预算、encoder 输入和 KV 资源形成 SchedulerOutput。
++  [完整原文](../../references/S-VLLM-SCHED/reader.html) · [全文文本](../../references/S-VLLM-SCHED/fulltext.txt)
+ 
+-上文的公式展开、容量算例与组合设计是 InfraAgents 在这些机制基础上的推导，具体推导已写在本条正文中。来源入口均为本地释义，可继续读取其定义与使用关系。版本 4，2026-09-20。
++正文中的公式展开、容量算例与组合设计是基于这些来源的推导；设定算例不冒充实测。来源版本受 2026-04-30 上限约束，编辑日期 2026-10-22 不作为事实发布日期。此独立 base 版本内的章节修订号从 1 开始，原章节身份与版本映射保存在版本清单。
+ 
+ ## 延伸阅读
+ 
+--- input/knowledge/algorithms/paged-kv-capacity.md
++++ version/knowledge/algorithms/paged-kv-capacity.md
+@@ -38,17 +38,16 @@
+ 
+ ## 来源与推导
+ 
+-- S-PAGED：[完整原文](../../references/S-PAGED/reader.html) · [全文文本](../../references/S-PAGED/fulltext.txt)
+-- S-FI：[完整原文](../../references/S-FI/reader.html) · [全文文本](../../references/S-FI/fulltext.txt)
+-- S-VLLM-KV：[完整原文](../../references/S-VLLM-KV/reader.html) · [全文文本](../../references/S-VLLM-KV/fulltext.txt)
++- [S-PAGED：Efficient Memory Management for Large Language Model Serving with PagedAttention](../sources/S-PAGED.md)：PagedAttention 把每条序列的逻辑 KV 划分为固定 token 数的块，用映射表访问不连续物理存储。多个序列可以共享相同前缀的物理块，分叉写入需要保持各序列状态独立。
++  [完整原文](../../references/S-PAGED/reader.html) · [全文文本](../../references/S-PAGED/fulltext.txt)
+ 
+-- [S-PAGED：Efficient Memory Management for Large Language Model Serving with PagedAttention](../sources/S-PAGED.md)：PagedAttention 把每条序列的逻辑 KV 划分为固定 token 数的块，用映射表访问不连续物理存储。多个序列可以共享相同前缀的物理块，分叉写入需要保持各序列状态独立。
+-
+-- [S-FI：FlashInfer：Attention kernels](../sources/S-FI.md)：已读 FlashInfer 0.6.18 接口说明区分 query 分段、KV 页表及末页长度。一些 wrapper 的 plan 安排计算/工作区，run 执行 attention；相关 plan 不能直接捕获入图。
++- [S-FI：FlashInfer：Attention kernels](../sources/S-FI.md)：截止日前的 FlashInfer 固定源码区分 query 分段、KV 页表及末页长度。相关 wrapper 的 plan 安排计算与工作区，run 执行 attention；plan 的捕获限制与图模式缓冲须按该版本接口核对。
++  [完整原文](../../references/S-FI/reader.html) · [全文文本](../../references/S-FI/fulltext.txt)
+ 
+ - [S-VLLM-KV：vLLM — KVCacheManager source reference](../sources/S-VLLM-KV.md)：KVCacheManager 的相关接口区分已命中状态、新 token 分配、lookahead、外部状态和释放。层组与实际可恢复状态参与分配判断。
++  [完整原文](../../references/S-VLLM-KV/reader.html) · [全文文本](../../references/S-VLLM-KV/fulltext.txt)
+ 
+-上文的公式展开、容量算例与组合设计是 InfraAgents 在这些机制基础上的推导，具体推导已写在本条正文中。来源入口均为本地释义，可继续读取其定义与使用关系。版本 4，2026-09-20。
++正文中的公式展开、容量算例与组合设计是基于这些来源的推导；设定算例不冒充实测。来源版本受 2026-04-30 上限约束，编辑日期 2026-10-22 不作为事实发布日期。此独立 base 版本内的章节修订号从 1 开始，原章节身份与版本映射保存在版本清单。
+ 
+ ## 延伸阅读
+ 
+--- input/knowledge/algorithms/prefix-cache-identity.md
++++ version/knowledge/algorithms/prefix-cache-identity.md
+@@ -32,17 +32,16 @@
+ 
+ ## 来源与推导
+ 
+-- S-SGLANG：[完整原文](../../references/S-SGLANG/reader.html) · [全文文本](../../references/S-SGLANG/fulltext.txt)
+-- S-VLLM-PREFIX：[完整原文](../../references/S-VLLM-PREFIX/reader.html) · [全文文本](../../references/S-VLLM-PREFIX/fulltext.txt)
+-- S-HF-CACHE：[完整原文](../../references/S-HF-CACHE/reader.html) · [全文文本](../../references/S-HF-CACHE/fulltext.txt)
+-
+ - [S-SGLANG：SGLang: Efficient Execution of Structured Language Model Programs](../sources/S-SGLANG.md)：SGLang 的 RadixAttention 利用 token 前缀树组织复用状态，结构化执行场景可以复用重复前缀计算。
++  [完整原文](../../references/S-SGLANG/reader.html) · [全文文本](../../references/S-SGLANG/fulltext.txt)
+ 
+ - [S-VLLM-PREFIX：vLLM — Automatic Prefix Caching](../sources/S-VLLM-PREFIX.md)：所核对 vLLM 版本以块身份组织前缀复用，身份可包含父块、token 和额外条件。不同上下文的同 token 块不应自动视为相同计算。
++  [完整原文](../../references/S-VLLM-PREFIX/reader.html) · [全文文本](../../references/S-VLLM-PREFIX/fulltext.txt)
+ 
+ - [S-HF-CACHE：Transformers — Caching](../sources/S-HF-CACHE.md)：Transformers 的缓存说明区分已存历史 K/V、新输入、attention mask 和 cache position。增量前向需要让新 token 的位置与已有缓存长度一致。
++  [完整原文](../../references/S-HF-CACHE/reader.html) · [全文文本](../../references/S-HF-CACHE/fulltext.txt)
+ 
+-上文的公式展开、容量算例与组合设计是 InfraAgents 在这些机制基础上的推导，具体推导已写在本条正文中。来源入口均为本地释义，可继续读取其定义与使用关系。版本 4，2026-09-20。
++正文中的公式展开、容量算例与组合设计是基于这些来源的推导；设定算例不冒充实测。来源版本受 2026-04-30 上限约束，编辑日期 2026-10-22 不作为事实发布日期。此独立 base 版本内的章节修订号从 1 开始，原章节身份与版本映射保存在版本清单。
+ 
+ ## 延伸阅读
+ 
+--- input/knowledge/algorithms/attention-io.md
++++ version/knowledge/algorithms/attention-io.md
+@@ -30,17 +30,16 @@
+ 
+ ## 来源与推导
+ 
+-- S-FLASH：[完整原文](../../references/S-FLASH/reader.html) · [全文文本](../../references/S-FLASH/fulltext.txt)
+-- S-TRITON：[完整原文](../../references/S-TRITON/reader.html) · [全文文本](../../references/S-TRITON/fulltext.txt)
+-- S-TORCH-NUMERIC：[完整原文](../../references/S-TORCH-NUMERIC/reader.html) · [全文文本](../../references/S-TORCH-NUMERIC/fulltext.txt)
+-
+ - [S-FLASH：FlashAttention: Fast and Memory-Efficient Exact Attention with IO-Awareness](../sources/S-FLASH.md)：FlashAttention 通过片上分块和在线 softmax，避免将完整 attention 分数与概率矩阵写入设备主存；目标函数仍是精确 attention 的数学形式。
++  [完整原文](../../references/S-FLASH/reader.html) · [全文文本](../../references/S-FLASH/fulltext.txt)
+ 
+ - [S-TRITON：Triton：Fused Attention](../sources/S-TRITON.md)：Triton 的 fused attention 示例展示块级张量程序、在线 softmax 归约、tile 划分与相应配置选择。逻辑 tile 和实际线程/寄存器布局有映射关系。
++  [完整原文](../../references/S-TRITON/reader.html) · [全文文本](../../references/S-TRITON/fulltext.txt)
+ 
+ - [S-TORCH-NUMERIC：PyTorch — Numerical accuracy](../sources/S-TORCH-NUMERIC.md)：浮点运算不满足实数运算的全部结合性质，批量方式、归约顺序和平台路径可以产生数值差异。数值格式、累加精度和极端输入影响误差。
++  [完整原文](../../references/S-TORCH-NUMERIC/reader.html) · [全文文本](../../references/S-TORCH-NUMERIC/fulltext.txt)
+ 
+-上文的公式展开、容量算例与组合设计是 InfraAgents 在这些机制基础上的推导，具体推导已写在本条正文中。来源入口均为本地释义，可继续读取其定义与使用关系。版本 4，2026-09-20。
++正文中的公式展开、容量算例与组合设计是基于这些来源的推导；设定算例不冒充实测。来源版本受 2026-04-30 上限约束，编辑日期 2026-10-22 不作为事实发布日期。此独立 base 版本内的章节修订号从 1 开始，原章节身份与版本映射保存在版本清单。
+ 
+ ## 延伸阅读
+ 
+--- input/knowledge/algorithms/quantization-contract.md
++++ version/knowledge/algorithms/quantization-contract.md
+@@ -34,17 +34,16 @@
+ 
+ ## 来源与推导
+ 
+-- S-GPTQ：[完整原文](../../references/S-GPTQ/reader.html) · [全文文本](../../references/S-GPTQ/fulltext.txt)
+-- S-TORCH-NUMERIC：[完整原文](../../references/S-TORCH-NUMERIC/reader.html) · [全文文本](../../references/S-TORCH-NUMERIC/fulltext.txt)
+-- S-CUDA-CAPABILITY：[完整原文](../../references/S-CUDA-CAPABILITY/reader.html) · [全文文本](../../references/S-CUDA-CAPABILITY/fulltext.txt)
+-
+ - [S-GPTQ：GPTQ: Accurate Post-Training Quantization for Generative Pre-trained Transformers](../sources/S-GPTQ.md)：GPTQ 是训练后权重量化方法，使用校准输入所反映的层输入结构，近似考虑量化误差对层输出的影响。它关注的目标不只是孤立权重元素的舍入误差。
++  [完整原文](../../references/S-GPTQ/reader.html) · [全文文本](../../references/S-GPTQ/fulltext.txt)
+ 
+ - [S-TORCH-NUMERIC：PyTorch — Numerical accuracy](../sources/S-TORCH-NUMERIC.md)：浮点运算不满足实数运算的全部结合性质，批量方式、归约顺序和平台路径可以产生数值差异。数值格式、累加精度和极端输入影响误差。
++  [完整原文](../../references/S-TORCH-NUMERIC/reader.html) · [全文文本](../../references/S-TORCH-NUMERIC/fulltext.txt)
+ 
+ - [S-CUDA-CAPABILITY：CUDA Programming Guide — Compute Capabilities](../sources/S-CUDA-CAPABILITY.md)：CUDA 的硬件功能与数值指令能力按 compute capability 和设备代际区分；一种 dtype 可被表示并不意味着所有算子形态都有高效实现。
++  [完整原文](../../references/S-CUDA-CAPABILITY/reader.html) · [全文文本](../../references/S-CUDA-CAPABILITY/fulltext.txt)
+ 
+-上文的公式展开、容量算例与组合设计是 InfraAgents 在这些机制基础上的推导，具体推导已写在本条正文中。来源入口均为本地释义，可继续读取其定义与使用关系。版本 4，2026-09-20。
++正文中的公式展开、容量算例与组合设计是基于这些来源的推导；设定算例不冒充实测。来源版本受 2026-04-30 上限约束，编辑日期 2026-10-22 不作为事实发布日期。此独立 base 版本内的章节修订号从 1 开始，原章节身份与版本映射保存在版本清单。
+ 
+ ## 延伸阅读
+ 
+--- input/knowledge/algorithms/speculation-budget.md
++++ version/knowledge/algorithms/speculation-budget.md
+@@ -30,17 +30,16 @@
+ 
+ ## 来源与推导
+ 
+-- S-SPEC：[完整原文](../../references/S-SPEC/reader.html) · [全文文本](../../references/S-SPEC/fulltext.txt)
+-- S-HF-CACHE：[完整原文](../../references/S-HF-CACHE/reader.html) · [全文文本](../../references/S-HF-CACHE/fulltext.txt)
+-- S-TORCH-REPRO：[完整原文](../../references/S-TORCH-REPRO/reader.html) · [全文文本](../../references/S-TORCH-REPRO/fulltext.txt)
+-
+ - [S-SPEC：Fast Inference from Transformers via Speculative Decoding](../sources/S-SPEC.md)：随机投机解码用草稿分布 q 产生候选，由目标分布 p 验证。候选 x 的接受概率为 min(1,p(x)/q(x))，拒绝时从正剩余概率质量中重新采样；greedy 采用自己的确定性验证规则。
++  [完整原文](../../references/S-SPEC/reader.html) · [全文文本](../../references/S-SPEC/fulltext.txt)
+ 
+ - [S-HF-CACHE：Transformers — Caching](../sources/S-HF-CACHE.md)：Transformers 的缓存说明区分已存历史 K/V、新输入、attention mask 和 cache position。增量前向需要让新 token 的位置与已有缓存长度一致。
++  [完整原文](../../references/S-HF-CACHE/reader.html) · [全文文本](../../references/S-HF-CACHE/fulltext.txt)
+ 
+ - [S-TORCH-REPRO：PyTorch — Reproducibility](../sources/S-TORCH-REPRO.md)：随机种子与确定性配置可以控制特定执行路径中的随机性，但不保证跨版本、平台和全部算法路径逐位一致。
++  [完整原文](../../references/S-TORCH-REPRO/reader.html) · [全文文本](../../references/S-TORCH-REPRO/fulltext.txt)
+ 
+-上文的公式展开、容量算例与组合设计是 InfraAgents 在这些机制基础上的推导，具体推导已写在本条正文中。来源入口均为本地释义，可继续读取其定义与使用关系。版本 4，2026-09-20。
++正文中的公式展开、容量算例与组合设计是基于这些来源的推导；设定算例不冒充实测。来源版本受 2026-04-30 上限约束，编辑日期 2026-10-22 不作为事实发布日期。此独立 base 版本内的章节修订号从 1 开始，原章节身份与版本映射保存在版本清单。
+ 
+ ## 延伸阅读
+ 
+--- input/knowledge/algorithms/chunked-prefill.md
++++ version/knowledge/algorithms/chunked-prefill.md
+@@ -24,17 +24,16 @@
+ 
+ ## 来源与推导
+ 
+-- S-SARATHI：[完整原文](../../references/S-SARATHI/reader.html) · [全文文本](../../references/S-SARATHI/fulltext.txt)
+-- S-ORCA：[完整原文](../../references/S-ORCA/reader.html) · [全文文本](../../references/S-ORCA/fulltext.txt)
+-- S-HF-CACHE：[完整原文](../../references/S-HF-CACHE/reader.html) · [全文文本](../../references/S-HF-CACHE/fulltext.txt)
+-
+ - [S-SARATHI：SARATHI: Efficient LLM Inference by Piggybacking Decodes with Chunked Prefills](../sources/S-SARATHI.md)：SARATHI 将长 prefill 切块，并在合适的批处理中与 decode 组织在一起，以减少两类工作之间的干扰并利用计算资源。
++  [完整原文](../../references/S-SARATHI/reader.html) · [全文文本](../../references/S-SARATHI/fulltext.txt)
+ 
+ - [S-ORCA：Orca: A Distributed Serving System for Transformer-Based Generative Models](../sources/S-ORCA.md)：Orca 以生成迭代为调度边界，让完成请求退出并让新请求进入；不同算子依据是否适合聚批采用相应执行组织。请求不必等待原批全部结束才获得资源。
++  [完整原文](../../references/S-ORCA/reader.html) · [全文文本](../../references/S-ORCA/fulltext.txt)
+ 
+ - [S-HF-CACHE：Transformers — Caching](../sources/S-HF-CACHE.md)：Transformers 的缓存说明区分已存历史 K/V、新输入、attention mask 和 cache position。增量前向需要让新 token 的位置与已有缓存长度一致。
++  [完整原文](../../references/S-HF-CACHE/reader.html) · [全文文本](../../references/S-HF-CACHE/fulltext.txt)
+ 
+-上文的公式展开、容量算例与组合设计是 InfraAgents 在这些机制基础上的推导，具体推导已写在本条正文中。来源入口均为本地释义，可继续读取其定义与使用关系。版本 3，2026-09-20。
++正文中的公式展开、容量算例与组合设计是基于这些来源的推导；设定算例不冒充实测。来源版本受 2026-04-30 上限约束，编辑日期 2026-10-22 不作为事实发布日期。此独立 base 版本内的章节修订号从 1 开始，原章节身份与版本映射保存在版本清单。
+ 
+ ## 延伸阅读
+ 
+--- input/knowledge/algorithms/async-scheduling.md
++++ version/knowledge/algorithms/async-scheduling.md
+@@ -28,17 +28,16 @@
+ 
+ ## 来源与推导
+ 
+-- S-CUDA-ASYNC：[完整原文](../../references/S-CUDA-ASYNC/reader.html) · [全文文本](../../references/S-CUDA-ASYNC/fulltext.txt)
+-- S-CUDA-ALLOC：[完整原文](../../references/S-CUDA-ALLOC/reader.html) · [全文文本](../../references/S-CUDA-ALLOC/fulltext.txt)
+-- S-VLLM-SCHED：[完整原文](../../references/S-VLLM-SCHED/reader.html) · [全文文本](../../references/S-VLLM-SCHED/fulltext.txt)
+-
+ - [S-CUDA-ASYNC：CUDA Programming Guide — Asynchronous Execution](../sources/S-CUDA-ASYNC.md)：CUDA stream 表达设备工作的顺序，event 可以在不同执行队列间建立完成依赖。host 调用返回、设备工作开始和设备完成属于不同事件。
++  [完整原文](../../references/S-CUDA-ASYNC/reader.html) · [全文文本](../../references/S-CUDA-ASYNC/fulltext.txt)
+ 
+ - [S-CUDA-ALLOC：CUDA Programming Guide — Stream-Ordered Memory Allocator](../sources/S-CUDA-ALLOC.md)：stream-ordered allocator 将分配和释放纳入执行顺序。跨 stream 访问必须存在与分配、使用和释放相容的依赖。
++  [完整原文](../../references/S-CUDA-ALLOC/reader.html) · [全文文本](../../references/S-CUDA-ALLOC/fulltext.txt)
+ 
+ - [S-VLLM-SCHED：vLLM — V1 Scheduler source reference](../sources/S-VLLM-SCHED.md)：vLLM V1 的调度入口根据请求所需 token 与已计算进度分配本轮工作，结合计算预算、encoder 输入和 KV 资源形成 SchedulerOutput。
++  [完整原文](../../references/S-VLLM-SCHED/reader.html) · [全文文本](../../references/S-VLLM-SCHED/fulltext.txt)
+ 
+-上文的公式展开、容量算例与组合设计是 InfraAgents 在这些机制基础上的推导，具体推导已写在本条正文中。来源入口均为本地释义，可继续读取其定义与使用关系。版本 3，2026-09-20。
++正文中的公式展开、容量算例与组合设计是基于这些来源的推导；设定算例不冒充实测。来源版本受 2026-04-30 上限约束，编辑日期 2026-10-22 不作为事实发布日期。此独立 base 版本内的章节修订号从 1 开始，原章节身份与版本映射保存在版本清单。
+ 
+ ## 延伸阅读
+ 
+--- input/knowledge/algorithms/heterogeneous-state-cache.md
++++ version/knowledge/algorithms/heterogeneous-state-cache.md
+@@ -34,17 +34,16 @@
+ 
+ ## 来源与推导
+ 
+-- S-VLLM-HYBRID：[完整原文](../../references/S-VLLM-HYBRID/reader.html) · [全文文本](../../references/S-VLLM-HYBRID/fulltext.txt)
+-- S-MAMBA：[完整原文](../../references/S-MAMBA/reader.html) · [全文文本](../../references/S-MAMBA/fulltext.txt)
+-- S-PAGED：[完整原文](../../references/S-PAGED/reader.html) · [全文文本](../../references/S-PAGED/fulltext.txt)
+-
+-- [S-VLLM-HYBRID：vLLM：Hybrid KV Cache Manager](../sources/S-VLLM-HYBRID.md)：已读 0.18 设计文档注明其基于提交 458e74，区分 KV hidden bytes、token block size 和物理 page size，讨论层组统一池以及各组前缀命中的交集。
++- [S-VLLM-HYBRID：vLLM：Hybrid KV Cache Manager](../sources/S-VLLM-HYBRID.md)：固定历史设计文档区分 KV hidden bytes、token block size 和物理 page size，讨论异构层分组、统一分配以及各组可恢复前缀的交集。具体功能限制只适用于该文档版本。
++  [完整原文](../../references/S-VLLM-HYBRID/reader.html) · [全文文本](../../references/S-VLLM-HYBRID/fulltext.txt)
+ 
+ - [S-MAMBA：Mamba: Linear-Time Sequence Modeling with Selective State Spaces](../sources/S-MAMBA.md)：Mamba 使用输入相关的选择性状态空间机制。递归生成保留有限大小的状态，长序列处理可以采用专门的扫描/分块执行方式。
++  [完整原文](../../references/S-MAMBA/reader.html) · [全文文本](../../references/S-MAMBA/fulltext.txt)
+ 
+ - [S-PAGED：Efficient Memory Management for Large Language Model Serving with PagedAttention](../sources/S-PAGED.md)：PagedAttention 把每条序列的逻辑 KV 划分为固定 token 数的块，用映射表访问不连续物理存储。多个序列可以共享相同前缀的物理块，分叉写入需要保持各序列状态独立。
++  [完整原文](../../references/S-PAGED/reader.html) · [全文文本](../../references/S-PAGED/fulltext.txt)
+ 
+-上文的公式展开、容量算例与组合设计是 InfraAgents 在这些机制基础上的推导，具体推导已写在本条正文中。来源入口均为本地释义，可继续读取其定义与使用关系。版本 3，2026-09-20。
++正文中的公式展开、容量算例与组合设计是基于这些来源的推导；设定算例不冒充实测。来源版本受 2026-04-30 上限约束，编辑日期 2026-10-22 不作为事实发布日期。此独立 base 版本内的章节修订号从 1 开始，原章节身份与版本映射保存在版本清单。
+ 
+ ## 延伸阅读
+ 
+--- input/knowledge/algorithms/cross-attention-cache.md
++++ version/knowledge/algorithms/cross-attention-cache.md
+@@ -34,17 +34,16 @@
+ 
+ ## 来源与推导
+ 
+-- S-TRANSFORMER：[完整原文](../../references/S-TRANSFORMER/reader.html) · [全文文本](../../references/S-TRANSFORMER/fulltext.txt)
+-- S-WHISPER：[完整原文](../../references/S-WHISPER/reader.html) · [全文文本](../../references/S-WHISPER/fulltext.txt)
+-- S-FI：[完整原文](../../references/S-FI/reader.html) · [全文文本](../../references/S-FI/fulltext.txt)
+-
+ - [S-TRANSFORMER：Attention Is All You Need](../sources/S-TRANSFORMER.md)：Transformer 的 attention 用 query 与 keys 的分数生成归一化权重，再对 values 加权；encoder-decoder attention 的 Q 来自 decoder，K/V 来自 encoder 表示。
++  [完整原文](../../references/S-TRANSFORMER/reader.html) · [全文文本](../../references/S-TRANSFORMER/fulltext.txt)
+ 
+ - [S-WHISPER：Robust Speech Recognition via Large-Scale Weak Supervision](../sources/S-WHISPER.md)：Whisper 采用语音 encoder-decoder 和任务条件 token。音频编码与目标文本自回归是不同阶段，decoder 使用源表示完成条件生成。
++  [完整原文](../../references/S-WHISPER/reader.html) · [全文文本](../../references/S-WHISPER/fulltext.txt)
+ 
+-- [S-FI：FlashInfer：Attention kernels](../sources/S-FI.md)：已读 FlashInfer 0.6.18 接口说明区分 query 分段、KV 页表及末页长度。一些 wrapper 的 plan 安排计算/工作区，run 执行 attention；相关 plan 不能直接捕获入图。
++- [S-FI：FlashInfer：Attention kernels](../sources/S-FI.md)：截止日前的 FlashInfer 固定源码区分 query 分段、KV 页表及末页长度。相关 wrapper 的 plan 安排计算与工作区，run 执行 attention；plan 的捕获限制与图模式缓冲须按该版本接口核对。
++  [完整原文](../../references/S-FI/reader.html) · [全文文本](../../references/S-FI/fulltext.txt)
+ 
+-上文的公式展开、容量算例与组合设计是 InfraAgents 在这些机制基础上的推导，具体推导已写在本条正文中。来源入口均为本地释义，可继续读取其定义与使用关系。版本 3，2026-09-20。
++正文中的公式展开、容量算例与组合设计是基于这些来源的推导；设定算例不冒充实测。来源版本受 2026-04-30 上限约束，编辑日期 2026-10-22 不作为事实发布日期。此独立 base 版本内的章节修订号从 1 开始，原章节身份与版本映射保存在版本清单。
+ 
+ ## 延伸阅读
+ 
+--- input/knowledge/algorithms/batched-sampling.md
++++ version/knowledge/algorithms/batched-sampling.md
+@@ -26,17 +26,16 @@
+ 
+ ## 来源与推导
+ 
+-- S-FI-SAMPLE：[完整原文](../../references/S-FI-SAMPLE/reader.html) · [全文文本](../../references/S-FI-SAMPLE/fulltext.txt)
+-- S-TORCH-REPRO：[完整原文](../../references/S-TORCH-REPRO/reader.html) · [全文文本](../../references/S-TORCH-REPRO/fulltext.txt)
+-- S-SPEC：[完整原文](../../references/S-SPEC/reader.html) · [全文文本](../../references/S-SPEC/fulltext.txt)
+-
+ - [S-FI-SAMPLE：FlashInfer：Sampling](../sources/S-FI-SAMPLE.md)：FlashInfer sampling 接口提供从概率或 logits 的按行采样，以及 top-k、top-p 等相关操作；调用的输入表示和参数决定实际概率处理。
++  [完整原文](../../references/S-FI-SAMPLE/reader.html) · [全文文本](../../references/S-FI-SAMPLE/fulltext.txt)
+ 
+ - [S-TORCH-REPRO：PyTorch — Reproducibility](../sources/S-TORCH-REPRO.md)：随机种子与确定性配置可以控制特定执行路径中的随机性，但不保证跨版本、平台和全部算法路径逐位一致。
++  [完整原文](../../references/S-TORCH-REPRO/reader.html) · [全文文本](../../references/S-TORCH-REPRO/fulltext.txt)
+ 
+ - [S-SPEC：Fast Inference from Transformers via Speculative Decoding](../sources/S-SPEC.md)：随机投机解码用草稿分布 q 产生候选，由目标分布 p 验证。候选 x 的接受概率为 min(1,p(x)/q(x))，拒绝时从正剩余概率质量中重新采样；greedy 采用自己的确定性验证规则。
++  [完整原文](../../references/S-SPEC/reader.html) · [全文文本](../../references/S-SPEC/fulltext.txt)
+ 
+-上文的公式展开、容量算例与组合设计是 InfraAgents 在这些机制基础上的推导，具体推导已写在本条正文中。来源入口均为本地释义，可继续读取其定义与使用关系。版本 3，2026-09-20。
++正文中的公式展开、容量算例与组合设计是基于这些来源的推导；设定算例不冒充实测。来源版本受 2026-04-30 上限约束，编辑日期 2026-10-22 不作为事实发布日期。此独立 base 版本内的章节修订号从 1 开始，原章节身份与版本映射保存在版本清单。
+ 
+ ## 延伸阅读
+ 
+--- input/knowledge/algorithms/structured-output.md
++++ version/knowledge/algorithms/structured-output.md
+@@ -24,17 +24,16 @@
+ 
+ ## 来源与推导
+ 
+-- S-XGRAMMAR：[完整原文](../../references/S-XGRAMMAR/reader.html) · [全文文本](../../references/S-XGRAMMAR/fulltext.txt)
+-- S-FI-SAMPLE：[完整原文](../../references/S-FI-SAMPLE/reader.html) · [全文文本](../../references/S-FI-SAMPLE/fulltext.txt)
+-- S-CHAT：[完整原文](../../references/S-CHAT/reader.html) · [全文文本](../../references/S-CHAT/fulltext.txt)
+-
+ - [S-XGRAMMAR：XGrammar](../sources/S-XGRAMMAR.md)：XGrammar 以语法状态决定合法 token，并利用可预计算与依赖上下文的部分分离，减少在线合法性判断开销。
++  [完整原文](../../references/S-XGRAMMAR/reader.html) · [全文文本](../../references/S-XGRAMMAR/fulltext.txt)
+ 
+ - [S-FI-SAMPLE：FlashInfer：Sampling](../sources/S-FI-SAMPLE.md)：FlashInfer sampling 接口提供从概率或 logits 的按行采样，以及 top-k、top-p 等相关操作；调用的输入表示和参数决定实际概率处理。
++  [完整原文](../../references/S-FI-SAMPLE/reader.html) · [全文文本](../../references/S-FI-SAMPLE/fulltext.txt)
+ 
+ - [S-CHAT：Transformers：Chat templates](../sources/S-CHAT.md)：Chat template 将消息序列变为包含角色边界、特殊 token 和生成提示的模型输入；tokenizer 自动添加特殊 token 的方式会影响最终序列。
++  [完整原文](../../references/S-CHAT/reader.html) · [全文文本](../../references/S-CHAT/fulltext.txt)
+ 
+-上文的公式展开、容量算例与组合设计是 InfraAgents 在这些机制基础上的推导，具体推导已写在本条正文中。来源入口均为本地释义，可继续读取其定义与使用关系。版本 3，2026-09-20。
++正文中的公式展开、容量算例与组合设计是基于这些来源的推导；设定算例不冒充实测。来源版本受 2026-04-30 上限约束，编辑日期 2026-10-22 不作为事实发布日期。此独立 base 版本内的章节修订号从 1 开始，原章节身份与版本映射保存在版本清单。
+ 
+ ## 延伸阅读
+ 
+--- input/knowledge/algorithms/disaggregated-serving.md
++++ version/knowledge/algorithms/disaggregated-serving.md
+@@ -28,17 +28,16 @@
+ 
+ ## 来源与推导
+ 
+-- S-DISTSERVE：[完整原文](../../references/S-DISTSERVE/reader.html) · [全文文本](../../references/S-DISTSERVE/fulltext.txt)
+-- S-CUDA-TOPOLOGY：[完整原文](../../references/S-CUDA-TOPOLOGY/reader.html) · [全文文本](../../references/S-CUDA-TOPOLOGY/fulltext.txt)
+-- S-PAGED：[完整原文](../../references/S-PAGED/reader.html) · [全文文本](../../references/S-PAGED/fulltext.txt)
+-
+ - [S-DISTSERVE：DistServe](../sources/S-DISTSERVE.md)：DistServe 将 prefill 与 decode 的资源分配和并行选择解耦，并把阶段间状态通信与链路条件纳入服务目标。
++  [完整原文](../../references/S-DISTSERVE/reader.html) · [全文文本](../../references/S-DISTSERVE/fulltext.txt)
+ 
+ - [S-CUDA-TOPOLOGY：CUDA Programming Guide — Programming Systems with Multiple GPUs](../sources/S-CUDA-TOPOLOGY.md)：多 GPU 系统涉及设备上下文、peer access、主机与设备连接路径。可通信和具有相同有效带宽不是同一性质。
++  [完整原文](../../references/S-CUDA-TOPOLOGY/reader.html) · [全文文本](../../references/S-CUDA-TOPOLOGY/fulltext.txt)
+ 
+ - [S-PAGED：Efficient Memory Management for Large Language Model Serving with PagedAttention](../sources/S-PAGED.md)：PagedAttention 把每条序列的逻辑 KV 划分为固定 token 数的块，用映射表访问不连续物理存储。多个序列可以共享相同前缀的物理块，分叉写入需要保持各序列状态独立。
++  [完整原文](../../references/S-PAGED/reader.html) · [全文文本](../../references/S-PAGED/fulltext.txt)
+ 
+-上文的公式展开、容量算例与组合设计是 InfraAgents 在这些机制基础上的推导，具体推导已写在本条正文中。来源入口均为本地释义，可继续读取其定义与使用关系。版本 3，2026-09-20。
++正文中的公式展开、容量算例与组合设计是基于这些来源的推导；设定算例不冒充实测。来源版本受 2026-04-30 上限约束，编辑日期 2026-10-22 不作为事实发布日期。此独立 base 版本内的章节修订号从 1 开始，原章节身份与版本映射保存在版本清单。
+ 
+ ## 延伸阅读
+ 
+--- input/knowledge/algorithms/lora-serving.md
++++ version/knowledge/algorithms/lora-serving.md
+@@ -24,17 +24,16 @@
+ 
+ ## 来源与推导
+ 
+-- S-LORA：[完整原文](../../references/S-LORA/reader.html) · [全文文本](../../references/S-LORA/fulltext.txt)
+-- S-VLLM-PREFIX：[完整原文](../../references/S-VLLM-PREFIX/reader.html) · [全文文本](../../references/S-VLLM-PREFIX/fulltext.txt)
+-- S-TORCH-NUMERIC：[完整原文](../../references/S-TORCH-NUMERIC/reader.html) · [全文文本](../../references/S-TORCH-NUMERIC/fulltext.txt)
+-
+ - [S-LORA：LoRA: Low-Rank Adaptation of Large Language Models](../sources/S-LORA.md)：LoRA 用低秩增量 ΔW＝sBA 表达权重适配；固定 adapter 可在条件允许时合并，多 adapter 可以共享基座并分别计算增量分支。
++  [完整原文](../../references/S-LORA/reader.html) · [全文文本](../../references/S-LORA/fulltext.txt)
+ 
+ - [S-VLLM-PREFIX：vLLM — Automatic Prefix Caching](../sources/S-VLLM-PREFIX.md)：所核对 vLLM 版本以块身份组织前缀复用，身份可包含父块、token 和额外条件。不同上下文的同 token 块不应自动视为相同计算。
++  [完整原文](../../references/S-VLLM-PREFIX/reader.html) · [全文文本](../../references/S-VLLM-PREFIX/fulltext.txt)
+ 
+ - [S-TORCH-NUMERIC：PyTorch — Numerical accuracy](../sources/S-TORCH-NUMERIC.md)：浮点运算不满足实数运算的全部结合性质，批量方式、归约顺序和平台路径可以产生数值差异。数值格式、累加精度和极端输入影响误差。
++  [完整原文](../../references/S-TORCH-NUMERIC/reader.html) · [全文文本](../../references/S-TORCH-NUMERIC/fulltext.txt)
+ 
+-上文的公式展开、容量算例与组合设计是 InfraAgents 在这些机制基础上的推导，具体推导已写在本条正文中。来源入口均为本地释义，可继续读取其定义与使用关系。版本 3，2026-09-20。
++正文中的公式展开、容量算例与组合设计是基于这些来源的推导；设定算例不冒充实测。来源版本受 2026-04-30 上限约束，编辑日期 2026-10-22 不作为事实发布日期。此独立 base 版本内的章节修订号从 1 开始，原章节身份与版本映射保存在版本清单。
+ 
+ ## 延伸阅读
+ 
+--- input/knowledge/algorithms/parallelism.md
++++ version/knowledge/algorithms/parallelism.md
+@@ -30,17 +30,16 @@
+ 
+ ## 来源与推导
+ 
+-- S-NCCL-COLLECTIVE：[完整原文](../../references/S-NCCL-COLLECTIVE/reader.html) · [全文文本](../../references/S-NCCL-COLLECTIVE/fulltext.txt)
+-- S-CUDA-TOPOLOGY：[完整原文](../../references/S-CUDA-TOPOLOGY/reader.html) · [全文文本](../../references/S-CUDA-TOPOLOGY/fulltext.txt)
+-- S-MIXTRAL：[完整原文](../../references/S-MIXTRAL/reader.html) · [全文文本](../../references/S-MIXTRAL/fulltext.txt)
+-
+ - [S-NCCL-COLLECTIVE：NCCL — Collective Operations](../sources/S-NCCL-COLLECTIVE.md)：集合通信操作由 communicator、参与 ranks、数据类型、数量、归约方式或 root 等共同定义。参与者必须执行相互匹配的逻辑操作。
++  [完整原文](../../references/S-NCCL-COLLECTIVE/reader.html) · [全文文本](../../references/S-NCCL-COLLECTIVE/fulltext.txt)
+ 
+ - [S-CUDA-TOPOLOGY：CUDA Programming Guide — Programming Systems with Multiple GPUs](../sources/S-CUDA-TOPOLOGY.md)：多 GPU 系统涉及设备上下文、peer access、主机与设备连接路径。可通信和具有相同有效带宽不是同一性质。
++  [完整原文](../../references/S-CUDA-TOPOLOGY/reader.html) · [全文文本](../../references/S-CUDA-TOPOLOGY/fulltext.txt)
+ 
+ - [S-MIXTRAL：Mixtral of Experts](../sources/S-MIXTRAL.md)：Mixtral 采用稀疏专家结构：每个 token 根据路由选择部分专家参与计算，而专家总参数与每 token 激活参数是不同数量。
++  [完整原文](../../references/S-MIXTRAL/reader.html) · [全文文本](../../references/S-MIXTRAL/fulltext.txt)
+ 
+-上文的公式展开、容量算例与组合设计是 InfraAgents 在这些机制基础上的推导，具体推导已写在本条正文中。来源入口均为本地释义，可继续读取其定义与使用关系。版本 3，2026-09-20。
++正文中的公式展开、容量算例与组合设计是基于这些来源的推导；设定算例不冒充实测。来源版本受 2026-04-30 上限约束，编辑日期 2026-10-22 不作为事实发布日期。此独立 base 版本内的章节修订号从 1 开始，原章节身份与版本映射保存在版本清单。
+ 
+ ## 延伸阅读
+ 
+--- input/knowledge/engine-index/vllm-scheduler.md
++++ version/knowledge/engine-index/vllm-scheduler.md
+@@ -4,7 +4,16 @@
+ 
+ ## 固定版本的阅读坐标
+ 
+-本页核对 v0.24.0 的 vllm/v1/core/sched/scheduler.py：Scheduler 在第 68 行，schedule 在第 388 行，_update_after_schedule 在第 1130 行，_try_schedule_encoder_inputs 在第 1280 行。文件 SHA 与符号见 [源码定位证据](../../docs/evidence/expert-source-locations-20260920.json)。这些位置绑定此标签，不能作为其他 checkout 的固定行号。
++本页核对固定提交 9c61864bf8a911a8369f35d79d538c7f11cf3dc2，提交日期为 2026-04-30。以下坐标由完整归档源码解析取得，只定位这一版本。
++
++| 文件 | 符号 | 行号 |
++|---|---|---|
++| vllm/v1/core/sched/scheduler.py | Scheduler | 67 |
++| vllm/v1/core/sched/scheduler.py | schedule | 352 |
++| vllm/v1/core/sched/scheduler.py | _update_after_schedule | 987 |
++| vllm/v1/core/sched/scheduler.py | _try_schedule_encoder_inputs | 1116 |
++
++[完整原文与本地阅读](../../references/S-VLLM-SCHED/reader.html)；[源码定位证据](../../docs/evidence/astra-source-locations.json)。
+ 
+ ## 核心状态关系
+ 
+@@ -24,17 +33,16 @@
+ 
+ ## 来源与推导
+ 
+-- S-VLLM-SCHED：[完整原文](../../references/S-VLLM-SCHED/reader.html) · [全文文本](../../references/S-VLLM-SCHED/fulltext.txt)
+-- S-VLLM-CODE：[完整原文](../../references/S-VLLM-CODE/reader.html) · [全文文本](../../references/S-VLLM-CODE/fulltext.txt)
+-- S-ORCA：[完整原文](../../references/S-ORCA/reader.html) · [全文文本](../../references/S-ORCA/fulltext.txt)
++- [S-VLLM-SCHED：vLLM — V1 Scheduler source reference](../sources/S-VLLM-SCHED.md)：vLLM V1 的调度入口根据请求所需 token 与已计算进度分配本轮工作，结合计算预算、encoder 输入和 KV 资源形成 SchedulerOutput。
++  [完整原文](../../references/S-VLLM-SCHED/reader.html) · [全文文本](../../references/S-VLLM-SCHED/fulltext.txt)
+ 
+-- [S-VLLM-SCHED：vLLM — V1 Scheduler source reference](../sources/S-VLLM-SCHED.md)：vLLM V1 的调度入口根据请求所需 token 与已计算进度分配本轮工作，结合计算预算、encoder 输入和 KV 资源形成 SchedulerOutput。
+-
+-- [S-VLLM-CODE：vLLM V1 固定标签源码](../sources/S-VLLM-CODE.md)：实际读取 v0.24.0 的 Scheduler、KVCacheManager 和 GPUModelRunner 三文件，核对 token 进度、分配参数、执行/采样状态和延迟释放相关入口。
++- [S-VLLM-CODE：vLLM V1 固定标签源码](../sources/S-VLLM-CODE.md)：固定历史提交的 Scheduler、KVCacheManager、GPUModelRunner、coordinator 和 block pool 展示 token 进度、分配、执行与采样、层组和回收之间的关系。接口含义以所归档的提交为准。
++  [完整原文](../../references/S-VLLM-CODE/reader.html) · [全文文本](../../references/S-VLLM-CODE/fulltext.txt)
+ 
+ - [S-ORCA：Orca: A Distributed Serving System for Transformer-Based Generative Models](../sources/S-ORCA.md)：Orca 以生成迭代为调度边界，让完成请求退出并让新请求进入；不同算子依据是否适合聚批采用相应执行组织。请求不必等待原批全部结束才获得资源。
++  [完整原文](../../references/S-ORCA/reader.html) · [全文文本](../../references/S-ORCA/fulltext.txt)
+ 
+-上文的公式展开、容量算例与组合设计是 InfraAgents 在这些机制基础上的推导，具体推导已写在本条正文中。来源入口均为本地释义，可继续读取其定义与使用关系。版本 4，2026-09-20。
++正文中的公式展开、容量算例与组合设计是基于这些来源的推导；设定算例不冒充实测。来源版本受 2026-04-30 上限约束，编辑日期 2026-10-22 不作为事实发布日期。此独立 base 版本内的章节修订号从 1 开始，原章节身份与版本映射保存在版本清单。
+ 
+ ## 延伸阅读
+ 
+--- input/knowledge/engine-index/vllm-kv-manager.md
++++ version/knowledge/engine-index/vllm-kv-manager.md
+@@ -4,15 +4,28 @@
+ 
+ ## 固定坐标和职责
+ 
+-v0.24.0 的 vllm/v1/core/kv_cache_manager.py 中，KVCacheBlocks 在第 26 行，KVCacheManager 在第 110 行，allocate_slots 在第 244 行，free 在第 460 行，pop_blocks_for_free 在第 483 行。哈希与完整方法定位在 [证据](../../docs/evidence/expert-source-locations-20260920.json)。
++本页核对固定提交 9c61864bf8a911a8369f35d79d538c7f11cf3dc2，提交日期为 2026-04-30。以下坐标由完整归档源码解析取得，只定位这一版本。
+ 
+-get_computed_blocks 从 prefix 状态寻找可直接复用的块。该版本把最长命中限制在请求 token 数减一，以便重算得到所需 logits；块对齐还可能使重算超过一个 token。这个具体实现解释了“全 prompt 已命中”为什么不总等于零次模型工作。
++| 文件 | 符号 | 行号 |
++|---|---|---|
++| vllm/v1/core/kv_cache_manager.py | KVCacheBlocks | 22 |
++| vllm/v1/core/kv_cache_manager.py | KVCacheManager | 106 |
++| vllm/v1/core/kv_cache_manager.py | get_computed_blocks | 183 |
++| vllm/v1/core/kv_cache_manager.py | can_fit_full_sequence | 225 |
++| vllm/v1/core/kv_cache_manager.py | allocate_slots | 265 |
++| vllm/v1/core/kv_cache_manager.py | free | 437 |
++
++[完整原文与本地阅读](../../references/S-VLLM-KV/reader.html)；[源码定位证据](../../docs/evidence/astra-source-locations.json)。
++
++get_computed_blocks 将完整命中的最大长度限制在请求 token 数减一，以重算所需 logits；块对齐可能使重算超过一个 token。这说明前缀全部命中仍可能需要模型工作。
+ 
+ ## 分配参数表达多种状态
+ 
+-allocate_slots 区分新算 token、新命中的本地块、外部已算状态、lookahead 和 encoder token。delay_cache_blocks 用于尚未完成的传输等路径；reserved_blocks 和 full_sequence_must_fit 表达资源保留/admission 条件。读这些参数时，应对应到逻辑状态，而不是把所有长度相加后称为已完成前缀。
++allocate_slots 区分新算 token、新命中的本地块、外部已算状态、lookahead 和 encoder token。delay_cache_blocks 用于延后把尚未完成的传输状态发布为可复用缓存。读这些参数时，应分别还原已计算、待计算、预留和可共享状态，不能把全部长度相加后称为已完成前缀。
+ 
+-层组 coordinator 决定不同状态族怎样联合分配与命中。通用异构缓存原理见关联章节；0.18 的设计文档可解释演化背景，其中具体功能限制不应直接移植成 0.24 的结论。
++本版本另有 can_fit_full_sequence，按完整序列、已有命中与窗口规则计算需要的块，并与 block pool 空闲块比较；这是准入检查。它不把一次通过的容量检查自动变成之后每次分配都已成功的事实。
++
++层组 coordinator 决定不同状态族怎样联合分配和命中。异构缓存设计文档与这些接口均绑定本库登记的同一历史提交；各状态族的共同恢复条件仍由正文中的状态模型解释。
+ 
+ ## 与回收的接口
+ 
+@@ -24,17 +37,16 @@
+ 
+ ## 来源与推导
+ 
+-- S-VLLM-KV：[完整原文](../../references/S-VLLM-KV/reader.html) · [全文文本](../../references/S-VLLM-KV/fulltext.txt)
+-- S-VLLM-CODE：[完整原文](../../references/S-VLLM-CODE/reader.html) · [全文文本](../../references/S-VLLM-CODE/fulltext.txt)
+-- S-VLLM-HYBRID：[完整原文](../../references/S-VLLM-HYBRID/reader.html) · [全文文本](../../references/S-VLLM-HYBRID/fulltext.txt)
++- [S-VLLM-KV：vLLM — KVCacheManager source reference](../sources/S-VLLM-KV.md)：KVCacheManager 的相关接口区分已命中状态、新 token 分配、lookahead、外部状态和释放。层组与实际可恢复状态参与分配判断。
++  [完整原文](../../references/S-VLLM-KV/reader.html) · [全文文本](../../references/S-VLLM-KV/fulltext.txt)
+ 
+-- [S-VLLM-KV：vLLM — KVCacheManager source reference](../sources/S-VLLM-KV.md)：KVCacheManager 的相关接口区分已命中状态、新 token 分配、lookahead、外部状态和释放。层组与实际可恢复状态参与分配判断。
++- [S-VLLM-CODE：vLLM V1 固定标签源码](../sources/S-VLLM-CODE.md)：固定历史提交的 Scheduler、KVCacheManager、GPUModelRunner、coordinator 和 block pool 展示 token 进度、分配、执行与采样、层组和回收之间的关系。接口含义以所归档的提交为准。
++  [完整原文](../../references/S-VLLM-CODE/reader.html) · [全文文本](../../references/S-VLLM-CODE/fulltext.txt)
+ 
+-- [S-VLLM-CODE：vLLM V1 固定标签源码](../sources/S-VLLM-CODE.md)：实际读取 v0.24.0 的 Scheduler、KVCacheManager 和 GPUModelRunner 三文件，核对 token 进度、分配参数、执行/采样状态和延迟释放相关入口。
++- [S-VLLM-HYBRID：vLLM：Hybrid KV Cache Manager](../sources/S-VLLM-HYBRID.md)：固定历史设计文档区分 KV hidden bytes、token block size 和物理 page size，讨论异构层分组、统一分配以及各组可恢复前缀的交集。具体功能限制只适用于该文档版本。
++  [完整原文](../../references/S-VLLM-HYBRID/reader.html) · [全文文本](../../references/S-VLLM-HYBRID/fulltext.txt)
+ 
+-- [S-VLLM-HYBRID：vLLM：Hybrid KV Cache Manager](../sources/S-VLLM-HYBRID.md)：已读 0.18 设计文档注明其基于提交 458e74，区分 KV hidden bytes、token block size 和物理 page size，讨论层组统一池以及各组前缀命中的交集。
+-
+-上文的公式展开、容量算例与组合设计是 InfraAgents 在这些机制基础上的推导，具体推导已写在本条正文中。来源入口均为本地释义，可继续读取其定义与使用关系。版本 4，2026-09-20。
++正文中的公式展开、容量算例与组合设计是基于这些来源的推导；设定算例不冒充实测。来源版本受 2026-04-30 上限约束，编辑日期 2026-10-22 不作为事实发布日期。此独立 base 版本内的章节修订号从 1 开始，原章节身份与版本映射保存在版本清单。
+ 
+ ## 延伸阅读
+ 
+--- input/knowledge/engine-index/vllm-model-runner.md
++++ version/knowledge/engine-index/vllm-model-runner.md
+@@ -4,9 +4,17 @@
+ 
+ ## 固定版本入口
+ 
+-v0.24.0 的 vllm/v1/worker/gpu_model_runner.py 中，GPUModelRunner 在第 421 行，execute_model 在第 4056 行，sample_tokens 在第 4435 行，initialize_kv_cache 在第 7309 行，get_kv_cache_spec 在第 7465 行。实际文件哈希见 [证据](../../docs/evidence/expert-source-locations-20260920.json)。
++本页核对固定提交 9c61864bf8a911a8369f35d79d538c7f11cf3dc2，提交日期为 2026-04-30。以下坐标由完整归档源码解析取得，只定位这一版本。
+ 
+-execute_model 的输入是 SchedulerOutput。方法更新 persistent batch 状态，准备 encoder/attention 等执行信息并选择模型路径；部分路径将 execute 与 sample 分离，并保存 ExecuteModelState。返回空结果也可能是无 token 或 connector 工作，不能仅据返回值判断请求已经完成。
++| 文件 | 符号 | 行号 |
++|---|---|---|
++| vllm/v1/worker/gpu_model_runner.py | GPUModelRunner | 394 |
++| vllm/v1/worker/gpu_model_runner.py | execute_model | 3791 |
++| vllm/v1/worker/gpu_model_runner.py | sample_tokens | 4144 |
++| vllm/v1/worker/gpu_model_runner.py | initialize_kv_cache | 6812 |
++| vllm/v1/worker/gpu_model_runner.py | get_kv_cache_spec | 6949 |
++
++[完整原文与本地阅读](../../references/S-VLLM-RUNNER/reader.html)；[源码定位证据](../../docs/evidence/astra-source-locations.json)。
+ 
+ ## 从请求错配追踪三段映射
+ 
+@@ -22,17 +30,16 @@
+ 
+ ## 来源与推导
+ 
+-- S-VLLM-RUNNER：[完整原文](../../references/S-VLLM-RUNNER/reader.html) · [全文文本](../../references/S-VLLM-RUNNER/fulltext.txt)
+-- S-VLLM-CODE：[完整原文](../../references/S-VLLM-CODE/reader.html) · [全文文本](../../references/S-VLLM-CODE/fulltext.txt)
+-- S-TORCH-CUDA：[完整原文](../../references/S-TORCH-CUDA/reader.html) · [全文文本](../../references/S-TORCH-CUDA/fulltext.txt)
++- [S-VLLM-RUNNER：vLLM — GPUModelRunner source reference](../sources/S-VLLM-RUNNER.md)：GPUModelRunner 将调度输出映射为持久 batch、压紧输入、attention metadata、模型执行与采样结果。模型状态规格最终映射到物理缓存 tensor。
++  [完整原文](../../references/S-VLLM-RUNNER/reader.html) · [全文文本](../../references/S-VLLM-RUNNER/fulltext.txt)
+ 
+-- [S-VLLM-RUNNER：vLLM — GPUModelRunner source reference](../sources/S-VLLM-RUNNER.md)：GPUModelRunner 将调度输出映射为持久 batch、压紧输入、attention metadata、模型执行与采样结果。模型状态规格最终映射到物理缓存 tensor。
+-
+-- [S-VLLM-CODE：vLLM V1 固定标签源码](../sources/S-VLLM-CODE.md)：实际读取 v0.24.0 的 Scheduler、KVCacheManager 和 GPUModelRunner 三文件，核对 token 进度、分配参数、执行/采样状态和延迟释放相关入口。
++- [S-VLLM-CODE：vLLM V1 固定标签源码](../sources/S-VLLM-CODE.md)：固定历史提交的 Scheduler、KVCacheManager、GPUModelRunner、coordinator 和 block pool 展示 token 进度、分配、执行与采样、层组和回收之间的关系。接口含义以所归档的提交为准。
++  [完整原文](../../references/S-VLLM-CODE/reader.html) · [全文文本](../../references/S-VLLM-CODE/fulltext.txt)
+ 
+ - [S-TORCH-CUDA：PyTorch — CUDA semantics](../sources/S-TORCH-CUDA.md)：PyTorch CUDA 运算通常异步提交；不同 stream 的依赖需显式表达，allocator 还需要知道跨 stream 的使用。CUDA Graph 的重放路径依赖稳定的地址与兼容的执行结构。
++  [完整原文](../../references/S-TORCH-CUDA/reader.html) · [全文文本](../../references/S-TORCH-CUDA/fulltext.txt)
+ 
+-上文的公式展开、容量算例与组合设计是 InfraAgents 在这些机制基础上的推导，具体推导已写在本条正文中。来源入口均为本地释义，可继续读取其定义与使用关系。版本 4，2026-09-20。
++正文中的公式展开、容量算例与组合设计是基于这些来源的推导；设定算例不冒充实测。来源版本受 2026-04-30 上限约束，编辑日期 2026-10-22 不作为事实发布日期。此独立 base 版本内的章节修订号从 1 开始，原章节身份与版本映射保存在版本清单。
+ 
+ ## 延伸阅读
+ 
+--- input/knowledge/engine-index/sglang-radix-scheduler.md
++++ version/knowledge/engine-index/sglang-radix-scheduler.md
+@@ -4,7 +4,19 @@
+ 
+ ## 已核对的源码锚点
+ 
+-固定提交 dd83b54611897a5f80f4df59e69756bd2fb4b8ab：python/sglang/srt/managers/scheduler.py 的 Scheduler 在第 433 行，get_next_batch_to_run 在第 3648 行，run_batch 在第 4337 行。python/sglang/srt/mem_cache/radix_cache.py 的 RadixCache 在第 321 行，match_prefix 在第 396 行，insert 在第 456 行，evict 在第 643 行。原始符号与哈希见 [定位证据](../../docs/evidence/knowledge-source-locations-20260920.json)。
++本页核对固定提交 cf346bb15de90c447ed498ad5e99aae407e04ce2，提交日期为 2026-04-30。以下坐标由完整归档源码解析取得，只定位这一版本。
++
++| 文件 | 符号 | 行号 |
++|---|---|---|
++| python/sglang/srt/managers/scheduler.py | Scheduler | 322 |
++| python/sglang/srt/managers/scheduler.py | get_next_batch_to_run | 2388 |
++| python/sglang/srt/managers/scheduler.py | run_batch | 2864 |
++| python/sglang/srt/mem_cache/radix_cache.py | RadixCache | 321 |
++| python/sglang/srt/mem_cache/radix_cache.py | match_prefix | 398 |
++| python/sglang/srt/mem_cache/radix_cache.py | insert | 468 |
++| python/sglang/srt/mem_cache/radix_cache.py | evict | 608 |
++
++[完整原文与本地阅读](../../references/S-SGLANG-CODE/reader.html)；[源码定位证据](../../docs/evidence/astra-source-locations.json)。
+ 
+ ## 一次请求如何穿过结构
+ 
+@@ -24,14 +36,13 @@
+ 
+ ## 来源与推导
+ 
+-- S-SGLANG：[完整原文](../../references/S-SGLANG/reader.html) · [全文文本](../../references/S-SGLANG/fulltext.txt)
+-- S-SGLANG-CODE：[完整原文](../../references/S-SGLANG-CODE/reader.html) · [全文文本](../../references/S-SGLANG-CODE/fulltext.txt)
++- [S-SGLANG：SGLang: Efficient Execution of Structured Language Model Programs](../sources/S-SGLANG.md)：SGLang 的 RadixAttention 利用 token 前缀树组织复用状态，结构化执行场景可以复用重复前缀计算。
++  [完整原文](../../references/S-SGLANG/reader.html) · [全文文本](../../references/S-SGLANG/fulltext.txt)
+ 
+-- [S-SGLANG：SGLang: Efficient Execution of Structured Language Model Programs](../sources/S-SGLANG.md)：SGLang 的 RadixAttention 利用 token 前缀树组织复用状态，结构化执行场景可以复用重复前缀计算。
++- [S-SGLANG-CODE：SGLang — scheduler and radix cache source locations](../sources/S-SGLANG-CODE.md)：固定历史提交中的 scheduler.py 与 radix_cache.py 展示 Scheduler、批次选择和执行，以及 RadixCache 的前缀匹配、插入与淘汰。精确符号和行号随本版本源码单独记录。
++  [完整原文](../../references/S-SGLANG-CODE/reader.html) · [全文文本](../../references/S-SGLANG-CODE/fulltext.txt)
+ 
+-- [S-SGLANG-CODE：SGLang — scheduler and radix cache source locations](../sources/S-SGLANG-CODE.md)：实际核对提交 dd83b546 的 scheduler.py 与 radix_cache.py：Scheduler、get_next_batch_to_run、run_batch，以及 RadixCache 的 match_prefix、insert、evict。定位与文件 SHA 已保存到本项目证据。
+-
+-上文的公式展开、容量算例与组合设计是 InfraAgents 在这些机制基础上的推导，具体推导已写在本条正文中。来源入口均为本地释义，可继续读取其定义与使用关系。版本 4，2026-09-20。
++正文中的公式展开、容量算例与组合设计是基于这些来源的推导；设定算例不冒充实测。来源版本受 2026-04-30 上限约束，编辑日期 2026-10-22 不作为事实发布日期。此独立 base 版本内的章节修订号从 1 开始，原章节身份与版本映射保存在版本清单。
+ 
+ ## 延伸阅读
+ 
+--- input/knowledge/engine-index/tensorrt-llm.md
++++ version/knowledge/engine-index/tensorrt-llm.md
+@@ -4,9 +4,19 @@
+ 
+ ## 两种层次的来源
+ 
+-官方架构页说明 LLM 入口、执行器、scheduler、model engine 和 sampler 的关系。本次还实际读取 VibeSys 子模块记录指向的固定提交 0d2bea7c3c99b734a8e09c4c767820e03136a15b；并未初始化或引入它作为运行依赖。
++本页核对固定提交 0343a9d9f2a8f69f9fe783834b042ff7687a28a4，提交日期为 2026-04-30。以下坐标由完整归档源码解析取得，只定位这一版本。
+ 
+-该提交 tensorrt_llm/_torch/pyexecutor/py_executor.py：PyExecutor 第 256 行，_prepare_and_schedule_batch 第 1809 行，_schedule 第 2952 行，_sample_async 第 3467 行。文件哈希与符号见 [定位证据](../../docs/evidence/expert-source-locations-20260920.json)。该源码的组织不等于旧版 TensorRT C++ engine 路径，两者应按实际后端分别阅读。
++| 文件 | 符号 | 行号 |
++|---|---|---|
++| tensorrt_llm/_torch/pyexecutor/py_executor.py | PyExecutor | 272 |
++| tensorrt_llm/_torch/pyexecutor/py_executor.py | AsyncTransferManager | 153 |
++| tensorrt_llm/_torch/pyexecutor/py_executor.py | _prepare_and_schedule_batch | 1957 |
++| tensorrt_llm/_torch/pyexecutor/py_executor.py | _schedule | 3110 |
++| tensorrt_llm/_torch/pyexecutor/py_executor.py | _sample_async | 3632 |
++
++[完整原文与本地阅读](../../references/S-TRTLLM-CODE/reader.html)；[源码定位证据](../../docs/evidence/astra-source-locations.json)。
++
++架构文档与本文件来自同一历史提交，分别说明入口、执行器、scheduler、model engine 和 sampler 的职责及其实际连接。这里讨论 PyTorch 执行器，不把它与其他后端的接口混用。
+ 
+ ## Overlap 的关键是设备端依赖连续
+ 
+@@ -24,14 +34,13 @@
+ 
+ ## 来源与推导
+ 
+-- S-TRTLLM：[完整原文](../../references/S-TRTLLM/reader.html) · [全文文本](../../references/S-TRTLLM/fulltext.txt)
+-- S-TRTLLM-CODE：[完整原文](../../references/S-TRTLLM-CODE/reader.html) · [全文文本](../../references/S-TRTLLM-CODE/fulltext.txt)
++- [S-TRTLLM：TensorRT-LLM Architecture Overview](../sources/S-TRTLLM.md)：已读 TensorRT-LLM 架构页将入口、PyExecutor、scheduler、model engine 与 sampler 连接成后台迭代，并介绍 graph padding 和 overlap 思路。
++  [完整原文](../../references/S-TRTLLM/reader.html) · [全文文本](../../references/S-TRTLLM/fulltext.txt)
+ 
+-- [S-TRTLLM：TensorRT-LLM Architecture Overview](../sources/S-TRTLLM.md)：已读 TensorRT-LLM 架构页将入口、PyExecutor、scheduler、model engine 与 sampler 连接成后台迭代，并介绍 graph padding 和 overlap 思路。
++- [S-TRTLLM-CODE：TensorRT-LLM PyExecutor 固定提交](../sources/S-TRTLLM-CODE.md)：固定历史提交的 PyExecutor 包含调度准备、_schedule、_sample_async 和异步传输管理。AsyncTransferManager 在发送与保存的全部使用者完成后解除 KV 保护；加载状态由其他路径处理。
++  [完整原文](../../references/S-TRTLLM-CODE/reader.html) · [全文文本](../../references/S-TRTLLM-CODE/fulltext.txt)
+ 
+-- [S-TRTLLM-CODE：TensorRT-LLM PyExecutor 固定提交](../sources/S-TRTLLM-CODE.md)：实际读取固定提交 0d2bea7c 的 PyExecutor 文件，核对调度准备、_schedule、_sample_async 和异步传输责任。AsyncTransferManager 需在多个传输使用者完成后解除保护。
+-
+-上文的公式展开、容量算例与组合设计是 InfraAgents 在这些机制基础上的推导，具体推导已写在本条正文中。来源入口均为本地释义，可继续读取其定义与使用关系。版本 3，2026-09-20。
++正文中的公式展开、容量算例与组合设计是基于这些来源的推导；设定算例不冒充实测。来源版本受 2026-04-30 上限约束，编辑日期 2026-10-22 不作为事实发布日期。此独立 base 版本内的章节修订号从 1 开始，原章节身份与版本映射保存在版本清单。
+ 
+ ## 延伸阅读
+ 
+--- input/knowledge/frameworks/inference-eval.md
++++ version/knowledge/frameworks/inference-eval.md
+@@ -24,17 +24,16 @@
+ 
+ ## 来源与推导
+ 
+-- S-TORCH-INFERENCE：[完整原文](../../references/S-TORCH-INFERENCE/reader.html) · [全文文本](../../references/S-TORCH-INFERENCE/fulltext.txt)
+-- S-TORCH-CUDA：[完整原文](../../references/S-TORCH-CUDA/reader.html) · [全文文本](../../references/S-TORCH-CUDA/fulltext.txt)
+-- S-TORCH-REPRO：[完整原文](../../references/S-TORCH-REPRO/reader.html) · [全文文本](../../references/S-TORCH-REPRO/fulltext.txt)
+-
+ - [S-TORCH-INFERENCE：PyTorch — inference_mode](../sources/S-TORCH-INFERENCE.md)：inference_mode 关闭推理不需要的 autograd 相关开销，并具有张量使用边界；它不会自动将模块切换到 eval 模式。
++  [完整原文](../../references/S-TORCH-INFERENCE/reader.html) · [全文文本](../../references/S-TORCH-INFERENCE/fulltext.txt)
+ 
+ - [S-TORCH-CUDA：PyTorch — CUDA semantics](../sources/S-TORCH-CUDA.md)：PyTorch CUDA 运算通常异步提交；不同 stream 的依赖需显式表达，allocator 还需要知道跨 stream 的使用。CUDA Graph 的重放路径依赖稳定的地址与兼容的执行结构。
++  [完整原文](../../references/S-TORCH-CUDA/reader.html) · [全文文本](../../references/S-TORCH-CUDA/fulltext.txt)
+ 
+ - [S-TORCH-REPRO：PyTorch — Reproducibility](../sources/S-TORCH-REPRO.md)：随机种子与确定性配置可以控制特定执行路径中的随机性，但不保证跨版本、平台和全部算法路径逐位一致。
++  [完整原文](../../references/S-TORCH-REPRO/reader.html) · [全文文本](../../references/S-TORCH-REPRO/fulltext.txt)
+ 
+-上文的公式展开、容量算例与组合设计是 InfraAgents 在这些机制基础上的推导，具体推导已写在本条正文中。来源入口均为本地释义，可继续读取其定义与使用关系。版本 4，2026-09-20。
++正文中的公式展开、容量算例与组合设计是基于这些来源的推导；设定算例不冒充实测。来源版本受 2026-04-30 上限约束，编辑日期 2026-10-22 不作为事实发布日期。此独立 base 版本内的章节修订号从 1 开始，原章节身份与版本映射保存在版本清单。
+ 
+ ## 延伸阅读
+ 
+--- input/knowledge/frameworks/numerical-reference.md
++++ version/knowledge/frameworks/numerical-reference.md
+@@ -24,17 +24,16 @@
+ 
+ ## 来源与推导
+ 
+-- S-TORCH-NUMERIC：[完整原文](../../references/S-TORCH-NUMERIC/reader.html) · [全文文本](../../references/S-TORCH-NUMERIC/fulltext.txt)
+-- S-TORCH-REPRO：[完整原文](../../references/S-TORCH-REPRO/reader.html) · [全文文本](../../references/S-TORCH-REPRO/fulltext.txt)
+-- S-GPTQ：[完整原文](../../references/S-GPTQ/reader.html) · [全文文本](../../references/S-GPTQ/fulltext.txt)
+-
+ - [S-TORCH-NUMERIC：PyTorch — Numerical accuracy](../sources/S-TORCH-NUMERIC.md)：浮点运算不满足实数运算的全部结合性质，批量方式、归约顺序和平台路径可以产生数值差异。数值格式、累加精度和极端输入影响误差。
++  [完整原文](../../references/S-TORCH-NUMERIC/reader.html) · [全文文本](../../references/S-TORCH-NUMERIC/fulltext.txt)
+ 
+ - [S-TORCH-REPRO：PyTorch — Reproducibility](../sources/S-TORCH-REPRO.md)：随机种子与确定性配置可以控制特定执行路径中的随机性，但不保证跨版本、平台和全部算法路径逐位一致。
++  [完整原文](../../references/S-TORCH-REPRO/reader.html) · [全文文本](../../references/S-TORCH-REPRO/fulltext.txt)
+ 
+ - [S-GPTQ：GPTQ: Accurate Post-Training Quantization for Generative Pre-trained Transformers](../sources/S-GPTQ.md)：GPTQ 是训练后权重量化方法，使用校准输入所反映的层输入结构，近似考虑量化误差对层输出的影响。它关注的目标不只是孤立权重元素的舍入误差。
++  [完整原文](../../references/S-GPTQ/reader.html) · [全文文本](../../references/S-GPTQ/fulltext.txt)
+ 
+-上文的公式展开、容量算例与组合设计是 InfraAgents 在这些机制基础上的推导，具体推导已写在本条正文中。来源入口均为本地释义，可继续读取其定义与使用关系。版本 4，2026-09-20。
++正文中的公式展开、容量算例与组合设计是基于这些来源的推导；设定算例不冒充实测。来源版本受 2026-04-30 上限约束，编辑日期 2026-10-22 不作为事实发布日期。此独立 base 版本内的章节修订号从 1 开始，原章节身份与版本映射保存在版本清单。
+ 
+ ## 延伸阅读
+ 
+--- input/knowledge/frameworks/streams-allocator.md
++++ version/knowledge/frameworks/streams-allocator.md
+@@ -24,17 +24,16 @@
+ 
+ ## 来源与推导
+ 
+-- S-TORCH-CUDA：[完整原文](../../references/S-TORCH-CUDA/reader.html) · [全文文本](../../references/S-TORCH-CUDA/fulltext.txt)
+-- S-CUDA-ASYNC：[完整原文](../../references/S-CUDA-ASYNC/reader.html) · [全文文本](../../references/S-CUDA-ASYNC/fulltext.txt)
+-- S-CUDA-ALLOC：[完整原文](../../references/S-CUDA-ALLOC/reader.html) · [全文文本](../../references/S-CUDA-ALLOC/fulltext.txt)
+-
+ - [S-TORCH-CUDA：PyTorch — CUDA semantics](../sources/S-TORCH-CUDA.md)：PyTorch CUDA 运算通常异步提交；不同 stream 的依赖需显式表达，allocator 还需要知道跨 stream 的使用。CUDA Graph 的重放路径依赖稳定的地址与兼容的执行结构。
++  [完整原文](../../references/S-TORCH-CUDA/reader.html) · [全文文本](../../references/S-TORCH-CUDA/fulltext.txt)
+ 
+ - [S-CUDA-ASYNC：CUDA Programming Guide — Asynchronous Execution](../sources/S-CUDA-ASYNC.md)：CUDA stream 表达设备工作的顺序，event 可以在不同执行队列间建立完成依赖。host 调用返回、设备工作开始和设备完成属于不同事件。
++  [完整原文](../../references/S-CUDA-ASYNC/reader.html) · [全文文本](../../references/S-CUDA-ASYNC/fulltext.txt)
+ 
+ - [S-CUDA-ALLOC：CUDA Programming Guide — Stream-Ordered Memory Allocator](../sources/S-CUDA-ALLOC.md)：stream-ordered allocator 将分配和释放纳入执行顺序。跨 stream 访问必须存在与分配、使用和释放相容的依赖。
++  [完整原文](../../references/S-CUDA-ALLOC/reader.html) · [全文文本](../../references/S-CUDA-ALLOC/fulltext.txt)
+ 
+-上文的公式展开、容量算例与组合设计是 InfraAgents 在这些机制基础上的推导，具体推导已写在本条正文中。来源入口均为本地释义，可继续读取其定义与使用关系。版本 4，2026-09-20。
++正文中的公式展开、容量算例与组合设计是基于这些来源的推导；设定算例不冒充实测。来源版本受 2026-04-30 上限约束，编辑日期 2026-10-22 不作为事实发布日期。此独立 base 版本内的章节修订号从 1 开始，原章节身份与版本映射保存在版本清单。
+ 
+ ## 延伸阅读
+ 
+--- input/knowledge/frameworks/compile-dynamic-shapes.md
++++ version/knowledge/frameworks/compile-dynamic-shapes.md
+@@ -28,17 +28,16 @@
+ 
+ ## 来源与推导
+ 
+-- S-TORCH-DYNAMIC：[完整原文](../../references/S-TORCH-DYNAMIC/reader.html) · [全文文本](../../references/S-TORCH-DYNAMIC/fulltext.txt)
+-- S-NXDI：[完整原文](../../references/S-NXDI/reader.html) · [全文文本](../../references/S-NXDI/fulltext.txt)
+-- S-TRITON：[完整原文](../../references/S-TRITON/reader.html) · [全文文本](../../references/S-TRITON/fulltext.txt)
+-
+ - [S-TORCH-DYNAMIC：PyTorch — Dynamic Shapes](../sources/S-TORCH-DYNAMIC.md)：编译会基于 shape、stride、dtype、常量等条件特化，并用 guard 确定专门程序是否可继续使用；部分维度可以符号化，变化也可能触发重编译。
++  [完整原文](../../references/S-TORCH-DYNAMIC/reader.html) · [全文文本](../../references/S-TORCH-DYNAMIC/fulltext.txt)
+ 
+ - [S-NXDI：NxD Inference Features Configuration Guide](../sources/S-NXDI.md)：NxD Inference 说明静态形状可执行程序通过分桶和 padding 承接不同长度，context encoding 与 token generation 可配置不同桶；持久状态与模型执行共同受配置约束。
++  [完整原文](../../references/S-NXDI/reader.html) · [全文文本](../../references/S-NXDI/fulltext.txt)
+ 
+ - [S-TRITON：Triton：Fused Attention](../sources/S-TRITON.md)：Triton 的 fused attention 示例展示块级张量程序、在线 softmax 归约、tile 划分与相应配置选择。逻辑 tile 和实际线程/寄存器布局有映射关系。
++  [完整原文](../../references/S-TRITON/reader.html) · [全文文本](../../references/S-TRITON/fulltext.txt)
+ 
+-上文的公式展开、容量算例与组合设计是 InfraAgents 在这些机制基础上的推导，具体推导已写在本条正文中。来源入口均为本地释义，可继续读取其定义与使用关系。版本 4，2026-09-20。
++正文中的公式展开、容量算例与组合设计是基于这些来源的推导；设定算例不冒充实测。来源版本受 2026-04-30 上限约束，编辑日期 2026-10-22 不作为事实发布日期。此独立 base 版本内的章节修订号从 1 开始，原章节身份与版本映射保存在版本清单。
+ 
+ ## 延伸阅读
+ 
+--- input/knowledge/frameworks/cuda-graph-buffers.md
++++ version/knowledge/frameworks/cuda-graph-buffers.md
+@@ -42,20 +42,19 @@
+ 
+ ## 来源与推导
+ 
+-- S-TORCH-CUDA：[完整原文](../../references/S-TORCH-CUDA/reader.html) · [全文文本](../../references/S-TORCH-CUDA/fulltext.txt)
+-- S-CUDA-ASYNC：[完整原文](../../references/S-CUDA-ASYNC/reader.html) · [全文文本](../../references/S-CUDA-ASYNC/fulltext.txt)
+-- S-FI：[完整原文](../../references/S-FI/reader.html) · [全文文本](../../references/S-FI/fulltext.txt)
+-- S-TRTLLM：[完整原文](../../references/S-TRTLLM/reader.html) · [全文文本](../../references/S-TRTLLM/fulltext.txt)
+-
+ - [S-TORCH-CUDA：PyTorch — CUDA semantics](../sources/S-TORCH-CUDA.md)：PyTorch CUDA 运算通常异步提交；不同 stream 的依赖需显式表达，allocator 还需要知道跨 stream 的使用。CUDA Graph 的重放路径依赖稳定的地址与兼容的执行结构。
++  [完整原文](../../references/S-TORCH-CUDA/reader.html) · [全文文本](../../references/S-TORCH-CUDA/fulltext.txt)
+ 
+ - [S-CUDA-ASYNC：CUDA Programming Guide — Asynchronous Execution](../sources/S-CUDA-ASYNC.md)：CUDA stream 表达设备工作的顺序，event 可以在不同执行队列间建立完成依赖。host 调用返回、设备工作开始和设备完成属于不同事件。
++  [完整原文](../../references/S-CUDA-ASYNC/reader.html) · [全文文本](../../references/S-CUDA-ASYNC/fulltext.txt)
+ 
+-- [S-FI：FlashInfer：Attention kernels](../sources/S-FI.md)：已读 FlashInfer 0.6.18 接口说明区分 query 分段、KV 页表及末页长度。一些 wrapper 的 plan 安排计算/工作区，run 执行 attention；相关 plan 不能直接捕获入图。
++- [S-FI：FlashInfer：Attention kernels](../sources/S-FI.md)：截止日前的 FlashInfer 固定源码区分 query 分段、KV 页表及末页长度。相关 wrapper 的 plan 安排计算与工作区，run 执行 attention；plan 的捕获限制与图模式缓冲须按该版本接口核对。
++  [完整原文](../../references/S-FI/reader.html) · [全文文本](../../references/S-FI/fulltext.txt)
+ 
+ - [S-TRTLLM：TensorRT-LLM Architecture Overview](../sources/S-TRTLLM.md)：已读 TensorRT-LLM 架构页将入口、PyExecutor、scheduler、model engine 与 sampler 连接成后台迭代，并介绍 graph padding 和 overlap 思路。
++  [完整原文](../../references/S-TRTLLM/reader.html) · [全文文本](../../references/S-TRTLLM/fulltext.txt)
+ 
+-上文的公式展开、容量算例与组合设计是 InfraAgents 在这些机制基础上的推导，具体推导已写在本条正文中。来源入口均为本地释义，可继续读取其定义与使用关系。版本 4，2026-09-20。
++正文中的公式展开、容量算例与组合设计是基于这些来源的推导；设定算例不冒充实测。来源版本受 2026-04-30 上限约束，编辑日期 2026-10-22 不作为事实发布日期。此独立 base 版本内的章节修订号从 1 开始，原章节身份与版本映射保存在版本清单。
+ 
+ ## 延伸阅读
+ 
+--- input/knowledge/frameworks/attention-backends.md
++++ version/knowledge/frameworks/attention-backends.md
+@@ -35,20 +35,19 @@
+ 
+ ## 来源与推导
+ 
+-- S-SDPA：[完整原文](../../references/S-SDPA/reader.html) · [全文文本](../../references/S-SDPA/fulltext.txt)
+-- S-FA-IMPL：[完整原文](../../references/S-FA-IMPL/reader.html) · [全文文本](../../references/S-FA-IMPL/fulltext.txt)
+-- S-FI：[完整原文](../../references/S-FI/reader.html) · [全文文本](../../references/S-FI/fulltext.txt)
+-- S-AITER：[完整原文](../../references/S-AITER/reader.html) · [全文文本](../../references/S-AITER/fulltext.txt)
+-
+ - [S-SDPA：PyTorch：scaled_dot_product_attention](../sources/S-SDPA.md)：已核对 SDPA 文档：布尔 mask 的 true 表示参与 attention；dropout_p 大于零时执行 dropout；非方形 is_causal 采用文档定义的左上对齐。Q、K/V heads 与通道形状有明确关系。
++  [完整原文](../../references/S-SDPA/reader.html) · [全文文本](../../references/S-SDPA/fulltext.txt)
+ 
+ - [S-FA-IMPL：FlashAttention 官方实现说明](../sources/S-FA-IMPL.md)：FlashAttention 的版本说明记录：2.1 将非等长 Q/K 的 causal 对齐由左上改成右下。示例 Q 长 2、K 长 5 时，右下对齐使两行分别可见前 4、5 个位置。
++  [完整原文](../../references/S-FA-IMPL/reader.html) · [全文文本](../../references/S-FA-IMPL/fulltext.txt)
+ 
+-- [S-FI：FlashInfer：Attention kernels](../sources/S-FI.md)：已读 FlashInfer 0.6.18 接口说明区分 query 分段、KV 页表及末页长度。一些 wrapper 的 plan 安排计算/工作区，run 执行 attention；相关 plan 不能直接捕获入图。
++- [S-FI：FlashInfer：Attention kernels](../sources/S-FI.md)：截止日前的 FlashInfer 固定源码区分 query 分段、KV 页表及末页长度。相关 wrapper 的 plan 安排计算与工作区，run 执行 attention；plan 的捕获限制与图模式缓冲须按该版本接口核对。
++  [完整原文](../../references/S-FI/reader.html) · [全文文本](../../references/S-FI/fulltext.txt)
+ 
+ - [S-AITER：ROCm AITER 官方仓库](../sources/S-AITER.md)：AITER 是 AMD ROCm 的算子实现项目，提供面向相应硬件的 attention、矩阵或相关算子路径。项目覆盖不代表每种形状和设备都有相同实现。
++  [完整原文](../../references/S-AITER/reader.html) · [全文文本](../../references/S-AITER/fulltext.txt)
+ 
+-上文的公式展开、容量算例与组合设计是 InfraAgents 在这些机制基础上的推导，具体推导已写在本条正文中。来源入口均为本地释义，可继续读取其定义与使用关系。版本 3，2026-09-20。
++正文中的公式展开、容量算例与组合设计是基于这些来源的推导；设定算例不冒充实测。来源版本受 2026-04-30 上限约束，编辑日期 2026-10-22 不作为事实发布日期。此独立 base 版本内的章节修订号从 1 开始，原章节身份与版本映射保存在版本清单。
+ 
+ ## 延伸阅读
+ 
+--- input/knowledge/frameworks/triton-kernels.md
++++ version/knowledge/frameworks/triton-kernels.md
+@@ -24,17 +24,16 @@
+ 
+ ## 来源与推导
+ 
+-- S-TRITON：[完整原文](../../references/S-TRITON/reader.html) · [全文文本](../../references/S-TRITON/fulltext.txt)
+-- S-CUDA-BEST：[完整原文](../../references/S-CUDA-BEST/reader.html) · [全文文本](../../references/S-CUDA-BEST/fulltext.txt)
+-- S-ROCM：[完整原文](../../references/S-ROCM/reader.html) · [全文文本](../../references/S-ROCM/fulltext.txt)
+-
+ - [S-TRITON：Triton：Fused Attention](../sources/S-TRITON.md)：Triton 的 fused attention 示例展示块级张量程序、在线 softmax 归约、tile 划分与相应配置选择。逻辑 tile 和实际线程/寄存器布局有映射关系。
++  [完整原文](../../references/S-TRITON/reader.html) · [全文文本](../../references/S-TRITON/fulltext.txt)
+ 
+ - [S-CUDA-BEST：CUDA C++ Best Practices Guide](../sources/S-CUDA-BEST.md)：CUDA 性能资料区分有效带宽、访存组织、数据传输和执行资源。合并访问、复用和减少不必要搬运会改变实际流量。
++  [完整原文](../../references/S-CUDA-BEST/reader.html) · [全文文本](../../references/S-CUDA-BEST/fulltext.txt)
+ 
+ - [S-ROCM：HIP：Hardware implementation](../sources/S-ROCM.md)：HIP 硬件说明介绍 CU、SIMD、向量寄存器、LDS 与矩阵运算资源。寄存器使用影响驻留和隐藏延迟能力，不同 AMD 架构的资源参数不同。
++  [完整原文](../../references/S-ROCM/reader.html) · [全文文本](../../references/S-ROCM/fulltext.txt)
+ 
+-上文的公式展开、容量算例与组合设计是 InfraAgents 在这些机制基础上的推导，具体推导已写在本条正文中。来源入口均为本地释义，可继续读取其定义与使用关系。版本 3，2026-09-20。
++正文中的公式展开、容量算例与组合设计是基于这些来源的推导；设定算例不冒充实测。来源版本受 2026-04-30 上限约束，编辑日期 2026-10-22 不作为事实发布日期。此独立 base 版本内的章节修订号从 1 开始，原章节身份与版本映射保存在版本清单。
+ 
+ ## 延伸阅读
+ 
+--- input/knowledge/frameworks/mlx-serving.md
++++ version/knowledge/frameworks/mlx-serving.md
+@@ -22,14 +22,13 @@
+ 
+ ## 来源与推导
+ 
+-- S-MLX：[完整原文](../../references/S-MLX/reader.html) · [全文文本](../../references/S-MLX/fulltext.txt)
+-- S-MLX-MEM：[完整原文](../../references/S-MLX-MEM/reader.html) · [全文文本](../../references/S-MLX-MEM/fulltext.txt)
+-
+ - [S-MLX：MLX：Lazy Evaluation](../sources/S-MLX.md)：MLX 的惰性求值先建立计算图；显式求值或主机访问结果等操作触发执行。过密求值和过大的未求值图会产生不同开销。
++  [完整原文](../../references/S-MLX/reader.html) · [全文文本](../../references/S-MLX/fulltext.txt)
+ 
+ - [S-MLX-MEM：MLX：Unified Memory](../sources/S-MLX-MEM.md)：MLX 利用 Apple Silicon 的统一内存，CPU/GPU 可以对共享内存中的数组执行操作，设备选择发生在操作执行层。
++  [完整原文](../../references/S-MLX-MEM/reader.html) · [全文文本](../../references/S-MLX-MEM/fulltext.txt)
+ 
+-上文的公式展开、容量算例与组合设计是 InfraAgents 在这些机制基础上的推导，具体推导已写在本条正文中。来源入口均为本地释义，可继续读取其定义与使用关系。版本 3，2026-09-20。
++正文中的公式展开、容量算例与组合设计是基于这些来源的推导；设定算例不冒充实测。来源版本受 2026-04-30 上限约束，编辑日期 2026-10-22 不作为事实发布日期。此独立 base 版本内的章节修订号从 1 开始，原章节身份与版本映射保存在版本清单。
+ 
+ ## 延伸阅读
+ 
+--- input/knowledge/frameworks/neuron-serving.md
++++ version/knowledge/frameworks/neuron-serving.md
+@@ -24,14 +24,13 @@
+ 
+ ## 来源与推导
+ 
+-- S-NXDI：[完整原文](../../references/S-NXDI/reader.html) · [全文文本](../../references/S-NXDI/fulltext.txt)
+-- S-NKI：[完整原文](../../references/S-NKI/reader.html) · [全文文本](../../references/S-NKI/fulltext.txt)
+-
+ - [S-NXDI：NxD Inference Features Configuration Guide](../sources/S-NXDI.md)：NxD Inference 说明静态形状可执行程序通过分桶和 padding 承接不同长度，context encoding 与 token generation 可配置不同桶；持久状态与模型执行共同受配置约束。
++  [完整原文](../../references/S-NXDI/reader.html) · [全文文本](../../references/S-NXDI/fulltext.txt)
+ 
+ - [S-NKI：Trainium2 Architecture Guide for NKI](../sources/S-NKI.md)：已读 Trainium2 NKI 资料区分 HBM、SBUF、PSUM、DMA 与计算引擎；片上张量的 partition/free 轴和转置路径具有具体硬件意义。
++  [完整原文](../../references/S-NKI/reader.html) · [全文文本](../../references/S-NKI/fulltext.txt)
+ 
+-上文的公式展开、容量算例与组合设计是 InfraAgents 在这些机制基础上的推导，具体推导已写在本条正文中。来源入口均为本地释义，可继续读取其定义与使用关系。版本 3，2026-09-20。
++正文中的公式展开、容量算例与组合设计是基于这些来源的推导；设定算例不冒充实测。来源版本受 2026-04-30 上限约束，编辑日期 2026-10-22 不作为事实发布日期。此独立 base 版本内的章节修订号从 1 开始，原章节身份与版本映射保存在版本清单。
+ 
+ ## 延伸阅读
+ 
+--- input/knowledge/frameworks/nki-tiling.md
++++ version/knowledge/frameworks/nki-tiling.md
+@@ -22,14 +22,13 @@
+ 
+ ## 来源与推导
+ 
+-- S-NKI：[完整原文](../../references/S-NKI/reader.html) · [全文文本](../../references/S-NKI/fulltext.txt)
+-- S-FLASH：[完整原文](../../references/S-FLASH/reader.html) · [全文文本](../../references/S-FLASH/fulltext.txt)
+-
+ - [S-NKI：Trainium2 Architecture Guide for NKI](../sources/S-NKI.md)：已读 Trainium2 NKI 资料区分 HBM、SBUF、PSUM、DMA 与计算引擎；片上张量的 partition/free 轴和转置路径具有具体硬件意义。
++  [完整原文](../../references/S-NKI/reader.html) · [全文文本](../../references/S-NKI/fulltext.txt)
+ 
+ - [S-FLASH：FlashAttention: Fast and Memory-Efficient Exact Attention with IO-Awareness](../sources/S-FLASH.md)：FlashAttention 通过片上分块和在线 softmax，避免将完整 attention 分数与概率矩阵写入设备主存；目标函数仍是精确 attention 的数学形式。
++  [完整原文](../../references/S-FLASH/reader.html) · [全文文本](../../references/S-FLASH/fulltext.txt)
+ 
+-上文的公式展开、容量算例与组合设计是 InfraAgents 在这些机制基础上的推导，具体推导已写在本条正文中。来源入口均为本地释义，可继续读取其定义与使用关系。版本 3，2026-09-20。
++正文中的公式展开、容量算例与组合设计是基于这些来源的推导；设定算例不冒充实测。来源版本受 2026-04-30 上限约束，编辑日期 2026-10-22 不作为事实发布日期。此独立 base 版本内的章节修订号从 1 开始，原章节身份与版本映射保存在版本清单。
+ 
+ ## 延伸阅读
+ 
+--- input/knowledge/hardware/memory-and-roofline.md
++++ version/knowledge/hardware/memory-and-roofline.md
+@@ -28,17 +28,16 @@
+ 
+ ## 来源与推导
+ 
+-- S-CUDA-BEST：[完整原文](../../references/S-CUDA-BEST/reader.html) · [全文文本](../../references/S-CUDA-BEST/fulltext.txt)
+-- S-PAGED：[完整原文](../../references/S-PAGED/reader.html) · [全文文本](../../references/S-PAGED/fulltext.txt)
+-- S-FLASH：[完整原文](../../references/S-FLASH/reader.html) · [全文文本](../../references/S-FLASH/fulltext.txt)
+-
+ - [S-CUDA-BEST：CUDA C++ Best Practices Guide](../sources/S-CUDA-BEST.md)：CUDA 性能资料区分有效带宽、访存组织、数据传输和执行资源。合并访问、复用和减少不必要搬运会改变实际流量。
++  [完整原文](../../references/S-CUDA-BEST/reader.html) · [全文文本](../../references/S-CUDA-BEST/fulltext.txt)
+ 
+ - [S-PAGED：Efficient Memory Management for Large Language Model Serving with PagedAttention](../sources/S-PAGED.md)：PagedAttention 把每条序列的逻辑 KV 划分为固定 token 数的块，用映射表访问不连续物理存储。多个序列可以共享相同前缀的物理块，分叉写入需要保持各序列状态独立。
++  [完整原文](../../references/S-PAGED/reader.html) · [全文文本](../../references/S-PAGED/fulltext.txt)
+ 
+ - [S-FLASH：FlashAttention: Fast and Memory-Efficient Exact Attention with IO-Awareness](../sources/S-FLASH.md)：FlashAttention 通过片上分块和在线 softmax，避免将完整 attention 分数与概率矩阵写入设备主存；目标函数仍是精确 attention 的数学形式。
++  [完整原文](../../references/S-FLASH/reader.html) · [全文文本](../../references/S-FLASH/fulltext.txt)
+ 
+-上文的公式展开、容量算例与组合设计是 InfraAgents 在这些机制基础上的推导，具体推导已写在本条正文中。来源入口均为本地释义，可继续读取其定义与使用关系。版本 4，2026-09-20。
++正文中的公式展开、容量算例与组合设计是基于这些来源的推导；设定算例不冒充实测。来源版本受 2026-04-30 上限约束，编辑日期 2026-10-22 不作为事实发布日期。此独立 base 版本内的章节修订号从 1 开始，原章节身份与版本映射保存在版本清单。
+ 
+ ## 延伸阅读
+ 
+--- input/knowledge/hardware/topology-parallelism.md
++++ version/knowledge/hardware/topology-parallelism.md
+@@ -24,17 +24,16 @@
+ 
+ ## 来源与推导
+ 
+-- S-CUDA-TOPOLOGY：[完整原文](../../references/S-CUDA-TOPOLOGY/reader.html) · [全文文本](../../references/S-CUDA-TOPOLOGY/fulltext.txt)
+-- S-NCCL-COLLECTIVE：[完整原文](../../references/S-NCCL-COLLECTIVE/reader.html) · [全文文本](../../references/S-NCCL-COLLECTIVE/fulltext.txt)
+-- S-NCCL-GROUP：[完整原文](../../references/S-NCCL-GROUP/reader.html) · [全文文本](../../references/S-NCCL-GROUP/fulltext.txt)
+-
+ - [S-CUDA-TOPOLOGY：CUDA Programming Guide — Programming Systems with Multiple GPUs](../sources/S-CUDA-TOPOLOGY.md)：多 GPU 系统涉及设备上下文、peer access、主机与设备连接路径。可通信和具有相同有效带宽不是同一性质。
++  [完整原文](../../references/S-CUDA-TOPOLOGY/reader.html) · [全文文本](../../references/S-CUDA-TOPOLOGY/fulltext.txt)
+ 
+ - [S-NCCL-COLLECTIVE：NCCL — Collective Operations](../sources/S-NCCL-COLLECTIVE.md)：集合通信操作由 communicator、参与 ranks、数据类型、数量、归约方式或 root 等共同定义。参与者必须执行相互匹配的逻辑操作。
++  [完整原文](../../references/S-NCCL-COLLECTIVE/reader.html) · [全文文本](../../references/S-NCCL-COLLECTIVE/fulltext.txt)
+ 
+ - [S-NCCL-GROUP：NCCL — Group Calls](../sources/S-NCCL-GROUP.md)：NCCL group calls 用于组织成组通信提交，调用次序与多设备使用需要符合其协议。组调用不替应用修复不匹配的通信顺序。
++  [完整原文](../../references/S-NCCL-GROUP/reader.html) · [全文文本](../../references/S-NCCL-GROUP/fulltext.txt)
+ 
+-上文的公式展开、容量算例与组合设计是 InfraAgents 在这些机制基础上的推导，具体推导已写在本条正文中。来源入口均为本地释义，可继续读取其定义与使用关系。版本 4，2026-09-20。
++正文中的公式展开、容量算例与组合设计是基于这些来源的推导；设定算例不冒充实测。来源版本受 2026-04-30 上限约束，编辑日期 2026-10-22 不作为事实发布日期。此独立 base 版本内的章节修订号从 1 开始，原章节身份与版本映射保存在版本清单。
+ 
+ ## 延伸阅读
+ 
+--- input/knowledge/hardware/host-device-transfer.md
++++ version/knowledge/hardware/host-device-transfer.md
+@@ -24,17 +24,16 @@
+ 
+ ## 来源与推导
+ 
+-- S-CUDA-ASYNC：[完整原文](../../references/S-CUDA-ASYNC/reader.html) · [全文文本](../../references/S-CUDA-ASYNC/fulltext.txt)
+-- S-CUDA-BEST：[完整原文](../../references/S-CUDA-BEST/reader.html) · [全文文本](../../references/S-CUDA-BEST/fulltext.txt)
+-- S-CUDA-ALLOC：[完整原文](../../references/S-CUDA-ALLOC/reader.html) · [全文文本](../../references/S-CUDA-ALLOC/fulltext.txt)
+-
+ - [S-CUDA-ASYNC：CUDA Programming Guide — Asynchronous Execution](../sources/S-CUDA-ASYNC.md)：CUDA stream 表达设备工作的顺序，event 可以在不同执行队列间建立完成依赖。host 调用返回、设备工作开始和设备完成属于不同事件。
++  [完整原文](../../references/S-CUDA-ASYNC/reader.html) · [全文文本](../../references/S-CUDA-ASYNC/fulltext.txt)
+ 
+ - [S-CUDA-BEST：CUDA C++ Best Practices Guide](../sources/S-CUDA-BEST.md)：CUDA 性能资料区分有效带宽、访存组织、数据传输和执行资源。合并访问、复用和减少不必要搬运会改变实际流量。
++  [完整原文](../../references/S-CUDA-BEST/reader.html) · [全文文本](../../references/S-CUDA-BEST/fulltext.txt)
+ 
+ - [S-CUDA-ALLOC：CUDA Programming Guide — Stream-Ordered Memory Allocator](../sources/S-CUDA-ALLOC.md)：stream-ordered allocator 将分配和释放纳入执行顺序。跨 stream 访问必须存在与分配、使用和释放相容的依赖。
++  [完整原文](../../references/S-CUDA-ALLOC/reader.html) · [全文文本](../../references/S-CUDA-ALLOC/fulltext.txt)
+ 
+-上文的公式展开、容量算例与组合设计是 InfraAgents 在这些机制基础上的推导，具体推导已写在本条正文中。来源入口均为本地释义，可继续读取其定义与使用关系。版本 4，2026-09-20。
++正文中的公式展开、容量算例与组合设计是基于这些来源的推导；设定算例不冒充实测。来源版本受 2026-04-30 上限约束，编辑日期 2026-10-22 不作为事实发布日期。此独立 base 版本内的章节修订号从 1 开始，原章节身份与版本映射保存在版本清单。
+ 
+ ## 延伸阅读
+ 
+--- input/knowledge/hardware/precision-and-kernel-support.md
++++ version/knowledge/hardware/precision-and-kernel-support.md
+@@ -24,17 +24,16 @@
+ 
+ ## 来源与推导
+ 
+-- S-CUDA-CAPABILITY：[完整原文](../../references/S-CUDA-CAPABILITY/reader.html) · [全文文本](../../references/S-CUDA-CAPABILITY/fulltext.txt)
+-- S-TORCH-NUMERIC：[完整原文](../../references/S-TORCH-NUMERIC/reader.html) · [全文文本](../../references/S-TORCH-NUMERIC/fulltext.txt)
+-- S-GPTQ：[完整原文](../../references/S-GPTQ/reader.html) · [全文文本](../../references/S-GPTQ/fulltext.txt)
+-
+ - [S-CUDA-CAPABILITY：CUDA Programming Guide — Compute Capabilities](../sources/S-CUDA-CAPABILITY.md)：CUDA 的硬件功能与数值指令能力按 compute capability 和设备代际区分；一种 dtype 可被表示并不意味着所有算子形态都有高效实现。
++  [完整原文](../../references/S-CUDA-CAPABILITY/reader.html) · [全文文本](../../references/S-CUDA-CAPABILITY/fulltext.txt)
+ 
+ - [S-TORCH-NUMERIC：PyTorch — Numerical accuracy](../sources/S-TORCH-NUMERIC.md)：浮点运算不满足实数运算的全部结合性质，批量方式、归约顺序和平台路径可以产生数值差异。数值格式、累加精度和极端输入影响误差。
++  [完整原文](../../references/S-TORCH-NUMERIC/reader.html) · [全文文本](../../references/S-TORCH-NUMERIC/fulltext.txt)
+ 
+ - [S-GPTQ：GPTQ: Accurate Post-Training Quantization for Generative Pre-trained Transformers](../sources/S-GPTQ.md)：GPTQ 是训练后权重量化方法，使用校准输入所反映的层输入结构，近似考虑量化误差对层输出的影响。它关注的目标不只是孤立权重元素的舍入误差。
++  [完整原文](../../references/S-GPTQ/reader.html) · [全文文本](../../references/S-GPTQ/fulltext.txt)
+ 
+-上文的公式展开、容量算例与组合设计是 InfraAgents 在这些机制基础上的推导，具体推导已写在本条正文中。来源入口均为本地释义，可继续读取其定义与使用关系。版本 4，2026-09-20。
++正文中的公式展开、容量算例与组合设计是基于这些来源的推导；设定算例不冒充实测。来源版本受 2026-04-30 上限约束，编辑日期 2026-10-22 不作为事实发布日期。此独立 base 版本内的章节修订号从 1 开始，原章节身份与版本映射保存在版本清单。
+ 
+ ## 延伸阅读
+ 
+--- input/knowledge/hardware/cuda-execution.md
++++ version/knowledge/hardware/cuda-execution.md
+@@ -24,17 +24,16 @@
+ 
+ ## 来源与推导
+ 
+-- S-CUDA-BEST：[完整原文](../../references/S-CUDA-BEST/reader.html) · [全文文本](../../references/S-CUDA-BEST/fulltext.txt)
+-- S-CUDA-CAPABILITY：[完整原文](../../references/S-CUDA-CAPABILITY/reader.html) · [全文文本](../../references/S-CUDA-CAPABILITY/fulltext.txt)
+-- S-CUDA-ASYNC：[完整原文](../../references/S-CUDA-ASYNC/reader.html) · [全文文本](../../references/S-CUDA-ASYNC/fulltext.txt)
+-
+ - [S-CUDA-BEST：CUDA C++ Best Practices Guide](../sources/S-CUDA-BEST.md)：CUDA 性能资料区分有效带宽、访存组织、数据传输和执行资源。合并访问、复用和减少不必要搬运会改变实际流量。
++  [完整原文](../../references/S-CUDA-BEST/reader.html) · [全文文本](../../references/S-CUDA-BEST/fulltext.txt)
+ 
+ - [S-CUDA-CAPABILITY：CUDA Programming Guide — Compute Capabilities](../sources/S-CUDA-CAPABILITY.md)：CUDA 的硬件功能与数值指令能力按 compute capability 和设备代际区分；一种 dtype 可被表示并不意味着所有算子形态都有高效实现。
++  [完整原文](../../references/S-CUDA-CAPABILITY/reader.html) · [全文文本](../../references/S-CUDA-CAPABILITY/fulltext.txt)
+ 
+ - [S-CUDA-ASYNC：CUDA Programming Guide — Asynchronous Execution](../sources/S-CUDA-ASYNC.md)：CUDA stream 表达设备工作的顺序，event 可以在不同执行队列间建立完成依赖。host 调用返回、设备工作开始和设备完成属于不同事件。
++  [完整原文](../../references/S-CUDA-ASYNC/reader.html) · [全文文本](../../references/S-CUDA-ASYNC/fulltext.txt)
+ 
+-上文的公式展开、容量算例与组合设计是 InfraAgents 在这些机制基础上的推导，具体推导已写在本条正文中。来源入口均为本地释义，可继续读取其定义与使用关系。版本 3，2026-09-20。
++正文中的公式展开、容量算例与组合设计是基于这些来源的推导；设定算例不冒充实测。来源版本受 2026-04-30 上限约束，编辑日期 2026-10-22 不作为事实发布日期。此独立 base 版本内的章节修订号从 1 开始，原章节身份与版本映射保存在版本清单。
+ 
+ ## 延伸阅读
+ 
+--- input/knowledge/hardware/rocm-execution.md
++++ version/knowledge/hardware/rocm-execution.md
+@@ -22,17 +22,16 @@
+ 
+ ## 来源与推导
+ 
+-- S-ROCM：[完整原文](../../references/S-ROCM/reader.html) · [全文文本](../../references/S-ROCM/fulltext.txt)
+-- S-AITER：[完整原文](../../references/S-AITER/reader.html) · [全文文本](../../references/S-AITER/fulltext.txt)
+-- S-TRITON：[完整原文](../../references/S-TRITON/reader.html) · [全文文本](../../references/S-TRITON/fulltext.txt)
+-
+ - [S-ROCM：HIP：Hardware implementation](../sources/S-ROCM.md)：HIP 硬件说明介绍 CU、SIMD、向量寄存器、LDS 与矩阵运算资源。寄存器使用影响驻留和隐藏延迟能力，不同 AMD 架构的资源参数不同。
++  [完整原文](../../references/S-ROCM/reader.html) · [全文文本](../../references/S-ROCM/fulltext.txt)
+ 
+ - [S-AITER：ROCm AITER 官方仓库](../sources/S-AITER.md)：AITER 是 AMD ROCm 的算子实现项目，提供面向相应硬件的 attention、矩阵或相关算子路径。项目覆盖不代表每种形状和设备都有相同实现。
++  [完整原文](../../references/S-AITER/reader.html) · [全文文本](../../references/S-AITER/fulltext.txt)
+ 
+ - [S-TRITON：Triton：Fused Attention](../sources/S-TRITON.md)：Triton 的 fused attention 示例展示块级张量程序、在线 softmax 归约、tile 划分与相应配置选择。逻辑 tile 和实际线程/寄存器布局有映射关系。
++  [完整原文](../../references/S-TRITON/reader.html) · [全文文本](../../references/S-TRITON/fulltext.txt)
+ 
+-上文的公式展开、容量算例与组合设计是 InfraAgents 在这些机制基础上的推导，具体推导已写在本条正文中。来源入口均为本地释义，可继续读取其定义与使用关系。版本 3，2026-09-20。
++正文中的公式展开、容量算例与组合设计是基于这些来源的推导；设定算例不冒充实测。来源版本受 2026-04-30 上限约束，编辑日期 2026-10-22 不作为事实发布日期。此独立 base 版本内的章节修订号从 1 开始，原章节身份与版本映射保存在版本清单。
+ 
+ ## 延伸阅读
+ 
+--- input/knowledge/hardware/metal-unified-memory.md
++++ version/knowledge/hardware/metal-unified-memory.md
+@@ -22,14 +22,13 @@
+ 
+ ## 来源与推导
+ 
+-- S-MLX-MEM：[完整原文](../../references/S-MLX-MEM/reader.html) · [全文文本](../../references/S-MLX-MEM/fulltext.txt)
+-- S-MLX：[完整原文](../../references/S-MLX/reader.html) · [全文文本](../../references/S-MLX/fulltext.txt)
+-
+ - [S-MLX-MEM：MLX：Unified Memory](../sources/S-MLX-MEM.md)：MLX 利用 Apple Silicon 的统一内存，CPU/GPU 可以对共享内存中的数组执行操作，设备选择发生在操作执行层。
++  [完整原文](../../references/S-MLX-MEM/reader.html) · [全文文本](../../references/S-MLX-MEM/fulltext.txt)
+ 
+ - [S-MLX：MLX：Lazy Evaluation](../sources/S-MLX.md)：MLX 的惰性求值先建立计算图；显式求值或主机访问结果等操作触发执行。过密求值和过大的未求值图会产生不同开销。
++  [完整原文](../../references/S-MLX/reader.html) · [全文文本](../../references/S-MLX/fulltext.txt)
+ 
+-上文的公式展开、容量算例与组合设计是 InfraAgents 在这些机制基础上的推导，具体推导已写在本条正文中。来源入口均为本地释义，可继续读取其定义与使用关系。版本 3，2026-09-20。
++正文中的公式展开、容量算例与组合设计是基于这些来源的推导；设定算例不冒充实测。来源版本受 2026-04-30 上限约束，编辑日期 2026-10-22 不作为事实发布日期。此独立 base 版本内的章节修订号从 1 开始，原章节身份与版本映射保存在版本清单。
+ 
+ ## 延伸阅读
+ 
+--- input/knowledge/hardware/trainium-dataflow.md
++++ version/knowledge/hardware/trainium-dataflow.md
+@@ -22,14 +22,13 @@
+ 
+ ## 来源与推导
+ 
+-- S-NKI：[完整原文](../../references/S-NKI/reader.html) · [全文文本](../../references/S-NKI/fulltext.txt)
+-- S-NXDI：[完整原文](../../references/S-NXDI/reader.html) · [全文文本](../../references/S-NXDI/fulltext.txt)
+-
+ - [S-NKI：Trainium2 Architecture Guide for NKI](../sources/S-NKI.md)：已读 Trainium2 NKI 资料区分 HBM、SBUF、PSUM、DMA 与计算引擎；片上张量的 partition/free 轴和转置路径具有具体硬件意义。
++  [完整原文](../../references/S-NKI/reader.html) · [全文文本](../../references/S-NKI/fulltext.txt)
+ 
+ - [S-NXDI：NxD Inference Features Configuration Guide](../sources/S-NXDI.md)：NxD Inference 说明静态形状可执行程序通过分桶和 padding 承接不同长度，context encoding 与 token generation 可配置不同桶；持久状态与模型执行共同受配置约束。
++  [完整原文](../../references/S-NXDI/reader.html) · [全文文本](../../references/S-NXDI/fulltext.txt)
+ 
+-上文的公式展开、容量算例与组合设计是 InfraAgents 在这些机制基础上的推导，具体推导已写在本条正文中。来源入口均为本地释义，可继续读取其定义与使用关系。版本 3，2026-09-20。
++正文中的公式展开、容量算例与组合设计是基于这些来源的推导；设定算例不冒充实测。来源版本受 2026-04-30 上限约束，编辑日期 2026-10-22 不作为事实发布日期。此独立 base 版本内的章节修订号从 1 开始，原章节身份与版本映射保存在版本清单。
+ 
+ ## 延伸阅读
+ 
+--- input/knowledge/hardware/cpu-serving.md
++++ version/knowledge/hardware/cpu-serving.md
+@@ -24,14 +24,13 @@
+ 
+ ## 来源与推导
+ 
+-- S-CPU-TUNING：[完整原文](../../references/S-CPU-TUNING/reader.html) · [全文文本](../../references/S-CPU-TUNING/fulltext.txt)
+-- S-TORCH-NUMERIC：[完整原文](../../references/S-TORCH-NUMERIC/reader.html) · [全文文本](../../references/S-TORCH-NUMERIC/fulltext.txt)
+-
+ - [S-CPU-TUNING：PyTorch Performance Tuning Guide](../sources/S-CPU-TUNING.md)：PyTorch CPU 调优资料涉及线程组织、NUMA、向量化与执行配置；线程数和内存归属影响真实可用资源。
++  [完整原文](../../references/S-CPU-TUNING/reader.html) · [全文文本](../../references/S-CPU-TUNING/fulltext.txt)
+ 
+ - [S-TORCH-NUMERIC：PyTorch — Numerical accuracy](../sources/S-TORCH-NUMERIC.md)：浮点运算不满足实数运算的全部结合性质，批量方式、归约顺序和平台路径可以产生数值差异。数值格式、累加精度和极端输入影响误差。
++  [完整原文](../../references/S-TORCH-NUMERIC/reader.html) · [全文文本](../../references/S-TORCH-NUMERIC/fulltext.txt)
+ 
+-上文的公式展开、容量算例与组合设计是 InfraAgents 在这些机制基础上的推导，具体推导已写在本条正文中。来源入口均为本地释义，可继续读取其定义与使用关系。版本 3，2026-09-20。
++正文中的公式展开、容量算例与组合设计是基于这些来源的推导；设定算例不冒充实测。来源版本受 2026-04-30 上限约束，编辑日期 2026-10-22 不作为事实发布日期。此独立 base 版本内的章节修订号从 1 开始，原章节身份与版本映射保存在版本清单。
+ 
+ ## 延伸阅读
+ 
+--- input/knowledge/models/prefill-decode-state.md
++++ version/knowledge/models/prefill-decode-state.md
+@@ -37,17 +37,16 @@
+ 
+ ## 来源与推导
+ 
+-- S-TRANSFORMER：[完整原文](../../references/S-TRANSFORMER/reader.html) · [全文文本](../../references/S-TRANSFORMER/fulltext.txt)
+-- S-HF-CACHE：[完整原文](../../references/S-HF-CACHE/reader.html) · [全文文本](../../references/S-HF-CACHE/fulltext.txt)
+-- S-SARATHI：[完整原文](../../references/S-SARATHI/reader.html) · [全文文本](../../references/S-SARATHI/fulltext.txt)
+-
+ - [S-TRANSFORMER：Attention Is All You Need](../sources/S-TRANSFORMER.md)：Transformer 的 attention 用 query 与 keys 的分数生成归一化权重，再对 values 加权；encoder-decoder attention 的 Q 来自 decoder，K/V 来自 encoder 表示。
++  [完整原文](../../references/S-TRANSFORMER/reader.html) · [全文文本](../../references/S-TRANSFORMER/fulltext.txt)
+ 
+ - [S-HF-CACHE：Transformers — Caching](../sources/S-HF-CACHE.md)：Transformers 的缓存说明区分已存历史 K/V、新输入、attention mask 和 cache position。增量前向需要让新 token 的位置与已有缓存长度一致。
++  [完整原文](../../references/S-HF-CACHE/reader.html) · [全文文本](../../references/S-HF-CACHE/fulltext.txt)
+ 
+ - [S-SARATHI：SARATHI: Efficient LLM Inference by Piggybacking Decodes with Chunked Prefills](../sources/S-SARATHI.md)：SARATHI 将长 prefill 切块，并在合适的批处理中与 decode 组织在一起，以减少两类工作之间的干扰并利用计算资源。
++  [完整原文](../../references/S-SARATHI/reader.html) · [全文文本](../../references/S-SARATHI/fulltext.txt)
+ 
+-上文的公式展开、容量算例与组合设计是 InfraAgents 在这些机制基础上的推导，具体推导已写在本条正文中。来源入口均为本地释义，可继续读取其定义与使用关系。版本 4，2026-09-20。
++正文中的公式展开、容量算例与组合设计是基于这些来源的推导；设定算例不冒充实测。来源版本受 2026-04-30 上限约束，编辑日期 2026-10-22 不作为事实发布日期。此独立 base 版本内的章节修订号从 1 开始，原章节身份与版本映射保存在版本清单。
+ 
+ ## 延伸阅读
+ 
+--- input/knowledge/models/gqa-kv-heads.md
++++ version/knowledge/models/gqa-kv-heads.md
+@@ -26,17 +26,16 @@
+ 
+ ## 来源与推导
+ 
+-- S-GQA：[完整原文](../../references/S-GQA/reader.html) · [全文文本](../../references/S-GQA/fulltext.txt)
+-- S-HF-CACHE：[完整原文](../../references/S-HF-CACHE/reader.html) · [全文文本](../../references/S-HF-CACHE/fulltext.txt)
+-- S-FI：[完整原文](../../references/S-FI/reader.html) · [全文文本](../../references/S-FI/fulltext.txt)
+-
+ - [S-GQA：GQA: Training Generalized Multi-Query Transformer Models from Multi-Head Checkpoints](../sources/S-GQA.md)：GQA 让一组 query heads 共享 K/V heads；MQA 是只保留一组 K/V 的特殊形态。输出 query head 数与 KV head 数需要分别描述。
++  [完整原文](../../references/S-GQA/reader.html) · [全文文本](../../references/S-GQA/fulltext.txt)
+ 
+ - [S-HF-CACHE：Transformers — Caching](../sources/S-HF-CACHE.md)：Transformers 的缓存说明区分已存历史 K/V、新输入、attention mask 和 cache position。增量前向需要让新 token 的位置与已有缓存长度一致。
++  [完整原文](../../references/S-HF-CACHE/reader.html) · [全文文本](../../references/S-HF-CACHE/fulltext.txt)
+ 
+-- [S-FI：FlashInfer：Attention kernels](../sources/S-FI.md)：已读 FlashInfer 0.6.18 接口说明区分 query 分段、KV 页表及末页长度。一些 wrapper 的 plan 安排计算/工作区，run 执行 attention；相关 plan 不能直接捕获入图。
++- [S-FI：FlashInfer：Attention kernels](../sources/S-FI.md)：截止日前的 FlashInfer 固定源码区分 query 分段、KV 页表及末页长度。相关 wrapper 的 plan 安排计算与工作区，run 执行 attention；plan 的捕获限制与图模式缓冲须按该版本接口核对。
++  [完整原文](../../references/S-FI/reader.html) · [全文文本](../../references/S-FI/fulltext.txt)
+ 
+-上文的公式展开、容量算例与组合设计是 InfraAgents 在这些机制基础上的推导，具体推导已写在本条正文中。来源入口均为本地释义，可继续读取其定义与使用关系。版本 4，2026-09-20。
++正文中的公式展开、容量算例与组合设计是基于这些来源的推导；设定算例不冒充实测。来源版本受 2026-04-30 上限约束，编辑日期 2026-10-22 不作为事实发布日期。此独立 base 版本内的章节修订号从 1 开始，原章节身份与版本映射保存在版本清单。
+ 
+ ## 延伸阅读
+ 
+--- input/knowledge/models/moe-routing.md
++++ version/knowledge/models/moe-routing.md
+@@ -28,17 +28,16 @@
+ 
+ ## 来源与推导
+ 
+-- S-MIXTRAL：[完整原文](../../references/S-MIXTRAL/reader.html) · [全文文本](../../references/S-MIXTRAL/fulltext.txt)
+-- S-MLA：[完整原文](../../references/S-MLA/reader.html) · [全文文本](../../references/S-MLA/fulltext.txt)
+-- S-NCCL-COLLECTIVE：[完整原文](../../references/S-NCCL-COLLECTIVE/reader.html) · [全文文本](../../references/S-NCCL-COLLECTIVE/fulltext.txt)
+-
+ - [S-MIXTRAL：Mixtral of Experts](../sources/S-MIXTRAL.md)：Mixtral 采用稀疏专家结构：每个 token 根据路由选择部分专家参与计算，而专家总参数与每 token 激活参数是不同数量。
++  [完整原文](../../references/S-MIXTRAL/reader.html) · [全文文本](../../references/S-MIXTRAL/fulltext.txt)
+ 
+ - [S-MLA：DeepSeek-V2：MLA 与解耦位置编码](../sources/S-MLA.md)：DeepSeek-V2 的 MLA 以低维 latent 联合表示内容 K/V，通过线性投影的吸收减少历史展开；位置相关旋转不能任意与投影交换，因此采用解耦 RoPE 分量。
++  [完整原文](../../references/S-MLA/reader.html) · [全文文本](../../references/S-MLA/fulltext.txt)
+ 
+ - [S-NCCL-COLLECTIVE：NCCL — Collective Operations](../sources/S-NCCL-COLLECTIVE.md)：集合通信操作由 communicator、参与 ranks、数据类型、数量、归约方式或 root 等共同定义。参与者必须执行相互匹配的逻辑操作。
++  [完整原文](../../references/S-NCCL-COLLECTIVE/reader.html) · [全文文本](../../references/S-NCCL-COLLECTIVE/fulltext.txt)
+ 
+-上文的公式展开、容量算例与组合设计是 InfraAgents 在这些机制基础上的推导，具体推导已写在本条正文中。来源入口均为本地释义，可继续读取其定义与使用关系。版本 4，2026-09-20。
++正文中的公式展开、容量算例与组合设计是基于这些来源的推导；设定算例不冒充实测。来源版本受 2026-04-30 上限约束，编辑日期 2026-10-22 不作为事实发布日期。此独立 base 版本内的章节修订号从 1 开始，原章节身份与版本映射保存在版本清单。
+ 
+ ## 延伸阅读
+ 
+--- input/knowledge/models/recurrent-hybrid-state.md
++++ version/knowledge/models/recurrent-hybrid-state.md
+@@ -28,17 +28,16 @@
+ 
+ ## 来源与推导
+ 
+-- S-MAMBA：[完整原文](../../references/S-MAMBA/reader.html) · [全文文本](../../references/S-MAMBA/fulltext.txt)
+-- S-VLLM-HYBRID：[完整原文](../../references/S-VLLM-HYBRID/reader.html) · [全文文本](../../references/S-VLLM-HYBRID/fulltext.txt)
+-- S-HF-CACHE：[完整原文](../../references/S-HF-CACHE/reader.html) · [全文文本](../../references/S-HF-CACHE/fulltext.txt)
++- [S-MAMBA：Mamba: Linear-Time Sequence Modeling with Selective State Spaces](../sources/S-MAMBA.md)：Mamba 使用输入相关的选择性状态空间机制。递归生成保留有限大小的状态，长序列处理可以采用专门的扫描/分块执行方式。
++  [完整原文](../../references/S-MAMBA/reader.html) · [全文文本](../../references/S-MAMBA/fulltext.txt)
+ 
+-- [S-MAMBA：Mamba: Linear-Time Sequence Modeling with Selective State Spaces](../sources/S-MAMBA.md)：Mamba 使用输入相关的选择性状态空间机制。递归生成保留有限大小的状态，长序列处理可以采用专门的扫描/分块执行方式。
+-
+-- [S-VLLM-HYBRID：vLLM：Hybrid KV Cache Manager](../sources/S-VLLM-HYBRID.md)：已读 0.18 设计文档注明其基于提交 458e74，区分 KV hidden bytes、token block size 和物理 page size，讨论层组统一池以及各组前缀命中的交集。
++- [S-VLLM-HYBRID：vLLM：Hybrid KV Cache Manager](../sources/S-VLLM-HYBRID.md)：固定历史设计文档区分 KV hidden bytes、token block size 和物理 page size，讨论异构层分组、统一分配以及各组可恢复前缀的交集。具体功能限制只适用于该文档版本。
++  [完整原文](../../references/S-VLLM-HYBRID/reader.html) · [全文文本](../../references/S-VLLM-HYBRID/fulltext.txt)
+ 
+ - [S-HF-CACHE：Transformers — Caching](../sources/S-HF-CACHE.md)：Transformers 的缓存说明区分已存历史 K/V、新输入、attention mask 和 cache position。增量前向需要让新 token 的位置与已有缓存长度一致。
++  [完整原文](../../references/S-HF-CACHE/reader.html) · [全文文本](../../references/S-HF-CACHE/fulltext.txt)
+ 
+-上文的公式展开、容量算例与组合设计是 InfraAgents 在这些机制基础上的推导，具体推导已写在本条正文中。来源入口均为本地释义，可继续读取其定义与使用关系。版本 4，2026-09-20。
++正文中的公式展开、容量算例与组合设计是基于这些来源的推导；设定算例不冒充实测。来源版本受 2026-04-30 上限约束，编辑日期 2026-10-22 不作为事实发布日期。此独立 base 版本内的章节修订号从 1 开始，原章节身份与版本映射保存在版本清单。
+ 
+ ## 延伸阅读
+ 
+--- input/knowledge/models/encoder-decoder-streaming.md
++++ version/knowledge/models/encoder-decoder-streaming.md
+@@ -28,17 +28,16 @@
+ 
+ ## 来源与推导
+ 
+-- S-TRANSFORMER：[完整原文](../../references/S-TRANSFORMER/reader.html) · [全文文本](../../references/S-TRANSFORMER/fulltext.txt)
+-- S-WHISPER：[完整原文](../../references/S-WHISPER/reader.html) · [全文文本](../../references/S-WHISPER/fulltext.txt)
+-- S-MOONSHINE：[完整原文](../../references/S-MOONSHINE/reader.html) · [全文文本](../../references/S-MOONSHINE/fulltext.txt)
+-
+ - [S-TRANSFORMER：Attention Is All You Need](../sources/S-TRANSFORMER.md)：Transformer 的 attention 用 query 与 keys 的分数生成归一化权重，再对 values 加权；encoder-decoder attention 的 Q 来自 decoder，K/V 来自 encoder 表示。
++  [完整原文](../../references/S-TRANSFORMER/reader.html) · [全文文本](../../references/S-TRANSFORMER/fulltext.txt)
+ 
+ - [S-WHISPER：Robust Speech Recognition via Large-Scale Weak Supervision](../sources/S-WHISPER.md)：Whisper 采用语音 encoder-decoder 和任务条件 token。音频编码与目标文本自回归是不同阶段，decoder 使用源表示完成条件生成。
++  [完整原文](../../references/S-WHISPER/reader.html) · [全文文本](../../references/S-WHISPER/fulltext.txt)
+ 
+ - [S-MOONSHINE：Moonshine: Speech Recognition for Live Transcription and Voice Commands](../sources/S-MOONSHINE.md)：Moonshine 面向语音识别的 encoder-decoder 结构和变长音频处理，源音频表示与目标文本生成具有不同长度和计算阶段。
++  [完整原文](../../references/S-MOONSHINE/reader.html) · [全文文本](../../references/S-MOONSHINE/fulltext.txt)
+ 
+-上文的公式展开、容量算例与组合设计是 InfraAgents 在这些机制基础上的推导，具体推导已写在本条正文中。来源入口均为本地释义，可继续读取其定义与使用关系。版本 4，2026-09-20。
++正文中的公式展开、容量算例与组合设计是基于这些来源的推导；设定算例不冒充实测。来源版本受 2026-04-30 上限约束，编辑日期 2026-10-22 不作为事实发布日期。此独立 base 版本内的章节修订号从 1 开始，原章节身份与版本映射保存在版本清单。
+ 
+ ## 延伸阅读
+ 
+--- input/knowledge/models/mla.md
++++ version/knowledge/models/mla.md
+@@ -28,17 +28,16 @@
+ 
+ ## 来源与推导
+ 
+-- S-MLA：[完整原文](../../references/S-MLA/reader.html) · [全文文本](../../references/S-MLA/fulltext.txt)
+-- S-FI：[完整原文](../../references/S-FI/reader.html) · [全文文本](../../references/S-FI/fulltext.txt)
+-- S-TORCH-NUMERIC：[完整原文](../../references/S-TORCH-NUMERIC/reader.html) · [全文文本](../../references/S-TORCH-NUMERIC/fulltext.txt)
++- [S-MLA：DeepSeek-V2：MLA 与解耦位置编码](../sources/S-MLA.md)：DeepSeek-V2 的 MLA 以低维 latent 联合表示内容 K/V，通过线性投影的吸收减少历史展开；位置相关旋转不能任意与投影交换，因此采用解耦 RoPE 分量。
++  [完整原文](../../references/S-MLA/reader.html) · [全文文本](../../references/S-MLA/fulltext.txt)
+ 
+-- [S-MLA：DeepSeek-V2：MLA 与解耦位置编码](../sources/S-MLA.md)：DeepSeek-V2 的 MLA 以低维 latent 联合表示内容 K/V，通过线性投影的吸收减少历史展开；位置相关旋转不能任意与投影交换，因此采用解耦 RoPE 分量。
+-
+-- [S-FI：FlashInfer：Attention kernels](../sources/S-FI.md)：已读 FlashInfer 0.6.18 接口说明区分 query 分段、KV 页表及末页长度。一些 wrapper 的 plan 安排计算/工作区，run 执行 attention；相关 plan 不能直接捕获入图。
++- [S-FI：FlashInfer：Attention kernels](../sources/S-FI.md)：截止日前的 FlashInfer 固定源码区分 query 分段、KV 页表及末页长度。相关 wrapper 的 plan 安排计算与工作区，run 执行 attention；plan 的捕获限制与图模式缓冲须按该版本接口核对。
++  [完整原文](../../references/S-FI/reader.html) · [全文文本](../../references/S-FI/fulltext.txt)
+ 
+ - [S-TORCH-NUMERIC：PyTorch — Numerical accuracy](../sources/S-TORCH-NUMERIC.md)：浮点运算不满足实数运算的全部结合性质，批量方式、归约顺序和平台路径可以产生数值差异。数值格式、累加精度和极端输入影响误差。
++  [完整原文](../../references/S-TORCH-NUMERIC/reader.html) · [全文文本](../../references/S-TORCH-NUMERIC/fulltext.txt)
+ 
+-上文的公式展开、容量算例与组合设计是 InfraAgents 在这些机制基础上的推导，具体推导已写在本条正文中。来源入口均为本地释义，可继续读取其定义与使用关系。版本 3，2026-09-20。
++正文中的公式展开、容量算例与组合设计是基于这些来源的推导；设定算例不冒充实测。来源版本受 2026-04-30 上限约束，编辑日期 2026-10-22 不作为事实发布日期。此独立 base 版本内的章节修订号从 1 开始，原章节身份与版本映射保存在版本清单。
+ 
+ ## 延伸阅读
+ 
+--- input/knowledge/models/sliding-window-attention.md
++++ version/knowledge/models/sliding-window-attention.md
+@@ -24,17 +24,16 @@
+ 
+ ## 来源与推导
+ 
+-- S-MISTRAL：[完整原文](../../references/S-MISTRAL/reader.html) · [全文文本](../../references/S-MISTRAL/fulltext.txt)
+-- S-HF-CACHE：[完整原文](../../references/S-HF-CACHE/reader.html) · [全文文本](../../references/S-HF-CACHE/fulltext.txt)
+-- S-VLLM-HYBRID：[完整原文](../../references/S-VLLM-HYBRID/reader.html) · [全文文本](../../references/S-VLLM-HYBRID/fulltext.txt)
+-
+ - [S-MISTRAL：Mistral 7B](../sources/S-MISTRAL.md)：Mistral 7B 提供滑动窗口 attention 的具体模型例子：局部可见历史与滚动状态可以降低相关层的直接历史成本。
++  [完整原文](../../references/S-MISTRAL/reader.html) · [全文文本](../../references/S-MISTRAL/fulltext.txt)
+ 
+ - [S-HF-CACHE：Transformers — Caching](../sources/S-HF-CACHE.md)：Transformers 的缓存说明区分已存历史 K/V、新输入、attention mask 和 cache position。增量前向需要让新 token 的位置与已有缓存长度一致。
++  [完整原文](../../references/S-HF-CACHE/reader.html) · [全文文本](../../references/S-HF-CACHE/fulltext.txt)
+ 
+-- [S-VLLM-HYBRID：vLLM：Hybrid KV Cache Manager](../sources/S-VLLM-HYBRID.md)：已读 0.18 设计文档注明其基于提交 458e74，区分 KV hidden bytes、token block size 和物理 page size，讨论层组统一池以及各组前缀命中的交集。
++- [S-VLLM-HYBRID：vLLM：Hybrid KV Cache Manager](../sources/S-VLLM-HYBRID.md)：固定历史设计文档区分 KV hidden bytes、token block size 和物理 page size，讨论异构层分组、统一分配以及各组可恢复前缀的交集。具体功能限制只适用于该文档版本。
++  [完整原文](../../references/S-VLLM-HYBRID/reader.html) · [全文文本](../../references/S-VLLM-HYBRID/fulltext.txt)
+ 
+-上文的公式展开、容量算例与组合设计是 InfraAgents 在这些机制基础上的推导，具体推导已写在本条正文中。来源入口均为本地释义，可继续读取其定义与使用关系。版本 3，2026-09-20。
++正文中的公式展开、容量算例与组合设计是基于这些来源的推导；设定算例不冒充实测。来源版本受 2026-04-30 上限约束，编辑日期 2026-10-22 不作为事实发布日期。此独立 base 版本内的章节修订号从 1 开始，原章节身份与版本映射保存在版本清单。
+ 
+ ## 延伸阅读
+ 
+--- input/knowledge/models/vision-language.md
++++ version/knowledge/models/vision-language.md
+@@ -28,17 +28,16 @@
+ 
+ ## 来源与推导
+ 
+-- S-QWEN-VL：[完整原文](../../references/S-QWEN-VL/reader.html) · [全文文本](../../references/S-QWEN-VL/fulltext.txt)
+-- S-TRANSFORMER：[完整原文](../../references/S-TRANSFORMER/reader.html) · [全文文本](../../references/S-TRANSFORMER/fulltext.txt)
+-- S-HF-CACHE：[完整原文](../../references/S-HF-CACHE/reader.html) · [全文文本](../../references/S-HF-CACHE/fulltext.txt)
+-
+ - [S-QWEN-VL：Qwen2.5-VL Technical Report](../sources/S-QWEN-VL.md)：Qwen2.5-VL 报告讨论动态视觉分辨率、窗口视觉编码及时间相关的多模态位置，视觉输入具有独立的网格和时间几何。
++  [完整原文](../../references/S-QWEN-VL/reader.html) · [全文文本](../../references/S-QWEN-VL/fulltext.txt)
+ 
+ - [S-TRANSFORMER：Attention Is All You Need](../sources/S-TRANSFORMER.md)：Transformer 的 attention 用 query 与 keys 的分数生成归一化权重，再对 values 加权；encoder-decoder attention 的 Q 来自 decoder，K/V 来自 encoder 表示。
++  [完整原文](../../references/S-TRANSFORMER/reader.html) · [全文文本](../../references/S-TRANSFORMER/fulltext.txt)
+ 
+ - [S-HF-CACHE：Transformers — Caching](../sources/S-HF-CACHE.md)：Transformers 的缓存说明区分已存历史 K/V、新输入、attention mask 和 cache position。增量前向需要让新 token 的位置与已有缓存长度一致。
++  [完整原文](../../references/S-HF-CACHE/reader.html) · [全文文本](../../references/S-HF-CACHE/fulltext.txt)
+ 
+-上文的公式展开、容量算例与组合设计是 InfraAgents 在这些机制基础上的推导，具体推导已写在本条正文中。来源入口均为本地释义，可继续读取其定义与使用关系。版本 3，2026-09-20。
++正文中的公式展开、容量算例与组合设计是基于这些来源的推导；设定算例不冒充实测。来源版本受 2026-04-30 上限约束，编辑日期 2026-10-22 不作为事实发布日期。此独立 base 版本内的章节修订号从 1 开始，原章节身份与版本映射保存在版本清单。
+ 
+ ## 延伸阅读
+ 
+--- input/knowledge/models/image-diffusion.md
++++ version/knowledge/models/image-diffusion.md
+@@ -24,17 +24,16 @@
+ 
+ ## 来源与推导
+ 
+-- S-LDM：[完整原文](../../references/S-LDM/reader.html) · [全文文本](../../references/S-LDM/fulltext.txt)
+-- S-DIT：[完整原文](../../references/S-DIT/reader.html) · [全文文本](../../references/S-DIT/fulltext.txt)
+-- S-DIFFUSERS：[完整原文](../../references/S-DIFFUSERS/reader.html) · [全文文本](../../references/S-DIFFUSERS/fulltext.txt)
+-
+ - [S-LDM：High-Resolution Image Synthesis with Latent Diffusion Models](../sources/S-LDM.md)：Latent Diffusion 把去噪计算放在编码器形成的潜空间，通过条件机制引导生成，并最终解码到像素空间。
++  [完整原文](../../references/S-LDM/reader.html) · [全文文本](../../references/S-LDM/fulltext.txt)
+ 
+ - [S-DIT：Scalable Diffusion Models with Transformers](../sources/S-DIT.md)：DiT 使用 Transformer 处理潜空间 patch，去噪计算的 token 几何由 latent 网格和 patch 化决定。
++  [完整原文](../../references/S-DIT/reader.html) · [全文文本](../../references/S-DIT/fulltext.txt)
+ 
+-- [S-DIFFUSERS：Diffusers：Schedulers](../sources/S-DIFFUSERS.md)：Diffusers 的 scheduler 说明连接模型预测、当前 latent 和时间步更新；不同预测参数化与 scheduler 配置需要相容。
++- [S-DIFFUSERS：Diffusers — Scheduler 与 DDIM（固定历史源码）](../sources/S-DIFFUSERS.md)：Diffusers 的固定 scheduler 源码定义 scheduler 配置、模型预测与时间步更新；DDIM 文件给出 latent 更新及 prediction_type 的不同分支。当前材料不把后续版本的默认参数当作通用规则。
++  [完整原文](../../references/S-DIFFUSERS/reader.html) · [全文文本](../../references/S-DIFFUSERS/fulltext.txt)
+ 
+-上文的公式展开、容量算例与组合设计是 InfraAgents 在这些机制基础上的推导，具体推导已写在本条正文中。来源入口均为本地释义，可继续读取其定义与使用关系。版本 3，2026-09-20。
++正文中的公式展开、容量算例与组合设计是基于这些来源的推导；设定算例不冒充实测。来源版本受 2026-04-30 上限约束，编辑日期 2026-10-22 不作为事实发布日期。此独立 base 版本内的章节修订号从 1 开始，原章节身份与版本映射保存在版本清单。
+ 
+ ## 延伸阅读
+ 
+--- input/knowledge/models/video-generation.md
++++ version/knowledge/models/video-generation.md
+@@ -24,17 +24,16 @@
+ 
+ ## 来源与推导
+ 
+-- S-WAN：[完整原文](../../references/S-WAN/reader.html) · [全文文本](../../references/S-WAN/fulltext.txt)
+-- S-DIT：[完整原文](../../references/S-DIT/reader.html) · [全文文本](../../references/S-DIT/fulltext.txt)
+-- S-DIFFUSERS：[完整原文](../../references/S-DIFFUSERS/reader.html) · [全文文本](../../references/S-DIFFUSERS/fulltext.txt)
+-
+ - [S-WAN：Wan: Open and Advanced Large-Scale Video Generative Models](../sources/S-WAN.md)：Wan 的视频生成报告涉及时空建模和视频潜空间/解码结构；输出帧与压缩潜表示具有不同的时间和空间粒度。
++  [完整原文](../../references/S-WAN/reader.html) · [全文文本](../../references/S-WAN/fulltext.txt)
+ 
+ - [S-DIT：Scalable Diffusion Models with Transformers](../sources/S-DIT.md)：DiT 使用 Transformer 处理潜空间 patch，去噪计算的 token 几何由 latent 网格和 patch 化决定。
++  [完整原文](../../references/S-DIT/reader.html) · [全文文本](../../references/S-DIT/fulltext.txt)
+ 
+-- [S-DIFFUSERS：Diffusers：Schedulers](../sources/S-DIFFUSERS.md)：Diffusers 的 scheduler 说明连接模型预测、当前 latent 和时间步更新；不同预测参数化与 scheduler 配置需要相容。
++- [S-DIFFUSERS：Diffusers — Scheduler 与 DDIM（固定历史源码）](../sources/S-DIFFUSERS.md)：Diffusers 的固定 scheduler 源码定义 scheduler 配置、模型预测与时间步更新；DDIM 文件给出 latent 更新及 prediction_type 的不同分支。当前材料不把后续版本的默认参数当作通用规则。
++  [完整原文](../../references/S-DIFFUSERS/reader.html) · [全文文本](../../references/S-DIFFUSERS/fulltext.txt)
+ 
+-上文的公式展开、容量算例与组合设计是 InfraAgents 在这些机制基础上的推导，具体推导已写在本条正文中。来源入口均为本地释义，可继续读取其定义与使用关系。版本 3，2026-09-20。
++正文中的公式展开、容量算例与组合设计是基于这些来源的推导；设定算例不冒充实测。来源版本受 2026-04-30 上限约束，编辑日期 2026-10-22 不作为事实发布日期。此独立 base 版本内的章节修订号从 1 开始，原章节身份与版本映射保存在版本清单。
+ 
+ ## 延伸阅读
+ 
+--- input/knowledge/models/speech-generation.md
++++ version/knowledge/models/speech-generation.md
+@@ -24,17 +24,16 @@
+ 
+ ## 来源与推导
+ 
+-- S-OMNI：[完整原文](../../references/S-OMNI/reader.html) · [全文文本](../../references/S-OMNI/fulltext.txt)
+-- S-MOONSHINE：[完整原文](../../references/S-MOONSHINE/reader.html) · [全文文本](../../references/S-MOONSHINE/fulltext.txt)
+-- S-WHISPER：[完整原文](../../references/S-WHISPER/reader.html) · [全文文本](../../references/S-WHISPER/fulltext.txt)
+-
+ - [S-OMNI：Qwen2.5-Omni Technical Report](../sources/S-OMNI.md)：Qwen2.5-Omni 的报告描述 Thinker/Talker 分支、块式模态输入、时间对齐和流式音频输出，文本与音频不是同一执行时钟。
++  [完整原文](../../references/S-OMNI/reader.html) · [全文文本](../../references/S-OMNI/fulltext.txt)
+ 
+ - [S-MOONSHINE：Moonshine: Speech Recognition for Live Transcription and Voice Commands](../sources/S-MOONSHINE.md)：Moonshine 面向语音识别的 encoder-decoder 结构和变长音频处理，源音频表示与目标文本生成具有不同长度和计算阶段。
++  [完整原文](../../references/S-MOONSHINE/reader.html) · [全文文本](../../references/S-MOONSHINE/fulltext.txt)
+ 
+ - [S-WHISPER：Robust Speech Recognition via Large-Scale Weak Supervision](../sources/S-WHISPER.md)：Whisper 采用语音 encoder-decoder 和任务条件 token。音频编码与目标文本自回归是不同阶段，decoder 使用源表示完成条件生成。
++  [完整原文](../../references/S-WHISPER/reader.html) · [全文文本](../../references/S-WHISPER/fulltext.txt)
+ 
+-上文的公式展开、容量算例与组合设计是 InfraAgents 在这些机制基础上的推导，具体推导已写在本条正文中。来源入口均为本地释义，可继续读取其定义与使用关系。版本 3，2026-09-20。
++正文中的公式展开、容量算例与组合设计是基于这些来源的推导；设定算例不冒充实测。来源版本受 2026-04-30 上限约束，编辑日期 2026-10-22 不作为事实发布日期。此独立 base 版本内的章节修订号从 1 开始，原章节身份与版本映射保存在版本清单。
+ 
+ ## 延伸阅读
+ 
+--- input/knowledge/models/omni-multimodal.md
++++ version/knowledge/models/omni-multimodal.md
+@@ -26,17 +26,16 @@
+ 
+ ## 来源与推导
+ 
+-- S-OMNI：[完整原文](../../references/S-OMNI/reader.html) · [全文文本](../../references/S-OMNI/fulltext.txt)
+-- S-QWEN-VL：[完整原文](../../references/S-QWEN-VL/reader.html) · [全文文本](../../references/S-QWEN-VL/fulltext.txt)
+-- S-OTEL：[完整原文](../../references/S-OTEL/reader.html) · [全文文本](../../references/S-OTEL/fulltext.txt)
+-
+ - [S-OMNI：Qwen2.5-Omni Technical Report](../sources/S-OMNI.md)：Qwen2.5-Omni 的报告描述 Thinker/Talker 分支、块式模态输入、时间对齐和流式音频输出，文本与音频不是同一执行时钟。
++  [完整原文](../../references/S-OMNI/reader.html) · [全文文本](../../references/S-OMNI/fulltext.txt)
+ 
+ - [S-QWEN-VL：Qwen2.5-VL Technical Report](../sources/S-QWEN-VL.md)：Qwen2.5-VL 报告讨论动态视觉分辨率、窗口视觉编码及时间相关的多模态位置，视觉输入具有独立的网格和时间几何。
++  [完整原文](../../references/S-QWEN-VL/reader.html) · [全文文本](../../references/S-QWEN-VL/fulltext.txt)
+ 
+ - [S-OTEL：OpenTelemetry — Context propagation](../sources/S-OTEL.md)：OpenTelemetry context propagation 用上下文跨组件连接相关操作，trace/span 形成可追溯的执行关系。
++  [完整原文](../../references/S-OTEL/reader.html) · [全文文本](../../references/S-OTEL/fulltext.txt)
+ 
+-上文的公式展开、容量算例与组合设计是 InfraAgents 在这些机制基础上的推导，具体推导已写在本条正文中。来源入口均为本地释义，可继续读取其定义与使用关系。版本 3，2026-09-20。
++正文中的公式展开、容量算例与组合设计是基于这些来源的推导；设定算例不冒充实测。来源版本受 2026-04-30 上限约束，编辑日期 2026-10-22 不作为事实发布日期。此独立 base 版本内的章节修订号从 1 开始，原章节身份与版本映射保存在版本清单。
+ 
+ ## 延伸阅读
+ 
+--- input/knowledge/system-semantics/host-device-timing.md
++++ version/knowledge/system-semantics/host-device-timing.md
+@@ -14,9 +14,11 @@
+ 
+ 一张执行依赖图中，从请求到达到可消费输出的最长依赖路径决定完成延迟。加速不在这条路径上的工作，可能只释放资源而不立即缩短该请求；释放资源又可能改善其他排队请求。局部与负载下整体效应应分开推导。
+ 
+-## 原项目案例支持什么
++## 由合成事件说明统计口径
+ 
+-[CASE-0001](../cases/CASE-0001-nsys-observability.md) 的原始清单保存微型 CUDA 采集与分析。在该记录中，首次关联设备开始减 host API 结束为 −1116 ns；3 个 kernel 累计 4352 ns，2 次 memcpy 累计 4896 ns。这些数字用于说明事件关系和统计口径，不能用来推断模型吞吐。原有版本和证据保留在历史中。
++设一次异步 API 在主机时刻 0 开始、在 5 结束，关联设备工作在 3 开始、在 8 结束，则设备开始减 API 结束等于 −2。这里的单位任意，数字是为解释偏序关系而设定的算例，不是项目实测。负值与异步执行关系相容；能否对具体 trace 作同样解释，还需确认时钟域和事件关联。
++
++若两个独立 kernel 区间为 [0,10] 和 [5,15]，累计时长为 20，忙碌区间并集为 15。这些可复算关系足以保留时间统计的推导能力，无需借用截止日之后的工程案例。
+ 
+ ## 如何由时间线选择改动
+ 
+@@ -26,17 +28,13 @@
+ 
+ ## 来源与推导
+ 
+-- S-CUDA-ASYNC：[完整原文](../../references/S-CUDA-ASYNC/reader.html) · [全文文本](../../references/S-CUDA-ASYNC/fulltext.txt)
+-- S-NSYS：[完整原文](../../references/S-NSYS/reader.html) · [全文文本](../../references/S-NSYS/fulltext.txt)
+-- S-CASE-0001：[完整原文](../../references/S-CASE-0001/reader.html) · [全文文本](../../references/S-CASE-0001/fulltext.txt)
++- [S-CUDA-ASYNC：CUDA Programming Guide — Asynchronous Execution](../sources/S-CUDA-ASYNC.md)：CUDA stream 表达设备工作的顺序，event 可以在不同执行队列间建立完成依赖。host 调用返回、设备工作开始和设备完成属于不同事件。
++  [完整原文](../../references/S-CUDA-ASYNC/reader.html) · [全文文本](../../references/S-CUDA-ASYNC/fulltext.txt)
+ 
+-- [S-CUDA-ASYNC：CUDA Programming Guide — Asynchronous Execution](../sources/S-CUDA-ASYNC.md)：CUDA stream 表达设备工作的顺序，event 可以在不同执行队列间建立完成依赖。host 调用返回、设备工作开始和设备完成属于不同事件。
++- [S-NSYS：Nsight Systems 2024.6 — User Guide](../sources/S-NSYS.md)：Nsight Systems 2024.6 用户指南描述 host API、设备 kernel、复制、范围和相关事件的采集与查看。进程、线程、设备、采集范围和时间窗口共同限定观测含义。
++  [完整原文](../../references/S-NSYS/reader.html) · [全文文本](../../references/S-NSYS/fulltext.txt)
+ 
+-- [S-NSYS：Nsight Systems — Post-Collection Analysis Guide](../sources/S-NSYS.md)：Nsight Systems 的原始事件与导出可用于查看 host API、设备 kernel、复制和关联信息。事件属于具体进程、线程、设备和时间窗口。
+-
+-- [S-CASE-0001：InfraAgents CASE-0001 evidence manifest](../sources/S-CASE-0001.md)：本地证据清单记录微型 CUDA 采集、导出、缺表对照和事件关联。所记首次设备开始减 host API 结束为 −1116 ns；3 kernel 累计 4352 ns、2 memcpy 累计 4896 ns。
+-
+-上文的公式展开、容量算例与组合设计是 InfraAgents 在这些机制基础上的推导，具体推导已写在本条正文中。来源入口均为本地释义，可继续读取其定义与使用关系。版本 4，2026-09-20。
++正文中的公式展开、容量算例与组合设计是基于这些来源的推导；设定算例不冒充实测。来源版本受 2026-04-30 上限约束，编辑日期 2026-10-22 不作为事实发布日期。此独立 base 版本内的章节修订号从 1 开始，原章节身份与版本映射保存在版本清单。
+ 
+ ## 延伸阅读
+ 
+--- input/knowledge/system-semantics/request-batch-identity.md
++++ version/knowledge/system-semantics/request-batch-identity.md
+@@ -26,17 +26,16 @@
+ 
+ ## 来源与推导
+ 
+-- S-ORCA：[完整原文](../../references/S-ORCA/reader.html) · [全文文本](../../references/S-ORCA/fulltext.txt)
+-- S-VLLM-SCHED：[完整原文](../../references/S-VLLM-SCHED/reader.html) · [全文文本](../../references/S-VLLM-SCHED/fulltext.txt)
+-- S-OTEL：[完整原文](../../references/S-OTEL/reader.html) · [全文文本](../../references/S-OTEL/fulltext.txt)
+-
+ - [S-ORCA：Orca: A Distributed Serving System for Transformer-Based Generative Models](../sources/S-ORCA.md)：Orca 以生成迭代为调度边界，让完成请求退出并让新请求进入；不同算子依据是否适合聚批采用相应执行组织。请求不必等待原批全部结束才获得资源。
++  [完整原文](../../references/S-ORCA/reader.html) · [全文文本](../../references/S-ORCA/fulltext.txt)
+ 
+ - [S-VLLM-SCHED：vLLM — V1 Scheduler source reference](../sources/S-VLLM-SCHED.md)：vLLM V1 的调度入口根据请求所需 token 与已计算进度分配本轮工作，结合计算预算、encoder 输入和 KV 资源形成 SchedulerOutput。
++  [完整原文](../../references/S-VLLM-SCHED/reader.html) · [全文文本](../../references/S-VLLM-SCHED/fulltext.txt)
+ 
+ - [S-OTEL：OpenTelemetry — Context propagation](../sources/S-OTEL.md)：OpenTelemetry context propagation 用上下文跨组件连接相关操作，trace/span 形成可追溯的执行关系。
++  [完整原文](../../references/S-OTEL/reader.html) · [全文文本](../../references/S-OTEL/fulltext.txt)
+ 
+-上文的公式展开、容量算例与组合设计是 InfraAgents 在这些机制基础上的推导，具体推导已写在本条正文中。来源入口均为本地释义，可继续读取其定义与使用关系。版本 4，2026-09-20。
++正文中的公式展开、容量算例与组合设计是基于这些来源的推导；设定算例不冒充实测。来源版本受 2026-04-30 上限约束，编辑日期 2026-10-22 不作为事实发布日期。此独立 base 版本内的章节修订号从 1 开始，原章节身份与版本映射保存在版本清单。
+ 
+ ## 延伸阅读
+ 
+--- input/knowledge/system-semantics/position-mask-cache.md
++++ version/knowledge/system-semantics/position-mask-cache.md
+@@ -26,20 +26,19 @@
+ 
+ ## 来源与推导
+ 
+-- S-HF-CACHE：[完整原文](../../references/S-HF-CACHE/reader.html) · [全文文本](../../references/S-HF-CACHE/fulltext.txt)
+-- S-TRANSFORMER：[完整原文](../../references/S-TRANSFORMER/reader.html) · [全文文本](../../references/S-TRANSFORMER/fulltext.txt)
+-- S-SDPA：[完整原文](../../references/S-SDPA/reader.html) · [全文文本](../../references/S-SDPA/fulltext.txt)
+-- S-FA-IMPL：[完整原文](../../references/S-FA-IMPL/reader.html) · [全文文本](../../references/S-FA-IMPL/fulltext.txt)
+-
+ - [S-HF-CACHE：Transformers — Caching](../sources/S-HF-CACHE.md)：Transformers 的缓存说明区分已存历史 K/V、新输入、attention mask 和 cache position。增量前向需要让新 token 的位置与已有缓存长度一致。
++  [完整原文](../../references/S-HF-CACHE/reader.html) · [全文文本](../../references/S-HF-CACHE/fulltext.txt)
+ 
+ - [S-TRANSFORMER：Attention Is All You Need](../sources/S-TRANSFORMER.md)：Transformer 的 attention 用 query 与 keys 的分数生成归一化权重，再对 values 加权；encoder-decoder attention 的 Q 来自 decoder，K/V 来自 encoder 表示。
++  [完整原文](../../references/S-TRANSFORMER/reader.html) · [全文文本](../../references/S-TRANSFORMER/fulltext.txt)
+ 
+ - [S-SDPA：PyTorch：scaled_dot_product_attention](../sources/S-SDPA.md)：已核对 SDPA 文档：布尔 mask 的 true 表示参与 attention；dropout_p 大于零时执行 dropout；非方形 is_causal 采用文档定义的左上对齐。Q、K/V heads 与通道形状有明确关系。
++  [完整原文](../../references/S-SDPA/reader.html) · [全文文本](../../references/S-SDPA/fulltext.txt)
+ 
+ - [S-FA-IMPL：FlashAttention 官方实现说明](../sources/S-FA-IMPL.md)：FlashAttention 的版本说明记录：2.1 将非等长 Q/K 的 causal 对齐由左上改成右下。示例 Q 长 2、K 长 5 时，右下对齐使两行分别可见前 4、5 个位置。
++  [完整原文](../../references/S-FA-IMPL/reader.html) · [全文文本](../../references/S-FA-IMPL/fulltext.txt)
+ 
+-上文的公式展开、容量算例与组合设计是 InfraAgents 在这些机制基础上的推导，具体推导已写在本条正文中。来源入口均为本地释义，可继续读取其定义与使用关系。版本 4，2026-09-20。
++正文中的公式展开、容量算例与组合设计是基于这些来源的推导；设定算例不冒充实测。来源版本受 2026-04-30 上限约束，编辑日期 2026-10-22 不作为事实发布日期。此独立 base 版本内的章节修订号从 1 开始，原章节身份与版本映射保存在版本清单。
+ 
+ ## 延伸阅读
+ 
+--- input/knowledge/system-semantics/cancellation-resource-completion.md
++++ version/knowledge/system-semantics/cancellation-resource-completion.md
+@@ -26,17 +26,16 @@
+ 
+ ## 来源与推导
+ 
+-- S-ASGI：[完整原文](../../references/S-ASGI/reader.html) · [全文文本](../../references/S-ASGI/fulltext.txt)
+-- S-CUDA-ALLOC：[完整原文](../../references/S-CUDA-ALLOC/reader.html) · [全文文本](../../references/S-CUDA-ALLOC/fulltext.txt)
+-- S-CUDA-ASYNC：[完整原文](../../references/S-CUDA-ASYNC/reader.html) · [全文文本](../../references/S-CUDA-ASYNC/fulltext.txt)
+-
+ - [S-ASGI：ASGI — HTTP and WebSocket Message Format](../sources/S-ASGI.md)：ASGI HTTP/WebSocket 规范定义接收、发送、响应体和断开相关事件；断开通知与发送失败可能存在时间上的竞争。
++  [完整原文](../../references/S-ASGI/reader.html) · [全文文本](../../references/S-ASGI/fulltext.txt)
+ 
+ - [S-CUDA-ALLOC：CUDA Programming Guide — Stream-Ordered Memory Allocator](../sources/S-CUDA-ALLOC.md)：stream-ordered allocator 将分配和释放纳入执行顺序。跨 stream 访问必须存在与分配、使用和释放相容的依赖。
++  [完整原文](../../references/S-CUDA-ALLOC/reader.html) · [全文文本](../../references/S-CUDA-ALLOC/fulltext.txt)
+ 
+ - [S-CUDA-ASYNC：CUDA Programming Guide — Asynchronous Execution](../sources/S-CUDA-ASYNC.md)：CUDA stream 表达设备工作的顺序，event 可以在不同执行队列间建立完成依赖。host 调用返回、设备工作开始和设备完成属于不同事件。
++  [完整原文](../../references/S-CUDA-ASYNC/reader.html) · [全文文本](../../references/S-CUDA-ASYNC/fulltext.txt)
+ 
+-上文的公式展开、容量算例与组合设计是 InfraAgents 在这些机制基础上的推导，具体推导已写在本条正文中。来源入口均为本地释义，可继续读取其定义与使用关系。版本 4，2026-09-20。
++正文中的公式展开、容量算例与组合设计是基于这些来源的推导；设定算例不冒充实测。来源版本受 2026-04-30 上限约束，编辑日期 2026-10-22 不作为事实发布日期。此独立 base 版本内的章节修订号从 1 开始，原章节身份与版本映射保存在版本清单。
+ 
+ ## 延伸阅读
+ 
+--- input/knowledge/system-semantics/collective-ordering.md
++++ version/knowledge/system-semantics/collective-ordering.md
+@@ -24,17 +24,16 @@
+ 
+ ## 来源与推导
+ 
+-- S-NCCL-GROUP：[完整原文](../../references/S-NCCL-GROUP/reader.html) · [全文文本](../../references/S-NCCL-GROUP/fulltext.txt)
+-- S-NCCL-COLLECTIVE：[完整原文](../../references/S-NCCL-COLLECTIVE/reader.html) · [全文文本](../../references/S-NCCL-COLLECTIVE/fulltext.txt)
+-- S-CUDA-TOPOLOGY：[完整原文](../../references/S-CUDA-TOPOLOGY/reader.html) · [全文文本](../../references/S-CUDA-TOPOLOGY/fulltext.txt)
+-
+ - [S-NCCL-GROUP：NCCL — Group Calls](../sources/S-NCCL-GROUP.md)：NCCL group calls 用于组织成组通信提交，调用次序与多设备使用需要符合其协议。组调用不替应用修复不匹配的通信顺序。
++  [完整原文](../../references/S-NCCL-GROUP/reader.html) · [全文文本](../../references/S-NCCL-GROUP/fulltext.txt)
+ 
+ - [S-NCCL-COLLECTIVE：NCCL — Collective Operations](../sources/S-NCCL-COLLECTIVE.md)：集合通信操作由 communicator、参与 ranks、数据类型、数量、归约方式或 root 等共同定义。参与者必须执行相互匹配的逻辑操作。
++  [完整原文](../../references/S-NCCL-COLLECTIVE/reader.html) · [全文文本](../../references/S-NCCL-COLLECTIVE/fulltext.txt)
+ 
+ - [S-CUDA-TOPOLOGY：CUDA Programming Guide — Programming Systems with Multiple GPUs](../sources/S-CUDA-TOPOLOGY.md)：多 GPU 系统涉及设备上下文、peer access、主机与设备连接路径。可通信和具有相同有效带宽不是同一性质。
++  [完整原文](../../references/S-CUDA-TOPOLOGY/reader.html) · [全文文本](../../references/S-CUDA-TOPOLOGY/fulltext.txt)
+ 
+-上文的公式展开、容量算例与组合设计是 InfraAgents 在这些机制基础上的推导，具体推导已写在本条正文中。来源入口均为本地释义，可继续读取其定义与使用关系。版本 4，2026-09-20。
++正文中的公式展开、容量算例与组合设计是基于这些来源的推导；设定算例不冒充实测。来源版本受 2026-04-30 上限约束，编辑日期 2026-10-22 不作为事实发布日期。此独立 base 版本内的章节修订号从 1 开始，原章节身份与版本映射保存在版本清单。
+ 
+ ## 延伸阅读
+ 
+--- input/knowledge/system-semantics/evidence-and-independent-checks.md
++++ version/knowledge/system-semantics/evidence-and-independent-checks.md
+@@ -28,20 +28,19 @@
+ 
+ ## 来源与推导
+ 
+-- S-ACE：[完整原文](../../references/S-ACE/reader.html) · [全文文本](../../references/S-ACE/fulltext.txt)
+-- S-GEPA：[完整原文](../../references/S-GEPA/reader.html) · [全文文本](../../references/S-GEPA/fulltext.txt)
+-- S-SELF-CORRECTION：[完整原文](../../references/S-SELF-CORRECTION/reader.html) · [全文文本](../../references/S-SELF-CORRECTION/fulltext.txt)
+-- S-REFLEXION：[完整原文](../../references/S-REFLEXION/reader.html) · [全文文本](../../references/S-REFLEXION/fulltext.txt)
++- [S-ACE：Agentic Context Engineering: Evolving Contexts for Self-Improving Language Models](../sources/S-ACE.md)：ACE 的已读方法部分组织生成、反思和整理职责，并采用局部增量维护上下文条目，避免反复重写时丢失细节。
++  [完整原文](../../references/S-ACE/reader.html) · [全文文本](../../references/S-ACE/fulltext.txt)
+ 
+-- [S-ACE：Agentic Context Engineering: Evolving Contexts for Self-Improving Language Models](../sources/S-ACE.md)：ACE 的已读方法部分组织生成、反思和整理职责，并采用局部增量维护上下文条目，避免反复重写时丢失细节。
+-
+-- [S-GEPA：GEPA: Reflective Prompt Evolution Can Outperform Reinforcement Learning](../sources/S-GEPA.md)：已核对摘要与官方项目说明：利用可评价轨迹中的反思反馈提出候选，并依据评价保留具有价值或互补性的候选。
++- [S-GEPA：GEPA: Reflective Prompt Evolution Can Outperform Reinforcement Learning](../sources/S-GEPA.md)：所归档的 GEPA v2 论文利用可评价轨迹中的反思反馈提出候选，并通过评价保留有价值或互补的候选。这里的来源资格仅来自这份固定论文版本。
++  [完整原文](../../references/S-GEPA/reader.html) · [全文文本](../../references/S-GEPA/fulltext.txt)
+ 
+ - [S-SELF-CORRECTION：Large Language Models Cannot Self-Correct Reasoning Yet](../sources/S-SELF-CORRECTION.md)：该研究讨论其所考察设置下，仅依赖模型自身、缺少外部反馈的推理自纠正能力限制。结论具有实验设置范围。
++  [完整原文](../../references/S-SELF-CORRECTION/reader.html) · [全文文本](../../references/S-SELF-CORRECTION/fulltext.txt)
+ 
+ - [S-REFLEXION：Reflexion: Language Agents with Verbal Reinforcement Learning](../sources/S-REFLEXION.md)：Reflexion 把任务反馈转为文字反思，并在后续尝试中使用这些记忆。改进载体是显式经验文本，而非必须修改模型权重。
++  [完整原文](../../references/S-REFLEXION/reader.html) · [全文文本](../../references/S-REFLEXION/fulltext.txt)
+ 
+-上文的公式展开、容量算例与组合设计是 InfraAgents 在这些机制基础上的推导，具体推导已写在本条正文中。来源入口均为本地释义，可继续读取其定义与使用关系。版本 4，2026-09-20。
++正文中的公式展开、容量算例与组合设计是基于这些来源的推导；设定算例不冒充实测。来源版本受 2026-04-30 上限约束，编辑日期 2026-10-22 不作为事实发布日期。此独立 base 版本内的章节修订号从 1 开始，原章节身份与版本映射保存在版本清单。
+ 
+ ## 延伸阅读
+ 
+--- input/knowledge/system-semantics/tokenization-io.md
++++ version/knowledge/system-semantics/tokenization-io.md
+@@ -26,17 +26,16 @@
+ 
+ ## 来源与推导
+ 
+-- S-CHAT：[完整原文](../../references/S-CHAT/reader.html) · [全文文本](../../references/S-CHAT/fulltext.txt)
+-- S-HF-CACHE：[完整原文](../../references/S-HF-CACHE/reader.html) · [全文文本](../../references/S-HF-CACHE/fulltext.txt)
+-- S-ASGI：[完整原文](../../references/S-ASGI/reader.html) · [全文文本](../../references/S-ASGI/fulltext.txt)
+-
+ - [S-CHAT：Transformers：Chat templates](../sources/S-CHAT.md)：Chat template 将消息序列变为包含角色边界、特殊 token 和生成提示的模型输入；tokenizer 自动添加特殊 token 的方式会影响最终序列。
++  [完整原文](../../references/S-CHAT/reader.html) · [全文文本](../../references/S-CHAT/fulltext.txt)
+ 
+ - [S-HF-CACHE：Transformers — Caching](../sources/S-HF-CACHE.md)：Transformers 的缓存说明区分已存历史 K/V、新输入、attention mask 和 cache position。增量前向需要让新 token 的位置与已有缓存长度一致。
++  [完整原文](../../references/S-HF-CACHE/reader.html) · [全文文本](../../references/S-HF-CACHE/fulltext.txt)
+ 
+ - [S-ASGI：ASGI — HTTP and WebSocket Message Format](../sources/S-ASGI.md)：ASGI HTTP/WebSocket 规范定义接收、发送、响应体和断开相关事件；断开通知与发送失败可能存在时间上的竞争。
++  [完整原文](../../references/S-ASGI/reader.html) · [全文文本](../../references/S-ASGI/fulltext.txt)
+ 
+-上文的公式展开、容量算例与组合设计是 InfraAgents 在这些机制基础上的推导，具体推导已写在本条正文中。来源入口均为本地释义，可继续读取其定义与使用关系。版本 3，2026-09-20。
++正文中的公式展开、容量算例与组合设计是基于这些来源的推导；设定算例不冒充实测。来源版本受 2026-04-30 上限约束，编辑日期 2026-10-22 不作为事实发布日期。此独立 base 版本内的章节修订号从 1 开始，原章节身份与版本映射保存在版本清单。
+ 
+ ## 延伸阅读
+ 
+--- input/knowledge/system-semantics/service-protocol.md
++++ version/knowledge/system-semantics/service-protocol.md
+@@ -28,17 +28,16 @@
+ 
+ ## 来源与推导
+ 
+-- S-ASGI：[完整原文](../../references/S-ASGI/reader.html) · [全文文本](../../references/S-ASGI/fulltext.txt)
+-- S-OTEL：[完整原文](../../references/S-OTEL/reader.html) · [全文文本](../../references/S-OTEL/fulltext.txt)
+-- S-GENAI-PERF：[完整原文](../../references/S-GENAI-PERF/reader.html) · [全文文本](../../references/S-GENAI-PERF/fulltext.txt)
+-
+ - [S-ASGI：ASGI — HTTP and WebSocket Message Format](../sources/S-ASGI.md)：ASGI HTTP/WebSocket 规范定义接收、发送、响应体和断开相关事件；断开通知与发送失败可能存在时间上的竞争。
++  [完整原文](../../references/S-ASGI/reader.html) · [全文文本](../../references/S-ASGI/fulltext.txt)
+ 
+ - [S-OTEL：OpenTelemetry — Context propagation](../sources/S-OTEL.md)：OpenTelemetry context propagation 用上下文跨组件连接相关操作，trace/span 形成可追溯的执行关系。
++  [完整原文](../../references/S-OTEL/reader.html) · [全文文本](../../references/S-OTEL/fulltext.txt)
+ 
+ - [S-GENAI-PERF：NVIDIA GenAI-Perf](../sources/S-GENAI-PERF.md)：GenAI-Perf 的指标围绕请求、响应、首个内容、流式间隔、输出长度和测量窗口定义。客户端 chunk 与模型 token 并非必然一一对应。
++  [完整原文](../../references/S-GENAI-PERF/reader.html) · [全文文本](../../references/S-GENAI-PERF/fulltext.txt)
+ 
+-上文的公式展开、容量算例与组合设计是 InfraAgents 在这些机制基础上的推导，具体推导已写在本条正文中。来源入口均为本地释义，可继续读取其定义与使用关系。版本 3，2026-09-20。
++正文中的公式展开、容量算例与组合设计是基于这些来源的推导；设定算例不冒充实测。来源版本受 2026-04-30 上限约束，编辑日期 2026-10-22 不作为事实发布日期。此独立 base 版本内的章节修订号从 1 开始，原章节身份与版本映射保存在版本清单。
+ 
+ ## 延伸阅读
+ 
+--- input/knowledge/system-semantics/distributed-state-transfer.md
++++ version/knowledge/system-semantics/distributed-state-transfer.md
+@@ -24,17 +24,16 @@
+ 
+ ## 来源与推导
+ 
+-- S-DISTSERVE：[完整原文](../../references/S-DISTSERVE/reader.html) · [全文文本](../../references/S-DISTSERVE/fulltext.txt)
+-- S-CUDA-TOPOLOGY：[完整原文](../../references/S-CUDA-TOPOLOGY/reader.html) · [全文文本](../../references/S-CUDA-TOPOLOGY/fulltext.txt)
+-- S-VLLM-PREFIX：[完整原文](../../references/S-VLLM-PREFIX/reader.html) · [全文文本](../../references/S-VLLM-PREFIX/fulltext.txt)
+-
+ - [S-DISTSERVE：DistServe](../sources/S-DISTSERVE.md)：DistServe 将 prefill 与 decode 的资源分配和并行选择解耦，并把阶段间状态通信与链路条件纳入服务目标。
++  [完整原文](../../references/S-DISTSERVE/reader.html) · [全文文本](../../references/S-DISTSERVE/fulltext.txt)
+ 
+ - [S-CUDA-TOPOLOGY：CUDA Programming Guide — Programming Systems with Multiple GPUs](../sources/S-CUDA-TOPOLOGY.md)：多 GPU 系统涉及设备上下文、peer access、主机与设备连接路径。可通信和具有相同有效带宽不是同一性质。
++  [完整原文](../../references/S-CUDA-TOPOLOGY/reader.html) · [全文文本](../../references/S-CUDA-TOPOLOGY/fulltext.txt)
+ 
+ - [S-VLLM-PREFIX：vLLM — Automatic Prefix Caching](../sources/S-VLLM-PREFIX.md)：所核对 vLLM 版本以块身份组织前缀复用，身份可包含父块、token 和额外条件。不同上下文的同 token 块不应自动视为相同计算。
++  [完整原文](../../references/S-VLLM-PREFIX/reader.html) · [全文文本](../../references/S-VLLM-PREFIX/fulltext.txt)
+ 
+-上文的公式展开、容量算例与组合设计是 InfraAgents 在这些机制基础上的推导，具体推导已写在本条正文中。来源入口均为本地释义，可继续读取其定义与使用关系。版本 3，2026-09-20。
++正文中的公式展开、容量算例与组合设计是基于这些来源的推导；设定算例不冒充实测。来源版本受 2026-04-30 上限约束，编辑日期 2026-10-22 不作为事实发布日期。此独立 base 版本内的章节修订号从 1 开始，原章节身份与版本映射保存在版本清单。
+ 
+ ## 延伸阅读
+ 
+--- input/knowledge/system-semantics/design-synthesis.md
++++ version/knowledge/system-semantics/design-synthesis.md
+@@ -42,23 +42,22 @@
+ 
+ ## 来源与推导
+ 
+-- S-PAGED：[完整原文](../../references/S-PAGED/reader.html) · [全文文本](../../references/S-PAGED/fulltext.txt)
+-- S-SARATHI：[完整原文](../../references/S-SARATHI/reader.html) · [全文文本](../../references/S-SARATHI/fulltext.txt)
+-- S-DISTSERVE：[完整原文](../../references/S-DISTSERVE/reader.html) · [全文文本](../../references/S-DISTSERVE/fulltext.txt)
+-- S-MLA：[完整原文](../../references/S-MLA/reader.html) · [全文文本](../../references/S-MLA/fulltext.txt)
+-- S-NXDI：[完整原文](../../references/S-NXDI/reader.html) · [全文文本](../../references/S-NXDI/fulltext.txt)
+-
+ - [S-PAGED：Efficient Memory Management for Large Language Model Serving with PagedAttention](../sources/S-PAGED.md)：PagedAttention 把每条序列的逻辑 KV 划分为固定 token 数的块，用映射表访问不连续物理存储。多个序列可以共享相同前缀的物理块，分叉写入需要保持各序列状态独立。
++  [完整原文](../../references/S-PAGED/reader.html) · [全文文本](../../references/S-PAGED/fulltext.txt)
+ 
+ - [S-SARATHI：SARATHI: Efficient LLM Inference by Piggybacking Decodes with Chunked Prefills](../sources/S-SARATHI.md)：SARATHI 将长 prefill 切块，并在合适的批处理中与 decode 组织在一起，以减少两类工作之间的干扰并利用计算资源。
++  [完整原文](../../references/S-SARATHI/reader.html) · [全文文本](../../references/S-SARATHI/fulltext.txt)
+ 
+ - [S-DISTSERVE：DistServe](../sources/S-DISTSERVE.md)：DistServe 将 prefill 与 decode 的资源分配和并行选择解耦，并把阶段间状态通信与链路条件纳入服务目标。
++  [完整原文](../../references/S-DISTSERVE/reader.html) · [全文文本](../../references/S-DISTSERVE/fulltext.txt)
+ 
+ - [S-MLA：DeepSeek-V2：MLA 与解耦位置编码](../sources/S-MLA.md)：DeepSeek-V2 的 MLA 以低维 latent 联合表示内容 K/V，通过线性投影的吸收减少历史展开；位置相关旋转不能任意与投影交换，因此采用解耦 RoPE 分量。
++  [完整原文](../../references/S-MLA/reader.html) · [全文文本](../../references/S-MLA/fulltext.txt)
+ 
+ - [S-NXDI：NxD Inference Features Configuration Guide](../sources/S-NXDI.md)：NxD Inference 说明静态形状可执行程序通过分桶和 padding 承接不同长度，context encoding 与 token generation 可配置不同桶；持久状态与模型执行共同受配置约束。
++  [完整原文](../../references/S-NXDI/reader.html) · [全文文本](../../references/S-NXDI/fulltext.txt)
+ 
+-上文的公式展开、容量算例与组合设计是 InfraAgents 在这些机制基础上的推导，具体推导已写在本条正文中。来源入口均为本地释义，可继续读取其定义与使用关系。版本 3，2026-09-20。
++正文中的公式展开、容量算例与组合设计是基于这些来源的推导；设定算例不冒充实测。来源版本受 2026-04-30 上限约束，编辑日期 2026-10-22 不作为事实发布日期。此独立 base 版本内的章节修订号从 1 开始，原章节身份与版本映射保存在版本清单。
+ 
+ ## 延伸阅读
+ 
+--- input/knowledge/tools/trace-observability.md
++++ version/knowledge/tools/trace-observability.md
+@@ -12,7 +12,7 @@
+ 
+ 记录所需信号、采集是否启用、原始记录是否存在、导出是否成功和查询范围，可以明确每个结论依赖什么。主机 API、设备 kernel、memcpy、通信、NVTX 和 OS 调度各回答不同问题；一个工具的默认输出不能自动覆盖全部。
+ 
+-原项目 [CASE-0001](../cases/CASE-0001-nsys-observability.md) 通过有记录与缺表对照验证了这些状态区分，并保存原始清单。该证据支持观测工具链的行为，不将微型案例外推为模型服务表现。
++可以构造两份采集材料作区分：一份明确启用并取得目标设备事件，另一份未启用该类采集。后者缺少相应表，只能说明该观测路径未覆盖；是否执行须由其他独立信号判断。这里给出验证关系，不声称已经完成一次项目实验。
+ 
+ ## 缺失也可形成下一步信息
+ 
+@@ -22,17 +22,13 @@
+ 
+ ## 来源与推导
+ 
+-- S-NSYS：[完整原文](../../references/S-NSYS/reader.html) · [全文文本](../../references/S-NSYS/fulltext.txt)
+-- S-TORCH-PROFILER：[完整原文](../../references/S-TORCH-PROFILER/reader.html) · [全文文本](../../references/S-TORCH-PROFILER/fulltext.txt)
+-- S-CASE-0001：[完整原文](../../references/S-CASE-0001/reader.html) · [全文文本](../../references/S-CASE-0001/fulltext.txt)
+-
+-- [S-NSYS：Nsight Systems — Post-Collection Analysis Guide](../sources/S-NSYS.md)：Nsight Systems 的原始事件与导出可用于查看 host API、设备 kernel、复制和关联信息。事件属于具体进程、线程、设备和时间窗口。
++- [S-NSYS：Nsight Systems 2024.6 — User Guide](../sources/S-NSYS.md)：Nsight Systems 2024.6 用户指南描述 host API、设备 kernel、复制、范围和相关事件的采集与查看。进程、线程、设备、采集范围和时间窗口共同限定观测含义。
++  [完整原文](../../references/S-NSYS/reader.html) · [全文文本](../../references/S-NSYS/fulltext.txt)
+ 
+ - [S-TORCH-PROFILER：PyTorch — torch.profiler](../sources/S-TORCH-PROFILER.md)：框架 profiler 可以采集算子、设备工作、shape、stack 和内存相关信息。更详细的采集会增加运行开销，部分选项也会延长张量引用。
++  [完整原文](../../references/S-TORCH-PROFILER/reader.html) · [全文文本](../../references/S-TORCH-PROFILER/fulltext.txt)
+ 
+-- [S-CASE-0001：InfraAgents CASE-0001 evidence manifest](../sources/S-CASE-0001.md)：本地证据清单记录微型 CUDA 采集、导出、缺表对照和事件关联。所记首次设备开始减 host API 结束为 −1116 ns；3 kernel 累计 4352 ns、2 memcpy 累计 4896 ns。
+-
+-上文的公式展开、容量算例与组合设计是 InfraAgents 在这些机制基础上的推导，具体推导已写在本条正文中。来源入口均为本地释义，可继续读取其定义与使用关系。版本 4，2026-09-20。
++正文中的公式展开、容量算例与组合设计是基于这些来源的推导；设定算例不冒充实测。来源版本受 2026-04-30 上限约束，编辑日期 2026-10-22 不作为事实发布日期。此独立 base 版本内的章节修订号从 1 开始，原章节身份与版本映射保存在版本清单。
+ 
+ ## 延伸阅读
+ 
+--- input/knowledge/tools/timeline-attribution.md
++++ version/knowledge/tools/timeline-attribution.md
+@@ -22,17 +22,16 @@
+ 
+ ## 来源与推导
+ 
+-- S-NSYS：[完整原文](../../references/S-NSYS/reader.html) · [全文文本](../../references/S-NSYS/fulltext.txt)
+-- S-OTEL：[完整原文](../../references/S-OTEL/reader.html) · [全文文本](../../references/S-OTEL/fulltext.txt)
+-- S-CUDA-ASYNC：[完整原文](../../references/S-CUDA-ASYNC/reader.html) · [全文文本](../../references/S-CUDA-ASYNC/fulltext.txt)
+-
+-- [S-NSYS：Nsight Systems — Post-Collection Analysis Guide](../sources/S-NSYS.md)：Nsight Systems 的原始事件与导出可用于查看 host API、设备 kernel、复制和关联信息。事件属于具体进程、线程、设备和时间窗口。
++- [S-NSYS：Nsight Systems 2024.6 — User Guide](../sources/S-NSYS.md)：Nsight Systems 2024.6 用户指南描述 host API、设备 kernel、复制、范围和相关事件的采集与查看。进程、线程、设备、采集范围和时间窗口共同限定观测含义。
++  [完整原文](../../references/S-NSYS/reader.html) · [全文文本](../../references/S-NSYS/fulltext.txt)
+ 
+ - [S-OTEL：OpenTelemetry — Context propagation](../sources/S-OTEL.md)：OpenTelemetry context propagation 用上下文跨组件连接相关操作，trace/span 形成可追溯的执行关系。
++  [完整原文](../../references/S-OTEL/reader.html) · [全文文本](../../references/S-OTEL/fulltext.txt)
+ 
+ - [S-CUDA-ASYNC：CUDA Programming Guide — Asynchronous Execution](../sources/S-CUDA-ASYNC.md)：CUDA stream 表达设备工作的顺序，event 可以在不同执行队列间建立完成依赖。host 调用返回、设备工作开始和设备完成属于不同事件。
++  [完整原文](../../references/S-CUDA-ASYNC/reader.html) · [全文文本](../../references/S-CUDA-ASYNC/fulltext.txt)
+ 
+-上文的公式展开、容量算例与组合设计是 InfraAgents 在这些机制基础上的推导，具体推导已写在本条正文中。来源入口均为本地释义，可继续读取其定义与使用关系。版本 4，2026-09-20。
++正文中的公式展开、容量算例与组合设计是基于这些来源的推导；设定算例不冒充实测。来源版本受 2026-04-30 上限约束，编辑日期 2026-10-22 不作为事实发布日期。此独立 base 版本内的章节修订号从 1 开始，原章节身份与版本映射保存在版本清单。
+ 
+ ## 延伸阅读
+ 
+--- input/knowledge/tools/kernel-counter-replay.md
++++ version/knowledge/tools/kernel-counter-replay.md
+@@ -22,17 +22,16 @@
+ 
+ ## 来源与推导
+ 
+-- S-NCU：[完整原文](../../references/S-NCU/reader.html) · [全文文本](../../references/S-NCU/fulltext.txt)
+-- S-CUDA-BEST：[完整原文](../../references/S-CUDA-BEST/reader.html) · [全文文本](../../references/S-CUDA-BEST/fulltext.txt)
+-- S-ROCM：[完整原文](../../references/S-ROCM/reader.html) · [全文文本](../../references/S-ROCM/fulltext.txt)
+-
+ - [S-NCU：Nsight Compute — Profiling Guide](../sources/S-NCU.md)：Nsight Compute 提供 kernel 级硬件计数器和派生指标，某些采集需要 replay。计数器能力、采集模式及恢复条件影响所观察的执行。
++  [完整原文](../../references/S-NCU/reader.html) · [全文文本](../../references/S-NCU/fulltext.txt)
+ 
+ - [S-CUDA-BEST：CUDA C++ Best Practices Guide](../sources/S-CUDA-BEST.md)：CUDA 性能资料区分有效带宽、访存组织、数据传输和执行资源。合并访问、复用和减少不必要搬运会改变实际流量。
++  [完整原文](../../references/S-CUDA-BEST/reader.html) · [全文文本](../../references/S-CUDA-BEST/fulltext.txt)
+ 
+ - [S-ROCM：HIP：Hardware implementation](../sources/S-ROCM.md)：HIP 硬件说明介绍 CU、SIMD、向量寄存器、LDS 与矩阵运算资源。寄存器使用影响驻留和隐藏延迟能力，不同 AMD 架构的资源参数不同。
++  [完整原文](../../references/S-ROCM/reader.html) · [全文文本](../../references/S-ROCM/fulltext.txt)
+ 
+-上文的公式展开、容量算例与组合设计是 InfraAgents 在这些机制基础上的推导，具体推导已写在本条正文中。来源入口均为本地释义，可继续读取其定义与使用关系。版本 4，2026-09-20。
++正文中的公式展开、容量算例与组合设计是基于这些来源的推导；设定算例不冒充实测。来源版本受 2026-04-30 上限约束，编辑日期 2026-10-22 不作为事实发布日期。此独立 base 版本内的章节修订号从 1 开始，原章节身份与版本映射保存在版本清单。
+ 
+ ## 延伸阅读
+ 
+--- input/knowledge/tools/framework-profiler-scope.md
++++ version/knowledge/tools/framework-profiler-scope.md
+@@ -20,7 +20,7 @@
+ |---|---|---|---|
+ | CUDA | Nsight Systems 的 API、stream、copy 与主机时间 | Nsight Compute 的 kernel 计数器 | 用范围和 correlation 关联具体算子实例 |
+ | ROCm | rocprofv3 的 HIP/HSA、dispatch 与传输记录 | GPU 对应硬件计数器与派生指标 | 保留进程、agent、queue、dispatch 身份 |
+-| Metal | Instruments Metal System Trace 的 CPU/GPU 并行与内存 | Xcode 的阶段时间和硬件计数器 | 把 MLX 求值或 Metal command 工作映射到时间区间 |
++| Metal | MLX 求值边界与 Metal 对象标签 | 固定版本支持的 GPU capture 与 Xcode 操作依赖视图 | 把 MLX 数组求值连接到实际 Metal 工作；未被此来源覆盖的计数器能力另行核实 |
+ | Trainium | Neuron Explorer 的 runtime、API、加载与主机事件 | NeuronCore 指令 trace 与依赖 | 设备 trace 与匹配的编译 NEFF 对应，解释实际 executable |
+ | CPU | 线程调度、进程 CPU 时间与 framework spans | perf 的 cycles、instructions、cache 等可用事件 | 区分算子计算、线程竞争与主机预处理 |
+ 
+@@ -36,29 +36,28 @@
+ 
+ ## 来源与推导
+ 
+-- S-TORCH-PROFILER：[完整原文](../../references/S-TORCH-PROFILER/reader.html) · [全文文本](../../references/S-TORCH-PROFILER/fulltext.txt)
+-- S-MLX：[完整原文](../../references/S-MLX/reader.html) · [全文文本](../../references/S-MLX/fulltext.txt)
+-- S-NKI：[完整原文](../../references/S-NKI/reader.html) · [全文文本](../../references/S-NKI/fulltext.txt)
+-- S-ROCPROF：[完整原文](../../references/S-ROCPROF/reader.html) · [全文文本](../../references/S-ROCPROF/fulltext.txt)
+-- S-METAL-TOOLS：[完整原文](../../references/S-METAL-TOOLS/reader.html) · [全文文本](../../references/S-METAL-TOOLS/fulltext.txt)
+-- S-NEURON-EXPLORER：[完整原文](../../references/S-NEURON-EXPLORER/reader.html) · [全文文本](../../references/S-NEURON-EXPLORER/fulltext.txt)
+-- S-PERF：[完整原文](../../references/S-PERF/reader.html) · [全文文本](../../references/S-PERF/fulltext.txt)
+-
+ - [S-TORCH-PROFILER：PyTorch — torch.profiler](../sources/S-TORCH-PROFILER.md)：框架 profiler 可以采集算子、设备工作、shape、stack 和内存相关信息。更详细的采集会增加运行开销，部分选项也会延长张量引用。
++  [完整原文](../../references/S-TORCH-PROFILER/reader.html) · [全文文本](../../references/S-TORCH-PROFILER/fulltext.txt)
+ 
+ - [S-MLX：MLX：Lazy Evaluation](../sources/S-MLX.md)：MLX 的惰性求值先建立计算图；显式求值或主机访问结果等操作触发执行。过密求值和过大的未求值图会产生不同开销。
++  [完整原文](../../references/S-MLX/reader.html) · [全文文本](../../references/S-MLX/fulltext.txt)
+ 
+ - [S-NKI：Trainium2 Architecture Guide for NKI](../sources/S-NKI.md)：已读 Trainium2 NKI 资料区分 HBM、SBUF、PSUM、DMA 与计算引擎；片上张量的 partition/free 轴和转置路径具有具体硬件意义。
++  [完整原文](../../references/S-NKI/reader.html) · [全文文本](../../references/S-NKI/fulltext.txt)
+ 
+ - [S-ROCPROF：ROCprofiler-SDK：rocprofv3](../sources/S-ROCPROF.md)：ROCprofiler-SDK 的 rocprofv3 区分 API/activity tracing 与 kernel counter collection，记录进程、agent、queue、dispatch 等身份。计数器可用集合和并行采集能力依 GPU 而定。
++  [完整原文](../../references/S-ROCPROF/reader.html) · [全文文本](../../references/S-ROCPROF/fulltext.txt)
+ 
+-- [S-METAL-TOOLS：Apple Metal Developer Tools](../sources/S-METAL-TOOLS.md)：Apple 的 Metal 工具说明提供 Instruments 系统时间线，以及 Xcode 的阶段观察和硬件计数器，覆盖 CPU/GPU 并行和内存行为。
++- [S-METAL-TOOLS：MLX — Metal Debugger（固定历史文档）](../sources/S-METAL-TOOLS.md)：MLX 的固定 Metal Debugger 文档说明 GPU capture、Metal 对象标签，以及在 Xcode 中打开与重放 trace、查看操作依赖。它不单独证明完整 Instruments 时间线或所有硬件计数器的覆盖。
++  [完整原文](../../references/S-METAL-TOOLS/reader.html) · [全文文本](../../references/S-METAL-TOOLS/fulltext.txt)
+ 
+ - [S-NEURON-EXPLORER：Neuron Explorer：Get started](../sources/S-NEURON-EXPLORER.md)：Neuron Explorer 区分系统事件与设备指令 trace；系统视图覆盖 runtime、API、加载与主机，设备视图需要匹配的编译产物与 trace。
++  [完整原文](../../references/S-NEURON-EXPLORER/reader.html) · [全文文本](../../references/S-NEURON-EXPLORER/fulltext.txt)
+ 
+ - [S-PERF：Linux perf-stat manual](../sources/S-PERF.md)：perf stat 统计指定执行范围内的 CPU 性能事件，事件类型、计数对象和运行区间决定结果含义。
++  [完整原文](../../references/S-PERF/reader.html) · [全文文本](../../references/S-PERF/fulltext.txt)
+ 
+-上文的公式展开、容量算例与组合设计是 InfraAgents 在这些机制基础上的推导，具体推导已写在本条正文中。来源入口均为本地释义，可继续读取其定义与使用关系。版本 4，2026-09-20。
++正文中的公式展开、容量算例与组合设计是基于这些来源的推导；设定算例不冒充实测。来源版本受 2026-04-30 上限约束，编辑日期 2026-10-22 不作为事实发布日期。此独立 base 版本内的章节修订号从 1 开始，原章节身份与版本映射保存在版本清单。
+ 
+ ## 延伸阅读
+ 
+--- input/knowledge/tools/failure-evidence.md
++++ version/knowledge/tools/failure-evidence.md
+@@ -22,17 +22,16 @@
+ 
+ ## 来源与推导
+ 
+-- S-PY-SUBPROCESS：[完整原文](../../references/S-PY-SUBPROCESS/reader.html) · [全文文本](../../references/S-PY-SUBPROCESS/fulltext.txt)
+-- S-CUDA-ASYNC：[完整原文](../../references/S-CUDA-ASYNC/reader.html) · [全文文本](../../references/S-CUDA-ASYNC/fulltext.txt)
+-- S-TORCH-NUMERIC：[完整原文](../../references/S-TORCH-NUMERIC/reader.html) · [全文文本](../../references/S-TORCH-NUMERIC/fulltext.txt)
+-
+ - [S-PY-SUBPROCESS：Python — subprocess](../sources/S-PY-SUBPROCESS.md)：Python subprocess 区分启动失败、返回码和超时等执行结果，stdout/stderr 与进程状态属于独立记录。
++  [完整原文](../../references/S-PY-SUBPROCESS/reader.html) · [全文文本](../../references/S-PY-SUBPROCESS/fulltext.txt)
+ 
+ - [S-CUDA-ASYNC：CUDA Programming Guide — Asynchronous Execution](../sources/S-CUDA-ASYNC.md)：CUDA stream 表达设备工作的顺序，event 可以在不同执行队列间建立完成依赖。host 调用返回、设备工作开始和设备完成属于不同事件。
++  [完整原文](../../references/S-CUDA-ASYNC/reader.html) · [全文文本](../../references/S-CUDA-ASYNC/fulltext.txt)
+ 
+ - [S-TORCH-NUMERIC：PyTorch — Numerical accuracy](../sources/S-TORCH-NUMERIC.md)：浮点运算不满足实数运算的全部结合性质，批量方式、归约顺序和平台路径可以产生数值差异。数值格式、累加精度和极端输入影响误差。
++  [完整原文](../../references/S-TORCH-NUMERIC/reader.html) · [全文文本](../../references/S-TORCH-NUMERIC/fulltext.txt)
+ 
+-上文的公式展开、容量算例与组合设计是 InfraAgents 在这些机制基础上的推导，具体推导已写在本条正文中。来源入口均为本地释义，可继续读取其定义与使用关系。版本 4，2026-09-20。
++正文中的公式展开、容量算例与组合设计是基于这些来源的推导；设定算例不冒充实测。来源版本受 2026-04-30 上限约束，编辑日期 2026-10-22 不作为事实发布日期。此独立 base 版本内的章节修订号从 1 开始，原章节身份与版本映射保存在版本清单。
+ 
+ ## 延伸阅读
+ 
+--- input/knowledge/tools/correctness-oracles.md
++++ version/knowledge/tools/correctness-oracles.md
+@@ -22,20 +22,19 @@
+ 
+ ## 来源与推导
+ 
+-- S-TORCH-NUMERIC：[完整原文](../../references/S-TORCH-NUMERIC/reader.html) · [全文文本](../../references/S-TORCH-NUMERIC/fulltext.txt)
+-- S-TORCH-REPRO：[完整原文](../../references/S-TORCH-REPRO/reader.html) · [全文文本](../../references/S-TORCH-REPRO/fulltext.txt)
+-- S-HF-CACHE：[完整原文](../../references/S-HF-CACHE/reader.html) · [全文文本](../../references/S-HF-CACHE/fulltext.txt)
+-- S-ASGI：[完整原文](../../references/S-ASGI/reader.html) · [全文文本](../../references/S-ASGI/fulltext.txt)
+-
+ - [S-TORCH-NUMERIC：PyTorch — Numerical accuracy](../sources/S-TORCH-NUMERIC.md)：浮点运算不满足实数运算的全部结合性质，批量方式、归约顺序和平台路径可以产生数值差异。数值格式、累加精度和极端输入影响误差。
++  [完整原文](../../references/S-TORCH-NUMERIC/reader.html) · [全文文本](../../references/S-TORCH-NUMERIC/fulltext.txt)
+ 
+ - [S-TORCH-REPRO：PyTorch — Reproducibility](../sources/S-TORCH-REPRO.md)：随机种子与确定性配置可以控制特定执行路径中的随机性，但不保证跨版本、平台和全部算法路径逐位一致。
++  [完整原文](../../references/S-TORCH-REPRO/reader.html) · [全文文本](../../references/S-TORCH-REPRO/fulltext.txt)
+ 
+ - [S-HF-CACHE：Transformers — Caching](../sources/S-HF-CACHE.md)：Transformers 的缓存说明区分已存历史 K/V、新输入、attention mask 和 cache position。增量前向需要让新 token 的位置与已有缓存长度一致。
++  [完整原文](../../references/S-HF-CACHE/reader.html) · [全文文本](../../references/S-HF-CACHE/fulltext.txt)
+ 
+ - [S-ASGI：ASGI — HTTP and WebSocket Message Format](../sources/S-ASGI.md)：ASGI HTTP/WebSocket 规范定义接收、发送、响应体和断开相关事件；断开通知与发送失败可能存在时间上的竞争。
++  [完整原文](../../references/S-ASGI/reader.html) · [全文文本](../../references/S-ASGI/fulltext.txt)
+ 
+-上文的公式展开、容量算例与组合设计是 InfraAgents 在这些机制基础上的推导，具体推导已写在本条正文中。来源入口均为本地释义，可继续读取其定义与使用关系。版本 3，2026-09-20。
++正文中的公式展开、容量算例与组合设计是基于这些来源的推导；设定算例不冒充实测。来源版本受 2026-04-30 上限约束，编辑日期 2026-10-22 不作为事实发布日期。此独立 base 版本内的章节修订号从 1 开始，原章节身份与版本映射保存在版本清单。
+ 
+ ## 延伸阅读
+ 
+--- input/knowledge/workloads/metric-events.md
++++ version/knowledge/workloads/metric-events.md
+@@ -24,17 +24,16 @@
+ 
+ ## 来源与推导
+ 
+-- S-GENAI-PERF：[完整原文](../../references/S-GENAI-PERF/reader.html) · [全文文本](../../references/S-GENAI-PERF/fulltext.txt)
+-- S-MLPERF-LLM：[完整原文](../../references/S-MLPERF-LLM/reader.html) · [全文文本](../../references/S-MLPERF-LLM/fulltext.txt)
+-- S-ASGI：[完整原文](../../references/S-ASGI/reader.html) · [全文文本](../../references/S-ASGI/fulltext.txt)
++- [S-GENAI-PERF：NVIDIA GenAI-Perf](../sources/S-GENAI-PERF.md)：GenAI-Perf 的指标围绕请求、响应、首个内容、流式间隔、输出长度和测量窗口定义。客户端 chunk 与模型 token 并非必然一一对应。
++  [完整原文](../../references/S-GENAI-PERF/reader.html) · [全文文本](../../references/S-GENAI-PERF/fulltext.txt)
+ 
+-- [S-GENAI-PERF：NVIDIA GenAI-Perf](../sources/S-GENAI-PERF.md)：GenAI-Perf 的指标围绕请求、响应、首个内容、流式间隔、输出长度和测量窗口定义。客户端 chunk 与模型 token 并非必然一一对应。
+-
+-- [S-MLPERF-LLM：MLCommons — Llama 2 70B Inference Benchmark](../sources/S-MLPERF-LLM.md)：MLPerf 的 Llama 2 服务基准将特定任务、到达模型、质量和延迟条件组织成评测协议，服务能力依赖这些共同条件。
++- [S-MLPERF-LLM：MLPerf Inference — Llama 2 与 LoadGen（固定历史版本）](../sources/S-MLPERF-LLM.md)：MLPerf 的 Llama 2 服务基准将特定任务、到达模型、质量和延迟条件组织成评测协议，服务能力依赖这些共同条件。
++  [完整原文](../../references/S-MLPERF-LLM/reader.html) · [全文文本](../../references/S-MLPERF-LLM/fulltext.txt)
+ 
+ - [S-ASGI：ASGI — HTTP and WebSocket Message Format](../sources/S-ASGI.md)：ASGI HTTP/WebSocket 规范定义接收、发送、响应体和断开相关事件；断开通知与发送失败可能存在时间上的竞争。
++  [完整原文](../../references/S-ASGI/reader.html) · [全文文本](../../references/S-ASGI/fulltext.txt)
+ 
+-上文的公式展开、容量算例与组合设计是 InfraAgents 在这些机制基础上的推导，具体推导已写在本条正文中。来源入口均为本地释义，可继续读取其定义与使用关系。版本 4，2026-09-20。
++正文中的公式展开、容量算例与组合设计是基于这些来源的推导；设定算例不冒充实测。来源版本受 2026-04-30 上限约束，编辑日期 2026-10-22 不作为事实发布日期。此独立 base 版本内的章节修订号从 1 开始，原章节身份与版本映射保存在版本清单。
+ 
+ ## 延伸阅读
+ 
+--- input/knowledge/workloads/arrival-and-concurrency.md
++++ version/knowledge/workloads/arrival-and-concurrency.md
+@@ -24,17 +24,16 @@
+ 
+ ## 来源与推导
+ 
+-- S-MLPERF-LLM：[完整原文](../../references/S-MLPERF-LLM/reader.html) · [全文文本](../../references/S-MLPERF-LLM/fulltext.txt)
+-- S-MLPERF-SCENARIOS：[完整原文](../../references/S-MLPERF-SCENARIOS/reader.html) · [全文文本](../../references/S-MLPERF-SCENARIOS/fulltext.txt)
+-- S-GENAI-PERF：[完整原文](../../references/S-GENAI-PERF/reader.html) · [全文文本](../../references/S-GENAI-PERF/fulltext.txt)
+-
+-- [S-MLPERF-LLM：MLCommons — Llama 2 70B Inference Benchmark](../sources/S-MLPERF-LLM.md)：MLPerf 的 Llama 2 服务基准将特定任务、到达模型、质量和延迟条件组织成评测协议，服务能力依赖这些共同条件。
++- [S-MLPERF-LLM：MLPerf Inference — Llama 2 与 LoadGen（固定历史版本）](../sources/S-MLPERF-LLM.md)：MLPerf 的 Llama 2 服务基准将特定任务、到达模型、质量和延迟条件组织成评测协议，服务能力依赖这些共同条件。
++  [完整原文](../../references/S-MLPERF-LLM/reader.html) · [全文文本](../../references/S-MLPERF-LLM/fulltext.txt)
+ 
+ - [S-MLPERF-SCENARIOS：MLCommons — Inference Mobile Scenarios](../sources/S-MLPERF-SCENARIOS.md)：不同推理场景使用不同请求驱动方式，例如前一响应完成后再发与独立到达。相同平均吞吐并不表示相同负载压力。
++  [完整原文](../../references/S-MLPERF-SCENARIOS/reader.html) · [全文文本](../../references/S-MLPERF-SCENARIOS/fulltext.txt)
+ 
+ - [S-GENAI-PERF：NVIDIA GenAI-Perf](../sources/S-GENAI-PERF.md)：GenAI-Perf 的指标围绕请求、响应、首个内容、流式间隔、输出长度和测量窗口定义。客户端 chunk 与模型 token 并非必然一一对应。
++  [完整原文](../../references/S-GENAI-PERF/reader.html) · [全文文本](../../references/S-GENAI-PERF/fulltext.txt)
+ 
+-上文的公式展开、容量算例与组合设计是 InfraAgents 在这些机制基础上的推导，具体推导已写在本条正文中。来源入口均为本地释义，可继续读取其定义与使用关系。版本 4，2026-09-20。
++正文中的公式展开、容量算例与组合设计是基于这些来源的推导；设定算例不冒充实测。来源版本受 2026-04-30 上限约束，编辑日期 2026-10-22 不作为事实发布日期。此独立 base 版本内的章节修订号从 1 开始，原章节身份与版本映射保存在版本清单。
+ 
+ ## 延伸阅读
+ 
+--- input/knowledge/workloads/input-distribution.md
++++ version/knowledge/workloads/input-distribution.md
+@@ -26,17 +26,16 @@
+ 
+ ## 来源与推导
+ 
+-- S-GENAI-PERF：[完整原文](../../references/S-GENAI-PERF/reader.html) · [全文文本](../../references/S-GENAI-PERF/fulltext.txt)
+-- S-PAGED：[完整原文](../../references/S-PAGED/reader.html) · [全文文本](../../references/S-PAGED/fulltext.txt)
+-- S-QWEN-VL：[完整原文](../../references/S-QWEN-VL/reader.html) · [全文文本](../../references/S-QWEN-VL/fulltext.txt)
+-
+ - [S-GENAI-PERF：NVIDIA GenAI-Perf](../sources/S-GENAI-PERF.md)：GenAI-Perf 的指标围绕请求、响应、首个内容、流式间隔、输出长度和测量窗口定义。客户端 chunk 与模型 token 并非必然一一对应。
++  [完整原文](../../references/S-GENAI-PERF/reader.html) · [全文文本](../../references/S-GENAI-PERF/fulltext.txt)
+ 
+ - [S-PAGED：Efficient Memory Management for Large Language Model Serving with PagedAttention](../sources/S-PAGED.md)：PagedAttention 把每条序列的逻辑 KV 划分为固定 token 数的块，用映射表访问不连续物理存储。多个序列可以共享相同前缀的物理块，分叉写入需要保持各序列状态独立。
++  [完整原文](../../references/S-PAGED/reader.html) · [全文文本](../../references/S-PAGED/fulltext.txt)
+ 
+ - [S-QWEN-VL：Qwen2.5-VL Technical Report](../sources/S-QWEN-VL.md)：Qwen2.5-VL 报告讨论动态视觉分辨率、窗口视觉编码及时间相关的多模态位置，视觉输入具有独立的网格和时间几何。
++  [完整原文](../../references/S-QWEN-VL/reader.html) · [全文文本](../../references/S-QWEN-VL/fulltext.txt)
+ 
+-上文的公式展开、容量算例与组合设计是 InfraAgents 在这些机制基础上的推导，具体推导已写在本条正文中。来源入口均为本地释义，可继续读取其定义与使用关系。版本 4，2026-09-20。
++正文中的公式展开、容量算例与组合设计是基于这些来源的推导；设定算例不冒充实测。来源版本受 2026-04-30 上限约束，编辑日期 2026-10-22 不作为事实发布日期。此独立 base 版本内的章节修订号从 1 开始，原章节身份与版本映射保存在版本清单。
+ 
+ ## 延伸阅读
+ 
+--- input/knowledge/workloads/measurement-comparability.md
++++ version/knowledge/workloads/measurement-comparability.md
+@@ -24,17 +24,16 @@
+ 
+ ## 来源与推导
+ 
+-- S-GENAI-PERF：[完整原文](../../references/S-GENAI-PERF/reader.html) · [全文文本](../../references/S-GENAI-PERF/fulltext.txt)
+-- S-TORCH-PROFILER：[完整原文](../../references/S-TORCH-PROFILER/reader.html) · [全文文本](../../references/S-TORCH-PROFILER/fulltext.txt)
+-- S-NCU：[完整原文](../../references/S-NCU/reader.html) · [全文文本](../../references/S-NCU/fulltext.txt)
+-
+ - [S-GENAI-PERF：NVIDIA GenAI-Perf](../sources/S-GENAI-PERF.md)：GenAI-Perf 的指标围绕请求、响应、首个内容、流式间隔、输出长度和测量窗口定义。客户端 chunk 与模型 token 并非必然一一对应。
++  [完整原文](../../references/S-GENAI-PERF/reader.html) · [全文文本](../../references/S-GENAI-PERF/fulltext.txt)
+ 
+ - [S-TORCH-PROFILER：PyTorch — torch.profiler](../sources/S-TORCH-PROFILER.md)：框架 profiler 可以采集算子、设备工作、shape、stack 和内存相关信息。更详细的采集会增加运行开销，部分选项也会延长张量引用。
++  [完整原文](../../references/S-TORCH-PROFILER/reader.html) · [全文文本](../../references/S-TORCH-PROFILER/fulltext.txt)
+ 
+ - [S-NCU：Nsight Compute — Profiling Guide](../sources/S-NCU.md)：Nsight Compute 提供 kernel 级硬件计数器和派生指标，某些采集需要 replay。计数器能力、采集模式及恢复条件影响所观察的执行。
++  [完整原文](../../references/S-NCU/reader.html) · [全文文本](../../references/S-NCU/fulltext.txt)
+ 
+-上文的公式展开、容量算例与组合设计是 InfraAgents 在这些机制基础上的推导，具体推导已写在本条正文中。来源入口均为本地释义，可继续读取其定义与使用关系。版本 4，2026-09-20。
++正文中的公式展开、容量算例与组合设计是基于这些来源的推导；设定算例不冒充实测。来源版本受 2026-04-30 上限约束，编辑日期 2026-10-22 不作为事实发布日期。此独立 base 版本内的章节修订号从 1 开始，原章节身份与版本映射保存在版本清单。
+ 
+ ## 延伸阅读
+ 
+--- input/knowledge/workloads/slo-goodput.md
++++ version/knowledge/workloads/slo-goodput.md
+@@ -26,17 +26,16 @@
+ 
+ ## 来源与推导
+ 
+-- S-MLPERF-LLM：[完整原文](../../references/S-MLPERF-LLM/reader.html) · [全文文本](../../references/S-MLPERF-LLM/fulltext.txt)
+-- S-DISTSERVE：[完整原文](../../references/S-DISTSERVE/reader.html) · [全文文本](../../references/S-DISTSERVE/fulltext.txt)
+-- S-GENAI-PERF：[完整原文](../../references/S-GENAI-PERF/reader.html) · [全文文本](../../references/S-GENAI-PERF/fulltext.txt)
+-
+-- [S-MLPERF-LLM：MLCommons — Llama 2 70B Inference Benchmark](../sources/S-MLPERF-LLM.md)：MLPerf 的 Llama 2 服务基准将特定任务、到达模型、质量和延迟条件组织成评测协议，服务能力依赖这些共同条件。
++- [S-MLPERF-LLM：MLPerf Inference — Llama 2 与 LoadGen（固定历史版本）](../sources/S-MLPERF-LLM.md)：MLPerf 的 Llama 2 服务基准将特定任务、到达模型、质量和延迟条件组织成评测协议，服务能力依赖这些共同条件。
++  [完整原文](../../references/S-MLPERF-LLM/reader.html) · [全文文本](../../references/S-MLPERF-LLM/fulltext.txt)
+ 
+ - [S-DISTSERVE：DistServe](../sources/S-DISTSERVE.md)：DistServe 将 prefill 与 decode 的资源分配和并行选择解耦，并把阶段间状态通信与链路条件纳入服务目标。
++  [完整原文](../../references/S-DISTSERVE/reader.html) · [全文文本](../../references/S-DISTSERVE/fulltext.txt)
+ 
+ - [S-GENAI-PERF：NVIDIA GenAI-Perf](../sources/S-GENAI-PERF.md)：GenAI-Perf 的指标围绕请求、响应、首个内容、流式间隔、输出长度和测量窗口定义。客户端 chunk 与模型 token 并非必然一一对应。
++  [完整原文](../../references/S-GENAI-PERF/reader.html) · [全文文本](../../references/S-GENAI-PERF/fulltext.txt)
+ 
+-上文的公式展开、容量算例与组合设计是 InfraAgents 在这些机制基础上的推导，具体推导已写在本条正文中。来源入口均为本地释义，可继续读取其定义与使用关系。版本 4，2026-09-20。
++正文中的公式展开、容量算例与组合设计是基于这些来源的推导；设定算例不冒充实测。来源版本受 2026-04-30 上限约束，编辑日期 2026-10-22 不作为事实发布日期。此独立 base 版本内的章节修订号从 1 开始，原章节身份与版本映射保存在版本清单。
+ 
+ ## 延伸阅读
+ 
+--- input/knowledge/workloads/capacity-planning.md
++++ version/knowledge/workloads/capacity-planning.md
+@@ -26,17 +26,16 @@
+ 
+ ## 来源与推导
+ 
+-- S-PAGED：[完整原文](../../references/S-PAGED/reader.html) · [全文文本](../../references/S-PAGED/fulltext.txt)
+-- S-DISTSERVE：[完整原文](../../references/S-DISTSERVE/reader.html) · [全文文本](../../references/S-DISTSERVE/fulltext.txt)
+-- S-MLPERF-LLM：[完整原文](../../references/S-MLPERF-LLM/reader.html) · [全文文本](../../references/S-MLPERF-LLM/fulltext.txt)
+-
+ - [S-PAGED：Efficient Memory Management for Large Language Model Serving with PagedAttention](../sources/S-PAGED.md)：PagedAttention 把每条序列的逻辑 KV 划分为固定 token 数的块，用映射表访问不连续物理存储。多个序列可以共享相同前缀的物理块，分叉写入需要保持各序列状态独立。
++  [完整原文](../../references/S-PAGED/reader.html) · [全文文本](../../references/S-PAGED/fulltext.txt)
+ 
+ - [S-DISTSERVE：DistServe](../sources/S-DISTSERVE.md)：DistServe 将 prefill 与 decode 的资源分配和并行选择解耦，并把阶段间状态通信与链路条件纳入服务目标。
++  [完整原文](../../references/S-DISTSERVE/reader.html) · [全文文本](../../references/S-DISTSERVE/fulltext.txt)
+ 
+-- [S-MLPERF-LLM：MLCommons — Llama 2 70B Inference Benchmark](../sources/S-MLPERF-LLM.md)：MLPerf 的 Llama 2 服务基准将特定任务、到达模型、质量和延迟条件组织成评测协议，服务能力依赖这些共同条件。
++- [S-MLPERF-LLM：MLPerf Inference — Llama 2 与 LoadGen（固定历史版本）](../sources/S-MLPERF-LLM.md)：MLPerf 的 Llama 2 服务基准将特定任务、到达模型、质量和延迟条件组织成评测协议，服务能力依赖这些共同条件。
++  [完整原文](../../references/S-MLPERF-LLM/reader.html) · [全文文本](../../references/S-MLPERF-LLM/fulltext.txt)
+ 
+-上文的公式展开、容量算例与组合设计是 InfraAgents 在这些机制基础上的推导，具体推导已写在本条正文中。来源入口均为本地释义，可继续读取其定义与使用关系。版本 3，2026-09-20。
++正文中的公式展开、容量算例与组合设计是基于这些来源的推导；设定算例不冒充实测。来源版本受 2026-04-30 上限约束，编辑日期 2026-10-22 不作为事实发布日期。此独立 base 版本内的章节修订号从 1 开始，原章节身份与版本映射保存在版本清单。
+ 
+ ## 延伸阅读
+ 

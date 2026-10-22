@@ -20,7 +20,7 @@ shape 记录可以发现意外的全历史重算、padding、KV 展开和非连�
 |---|---|---|---|
 | CUDA | Nsight Systems 的 API、stream、copy 与主机时间 | Nsight Compute 的 kernel 计数器 | 用范围和 correlation 关联具体算子实例 |
 | ROCm | rocprofv3 的 HIP/HSA、dispatch 与传输记录 | GPU 对应硬件计数器与派生指标 | 保留进程、agent、queue、dispatch 身份 |
-| Metal | Instruments Metal System Trace 的 CPU/GPU 并行与内存 | Xcode 的阶段时间和硬件计数器 | 把 MLX 求值或 Metal command 工作映射到时间区间 |
+| Metal | MLX 求值边界与 Metal 对象标签 | 固定版本支持的 GPU capture 与 Xcode 操作依赖视图 | 把 MLX 数组求值连接到实际 Metal 工作；未被此来源覆盖的计数器能力另行核实 |
 | Trainium | Neuron Explorer 的 runtime、API、加载与主机事件 | NeuronCore 指令 trace 与依赖 | 设备 trace 与匹配的编译 NEFF 对应，解释实际 executable |
 | CPU | 线程调度、进程 CPU 时间与 framework spans | perf 的 cycles、instructions、cache 等可用事件 | 区分算子计算、线程竞争与主机预处理 |
 
@@ -36,29 +36,28 @@ shape 记录可以发现意外的全历史重算、padding、KV 展开和非连�
 
 ## 来源与推导
 
-- S-TORCH-PROFILER：[完整原文](../../references/S-TORCH-PROFILER/reader.html) · [全文文本](../../references/S-TORCH-PROFILER/fulltext.txt)
-- S-MLX：[完整原文](../../references/S-MLX/reader.html) · [全文文本](../../references/S-MLX/fulltext.txt)
-- S-NKI：[完整原文](../../references/S-NKI/reader.html) · [全文文本](../../references/S-NKI/fulltext.txt)
-- S-ROCPROF：[完整原文](../../references/S-ROCPROF/reader.html) · [全文文本](../../references/S-ROCPROF/fulltext.txt)
-- S-METAL-TOOLS：[完整原文](../../references/S-METAL-TOOLS/reader.html) · [全文文本](../../references/S-METAL-TOOLS/fulltext.txt)
-- S-NEURON-EXPLORER：[完整原文](../../references/S-NEURON-EXPLORER/reader.html) · [全文文本](../../references/S-NEURON-EXPLORER/fulltext.txt)
-- S-PERF：[完整原文](../../references/S-PERF/reader.html) · [全文文本](../../references/S-PERF/fulltext.txt)
-
 - [S-TORCH-PROFILER：PyTorch — torch.profiler](../sources/S-TORCH-PROFILER.md)：框架 profiler 可以采集算子、设备工作、shape、stack 和内存相关信息。更详细的采集会增加运行开销，部分选项也会延长张量引用。
+  [完整原文](../../references/S-TORCH-PROFILER/reader.html) · [全文文本](../../references/S-TORCH-PROFILER/fulltext.txt)
 
 - [S-MLX：MLX：Lazy Evaluation](../sources/S-MLX.md)：MLX 的惰性求值先建立计算图；显式求值或主机访问结果等操作触发执行。过密求值和过大的未求值图会产生不同开销。
+  [完整原文](../../references/S-MLX/reader.html) · [全文文本](../../references/S-MLX/fulltext.txt)
 
 - [S-NKI：Trainium2 Architecture Guide for NKI](../sources/S-NKI.md)：已读 Trainium2 NKI 资料区分 HBM、SBUF、PSUM、DMA 与计算引擎；片上张量的 partition/free 轴和转置路径具有具体硬件意义。
+  [完整原文](../../references/S-NKI/reader.html) · [全文文本](../../references/S-NKI/fulltext.txt)
 
 - [S-ROCPROF：ROCprofiler-SDK：rocprofv3](../sources/S-ROCPROF.md)：ROCprofiler-SDK 的 rocprofv3 区分 API/activity tracing 与 kernel counter collection，记录进程、agent、queue、dispatch 等身份。计数器可用集合和并行采集能力依 GPU 而定。
+  [完整原文](../../references/S-ROCPROF/reader.html) · [全文文本](../../references/S-ROCPROF/fulltext.txt)
 
-- [S-METAL-TOOLS：Apple Metal Developer Tools](../sources/S-METAL-TOOLS.md)：Apple 的 Metal 工具说明提供 Instruments 系统时间线，以及 Xcode 的阶段观察和硬件计数器，覆盖 CPU/GPU 并行和内存行为。
+- [S-METAL-TOOLS：MLX — Metal Debugger（固定历史文档）](../sources/S-METAL-TOOLS.md)：MLX 的固定 Metal Debugger 文档说明 GPU capture、Metal 对象标签，以及在 Xcode 中打开与重放 trace、查看操作依赖。它不单独证明完整 Instruments 时间线或所有硬件计数器的覆盖。
+  [完整原文](../../references/S-METAL-TOOLS/reader.html) · [全文文本](../../references/S-METAL-TOOLS/fulltext.txt)
 
 - [S-NEURON-EXPLORER：Neuron Explorer：Get started](../sources/S-NEURON-EXPLORER.md)：Neuron Explorer 区分系统事件与设备指令 trace；系统视图覆盖 runtime、API、加载与主机，设备视图需要匹配的编译产物与 trace。
+  [完整原文](../../references/S-NEURON-EXPLORER/reader.html) · [全文文本](../../references/S-NEURON-EXPLORER/fulltext.txt)
 
 - [S-PERF：Linux perf-stat manual](../sources/S-PERF.md)：perf stat 统计指定执行范围内的 CPU 性能事件，事件类型、计数对象和运行区间决定结果含义。
+  [完整原文](../../references/S-PERF/reader.html) · [全文文本](../../references/S-PERF/fulltext.txt)
 
-上文的公式展开、容量算例与组合设计是 InfraAgents 在这些机制基础上的推导，具体推导已写在本条正文中。来源入口均为本地释义，可继续读取其定义与使用关系。版本 4，2026-09-20。
+正文中的公式展开、容量算例与组合设计是基于这些来源的推导；设定算例不冒充实测。来源版本受 2026-04-30 上限约束，编辑日期 2026-10-22 不作为事实发布日期。此独立 base 版本内的章节修订号从 1 开始，原章节身份与版本映射保存在版本清单。
 
 ## 延伸阅读
 

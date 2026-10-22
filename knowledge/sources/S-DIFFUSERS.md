@@ -1,23 +1,19 @@
-# S-DIFFUSERS：Diffusers：Schedulers
+# S-DIFFUSERS：Diffusers — Scheduler 与 DDIM（固定历史源码）
 
 ## 本地完整原文
 
-[完整原文阅读](../../references/S-DIFFUSERS/reader.html) · [全文文本](../../references/S-DIFFUSERS/fulltext.txt) · [原始文件](../../references/S-DIFFUSERS/original.html)
+[完整原文](../../references/S-DIFFUSERS/reader.html) · [全文文本](../../references/S-DIFFUSERS/fulltext.txt)
 
-原始文件、完整正文及正文所需本地资源均已保存。
-
-资料形态：按已核对范围整理的本地非代码释义。原文版本：online 2026-09-20。
+固定版本：Git 303c1d8b04688a48d67fe1829217c721996995c0 (2026-04-30)。来源版本日期：2026-04-30；整理核对日期：2026-10-22。
 
 ## 来源支持的机制与定义
 
-Diffusers 的 scheduler 说明连接模型预测、当前 latent 和时间步更新；不同预测参数化与 scheduler 配置需要相容。
+Diffusers 的固定 scheduler 源码定义 scheduler 配置、模型预测与时间步更新；DDIM 文件给出 latent 更新及 prediction_type 的不同分支。当前材料不把后续版本的默认参数当作通用规则。
 
 ## InfraAgents 如何据此推导
 
 本库将步数、guidance、初始噪声和 scheduler 一起定义为比较条件。减少求解步数改变质量/成本问题，不能只当等价实现加速。
 
-## 阅读范围与出处身份
+## 适用边界
 
-扩散调度器、时间步和模型预测的关系。
-
-核对日期：2026-09-20。原文标题、版本与原始地址保留在来源登记元数据中；上述内容是来源释义与本库推导的区分，不冒充原文逐字副本。
+所列机制与接口资料；本文设计推导和数值例为独立分析，不是目标机器实测。 原始版本、日期依据与归档范围见本地 provenance.json；版本日期不证明模型训练实际包含该资料。

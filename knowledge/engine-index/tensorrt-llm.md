@@ -4,9 +4,19 @@ TensorRT-LLM 的执行器将请求调度、模型执行、采样和资源管理�
 
 ## 两种层次的来源
 
-官方架构页说明 LLM 入口、执行器、scheduler、model engine 和 sampler 的关系。本次还实际读取 VibeSys 子模块记录指向的固定提交 0d2bea7c3c99b734a8e09c4c767820e03136a15b；并未初始化或引入它作为运行依赖。
+本页核对固定提交 0343a9d9f2a8f69f9fe783834b042ff7687a28a4，提交日期为 2026-04-30。以下坐标由完整归档源码解析取得，只定位这一版本。
 
-该提交 tensorrt_llm/_torch/pyexecutor/py_executor.py：PyExecutor 第 256 行，_prepare_and_schedule_batch 第 1809 行，_schedule 第 2952 行，_sample_async 第 3467 行。文件哈希与符号见 [定位证据](../../docs/evidence/expert-source-locations-20260920.json)。该源码的组织不等于旧版 TensorRT C++ engine 路径，两者应按实际后端分别阅读。
+| 文件 | 符号 | 行号 |
+|---|---|---|
+| tensorrt_llm/_torch/pyexecutor/py_executor.py | PyExecutor | 272 |
+| tensorrt_llm/_torch/pyexecutor/py_executor.py | AsyncTransferManager | 153 |
+| tensorrt_llm/_torch/pyexecutor/py_executor.py | _prepare_and_schedule_batch | 1957 |
+| tensorrt_llm/_torch/pyexecutor/py_executor.py | _schedule | 3110 |
+| tensorrt_llm/_torch/pyexecutor/py_executor.py | _sample_async | 3632 |
+
+[完整原文与本地阅读](../../references/S-TRTLLM-CODE/reader.html)；[源码定位证据](../../docs/evidence/astra-source-locations.json)。
+
+架构文档与本文件来自同一历史提交，分别说明入口、执行器、scheduler、model engine 和 sampler 的职责及其实际连接。这里讨论 PyTorch 执行器，不把它与其他后端的接口混用。
 
 ## Overlap 的关键是设备端依赖连续
 
@@ -24,14 +34,13 @@ TensorRT-LLM 的执行器将请求调度、模型执行、采样和资源管理�
 
 ## 来源与推导
 
-- S-TRTLLM：[完整原文](../../references/S-TRTLLM/reader.html) · [全文文本](../../references/S-TRTLLM/fulltext.txt)
-- S-TRTLLM-CODE：[完整原文](../../references/S-TRTLLM-CODE/reader.html) · [全文文本](../../references/S-TRTLLM-CODE/fulltext.txt)
-
 - [S-TRTLLM：TensorRT-LLM Architecture Overview](../sources/S-TRTLLM.md)：已读 TensorRT-LLM 架构页将入口、PyExecutor、scheduler、model engine 与 sampler 连接成后台迭代，并介绍 graph padding 和 overlap 思路。
+  [完整原文](../../references/S-TRTLLM/reader.html) · [全文文本](../../references/S-TRTLLM/fulltext.txt)
 
-- [S-TRTLLM-CODE：TensorRT-LLM PyExecutor 固定提交](../sources/S-TRTLLM-CODE.md)：实际读取固定提交 0d2bea7c 的 PyExecutor 文件，核对调度准备、_schedule、_sample_async 和异步传输责任。AsyncTransferManager 需在多个传输使用者完成后解除保护。
+- [S-TRTLLM-CODE：TensorRT-LLM PyExecutor 固定提交](../sources/S-TRTLLM-CODE.md)：固定历史提交的 PyExecutor 包含调度准备、_schedule、_sample_async 和异步传输管理。AsyncTransferManager 在发送与保存的全部使用者完成后解除 KV 保护；加载状态由其他路径处理。
+  [完整原文](../../references/S-TRTLLM-CODE/reader.html) · [全文文本](../../references/S-TRTLLM-CODE/fulltext.txt)
 
-上文的公式展开、容量算例与组合设计是 InfraAgents 在这些机制基础上的推导，具体推导已写在本条正文中。来源入口均为本地释义，可继续读取其定义与使用关系。版本 3，2026-09-20。
+正文中的公式展开、容量算例与组合设计是基于这些来源的推导；设定算例不冒充实测。来源版本受 2026-04-30 上限约束，编辑日期 2026-10-22 不作为事实发布日期。此独立 base 版本内的章节修订号从 1 开始，原章节身份与版本映射保存在版本清单。
 
 ## 延伸阅读
 

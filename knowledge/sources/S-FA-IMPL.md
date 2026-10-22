@@ -2,11 +2,9 @@
 
 ## 本地完整原文
 
-[完整原文阅读](../../references/S-FA-IMPL/reader.html) · [全文文本](../../references/S-FA-IMPL/fulltext.txt) · [原始文件](../../references/S-FA-IMPL/repository.tar.gz)
+[完整原文](../../references/S-FA-IMPL/reader.html) · [全文文本](../../references/S-FA-IMPL/fulltext.txt)
 
-固定源码提交：edb5c76ee329b18ed95d1f7ea9aa522a1331ab7d；归档范围：entire_repository。
-
-资料形态：按已核对范围整理的本地非代码释义。原文版本：online 2026-09-20。
+固定版本：Git c5f6ff4905b924d20b5fc2fe74551638cd1421f4 (2026-04-30)。来源版本日期：2026-04-30；整理核对日期：2026-10-22。
 
 ## 来源支持的机制与定义
 
@@ -16,8 +14,6 @@ FlashAttention 的版本说明记录：2.1 将非等长 Q/K 的 causal 对齐由
 
 本库以绝对位置推导期望 mask，再比较 backend 接口，不能只把同名 causal 布尔值直接替换。
 
-## 阅读范围与出处身份
+## 适用边界
 
-非等长 Q/K 的 causal 对齐及版本变化。
-
-核对日期：2026-09-20。原文标题、版本与原始地址保留在来源登记元数据中；上述内容是来源释义与本库推导的区分，不冒充原文逐字副本。
+所列机制与接口资料；本文设计推导和数值例为独立分析，不是目标机器实测。 原始版本、日期依据与归档范围见本地 provenance.json；版本日期不证明模型训练实际包含该资料。

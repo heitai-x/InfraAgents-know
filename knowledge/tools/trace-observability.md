@@ -12,7 +12,7 @@ trace 是由采集范围和工具机制生成的观测，不是系统全部执�
 
 记录所需信号、采集是否启用、原始记录是否存在、导出是否成功和查询范围，可以明确每个结论依赖什么。主机 API、设备 kernel、memcpy、通信、NVTX 和 OS 调度各回答不同问题；一个工具的默认输出不能自动覆盖全部。
 
-原项目 [CASE-0001](../cases/CASE-0001-nsys-observability.md) 通过有记录与缺表对照验证了这些状态区分，并保存原始清单。该证据支持观测工具链的行为，不将微型案例外推为模型服务表现。
+可以构造两份采集材料作区分：一份明确启用并取得目标设备事件，另一份未启用该类采集。后者缺少相应表，只能说明该观测路径未覆盖；是否执行须由其他独立信号判断。这里给出验证关系，不声称已经完成一次项目实验。
 
 ## 缺失也可形成下一步信息
 
@@ -22,17 +22,13 @@ trace 是由采集范围和工具机制生成的观测，不是系统全部执�
 
 ## 来源与推导
 
-- S-NSYS：[完整原文](../../references/S-NSYS/reader.html) · [全文文本](../../references/S-NSYS/fulltext.txt)
-- S-TORCH-PROFILER：[完整原文](../../references/S-TORCH-PROFILER/reader.html) · [全文文本](../../references/S-TORCH-PROFILER/fulltext.txt)
-- S-CASE-0001：[完整原文](../../references/S-CASE-0001/reader.html) · [全文文本](../../references/S-CASE-0001/fulltext.txt)
-
-- [S-NSYS：Nsight Systems — Post-Collection Analysis Guide](../sources/S-NSYS.md)：Nsight Systems 的原始事件与导出可用于查看 host API、设备 kernel、复制和关联信息。事件属于具体进程、线程、设备和时间窗口。
+- [S-NSYS：Nsight Systems 2024.6 — User Guide](../sources/S-NSYS.md)：Nsight Systems 2024.6 用户指南描述 host API、设备 kernel、复制、范围和相关事件的采集与查看。进程、线程、设备、采集范围和时间窗口共同限定观测含义。
+  [完整原文](../../references/S-NSYS/reader.html) · [全文文本](../../references/S-NSYS/fulltext.txt)
 
 - [S-TORCH-PROFILER：PyTorch — torch.profiler](../sources/S-TORCH-PROFILER.md)：框架 profiler 可以采集算子、设备工作、shape、stack 和内存相关信息。更详细的采集会增加运行开销，部分选项也会延长张量引用。
+  [完整原文](../../references/S-TORCH-PROFILER/reader.html) · [全文文本](../../references/S-TORCH-PROFILER/fulltext.txt)
 
-- [S-CASE-0001：InfraAgents CASE-0001 evidence manifest](../sources/S-CASE-0001.md)：本地证据清单记录微型 CUDA 采集、导出、缺表对照和事件关联。所记首次设备开始减 host API 结束为 −1116 ns；3 kernel 累计 4352 ns、2 memcpy 累计 4896 ns。
-
-上文的公式展开、容量算例与组合设计是 InfraAgents 在这些机制基础上的推导，具体推导已写在本条正文中。来源入口均为本地释义，可继续读取其定义与使用关系。版本 4，2026-09-20。
+正文中的公式展开、容量算例与组合设计是基于这些来源的推导；设定算例不冒充实测。来源版本受 2026-04-30 上限约束，编辑日期 2026-10-22 不作为事实发布日期。此独立 base 版本内的章节修订号从 1 开始，原章节身份与版本映射保存在版本清单。
 
 ## 延伸阅读
 

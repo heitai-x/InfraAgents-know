@@ -1,219 +1,863 @@
-<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; frame-src 'self'; object-src 'self'; media-src 'self'; base-uri 'none'; form-action 'none'"><title>Llama 2 70B: An MLPerf Inference Benchmark for Large Language Models - MLCommons</title><style>body{font:16px/1.75 system-ui,sans-serif;color:#202631;background:#fff;margin:0 auto;padding:40px;max-width:1100px}h1,h2,h3{line-height:1.3}pre,code{font-family:Consolas,monospace}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#f4f6f8;padding:18px}table{border-collapse:collapse;display:block;overflow-x:auto}td,th{border:1px solid #ccd3dc;padding:8px}img,svg{max-width:100%;height:auto}figure{margin:24px 0}.archive-note{border-left:4px solid #2563eb;padding:12px 20px;background:#eef4ff}math{font-size:1.1em}iframe{width:100%;height:85vh;border:1px solid #ccd3dc}a{color:#1658a5}</style></head><body><p class="archive-note">本地原文阅读副本。正文与资料文件已归档；原始响应、版本和校验信息见同目录 manifest.json。网页导航与在线脚本不执行。</p><main id="content">
-<div class="gutenberg-blocks">
-<div class="insight-banner">
-<div class="wrapper">
-<p class="h5">Insights</p>
-</div>
-</div>
-<article class="insight">
-<div class="insight__content">
-<header class="insight__hd">
-<h1 class="h2">Llama 2 70B: An MLPerf Inference Benchmark for Large Language Models</h1>
-<div class="insight__excerpt"><p>MLPerf Inference task force shares insights on the selection of Llama 2 for the latest MLPerf Inference benchmark round.</p>
-</div>
-<span class="insight__date">March 27, 2024</span>
-<figure class="insight__media">
-<img alt="" class="attachment-post-thumbnail size-post-thumbnail wp-post-image" decoding="async" fetchpriority="high" height="2000" sizes="(max-width: 2000px) 100vw, 2000px" src="assets/2bd2cefd1d73ff36766b9018.png" width="2000"/> </figure>
-</header>
-<div class="post-content">
-<p class="wp-block-paragraph">The MLCommons<sup>Ⓡ </sup>MLPerf<sup>Ⓡ</sup> Inference benchmark suite is an industry standard for measuring the performance of machine learning (ML) and artificial intelligence (AI) workloads from diverse domains including vision, speech, and natural language processing. For each of these domains, the suite includes a carefully selected set of workloads that represents the state of the art in the industry across different application segments. These benchmarks not only provide key information to consumers for making application deployment and budget decisions but also enable vendors to deliver critical workload optimizations within certain practical constraints to their customers.</p>
-<p class="wp-block-paragraph">With the advent and widespread adoption of large language models (LLMs), it has become even more crucial to make objective, fair and robust benchmarks readily available to the community. With this goal in mind, the MLPerf Inference working group formed a special task force in early 2023 to explore, define, and create language benchmarks.  </p>
-<h2 class="wp-block-heading">Building on small LLM in Inference v3.1</h2>
-<p class="wp-block-paragraph">In deliberations leading up to the MLPerf Inference v3.1 round, which was available for submission in August 2023, the task force initially considered two principal LLM segments: a “smaller” LLM represented by GPT-J with six billion parameters, and a “larger” LLM based on GPT-3 with 175 billion parameters.</p>
-<p class="wp-block-paragraph">The smaller LLM was fine-tuned for text summarization, which is an application of increasing importance, aiding in human understanding and decision making from large bodies of text. This benchmark had a successful debut in the v3.1 round, with 11 organizations submitting 30 results across CPUs, GPUs, and custom accelerators. Details of the MLPerf Inference GPT-J benchmark and reference implementation can be found <a data-original-href="https://github.com/mlcommons/inference/tree/master/language/gpt-j">here</a>.</p>
-<p class="wp-block-paragraph">The task force faced a number of technical challenges with the larger, more compute-intensive LLM, and the team eventually chose to postpone work on this benchmark to the MLPerf v4.0 round.</p>
-<h2 class="wp-block-heading">Introducing Llama 2 70B in MLPerf Inference v4.0</h2>
-<p class="wp-block-paragraph">For the MLPerf Inference v4.0 round, the working group decided to revisit the “larger” LLM task and spawned a new task force. The task force examined several potential candidates for inclusion: GPT-175B, Falcon-40B, Falcon-180B, BLOOMZ, and Llama 2 70B.</p>
-<p class="wp-block-paragraph">After careful evaluation and discussion, the task force chose <strong>Llama 2 70B</strong> as the model that best suited the goals of the benchmark. The choice of Llama 2 70B as the flagship “larger” LLM was determined by several factors:</p>
-<ul class="wp-block-list">
-<li><strong>Licensing restrictions</strong>: For an open benchmark consortium, model licenses must be flexible enough to offer unlimited access and use to participating submitters at minimum and, ideally, to the press and public in general. This requirement typically reduces the candidate pool to models (and datasets) with permissive licenses such as Apache 2.0, MIT, or similar. Thanks to Meta’s support, MLCommons is making the Llama 2 family of models available to MLCommons’ members, as part of the MLPerf benchmark suite, for the purpose of members conducting the benchmarking.</li>
-<li><strong>Ease of use and deployment (technical)</strong>: Llama 2 70B stands out for its accessibility and ease of deployment compared to models like GPT-175B that demand substantial resources and engineering effort for pre-training, fine-tuning, and framework alignment. The <a data-original-href="https://huggingface.co/meta-llama/Llama-2-70b-chat-hf">Llama-2-70B-Chat-HF</a> model dramatically streamlined the MLPerf benchmark development process, allowing the task force to integrate an advanced LLM model without extensive resource allocation.</li>
-<li><strong>Community interests</strong>: While LLM model parameter sizes have increased tremendously in the recent past, the broader ML/AI developer community’s interest also plays an important role in shaping industry adoption across different application segments. Using Hugging Face contributions and leaderboards as a proxy for community engagement, Llama 2 70B was the leading candidate for inclusion during the task force’s discussions.</li>
-<li><strong>Quality</strong>:<strong> </strong>In gauging the suitability of candidate models, we considered their accuracy scores and output text quality across popular datasets curated for different language modeling tasks. Llama 2 70B was one of the best performing models in our evaluation under this criteria.</li>
-</ul>
-<h2 class="wp-block-heading">Choosing a task and a dataset for the LLM</h2>
-<p class="wp-block-paragraph">The task force evaluated many of the popular tasks for LLMs and, after careful deliberation, chose to use a question-answering (or Q&amp;A) scenario. We picked the Q&amp;A task because it is one of the most common ways that LLMs are being used in serving applications today. Q&amp;A tasks reflect real-world demands for natural-language understanding and interaction. We considered dialogue-based tasks, like an interactive chat session that accumulates context over a series of interactions, but their evaluation complexity posed challenges, particularly in ensuring accurate assessments and also in the difficulty of measuring performance during such a dialogue. Thus, to streamline our benchmarking process and ensure robust evaluation, we opted for the Q&amp;A scenario, with discrete pairs of questions and answers, due to its widespread applicability and straightforward evaluation metrics.</p>
-<p class="wp-block-paragraph">Examining the field of available datasets for this task, we chose the <a data-original-href="https://huggingface.co/datasets/Open-Orca/OpenOrca"><strong>Open Orca dataset</strong></a> among various top-rated datasets such as <a data-original-href="https://huggingface.co/datasets/allenai/soda">AllenAI/soda</a>. Open Orca is recognized as one of the highest quality and most extensive datasets available for question answering. The dataset contains a fusion of augmented FLAN Collection data with one million GPT-4 completions, making it a rich source for evaluating NLP capabilities. </p>
-<p class="wp-block-paragraph">In order to shorten benchmark runtime, we decided to select a subset of 24,576 samples from this dataset. The samples in this dataset were further curated for characteristics such as prompt quality, sample source (e.g cot, flan), maximum input length (1,024 tokens), maximum output length (1,024 tokens) and minimum reference response length (at least three tokens) to create the validation set for the benchmark. Interested readers can refer to <a data-original-href="https://github.com/mlcommons/inference/blob/master/language/llama2-70b/processorca.py">processorca.py</a> for more details.</p>
-<figure class="wp-block-image aligncenter size-full"><img alt="" class="wp-image-2826" decoding="async" src="assets/b7fb52c36747e8dbda9aa6be.png"/></figure>
-<p class="wp-block-paragraph"><em> Figure 1: Input length distribution in the curated dataset</em></p>
-<p class="wp-block-paragraph">We observed that in general Llama 2 70B generates slightly longer outputs than GPT-4 on our dataset. Additionally, some of the output sequences from our model do not finish their generation within our bound of 1,024 tokens.</p>
-<h2 class="wp-block-heading">Choosing accuracy metrics for the LLM</h2>
-<p class="wp-block-paragraph">For comprehensive evaluation, the LLM inference task force carefully considered how to adhere to a high standard of model quality. Given the potential accuracy and performance trade-offs during optimization, submissions should not deviate significantly from the output that is generated by the 32-bit floating-point (FP32) reference model that defines canonical correctness. </p>
-<p class="wp-block-paragraph">The task force investigated various accuracy metrics for language models, including perplexity, MMLU, MAUVE, and ExactMatch. Some of these metrics do not take the entire generated text into consideration (e..g perplexity and MMLU), while others have non-deterministic behavior (e.g. MAUVE). The task force ended up choosing <a data-original-href="https://en.wikipedia.org/wiki/ROUGE_(metric)"><strong>ROUGE </strong>scores</a> as the accuracy metrics. In essence, n-gram based metrics, such as ROUGE scores, measure how close a given text is to its reference. Keeping the robustness of the accuracy in mind, the taskforce sided with choosing a set of three ROUGE metrics for this benchmark: ROUGE-1, ROUGE-2 and ROUGE-L.</p>
-<p class="wp-block-paragraph">The reference FP32 implementation achieves the following reference ROUGE scores:</p>
-<ul class="wp-block-list">
-<li>ROUGE-1 = 44.4312</li>
-<li>ROUGE-2 = 22.0352</li>
-<li>ROUGE-L = 28.6162</li>
-</ul>
-<p class="wp-block-paragraph">The Llama 2 70B benchmark allows submissions under two categories: in the first category, all achieved scores must be above 99.9% of the reference scores; in the second category, all achieved scores must be above 99% of the reference scores. However, since there were no v4.0 submissions with the accuracy lower than 99.9%, the 4.0 results table contains only the highest accuracy category.</p>
-<p class="wp-block-paragraph">To further tighten this benchmark, the taskforce decided to allow only submissions with a generation length of 294.45 tokens per sample, with a +/- 10% tolerance.</p>
-<figure class="wp-block-image aligncenter size-full"><img alt="" class="wp-image-2828" decoding="async" src="assets/aaa47dc97e6b7a8105cdca95.png"/></figure>
-<p class="wp-block-paragraph"><em>Figure 2: ROUGE scores distribution in outputs from the reference implementation</em></p>
-<h2 class="wp-block-heading">Measuring performance of the LLM</h2>
-<p class="wp-block-paragraph">An LLM inference takes as input several tokens (a sentence or paragraph) and generates tokens based on the instructions. In its most basic form, one could treat the problem as asking the benchmark to fill in the last word of a sentence. Internally, the processing happens in two main steps. The input tokens are processed together to generate the first output token. This step is commonly referred to as the <strong>prompt phase</strong> or the context phase. After this phase, computation is primarily limited to generating the rest of the tokens in the response, one token at a time, reusing the context from prior computation in each step. This phase is generally called the <strong>generation phase</strong>. It is critical for the performance and accuracy metrics to capture the application execution behavior in both of these phases of computation. </p>
-<p class="wp-block-paragraph">While other applications could use throughput metrics such as queries/second, the amount of computational work done by one LLM inference can be extremely different from another. This delta is due to the fact that queries can have different input and output token lengths. Therefore, the task force decided to use <strong>tokens/second</strong> as the metric for throughput measurement, which is a well understood and standard metric for LLM throughput measurement across the industry. </p>
-<h2 class="wp-block-heading">Latency constraints for the server scenario</h2>
-<p class="wp-block-paragraph">The server scenario in <a data-original-href="https://arxiv.org/pdf/1911.02549.pdf">MLPerf Inference benchmarks</a> simulates online applications where query arrival is random and the response latency is important. The query arrival traffic is described with a Poisson distribution where the query arrival rate (queries per second or “target_qps”) is the Poisson parameter. The test is successful if latency constraints for the benchmark are met.</p>
-<p class="wp-block-paragraph">In industrial applications of LLMs, the following latency metrics are considered important:</p>
-<ul class="wp-block-list">
-<li><strong>TTFT</strong>: Time to first token</li>
-<li><strong>TPOT</strong>: Time per output token, sometimes also called TBT (time between tokens)</li>
-</ul>
-<p class="wp-block-paragraph">Using the typical human reading speed as a logical anchor, these latency constraints were set as:</p>
-<ul class="wp-block-list">
-<li><strong>TTFT</strong>: &lt;= 2 seconds</li>
-<li><strong>TPOT</strong>: &lt;= 200 milliseconds</li>
-</ul>
-<p class="wp-block-paragraph">A TPOT of 200 ms translates to a maximum allowed generation latency that maps to ~240 words per minute (depending on the tokenizer), which is <a data-original-href="https://scholarwithin.com/average-reading-speed#:~:text=read%2020%20pages.-,Adult%20Average%20Reading%20Speed,of%20300%20words%20per%20minute">often cited as the average human reading speed</a>.</p>
-<p class="wp-block-paragraph">While reading speed is a good yardstick for generation tasks such as LLM-based chat or tech support, other use cases have tighter latency constraints. For example, code generation, real-time slide generation, and smart agents all require much faster response times. </p>
-<h2 class="wp-block-heading">Ensuring compliance to the benchmark criteria</h2>
-<p class="wp-block-paragraph">To ensure compliance and prevent potential exploitation, the task force devised a compliance check mechanism. This test is designed to verify the adherence of tokens generated by submitters to predefined criteria. Specifically, three key tests are applied to the submissions:</p>
-<ol class="wp-block-list">
-<li><strong>First token consistency</strong>: The first token generated must match the first token reported to the LoadGen for timing purposes, ensuring synchronization and accuracy in the token generation processes.</li>
-<li><strong>EOS token validation</strong>: The end-of-sequence (EOS) token should not be generated more than once in the generated output, maintaining coherence and integrity in the completion of sequences.</li>
-<li><strong>Token count verification</strong>: The total number of tokens generated by the model must align with the number reported to the LoadGen, validating the completeness and accuracy of the generated output.</li>
-</ol>
-<h2 class="wp-block-heading">Conclusion</h2>
-<p class="wp-block-paragraph">In this post, we described the complexities involved in the choices of model, task, dataset, accuracy, performance, and verification of a contemporary LLM benchmark. We believe the design choices of this benchmark objectively address most of the critical deployment decisions faced by practitioners while delivering important performance insights to customers.</p>
-<p class="wp-block-paragraph">Details of the MLPerf Inference Llama 2 70B benchmark and reference implementation can be found <a data-original-href="https://github.com/mlcommons/inference/tree/master/language/llama2-70b">here</a>.</p>
-<p class="wp-block-paragraph">Given the overwhelming interests from vendors, as demonstrated by the <a data-original-href="https://mlcommons.org/benchmarks/inference-datacenter/">number of submissions</a>, we hope to continue to improve on the benchmark in future iterations, accounting for the different application domains that may steer LLM adoption. </p>
-<p class="wp-block-paragraph"><em>Additional technical contributors: Jinho Suh, NVIDIA;<em>  Junwei Yang, Google; Pablo Gonzalez, MLCommons</em>.</em></p>
-</div>
-</div>
-<div class="insight__sidebar">
-<p class="subheading">Category</p>
-<a class="tag tag--pill" data-original-href="https://mlcommons.org/category/mlperf-inference/">MLPerf Inference</a>
-<hr class="wp-block-separator has-alpha-channel-opacity alignfull"/>
-<div class="insight__authors">
-<p class="subheading mb-2">Authors</p>
-<p>Thomas Atta-fosu, Intel (Task Force Chair); Akhil Arunkumar, D-Matrix; Anton Lokhmotov, KRAI; Ashwin Nanjappa, NVIDIA; Itay Hubara, Intel Habana Labs; Michal Szutenberg, Intel Habana Labs; Miro Hodak, AMD; Mitchelle Rasquinha, Google; Zhihan Jiang, NVIDIA</p>
-</div>
-<hr class="wp-block-separator has-alpha-channel-opacity alignfull"/>
-<div class="insights-share">
-<p class="subheading mb-2">Share</p>
-<ul class="social-list">
-<li>
-<a data-original-href="https://mlcommons.org/cdn-cgi/l/email-protection#48773b3d2a222d2b3c750b202d2b2363273d3c633c20213b6338273b3c632e3a27256305040b27252527263b6d7b09630424292529637a637f780a6d7b09630926630504182d3a2e6301262e2d3a2d262b2d630a2d262b2025293a23632e273a6304293a2f2d630429262f3d292f2d6305272c2d243b6e2a272c31751a2d292c633c202d63293a3c212b242d6327266325242b27252527263b66273a2f63202d3a2d6d7b0963203c3c383b6d7b096d7a0e6d7a0e25242b27252527263b66273a2f6d7a0e7a787a7c6d7a0e787b6d7a0e2524382d3a2e6524242925297a657f782a6d7a0e" target="_blank">
-<span class="sr-only">Share via email</span>
-<svg fill="none" height="24" viewbox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
-<path d="M3 3H21C21.5523 3 22 3.44772 22 4V20C22 20.5523 21.5523 21 21 21H3C2.44772 21 2 20.5523 2 20V4C2 3.44772 2.44772 3 3 3ZM20 7.23792L12.0718 14.338L4 7.21594V19H20V7.23792ZM4.51146 5L12.0619 11.662L19.501 5H4.51146Z" fill="#11141F"></path>
-</svg>
-</a>
-</li>
-<li>
-<a data-original-href="https://www.facebook.com/sharer/sharer.php?u=https%3A%2F%2Fmlcommons.org%2F2024%2F03%2Fmlperf-llama2-70b%2F" target="_blank">
-<span class="sr-only">Share on facebook</span>
-<svg fill="none" height="24" viewbox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
-<path d="M14 13.5H16.5L17.5 9.5H14V7.5C14 6.47062 14 5.5 16 5.5H17.5V2.1401C17.1743 2.09685 15.943 2 14.6429 2C11.9284 2 10 3.65686 10 6.69971V9.5H7V13.5H10V22H14V13.5Z" fill="#11141F"></path>
-</svg>
-</a>
-</li>
-<li>
-<a data-original-href="https://www.linkedin.com/shareArticle?mini=true&amp;url=https%3A%2F%2Fmlcommons.org%2F2024%2F03%2Fmlperf-llama2-70b%2F&amp;title=Llama+2+70B%3A+An+MLPerf+Inference+Benchmark+for+Large+Language+Models" rel="noopener noreferrer" target="_blank">
-<span class="sr-only">Share LinkedIn</span>
-<svg fill="none" height="24" viewbox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
-<path d="M6.94146 4.99993C6.94109 5.81424 6.44706 6.54702 5.69232 6.85273C4.93758 7.15845 4.07285 6.97605 3.50588 6.39155C2.93891 5.80704 2.78293 4.93715 3.11148 4.19207C3.44004 3.44699 4.18752 2.9755 5.00146 2.99993C6.08253 3.03238 6.94195 3.91837 6.94146 4.99993ZM7.00146 8.47993H3.00146V20.9999H7.00146V8.47993ZM13.3215 8.47993H9.34146V20.9999H13.2815V14.4299C13.2815 10.7699 18.0515 10.4299 18.0515 14.4299V20.9999H22.0015V13.0699C22.0015 6.89993 14.9415 7.12993 13.2815 10.1599L13.3215 8.47993Z" fill="#11141F"></path>
-</svg>
-</a>
-</li>
-<li>
-<a data-original-href="https://twitter.com/intent/tweet?text=Llama+2+70B%3A+An+MLPerf+Inference+Benchmark+for+Large+Language+Models&amp;url=https%3A%2F%2Fmlcommons.org%2F2024%2F03%2Fmlperf-llama2-70b%2F" rel="noopener noreferrer" target="_blank">
-<span class="sr-only">Share on X</span>
-<svg fill="none" height="22" viewbox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
-<path d="M18.2048 2.25H21.5128L14.2858 10.51L22.7878 21.75H16.1308L10.9168 14.933L4.95084 21.75H1.64084L9.37084 12.915L1.21484 2.25H8.04084L12.7538 8.481L18.2048 2.25ZM17.0438 19.77H18.8768L7.04484 4.126H5.07784L17.0438 19.77Z" fill="#11141F"></path>
-</svg>
-</a>
-</li>
-<li>
-<a class="js-copy-text" href="" target="_blank">
-<span class="sr-only">Copy link</span>
-<svg class="copy-text__copy" fill="none" height="24" viewbox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
-<path d="M18.3643 15.5356L16.9501 14.1214L18.3643 12.7072C20.3169 10.7546 20.3169 7.58872 18.3643 5.6361C16.4117 3.68347 13.2458 3.68347 11.2932 5.6361L9.87898 7.05031L8.46477 5.6361L9.87898 4.22188C12.6127 1.48821 17.0448 1.48821 19.7785 4.22188C22.5122 6.95555 22.5122 11.3877 19.7785 14.1214L18.3643 15.5356ZM15.5358 18.3641L14.1216 19.7783C11.388 22.5119 6.9558 22.5119 4.22213 19.7783C1.48846 17.0446 1.48846 12.6124 4.22213 9.87874L5.63634 8.46452L7.05056 9.87874L5.63634 11.293C3.68372 13.2456 3.68372 16.4114 5.63634 18.3641C7.58896 20.3167 10.7548 20.3167 12.7074 18.3641L14.1216 16.9498L15.5358 18.3641ZM14.8287 7.75742L16.243 9.17163L9.17188 16.2427L7.75766 14.8285L14.8287 7.75742Z" fill="#11141F"></path>
-</svg>
-<svg class="copy-text__check" fill="currentColor" viewbox="0 0 24 24"><path d="M9.9997 15.1709L19.1921 5.97852L20.6063 7.39273L9.9997 17.9993L3.63574 11.6354L5.04996 10.2212L9.9997 15.1709Z"></path></svg>
-</a>
-</li>
-</ul>
+<!doctype html><html lang="en"><meta charset="utf-8"><title>MLPerf Inference — Llama 2 与 LoadGen（固定历史版本）</title><style>body{max-width:1100px;margin:40px auto;padding:0 24px;line-height:1.6}pre{white-space:pre-wrap;overflow-wrap:anywhere}img{max-width:100%;height:auto}</style><h1>MLPerf Inference — Llama 2 与 LoadGen（固定历史版本）</h1><pre>
+===== language/llama2-70b/README.md =====
+# Reference Implementation for llama2-70b
 
-</div>
-</div>
-</article>
-<aside class="wrapper insights-related">
-<hr class="wp-block-separator has-alpha-channel-opacity alignfull"/>
-<h4>Related Insights</h4>
-<div class="related-insights-list">
-<article class="insight-preview insight-preview--stacked">
-<figure>
-<a data-original-href="https://mlcommons.org/2026/09/chairs-mlperf-inference-v6-1/">
-<img alt="" class="attachment-post-thumbnail size-post-thumbnail wp-post-image" decoding="async" height="938" sizes="(max-width: 1250px) 100vw, 1250px" src="assets/89da875fe5e6964a3a6072c7.png" width="1250"/> </a>
-</figure>
-<div>
-<h3>
-<a data-original-href="https://mlcommons.org/2026/09/chairs-mlperf-inference-v6-1/">
-        Where the Industry Is Investing: A Look at MLPerf Inference v6.1      </a>
-</h3>
-<div class="insight-preview__meta">
-<span class="insight-preview__cat">News</span>
-<span class="dot"></span>
-<span class="insight-preview__date">September 17, 2026</span>
-</div>
-</div>
-</article> <article class="insight-preview insight-preview--stacked">
-<figure>
-<a data-original-href="https://mlcommons.org/2026/09/mlperf-inference-v6-1-results/">
-<img alt="" class="attachment-post-thumbnail size-post-thumbnail wp-post-image" decoding="async" height="938" sizes="(max-width: 1250px) 100vw, 1250px" src="assets/6fc543d6e2bd743159fb7816.png" width="1250"/> </a>
-</figure>
-<div>
-<h3>
-<a data-original-href="https://mlcommons.org/2026/09/mlperf-inference-v6-1-results/">
-        MLCommons Sets Participation Record with New MLPerf Inference v6.1 Benchmark Results      </a>
-</h3>
-<div class="insight-preview__meta">
-<span class="insight-preview__cat">News</span>
-<span class="dot"></span>
-<span class="insight-preview__date">September 16, 2026</span>
-</div>
-</div>
-</article> <article class="insight-preview insight-preview--stacked">
-<figure>
-<a data-original-href="https://mlcommons.org/2026/08/endtoend-inference/">
-<img alt="" class="attachment-post-thumbnail size-post-thumbnail wp-post-image" decoding="async" src="assets/3894a9da979616267a1b4cce.svg"/> </a>
-</figure>
-<div>
-<h3>
-<a data-original-href="https://mlcommons.org/2026/08/endtoend-inference/">
-        Introducing the MLPerf End-to-End RAG Inference Benchmark      </a>
-</h3>
-<div class="insight-preview__meta">
-<span class="insight-preview__cat">News</span>
-<span class="dot"></span>
-<span class="insight-preview__date">August 26, 2026</span>
-</div>
-</div>
-</article> <article class="insight-preview insight-preview--stacked">
-<figure>
-<a data-original-href="https://mlcommons.org/2026/07/mlperf-inference-v61-edge-agentic/">
-<img alt="" class="attachment-post-thumbnail size-post-thumbnail wp-post-image" decoding="async" src="assets/8746d6f209c08487fd391276.svg"/> </a>
-</figure>
-<div>
-<h3>
-<a data-original-href="https://mlcommons.org/2026/07/mlperf-inference-v61-edge-agentic/">
-        Call for Submission: Edge Agentic Inference Benchmark for MLPerf Inference v6.1      </a>
-</h3>
-<div class="insight-preview__meta">
-<span class="insight-preview__cat">Blog</span>
-<span class="dot"></span>
-<span class="insight-preview__date">July 9, 2026</span>
-</div>
-</div>
-</article> </div>
-<div class="mt-4">
-<a class="btn btn--black-outline" data-original-href="https://mlcommons.org/category/mlperf-inference/">
-<span>View All</span>
-</a>
-</div>
-</aside>
-</div>
-</main></body></html>
+**Basic implementation for llama2-70b. Few noteworthy items:**
+
++ Streamer for communicating with loadgen has quite some overhead. This is only meant to provide functional implementation
++ For custom/optimized implementations of this benchmark it is important to include the :
+        - For server scenario, it is necessary to call `lg.FirstTokenComplete(response)` for each query. This way the first token will be reported and it&#x27;s latency will be measured.
+        - For all scenarios, when calling `lg.QuerySamplesComplete(response)`, it is necessary that each of the elements in response is a `lg.QuerySampleResponse` that contains the number of tokens (can be create this way: `lg.QuerySampleResponse(qitem.id, bi[0], bi[1], n_tokens)`). The number of tokens reported should match with the number of tokens on your answer and this will be checked in [TEST06](../../compliance/TEST06/)
+
+
+## Automated command to run the benchmark via MLCFlow
+
+Please see the [new docs site](https://docs.mlcommons.org/inference/benchmarks/language/llama2-70b) for an automated way to run this benchmark across different available implementations and do an end-to-end submission with or without docker.
+
+You can also do `pip install mlc-scripts` and then use `mlcr` commands for downloading the model and datasets using the commands given in the later sections.
+ 
+## Prepare environment
+
+For a CPU-only run:
+
+```
+conda create -n llama2-70b python=3.9
+conda activate llama2-70b
+
+# Install packages
+conda install pybind11==2.10.4 -c conda-forge -y
+python -m pip install torch==2.2.0 --index-url https://download.pytorch.org/whl/cpu
+pip install transformers==4.31.0 nltk==3.8.1 evaluate==0.4.0 absl-py==1.4.0 rouge-score==0.1.2 sentencepiece==0.1.99 accelerate==0.21.0
+
+export CUR_DIR=${PWD}
+cd &lt;inference-repo-root&gt;/loadgen
+
+# Need to fetch Pablo&#x27;s changes
+git fetch origin pull/1523/head:llm-server
+git merge llm-server
+
+python -m pip install .
+```
+
+For a GPU-based run:
+
+A dockerfile is provided, along with scripts to help launch it. First, add any docker volume mounts you want in
+`launch.sh`. There is a section at the top of the file that looks like:
+```
+# Add any volume mounts here with the following syntax
+# /path/to/src:/path/to/dir/in/container
+MOUNTS=(
+    $MLCOMMONS_REPO_PATH:$MLCOMMONS_REPO_PATH
+)
+```
+
+For example if you have a raid space located at `/raid/data` on your local machine, you can add it to the same path in the container like so:
+```
+# Add any volume mounts here with the following syntax
+# /path/to/src:/path/to/dir/in/container
+MOUNTS=(
+    $MLCOMMONS_REPO_PATH:$MLCOMMONS_REPO_PATH
+    /raid/data:/raid/data
+)
+```
+Once you have added all your mounts, launch the container with `bash launch.sh`.
+
+Inside the container, set up the environment with `bash build.sh`. This will install all the dependencies from the
+CPU-only setup, as well as any GPU versions for applicable libraries like PyTorch.
+
+
+## Get Model
+### MLCommons Members Download
+MLCommons hosts the model and preprocessed dataset for download **exclusively by MLCommons Members**. You must first agree to the [confidentiality notice](https://llama2.mlcommons.org) using your organizational email address, then you will receive a link to a page containing download instructions. _If you cannot access the form but you are part of a MLCommons Member organization, submit the [MLCommons subscription form](https://mlcommons.org/community/subscribe/) with your organizational email address and [associate a Google account](https://accounts.google.com/SignUpWithoutGmail) with your organizational email address._
+
+
+### Download model through MLCFlow Automation
+
+```
+mlcr get,ml-model,llama2-70b,_pytorch,_r2-downloader,_70b,_mlc --outdirname=&lt;Download path&gt; -j
+```
+
+### External Download (Not recommended for official submission)
++ First go to [llama2-request-link](https://ai.meta.com/resources/models-and-libraries/llama-downloads/) and make a request, sign in to HuggingFace (if you don&#x27;t have account, you&#x27;ll need to create one). **Please note your authentication credentials** as you may be required to provide them when cloning below.
++ Requires Git Large Files Storage
+```
+export CHECKPOINT_PATH=${PWD}/Llama-2-70b-chat-hf
+git lfs install
+git clone https://huggingface.co/meta-llama/Llama-2-70b-chat-hf ${CHECKPOINT_PATH}
+```
+
+## Get Dataset
+
+### Download Preprocessed dataset through MLCFlow Automation
+
+**Validation**
+
+```
+mlcr get,dataset,preprocessed,openorca,_validation,_r2-downloader,_mlc --outdirname=&lt;path_to_download&gt; -j
+```
+
+**Calibration**
+
+```
+mlcr get,dataset,preprocessed,openorca,_calibration,_r2-downloader,_mlc --outdirname=&lt;path_to_download&gt; -j
+```
+
+### Download Unprocessed dataset through MLCFlow Automation
+
+**Validation**
+
+```
+mlcr get,dataset,openorca,_validation --outdirname=&lt;path_to_download&gt; -j
+```
+
+**Calibration**
+
+```
+mlcr get,dataset,openorca,_calibration --outdirname=&lt;path_to_download&gt; -j
+```
+
+### Preprocessed
+
+You can use the MLCommons R2 Downloader to download the preprocessed dataset from a Cloudflare R2 bucket (more information about the MLC R2 Downloader, including how to run it on Windows, can be found [here](https://inference.mlcommons-storage.org)).
+
+Navigate in the terminal to your desired download directory and run the following command to download the dataset:
+
+```
+bash &lt;(curl -s https://raw.githubusercontent.com/mlcommons/r2-downloader/refs/heads/main/mlc-r2-downloader.sh) https://inference.mlcommons-storage.org/metadata/llama-2-70b-open-orca-dataset.uri
+```
+
+### Unprocessed
+
+You can also download and process the dataset yourself following the command below:
+
+```
+# First get the `open-orca` parquet from huggingface
+export OPENORCA_DATASET=${PWD}/open-orca
+git clone https://huggingface.co/datasets/Open-Orca/OpenOrca ${OPENORCA_DATASET}
+
+export OPENORCA_PARQUET=${OPENORCA_DATASET}/1M-GPT4-Augmented.parquet
+EXPORT_DIR=${PWD}/processed-openorca
+export DATASET_PATH=${PWD}/processed-data.pkl
+
+# Process the dataset according the Taskforce&#x27;s agreed criteria
+python3 processorca.py --dataset_pq_path=${OPENORCA_PARQUET} --model_dir=${CHECKPOINT_PATH} --seqlen_limit=1024 --export_dir=${EXPORT_DIR} --num_total_samples=24576
+
+mv ${EXPORT_DIR}/open_orca_gpt4_tokenized_llama.sampled_24576.pkl ${DATASET_PATH}
+```
+
+The script will perform the following steps on the original open_orca GPT4 dataset:
+- filter out all queries with non-ascii characters, except for normal unicode quotes and hyphens.
+- filter out all queries with out-of-bound input/output sequence lengths
+- filter out all queries with expected answers shorter than 2 words (known to cause issues for Llama2)
+- filter out all queries with prompts that generate bad output texts using Llama2 models
+- sample equally from the sub-dataset (i.e. COT, NIV, FLAN, T0) and form the final dataset.
+
+## Run Performance Benchmarks
+
+### Offline
+```
+python -u main.py --scenario Offline \
+                --model-path ${CHECKPOINT_PATH} \
+                --mlperf-conf mlperf.conf \
+                --user-conf user.conf \
+                --total-sample-count 24576 \
+                --device cpu \
+                --dataset-path ${DATASET_PATH} \
+                --output-log-dir offline-logs
+
+```
+
+For a GPU-based run:
+```
+python3 -u main.py --scenario Offline \
+        --model-path ${CHECKPOINT_PATH} \
+        --mlperf-conf mlperf.conf \
+        --user-conf user.conf \
+        --total-sample-count 24576 \
+        --dataset-path ${DATASET_PATH} \
+        --output-log-dir offline-logs \
+        --dtype float32 \
+        --device cuda:0 2&gt;&amp;1 | tee offline_performance_log.log
+```
+
+### Server
+```
+python -u main.py --scenario Server \
+                --model-path ${CHECKPOINT_PATH} \
+                --mlperf-conf mlperf.conf \
+                --user-conf user.conf \
+                --total-sample-count 24576 \
+                --device cpu \
+                --dataset-path ${DATASET_PATH} \
+                --output-log-dir server-logs
+```
+
+The ServerSUT was not tested for GPU runs.
+
+
+## Run Accuracy Benchmarks
+
+### Offline
+```
+OUTPUT_LOG_DIR=offline-accuracy-logs
+
+mkdir -p &quot;run_outputs&quot;  # The script will dump all the outputs to &#x27;run_outputs&#x27;.
+
+python -u main.py --scenario Offline \
+                --model-path ${CHECKPOINT_PATH} \
+                --accuracy \
+                --user-conf user.conf \
+                --total-sample-count 24576 \
+                --dataset-path ${DATASET_PATH} \
+                --output-log-dir ${OUTPUT_LOG_DIR} \
+                --device cpu
+
+
+ACCURACY_LOG_FILE=${OUTPUT_LOG_DIR}/mlperf_log_accuracy.json
+if [ -e ${ACCURACY_LOG_FILE} ]; then
+        python evaluate-accuracy.py --checkpoint-path ${CHECKPOINT_PATH} \
+                --mlperf-accuracy-file ${ACCURACY_LOG_FILE} --dataset-file ${DATASET_PATH} --dtype int32
+fi
+
+# Optional: Create a pickled pandas DataFrame that is the original dataset with extra columns with output data from the
+# accuracy run. The following columns will be added:
+# - &quot;gen_output_tok_id&quot;: A list of ints representing the tokenized output sequence.
+# - &quot;gen_output_text&quot;: A str representing the untokenized output sequence.
+# - &quot;gen_output_tok_len&quot;: An int representing the number of output tokens.
+# - &quot;rouge1&quot;: The rouge1 score for this sample
+# - &quot;rouge2&quot;: The rouge2 score for this sample
+# - &quot;rougeL&quot;: The rougeL score for this sample
+# This file will by default be saved to &#x27;full_output.pkl&#x27;. You can modify this with --output-pkl-path.
+python consolidate_results.py --dataset-path ${DATASET_PATH} --model-dir ${CHECKPOINT_PATH}
+```
+
+For the GPU run - The above steps have been automated in `run_accuracy.sh`. You can also modify this script to use
+`--device cpu` to adapt it to a CPU-only run.
+
+
+### Server
+```
+OUTPUT_LOG_DIR=server-accuracy-logs
+
+python -u main.py --scenario Server \
+                --model-path ${CHECKPOINT_PATH} \
+                --accuracy \
+                --user-conf user.conf \
+                --total-sample-count 24576 \
+                --dataset-path ${DATASET_PATH} \
+                --output-log-dir ${OUTPUT_LOG_DIR} \
+                --device cpu
+
+
+ACCURACY_LOG_FILE=${OUTPUT_LOG_DIR}/mlperf_log_accuracy.json
+if [ -e ${ACCURACY_LOG_FILE} ]; then
+        python evaluate-accuracy.py --checkpoint-path ${CHECKPOINT_PATH} \
+                --mlperf-accuracy-file ${ACCURACY_LOG_FILE} --dataset-file ${DATASET_PATH} --dtype int32
+fi
+```
+
+The ServerSUT was not tested for GPU runs.
+
+
+## Accuracy Target
+Running the GPU implementation in FP16 precision resulted in the following FP16 accuracy targets (normalized to a 0-100
+scale from a 0.0-1.0 scale):
+- Rouge1: 44.4312
+- Rouge2: 22.0352
+- RougeL: 28.6162
+- Tokens per sample: 294.45
+
+This was run on a DGX-H100 node. Total runtime was ~4.5 days.
+
+### Evaluate the accuracy through MLCFlow Automation
+```bash
+mlcr process,mlperf,accuracy,_openorca --result_dir=&lt;Path to directory where files are generated after the benchmark run&gt;
+```
+
+Please click [here](https://github.com/mlcommons/inference/blob/master/language/llama2-70b/evaluate-accuracy.py) to view the Python script for evaluating accuracy for the Waymo dataset.
+
+## Automated command for submission generation via MLCFlow
+
+Please see the [new docs site](https://docs.mlcommons.org/inference/submission/) for an automated way to generate submission through MLCFlow. 
+
+
+# Run llama2-70b-interactive benchmark
+
+For official, Llama2-70b submissions it is also possible to submit in the interactive category. This sets a more strict latency requirements for Time to First Token (ttft) and Time per Output Token (tpot). Specifically, the interactive category requires loadgen to enforce `ttft &lt;= 450ms` and `tpot &lt;= 40ms`
+
+In order to run interactive category, it is sufficient to set the flag `--lg-model-name` as `llama2-70b-interactive` when calling the `main.py` to run the benchmark. For example, to run the server scenario in interactive mode:
+
+```
+python -u main.py --scenario Server \
+                --model-path ${CHECKPOINT_PATH} \
+                --user-conf user.conf \
+                --total-sample-count 24576 \
+                --device cpu \
+                --dataset-path ${DATASET_PATH} \
+                --output-log-dir server-logs \
+                --lg-model-name llama2-70b-interactive
+```
+
+
+===== loadgen/README.md =====
+# Overview {#mainpage}
+
+## Introduction
+
+* The LoadGen is a *reusable* module that *efficiently* and *fairly* measures
+  the performance of inference systems.
+* It generates traffic for scenarios as formulated by a diverse set of experts
+  in the [MLCommons working group](https://mlcommons.org/).
+* The scenarios emulate the workloads seen in mobile devices,
+  autonomous vehicles, robotics, and cloud-based setups.
+* Although the LoadGen is not model or dataset aware, its strength is in its
+  reusability with logic that is.
+
+## Integration Example and Flow
+The following is an diagram of how the LoadGen can be integrated into an
+inference system, resembling how some of the MLPerf reference models are
+implemented.
+&lt;div style=&quot;display:flex; flex-flow:row wrap; justify-content: space-evenly;&quot;&gt;
+&lt;img src=&quot;https://raw.githubusercontent.com/mlcommons/inference/master/loadgen/loadgen_integration_diagram.svg&quot; width=&quot;500px&quot; style=&quot;padding: 20px&quot;&gt;
+&lt;ol style=&quot;padding: 20px&quot;&gt;
+&lt;li&gt;Benchmark knows the model, dataset, and preprocessing.&lt;/li&gt;
+&lt;li&gt;Benchmark hands dataset sample IDs to LoadGen.&lt;/li&gt;
+&lt;li&gt;LoadGen starts generating queries of sample IDs.&lt;/li&gt;
+&lt;li&gt;Benchmark creates requests to backend.&lt;/li&gt;
+&lt;li&gt;Result is post processed and forwarded to LoadGen.&lt;/li&gt;
+&lt;li&gt;LoadGen outputs logs for analysis.&lt;br&gt;
+&lt;/ol&gt;
+&lt;/div&gt;
+
+## Useful Links
+* [FAQ](README_FAQ.md)
+* [LoadGen Build Instructions](README_BUILD.md)
+* [LoadGen API](loadgen.h)
+* [Test Settings](test_settings.h) -
+  A good description of available scenarios, modes, and knobs.
+* [MLPerf Inference Code](https://github.com/mlcommons/inference) -
+  Includes source for the LoadGen and reference models that use the LoadGen.
+* [MLPerf Inference Rules](https://github.com/mlcommons/inference_policies) -
+  Any mismatch with this is a bug in the LoadGen.
+
+## Scope of the LoadGen&#x27;s Responsibilities
+
+### In Scope
+* **Provide a reusable** C++ library with python bindings.
+* **Implement** the traffic patterns of the MLPerf Inference scenarios and
+  modes.
+* **Record** all traffic generated and received for later analysis and
+  verification.
+* **Summarize** the results and whether performance constraints were met.
+* **Target high-performance** systems with efficient multi-thread friendly
+  logging utilities.
+* **Generate trust** via a shared, well-tested, and community-hardened
+  code base.
+
+### Out of Scope
+The LoadGen is:
+* **NOT** aware of the ML model it is running against.
+* **NOT** aware of the data formats of the model&#x27;s inputs and outputs.
+* **NOT** aware of how to score the accuracy of a model&#x27;s outputs.
+* **NOT** aware of MLPerf rules regarding scenario-specific constraints.
+
+Limitting the scope of the LoadGen in this way keeps it reusable across
+different models and datasets without modification. Using composition and
+dependency injection, the user can define their own model, datasets, and
+metrics.
+
+Additionally, not hardcoding MLPerf-specific test constraints, like test
+duration and performance targets, allows users to use the LoadGen unmodified
+for custom testing and continuous integration purposes.
+
+## Submission Considerations
+
+### Upstream all local modifications
+* As a rule, no local modifications to the LoadGen&#x27;s C++ library are allowed
+for submission.
+* Please upstream early and often to keep the playing field level.
+
+### Choose your TestSettings carefully!
+* Since the LoadGen is oblivious to the model, it can&#x27;t enforce the MLPerf
+requirements for submission. *e.g.:* target percentiles and latencies.
+* For verification, the values in TestSettings are logged.
+* To help make sure your settings are spec compliant, use
+TestSettings::FromConfig in conjunction with the relevant config file provided
+with the reference models.
+
+## Responsibilities of a LoadGen User
+
+### Implement the Interfaces
+* Implement the SystemUnderTest and QuerySampleLibrary interfaces and pass
+  them to the StartTest function.
+* Call QuerySampleComplete for every sample received by
+  SystemUnderTest::IssueQuery.
+
+### Assess Accuracy
+* Process the *mlperf_log_accuracy.json* output by the LoadGen to determine
+  the accuracy of your system.
+* For the official models, Python scripts will be provided by the MLPerf model
+  owners for you to do this automatically.
+
+For templates of how to do the above in detail, refer to code for the demos,
+tests, and reference models.
+
+
+## LoadGen over the Network
+
+For reference, on a high level a submission looks like this:
+
+&lt;div align=&quot;center&quot; style=&quot;display:flex; flex-flow:row wrap; justify-content: space-evenly;&quot;&gt;
+&lt;img src=&quot;https://raw.githubusercontent.com/mlcommons/inference/master/loadgen/diagram_submission.png&quot; width=&quot;300px&quot; style=&quot;padding: 20px&quot;&gt;
+&lt;/div&gt;
+
+The LoadGen implementation is common to all submissions, while the QSL (“Query Sample Library”) and SUT (“System Under Test”) are implemented by submitters. QSL is responsible for loading the data and includes untimed preprocessing.
+
+A submission over the network introduces a new component “QDL” (query dispatch library) that is added to the system as presented in the following diagram:
+
+&lt;div align=&quot;center&quot; style=&quot;display:flex; flex-flow:row wrap; justify-content: space-evenly;&quot;&gt;
+&lt;img src=&quot;https://raw.githubusercontent.com/mlcommons/inference/master/loadgen/diagram_network_submission.png&quot; width=&quot;300px&quot; style=&quot;padding: 20px&quot;&gt;
+&lt;/div&gt;
+
+QDL is a proxy for a load-balancer, that dispatches queries to SUT over a physical network, receives the responses and passes them back to LoadGen.  It is implemented by the submitter. The interface of the QDL is the same as the API to SUT. 
+
+In scenarios using QDL, data may be compressed in QSL at the choice of the submitter in order to reduce network transmission time. Decompression is part of the timed processing in SUT. A set of approved standard compression schemes will be specified for each benchmark; additional compression schemes must be approved in advance by the Working Group.
+
+All communication between LoadGen/QSL and SUT is via QDL, and all communication between QDL and SUT must pass over a physical network.
+
+QDL implements the protocol to transmit queries over the network and receive responses. It also implements decompression of any response returned by the SUT, where compression of responses is allowed. Performing any part of the timed preprocessing or inference in QDL is specifically disallowed. Currently no batching is allowed in QDL, although this may be revisited in future.
+
+The MLperf over the Network will run in Server mode and Offline mode. All LoadGen modes are expected to work as is with insignificant changes. These include running the test in performance mode, accuracy mode, find peak performance mode and compliance mode. The same applies for power measurements.
+
+### QDL details
+The Query Dispatch Library is implemented by the submitter and interfaces with LoadGen using the same SUT API. All MLPerf Inference SUTs implement the `mlperf::SystemUnderTest` class which is defined in system_under_test.h. The QDL implements `mlperf::QueryDispatchLibrary` class which inherits the `mlperf::SystemUnderTest` class and has the same API and support all existing `mlperf::SystemUnderTest` methods. It has a separate header file query_dispatch_library.h. Using sut with `mlperf::SystemUnderTest` class in LoadGen StartTest is natively upcasting `mlperf::QueryDispatchLibrary` class.
+
+#### QDL Query issue and response over the network
+
+The QDL gets the queries from the LoadGen through 
+```CPP
+void IssueQuery(const std::vector&lt;QuerySample&gt;&amp; samples)
+```
+
+The QDL dispatches the queries to the SUT over the physical media. The exact method and implementation for it are submitter specific and would not be specified at MLCommons. Submitter implementation includes all methods required to serialize the query, load balance, drive it to the Operating system and network interface card and send to the SUT.
+
+The QDL receives the query responses over the network from the SUT. The exact method and implementation for it are submitter specific and would not be specified at MLCommons. The submitter implementation includes all methods required to receive the network data from the Network Interface card, go through the Operating system, deserialize the query response, and provide it back to the LoadGen through query completion by:
+
+```CPP
+struct QuerySampleResponse {
+  ResponseId id;
+  uintptr_t data;
+  size_t size;
+};
+void QuerySamplesComplete(QuerySampleResponse* responses, 
+                          size_t response_count);
+
+```
+
+#### QDL Additional Methods
+
+In addition to that the QDL needs to implement the following methods that are provided by the SUT interface to the LoadGen:
+```CPP
+const std::string&amp; Name();
+```
+The `Name` function returns a known string for over the Network SUTs to identify it as over the network benchmark.
+```CPP
+void FlushQueries();
+```
+
+It is not specified here how the QDL would query and configure the SUT to execute the above methods. The QDL responds to the LoadGen after receiving its own response from the SUT.
+
+### Example
+
+Refer to [LON demo](demos/lon) for a reference example illustrating usage of Loadgen over the network.
+
+## Find Peak Performance Mode
+
+The Find Peak Performance mode can be used to find the optimal queries per second (QPS) for the server scenario.
+
+### Setup
+
+You can setup loadgen to run this mode by setting the `mode` variable in the `test_settings` used to run the test. Using the Python API:
+
+```python
+settings = mlperf_loadgen.TestSettings()
+settings.server_target_qps = 100
+settings.scenario = mlperf_loadgen.TestScenario.Server
+settings.mode = mlperf_loadgen.TestMode.FindPeakPerformance
+...
+
+mlperf_loadgen.StartTest(sut, qsl, settings)
+```
+
+Using the C/C++ API:
+```CPP
+mlperf::TestSettings settings;
+setting.server_target_qps = 100;
+settings.scenario = mlperf::TestScenario::Server;
+settings.mode = mlperf::TestMode::FindPeakPerformance;
+mlperf::LogSettings log_settings;
+/*
+Construct QSL and SUT
+*/
+mlperf::StartTest(&amp;sut, &amp;qsl, settings, log_settings);
+```
+
+**Note:** Make sure you are setting the TestScenario to server and you are providing an initial target QPS.
+
+### Description
+
+The Find Peak Performance mode works by finding a lower and upper boundary for the optimal QPS. Then performing a binary search between the lower and upper bound to find the optimal QPS.
+
+#### Finding lower and upper boundary
+
+LoadGen begins by running performance mode at the specified target QPS. If the test passes, this value is used as the lower bound; otherwise, an error is raised. The algorithm then guesses the upper bound as twice the target QPS. 
+
+Then LoadGen will run performance mode using the upper bound guess. If the test is successful, both the lower bound and upper bound will be doubled. This repeats until the upper bound guess fails the test.
+
+```
+[initial_target_qps, 2*initial_target_qps] -&gt; [2*initial_target_qps, 4*initial_target_qps] -&gt; [4*initial_target_qps, 8*initial_target_qps]...
+```
+
+Finally, the final lower bound and upper bound are set to their current values. This process assures that the lower bound passes the performance mode, but the upper bound doesn’t.
+
+#### Binary Search
+
+Once the lower and upper bounds are set, binary search can be performed over the range `[lower, upper]`` to find the optimal QPS. If a given QPS fails in performance mode, the optimal value lies below it; if it passes, the optimal is higher.
+
+
+===== loadgen/test_settings.h =====
+/* Copyright 2019 The MLPerf Authors. All Rights Reserved.
+Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+    http://www.apache.org/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+==============================================================================*/
+
+/// \file
+/// \brief Provides ways for a client to change the behavior and
+/// constraints of the load generator.
+/// \details Note: The MLPerf specification takes precedent over any of the
+/// comments in this file if there are inconsistencies in regards to how the
+/// loadgen *should* work.
+/// The comments in this file are indicative of the loadgen implementation.
+
+#ifndef MLPERF_LOADGEN_TEST_SETTINGS_H
+#define MLPERF_LOADGEN_TEST_SETTINGS_H
+
+#include &lt;cstdint&gt;
+#include &lt;string&gt;
+
+namespace mlperf {
+
+/// \addtogroup LoadgenAPI
+/// @{
+
+/// \addtogroup LoadgenAPITestSettings Test Settings
+/// \brief This page contains a description of all the scenarios, modes,
+/// and log settings as implemented by the LoadGen.
+/// @{
+
+///
+/// \enum TestScenario
+/// * **SingleStream**
+///  + Issues queries containing a single sample.
+///  + The next query is only issued once the previous one has completed.
+///  + Internal LoadGen latency between queries is not included in the
+///    latency results.
+///  + **Final performance result is:** a percentile of the latency.
+/// * **MultiStream**
+///  + Issues queries containing N samples.
+///   - N is specified by \link
+///   mlperf::TestSettings::multi_stream_samples_per_query
+///   multi_stream_samples_per_query \endlink.
+///  + The next query is only issued once the previous one has completed.
+///  + The samples of each query are guaranteed to be contiguous with respect
+///    to the order they were loaded in the QuerySampleLibrary.
+///  + Latency is tracked and reported on a per-query and per-sample basis.
+///  + The latency of a query is the maximum latency of its samples, including
+///    any cross-thread communication within the loadgen.
+///  + Internal LoadGen latency between queries is not included in the
+///    latency results.
+///  + **Final performance result is:** a percentile of the query latency.
+/// * **Server**
+///  + Sends queries with a single sample.
+///  + Queries have a random poisson (non-uniform) arrival rate that, when
+///    averaged, hits the target QPS.
+///  + There is no limit on the number of outstanding queries, as long as
+///    the latency constraints are met.
+///  + **Final performance result is:** PASS if the a percentile of the latency
+///    is under a given threshold. FAIL otherwise.
+///   - Threshold is specified by \link
+///   mlperf::TestSettings::server_target_latency_ns server_target_latency_ns
+///   \endlink.
+/// * **Offline**
+///  + Sends all N samples to the SUT inside of a single query.
+///  + The samples of the query are guaranteed to be contiguous with respect
+///    to the order they were loaded in the QuerySampleLibrary.
+///  + **Final performance result is:** samples per second.
+///
+enum class TestScenario {
+  SingleStream,
+  MultiStream,
+  Server,
+  Offline,
+};
+
+///
+/// \enum TestMode
+/// * **SubmissionRun**
+///  + Runs accuracy mode followed by performance mode.
+///  + TODO: Implement further requirements as decided by MLPerf.
+/// * **AccuracyOnly**
+///  + Runs each sample from the QSL through the SUT a least once.
+///  + Outputs responses to an accuracy json that can be parsed by a model +
+///    sample library specific script.
+/// * **PerformanceOnly**
+///  + Runs the performance traffic for the given scenario, as described in
+///    the comments for TestScenario.
+/// * **FindPeakPerformance**
+///  + Determines the maximumum QPS for the Server scenario.
+///  + Not applicable for SingleStream, MultiStream or Offline scenarios.
+///
+enum class TestMode {
+  SubmissionRun,
+  AccuracyOnly,
+  PerformanceOnly,
+  FindPeakPerformance,
+};
+
+///
+/// \brief Top-level struct specifing the modes and parameters of the test.
+///
+struct TestSettings {
+  TestScenario scenario = TestScenario::SingleStream;
+  TestMode mode = TestMode::PerformanceOnly;
+
+  // ==================================
+  /// \name SingleStream-specific
+  /**@{*/
+  /// \brief A hint used by the loadgen to pre-generate enough samples to
+  ///        meet the minimum test duration.
+  double single_stream_expected_latency_ns = 1000000;
+  /// \brief The latency percentile reported as the final result.
+  double single_stream_target_latency_percentile = 0.90;
+  /**@}*/
+
+  // ==================================
+  /// \name MultiStream-specific
+  /**@{*/
+  /// \brief A hint used by the loadgen to pre-generate enough samples to
+  ///        meet the minimum test duration.
+  /// \brief MultiStream latency is for query (not sample) latency
+  double multi_stream_expected_latency_ns = 8000000;
+  /// \brief The latency percentile for MultiStream mode.
+  double multi_stream_target_latency_percentile = 0.99;
+  /// \brief The number of samples in each query.
+  /// \details How many samples are bundled in a query
+  uint64_t multi_stream_samples_per_query = 8;
+  /**@}*/
+
+  // ==================================
+  /// \name Server-specific
+  /**@{*/
+  /// \brief The average QPS of the poisson distribution.
+  /// \details note: This field is used as a FindPeakPerformance&#x27;s lower bound.
+  /// When you run FindPeakPerformanceMode, you should make sure that this value
+  /// satisfies performance constraints.
+  double server_target_qps = 1;
+  /// \brief The latency constraint for the Server scenario.
+  uint64_t server_target_latency_ns = 100000000;
+  /// \brief The latency percentile for server mode. This value is combined with
+  /// server_target_latency_ns to determine if a run is valid.
+  /// \details 99% is the default value, which is correct for image models. GNMT
+  /// should be set to 0.97 (97%) in v0.5.(As always, check the policy page for
+  /// updated values for the benchmark you are running.)
+  double server_target_latency_percentile = 0.99;
+  /// \brief If this flag is set to true, LoadGen will combine samples from
+  /// multiple queries into a single query if their scheduled issue times have
+  /// passed.
+  bool server_coalesce_queries = false;
+  /// \brief The decimal places of QPS precision used to terminate
+  /// FindPeakPerformance mode.
+  int server_find_peak_qps_decimals_of_precision = 1;
+  /// \brief A step size (as a fraction of the QPS) used to widen the lower and
+  /// upper bounds to find the initial boundaries of binary search.
+  double server_find_peak_qps_boundary_step_size = 1;
+  /// \brief The maximum number of outstanding queries to allow before earlying
+  /// out from a performance run. Useful for performance tuning and speeding up
+  /// the FindPeakPerformance mode.
+  uint64_t server_max_async_queries = 0;  ///&lt; 0: Infinity.
+  /// \brief The number of issue query threads that will be registered and used
+  /// to call SUT&#x27;s IssueQuery(). If this is 0, the same thread calling
+  /// StartTest() will be used to call IssueQuery(). See also
+  /// mlperf::RegisterIssueQueryThread().
+  uint64_t server_num_issue_query_threads = 0;
+  /**@}*/
+
+  // ==================================
+  /// \name Offline-specific
+  /**@{*/
+  /// \brief Specifies the QPS the SUT expects to hit for the offline load.
+  /// The loadgen generates 10% more queries than it thinks it needs to meet
+  /// the minimum test duration.
+  double offline_expected_qps = 1;
+  /// \brief Affects the order in which the samples of the dataset are chosen.
+  /// If false it concatenates a single permutation of the dataset (or part
+  /// of it depending on QSL-&gt;PerformanceSampleCount()) several times up to the
+  /// number of samples requested.
+  /// If true it concatenates a multiple permutation of the dataset (or a
+  /// part of it depending on QSL-&gt;PerformanceSampleCount()) several times
+  /// up to the number of samples requested.
+  bool sample_concatenate_permutation = false;
+  /**@}*/
+
+  // ==================================
+  /// \name Test duration
+  /// The test runs until **both** min duration and min query count have been
+  /// met. However, it will exit before that point if **either** max duration or
+  /// max query count have been reached.
+  /**@{*/
+  uint64_t min_duration_ms = 10000;
+  uint64_t max_duration_ms = 0;  ///&lt; 0: Infinity.
+  uint64_t min_query_count = 100;
+  uint64_t max_query_count = 0;  ///&lt; 0: Infinity.
+  /**@}*/
+
+  // ==================================
+  /// \name Random number generation
+  /// There are 4 separate seeds, so each dimension can be changed
+  /// independently.
+  /**@{*/
+  /// \brief Affects which subset of samples from the QSL are chosen for
+  /// the performance sample set and accuracy sample sets.
+  uint64_t qsl_rng_seed = 0;
+  /// \brief Affects the order in which samples from the performance set will
+  /// be included in queries.
+  uint64_t sample_index_rng_seed = 0;
+  /// \brief Affects the poisson arrival process of the Server scenario.
+  /// \details Different seeds will appear to &quot;jitter&quot; the queries
+  /// differently in time, but should not affect the average issued QPS.
+  uint64_t schedule_rng_seed = 0;
+  /// \brief Affects which samples have their query returns logged to the
+  /// accuracy log in performance mode.
+  uint64_t accuracy_log_rng_seed = 0;
+
+  /// \brief Probability of the query response of a sample being logged to the
+  /// accuracy log in performance mode
+  double accuracy_log_probability = 0.0;
+
+  /// \brief Target number of samples that will have their results printed to
+  /// accuracy log in performance mode for compliance testing
+  uint64_t accuracy_log_sampling_target = 0;
+
+  /// \brief Variables for running test05 from native config. A boolean that
+  /// determines whether or not to run test05 and three random seed to run the
+  /// test
+  bool test05 = false;
+  uint64_t test05_qsl_rng_seed = 0;
+  uint64_t test05_sample_index_rng_seed = 0;
+  uint64_t test05_schedule_rng_seed = 0;
+  /**@}*/
+
+  // ==================================
+  /// \name Performance Sample modifiers
+  /// \details These settings can be used to Audit Performance mode runs.
+  /// In order to detect sample caching by SUT, performance of runs when only
+  /// unique queries (with non-repeated samples) are issued can be compared with
+  /// that when the same query is repeatedly issued.
+  /**@{*/
+  /// \brief Prints measurement interval start and stop timestamps to std::cout
+  /// for the purpose of comparison against an external timer
+  bool print_timestamps = false;
+  /// \brief Allows issuing only unique queries in Performance mode of any
+  /// scenario \details This can be used to send non-repeat &amp; hence unique
+  /// samples to SUT
+  bool performance_issue_unique = false;
+  /// \brief If true, the same query is chosen repeatedley for Inference.
+  /// In offline scenario, the query is filled with the same sample.
+  bool performance_issue_same = false;
+  /// \brief Offset to control which sample is repeated in
+  /// performance_issue_same mode.
+  /// Value should be within [0, performance_sample_count)
+  uint64_t performance_issue_same_index = 0;
+  /// \brief Overrides QSL-&gt;PerformanceSampleCount() when non-zero
+  uint64_t performance_sample_count_override = 0;
+  /// \brief Specifies the number of samples for accuracy evaluation.
+  /// When non-zero, accuracy mode generates sample indices [0,
+  /// accuracy_sample_count_override). When zero (default), uses
+  /// performance_sample_count.
+  uint64_t accuracy_sample_count_override = 0;
+  /// \brief Measure token latencies
+  bool use_token_latencies = false;
+  /// Token latency parameters
+  uint64_t server_ttft_latency = 100000000;
+  uint64_t server_tpot_latency = 100000000;
+  /// \brief Infer token latencies
+  bool infer_token_latencies = false;
+  uint64_t token_latency_scaling_factor;
+  /**@}*/
+
+  /// \brief Load mlperf parameter config from file.
+  int FromConfig(const std::string &amp;path, const std::string &amp;model,
+                 const std::string &amp;scenario, int conf_type = 1);
+};
+
+///
+/// \enum LoggingMode
+/// Specifies how and when logging should be sampled and stringified at
+/// runtime.
+/// * **AsyncPoll**
+///  + Logs are serialized and output on an IOThread that polls for new logs at
+///  a fixed interval. This is the only mode currently implemented.
+/// * **EndOfTestOnly**
+///  + TODO: Logs are serialzied and output only at the end of the test.
+/// * **Synchronous**
+///  + TODO: Logs are serialized and output inline.
+enum class LoggingMode {
+  AsyncPoll,
+  EndOfTestOnly,
+  Synchronous,
+};
+
+///
+/// \brief Specifies where log outputs should go.
+///
+/// By default, the loadgen outputs its log files to outdir and
+/// modifies the filenames of its logs with a prefix and suffix.
+/// Filenames will take the form:
+/// &quot;&lt;outdir&gt;/&lt;datetime&gt;&lt;prefix&gt;summary&lt;suffix&gt;.txt&quot;
+///
+/// Affordances for outputing logs to stdout are also provided.
+///
+struct LogOutputSettings {
+  std::string outdir = &quot;.&quot;;
+  std::string prefix = &quot;mlperf_log_&quot;;
+  std::string suffix = &quot;&quot;;
+  bool prefix_with_datetime = false;
+  bool copy_detail_to_stdout = false;
+  bool copy_summary_to_stdout = false;
+};
+
+///
+/// \brief Top-level log settings.
+///
+struct LogSettings {
+  LogOutputSettings log_output;
+  LoggingMode log_mode = LoggingMode::AsyncPoll;
+  uint64_t log_mode_async_poll_interval_ms = 1000;  ///&lt; TODO: Implement this.
+  bool enable_trace = true;
+};
+
+/// @}
+
+/// @}
+
+}  // namespace mlperf
+
+#endif  // MLPERF_LOADGEN_TEST_SETTINGS_H
+</pre><figure><figcaption>loadgen/loadgen_integration_diagram.svg</figcaption><img src="upstream/loadgen/loadgen_integration_diagram.svg"></figure><figure><figcaption>loadgen/diagram_submission.png</figcaption><img src="upstream/loadgen/diagram_submission.png"></figure><figure><figcaption>loadgen/diagram_network_submission.png</figcaption><img src="upstream/loadgen/diagram_network_submission.png"></figure></html>

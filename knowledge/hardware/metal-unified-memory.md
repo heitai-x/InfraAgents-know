@@ -22,14 +22,13 @@ prefill、decode 和多模态 encoder 的工作形态不同，Metal/MLX 的 kern
 
 ## 来源与推导
 
-- S-MLX-MEM：[完整原文](../../references/S-MLX-MEM/reader.html) · [全文文本](../../references/S-MLX-MEM/fulltext.txt)
-- S-MLX：[完整原文](../../references/S-MLX/reader.html) · [全文文本](../../references/S-MLX/fulltext.txt)
-
 - [S-MLX-MEM：MLX：Unified Memory](../sources/S-MLX-MEM.md)：MLX 利用 Apple Silicon 的统一内存，CPU/GPU 可以对共享内存中的数组执行操作，设备选择发生在操作执行层。
+  [完整原文](../../references/S-MLX-MEM/reader.html) · [全文文本](../../references/S-MLX-MEM/fulltext.txt)
 
 - [S-MLX：MLX：Lazy Evaluation](../sources/S-MLX.md)：MLX 的惰性求值先建立计算图；显式求值或主机访问结果等操作触发执行。过密求值和过大的未求值图会产生不同开销。
+  [完整原文](../../references/S-MLX/reader.html) · [全文文本](../../references/S-MLX/fulltext.txt)
 
-上文的公式展开、容量算例与组合设计是 InfraAgents 在这些机制基础上的推导，具体推导已写在本条正文中。来源入口均为本地释义，可继续读取其定义与使用关系。版本 3，2026-09-20。
+正文中的公式展开、容量算例与组合设计是基于这些来源的推导；设定算例不冒充实测。来源版本受 2026-04-30 上限约束，编辑日期 2026-10-22 不作为事实发布日期。此独立 base 版本内的章节修订号从 1 开始，原章节身份与版本映射保存在版本清单。
 
 ## 延伸阅读
 

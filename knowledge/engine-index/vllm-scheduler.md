@@ -4,7 +4,16 @@ vLLM V1 的调度可沿请求 token 进度理解，再追踪预算、缓存分�
 
 ## 固定版本的阅读坐标
 
-本页核对 v0.24.0 的 vllm/v1/core/sched/scheduler.py：Scheduler 在第 68 行，schedule 在第 388 行，_update_after_schedule 在第 1130 行，_try_schedule_encoder_inputs 在第 1280 行。文件 SHA 与符号见 [源码定位证据](../../docs/evidence/expert-source-locations-20260920.json)。这些位置绑定此标签，不能作为其他 checkout 的固定行号。
+本页核对固定提交 9c61864bf8a911a8369f35d79d538c7f11cf3dc2，提交日期为 2026-04-30。以下坐标由完整归档源码解析取得，只定位这一版本。
+
+| 文件 | 符号 | 行号 |
+|---|---|---|
+| vllm/v1/core/sched/scheduler.py | Scheduler | 67 |
+| vllm/v1/core/sched/scheduler.py | schedule | 352 |
+| vllm/v1/core/sched/scheduler.py | _update_after_schedule | 987 |
+| vllm/v1/core/sched/scheduler.py | _try_schedule_encoder_inputs | 1116 |
+
+[完整原文与本地阅读](../../references/S-VLLM-SCHED/reader.html)；[源码定位证据](../../docs/evidence/astra-source-locations.json)。
 
 ## 核心状态关系
 
@@ -24,17 +33,16 @@ token_budget 限制本轮计算量，encoder 还有独立预算，KV 分配决�
 
 ## 来源与推导
 
-- S-VLLM-SCHED：[完整原文](../../references/S-VLLM-SCHED/reader.html) · [全文文本](../../references/S-VLLM-SCHED/fulltext.txt)
-- S-VLLM-CODE：[完整原文](../../references/S-VLLM-CODE/reader.html) · [全文文本](../../references/S-VLLM-CODE/fulltext.txt)
-- S-ORCA：[完整原文](../../references/S-ORCA/reader.html) · [全文文本](../../references/S-ORCA/fulltext.txt)
-
 - [S-VLLM-SCHED：vLLM — V1 Scheduler source reference](../sources/S-VLLM-SCHED.md)：vLLM V1 的调度入口根据请求所需 token 与已计算进度分配本轮工作，结合计算预算、encoder 输入和 KV 资源形成 SchedulerOutput。
+  [完整原文](../../references/S-VLLM-SCHED/reader.html) · [全文文本](../../references/S-VLLM-SCHED/fulltext.txt)
 
-- [S-VLLM-CODE：vLLM V1 固定标签源码](../sources/S-VLLM-CODE.md)：实际读取 v0.24.0 的 Scheduler、KVCacheManager 和 GPUModelRunner 三文件，核对 token 进度、分配参数、执行/采样状态和延迟释放相关入口。
+- [S-VLLM-CODE：vLLM V1 固定标签源码](../sources/S-VLLM-CODE.md)：固定历史提交的 Scheduler、KVCacheManager、GPUModelRunner、coordinator 和 block pool 展示 token 进度、分配、执行与采样、层组和回收之间的关系。接口含义以所归档的提交为准。
+  [完整原文](../../references/S-VLLM-CODE/reader.html) · [全文文本](../../references/S-VLLM-CODE/fulltext.txt)
 
 - [S-ORCA：Orca: A Distributed Serving System for Transformer-Based Generative Models](../sources/S-ORCA.md)：Orca 以生成迭代为调度边界，让完成请求退出并让新请求进入；不同算子依据是否适合聚批采用相应执行组织。请求不必等待原批全部结束才获得资源。
+  [完整原文](../../references/S-ORCA/reader.html) · [全文文本](../../references/S-ORCA/fulltext.txt)
 
-上文的公式展开、容量算例与组合设计是 InfraAgents 在这些机制基础上的推导，具体推导已写在本条正文中。来源入口均为本地释义，可继续读取其定义与使用关系。版本 4，2026-09-20。
+正文中的公式展开、容量算例与组合设计是基于这些来源的推导；设定算例不冒充实测。来源版本受 2026-04-30 上限约束，编辑日期 2026-10-22 不作为事实发布日期。此独立 base 版本内的章节修订号从 1 开始，原章节身份与版本映射保存在版本清单。
 
 ## 延伸阅读
 

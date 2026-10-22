@@ -2,11 +2,9 @@
 
 ## 本地完整原文
 
-[完整原文阅读](../../references/S-NKI/reader.html) · [全文文本](../../references/S-NKI/fulltext.txt) · [原始文件](../../references/S-NKI/original.html)
+[完整原文](../../references/S-NKI/reader.html) · [全文文本](../../references/S-NKI/fulltext.txt)
 
-原始文件、完整正文及正文所需本地资源均已保存。
-
-资料形态：按已核对范围整理的本地非代码释义。原文版本：Neuron 2.32.0 documentation snapshot。
+固定版本：Git ceca8d914d1c4ca531bd27d8e37581b039dcad2b (2026-04-30)。来源版本日期：2026-04-30；整理核对日期：2026-10-22。
 
 ## 来源支持的机制与定义
 
@@ -16,8 +14,6 @@
 
 本库用活跃 tile 集合与在线归约推导 attention 数据流，分析双缓冲、矩阵供数和片上存储生存期。
 
-## 阅读范围与出处身份
+## 适用边界
 
-HBM/SBUF/PSUM、partition/free 轴、DMA 与 Tensor Engine。
-
-核对日期：2026-09-20。原文标题、版本与原始地址保留在来源登记元数据中；上述内容是来源释义与本库推导的区分，不冒充原文逐字副本。
+所列机制与接口资料；本文设计推导和数值例为独立分析，不是目标机器实测。 原始版本、日期依据与归档范围见本地 provenance.json；版本日期不证明模型训练实际包含该资料。

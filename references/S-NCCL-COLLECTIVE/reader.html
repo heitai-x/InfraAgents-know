@@ -1,108 +1,63 @@
-<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; frame-src 'self'; object-src 'self'; media-src 'self'; base-uri 'none'; form-action 'none'"><title>Collective Operations — NCCL 2.31.2 documentation</title><style>body{font:16px/1.75 system-ui,sans-serif;color:#202631;background:#fff;margin:0 auto;padding:40px;max-width:1100px}h1,h2,h3{line-height:1.3}pre,code{font-family:Consolas,monospace}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#f4f6f8;padding:18px}table{border-collapse:collapse;display:block;overflow-x:auto}td,th{border:1px solid #ccd3dc;padding:8px}img,svg{max-width:100%;height:auto}figure{margin:24px 0}.archive-note{border-left:4px solid #2563eb;padding:12px 20px;background:#eef4ff}math{font-size:1.1em}iframe{width:100%;height:85vh;border:1px solid #ccd3dc}a{color:#1658a5}</style></head><body><p class="archive-note">本地原文阅读副本。正文与资料文件已归档；原始响应、版本和校验信息见同目录 manifest.json。网页导航与在线脚本不执行。</p><div class="document" itemscope="itemscope" itemtype="http://schema.org/Article" role="main">
+<!doctype html><html lang="en"><meta charset="utf-8"><title>NCCL — Collective Operations</title><style>body{max-width:1100px;margin:40px auto;padding:0 24px;line-height:1.6}pre{white-space:pre-wrap;overflow-wrap:anywhere}img{max-width:100%;height:auto}</style><h1>NCCL — Collective Operations</h1><div class="document" itemscope="itemscope" itemtype="http://schema.org/Article" role="main">
 <div itemprop="articleBody">
-<section id="collective-operations">
-<h1>Collective Operations<a class="headerlink" href="#collective-operations" title="Permalink to this heading"></a></h1>
+<div class="section" id="collective-operations">
+<h1>Collective Operations<a class="headerlink" href="#collective-operations" title="Permalink to this headline">¶</a></h1>
 <p>Collective operations have to be called for each rank (hence CUDA device), using the same count and the same datatype, to form a complete collective operation.
 Failure to do so will result in undefined behavior, including hangs, crashes, or data corruption.</p>
-<section id="allreduce">
-<span id="id1"></span><h2>AllReduce<a class="headerlink" href="#allreduce" title="Permalink to this heading"></a></h2>
+<div class="section" id="allreduce">
+<span id="id1"></span><h2>AllReduce<a class="headerlink" href="#allreduce" title="Permalink to this headline">¶</a></h2>
 <p>The AllReduce operation performs reductions on data (for example, sum, min, max) across devices and stores the result in the receive buffer of every rank.</p>
 <p>In a <em>sum</em> allreduce operation between <em>k</em> ranks, each rank will provide an array in of N values, and receive identical results in array out of N values,
 where out[i] = in0[i]+in1[i]+…+in(k-1)[i].</p>
-<figure class="align-center" id="id9">
+<div class="figure align-center" id="id6">
 <img alt="../_images/allreduce.png" src="assets/56ba8399a2d0ae820a989cc1.png"/>
-<figcaption>
-<p><span class="caption-text">All-Reduce operation: each rank receives the reduction of input values across ranks.</span><a class="headerlink" href="#id9" title="Permalink to this image"></a></p>
-</figcaption>
-</figure>
-<p>Related links: <a class="reference internal" data-original-href="https://docs.nvidia.com/deeplearning/nccl/user-guide/docs/api/colls.html#c.ncclAllReduce" title="ncclAllReduce"><code class="xref c c-func docutils literal notranslate"><span class="pre">ncclAllReduce()</span></code></a>.</p>
-</section>
-<section id="broadcast">
-<span id="id2"></span><h2>Broadcast<a class="headerlink" href="#broadcast" title="Permalink to this heading"></a></h2>
+<p class="caption"><span class="caption-text">All-Reduce operation: each rank receives the reduction of input values across ranks.</span></p>
+</div>
+<p>Related links: <a class="reference internal" href="../api/colls.html#c.ncclAllReduce" title="ncclAllReduce"><code class="xref c c-func docutils literal notranslate"><span class="pre">ncclAllReduce()</span></code></a>.</p>
+</div>
+<div class="section" id="broadcast">
+<span id="id2"></span><h2>Broadcast<a class="headerlink" href="#broadcast" title="Permalink to this headline">¶</a></h2>
 <p>The Broadcast operation copies an N-element buffer from the root rank to all the ranks.</p>
-<figure class="align-center" id="id10">
+<div class="figure align-center" id="id7">
 <img alt="../_images/broadcast.png" src="assets/0b2d68b232721d1aca8184ad.png"/>
-<figcaption>
-<p><span class="caption-text">Broadcast operation: all ranks receive data from a “root” rank.</span><a class="headerlink" href="#id10" title="Permalink to this image"></a></p>
-</figcaption>
-</figure>
+<p class="caption"><span class="caption-text">Broadcast operation: all ranks receive data from a “root” rank.</span></p>
+</div>
 <p>Important note: The root argument is one of the ranks, not a device number, and is therefore impacted by a different rank to device mapping.</p>
-<p>Related links: <a class="reference internal" data-original-href="https://docs.nvidia.com/deeplearning/nccl/user-guide/docs/api/colls.html#c.ncclBroadcast" title="ncclBroadcast"><code class="xref c c-func docutils literal notranslate"><span class="pre">ncclBroadcast()</span></code></a>.</p>
-</section>
-<section id="reduce">
-<span id="id3"></span><h2>Reduce<a class="headerlink" href="#reduce" title="Permalink to this heading"></a></h2>
+<p>Related links: <a class="reference internal" href="../api/colls.html#c.ncclBroadcast" title="ncclBroadcast"><code class="xref c c-func docutils literal notranslate"><span class="pre">ncclBroadcast()</span></code></a>.</p>
+</div>
+<div class="section" id="reduce">
+<span id="id3"></span><h2>Reduce<a class="headerlink" href="#reduce" title="Permalink to this headline">¶</a></h2>
 <p>The Reduce operation performs the same operation as AllReduce, but stores the result only in the receive buffer of a specified root rank.</p>
-<figure class="align-center" id="id11">
+<div class="figure align-center" id="id8">
 <img alt="../_images/reduce.png" src="assets/751018b537a140fdf7526d8d.png"/>
-<figcaption>
-<p><span class="caption-text">Reduce operation: one rank receives the reduction of input values across ranks.</span><a class="headerlink" href="#id11" title="Permalink to this image"></a></p>
-</figcaption>
-</figure>
+<p class="caption"><span class="caption-text">Reduce operation: one rank receives the reduction of input values across ranks.</span></p>
+</div>
 <p>Important note: The root argument is one of the ranks (not a device number), and is therefore impacted by a different rank to device mapping.</p>
 <p>Note: A Reduce, followed by a Broadcast, is equivalent to the AllReduce operation.</p>
-<p>Related links: <a class="reference internal" data-original-href="https://docs.nvidia.com/deeplearning/nccl/user-guide/docs/api/colls.html#c.ncclReduce" title="ncclReduce"><code class="xref c c-func docutils literal notranslate"><span class="pre">ncclReduce()</span></code></a>.</p>
-</section>
-<section id="allgather">
-<span id="id4"></span><h2>AllGather<a class="headerlink" href="#allgather" title="Permalink to this heading"></a></h2>
+<p>Related links: <a class="reference internal" href="../api/colls.html#c.ncclReduce" title="ncclReduce"><code class="xref c c-func docutils literal notranslate"><span class="pre">ncclReduce()</span></code></a>.</p>
+</div>
+<div class="section" id="allgather">
+<span id="id4"></span><h2>AllGather<a class="headerlink" href="#allgather" title="Permalink to this headline">¶</a></h2>
 <p>The AllGather operation gathers N values from k ranks into an output buffer of size k*N, and distributes that result to all ranks.</p>
 <p>The output is ordered by the rank index. The AllGather operation is therefore impacted by a different rank to device mapping.</p>
-<figure class="align-center" id="id12">
+<div class="figure align-center" id="id9">
 <img alt="../_images/allgather.png" src="assets/93b7bf717381477043bc7b8d.png"/>
-<figcaption>
-<p><span class="caption-text">AllGather operation: each rank receives the aggregation of data from all ranks in the order of the ranks.</span><a class="headerlink" href="#id12" title="Permalink to this image"></a></p>
-</figcaption>
-</figure>
+<p class="caption"><span class="caption-text">AllGather operation: each rank receives the aggregation of data from all ranks in the order of the ranks.</span></p>
+</div>
 <p>Note: Executing ReduceScatter, followed by AllGather, is equivalent to the AllReduce operation.</p>
-<p>Related links: <a class="reference internal" data-original-href="https://docs.nvidia.com/deeplearning/nccl/user-guide/docs/api/colls.html#c.ncclAllGather" title="ncclAllGather"><code class="xref c c-func docutils literal notranslate"><span class="pre">ncclAllGather()</span></code></a>.</p>
-</section>
-<section id="reducescatter">
-<span id="id5"></span><h2>ReduceScatter<a class="headerlink" href="#reducescatter" title="Permalink to this heading"></a></h2>
+<p>Related links: <a class="reference internal" href="../api/colls.html#c.ncclAllGather" title="ncclAllGather"><code class="xref c c-func docutils literal notranslate"><span class="pre">ncclAllGather()</span></code></a>.</p>
+</div>
+<div class="section" id="reducescatter">
+<span id="id5"></span><h2>ReduceScatter<a class="headerlink" href="#reducescatter" title="Permalink to this headline">¶</a></h2>
 <p>The ReduceScatter operation performs the same operation as Reduce, except that the result is scattered in equal-sized blocks between ranks,
 each rank getting a chunk of data based on its rank index.</p>
 <p>The ReduceScatter operation is impacted by a different rank to device mapping since the ranks determine the data layout.</p>
-<figure class="align-center" id="id13">
+<div class="figure align-center" id="id10">
 <img alt="../_images/reducescatter.png" src="assets/1a8a69eec2115d501cb724ac.png"/>
-<figcaption>
-<p><span class="caption-text">Reduce-Scatter operation: input values are reduced across ranks, with each rank receiving a subpart of the result.</span><a class="headerlink" href="#id13" title="Permalink to this image"></a></p>
-</figcaption>
-</figure>
-<p>Related links: <a class="reference internal" data-original-href="https://docs.nvidia.com/deeplearning/nccl/user-guide/docs/api/colls.html#c.ncclReduceScatter" title="ncclReduceScatter"><code class="xref c c-func docutils literal notranslate"><span class="pre">ncclReduceScatter()</span></code></a></p>
-</section>
-<section id="alltoall">
-<span id="id6"></span><h2>AlltoAll<a class="headerlink" href="#alltoall" title="Permalink to this heading"></a></h2>
-<p>In an AlltoAll operation between k ranks, each rank provides an input buffer of size k*N values, where the j-th chunk of N values is sent to destination rank j. Each rank receives an output buffer of size k*N values, where the i-th chunk of N values comes from source rank i.</p>
-<figure class="align-center" id="id14">
-<img alt="../_images/alltoall.png" src="assets/664155da9f45512acce0ebce.png"/>
-<figcaption>
-<p><span class="caption-text">AlltoAll operation: exchanges data between all ranks, where each rank sends different data to every other rank and receives different data from every other rank.</span><a class="headerlink" href="#id14" title="Permalink to this image"></a></p>
-</figcaption>
-</figure>
-<p>Related links: <a class="reference internal" data-original-href="https://docs.nvidia.com/deeplearning/nccl/user-guide/docs/api/colls.html#c.ncclAlltoAll" title="ncclAlltoAll"><code class="xref c c-func docutils literal notranslate"><span class="pre">ncclAlltoAll()</span></code></a>.</p>
-</section>
-<section id="gather">
-<span id="id7"></span><h2>Gather<a class="headerlink" href="#gather" title="Permalink to this heading"></a></h2>
-<p>The Gather operation gathers N values from k ranks into an output buffer on the root rank of size k*N.</p>
-<figure class="align-center" id="id15">
-<img alt="../_images/gather.png" src="assets/ba32ba6a381f4a90370b38a9.png"/>
-<figcaption>
-<p><span class="caption-text">Gather operation: root rank receives data from all ranks.</span><a class="headerlink" href="#id15" title="Permalink to this image"></a></p>
-</figcaption>
-</figure>
-<p>Important note: The root argument is one of the ranks, not a device number, and is therefore impacted by a different rank to device mapping.</p>
-<p>Related links: <a class="reference internal" data-original-href="https://docs.nvidia.com/deeplearning/nccl/user-guide/docs/api/colls.html#c.ncclGather" title="ncclGather"><code class="xref c c-func docutils literal notranslate"><span class="pre">ncclGather()</span></code></a>.</p>
-</section>
-<section id="scatter">
-<span id="id8"></span><h2>Scatter<a class="headerlink" href="#scatter" title="Permalink to this heading"></a></h2>
-<p>The Scatter operation distributes a total of N*k values from the root rank to k ranks, each rank receiving N values.</p>
-<figure class="align-center" id="id16">
-<img alt="../_images/scatter.png" src="assets/7e8f2709feb9afbcde8e7663.png"/>
-<figcaption>
-<p><span class="caption-text">Scatter operation: root rank distributes data to all ranks.</span><a class="headerlink" href="#id16" title="Permalink to this image"></a></p>
-</figcaption>
-</figure>
-<p>Important note: The root argument is one of the ranks, not a device number, and is therefore impacted by a different rank to device mapping.</p>
-<p>Related links: <a class="reference internal" data-original-href="https://docs.nvidia.com/deeplearning/nccl/user-guide/docs/api/colls.html#c.ncclScatter" title="ncclScatter"><code class="xref c c-func docutils literal notranslate"><span class="pre">ncclScatter()</span></code></a>.</p>
-</section>
-</section>
+<p class="caption"><span class="caption-text">Reduce-Scatter operation: input values are reduced across ranks, with each rank receiving a subpart of the result.</span></p>
 </div>
-</div></body></html>
+<p>Related links: <a class="reference internal" href="../api/colls.html#c.ncclReduceScatter" title="ncclReduceScatter"><code class="xref c c-func docutils literal notranslate"><span class="pre">ncclReduceScatter()</span></code></a></p>
+</div>
+</div>
+</div>
+</div></html>

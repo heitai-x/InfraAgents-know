@@ -2,7 +2,7 @@
 
 先用 [组合设计](system-semantics/design-synthesis.md) 建立完整问题，再选与当前决策有关的机制。索引摘要用于导航，具体设计依据来自正文中的关系与推导。
 
-本分支提供完整 base。日期约束由选定版本和 Task 的知识视图明确声明；整理日期与来源版本日期分别保留。详见 [使用说明](../docs/USAGE.md)。
+角色只从当前运行的时间 profile 读取正文和原始来源。`checked_at`、`updated_at` 和本地归档时间不是事实发生时间；需要先通过 [时间边界规则](../docs/23-time-bounded-knowledge.md) 的来源版本检查，再把专题用于设计。
 
 ## 确定模型函数与状态
 

@@ -2,22 +2,18 @@
 
 ## 本地完整原文
 
-[完整原文阅读](../../references/S-SGLANG-CODE/reader.html) · [全文文本](../../references/S-SGLANG-CODE/fulltext.txt) · [原始文件](../../references/S-SGLANG-CODE/repository.tar.gz)
+[完整原文](../../references/S-SGLANG-CODE/reader.html) · [全文文本](../../references/S-SGLANG-CODE/fulltext.txt)
 
-固定源码提交：dd83b54611897a5f80f4df59e69756bd2fb4b8ab；归档范围：entire_repository。
-
-资料形态：按已核对范围整理的本地非代码释义。原文版本：Git dd83b54611897a5f80f4df59e69756bd2fb4b8ab。
+固定版本：Git cf346bb15de90c447ed498ad5e99aae407e04ce2 (2026-04-30)。来源版本日期：2026-04-30；整理核对日期：2026-10-22。
 
 ## 来源支持的机制与定义
 
-实际核对提交 dd83b546 的 scheduler.py 与 radix_cache.py：Scheduler、get_next_batch_to_run、run_batch，以及 RadixCache 的 match_prefix、insert、evict。定位与文件 SHA 已保存到本项目证据。
+固定历史提交中的 scheduler.py 与 radix_cache.py 展示 Scheduler、批次选择和执行，以及 RadixCache 的前缀匹配、插入与淘汰。精确符号和行号随本版本源码单独记录。
 
 ## InfraAgents 如何据此推导
 
 源码入口用于连接前缀匹配、调度选择、执行与回收责任；本库的通用状态模型独立于这些方法名。
 
-## 阅读范围与出处身份
+## 适用边界
 
-只核对机制定位与职责，不复制上游实现。
-
-核对日期：2026-09-20。原文标题、版本与原始地址保留在来源登记元数据中；上述内容是来源释义与本库推导的区分，不冒充原文逐字副本。
+机制与接口说明；不构成当前目标的性能或可达性证明。 原始版本、日期依据与归档范围见本地 provenance.json；版本日期不证明模型训练实际包含该资料。

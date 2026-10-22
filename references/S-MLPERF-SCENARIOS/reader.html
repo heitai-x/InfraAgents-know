@@ -1,200 +1,563 @@
-<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; frame-src 'self'; object-src 'self'; media-src 'self'; base-uri 'none'; form-action 'none'"><title>Benchmark MLPerf Inference: Mobile | MLCommons V3.1 Results</title><style>body{font:16px/1.75 system-ui,sans-serif;color:#202631;background:#fff;margin:0 auto;padding:40px;max-width:1100px}h1,h2,h3{line-height:1.3}pre,code{font-family:Consolas,monospace}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#f4f6f8;padding:18px}table{border-collapse:collapse;display:block;overflow-x:auto}td,th{border:1px solid #ccd3dc;padding:8px}img,svg{max-width:100%;height:auto}figure{margin:24px 0}.archive-note{border-left:4px solid #2563eb;padding:12px 20px;background:#eef4ff}math{font-size:1.1em}iframe{width:100%;height:85vh;border:1px solid #ccd3dc}a{color:#1658a5}</style></head><body><p class="archive-note">本地原文阅读副本。正文与资料文件已归档；原始响应、版本和校验信息见同目录 manifest.json。网页导航与在线脚本不执行。</p><main id="content">
-<div class="gutenberg-blocks">
-<section class="block-hero-benchmark wp-elements-4b6873718873f2065cfed067994910d6 wp-block-acf-benchmarkhero has-text-color has-white-color has-background has-ml-blue-background-color" id="block-hero-benchmark-block_d37325fd2d576fee6aeb5b58147a1942">
-<div class="hero-benchmark">
-<div class="hero-benchmark__inner">
-<div class="hero-benchmark__title" data-animate="fade">
-<div>
-<p class="subheading">Benchmark Suite Results</p>
-<h1>MLPerf Inference: Mobile</h1>
-</div>
-</div>
-<div class="hero-benchmark__content">
-<div data-animate="fade">
-<p class="wp-block-paragraph">The MLPerf Inference: Mobile benchmark suite measures how fast systems can process inputs and produce results using a trained model. Below is a short summary of the current benchmarks and metrics. Please see the <a data-original-href="https://arxiv.org/abs/2012.02328" rel="noreferrer noopener" target="_blank">MLPerf Mobile Inference benchmark paper</a> for a detailed description of the motivation and guiding principles behind the benchmark suite. </p>
-<div class="wp-block-buttons is-layout-flex wp-block-buttons-is-layout-flex">
-<div class="wp-block-button is-style-white-outline"><a class="wp-block-button__link wp-element-button" data-original-href="https://mlcommons.org/working-groups/benchmarks/mobile/">Join the Working Group</a></div>
-</div>
-</div>
-</div>
-</div>
-</div>
-</section>
-<div class="wp-block-group is-layout-constrained wp-block-group-is-layout-constrained" id="results" style="margin-top:var(--wp--preset--spacing--4);margin-bottom:var(--wp--preset--spacing--4)">
-<hr class="wp-block-separator has-alpha-channel-opacity"/>
-<h2 class="wp-block-heading">Results</h2>
-<p class="is-style-medium-width wp-block-paragraph">MLCommons results are shown in an interactive table to enable you to explore the results. You can apply filters to see just the information you want and click across the top tabs to view the results visually. To see all result details, expand the columns by clicking on the “+” icon, which appears when you hover over “System Name” and subsequent columns.</p>
-<section class="block-iframeEmbed alignnone wp-block-acf-iframeembed" id="block-iframeEmbed-block_a63c0208c3a771592e4401a801183aa6">
+<!doctype html><html lang="en"><meta charset="utf-8"><title>MLCommons — Inference Mobile Scenarios</title><style>body{max-width:1100px;margin:40px auto;padding:0 24px;line-height:1.6}pre{white-space:pre-wrap;overflow-wrap:anywhere}img{max-width:100%;height:auto}</style><h1>MLCommons — Inference Mobile Scenarios</h1><pre>
+===== loadgen/README.md =====
+# Overview {#mainpage}
 
-<div class="iframe-embed">
-<div class="iframe-embed__embed">
-<iframe src="embeds/results.html" title="MLPerf Mobile v4.1 official release records"></iframe> </div>
-</div>
-</section>
-</div>
-<div class="wp-block-group is-layout-constrained wp-block-group-is-layout-constrained" id="metrics" style="margin-top:var(--wp--preset--spacing--4);margin-bottom:var(--wp--preset--spacing--4)">
-<hr class="wp-block-separator has-alpha-channel-opacity"/>
-<h2 class="wp-block-heading">Scenarios &amp; Metrics</h2>
-<p class="is-style-medium-width wp-block-paragraph">To enable representative testing of a wide variety of inference platforms and use cases, MLPerf has defined four different scenarios as described below. A given scenario is evaluated by a standard load generator generating inference requests in a particular pattern and measuring a specific metric. </p>
-<figure class="wp-block-flexible-table-block-table is-scroll-on-mobile"><table class="has-fixed-layout"><thead><tr><th>Scenario</th><th>Query Generation</th><th>Duration</th><th>Samples/query</th><th>Latency Constraint</th><th>Tail Latency</th><th>Performance Metric</th></tr></thead><tbody><tr><td>Single stream</td><td>LoadGen sends next query as soon as SUT completes the previous query</td><td>1024 queries and 60 seconds</td><td>1</td><td>None</td><td>90%</td><td>90%-ile measured latency</td></tr><tr><td>Multiple stream (1.1 and earlier)</td><td>LoadGen sends a new query every <em>latency constraint</em> if the SUT has completed the prior query, otherwise the new query is dropped and is counted as one overtime query</td><td>270,336 queries and 60 seconds</td><td>Variable, see metric</td><td>Benchmark specific</td><td>99%</td><td>Maximum number of inferences per query supported</td></tr><tr><td>Multiple stream (2.0 and later)</td><td>Loadgen sends next query, as soon as SUT completes the previous query</td><td>270,336 queries and 600 seconds</td><td>8</td><td>None</td><td>99%</td><td>99%-ile measured latency</td></tr><tr><td>Server</td><td>LoadGen sends new queries to the SUT according to a Poisson distribution</td><td>270,336 queries and 60 seconds</td><td>1</td><td>Benchmark specific</td><td>99%</td><td>Maximum Poisson throughput parameter supported</td></tr><tr><td>Offline</td><td>LoadGen sends all queries to the SUT at start</td><td>1 query and 60 seconds</td><td>At least 24,576</td><td>None</td><td>N/A</td><td>Measured throughput</td></tr></tbody></table></figure>
-</div>
-<div class="wp-block-group is-layout-constrained wp-block-group-is-layout-constrained" id="benchmarks" style="margin-top:var(--wp--preset--spacing--4);margin-bottom:var(--wp--preset--spacing--4)">
-<hr class="wp-block-separator has-alpha-channel-opacity"/>
-<h2 class="wp-block-heading">Benchmarks</h2>
-<p class="is-style-medium-width wp-block-paragraph">Each benchmark is defined by a Dataset and Quality Target. The following table summarizes the benchmarks in this version of the suite (the rules remain the official source of truth): </p>
-<figure class="wp-block-flexible-table-block-table is-scroll-on-mobile"><table class="has-fixed-layout"><thead><tr><th>Domain</th><th>Task</th><th>Model</th><th>Dataset</th><th>Mode</th><th>Quality</th><th>Latest Available Version</th></tr></thead><tbody><tr><td>Generative AI</td><td>Large Language Model</td><td>Llama 3.1 8B Instruct</td><td>TinyMMLU, IFEval-33</td><td>Single-stream</td><td>~TinyMMLU FewShot2: (61% FP16 )<br/>~IFEval-33: (67% FP16 )<br/></td><td>v6.0</td></tr><tr><td>Generative AI</td><td>Large Language Model</td><td>Llama 3.2 3B Instruct</td><td>Instruct<br/>TinyMMLU, IFEval-33</td><td>Single-stream</td><td>~TinyMMLU FewShot2: (59% FP16 )<br/>~IFEval-33: (65.5 FP16 )<br/></td><td>v6.0</td></tr><tr><td>Generative AI</td><td>Text to image</td><td>Stable Diffusion 1.5</td><td>MS-COCO 2014 captions</td><td>Single-stream</td><td>25.00 Text to image CLIP score, (FP32: 25.31)</td><td>v6.0</td></tr><tr><td>Vision</td><td>Object detection</td><td>MobileDETs</td><td>MS-COCO 2017</td><td>Single-stream</td><td>27.075 ~ 95% of FP32 (mAp: 28.5)</td><td>v6.0</td></tr><tr><td>Vision</td><td>Segmentation</td><td>MOSAIC</td><td>ADE20K (32 classes, 512×512)</td><td>Single-stream</td><td>57.4 ~ 96% of FP32 (32-class mIOU: 59.8)</td><td>v6.0</td></tr><tr><td>Language</td><td>Language Processing</td><td>Mobile-BERT</td><td>SQUAD 1.1</td><td>Single-stream</td><td>87.4%~ 93% of FP32 (F1 score: 94)</td><td>v6.0</td></tr><tr><td>Image Processing</td><td>Super Resolution</td><td>EDSR F32B5</td><td>OpenSR</td><td>Single-stream</td><td>33 dB PSNR (peak signal to noise ratio)</td><td>v6.0</td></tr><tr><td>Vision</td><td>Image Classification</td><td>MobileNetV4</td><td>ImageNet</td><td>Single-stream &amp; Offline</td><td>81% ~ 98% of FP32 (Top 1: 82.68%)</td><td>v6.0</td></tr><tr><td>Vision</td><td>Image Classification</td><td>MobileNetEdge TPU</td><td>ImageNet</td><td>Single-stream &amp; Offline</td><td>74.66% ~ 98% of FP32 (Top1: 76.19%) </td><td>v4.0</td></tr><tr><td>Vision</td><td>Segmentation</td><td>DeepLabV3+ (MobileNetV2)</td><td>ADE20K (32 classes, 512×512)</td><td>Single-stream</td><td>97% of FP32 (32-class mIOU: 54.8)</td><td>v2.1</td></tr><tr><td>Vision</td><td>Object detection</td><td>SSD-MobileNetV2</td><td>MS-COCO 2017</td><td>Single-stream</td><td>93% of FP32 (mAp: 0.244)</td><td>v0.7</td></tr></tbody></table></figure>
-<section class="block-callout alignnone wp-block-acf-callout" id="block-callout-block_15286043b3cfdcf45b4b7413add52af3">
-<div class="callout">
-<svg fill="none" height="20" viewbox="0 0 20 20" width="20">
-<path d="M10 20C4.47715 20 0 15.5228 0 10C0 4.47715 4.47715 0 10 0C15.5228 0 20 4.47715 20 10C20 15.5228 15.5228 20 10 20ZM10 18C14.4183 18 18 14.4183 18 10C18 5.58172 14.4183 2 10 2C5.58172 2 2 5.58172 2 10C2 14.4183 5.58172 18 10 18ZM9 5H11V7H9V5ZM9 9H11V15H9V9Z" fill="currentColor"></path>
-</svg>
-<div class="callout__content">
-<div>
-<p class="wp-block-paragraph"><em>Each Mobile benchmark requires the single stream scenario. The Image classification benchmark permits an optional Offline scenario. </em></p>
-</div>
-</div>
-</div>
-</section>
-<p class="wp-block-paragraph"></p>
-<div class="wp-block-columns is-layout-flex wp-container-core-columns-is-layout-7387b849 wp-block-columns-is-layout-flex">
-<div class="wp-block-column is-layout-flow wp-block-column-is-layout-flow">
-<div class="wp-block-group is-style-card has-light-background-color has-background is-layout-constrained wp-block-group-is-layout-constrained">
-<h4 class="wp-block-heading">Divisions</h4>
-<p class="wp-block-paragraph">MLPerf aims to encourage innovation in software as well as hardware by allowing submitters to reimplement the reference implementations. There are two Divisions that allow different levels of flexibility during reimplementation:</p>
-<ul class="wp-block-list">
-<li><strong>The Closed division</strong> is intended to compare hardware platforms or software frameworks “apples-to-apples” and requires using the same model as the reference implementation.</li>
-<li><strong>The Open division</strong> is intended to foster innovation and allows using a different model or retraining. </li>
-</ul>
-</div>
-</div>
-<div class="wp-block-column is-layout-flow wp-block-column-is-layout-flow">
-<div class="wp-block-group is-style-card has-light-background-color has-background is-layout-constrained wp-block-group-is-layout-constrained">
-<h4 class="wp-block-heading">Availability</h4>
-<p class="wp-block-paragraph">MLPerf divides benchmark results into Categories based on availability. </p>
-<ul class="wp-block-list">
-<li>Available systems contain only components that are available for purchase or for rent in the cloud. </li>
-<li>Preview systems must be submittable as Available in the next submission round.</li>
-<li>Research, Development, or Internal (RDI) contain experimental, in development, or internal-use hardware or software.<br/></li>
-</ul>
-</div>
-</div>
-</div>
-</div>
-<div class="wp-block-group is-layout-constrained wp-block-group-is-layout-constrained" id="submission-information">
-<div class="wp-block-group alignfull is-layout-constrained wp-block-group-is-layout-constrained" style="margin-top:var(--wp--preset--spacing--4);margin-bottom:var(--wp--preset--spacing--4)">
-<hr class="wp-block-separator has-alpha-channel-opacity"/>
-<h2 class="wp-block-heading">Submission Information</h2>
-<p class="is-style-medium is-style-medium-width wp-block-paragraph">Each row in the results table is a set of results produced by a single submitter  using the same software stack and hardware platform. Each Closed division row contains the following information:</p>
-<div class="block-icon-list alignnone wp-block-acf-iconlist" id="block-icon-list-block_bf46e26d5897dfb7dd2e0564e0deb69d" style="margin-top:var(--wp--preset--spacing--2);margin-bottom:var(--wp--preset--spacing--2)">
-<ul class="icon-list">
-<li>
-<figure class="icon-bg">
-<svg fill="currentColor" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M14 14.252V16.3414C13.3744 16.1203 12.7013 16 12 16C8.68629 16 6 18.6863 6 22H4C4 17.5817 7.58172 14 12 14C12.6906 14 13.3608 14.0875 14 14.252ZM12 13C8.685 13 6 10.315 6 7C6 3.685 8.685 1 12 1C15.315 1 18 3.685 18 7C18 10.315 15.315 13 12 13ZM12 11C14.21 11 16 9.21 16 7C16 4.79 14.21 3 12 3C9.79 3 8 4.79 8 7C8 9.21 9.79 11 12 11ZM18.5858 17L16.7574 15.1716L18.1716 13.7574L22.4142 18L18.1716 22.2426L16.7574 20.8284L18.5858 19H15V17H18.5858Z"></path></svg> </figure>
-<div>
-<h5>Submitter</h5>
-<p>The organization that submitted the results.</p>
-</div>
-</li>
-<li>
-<figure class="icon-bg">
-<svg fill="currentColor" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M4 16H20V5H4V16ZM13 18V20H17V22H7V20H11V18H2.9918C2.44405 18 2 17.5511 2 16.9925V4.00748C2 3.45107 2.45531 3 2.9918 3H21.0082C21.556 3 22 3.44892 22 4.00748V16.9925C22 17.5489 21.5447 18 21.0082 18H13Z"></path></svg> </figure>
-<div>
-<h5>Software</h5>
-<p>The ML framework and primary ML hardware library used.
-</p>
-</div>
-</li>
-<li>
-<figure class="icon-bg">
-<svg fill="currentColor" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M5 11H19V5H5V11ZM21 4V20C21 20.5523 20.5523 21 20 21H4C3.44772 21 3 20.5523 3 20V4C3 3.44772 3.44772 3 4 3H20C20.5523 3 21 3.44772 21 4ZM19 13H5V19H19V13ZM7 15H10V17H7V15ZM7 7H10V9H7V7Z"></path></svg> </figure>
-<div>
-<h5>System</h5>
-<p>General system description.</p>
-</div>
-</li>
-<li>
-<figure class="icon-bg">
-<svg fill="currentColor" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M3 12H7V21H3V12ZM17 8H21V21H17V8ZM10 2H14V21H10V2Z"></path></svg> </figure>
-<div>
-<h5>Benchmark Results</h5>
-<p>Results for each benchmark as described above.</p>
-</div>
-</li>
-<li>
-<figure class="icon-bg">
-<svg fill="currentColor" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M4.50772 2.87597C4.57028 2.37554 4.99568 2 5.5 2H18.5C19.0043 2 19.4297 2.37554 19.4923 2.87597L20.9923 14.876C20.9974 14.9171 21 14.9585 21 15V21C21 21.5523 20.5523 22 20 22H4C3.44772 22 3 21.5523 3 21V15C3 14.9585 3.00258 14.9171 3.00772 14.876L4.50772 2.87597ZM6.38278 4L5.13278 14H18.8672L17.6172 4H6.38278ZM19 16H5V20H19V16ZM15 17H17V19H15V17ZM13 17H11V19H13V17Z"></path></svg> </figure>
-<div>
-<h5>Processor and Count</h5>
-<p>The type and number of CPUs used, if CPUs perform the majority of ML compute.</p>
-</div>
-</li>
-<li>
-<figure class="icon-bg">
-<svg fill="currentColor" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20 22H4C3.44772 22 3 21.5523 3 21V3C3 2.44772 3.44772 2 4 2H20C20.5523 2 21 2.44772 21 3V21C21 21.5523 20.5523 22 20 22ZM19 20V4H5V20H19ZM7 6H11V10H7V6ZM7 12H17V14H7V12ZM7 16H17V18H7V16ZM13 7H17V9H13V7Z"></path></svg> </figure>
-<div>
-<h5>Details</h5>
-<p>Link to metadata for submission.</p>
-</div>
-</li>
-<li>
-<figure class="icon-bg">
-<svg fill="currentColor" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M4 2H20C20.5523 2 21 2.44772 21 3V21C21 21.5523 20.5523 22 20 22H4C3.44772 22 3 21.5523 3 21V3C3 2.44772 3.44772 2 4 2ZM5 4V20H19V4H5ZM7 6H17V10H7V6ZM7 12H9V14H7V12ZM7 16H9V18H7V16ZM11 12H13V14H11V12ZM11 16H13V18H11V16ZM15 12H17V18H15V12Z"></path></svg> </figure>
-<div>
-<h5>Accelerator and Count</h5>
-<p>The type and number of accelerators used, if accelerators perform the majority of ML compute.</p>
-</div>
-</li>
-<li>
-<figure class="icon-bg">
-<svg fill="currentColor" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M23 12L15.9289 19.0711L14.5147 17.6569L20.1716 12L14.5147 6.34317L15.9289 4.92896L23 12ZM3.82843 12L9.48528 17.6569L8.07107 19.0711L1 12L8.07107 4.92896L9.48528 6.34317L3.82843 12Z"></path></svg> </figure>
-<div>
-<h5>Code</h5>
-<p>Link to code for submission.</p>
-</div>
-</li>
-</ul>
-</div>
-<div class="wp-block-columns is-layout-flex wp-container-core-columns-is-layout-84a6ebda wp-block-columns-is-layout-flex" style="margin-top:var(--wp--preset--spacing--3)">
-<div class="wp-block-column is-layout-flow wp-block-column-is-layout-flow">
-<div class="wp-block-group is-style-card has-light-background-color has-background is-layout-constrained wp-block-group-is-layout-constrained">
-<h5 class="wp-block-heading">Open Divisions</h5>
-<p class="wp-block-paragraph">You may add the following rows:</p>
-<hr class="wp-block-separator has-alpha-channel-opacity"/>
-<p class="wp-block-paragraph"><strong>Model Used</strong><br/>The model used to produce the results, which may or may not match the Closed Division requirement.</p>
-<p class="wp-block-paragraph"><strong>Notes</strong><br/>Arbitrary notes from submitter.</p>
-</div>
-</div>
-<div class="wp-block-column is-layout-flow wp-block-column-is-layout-flow">
-<div class="wp-block-group is-style-card has-light-background-color has-background is-layout-constrained wp-block-group-is-layout-constrained">
-<h5 class="wp-block-heading">Power Measurements</h5>
-<p class="wp-block-paragraph">Each row will add columns for each benchmark containing the following:</p>
-<hr class="wp-block-separator has-alpha-channel-opacity"/>
-<p class="wp-block-paragraph"><strong>System Power</strong><br/>for Server and Offline scenarios, or…</p>
-<p class="wp-block-paragraph"><strong>Energy Per Stream<br/></strong>for Single stream and Multiple stream scenarios</p>
-</div>
-</div>
-</div>
-</div>
-<div class="wp-block-group alignfull is-layout-constrained wp-block-group-is-layout-constrained" style="margin-top:var(--wp--preset--spacing--4);margin-bottom:var(--wp--preset--spacing--4)">
-<div class="wp-block-columns is-layout-flex wp-container-core-columns-is-layout-7387b849 wp-block-columns-is-layout-flex">
-<div class="wp-block-column is-layout-flow wp-block-column-is-layout-flow">
-<div class="wp-block-buttons is-layout-flex wp-block-buttons-is-layout-flex">
-<div class="wp-block-button is-style-tile"><a class="wp-block-button__link wp-element-button" data-original-href="https://github.com/mlcommons/mobile_open/blob/main/rules/mobile_inference_rules.adoc#23-system-and-framework-must-be-available" rel="noreferrer noopener" target="_blank">Rules</a></div>
-</div>
-</div>
-<div class="wp-block-column is-layout-flow wp-block-column-is-layout-flow">
-<div class="wp-block-buttons is-layout-flex wp-block-buttons-is-layout-flex">
-<div class="wp-block-button is-style-tile"><a class="wp-block-button__link wp-element-button" data-original-href="https://github.com/mlcommons/mobile_models" rel="noreferrer noopener" target="_blank">Reference Implementations</a></div>
-</div>
-</div>
-<div class="wp-block-column is-layout-flow wp-block-column-is-layout-flow">
-<div class="wp-block-buttons is-layout-flex wp-block-buttons-is-layout-flex">
-<div class="wp-block-button is-style-tile"><a class="wp-block-button__link wp-element-button" data-original-href="https://github.com/mlcommons/policies/blob/master/MLPerf_Results_Messaging_Guidelines.adoc" rel="noreferrer noopener" target="_blank">Results Usage Guidelines*</a></div>
-</div>
-</div>
-</div>
-<div aria-hidden="true" class="wp-block-spacer" style="height:48px"></div>
-</div>
-</div>
-</div>
-</main></body></html>
+## Introduction
+
+* The LoadGen is a *reusable* module that *efficiently* and *fairly* measures
+  the performance of inference systems.
+* It generates traffic for scenarios as formulated by a diverse set of experts
+  in the [MLCommons working group](https://mlcommons.org/).
+* The scenarios emulate the workloads seen in mobile devices,
+  autonomous vehicles, robotics, and cloud-based setups.
+* Although the LoadGen is not model or dataset aware, its strength is in its
+  reusability with logic that is.
+
+## Integration Example and Flow
+The following is an diagram of how the LoadGen can be integrated into an
+inference system, resembling how some of the MLPerf reference models are
+implemented.
+&lt;div style=&quot;display:flex; flex-flow:row wrap; justify-content: space-evenly;&quot;&gt;
+&lt;img src=&quot;https://raw.githubusercontent.com/mlcommons/inference/master/loadgen/loadgen_integration_diagram.svg&quot; width=&quot;500px&quot; style=&quot;padding: 20px&quot;&gt;
+&lt;ol style=&quot;padding: 20px&quot;&gt;
+&lt;li&gt;Benchmark knows the model, dataset, and preprocessing.&lt;/li&gt;
+&lt;li&gt;Benchmark hands dataset sample IDs to LoadGen.&lt;/li&gt;
+&lt;li&gt;LoadGen starts generating queries of sample IDs.&lt;/li&gt;
+&lt;li&gt;Benchmark creates requests to backend.&lt;/li&gt;
+&lt;li&gt;Result is post processed and forwarded to LoadGen.&lt;/li&gt;
+&lt;li&gt;LoadGen outputs logs for analysis.&lt;br&gt;
+&lt;/ol&gt;
+&lt;/div&gt;
+
+## Useful Links
+* [FAQ](README_FAQ.md)
+* [LoadGen Build Instructions](README_BUILD.md)
+* [LoadGen API](loadgen.h)
+* [Test Settings](test_settings.h) -
+  A good description of available scenarios, modes, and knobs.
+* [MLPerf Inference Code](https://github.com/mlcommons/inference) -
+  Includes source for the LoadGen and reference models that use the LoadGen.
+* [MLPerf Inference Rules](https://github.com/mlcommons/inference_policies) -
+  Any mismatch with this is a bug in the LoadGen.
+
+## Scope of the LoadGen&#x27;s Responsibilities
+
+### In Scope
+* **Provide a reusable** C++ library with python bindings.
+* **Implement** the traffic patterns of the MLPerf Inference scenarios and
+  modes.
+* **Record** all traffic generated and received for later analysis and
+  verification.
+* **Summarize** the results and whether performance constraints were met.
+* **Target high-performance** systems with efficient multi-thread friendly
+  logging utilities.
+* **Generate trust** via a shared, well-tested, and community-hardened
+  code base.
+
+### Out of Scope
+The LoadGen is:
+* **NOT** aware of the ML model it is running against.
+* **NOT** aware of the data formats of the model&#x27;s inputs and outputs.
+* **NOT** aware of how to score the accuracy of a model&#x27;s outputs.
+* **NOT** aware of MLPerf rules regarding scenario-specific constraints.
+
+Limitting the scope of the LoadGen in this way keeps it reusable across
+different models and datasets without modification. Using composition and
+dependency injection, the user can define their own model, datasets, and
+metrics.
+
+Additionally, not hardcoding MLPerf-specific test constraints, like test
+duration and performance targets, allows users to use the LoadGen unmodified
+for custom testing and continuous integration purposes.
+
+## Submission Considerations
+
+### Upstream all local modifications
+* As a rule, no local modifications to the LoadGen&#x27;s C++ library are allowed
+for submission.
+* Please upstream early and often to keep the playing field level.
+
+### Choose your TestSettings carefully!
+* Since the LoadGen is oblivious to the model, it can&#x27;t enforce the MLPerf
+requirements for submission. *e.g.:* target percentiles and latencies.
+* For verification, the values in TestSettings are logged.
+* To help make sure your settings are spec compliant, use
+TestSettings::FromConfig in conjunction with the relevant config file provided
+with the reference models.
+
+## Responsibilities of a LoadGen User
+
+### Implement the Interfaces
+* Implement the SystemUnderTest and QuerySampleLibrary interfaces and pass
+  them to the StartTest function.
+* Call QuerySampleComplete for every sample received by
+  SystemUnderTest::IssueQuery.
+
+### Assess Accuracy
+* Process the *mlperf_log_accuracy.json* output by the LoadGen to determine
+  the accuracy of your system.
+* For the official models, Python scripts will be provided by the MLPerf model
+  owners for you to do this automatically.
+
+For templates of how to do the above in detail, refer to code for the demos,
+tests, and reference models.
+
+
+## LoadGen over the Network
+
+For reference, on a high level a submission looks like this:
+
+&lt;div align=&quot;center&quot; style=&quot;display:flex; flex-flow:row wrap; justify-content: space-evenly;&quot;&gt;
+&lt;img src=&quot;https://raw.githubusercontent.com/mlcommons/inference/master/loadgen/diagram_submission.png&quot; width=&quot;300px&quot; style=&quot;padding: 20px&quot;&gt;
+&lt;/div&gt;
+
+The LoadGen implementation is common to all submissions, while the QSL (“Query Sample Library”) and SUT (“System Under Test”) are implemented by submitters. QSL is responsible for loading the data and includes untimed preprocessing.
+
+A submission over the network introduces a new component “QDL” (query dispatch library) that is added to the system as presented in the following diagram:
+
+&lt;div align=&quot;center&quot; style=&quot;display:flex; flex-flow:row wrap; justify-content: space-evenly;&quot;&gt;
+&lt;img src=&quot;https://raw.githubusercontent.com/mlcommons/inference/master/loadgen/diagram_network_submission.png&quot; width=&quot;300px&quot; style=&quot;padding: 20px&quot;&gt;
+&lt;/div&gt;
+
+QDL is a proxy for a load-balancer, that dispatches queries to SUT over a physical network, receives the responses and passes them back to LoadGen.  It is implemented by the submitter. The interface of the QDL is the same as the API to SUT. 
+
+In scenarios using QDL, data may be compressed in QSL at the choice of the submitter in order to reduce network transmission time. Decompression is part of the timed processing in SUT. A set of approved standard compression schemes will be specified for each benchmark; additional compression schemes must be approved in advance by the Working Group.
+
+All communication between LoadGen/QSL and SUT is via QDL, and all communication between QDL and SUT must pass over a physical network.
+
+QDL implements the protocol to transmit queries over the network and receive responses. It also implements decompression of any response returned by the SUT, where compression of responses is allowed. Performing any part of the timed preprocessing or inference in QDL is specifically disallowed. Currently no batching is allowed in QDL, although this may be revisited in future.
+
+The MLperf over the Network will run in Server mode and Offline mode. All LoadGen modes are expected to work as is with insignificant changes. These include running the test in performance mode, accuracy mode, find peak performance mode and compliance mode. The same applies for power measurements.
+
+### QDL details
+The Query Dispatch Library is implemented by the submitter and interfaces with LoadGen using the same SUT API. All MLPerf Inference SUTs implement the `mlperf::SystemUnderTest` class which is defined in system_under_test.h. The QDL implements `mlperf::QueryDispatchLibrary` class which inherits the `mlperf::SystemUnderTest` class and has the same API and support all existing `mlperf::SystemUnderTest` methods. It has a separate header file query_dispatch_library.h. Using sut with `mlperf::SystemUnderTest` class in LoadGen StartTest is natively upcasting `mlperf::QueryDispatchLibrary` class.
+
+#### QDL Query issue and response over the network
+
+The QDL gets the queries from the LoadGen through 
+```CPP
+void IssueQuery(const std::vector&lt;QuerySample&gt;&amp; samples)
+```
+
+The QDL dispatches the queries to the SUT over the physical media. The exact method and implementation for it are submitter specific and would not be specified at MLCommons. Submitter implementation includes all methods required to serialize the query, load balance, drive it to the Operating system and network interface card and send to the SUT.
+
+The QDL receives the query responses over the network from the SUT. The exact method and implementation for it are submitter specific and would not be specified at MLCommons. The submitter implementation includes all methods required to receive the network data from the Network Interface card, go through the Operating system, deserialize the query response, and provide it back to the LoadGen through query completion by:
+
+```CPP
+struct QuerySampleResponse {
+  ResponseId id;
+  uintptr_t data;
+  size_t size;
+};
+void QuerySamplesComplete(QuerySampleResponse* responses, 
+                          size_t response_count);
+
+```
+
+#### QDL Additional Methods
+
+In addition to that the QDL needs to implement the following methods that are provided by the SUT interface to the LoadGen:
+```CPP
+const std::string&amp; Name();
+```
+The `Name` function returns a known string for over the Network SUTs to identify it as over the network benchmark.
+```CPP
+void FlushQueries();
+```
+
+It is not specified here how the QDL would query and configure the SUT to execute the above methods. The QDL responds to the LoadGen after receiving its own response from the SUT.
+
+### Example
+
+Refer to [LON demo](demos/lon) for a reference example illustrating usage of Loadgen over the network.
+
+## Find Peak Performance Mode
+
+The Find Peak Performance mode can be used to find the optimal queries per second (QPS) for the server scenario.
+
+### Setup
+
+You can setup loadgen to run this mode by setting the `mode` variable in the `test_settings` used to run the test. Using the Python API:
+
+```python
+settings = mlperf_loadgen.TestSettings()
+settings.server_target_qps = 100
+settings.scenario = mlperf_loadgen.TestScenario.Server
+settings.mode = mlperf_loadgen.TestMode.FindPeakPerformance
+...
+
+mlperf_loadgen.StartTest(sut, qsl, settings)
+```
+
+Using the C/C++ API:
+```CPP
+mlperf::TestSettings settings;
+setting.server_target_qps = 100;
+settings.scenario = mlperf::TestScenario::Server;
+settings.mode = mlperf::TestMode::FindPeakPerformance;
+mlperf::LogSettings log_settings;
+/*
+Construct QSL and SUT
+*/
+mlperf::StartTest(&amp;sut, &amp;qsl, settings, log_settings);
+```
+
+**Note:** Make sure you are setting the TestScenario to server and you are providing an initial target QPS.
+
+### Description
+
+The Find Peak Performance mode works by finding a lower and upper boundary for the optimal QPS. Then performing a binary search between the lower and upper bound to find the optimal QPS.
+
+#### Finding lower and upper boundary
+
+LoadGen begins by running performance mode at the specified target QPS. If the test passes, this value is used as the lower bound; otherwise, an error is raised. The algorithm then guesses the upper bound as twice the target QPS. 
+
+Then LoadGen will run performance mode using the upper bound guess. If the test is successful, both the lower bound and upper bound will be doubled. This repeats until the upper bound guess fails the test.
+
+```
+[initial_target_qps, 2*initial_target_qps] -&gt; [2*initial_target_qps, 4*initial_target_qps] -&gt; [4*initial_target_qps, 8*initial_target_qps]...
+```
+
+Finally, the final lower bound and upper bound are set to their current values. This process assures that the lower bound passes the performance mode, but the upper bound doesn’t.
+
+#### Binary Search
+
+Once the lower and upper bounds are set, binary search can be performed over the range `[lower, upper]`` to find the optimal QPS. If a given QPS fails in performance mode, the optimal value lies below it; if it passes, the optimal is higher.
+
+
+===== loadgen/test_settings.h =====
+/* Copyright 2019 The MLPerf Authors. All Rights Reserved.
+Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+    http://www.apache.org/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+==============================================================================*/
+
+/// \file
+/// \brief Provides ways for a client to change the behavior and
+/// constraints of the load generator.
+/// \details Note: The MLPerf specification takes precedent over any of the
+/// comments in this file if there are inconsistencies in regards to how the
+/// loadgen *should* work.
+/// The comments in this file are indicative of the loadgen implementation.
+
+#ifndef MLPERF_LOADGEN_TEST_SETTINGS_H
+#define MLPERF_LOADGEN_TEST_SETTINGS_H
+
+#include &lt;cstdint&gt;
+#include &lt;string&gt;
+
+namespace mlperf {
+
+/// \addtogroup LoadgenAPI
+/// @{
+
+/// \addtogroup LoadgenAPITestSettings Test Settings
+/// \brief This page contains a description of all the scenarios, modes,
+/// and log settings as implemented by the LoadGen.
+/// @{
+
+///
+/// \enum TestScenario
+/// * **SingleStream**
+///  + Issues queries containing a single sample.
+///  + The next query is only issued once the previous one has completed.
+///  + Internal LoadGen latency between queries is not included in the
+///    latency results.
+///  + **Final performance result is:** a percentile of the latency.
+/// * **MultiStream**
+///  + Issues queries containing N samples.
+///   - N is specified by \link
+///   mlperf::TestSettings::multi_stream_samples_per_query
+///   multi_stream_samples_per_query \endlink.
+///  + The next query is only issued once the previous one has completed.
+///  + The samples of each query are guaranteed to be contiguous with respect
+///    to the order they were loaded in the QuerySampleLibrary.
+///  + Latency is tracked and reported on a per-query and per-sample basis.
+///  + The latency of a query is the maximum latency of its samples, including
+///    any cross-thread communication within the loadgen.
+///  + Internal LoadGen latency between queries is not included in the
+///    latency results.
+///  + **Final performance result is:** a percentile of the query latency.
+/// * **Server**
+///  + Sends queries with a single sample.
+///  + Queries have a random poisson (non-uniform) arrival rate that, when
+///    averaged, hits the target QPS.
+///  + There is no limit on the number of outstanding queries, as long as
+///    the latency constraints are met.
+///  + **Final performance result is:** PASS if the a percentile of the latency
+///    is under a given threshold. FAIL otherwise.
+///   - Threshold is specified by \link
+///   mlperf::TestSettings::server_target_latency_ns server_target_latency_ns
+///   \endlink.
+/// * **Offline**
+///  + Sends all N samples to the SUT inside of a single query.
+///  + The samples of the query are guaranteed to be contiguous with respect
+///    to the order they were loaded in the QuerySampleLibrary.
+///  + **Final performance result is:** samples per second.
+///
+enum class TestScenario {
+  SingleStream,
+  MultiStream,
+  Server,
+  Offline,
+};
+
+///
+/// \enum TestMode
+/// * **SubmissionRun**
+///  + Runs accuracy mode followed by performance mode.
+///  + TODO: Implement further requirements as decided by MLPerf.
+/// * **AccuracyOnly**
+///  + Runs each sample from the QSL through the SUT a least once.
+///  + Outputs responses to an accuracy json that can be parsed by a model +
+///    sample library specific script.
+/// * **PerformanceOnly**
+///  + Runs the performance traffic for the given scenario, as described in
+///    the comments for TestScenario.
+/// * **FindPeakPerformance**
+///  + Determines the maximumum QPS for the Server scenario.
+///  + Not applicable for SingleStream, MultiStream or Offline scenarios.
+///
+enum class TestMode {
+  SubmissionRun,
+  AccuracyOnly,
+  PerformanceOnly,
+  FindPeakPerformance,
+};
+
+///
+/// \brief Top-level struct specifing the modes and parameters of the test.
+///
+struct TestSettings {
+  TestScenario scenario = TestScenario::SingleStream;
+  TestMode mode = TestMode::PerformanceOnly;
+
+  // ==================================
+  /// \name SingleStream-specific
+  /**@{*/
+  /// \brief A hint used by the loadgen to pre-generate enough samples to
+  ///        meet the minimum test duration.
+  double single_stream_expected_latency_ns = 1000000;
+  /// \brief The latency percentile reported as the final result.
+  double single_stream_target_latency_percentile = 0.90;
+  /**@}*/
+
+  // ==================================
+  /// \name MultiStream-specific
+  /**@{*/
+  /// \brief A hint used by the loadgen to pre-generate enough samples to
+  ///        meet the minimum test duration.
+  /// \brief MultiStream latency is for query (not sample) latency
+  double multi_stream_expected_latency_ns = 8000000;
+  /// \brief The latency percentile for MultiStream mode.
+  double multi_stream_target_latency_percentile = 0.99;
+  /// \brief The number of samples in each query.
+  /// \details How many samples are bundled in a query
+  uint64_t multi_stream_samples_per_query = 8;
+  /**@}*/
+
+  // ==================================
+  /// \name Server-specific
+  /**@{*/
+  /// \brief The average QPS of the poisson distribution.
+  /// \details note: This field is used as a FindPeakPerformance&#x27;s lower bound.
+  /// When you run FindPeakPerformanceMode, you should make sure that this value
+  /// satisfies performance constraints.
+  double server_target_qps = 1;
+  /// \brief The latency constraint for the Server scenario.
+  uint64_t server_target_latency_ns = 100000000;
+  /// \brief The latency percentile for server mode. This value is combined with
+  /// server_target_latency_ns to determine if a run is valid.
+  /// \details 99% is the default value, which is correct for image models. GNMT
+  /// should be set to 0.97 (97%) in v0.5.(As always, check the policy page for
+  /// updated values for the benchmark you are running.)
+  double server_target_latency_percentile = 0.99;
+  /// \brief If this flag is set to true, LoadGen will combine samples from
+  /// multiple queries into a single query if their scheduled issue times have
+  /// passed.
+  bool server_coalesce_queries = false;
+  /// \brief The decimal places of QPS precision used to terminate
+  /// FindPeakPerformance mode.
+  int server_find_peak_qps_decimals_of_precision = 1;
+  /// \brief A step size (as a fraction of the QPS) used to widen the lower and
+  /// upper bounds to find the initial boundaries of binary search.
+  double server_find_peak_qps_boundary_step_size = 1;
+  /// \brief The maximum number of outstanding queries to allow before earlying
+  /// out from a performance run. Useful for performance tuning and speeding up
+  /// the FindPeakPerformance mode.
+  uint64_t server_max_async_queries = 0;  ///&lt; 0: Infinity.
+  /// \brief The number of issue query threads that will be registered and used
+  /// to call SUT&#x27;s IssueQuery(). If this is 0, the same thread calling
+  /// StartTest() will be used to call IssueQuery(). See also
+  /// mlperf::RegisterIssueQueryThread().
+  uint64_t server_num_issue_query_threads = 0;
+  /**@}*/
+
+  // ==================================
+  /// \name Offline-specific
+  /**@{*/
+  /// \brief Specifies the QPS the SUT expects to hit for the offline load.
+  /// The loadgen generates 10% more queries than it thinks it needs to meet
+  /// the minimum test duration.
+  double offline_expected_qps = 1;
+  /// \brief Affects the order in which the samples of the dataset are chosen.
+  /// If false it concatenates a single permutation of the dataset (or part
+  /// of it depending on QSL-&gt;PerformanceSampleCount()) several times up to the
+  /// number of samples requested.
+  /// If true it concatenates a multiple permutation of the dataset (or a
+  /// part of it depending on QSL-&gt;PerformanceSampleCount()) several times
+  /// up to the number of samples requested.
+  bool sample_concatenate_permutation = false;
+  /**@}*/
+
+  // ==================================
+  /// \name Test duration
+  /// The test runs until **both** min duration and min query count have been
+  /// met. However, it will exit before that point if **either** max duration or
+  /// max query count have been reached.
+  /**@{*/
+  uint64_t min_duration_ms = 10000;
+  uint64_t max_duration_ms = 0;  ///&lt; 0: Infinity.
+  uint64_t min_query_count = 100;
+  uint64_t max_query_count = 0;  ///&lt; 0: Infinity.
+  /**@}*/
+
+  // ==================================
+  /// \name Random number generation
+  /// There are 4 separate seeds, so each dimension can be changed
+  /// independently.
+  /**@{*/
+  /// \brief Affects which subset of samples from the QSL are chosen for
+  /// the performance sample set and accuracy sample sets.
+  uint64_t qsl_rng_seed = 0;
+  /// \brief Affects the order in which samples from the performance set will
+  /// be included in queries.
+  uint64_t sample_index_rng_seed = 0;
+  /// \brief Affects the poisson arrival process of the Server scenario.
+  /// \details Different seeds will appear to &quot;jitter&quot; the queries
+  /// differently in time, but should not affect the average issued QPS.
+  uint64_t schedule_rng_seed = 0;
+  /// \brief Affects which samples have their query returns logged to the
+  /// accuracy log in performance mode.
+  uint64_t accuracy_log_rng_seed = 0;
+
+  /// \brief Probability of the query response of a sample being logged to the
+  /// accuracy log in performance mode
+  double accuracy_log_probability = 0.0;
+
+  /// \brief Target number of samples that will have their results printed to
+  /// accuracy log in performance mode for compliance testing
+  uint64_t accuracy_log_sampling_target = 0;
+
+  /// \brief Variables for running test05 from native config. A boolean that
+  /// determines whether or not to run test05 and three random seed to run the
+  /// test
+  bool test05 = false;
+  uint64_t test05_qsl_rng_seed = 0;
+  uint64_t test05_sample_index_rng_seed = 0;
+  uint64_t test05_schedule_rng_seed = 0;
+  /**@}*/
+
+  // ==================================
+  /// \name Performance Sample modifiers
+  /// \details These settings can be used to Audit Performance mode runs.
+  /// In order to detect sample caching by SUT, performance of runs when only
+  /// unique queries (with non-repeated samples) are issued can be compared with
+  /// that when the same query is repeatedly issued.
+  /**@{*/
+  /// \brief Prints measurement interval start and stop timestamps to std::cout
+  /// for the purpose of comparison against an external timer
+  bool print_timestamps = false;
+  /// \brief Allows issuing only unique queries in Performance mode of any
+  /// scenario \details This can be used to send non-repeat &amp; hence unique
+  /// samples to SUT
+  bool performance_issue_unique = false;
+  /// \brief If true, the same query is chosen repeatedley for Inference.
+  /// In offline scenario, the query is filled with the same sample.
+  bool performance_issue_same = false;
+  /// \brief Offset to control which sample is repeated in
+  /// performance_issue_same mode.
+  /// Value should be within [0, performance_sample_count)
+  uint64_t performance_issue_same_index = 0;
+  /// \brief Overrides QSL-&gt;PerformanceSampleCount() when non-zero
+  uint64_t performance_sample_count_override = 0;
+  /// \brief Specifies the number of samples for accuracy evaluation.
+  /// When non-zero, accuracy mode generates sample indices [0,
+  /// accuracy_sample_count_override). When zero (default), uses
+  /// performance_sample_count.
+  uint64_t accuracy_sample_count_override = 0;
+  /// \brief Measure token latencies
+  bool use_token_latencies = false;
+  /// Token latency parameters
+  uint64_t server_ttft_latency = 100000000;
+  uint64_t server_tpot_latency = 100000000;
+  /// \brief Infer token latencies
+  bool infer_token_latencies = false;
+  uint64_t token_latency_scaling_factor;
+  /**@}*/
+
+  /// \brief Load mlperf parameter config from file.
+  int FromConfig(const std::string &amp;path, const std::string &amp;model,
+                 const std::string &amp;scenario, int conf_type = 1);
+};
+
+///
+/// \enum LoggingMode
+/// Specifies how and when logging should be sampled and stringified at
+/// runtime.
+/// * **AsyncPoll**
+///  + Logs are serialized and output on an IOThread that polls for new logs at
+///  a fixed interval. This is the only mode currently implemented.
+/// * **EndOfTestOnly**
+///  + TODO: Logs are serialzied and output only at the end of the test.
+/// * **Synchronous**
+///  + TODO: Logs are serialized and output inline.
+enum class LoggingMode {
+  AsyncPoll,
+  EndOfTestOnly,
+  Synchronous,
+};
+
+///
+/// \brief Specifies where log outputs should go.
+///
+/// By default, the loadgen outputs its log files to outdir and
+/// modifies the filenames of its logs with a prefix and suffix.
+/// Filenames will take the form:
+/// &quot;&lt;outdir&gt;/&lt;datetime&gt;&lt;prefix&gt;summary&lt;suffix&gt;.txt&quot;
+///
+/// Affordances for outputing logs to stdout are also provided.
+///
+struct LogOutputSettings {
+  std::string outdir = &quot;.&quot;;
+  std::string prefix = &quot;mlperf_log_&quot;;
+  std::string suffix = &quot;&quot;;
+  bool prefix_with_datetime = false;
+  bool copy_detail_to_stdout = false;
+  bool copy_summary_to_stdout = false;
+};
+
+///
+/// \brief Top-level log settings.
+///
+struct LogSettings {
+  LogOutputSettings log_output;
+  LoggingMode log_mode = LoggingMode::AsyncPoll;
+  uint64_t log_mode_async_poll_interval_ms = 1000;  ///&lt; TODO: Implement this.
+  bool enable_trace = true;
+};
+
+/// @}
+
+/// @}
+
+}  // namespace mlperf
+
+#endif  // MLPERF_LOADGEN_TEST_SETTINGS_H
+</pre><figure><figcaption>loadgen/loadgen_integration_diagram.svg</figcaption><img src="upstream/loadgen/loadgen_integration_diagram.svg"></figure><figure><figcaption>loadgen/diagram_submission.png</figcaption><img src="upstream/loadgen/diagram_submission.png"></figure><figure><figcaption>loadgen/diagram_network_submission.png</figcaption><img src="upstream/loadgen/diagram_network_submission.png"></figure></html>

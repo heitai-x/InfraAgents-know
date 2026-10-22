@@ -1,85 +1,488 @@
-<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; frame-src 'self'; object-src 'self'; media-src 'self'; base-uri 'none'; form-action 'none'"><title>inference_mode — PyTorch 2.14 documentation</title><style>body{font:16px/1.75 system-ui,sans-serif;color:#202631;background:#fff;margin:0 auto;padding:40px;max-width:1100px}h1,h2,h3{line-height:1.3}pre,code{font-family:Consolas,monospace}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#f4f6f8;padding:18px}table{border-collapse:collapse;display:block;overflow-x:auto}td,th{border:1px solid #ccd3dc;padding:8px}img,svg{max-width:100%;height:auto}figure{margin:24px 0}.archive-note{border-left:4px solid #2563eb;padding:12px 20px;background:#eef4ff}math{font-size:1.1em}iframe{width:100%;height:85vh;border:1px solid #ccd3dc}a{color:#1658a5}</style></head><body><p class="archive-note">本地原文阅读副本。正文与资料文件已归档；原始响应、版本和校验信息见同目录 manifest.json。网页导航与在线脚本不执行。</p><article class="bd-article">
-<section id="inference-mode">
-<h1>inference_mode<a class="headerlink" href="#inference-mode" title="Link to this heading">#</a></h1>
-<dl class="py class">
-<dt class="sig sig-object py" id="torch.autograd.grad_mode.inference_mode">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">torch.autograd.grad_mode.</span></span><span class="sig-name descname"><span class="pre">inference_mode</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference external" data-original-href="https://github.com/pytorch/pytorch/blob/v2.14.0/torch/autograd/grad_mode.py#L213"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torch.autograd.grad_mode.inference_mode" title="Link to this definition">#</a></dt>
-<dd><p>Context manager that enables or disables inference mode.</p>
-<p>InferenceMode is analogous to <a class="reference internal" data-original-href="https://docs.pytorch.org/docs/2.14/generated/torch.no_grad.html#torch.no_grad" title="torch.autograd.grad_mode.no_grad"><code class="xref py py-class docutils literal notranslate"><span class="pre">no_grad</span></code></a> and should be used
-when you are certain your operations will not interact with autograd
-(e.g., during data loading or model evaluation). Compared to
-<a class="reference internal" data-original-href="https://docs.pytorch.org/docs/2.14/generated/torch.no_grad.html#torch.no_grad" title="torch.autograd.grad_mode.no_grad"><code class="xref py py-class docutils literal notranslate"><span class="pre">no_grad</span></code></a>, it removes additional overhead by disabling view
-tracking and version counter bumps. It is also more restrictive, in
-that tensors created in this mode cannot be used in computations
-recorded by autograd.</p>
-<p>This context manager is thread-local; it does not affect computation
-in other threads.</p>
-<p>Also functions as a decorator.</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>Inference mode is one of several mechanisms that can locally enable
-or disable gradients. See <a class="reference internal" data-original-href="https://docs.pytorch.org/docs/2.14/notes/autograd.html#locally-disable-grad-doc"><span class="std std-ref">Locally disabling gradient computation</span></a> for a
-comparison. If avoiding the use of tensors created in inference mode
-in autograd-tracked regions is difficult, consider benchmarking your
-code with and without inference mode to weigh the performance benefits
-against the trade-offs. You can always use <a class="reference internal" data-original-href="https://docs.pytorch.org/docs/2.14/generated/torch.no_grad.html#torch.no_grad" title="torch.autograd.grad_mode.no_grad"><code class="xref py py-class docutils literal notranslate"><span class="pre">no_grad</span></code></a> instead.</p>
-</div>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>Unlike some other mechanisms that locally enable or disable grad,
-entering inference_mode also disables <a class="reference internal" data-original-href="https://docs.pytorch.org/docs/2.14/autograd.html#forward-mode-ad"><span class="std std-ref">forward-mode AD</span></a>.</p>
-</div>
-<div class="admonition warning">
-<p class="admonition-title">Warning</p>
-<p><cite>inference_mode</cite> does NOT automatically set the model to evaluation mode.
-For proper inference behavior (e.g., disabling dropout, using running statistics
-in batch normalization), you must explicitly set your model to evaluation mode using
-<cite>model.eval()</cite> in addition to using this context manager.</p>
-</div>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>mode</strong> (<a class="reference external" data-original-href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em> or </em><em>function</em>) – Either a boolean flag to enable or disable
-inference mode, or a Python function to decorate with inference
-mode enabled.</p>
-</dd>
-</dl>
-<dl>
-<dt>Example::</dt><dd><div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">requires_grad</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">inference_mode</span><span class="p">():</span>
-<span class="gp">... </span>    <span class="n">y</span> <span class="o">=</span> <span class="n">x</span> <span class="o">*</span> <span class="n">x</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">y</span><span class="o">.</span><span class="n">requires_grad</span>
-<span class="go">False</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">y</span><span class="o">.</span><span class="n">_version</span>
-<span class="gt">Traceback (most recent call last):</span>
-<span class="gr">File "&lt;stdin&gt;", line 1, in &lt;module&gt;</span>
-<span class="gr">RuntimeError</span>: <span class="n">Inference tensors do not track version counter.</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="nd">@torch</span><span class="o">.</span><span class="n">inference_mode</span><span class="p">()</span>
-<span class="gp">... </span><span class="k">def</span><span class="w"> </span><span class="nf">func</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
-<span class="gp">... </span>    <span class="k">return</span> <span class="n">x</span> <span class="o">*</span> <span class="n">x</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">out</span> <span class="o">=</span> <span class="n">func</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">out</span><span class="o">.</span><span class="n">requires_grad</span>
-<span class="go">False</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="nd">@torch</span><span class="o">.</span><span class="n">inference_mode</span><span class="p">()</span>
-<span class="gp">... </span><span class="k">def</span><span class="w"> </span><span class="nf">doubler</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
-<span class="gp">... </span>    <span class="k">return</span> <span class="n">x</span> <span class="o">*</span> <span class="mi">2</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">out</span> <span class="o">=</span> <span class="n">doubler</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">out</span><span class="o">.</span><span class="n">requires_grad</span>
-<span class="go">False</span>
-</pre></div>
-</div>
-</dd>
-</dl>
-<dl class="py method">
-<dt class="sig sig-object py" id="torch.autograd.grad_mode.inference_mode.clone">
-<span class="sig-name descname"><span class="pre">clone</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference external" data-original-href="https://github.com/pytorch/pytorch/blob/v2.14.0/torch/autograd/grad_mode.py#L297"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torch.autograd.grad_mode.inference_mode.clone" title="Link to this definition">#</a></dt>
-<dd><p>Create a copy of this class</p>
-<dl class="field-list simple">
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="#torch.autograd.grad_mode.inference_mode" title="torch.autograd.grad_mode.inference_mode"><em>inference_mode</em></a></p>
-</dd>
-</dl>
-</dd></dl>
-</dd></dl>
-</section>
-</article></body></html>
+<!doctype html><html lang="en"><meta charset="utf-8"><title>PyTorch — inference_mode</title><style>body{max-width:1100px;margin:40px auto;padding:0 24px;line-height:1.6}pre{white-space:pre-wrap;overflow-wrap:anywhere}img{max-width:100%;height:auto}</style><h1>PyTorch — inference_mode</h1><pre>
+===== torch/autograd/grad_mode.py =====
+# mypy: allow-untyped-defs
+from typing import Any
+
+import torch
+from torch.utils._contextlib import (
+    _DecoratorContextManager,
+    _NoParamDecoratorContextManager,
+    F,
+)
+
+
+__all__ = [
+    &quot;no_grad&quot;,
+    &quot;enable_grad&quot;,
+    &quot;set_grad_enabled&quot;,
+    &quot;inference_mode&quot;,
+    &quot;set_multithreading_enabled&quot;,
+    &quot;enforce_grad_layout_policy&quot;,
+]
+
+
+class no_grad(_NoParamDecoratorContextManager):
+    r&quot;&quot;&quot;Context-manager that disables gradient calculation.
+
+    Disabling gradient calculation is useful for inference, when you are sure
+    that you will not call :meth:`Tensor.backward()`. It will reduce memory
+    consumption for computations that would otherwise have `requires_grad=True`.
+
+    In this mode, the result of every computation will have
+    `requires_grad=False`, even when the inputs have `requires_grad=True`.
+    There is an exception! All factory functions, or functions that create
+    a new Tensor and take a requires_grad kwarg, will NOT be affected by
+    this mode.
+
+    This context manager is thread local; it will not affect computation
+    in other threads.
+
+    Also functions as a decorator.
+
+    .. note::
+        No-grad is one of several mechanisms that can enable or
+        disable gradients locally see :ref:`locally-disable-grad-doc` for
+        more information on how they compare.
+
+    .. note::
+        This API does not apply to :ref:`forward-mode AD &lt;forward-mode-ad&gt;`.
+        If you want to disable forward AD for a computation, you can unpack
+        your dual tensors.
+
+    Example::
+        &gt;&gt;&gt; # xdoctest: +SKIP
+        &gt;&gt;&gt; x = torch.tensor([1.], requires_grad=True)
+        &gt;&gt;&gt; with torch.no_grad():
+        ...     y = x * 2
+        &gt;&gt;&gt; y.requires_grad
+        False
+        &gt;&gt;&gt; @torch.no_grad()
+        ... def doubler(x):
+        ...     return x * 2
+        &gt;&gt;&gt; z = doubler(x)
+        &gt;&gt;&gt; z.requires_grad
+        False
+        &gt;&gt;&gt; @torch.no_grad()
+        ... def tripler(x):
+        ...     return x * 3
+        &gt;&gt;&gt; z = tripler(x)
+        &gt;&gt;&gt; z.requires_grad
+        False
+        &gt;&gt;&gt; # factory function exception
+        &gt;&gt;&gt; with torch.no_grad():
+        ...     a = torch.nn.Parameter(torch.rand(10))
+        &gt;&gt;&gt; a.requires_grad
+        True
+    &quot;&quot;&quot;
+
+    def __init__(self) -&gt; None:
+        if not torch._jit_internal.is_scripting():
+            super().__init__()
+        self.prev = False
+
+    def __enter__(self) -&gt; None:
+        self.prev = torch.is_grad_enabled()
+        torch.set_grad_enabled(False)
+
+    def __exit__(self, exc_type: Any, exc_value: Any, traceback: Any) -&gt; None:
+        torch.set_grad_enabled(self.prev)
+
+
+class enable_grad(_NoParamDecoratorContextManager):
+    r&quot;&quot;&quot;Context-manager that enables gradient calculation.
+
+    Enables gradient calculation, if it has been disabled via :class:`~no_grad`
+    or :class:`~set_grad_enabled`.
+
+    This context manager is thread local; it will not affect computation
+    in other threads.
+
+    Also functions as a decorator.
+
+    .. note::
+        enable_grad is one of several mechanisms that can enable or
+        disable gradients locally see :ref:`locally-disable-grad-doc` for
+        more information on how they compare.
+
+    .. note::
+        This API does not apply to :ref:`forward-mode AD &lt;forward-mode-ad&gt;`.
+
+    Example::
+        &gt;&gt;&gt; # xdoctest: +SKIP
+        &gt;&gt;&gt; x = torch.tensor([1.], requires_grad=True)
+        &gt;&gt;&gt; with torch.no_grad():
+        ...     with torch.enable_grad():
+        ...         y = x * 2
+        &gt;&gt;&gt; y.requires_grad
+        True
+        &gt;&gt;&gt; y.backward()
+        &gt;&gt;&gt; x.grad
+        tensor([2.])
+        &gt;&gt;&gt; @torch.enable_grad()
+        ... def doubler(x):
+        ...     return x * 2
+        &gt;&gt;&gt; with torch.no_grad():
+        ...     z = doubler(x)
+        &gt;&gt;&gt; z.requires_grad
+        True
+        &gt;&gt;&gt; @torch.enable_grad()
+        ... def tripler(x):
+        ...     return x * 3
+        &gt;&gt;&gt; with torch.no_grad():
+        ...     z = tripler(x)
+        &gt;&gt;&gt; z.requires_grad
+        True
+
+    &quot;&quot;&quot;
+
+    def __enter__(self) -&gt; None:
+        self.prev = torch.is_grad_enabled()
+        torch._C._set_grad_enabled(True)
+
+    def __exit__(self, exc_type: Any, exc_value: Any, traceback: Any) -&gt; None:
+        torch._C._set_grad_enabled(self.prev)
+
+
+class set_grad_enabled(_DecoratorContextManager):
+    r&quot;&quot;&quot;Context-manager that sets gradient calculation on or off.
+
+    ``set_grad_enabled`` will enable or disable grads based on its argument :attr:`mode`.
+    It can be used as a context-manager or as a function.
+
+    This context manager is thread local; it will not affect computation
+    in other threads.
+
+    Args:
+        mode (bool): Flag whether to enable grad (``True``), or disable
+                     (``False``). This can be used to conditionally enable
+                     gradients.
+
+    .. note::
+        set_grad_enabled is one of several mechanisms that can enable or
+        disable gradients locally see :ref:`locally-disable-grad-doc` for
+        more information on how they compare.
+
+    .. note::
+        This API does not apply to :ref:`forward-mode AD &lt;forward-mode-ad&gt;`.
+
+    Example::
+        &gt;&gt;&gt; # xdoctest: +SKIP
+        &gt;&gt;&gt; x = torch.tensor([1.], requires_grad=True)
+        &gt;&gt;&gt; is_train = False
+        &gt;&gt;&gt; with torch.set_grad_enabled(is_train):
+        ...     y = x * 2
+        &gt;&gt;&gt; y.requires_grad
+        False
+        &gt;&gt;&gt; _ = torch.set_grad_enabled(True)
+        &gt;&gt;&gt; y = x * 2
+        &gt;&gt;&gt; y.requires_grad
+        True
+        &gt;&gt;&gt; _ = torch.set_grad_enabled(False)
+        &gt;&gt;&gt; y = x * 2
+        &gt;&gt;&gt; y.requires_grad
+        False
+
+    &quot;&quot;&quot;
+
+    def __init__(self, mode: bool) -&gt; None:
+        self.prev = torch.is_grad_enabled()
+        self.mode = mode
+        torch._C._set_grad_enabled(mode)
+
+    def __call__(self, orig_func: F) -&gt; F:
+        torch._C._set_grad_enabled(self.prev)
+        return super().__call__(orig_func)
+
+    def __enter__(self) -&gt; None:
+        torch._C._set_grad_enabled(self.mode)
+
+    def __exit__(self, exc_type: Any, exc_value: Any, traceback: Any) -&gt; None:
+        torch._C._set_grad_enabled(self.prev)
+
+    def __str__(self) -&gt; str:
+        return f&quot;{torch.typename(self)}(mode={self.mode})&quot;
+
+    def __repr__(self) -&gt; str:
+        return str(self)
+
+    def clone(self) -&gt; &quot;set_grad_enabled&quot;:
+        r&quot;&quot;&quot;
+        Create a copy of this class
+        &quot;&quot;&quot;
+        return self.__class__(self.mode)
+
+
+class inference_mode(_DecoratorContextManager):
+    r&quot;&quot;&quot;Context manager that enables or disables inference mode.
+
+    InferenceMode is analogous to :class:`~no_grad` and should be used
+    when you are certain your operations will not interact with autograd
+    (e.g., during data loading or model evaluation). Compared to
+    :class:`~no_grad`, it removes additional overhead by disabling view
+    tracking and version counter bumps. It is also more restrictive, in
+    that tensors created in this mode cannot be used in computations
+    recorded by autograd.
+
+    This context manager is thread-local; it does not affect computation
+    in other threads.
+
+    Also functions as a decorator.
+
+    .. note::
+        Inference mode is one of several mechanisms that can locally enable
+        or disable gradients. See :ref:`locally-disable-grad-doc` for a
+        comparison. If avoiding the use of tensors created in inference mode
+        in autograd-tracked regions is difficult, consider benchmarking your
+        code with and without inference mode to weigh the performance benefits
+        against the trade-offs. You can always use :class:`~no_grad` instead.
+
+    .. note::
+       Unlike some other mechanisms that locally enable or disable grad,
+       entering inference_mode also disables :ref:`forward-mode AD &lt;forward-mode-ad&gt;`.
+
+    .. warning::
+        `inference_mode` does NOT automatically set the model to evaluation mode.
+        For proper inference behavior (e.g., disabling dropout, using running statistics
+        in batch normalization), you must explicitly set your model to evaluation mode using
+        `model.eval()` in addition to using this context manager.
+
+    Args:
+        mode (bool or function): Either a boolean flag to enable or disable
+            inference mode, or a Python function to decorate with inference
+            mode enabled.
+
+    Example::
+        &gt;&gt;&gt; # xdoctest: +REQUIRES(env:TORCH_DOCTEST_AUTOGRAD)
+        &gt;&gt;&gt; import torch
+        &gt;&gt;&gt; x = torch.ones(1, 2, 3, requires_grad=True)
+        &gt;&gt;&gt; with torch.inference_mode():
+        ...     y = x * x
+        &gt;&gt;&gt; y.requires_grad
+        False
+        &gt;&gt;&gt; # xdoctest: +SKIP(&quot;want string isn&#x27;t quite right&quot;)
+        &gt;&gt;&gt; y._version
+        Traceback (most recent call last):
+        File &quot;&lt;stdin&gt;&quot;, line 1, in &lt;module&gt;
+        RuntimeError: Inference tensors do not track version counter.
+        &gt;&gt;&gt; @torch.inference_mode()
+        ... def func(x):
+        ...     return x * x
+        &gt;&gt;&gt; out = func(x)
+        &gt;&gt;&gt; out.requires_grad
+        False
+        &gt;&gt;&gt; @torch.inference_mode()
+        ... def doubler(x):
+        ...     return x * 2
+        &gt;&gt;&gt; out = doubler(x)
+        &gt;&gt;&gt; out.requires_grad
+        False
+
+    &quot;&quot;&quot;
+
+    def __init__(self, mode: bool = True) -&gt; None:
+        if not torch._jit_internal.is_scripting():
+            super().__init__()
+        self.mode = mode
+
+    def __new__(cls, mode=True):
+        if isinstance(mode, bool):
+            return super().__new__(cls)
+        return cls()(mode)
+
+    def __enter__(self) -&gt; None:
+        self._inference_mode_context = torch._C._InferenceMode(self.mode)
+        self._inference_mode_context.__enter__()
+
+    def __exit__(self, exc_type: Any, exc_value: Any, traceback: Any) -&gt; None:
+        self._inference_mode_context.__exit__(exc_type, exc_value, traceback)
+
+    def clone(self) -&gt; &quot;inference_mode&quot;:
+        r&quot;&quot;&quot;
+        Create a copy of this class
+        &quot;&quot;&quot;
+        return self.__class__(self.mode)
+
+
+def _enter_inference_mode(mode):
+    mode_context = torch._C._InferenceMode(mode)
+    mode_context.__enter__()
+    return mode_context
+
+
+def _exit_inference_mode(mode):
+    mode.__exit__(None, None, None)
+
+
+class set_multithreading_enabled(_DecoratorContextManager):
+    r&quot;&quot;&quot;Context-manager that enables or disables multithreaded backward.
+
+    Ordinarily, when :ref:`accelerator&lt;accelerators&gt;` devices are in use,
+    the backward pass runs on device-specific worker threads. The engine
+    creates these threads based on the number of available devices and
+    reuses them across iterations.
+
+    When ``mode=False``, the backward pass runs on the calling thread
+    instead. ``mode=True`` restores the default behavior.
+
+    This can be used as a context-manager or as a function. It is
+    thread-local and will not affect computation in other threads.
+
+    Args:
+        mode (bool): Whether to enable multithreaded backward (``True``,
+                    default) or disable (``False``).
+
+    .. note::
+        This API does not apply to :ref:`forward-mode AD &lt;forward-mode-ad&gt;`,
+        which never uses multithreading.
+
+    &quot;&quot;&quot;
+
+    def __init__(self, mode: bool) -&gt; None:
+        self.prev = torch._C._is_multithreading_enabled()
+        torch._C._set_multithreading_enabled(mode)
+        self.mode = mode
+
+    def __enter__(self) -&gt; None:
+        pass
+
+    def __exit__(self, exc_type: Any, exc_value: Any, traceback: Any) -&gt; None:
+        torch._C._set_multithreading_enabled(self.prev)
+
+    def clone(self) -&gt; &quot;set_multithreading_enabled&quot;:
+        r&quot;&quot;&quot;
+        Create a copy of this class
+        &quot;&quot;&quot;
+        return self.__class__(self.mode)
+
+
+class enforce_grad_layout_policy(_DecoratorContextManager):
+    r&quot;&quot;&quot;Context-manager that controls the gradient layout policy enforcement.
+
+    The gradient layout contract ensures that accumulated gradients have
+    strides matching their corresponding parameters (for non-overlapping
+    dense parameters) or are row-major contiguous (otherwise). This aids
+    performance in optimizers and distributed reducers.
+
+    When ``enable=False``, the autograd engine relaxes this enforcement:
+
+    - Stealable gradients whose layout does *not* match the parameter can
+      still be stolen directly (avoiding an extra copy).
+    - The &quot;grad and param do not obey the gradient layout contract&quot; warning
+      is suppressed.
+
+    The logic that *creates* a brand-new gradient (e.g., cloning into the
+    correct layout when the gradient is not stealable) is **not** affected
+    by this flag.
+
+    This can be used as a context-manager or as a function. It is
+    thread-local and will not affect computation in other threads.
+
+    Args:
+        enable (bool): Whether to enforce the gradient layout contract
+            (``True``, default) or relax enforcement (``False``).
+
+    Example::
+        &gt;&gt;&gt; # xdoctest: +SKIP
+        &gt;&gt;&gt; import torch
+        &gt;&gt;&gt; p = torch.empty(2, 3, 4).permute(2, 0, 1).requires_grad_()
+        &gt;&gt;&gt; with torch.autograd.enforce_grad_layout_policy(False):
+        ...     (p * 2).sum().backward()
+        ...     # p.grad may now have the same strides as the incoming
+        ...     # gradient rather than being forced to match p&#x27;s strides.
+    &quot;&quot;&quot;
+
+    def __init__(self, enable: bool = True) -&gt; None:
+        self.prev = torch._C._is_grad_layout_enforcement_enabled()
+        torch._C._set_grad_layout_enforcement_enabled(enable)
+        self.mode = enable
+
+    def __enter__(self) -&gt; None:
+        pass
+
+    def __exit__(self, exc_type: Any, exc_value: Any, traceback: Any) -&gt; None:
+        torch._C._set_grad_layout_enforcement_enabled(self.prev)
+
+    def clone(self) -&gt; &quot;enforce_grad_layout_policy&quot;:
+        r&quot;&quot;&quot;
+        Create a copy of this class
+        &quot;&quot;&quot;
+        return self.__class__(self.mode)
+
+
+class _force_original_view_tracking(_DecoratorContextManager):
+    r&quot;&quot;&quot;Context-manager that sets whether or not to always enable view-replay in autograd.
+
+    ``set_view_replay_enabled`` will enable or disable view-replay based on its argument :attr:`mode`.
+    It can be used as a context-manager or as a function.
+
+    This context manager is thread local; it will not affect computation
+    in other threads.
+
+    When a tensor view is mutated, the autograd engine needs to decide whether or not
+    to regenerate the &quot;updated view&quot; by either replaying the chain of views from the updated base,
+    or with a single call to as_strided.
+
+    If set_view_replay_enabled is set to True, then autograd will always use view replay.
+    Otherwise, it will fall back to its existing logic.
+
+    Args:
+        mode (bool): Flag whether to enable view-replay (``True``), or disable
+                     (``False``).
+
+    &quot;&quot;&quot;
+
+    def __init__(self, mode: bool) -&gt; None:
+        self.prev = torch._C._is_view_replay_enabled()
+        self.mode = mode
+        torch._C._set_view_replay_enabled(mode)
+
+    def __call__(self, orig_func: F) -&gt; F:
+        torch._C._set_view_replay_enabled(self.prev)
+        return super().__call__(orig_func)
+
+    def __enter__(self) -&gt; None:
+        torch._C._set_view_replay_enabled(self.mode)
+
+    def __exit__(self, exc_type: Any, exc_value: Any, traceback: Any) -&gt; None:
+        torch._C._set_view_replay_enabled(self.prev)
+
+    def clone(self):
+        return self.__class__(self.mode)
+
+
+class _unsafe_preserve_version_counter(_DecoratorContextManager):
+    r&quot;&quot;&quot;DO NOT USE THIS UNLESS YOU KNOW EXACTLY WHAT YOU&#x27;RE DOING.
+
+    This context manager can lead to arbitrary silent-correctness issues in any other part of your code
+    (even the ones not touched directly by the context manager)!
+
+    Ordinarily, autograd will track mutations to tensors by incrementing it&#x27;s `._version` attribute.
+    This is generally important for correctness, as for example, mutating a tensor that autograd has saved
+    for the backwards pass can result in incorrect gradients, and autograd uses the version counter to detect
+    and error out in this situation.
+
+    However, there are rare instances where it might be useful to hide mutations from autograd. For example:
+    if a tensor is very large, and you&#x27;d like to free its memory by storing it elsewhere, and re-populate
+    the tensor right before it is needed by autograd.
+
+    Args:
+        tensor (torch.Tensor): the tensor in question, that you would like to preserve the version counter of.
+
+    .. note::
+        This API does not apply to :ref:`forward-mode AD &lt;forward-mode-ad&gt;`.
+
+    &quot;&quot;&quot;
+
+    def __init__(self, tensors: torch.Tensor | tuple[torch.Tensor, ...]) -&gt; None:
+        self.tensors = (tensors,) if isinstance(tensors, torch.Tensor) else tensors
+        if not isinstance(self.tensors, tuple):
+            raise AssertionError(&quot;Expected tensors to be a tuple&quot;)
+        self.prev_versions = tuple(t._version for t in self.tensors)
+
+    def __enter__(self) -&gt; None:
+        pass
+
+    # pyrefly: ignore [bad-override]
+    def __exit__(self, *args) -&gt; None:
+        torch._C._autograd._unsafe_set_version_counter(self.tensors, self.prev_versions)
+</pre></html>

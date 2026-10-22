@@ -1,520 +1,416 @@
-This document is relevant for
-:
-Inf2
-,
-Trn1
-,
-Trn2
-,
-Trn3
-Get started with Neuron Explorer
-#
+
+===== tools/neuron-explorer/get-started.rst =====
+.. meta::
+   :description: Setup and get started guide for new Neuron SDK profiler
+   :date_updated: 12/02/2025
+
+.. _new-neuron-profiler-setup:
+
+Get Started with Neuron Explorer
+========================================
+
+In this guide, you'll learn how to set up and launch Neuron Explorer, including the web-based UI for interactive analysis. By the end of this guide, you'll be able to visualize and analyze performance data for your models directly in your browser.
+
 Overview
-#
-In this guide, you’ll capture a profile of your Neuron workload, launch Neuron Explorer, and upload the profile for interactive analysis.
-By the end you will have:
-Captured a system or device profile
-Launched Neuron Explorer (browser or VS Code)
-Uploaded and viewed your profile in the interactive timeline
+---------
+
+In this guide, you'll launch an AWS Trainium or Inferentia EC2 instance using the AWS Deep Learning AMI (DLAMI) for Neuron, install and verify Neuron Explorer, start both the API and UI servers, and set up secure SSH tunneling to view the Neuron Explorer interface in your local browser.
+
+Use this tool when you want to collect, inspect, and visualize Neuron profiling data from model training or inference jobs running on Neuron-compatible instances. At a high level, you will:
+
+1. Launch a Neuron DLAMI instance
+2. Verify Neuron Explorer installation
+3. Start the Neuron Explorer servers
+4. Configure SSH tunneling
+5. Access the Neuron Explorer UI locally
+
+
 Prerequisites
-#
-A Trainium or Inferentia EC2 instance (e.g., trn2.48xlarge, inf2.xlarge) with the
-AWS Neuron DLAMI
-SSH key pair (
-.pem
-file) for connecting to your instance
-Local machine with SSH client and a web browser (or VS Code)
-Step 1: Connect and verify installation
-#
-Launch an EC2 instance with a Neuron DLAMI. See the
-setup guide
-for details. Then, SSH into your EC2 instance and verify Neuron Explorer is installed:
-neuron-explorer
---version
-If not installed:
-sudo
-apt
-install
-aws-neuronx-tools
-Step 2: Set up SSH tunneling
-#
-Neuron Explorer serves a web UI on port 3001 and an API backend on port 3002. You access both from your local machine through SSH tunnels.
-From your
-local machine
-, open the tunnels:
-ssh
--i
-~/path/to/your-key.pem
-\
--L
-3001
-:localhost:3001
-\
--L
-3002
-:localhost:3002
-\
-ubuntu@<instance-ip>
--fN
--i
-~/path/to/your-key.pem
-Path to your EC2 key pair
--L
-3001:localhost:3001
-Forwards the UI port
--L
-3002:localhost:3002
-Forwards the API port
-ubuntu@<instance-ip>
-Instance login (use
-ec2-user
-for Amazon Linux)
--fN
-Runs tunnel in background (no shell)
-Important
-You must forward
-both
-ports. The UI on 3001 calls the API on 3002. If you only forward one, the page loads but shows no data. See
-Troubleshooting
-if you run into issues.
-Step 3: Capture your profile
-#
-Profile types at a glance
-#
-Type
-What it captures
-When to use
-Output files
-System
-Runtime events, API calls, model loads, CPU/memory
-End-to-end execution flow
-ntrace.pb
-,
-trace_info.pb
-,
-cpu_util.pb
-,
-host_mem.pb
-Device
-Hardware-level NeuronCore instruction traces
-On-device compute bottlenecks
-Matched
-.neff
-+
-.ntff
-pair
-Both
-Combined system + device view
-Full optimization picture
-All of the above
-Note
-Device profiles require a matched pair: the
-.neff
-and
-.ntff
-share a numeric hash in their filename (e.g.,
-neff_395760075800974.neff
-pairs with
-395760075800974_instid_0_vnc_0.ntff
-).
-For instructions on how to capture a profile, see
-Capture Profiles in Neuron Explorer
-or
-Profile a NKI Kernel
-.
-After profiling,
-./profile_output
-will contain trace artifacts organized per process. Verify the output matches the
-Expected Output
-section.
-Step 4: Launch Neuron Explorer
-#
-On the EC2 instance, run:
-neuron-explorer
-view
-# Expected Output:
-View
-a
-list
-of
-profiles
-at
-http://localhost:3001/
-ctrl-c
-to
-exit
-This starts the
-UI server
-on port 3001 (web interface) and the
-API server
-on port 3002 (data backend).
-In your local browser, navigate to
-http://localhost:3001
-:
-Using VS Code instead of the browser
-#
-Install: Search for
-AWS Neuron Explorer
-(publisher: Amazon Web Services) in VS Code Extensions (Ctrl+Shift+X), or install from the
-VS Code Marketplace
-.
-Option A — Local Binary (no tunnel needed)
-From the Neuron Explorer view in VS Code, and after you have connected to the Neuron EC2 instance with Remote-SSH:
-Configure the endpoint: click the extension in the left activity bar, select
-Local Binary
-on the bottom bar.
-Access Profile Manager from the extension sidebar.
-Click
-Upload Profile
-and paste the path to the profile directory on the instance.
-Note
-No SSH tunnel is required when running Neuron Explorer on the remote device. The extension starts the
-neuron-explorer
-server for you automatically when you select
-Local Binary
-.
-Option B — Custom endpoint (SSH tunnel)
-Ensure SSH tunnels are active (see
-Step 2: Set up SSH tunneling
-).
-Configure the endpoint: click the extension in the left activity bar, select
-Endpoint
-on the bottom bar, choose
-Custom endpoint
-, and enter
-localhost:3002
-.
-Access the
-Profile Manager
-from the Neuron Explorer extension sidebar.
-Note
-The VS Code extension uses the same API server. All upload methods (CLI, web UI) work interchangeably — once a profile is uploaded, it’s visible in both interfaces.
-Step 5: Upload your profile
-#
-Choose the method that fits your workflow:
-Option A: CLI upload
-#
-If you’re already SSH’d into the instance, this is the quickest path:
-neuron-explorer
-view
-\
--d
-./profile_output
-\
---ingest-only
-\
---display-name
-"my-profile-run"
-Expected outcome:
-After processing, the CLI outputs a direct link to your profile. Open it in your browser (via the tunnel) to view.
-Useful flags:
-Flag
-Description
---ignore-device-profile
-Skip device-level traces (faster processing)
---system-trace-secondary-group
-worker_gid,lnc_idx
-Reduce tracks for a cleaner view
-Option B: Web UI upload
-#
-If your profile output is on the EC2 instance and you want to use the browser uploader locally, transfer the files first:
-# Compress for faster transfer (recommended for large profiles)
-# Run on EC2:
-tar
--czf
-profile_output.tar.gz
-./profile_output
-# Transfer to local machine:
-scp
--i
-~/your-key.pem
-ubuntu@<instance-ip>:./profile_output.tar.gz
-.
-tar
--xzf
-profile_output.tar.gz
-Use your local browser or VSCode to open
-http://localhost:3001
-. The
-Profile Manager
-page is displayed.
-Click the
-Upload Profile
-button on the top right to open the upload dialog:
-Enter a
-Profile Name
-(required).
-Choose your upload method based on profile type:
-For system profiles (or system + device):
-click
-Upload Profile
-and select
-Directory Upload For System Profile
-. Then select the directory containing your
-.pb
-files (must include
-trace_info.pb
-).
-For device-only profiles:
-click
-Upload Profile
-and select
-Individual Files
-. Upload your
-.neff
-and
-.ntff
-files in the designated boxes.
-Expected outcome:
-The profile appears on the
-My Uploads
-tab. Click
-Refresh
-to check processing status. Once complete, click the profile name to open the interactive timeline.
-Note
-Why two upload methods?
-Directory Upload requires a system profile (
-ntrace.pb
-+
-trace_info.pb
-). It does not work with device-only profiles. For device-only profiles (just
-.neff
-+
-.ntff
-), use
-Individual Files
-. If you have both system + device files, use
-Directory Upload
-as it picks up everything.
-Option C: Export to JSON
-#
-For programmatic analysis (custom scripts, coding agents), export to JSON. This generates
-system_profile.json
-and
-device_profile_model_<model_id>.json
-per compiled model.
-neuron-explorer
-view
-\
---session-dir
-./profile_output
-\
---output-format
-json
-\
---output-file
-./integrated_trace.json
-Quick text summary (no UI needed):
-neuron-explorer
-view
--d
-./profile_output
---output-format
-summary-text
-JSON schema (system_profile.json):
-The file contains event objects. It also includes
-mem_usage
-(sampled host memory) and
-cpu_util
-(CPU utilization per core).
-{
-"Neuron_Runtime_API_Event"
-:
-{
-"duration"
-:
-27094
-,
-"group"
-:
-"nrt-nc-000"
-,
-"id"
-:
-1
-,
-"instance_id"
-:
-"i-0f207fb2a99bd2d08"
-,
-"name"
-:
-"nrt_tensor_write"
-,
-"timestamp"
-:
-1729888371056597613
-,
-"type"
-:
-11
-},
-"Framework_Event"
-:
-{
-"duration"
-:
-3758079
-,
-"group"
-:
-"framework-80375131"
-,
-"instance_id"
-:
-"i-0f207fb2a99bd2d08"
-,
-"name"
-:
-"PjitFunction(matmul_allgather)"
-,
-"timestamp"
-:
-1729888382798557372
-}
-}
-Note
-Share your view with teammates.
-After you open a profile, Neuron Explorer encodes your current time range, selected event, and active annotation in the page URL. Copy the URL and share it to give others the same view with no additional setup. The shared URL only works for users connected to the same Neuron Explorer instance.
-Organize profiles into folders
-#
-Folders group related profiles — for example, every run from one experiment. Folders are private to
-you. A profile can belong to more than one folder. Folders support only one level, so you cannot
-nest one folder inside another.
-To create a folder, open the
-Profile Manager
-page, select the
-My Folders
-tab, and choose
-Create Folder
-— or
-Create your first folder
-if you have none yet. Names are limited to 100
-characters and cannot contain spaces; use underscores, hyphens, or dots instead.
-To file profiles, go to the
-My Uploads
-tab and either choose the folder icon in a profile’s
-Actions
-column, or select one or more profiles and choose
-Actions
->
-Add to folder
-. In
-the
-Add to Folder
-dialog, select an existing folder — or choose
-Create new folder…
-— and
-then choose
-Add
-. The upload form also has a
-Folder
-field, which defaults to
-None (no folder)
-, so you can file a profile as you upload it.
-The
-My Folders
-tab lists each folder with the number of profiles it holds. Choose a folder name
-to open it and see those profiles in the same table the
-My Uploads
-tab uses, then use the
-My Folders
-breadcrumb to go back. From the
-My Folders
-tab you can also rename a folder with
-the edit icon beside its name, or delete folders by selecting them, choosing
-Delete
-, and
-confirming. To take a profile out of a folder, open the folder and choose the remove icon in the
-profile’s row, or select profiles and choose
-Actions
->
-Remove from folder
-.
-Note
-Removing a profile from a folder, or deleting the folder itself, leaves the profile in place on
-the
-My Uploads
-tab. Deleting a folder takes its profiles out of that folder only; they remain
-in any other folders that contain them. Deleting a profile is a separate, permanent action, and
-it removes that profile from every folder that contains it. See
-Delete a profile
-.
-Delete a profile
-#
-When you no longer need a profile, delete it from the
-Profile Manager
-page to free up storage.
-Before you start:
-The delete action is available only on the
-My Uploads
-tab. You can delete
-only the profiles that you uploaded. If you try to delete a profile that someone else uploaded,
-Neuron Explorer reports an error and leaves the profile in place.
-To delete one or more profiles:
-Open the
-Profile Manager
-page and select the
-My Uploads
-tab.
-Start the deletion in one of two ways:
-Choose the delete icon in the
-Actions
-column of a profile’s row to delete only that
-profile.
-Select the checkbox for one or more profiles, choose
-Actions
-, and then choose
-Delete profile
-.
-In the confirmation dialog, review the profiles to be deleted, type
-delete
-in the
-confirmation field, and then choose
-Delete
-. The
-Delete
-button stays disabled until you
-type the confirmation text exactly.
-Expected outcome:
-A success notification confirms the deletion, and the profiles no longer
-appear on the
-My Uploads
-tab.
-Warning
-Deleting a profile is permanent and cannot be undone. Neuron Explorer removes the profile’s
-stored files and metadata, along with its tags, annotations, and folder membership, and makes
-any persistent link to the profile inaccessible, including the view links described earlier in
-this guide. To recover a deleted profile, upload it again as described in
-Step 5
-, and then recreate any tags and
-annotations.
-Note
-When you delete several profiles at once, each profile is deleted independently. If some
-deletions fail, Neuron Explorer deletes the rest and reports the names of the profiles it could
-not delete. Select those profiles and retry.
-Troubleshooting
-#
-For troubleshooting connection issues, upload errors, profiling results problems,
-and frequently asked questions, see the full
-Troubleshooting & FAQs
-guide.
-Next steps
-#
-Capture Profiles in Neuron Explorer
-— Full capturing and profiling reference (PyTorch, JAX, environment variables, CLI, filtering)
-Neuron Explorer Full Documentation
-— Complete viewer and feature reference
-Profile Parquet Schema Reference
-— Complete profile data reference, matching
-neuron-explorer
---show-profile-schema
-This document is relevant for
-:
-Inf2
-,
-Trn1
-,
-Trn2
-,
-Trn3
+--------------
+
+* An AWS account with permissions to launch EC2 instances.
+* Access to an AWS Trainium or Inferentia instance type (such as trn1.2xlarge, inf2.xlarge).
+* AWS Neuron DLAMI with the latest Neuron SDK preinstalled.
+* SSH key pair (``.pem`` file) to securely connect to your EC2 instance.
+* Local machine with SSH client and web browser installed.
+
+
+Before you begin
+-----------------
+
+Complete these steps before starting the task in this document:
+
+1. Make sure you have an active AWS account and `a default VPC available in your region <https://console.aws.amazon.com/vpc/>`_. 
+2. Create or locate your SSH key pair (``.pem`` file) that allows access to your EC2 instance.
+
+Instructions
+-------------
+
+1. Launch a Neuron-compatible EC2 instance
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Launch an EC2 instance with either a Trainium or Inferentia instance type using the AWS Neuron DLAMI.
+You can do this from the AWS Management Console or CLI. For more instructions on how to launch an instance with Neuron DLAMI, refer to the instructions here.
+
+**Expected outcome**
+
+Your instance should start and appear in the EC2 dashboard as "Running."
+
+
+2. Verify that Neuron Explorer is installed
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Once you've connected to your EC2 instance with SSH, verify that Neuron Explorer and the associated tools are installed:
+
+.. code-block:: bash
+
+   apt list --installed | grep neuronx-tools
+
+**Expected outcome**
+
+You should see neuronx-tools listed among the installed packages, confirming that Neuron Explorer is available on your instance.
+
+
+3. Launch the API and UI SPA servers
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Start the Neuron Explorer web servers using the following command:
+
+.. code-block:: bash
+
+   neuron-explorer view -v 2 --data-path ./parquet_files
+
+
+This command starts:
+
+* The UI SPA (Single Page Application) server (default port: 3001)
+* The API server (default port: 3002)
+
+
+**Expected outcome**
+
+You'll see terminal logs confirming that both the UI and API servers are running.
+
+
+4. Set up SSH tunneling
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+By default, Neuron Explorer runs locally on the EC2 instance. To securely access it from your local computer, you must create SSH tunnels for ports 3001 and 3002.
+
+Run the following command from your local machine terminal (replace placeholders such as ``your-key`` and ``public_ip_address_of_your_instance``):
+
+.. code-block:: bash
+
+   ssh -i ~/your-key.pem -L 3001:localhost:3001 -L 3002:localhost:3002 ubuntu@[public_ip_address_of_your_instance_] -fN
+
+**Explanation:**
+
+* ``-L 3001:localhost:3001`` forwards the UI server.
+* ``-L 3002:localhost:3002`` forwards the API server.
+* ``-fN`` keeps the tunnel open in the background.
+
+
+**Expected outcome**
+
+No error messages should appear, indicating that your SSH tunnels are active.
+
+.. note::
+   Replace ``ubuntu`` with the appropriate username for your AMI (for example, ``ec2-user`` on Amazon Linux).
+
+5. Connect to the Neuron Explorer UI
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Once your tunnel is active, open your preferred web browser and navigate to:
+
+.. code-block:: text
+
+   http://localhost:3001
+
+
+**Expected outcome**
+
+The Neuron Explorer UI loads in your browser, displaying an interactive dashboard for exploring profiling data.
+
+Confirm your work
+------------------
+
+You've successfully set up Neuron Explorer! To confirm everything is working:
+
+1. The browser should display the Neuron Explorer interface.
+2. The terminal running the profiler command should show log activity when interacting with the UI.
+3. You can explore profiling sessions from your ``./parquet_files`` directory.
+
+If all these checks pass, you are ready to begin analyzing performance data using Neuron Explorer.
+
+Common issues
+---------------
+
+If you encounter an error or other issue while working through this task, here are some commonly encountered issues and how to address them:
+
+* **Neuron Explorer UI doesn't load**: Check that your SSH tunnel is configured correctly. Make sure ports 3001 and 3002 are forwarded using the ``-L`` flags in your SSH command, and verify the EC2 instance is running.
+* **No profiling data displayed**: Double-check that the directory passed to ``--data-path`` contains valid .parquet profiling files generated by a prior Neuron profiling run.
+* **neuron-profile command not found**: Ensure that Neuron SDK is installed. Please ensure that you have launched your instance with Neuron DLAMI or you have set up your instance based on the instructions mentioned here.
+* **Connection refused on port 3001 or 3002**: Confirm that your EC2 security group allows outbound traffic and that the SSH tunnel was created from your local machine, not from inside the instance.
+
+
+===== tools/neuron-explorer/overview-system-profiles.rst =====
+.. meta::
+    :description: Learn about the System Profile in Neuron Explorer for analyzing system-level execution across instances and workers with runtime and hardware events.
+    :date-modified: 01/30/2026
+
+System Profile
+================
+
+The Neuron System Profile show a system-level granularity of execution across instances and workers in your workload. This provides visibility into Neuron Runtime API calls and ML framework function calls (PyTorch or JAX) to help identify bottlenecks in distributed workloads. The Neuron Explorer UI provides system-level widgets for an extensible and customizable workflow.
+
+.. image:: /tools/neuron-explorer/images/neuron-explorer-system-viewer.png
+
+System Trace Viewer
+---------------------
+
+The System Trace Viewer provides an interactive timeline interface with time range selection, configurable event grouping, system event details on hover, and linking of hardware events to Device Trace Viewer widgets.
+
+You can see events in the Neuron Runtime and correlate them with hardware execution events on the Neuron Devices.
+
+.. image:: /tools/neuron-explorer/images/system-timeline-widget.png
+
+You can also see the device memory (HBM) allocations for each Neuron device over time. Hovering over these memory usage events shows a breakdown by usage category.
+
+.. image:: /tools/neuron-explorer/images/system-timeline-widget-hbm-usage.png
+
+
+Adding Widgets
+---------------
+The System Profile supports both System and Device widgets, enabling multi-profile analysis, for example comparing annotated device events across different devices.
+
+To add a widget:
+
+1. Click the **Add Widget** button to open the Add Widget modal.
+2. Select a Device or System widget.
+3. Click a widget tile to load it with the selected profile. Each tile is tagged with its supported profile type (system, device, or both).
+
+To load multiple instances of the same widget type for different profiles, repeat the steps above and select a different profile each time.
+
+.. image:: /tools/neuron-explorer/images/system-timeline-add-widget.gif
+
+
+After adding a widget, you can switch to a different profile by using the profile dropdown at the top of the widget.
+
+.. image:: /tools/neuron-explorer/images/widget_switch_profiles.png
+
+.. note::
+
+   Adding duplicate widgets for the same profile is not currently supported.
+
+
+
+Settings
+----------
+
+The System Trace Viewer supports multiple grouping modes to organize events for different analysis perspectives.
+You can switch between the following grouping modes in the settings to focus your analysis on different aspects of system performance:
+
+.. list-table:: Grouping Options
+   :widths: auto
+   :header-rows: 1
+   :align: left
+
+   * - Grouping Option
+     - Description
+     - Example
+   * - CPU vs Device Grouping (Default)
+     - Groups events by event source (CPU or Neuron device events)
+     - Runtime events: ``i-0b1ea78ca2865fd32/PID:1765325/TID:0/neuron_rt``, Hardware events: ``i-0b1ea78ca2865fd32/PID:1765325/Worker:0/neuron_hw``
+   * - NeuronCore Grouping
+     - Groups events by individual NeuronCore
+     - ``i-0b1ea78ca2865fd32/NC:0``, ``i-0b1ea78ca2865fd32/NC:1``
+   * - Thread Grouping
+     - Groups events by thread identifier
+     - ``i-0b1ea78ca2865fd32/PID:1765325/TID:0``
+   * - Process Grouping
+     - Groups events by process identifier
+     - ``i-0b1ea78ca2865fd32/PID:1765325``
+   * - Instance Grouping
+     - Groups all events by instance only
+     - ``i-0b1ea78ca2865fd32``
+
+.. image:: /tools/neuron-explorer/images/system-timeline-settings.png
+
+Event Details
+--------------
+
+Clicking on trace events in the timeline populates the Event Details widget with a list of properties for the system trace event.
+
+.. image:: /tools/neuron-explorer/images/system-event-details.png
+
+Device Profile Linking
+------------------------
+
+The System Trace Viewer links hardware events to the Device Trace Viewer, which renders the corresponding device traces.
+
+Navigating from the System Trace Viewer to a Device Trace Viewer can be accomplished in two ways:
+
+Open the Device Profile List Modal
+------------------------------------
+
+To see a list of all device profiles captured during your workload:
+
+1. **Click the "Device Profiles List" button** in the top right action bar of the System Trace Viewer to open a modal containing a list of device profiles
+2. **Select a Device Profile and click Submit** to open the Device Trace Viewer with the selected device profile
+
+.. image:: /tools/neuron-explorer/images/system-timeline-device-profiles-list-modal.png
+
+Drill-down from Hardware Events
+---------------------------------
+
+To drill-down from a hardware event to the Device Trace Viewer:
+
+1. Find a hardware event such as ``nc_exec_running``
+2. Click on the hardware event
+3. Wait for the Device Trace Viewer to open
+
+This will open a new Device Trace Viewer with the selected device profile showing detailed hardware events. To learn about device profiles, see :doc:`Device Profiles in Neuron Explorer <overview-device-profiles>`.
+
+.. image:: /tools/neuron-explorer/images/system-timeline-hardware-event-linking.gif
+
+
+===== tools/neuron-explorer/overview-device-profiles.rst =====
+.. meta::
+    :description: Learn about Neuron Explorer widgets for device profiling including timeline views, event details, annotations, and performance analysis tools.
+    :date-modified: 12/02/2025
+
+Device Trace Viewer
+===================
+
+The Neuron Device Trace Viewer displays a hardware instruction level granularity of execution on a NeuronCore. Neuron Explorer collects the timestamped start and end events that occur on the device into a NTFF. As a post-processing step, the profiler will correlate these events with information in the compiled NEFF to generate a detailed report of the hardware performance. The Neuron Explorer UI provides several different tools for an extensible and customizable workflow.
+
+.. image:: /tools/profiler/images/device-profile-1.png
+
+Tools
+------
+
+Device Trace Viewer
+~~~~~~~~~~~~~~~~~~~~~
+
+The Device Trace Viewer presents a timeline view of the device execution, including activity on the DMA and compute engines, Hardware FLOPs Utilization (HFU) and device memory utilization over time, and more.
+
+.. image:: /tools/profiler/images/device-profile-2.png
+
+Hover
+^^^^^
+
+.. image:: /tools/profiler/images/device-profile-3.png
+
+Hover on events in the timeline to see important identifying information at a glance, such as the time window, the hierarchy, and the hardware instruction that was executed.
+
+For more details, clicking the event will display the full details in the Event Details widget.
+
+Color Scheme
+^^^^^^^^^^^^
+
+.. list-table::
+   :header-rows: 0
+   :widths: 50 50
+
+   * - .. image:: /tools/profiler/images/device-profile-4.png
+          :width: 100%
+     - .. image:: /tools/profiler/images/device-profile-5.png
+          :width: 100%
+
+Instructions are color-coded according to their associated PyTorch operator. All instructions derived from the same PyTorch operator share an identical color.
+
+.. note::
+   In future releases, we will introduce more customizable options for color-coding.
+
+Panning
+^^^^^^^
+
+.. image:: /tools/profiler/images/device-profile-6.gif
+
+Panning is supported in a couple of ways:
+
+* Left-clicking the x-axis and dragging it
+* Spinning scroll-wheel while holding down shift
+* With the keyboard:
+    * A/D keys for left/right movement
+    * Left/right arrow keys for left/right movement
+
+The amount panned depends on the current zoom level.
+
+Event Details
+~~~~~~~~~~~~~
+
+Upon clicking an event in the Device Trace Viewer, all details related to the event will appear in the Event Details. The information shown will be a superset of the information available on hover, allowing us to dive deeper into what is happening on the hardware.
+
+* The Event Details table will populate with field data from clicked events from the instruction widget.
+* When filtering by fields through Search, all matching events will be rendered as pages in the Event Details. Users can navigate through each page to analyze data for each matching event.
+  
+.. image:: /tools/profiler/images/device-profile-7.png
+
+Annotations
+~~~~~~~~~~~
+
+Users can create annotations by right-clicking in the Device Trace Viewer. These annotations can be moved by clicking and dragging the vertical line, and will snap to the closest events when applicable.
+
+The annotations tab will show more details on all available annotations in the profile, such as the time difference and summary metrics that occur between two markers. The option of which two annotations to compare is configurable in the diff vs column. You can also quickly zoom in to the region between two annotations by selecting the checkbox on the left. Users can rename, delete, save, and load annotations for better readability and collaboration.
+
+.. image:: /tools/profiler/images/device-profile-8.png
+
+Operator Table
+~~~~~~~~~~~~~~
+
+The Operator Table aggregates the hardware level metrics into framework layers and operations, such as the MFU and amount of data being moved. Users can progressively expand each row to get a further breakdown of each nested operator.
+
+Filters can be applied and columns can be sorted for more streamlined viewing.
+
+.. image:: /tools/profiler/images/device-profile-9.png
+
+Overall Summary
+~~~~~~~~~~~~~~~
+
+The Overall Summary displays performance metrics across the entire profile run, with metrics broken down into different categories such as by the NeuronCore engines. These can be used for quick insights into how well the model performed.
+
+.. image:: /tools/profiler/images/device-profile-10.png
+
+Current Selection Summary
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The Current Selection Summary provides metrics for the current time window. Zooming in and out in the Device Trace Viewer will update the summary. This can be used in conjunction with the zoom feature of Annotations for easy access to a region of interest.
+
+.. image:: /tools/profiler/images/device-profile-11.png
+
+.. _box-selection-summary:
+
+Box Selection Summary
+~~~~~~~~~~~~~~~~~~~~~
+
+The Box Selection Summary provides metrics within a bounding box region. Select and drag regions within the timeline widget to update the summary.
+
+.. image:: /tools/profiler/images/box-select.gif
+
+Box selection is supported in a couple of ways:
+
+* Toggling the box selection button within the timeline widget
+* Clear selection with `esc` key
+
+Correponding summary information of the selected region is displayed within the box selection selection widget.
+
+Code Viewer
+~~~~~~~~~~~
+
+Profiles that are uploaded with source code files enable users to quickly navigate between NKI and application level source code and the corresponding hardware level instructions.
+
+In the Device Trace Viewer, we can click on an event to highlight the source code line in the Code Viewer. A (Ctrl/Cmd) + click on the event will scroll to the corresponding source code line.
+
+In the Code Viewer, clicking on a line in the source code will automatically highlight all associated events in the Device Trace Viewer. Similarly, highlighting multiple lines of the source code will also highlight all events in the timeline.
+
+.. image:: /tools/profiler/images/device-profile-12.png
+
+See :ref:`neuron-explorer-source-code` for instructions on how to enable source code viewing.
+
+Layout Customization
+~~~~~~~~~~~~~~~~~~~~
+
+Understanding and optimizing performance with the profiler can be overwhelming given the amount of information being processed and displayed. As part of preparing for optimization work, you can cross-reference different information, such as the Device Trace Viewer with the application source code. With the widget-based UI, you can customize the layout to best fit a specific workflow. Each widget can be added, removed, dragged around, and resized. Once you are happy with the layout, you can save it through the Layout dropdown at the top right. The layouts are not tied to a specific profile, so they can be loaded and re-used for future profiles as well.
+
+.. image:: /tools/profiler/images/device-profile-13.png

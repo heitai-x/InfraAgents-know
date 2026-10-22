@@ -1,821 +1,911 @@
-<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; frame-src 'self'; object-src 'self'; media-src 'self'; base-uri 'none'; form-action 'none'"><title>NxD Inference Features Configuration Guide — AWS Neuron Documentation</title><style>body{font:16px/1.75 system-ui,sans-serif;color:#202631;background:#fff;margin:0 auto;padding:40px;max-width:1100px}h1,h2,h3{line-height:1.3}pre,code{font-family:Consolas,monospace}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#f4f6f8;padding:18px}table{border-collapse:collapse;display:block;overflow-x:auto}td,th{border:1px solid #ccd3dc;padding:8px}img,svg{max-width:100%;height:auto}figure{margin:24px 0}.archive-note{border-left:4px solid #2563eb;padding:12px 20px;background:#eef4ff}math{font-size:1.1em}iframe{width:100%;height:85vh;border:1px solid #ccd3dc}a{color:#1658a5}</style></head><body><p class="archive-note">本地原文阅读副本。正文与资料文件已归档；原始响应、版本和校验信息见同目录 manifest.json。网页导航与在线脚本不执行。</p><article class="bd-article" role="main">
-<p><strong>This document is relevant for</strong>: <code class="docutils literal notranslate"><span class="pre">Inf2</span></code>, <code class="docutils literal notranslate"><span class="pre">Trn1</span></code>, <code class="docutils literal notranslate"><span class="pre">Trn2</span></code></p>
-<section id="nxd-inference-features-configuration-guide">
-<span id="nxdi-feature-guide"></span><h1>NxD Inference Features Configuration Guide<a class="headerlink" href="#nxd-inference-features-configuration-guide" title="Permalink to this heading">#</a></h1>
-<p>NxD Inference (<code class="docutils literal notranslate"><span class="pre">neuronx-distributed-inference</span></code>) is
+<!doctype html><html lang="en"><meta charset="utf-8"><title>NxD Inference Features Configuration Guide</title><style>body{max-width:1100px;margin:40px auto;padding:0 24px;line-height:1.6}pre{white-space:pre-wrap;overflow-wrap:anywhere}img{max-width:100%;height:auto}</style><h1>NxD Inference Features Configuration Guide</h1><pre>
+===== libraries/nxd-inference/developer_guides/feature-guide.rst =====
+.. _nxdi-feature-guide:
+
+NxD Inference Features Configuration Guide
+==========================================
+
+NxD Inference (``neuronx-distributed-inference``) is
 an open-source PyTorch-based inference library that simplifies deep learning
 model deployment on AWS Inferentia and Trainium instances. Neuronx Distributed
 Inference includes a model hub and modules that users can reference to
-implement their own models on Neuron.</p>
+implement their own models on Neuron.
 
-<section id="checkpoint-compatibility-with-huggingface-transformers">
-<h2><a class="toc-backref" href="#id7" role="doc-backlink">Checkpoint compatibility with HuggingFace Transformers</a><a class="headerlink" href="#checkpoint-compatibility-with-huggingface-transformers" title="Permalink to this heading">#</a></h2>
-<p>Models included in the NxD Inference model hub are checkpoint-compatible with
+
+.. contents:: Table of contents
+   :local:
+   :depth: 2
+
+Checkpoint compatibility with HuggingFace Transformers
+------------------------------------------------------
+
+Models included in the NxD Inference model hub are checkpoint-compatible with
 HuggingFace Transformers. Supporting other checkpoint formats in NxD Inference is possible through converting the
-obtained checkpoint to the standard HuggingFace Transformers checkpoint format.</p>
-</section>
-<section id="checkpoint-support">
-<span id="nxdi-checkpoint-support"></span><h2><a class="toc-backref" href="#id8" role="doc-backlink">Checkpoint support</a><a class="headerlink" href="#checkpoint-support" title="Permalink to this heading">#</a></h2>
-<p>NxD Inference supports older PyTorch binary checkpoints
-and newer <a class="reference external" data-original-href="https://github.com/huggingface/safetensors">safetensors</a>
+obtained checkpoint to the standard HuggingFace Transformers checkpoint format.
+
+.. _nxdi-checkpoint-support:
+
+Checkpoint support
+------------------
+
+NxD Inference supports older PyTorch binary checkpoints
+and newer `safetensors &lt;https://github.com/huggingface/safetensors&gt;`__
 checkpoints. For improved load speed and reduced host memory
 consumption, we recommend to always use safetensors by default. Both
-regular and sharded variants of checkpoints are supported.</p>
-<p>NxD Inference supports weights stored in the model path in the following
-formats:</p>
-<table class="table">
-<thead>
-<tr class="row-odd"><th class="head"><p>Format</p></th>
-<th class="head"><p>Sharded</p></th>
-<th class="head"><p>File name</p></th>
-</tr>
-</thead>
-<tbody>
-<tr class="row-even"><td><p>Safetensors</p></td>
-<td><p>No</p></td>
-<td><p>model.safetensors</p></td>
-</tr>
-<tr class="row-odd"><td><p>Safetensors</p></td>
-<td><p>Yes</p></td>
-<td><p>model.safetensors.index.json</p></td>
-</tr>
-<tr class="row-even"><td><p>Pickle</p></td>
-<td><p>No</p></td>
-<td><p>pytorch_model.bin</p></td>
-</tr>
-<tr class="row-odd"><td><p>Pickle</p></td>
-<td><p>Yes</p></td>
-<td><p>pytorch_model.bin.index.json</p></td>
-</tr>
-</tbody>
-</table>
-<p>If your weights are in another format, you must convert them to one of
+regular and sharded variants of checkpoints are supported.
+
+NxD Inference supports weights stored in the model path in the following
+formats:
+
+=========== ======= ============================
+Format      Sharded File name
+=========== ======= ============================
+Safetensors No      model.safetensors
+Safetensors Yes     model.safetensors.index.json
+Pickle      No      pytorch_model.bin
+Pickle      Yes     pytorch_model.bin.index.json
+=========== ======= ============================
+
+If your weights are in another format, you must convert them to one of
 these formats before you can compile and load the model to Neuron. See
-the following references for more information about these formats:</p>
-<ul class="simple">
-<li><p>Safetensors:</p>
-<ul>
-<li><p><a class="github reference external" data-original-href="https://github.com/huggingface/safetensors">huggingface/safetensors</a></p></li>
-<li><p><a class="reference external" data-original-href="https://huggingface.co/docs/safetensors/en/convert-weights">https://huggingface.co/docs/safetensors/en/convert-weights</a></p></li>
-</ul>
-</li>
-<li><p>Pickle:</p>
-<ul>
-<li><p><a class="reference external" data-original-href="https://docs.python.org/3/library/pickle.html">https://docs.python.org/3/library/pickle.html</a></p></li>
-</ul>
-</li>
-</ul>
-</section>
-<section id="compiling-models">
-<h2><a class="toc-backref" href="#id9" role="doc-backlink">Compiling models</a><a class="headerlink" href="#compiling-models" title="Permalink to this heading">#</a></h2>
-<p>To run a model on Neuron with NxD Inference, you compile Python code into
+the following references for more information about these formats:
+
+- Safetensors:
+
+  - https://github.com/huggingface/safetensors
+  - https://huggingface.co/docs/safetensors/en/convert-weights
+
+- Pickle:
+
+  - https://docs.python.org/3/library/pickle.html
+
+Compiling models
+----------------
+To run a model on Neuron with NxD Inference, you compile Python code into
 a NEFF file (Neuron Executable File Format), which you can load to Neuron
-devices using the Neuron Runtime.</p>
-<p>When you call <code class="docutils literal notranslate"><span class="pre">compile()</span></code>, NxD Inference does the following:</p>
-<ol class="arabic simple">
-<li><p>Trace the Python code to produce an HLO file.</p></li>
-<li><p>Use the Neuron Compiler to compile the HLO file into a NEFF.</p></li>
-</ol>
-<p>During the trace process, the model code is traced based on a given sample
+devices using the Neuron Runtime.
+
+When you call ``compile()``, NxD Inference does the following:
+
+1. Trace the Python code to produce an HLO file.
+2. Use the Neuron Compiler to compile the HLO file into a NEFF.
+
+During the trace process, the model code is traced based on a given sample
 tensor for each input. As a result, model code should avoid dynamic logic
 that depends on the input values in a tensor, because NxD Inference compiles
-only the code path that is traced for the sample input tensor.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># Configure, initialize, and compile a model.</span>
-<span class="n">model</span> <span class="o">=</span> <span class="n">NeuronLlamaForCausalLM</span><span class="p">(</span><span class="n">model_path</span><span class="p">,</span> <span class="n">config</span><span class="p">)</span>
-<span class="n">model</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">compiled_model_path</span><span class="p">)</span>
-</pre></div>
-</div>
-</section>
-<section id="neuron-persistent-cache">
-<span id="nxdi-neuron-persistent-cache"></span><h2><a class="toc-backref" href="#id10" role="doc-backlink">Neuron Persistent Cache</a><a class="headerlink" href="#neuron-persistent-cache" title="Permalink to this heading">#</a></h2>
-<p>The Neuron Persistent Cache is enabled by default for NxD Inference library.
+only the code path that is traced for the sample input tensor.
+
+::
+
+    # Configure, initialize, and compile a model.
+    model = NeuronLlamaForCausalLM(model_path, config)
+    model.compile(compiled_model_path)
+
+
+.. _nxdi-neuron-persistent-cache:
+
+Neuron Persistent Cache
+------------------------
+
+The Neuron Persistent Cache is enabled by default for NxD Inference library.
 Model artifacts which have been compiled once will be cached and reused on
 successive runs when possible. Model artifacts will only be reused when
 compiling with the same compiler version (neuronx-cc), model configurations,
 and compiler flags. Neuron Persistent Cache also includes other features, such as using an S3 bucket as
 the cache backend. For more detailed information, see the
-<a class="reference internal" data-original-href="https://awsdocs-neuron.readthedocs-hosted.com/en/latest/about-neuron/arch/neuron-features/neuron-caching.html#neuron-caching"><span class="std std-ref">Persistent cache documentation</span></a></p>
-</section>
-<section id="serialization-support">
-<h2><a class="toc-backref" href="#id11" role="doc-backlink">Serialization support</a><a class="headerlink" href="#serialization-support" title="Permalink to this heading">#</a></h2>
-<p>When you compile a model with NxD Inference, the library
+:ref:`Persistent cache documentation &lt;neuron-caching&gt;`
+
+
+Serialization support
+---------------------
+
+When you compile a model with NxD Inference, the library
 serializes the model to a given folder. After you have a serialized
 model, you can load it directly to a Neuron device without needing to
-compile again.</p>
-<p>The compile function does not serialize sharded weights by default, and you can
-enable this functionality with the <code class="docutils literal notranslate"><span class="pre">save_sharded_checkpoint</span></code> flag in
-NeuronConfig. For more information on weights sharding, see <a class="reference internal" data-original-href="https://awsdocs-neuron.readthedocs-hosted.com/en/latest/libraries/nxd-inference/developer_guides/weights-sharding-guide.html#nxdi-weights-sharding-guide"><span class="std std-ref">NxD Inference Weights Sharding Guide</span></a>.</p>
-</section>
-<section id="logical-neuroncore-configuration-lnc-support">
-<h2><a class="toc-backref" href="#id12" role="doc-backlink">Logical NeuronCore Configuration (LNC) support</a><a class="headerlink" href="#logical-neuroncore-configuration-lnc-support" title="Permalink to this heading">#</a></h2>
-<p>On Trn2 instances, Neuron supports Logical NeuronCore (LNC) configuration,
+compile again.
+
+The compile function does not serialize sharded weights by default, and you can
+enable this functionality with the ``save_sharded_checkpoint`` flag in
+NeuronConfig. For more information on weights sharding, see :ref:`nxdi-weights-sharding-guide`.
+
+Logical NeuronCore Configuration (LNC) support
+----------------------------------------------
+On Trn2 instances, Neuron supports Logical NeuronCore (LNC) configuration,
 which combines multiple physical NeuronCores into a single logical
 NeuronCore. On Trn2 instances, the Neuron SDK is optimized for LNC=2, which means
-each NeuronCore visible to the Neuron SDK is two physical NeuronCores.</p>
-<p>NxD Inference automatically chooses the correct LNC configuration
+each NeuronCore visible to the Neuron SDK is two physical NeuronCores.
+
+NxD Inference automatically chooses the correct LNC configuration
 based on the target platform. To override the default LNC configuration,
-you can set the <code class="docutils literal notranslate"><span class="pre">NEURON_LOGICAL_NC_CONFIG</span></code> environment variable, or set the
-<code class="docutils literal notranslate"><span class="pre">logical_nc_config</span></code> flag in NeuronConfig.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">neuron_config</span> <span class="o">=</span> <span class="n">NeuronConfig</span><span class="p">(</span><span class="n">logical_nc_config</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
-</pre></div>
-</div>
-<p>For more information about logical NeuronCore support, see
-<a class="reference internal" data-original-href="https://awsdocs-neuron.readthedocs-hosted.com/en/latest/about-neuron/arch/neuron-features/logical-neuroncore-config.html#logical-neuroncore-config"><span class="std std-ref">Logical NeuronCore configuration</span></a>.</p>
-</section>
-<section id="tensor-parallelism-support">
-<span id="nxdi-feature-guide-tensor-parallelism"></span><h2><a class="toc-backref" href="#id13" role="doc-backlink">Tensor-parallelism support</a><a class="headerlink" href="#tensor-parallelism-support" title="Permalink to this heading">#</a></h2>
-<p>For transformer decoders used in large language models,
+you can set the ``NEURON_LOGICAL_NC_CONFIG`` environment variable, or set the
+``logical_nc_config`` flag in NeuronConfig.
+
+::
+
+   neuron_config = NeuronConfig(logical_nc_config=2)
+
+For more information about logical NeuronCore support, see
+:ref:`logical-neuroncore-config`.
+
+.. _nxdi-feature-guide-tensor-parallelism:
+
+Tensor-parallelism support
+--------------------------
+
+For transformer decoders used in large language models,
 tensor-parallelism is necessary as it provides a way to shard the
-models’ large weight matrices onto multiple NeuronCores, and having
+models&#x27; large weight matrices onto multiple NeuronCores, and having
 NeuronCores working on the same matrix multiply operation
-collaboratively. neuronx-distributed-inference’s tensor-parallelism
+collaboratively. neuronx-distributed-inference&#x27;s tensor-parallelism
 support makes heavy use of collective operations such as all-reduce,
-which is supported natively by the Neuron runtime.</p>
-<p>There are some principles for setting tensor-parallelism degree (number
+which is supported natively by the Neuron runtime.
+
+There are some principles for setting tensor-parallelism degree (number
 of NeuronCores participating in sharded matrix multiply operations) for
-Neuron-optimized transformer decoder models.</p>
-<ol class="arabic simple">
-<li><p>The number of attention heads needs to be divisible by the
-tensor-parallelism degree.</p></li>
-<li><p>The total data size of model weights and key-value caches needs to be
-smaller than the tensor-parallelism degree multiplied by the amount
-of memory per Neuron core.</p>
-<ol class="arabic simple">
-<li><p>On Trn2, each Neuron core has 24GB of memory (with LNC2).</p></li>
-<li><p>On Inf2/Trn1, each Neuron core has 16GB of memory.</p></li>
-</ol>
-</li>
-<li><p>The Neuron runtime supports the following tensor-parallelism degrees:</p>
-<ol class="arabic simple">
-<li><p>Trn2: 1, 2, 4, 8, 16, 32, and 64 (with LNC2)</p></li>
-<li><p>Inf2: 1, 2, 4, 8, and 24</p></li>
-<li><p>Trn1: 1, 2, 8, 16, and 32</p></li>
-</ol>
-</li>
-</ol>
-<section id="examples">
-<h3><a class="toc-backref" href="#id14" role="doc-backlink">Examples</a><a class="headerlink" href="#examples" title="Permalink to this heading">#</a></h3>
-<ol class="arabic simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">meta-llama/Meta-Llama-3.1-8B</span></code> has 32 attention heads, and when
-running at batch size 1 and bfloat16 precision, the model requires
-about 16GB memory. Therefore, a <code class="docutils literal notranslate"><span class="pre">trn1.2xlarge</span></code> with 32GB device
-memory is sufficient.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">meta-llama/Meta-Llama-3.1-70B</span></code> has 64 attention heads, and when
-running at batch size 1 and bfloat16 precision, the model requires
-about 148GB memory. Therefore, it can run on 16 NeuronCores on one
-<code class="docutils literal notranslate"><span class="pre">trn1.32xlarge</span></code> using 256GB device memory.</p></li>
-</ol>
-</section>
-</section>
-<section id="sequence-parallelism">
-<span id="nxdi-feature-guide-sequence-parallelism"></span><h2><a class="toc-backref" href="#id15" role="doc-backlink">Sequence Parallelism</a><a class="headerlink" href="#sequence-parallelism" title="Permalink to this heading">#</a></h2>
-<p>Sequence parallelism splits tensors across the sequence dimension to
+Neuron-optimized transformer decoder models.
+
+1. The number of attention heads needs to be divisible by the
+   tensor-parallelism degree.
+2. The total data size of model weights and key-value caches needs to be
+   smaller than the tensor-parallelism degree multiplied by the amount
+   of memory per Neuron core.
+
+   1. On Trn2, each Neuron core has 24GB of memory (with LNC2).
+   2. On Inf2/Trn1, each Neuron core has 16GB of memory.
+
+3. The Neuron runtime supports the following tensor-parallelism degrees:
+
+   1. Trn2: 1, 2, 4, 8, 16, 32, and 64 (with LNC2)
+   2. Inf2: 1, 2, 4, 8, and 24
+   3. Trn1: 1, 2, 8, 16, and 32
+
+Examples
+~~~~~~~~
+
+1. ``meta-llama/Meta-Llama-3.1-8B`` has 32 attention heads, and when
+   running at batch size 1 and bfloat16 precision, the model requires
+   about 16GB memory. Therefore, a ``trn1.2xlarge`` with 32GB device
+   memory is sufficient.
+2. ``meta-llama/Meta-Llama-3.1-70B`` has 64 attention heads, and when
+   running at batch size 1 and bfloat16 precision, the model requires
+   about 148GB memory. Therefore, it can run on 16 NeuronCores on one
+   ``trn1.32xlarge`` using 256GB device memory.
+
+.. _nxdi-feature-guide-sequence-parallelism:
+
+Sequence Parallelism
+--------------------
+Sequence parallelism splits tensors across the sequence dimension to
 improve performance. You can enable sequence parallelism by setting
-<code class="docutils literal notranslate"><span class="pre">sequence_parallel_enabled=True</span></code> in NeuronConfig.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">neuron_config</span> <span class="o">=</span> <span class="n">NeuronConfig</span><span class="p">(</span><span class="n">sequence_parallel_enabled</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-</pre></div>
-</div>
-</section>
-<section id="compile-time-configurations">
-<h2><a class="toc-backref" href="#id16" role="doc-backlink">Compile-time Configurations</a><a class="headerlink" href="#compile-time-configurations" title="Permalink to this heading">#</a></h2>
-<p>NxD Inference models support a variety of compile-time
+``sequence_parallel_enabled=True`` in NeuronConfig.
+
+::
+
+   neuron_config = NeuronConfig(sequence_parallel_enabled=True)
+
+Compile-time Configurations
+---------------------------
+
+NxD Inference models support a variety of compile-time
 configurations you can use to tune model performance. For more
-information, see the <a class="reference internal" data-original-href="https://awsdocs-neuron.readthedocs-hosted.com/en/latest/libraries/nxd-inference/api-guides/api-guide.html#nxd-inference-api-guide"><span class="std std-ref">NxD Inference API Reference</span></a>.</p>
-</section>
-<section id="hugging-face-generate-api-support">
-<h2><a class="toc-backref" href="#id17" role="doc-backlink">Hugging Face generate() API support</a><a class="headerlink" href="#hugging-face-generate-api-support" title="Permalink to this heading">#</a></h2>
-<p>NxD Inference models support the HuggingFace <a class="reference external" data-original-href="https://huggingface.co/docs/transformers/main/en/main_classes/text_generation">generate()
-API</a>
-via the <code class="docutils literal notranslate"><span class="pre">HuggingFaceGenerationAdapter</span></code> class. This adapter wraps a
-Neuron model to provide the HuggingFace generation interface.</p>
-<p>NxD Inference’s supports the following HuggingFace
-generation modes:</p>
-<ul class="simple">
-<li><p>Greedy decoding — <code class="docutils literal notranslate"><span class="pre">num_beams=1</span></code> and <code class="docutils literal notranslate"><span class="pre">do_sample=False</span></code>.</p></li>
-<li><p>Multinomial sampling — <code class="docutils literal notranslate"><span class="pre">num_beams=1</span></code> and <code class="docutils literal notranslate"><span class="pre">do_sample=True</span></code>.</p></li>
-<li><p>Assisted (speculative) decoding — <code class="docutils literal notranslate"><span class="pre">assistant_model</span></code> or
-<code class="docutils literal notranslate"><span class="pre">prompt_lookup_num_tokens</span></code> are specified.</p></li>
-</ul>
-<p>NxD Inference doesn’t currently support other
-HuggingFace generation modes such beam-search sampling.</p>
-<p>Note: When you call <code class="docutils literal notranslate"><span class="pre">generate</span></code>, the number of prompts must match the
-<code class="docutils literal notranslate"><span class="pre">batch_size</span></code> for the model, which is an attribute of NeuronConfig.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">neuron_config</span> <span class="o">=</span> <span class="n">NeuronConfig</span><span class="p">(</span><span class="n">batch_size</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
-</pre></div>
-</div>
-<section id="example">
-<h3><a class="toc-backref" href="#id18" role="doc-backlink">Example</a><a class="headerlink" href="#example" title="Permalink to this heading">#</a></h3>
-<p>The following example demonstrates how to wrap a model with
-HuggingFaceGenerationAdapter to call <code class="docutils literal notranslate"><span class="pre">generate()</span></code>.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">neuronx_distributed_inference.utils.hf_adapter</span><span class="w"> </span><span class="kn">import</span> <span class="n">HuggingFaceGenerationAdapter</span>
+information, see the :ref:`nxd-inference-api-guide`.
 
-<span class="c1"># Init Neuron model, HuggingFace tokenizer, HuggingFace and generation config.</span>
+Hugging Face generate() API support
+-----------------------------------
+
+NxD Inference models support the HuggingFace `generate()
+API &lt;https://huggingface.co/docs/transformers/main/en/main_classes/text_generation&gt;`__
+via the ``HuggingFaceGenerationAdapter`` class. This adapter wraps a
+Neuron model to provide the HuggingFace generation interface.
+
+NxD Inference&#x27;s supports the following HuggingFace
+generation modes:
+
+- Greedy decoding — ``num_beams=1`` and ``do_sample=False``.
+- Multinomial sampling — ``num_beams=1`` and ``do_sample=True``.
+- Assisted (speculative) decoding — ``assistant_model`` or
+  ``prompt_lookup_num_tokens`` are specified.
+
+NxD Inference doesn&#x27;t currently support other
+HuggingFace generation modes such beam-search sampling.
+
+Note: When you call ``generate``, the number of prompts must match the
+``batch_size`` for the model, which is an attribute of NeuronConfig.
+
+::
+
+   neuron_config = NeuronConfig(batch_size=2)
+
+Example
+~~~~~~~
+
+The following example demonstrates how to wrap a model with
+HuggingFaceGenerationAdapter to call ``generate()``.
+
+::
+
+   from neuronx_distributed_inference.utils.hf_adapter import HuggingFaceGenerationAdapter
+
+   # Init Neuron model, HuggingFace tokenizer, HuggingFace and generation config.
 
 
-<span class="c1"># Run generation with HuggingFaceGenerationAdapter.</span>
-<span class="n">generation_model</span> <span class="o">=</span> <span class="n">HuggingFaceGenerationAdapter</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
-<span class="n">inputs</span> <span class="o">=</span> <span class="n">tokenizer</span><span class="p">(</span><span class="n">prompts</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">return_tensors</span><span class="o">=</span><span class="s2">"pt"</span><span class="p">)</span>
-<span class="n">outputs</span> <span class="o">=</span> <span class="n">generation_model</span><span class="o">.</span><span class="n">generate</span><span class="p">(</span>
-    <span class="n">inputs</span><span class="o">.</span><span class="n">input_ids</span><span class="p">,</span>
-    <span class="n">generation_config</span><span class="o">=</span><span class="n">generation_config</span><span class="p">,</span>
-    <span class="n">attention_mask</span><span class="o">=</span><span class="n">inputs</span><span class="o">.</span><span class="n">attention_mask</span><span class="p">,</span>
-    <span class="n">max_length</span><span class="o">=</span><span class="n">model</span><span class="o">.</span><span class="n">neuron_config</span><span class="o">.</span><span class="n">max_length</span><span class="p">,</span>
-    <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
-<span class="p">)</span>
+   # Run generation with HuggingFaceGenerationAdapter.
+   generation_model = HuggingFaceGenerationAdapter(model)
+   inputs = tokenizer(prompts, padding=True, return_tensors=&quot;pt&quot;)
+   outputs = generation_model.generate(
+       inputs.input_ids,
+       generation_config=generation_config,
+       attention_mask=inputs.attention_mask,
+       max_length=model.neuron_config.max_length,
+       **kwargs,
+   )
 
-<span class="n">output_tokens</span> <span class="o">=</span> <span class="n">tokenizer</span><span class="o">.</span><span class="n">batch_decode</span><span class="p">(</span>
-    <span class="n">outputs</span><span class="p">,</span> <span class="n">skip_special_tokens</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">clean_up_tokenization_spaces</span><span class="o">=</span><span class="kc">False</span>
-<span class="p">)</span>
+   output_tokens = tokenizer.batch_decode(
+       outputs, skip_special_tokens=True, clean_up_tokenization_spaces=False
+   )
 
-<span class="nb">print</span><span class="p">(</span><span class="s2">"Generated outputs:"</span><span class="p">)</span>
-<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">output_token</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">output_tokens</span><span class="p">):</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Output </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">output_token</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-</pre></div>
-</div>
-</section>
-</section>
-<section id="on-device-sampling-support">
-<h2><a class="toc-backref" href="#id19" role="doc-backlink">On-device Sampling Support</a><a class="headerlink" href="#on-device-sampling-support" title="Permalink to this heading">#</a></h2>
-<p>On-device sampling performs sampling logic on the Neuron device (rather
+   print(&quot;Generated outputs:&quot;)
+   for i, output_token in enumerate(output_tokens):
+       print(f&quot;Output {i}: {output_token}&quot;)
+
+On-device Sampling Support
+--------------------------
+
+On-device sampling performs sampling logic on the Neuron device (rather
 than on the CPU) to achieve better performance. To enable on device
 sampling, provide an OnDeviceSamplingConfig for the
-<code class="docutils literal notranslate"><span class="pre">on_device_sampling_config</span></code> attribute in NeuronConfig.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">on_device_sampling_config</span> <span class="o">=</span> <span class="n">OnDeviceSamplingConfig</span><span class="p">(</span><span class="n">global_topk</span><span class="o">=</span><span class="mi">256</span><span class="p">)</span>
-<span class="n">neuron_config</span> <span class="o">=</span> <span class="n">NeuronConfig</span><span class="p">(</span><span class="n">on_device_sampling_config</span><span class="o">=</span><span class="n">on_device_sampling_config</span><span class="p">)</span>
-</pre></div>
-</div>
-<section id="dynamic-sampling">
-<h3><a class="toc-backref" href="#id20" role="doc-backlink">Dynamic Sampling</a><a class="headerlink" href="#dynamic-sampling" title="Permalink to this heading">#</a></h3>
-<p>With dynamic sampling, you can pass different <code class="docutils literal notranslate"><span class="pre">top_k</span></code>, <code class="docutils literal notranslate"><span class="pre">top_p</span></code>, and
-<code class="docutils literal notranslate"><span class="pre">temperature</span></code> values to the <code class="docutils literal notranslate"><span class="pre">forward</span></code> call to configure sampling for
+``on_device_sampling_config`` attribute in NeuronConfig.
+
+::
+
+   on_device_sampling_config = OnDeviceSamplingConfig(global_topk=256)
+   neuron_config = NeuronConfig(on_device_sampling_config=on_device_sampling_config)
+
+Dynamic Sampling
+~~~~~~~~~~~~~~~~
+
+With dynamic sampling, you can pass different ``top_k``, ``top_p``, and
+``temperature`` values to the ``forward`` call to configure sampling for
 each input in a batch. To enable dynamic sampling, provide an
-OnDeviceSamplingConfig with <code class="docutils literal notranslate"><span class="pre">dynamic=True</span></code>.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">on_device_sampling_config</span> <span class="o">=</span> <span class="n">OnDeviceSamplingConfig</span><span class="p">(</span><span class="n">dynamic</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<span class="n">neuron_config</span> <span class="o">=</span> <span class="n">NeuronConfig</span><span class="p">(</span><span class="n">on_device_sampling_config</span><span class="o">=</span><span class="n">on_device_sampling_config</span><span class="p">)</span>
-</pre></div>
-</div>
-<p>To use dynamic sampling, pass a <code class="docutils literal notranslate"><span class="pre">sampling_params</span></code> tensor to the
-forward function of the model. The <code class="docutils literal notranslate"><span class="pre">sampling_params</span></code> tensor has shape
-<code class="docutils literal notranslate"><span class="pre">[batch_size,</span> <span class="pre">3]</span></code>, where the three values per batch are <code class="docutils literal notranslate"><span class="pre">top_k</span></code>,
-<code class="docutils literal notranslate"><span class="pre">top_p</span></code>, and <code class="docutils literal notranslate"><span class="pre">temperature</span></code>.</p>
-<p>The following example demonstrates how to create <code class="docutils literal notranslate"><span class="pre">sampling_params</span></code> for
-a batch with two inputs. In the first input, <code class="docutils literal notranslate"><span class="pre">top_k=50</span></code>,
-<code class="docutils literal notranslate"><span class="pre">top_p=0.5</span></code>, and <code class="docutils literal notranslate"><span class="pre">temperature=0.75</span></code>. In the second input,
-<code class="docutils literal notranslate"><span class="pre">top_k=5</span></code>, <code class="docutils literal notranslate"><span class="pre">top_p=1.0</span></code>, and <code class="docutils literal notranslate"><span class="pre">temperature=1.0</span></code>.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sampling_params</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([[</span><span class="mi">50</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.75</span><span class="p">],</span> <span class="p">[</span><span class="mi">5</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">]])</span>
-</pre></div>
-</div>
-</section>
-<section id="greedy-sampling">
-<h3><a class="toc-backref" href="#id21" role="doc-backlink">Greedy Sampling</a><a class="headerlink" href="#greedy-sampling" title="Permalink to this heading">#</a></h3>
-<p>By default, on-device sampling uses greedy sampling, where the model
-picks the highest scoring token.</p>
-</section>
-<section id="multinomial-top-k-sampling">
-<h3><a class="toc-backref" href="#id22" role="doc-backlink">Multinomial (Top-K) Sampling</a><a class="headerlink" href="#multinomial-top-k-sampling" title="Permalink to this heading">#</a></h3>
-<p>With multinomial (top-k) sampling, the model picks one of the top
-<em>k</em>-highest scoring tokens. To use on-device multinomial sampling, you
-must enable dynamic sampling. You can configure the default <code class="docutils literal notranslate"><span class="pre">top_k</span></code>
+OnDeviceSamplingConfig with ``dynamic=True``.
+
+::
+
+   on_device_sampling_config = OnDeviceSamplingConfig(dynamic=True)
+   neuron_config = NeuronConfig(on_device_sampling_config=on_device_sampling_config)
+
+To use dynamic sampling, pass a ``sampling_params`` tensor to the
+forward function of the model. The ``sampling_params`` tensor has shape
+``[batch_size, 3]``, where the three values per batch are ``top_k``,
+``top_p``, and ``temperature``.
+
+The following example demonstrates how to create ``sampling_params`` for
+a batch with two inputs. In the first input, ``top_k=50``,
+``top_p=0.5``, and ``temperature=0.75``. In the second input,
+``top_k=5``, ``top_p=1.0``, and ``temperature=1.0``.
+
+::
+
+   sampling_params = torch.tensor([[50, 0.5, 0.75], [5, 1.0, 1.0]])
+
+Greedy Sampling
+~~~~~~~~~~~~~~~
+
+By default, on-device sampling uses greedy sampling, where the model
+picks the highest scoring token.
+
+Multinomial (Top-K) Sampling
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+With multinomial (top-k) sampling, the model picks one of the top
+*k*-highest scoring tokens. To use on-device multinomial sampling, you
+must enable dynamic sampling. You can configure the default ``top_k``
 attribute in the OnDeviceSamplingConfig, or you can specify the
-<code class="docutils literal notranslate"><span class="pre">top_k</span></code> value in each call to the model’s <code class="docutils literal notranslate"><span class="pre">forward</span></code> function.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">on_device_sampling_config</span> <span class="o">=</span> <span class="n">OnDeviceSamplingConfig</span><span class="p">(</span><span class="n">top_k</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
-</pre></div>
-</div>
-</section>
-<section id="top-p-support-in-on-device-sampling">
-<h3><a class="toc-backref" href="#id23" role="doc-backlink">Top-P Support in On-Device Sampling</a><a class="headerlink" href="#top-p-support-in-on-device-sampling" title="Permalink to this heading">#</a></h3>
-<p>To use top-p in on-device sampling, enable dynamic sampling, and specify
-<code class="docutils literal notranslate"><span class="pre">top_p</span></code> values in the <code class="docutils literal notranslate"><span class="pre">sampling_params</span></code>.</p>
-</section>
-<section id="temperature-support-in-on-device-sampling">
-<h3><a class="toc-backref" href="#id24" role="doc-backlink">Temperature Support in On-Device Sampling</a><a class="headerlink" href="#temperature-support-in-on-device-sampling" title="Permalink to this heading">#</a></h3>
-<p>To adjust temperature in on-device sampling, enable dynamic sampling,
-and specify <code class="docutils literal notranslate"><span class="pre">temperature</span></code> values in the <code class="docutils literal notranslate"><span class="pre">sampling_params</span></code>.</p>
-</section>
-</section>
-<section id="qkv-weight-fusion">
-<span id="id1"></span><h2><a class="toc-backref" href="#id25" role="doc-backlink">QKV Weight Fusion</a><a class="headerlink" href="#qkv-weight-fusion" title="Permalink to this heading">#</a></h2>
-<p>QKV weight fusion concatenates a model’s query, key and value weight
+``top_k`` value in each call to the model&#x27;s ``forward`` function.
+
+::
+
+   on_device_sampling_config = OnDeviceSamplingConfig(top_k=5)
+
+Top-P Support in On-Device Sampling
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+To use top-p in on-device sampling, enable dynamic sampling, and specify
+``top_p`` values in the ``sampling_params``.
+
+Temperature Support in On-Device Sampling
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+To adjust temperature in on-device sampling, enable dynamic sampling,
+and specify ``temperature`` values in the ``sampling_params``.
+
+.. _qkv-weight-fusion:
+
+QKV Weight Fusion
+-----------------
+
+QKV weight fusion concatenates a model&#x27;s query, key and value weight
 matrices to achieve better performance, because larger matrices allow
 for more efficient data movement and compute. You can enable QKV weight
-fusion by setting <code class="docutils literal notranslate"><span class="pre">fused_qkv=True</span></code> in the NeuronConfig.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">neuron_config</span> <span class="o">=</span> <span class="n">NeuronConfig</span><span class="p">(</span><span class="n">fused_qkv</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-</pre></div>
-</div>
-</section>
-<section id="bucketing">
-<span id="nxdi-bucketing"></span><h2><a class="toc-backref" href="#id26" role="doc-backlink">Bucketing</a><a class="headerlink" href="#bucketing" title="Permalink to this heading">#</a></h2>
-<p>LLM inference is a generation process that can produce variable length
+fusion by setting ``fused_qkv=True`` in the NeuronConfig.
+
+::
+
+   neuron_config = NeuronConfig(fused_qkv=True)
+
+.. _nxdi-bucketing:
+
+Bucketing
+---------
+
+LLM inference is a generation process that can produce variable length
 sequences. This poses a problem since the Neuron compiler produces
 executables which expect statically shaped inputs and outputs. To make
 LLMs work with different shapes, NxD Inference supports
 buckets and applies padding wherever it is required. When you run
 inference, NxD Inference automatically chooses the
 smallest bucket that fits the input for optimal performance. For more
-information about bucketing, see <a class="reference internal" data-original-href="https://awsdocs-neuron.readthedocs-hosted.com/en/latest/frameworks/torch/torch-neuronx/programming-guide/inference/autobucketing-dev-guide.html#torch-neuronx-autobucketing-devguide"><span class="std std-ref">Autobucketing for Inference (torch-neuronx)</span></a>.</p>
-<section id="automatic-bucketing">
-<h3><a class="toc-backref" href="#id27" role="doc-backlink">Automatic Bucketing</a><a class="headerlink" href="#automatic-bucketing" title="Permalink to this heading">#</a></h3>
-<p>When automatic bucketing is enabled, NxD Inference
+information about bucketing, see :ref:`torch-neuronx-autobucketing-devguide`.
+
+Automatic Bucketing
+~~~~~~~~~~~~~~~~~~~
+
+When automatic bucketing is enabled, NxD Inference
 automatically chooses buckets for each model according to the following
-logic:</p>
-<ul class="simple">
-<li><p>Context encoding: Powers of two between 128 and the max context
-length.</p>
-<ul>
-<li><p>Note: Max context length is equivalent to sequence length by
-default.</p></li>
-</ul>
-</li>
-<li><p>Token generation: Powers of two between 128 and the maximum sequence
-length.</p></li>
-</ul>
-<p>To enable automatic bucketing, set <code class="docutils literal notranslate"><span class="pre">enable_bucketing=True</span></code> in
-NeuronConfig.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">neuron_config</span> <span class="o">=</span> <span class="n">NeuronConfig</span><span class="p">(</span><span class="n">enable_bucketing</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-</pre></div>
-</div>
-</section>
-<section id="configuring-specific-buckets">
-<h3><a class="toc-backref" href="#id28" role="doc-backlink">Configuring Specific Buckets</a><a class="headerlink" href="#configuring-specific-buckets" title="Permalink to this heading">#</a></h3>
-<p>You can configure specific buckets to further optimize inference based
+logic:
+
+- Context encoding: Powers of two between 128 and the max context
+  length.
+
+  - Note: Max context length is equivalent to sequence length by
+    default.
+
+- Token generation: Powers of two between 128 and the maximum sequence
+  length.
+
+To enable automatic bucketing, set ``enable_bucketing=True`` in
+NeuronConfig.
+
+::
+
+   neuron_config = NeuronConfig(enable_bucketing=True)
+
+Configuring Specific Buckets
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+You can configure specific buckets to further optimize inference based
 on the input and output length distribution that you expect to process
-with your model. In NeuronConfig, set <code class="docutils literal notranslate"><span class="pre">enable_bucketing=True</span></code>, and
-provide a list of bucket sizes in <code class="docutils literal notranslate"><span class="pre">context_encoding_buckets</span></code> and/or
-<code class="docutils literal notranslate"><span class="pre">token_generation_buckets</span></code>.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">neuron_config</span> <span class="o">=</span> <span class="n">NeuronConfig</span><span class="p">(</span>
-    <span class="n">enable_bucketing</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-    <span class="n">context_encoding_buckets</span><span class="o">=</span><span class="p">[</span><span class="mi">1024</span><span class="p">,</span> <span class="mi">2048</span><span class="p">,</span> <span class="mi">4096</span><span class="p">],</span>
-    <span class="n">token_generation_buckets</span><span class="o">=</span><span class="p">[</span><span class="mi">8192</span><span class="p">]</span>
-<span class="p">)</span>
-</pre></div>
-</div>
-</section>
-</section>
-<section id="quantization">
-<span id="nxdi-quantization"></span><h2><a class="toc-backref" href="#id29" role="doc-backlink">Quantization</a><a class="headerlink" href="#quantization" title="Permalink to this heading">#</a></h2>
-<p>NxD Inference supports quantization, where model weights
+with your model. In NeuronConfig, set ``enable_bucketing=True``, and
+provide a list of bucket sizes in ``context_encoding_buckets`` and/or
+``token_generation_buckets``.
+
+::
+
+   neuron_config = NeuronConfig(
+       enable_bucketing=True,
+       context_encoding_buckets=[1024, 2048, 4096],
+       token_generation_buckets=[8192]
+   )
+
+.. _nxdi-quantization:
+
+Quantization
+------------
+
+NxD Inference supports quantization, where model weights
 and data are converted to a smaller data type to reduce memory bandwidth
-usage, which improves model performance.</p>
-<p>Note: Quantization slightly reduces accuracy due to using data types
-with lower precision and/or lower range.</p>
-<section id="model-weight-quantization">
-<span id="nxdi-weight-quantization"></span><h3><a class="toc-backref" href="#id30" role="doc-backlink">Model Weight Quantization</a><a class="headerlink" href="#model-weight-quantization" title="Permalink to this heading">#</a></h3>
-<p>NxD Inference supports quantizing model weights to the
-following data types:</p>
-<ul class="simple">
-<li><p>INT8 (<code class="docutils literal notranslate"><span class="pre">int8</span></code>) - 8 bit int.</p></li>
-<li><p>FP8 - 8 bit float.</p>
-<ul>
-<li><p><code class="docutils literal notranslate"><span class="pre">f8e4m3</span></code> - 8-bit float with greater precision and less range.</p>
-<ul>
-<li><p>Important: To use <code class="docutils literal notranslate"><span class="pre">f8e4m3</span></code> for quantization, you must set the
-<code class="docutils literal notranslate"><span class="pre">XLA_HANDLE_SPECIAL_SCALAR</span></code> environment variable to <code class="docutils literal notranslate"><span class="pre">1</span></code>.</p></li>
-</ul>
-</li>
-<li><p><code class="docutils literal notranslate"><span class="pre">f8e5m2</span></code> - 8-bit float with greater range and less precision.</p></li>
-</ul>
-</li>
-</ul>
-<p>NxD Inference supports the following quantization methods, which you specify with <cite>quantization_type</cite> in NeuronConfig:</p>
-<ul class="simple">
-<li><p><cite>per_tensor_symmetric</cite></p></li>
-<li><p><cite>per_channel_symmetric</cite></p></li>
-</ul>
-<section id="example-1">
-<span id="id2"></span><h4>Example<a class="headerlink" href="#example-1" title="Permalink to this heading">#</a></h4>
-<p>The following example demonstrates how to quantize a model to INT8. To quantize
-a model to a different data type, change the <code class="docutils literal notranslate"><span class="pre">quantization_dtype</span></code> config
-attribute in <code class="docutils literal notranslate"><span class="pre">NeuronConfig</span></code>.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">neuronx_distributed_inference.models.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">NeuronConfig</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">neuronx_distributed_inference.models.llama.modeling_llama</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
-    <span class="n">LlamaInferenceConfig</span><span class="p">,</span>
-    <span class="n">NeuronLlamaForCausalLM</span>
-<span class="p">)</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">neuronx_distributed_inference.utils.hf_adapter</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_pretrained_config</span>
+usage, which improves model performance.
 
-<span class="n">model_path</span> <span class="o">=</span> <span class="s2">"/home/ubuntu/models/Llama-3.1-8B"</span>
-<span class="n">quantized_model_path</span> <span class="o">=</span> <span class="s2">"/home/ubuntu/models/Llama-3.1-8B-quantized"</span>
+Note: Quantization slightly reduces accuracy due to using data types
+with lower precision and/or lower range.
 
-<span class="n">neuron_config</span> <span class="o">=</span> <span class="n">NeuronConfig</span><span class="p">(</span>
-    <span class="n">quantized</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-    <span class="n">quantized_checkpoints_path</span><span class="o">=</span><span class="n">quantized_model_path</span><span class="p">,</span>
-    <span class="n">quantization_dtype</span><span class="o">=</span><span class="s2">"int8"</span><span class="p">,</span>
-    <span class="n">quantization_type</span><span class="o">=</span><span class="s2">"per_tensor_symmetric"</span>
-<span class="p">)</span>
+.. _nxdi-weight-quantization:
 
-<span class="n">config</span> <span class="o">=</span> <span class="n">LlamaInferenceConfig</span><span class="p">(</span>
-    <span class="n">neuron_config</span><span class="p">,</span>
-    <span class="n">load_config</span><span class="o">=</span><span class="n">load_pretrained_config</span><span class="p">(</span><span class="n">model_path</span><span class="p">)</span>
-<span class="p">)</span>
+Model Weight Quantization
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
-<span class="c1"># Quantize the model and save it to `quantized_checkpoints_path`.</span>
-<span class="n">NeuronLlamaForCausalLM</span><span class="o">.</span><span class="n">save_quantized_state_dict</span><span class="p">(</span><span class="n">model_path</span><span class="p">,</span> <span class="n">config</span><span class="p">)</span>
+NxD Inference supports quantizing model weights to the
+following data types:
 
-<span class="c1"># Compile, load, and use the model.</span>
-<span class="n">model</span> <span class="o">=</span> <span class="n">NeuronLlamaForCausalLM</span><span class="p">(</span><span class="n">model_path</span><span class="p">,</span> <span class="n">config</span><span class="p">)</span>
-</pre></div>
-</div>
-</section>
-</section>
-<section id="kv-cache-quantization">
-<span id="nxdi-kv-cache-quantization"></span><h3><a class="toc-backref" href="#id31" role="doc-backlink">KV Cache Quantization</a><a class="headerlink" href="#kv-cache-quantization" title="Permalink to this heading">#</a></h3>
-<p>NxD Inference supports KV cache quantization, where the
-model’s KV cache is quantized to a smaller data type. When enabled, the
-model quantizes the KV cache to the <code class="docutils literal notranslate"><span class="pre">torch.float8_e4m3fn</span></code> data type.
+- INT8 (``int8``) - 8 bit int.
+- FP8 - 8 bit float.
+
+  - ``f8e4m3`` - 8-bit float with greater precision and less range.
+
+    - Important: To use ``f8e4m3`` for quantization, you must set the
+      ``XLA_HANDLE_SPECIAL_SCALAR`` environment variable to ``1``.
+
+  - ``f8e5m2`` - 8-bit float with greater range and less precision.
+
+NxD Inference supports the following quantization methods, which you specify with `quantization_type` in NeuronConfig:
+
+- `per_tensor_symmetric`
+- `per_channel_symmetric`
+
+.. _example-1:
+
+Example
+^^^^^^^
+
+The following example demonstrates how to quantize a model to INT8. To quantize
+a model to a different data type, change the ``quantization_dtype`` config
+attribute in ``NeuronConfig``.
+
+::
+
+   from neuronx_distributed_inference.models.config import NeuronConfig
+   from neuronx_distributed_inference.models.llama.modeling_llama import (
+       LlamaInferenceConfig,
+       NeuronLlamaForCausalLM
+   )
+   from neuronx_distributed_inference.utils.hf_adapter import load_pretrained_config
+
+   model_path = &quot;/home/ubuntu/models/Llama-3.1-8B&quot;
+   quantized_model_path = &quot;/home/ubuntu/models/Llama-3.1-8B-quantized&quot;
+
+   neuron_config = NeuronConfig(
+       quantized=True,
+       quantized_checkpoints_path=quantized_model_path,
+       quantization_dtype=&quot;int8&quot;,
+       quantization_type=&quot;per_tensor_symmetric&quot;
+   )
+
+   config = LlamaInferenceConfig(
+       neuron_config,
+       load_config=load_pretrained_config(model_path)
+   )
+
+   # Quantize the model and save it to `quantized_checkpoints_path`.
+   NeuronLlamaForCausalLM.save_quantized_state_dict(model_path, config)
+
+   # Compile, load, and use the model.
+   model = NeuronLlamaForCausalLM(model_path, config)
+
+.. _nxdi-kv-cache-quantization:
+
+KV Cache Quantization
+~~~~~~~~~~~~~~~~~~~~~
+
+NxD Inference supports KV cache quantization, where the
+model&#x27;s KV cache is quantized to a smaller data type. When enabled, the
+model quantizes the KV cache to the ``torch.float8_e4m3fn`` data type.
 Before using the KV cache, the model dequantizes the KV cache to the data
-type specified by <code class="docutils literal notranslate"><span class="pre">torch_dtype</span></code> in NeuronConfig.</p>
-<p>To enable KV cache quantization, set <code class="docutils literal notranslate"><span class="pre">kv_cache_quant=True</span></code> in
-NeuronConfig.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">neuron_config</span> <span class="o">=</span> <span class="n">NeuronConfig</span><span class="p">(</span><span class="n">kv_cache_quant</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-</pre></div>
-</div>
-<ul class="simple">
-<li><p>Important: To use KV cache quantization, you must set the
-<code class="docutils literal notranslate"><span class="pre">XLA_HANDLE_SPECIAL_SCALAR</span></code> environment variable to <code class="docutils literal notranslate"><span class="pre">1</span></code>.</p></li>
-</ul>
-</section>
-</section>
-<section id="speculative-decoding">
-<span id="nxd-speculative-decoding"></span><h2><a class="toc-backref" href="#id32" role="doc-backlink">Speculative Decoding</a><a class="headerlink" href="#speculative-decoding" title="Permalink to this heading">#</a></h2>
-<p>Speculative decoding is a performance optimization technique where a
-smaller <em>draft</em> LLM model predicts the next tokens, and the larger <em>target</em>
+type specified by ``torch_dtype`` in NeuronConfig.
+
+To enable KV cache quantization, set ``kv_cache_quant=True`` in
+NeuronConfig.
+
+::
+
+   neuron_config = NeuronConfig(kv_cache_quant=True)
+
+- Important: To use KV cache quantization, you must set the
+  ``XLA_HANDLE_SPECIAL_SCALAR`` environment variable to ``1``.
+
+.. _nxd-speculative-decoding:
+
+Speculative Decoding
+--------------------
+
+Speculative decoding is a performance optimization technique where a
+smaller *draft* LLM model predicts the next tokens, and the larger *target*
 LLM model verifies those predictions. NxD Inference supports
-the following speculative decoding implementations:</p>
-<ol class="arabic simple">
-<li><p><a class="reference internal" href="#nxd-vanilla-speculative-decoding"><span class="std std-ref">Speculative decoding with a draft model</span></a>,
-where a separate draft model predicts the next <em>n</em> tokens for the target
-model. Each model is compiled independently.</p></li>
-<li><p><a class="reference internal" href="#nxd-medusa-speculative-decoding"><span class="std std-ref">Medusa speculative decoding</span></a>,
-where several small model heads predict next tokens, and the target
-model verifies all predictions at the same time.</p></li>
-<li><p><a class="reference internal" href="#nxd-eagle-speculative-decoding"><span class="std std-ref">EAGLE speculative decoding</span></a>,
-where the draft model uses additional context from the target model
-to improve generation efficiency. NxD Inference supports EAGLE v1 with
-a flat draft structure.</p></li>
-</ol>
-<section id="speculative-decoding-with-a-draft-model">
-<span id="nxd-vanilla-speculative-decoding"></span><h3><a class="toc-backref" href="#id33" role="doc-backlink">Speculative Decoding with a Draft model</a><a class="headerlink" href="#speculative-decoding-with-a-draft-model" title="Permalink to this heading">#</a></h3>
-<p>To use speculative decoding with a draft model, you configure, compile, and load a
-draft model in addition to the main target model. To enable
-speculative decoding with a draft model, set <code class="docutils literal notranslate"><span class="pre">speculation_length</span></code> and
-<code class="docutils literal notranslate"><span class="pre">trace_tokengen_model=False</span></code> in the target model’s NeuronConfig. The
-draft model’s NeuronConfig should use the same configuration but with
-these additional attributes reset to their defaults.</p>
-<blockquote>
-<div><p>Speculative decoding with a draft model currently supports only batch sizes of 1.</p>
-</div></blockquote>
-<section id="example-2">
-<span id="id3"></span><h4>Example<a class="headerlink" href="#example-2" title="Permalink to this heading">#</a></h4>
-<p>The following example demonstrates using Llama-3.2 3B as a draft model
-for Llama-3.1 70B. The speculation length is set to 5 tokens.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">copy</span>
+the following speculative decoding implementations:
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">transformers</span><span class="w"> </span><span class="kn">import</span> <span class="n">AutoTokenizer</span><span class="p">,</span> <span class="n">GenerationConfig</span>
+1. :ref:`Speculative decoding with a draft model &lt;nxd-vanilla-speculative-decoding&gt;`,
+   where a separate draft model predicts the next *n* tokens for the target
+   model. Each model is compiled independently.
+2. :ref:`Medusa speculative decoding&lt;nxd-medusa-speculative-decoding&gt;`,
+   where several small model heads predict next tokens, and the target
+   model verifies all predictions at the same time.
+3. :ref:`EAGLE speculative decoding&lt;nxd-eagle-speculative-decoding&gt;`,
+   where the draft model uses additional context from the target model
+   to improve generation efficiency. NxD Inference supports EAGLE v1 with
+   a flat draft structure.
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">neuronx_distributed_inference.models.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">NeuronConfig</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">neuronx_distributed_inference.models.llama.modeling_llama</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
-    <span class="n">LlamaInferenceConfig</span><span class="p">,</span>
-    <span class="n">NeuronLlamaForCausalLM</span>
-<span class="p">)</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">neuronx_distributed_inference.utils.accuracy</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_generate_outputs</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">neuronx_distributed_inference.utils.hf_adapter</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_pretrained_config</span>
+.. _nxd-vanilla-speculative-decoding:
 
-<span class="n">prompts</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"I believe the meaning of life is"</span><span class="p">]</span>
+Speculative Decoding with a Draft model
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-<span class="n">model_path</span> <span class="o">=</span> <span class="s2">"/home/ubuntu/models/Llama-3.1-70B"</span>
-<span class="n">draft_model_path</span> <span class="o">=</span> <span class="s2">"/home/ubuntu/models/Llama-3.2-3B"</span>
-<span class="n">compiled_model_path</span> <span class="o">=</span> <span class="s2">"/home/ubuntu/neuron_models/Llama-3.1-70B"</span>
-<span class="n">compiled_draft_model_path</span> <span class="o">=</span> <span class="s2">"/home/ubuntu/neuron_models/Llama-3.2-3B"</span>
+To use speculative decoding with a draft model, you configure, compile, and load a
+draft model in addition to the main target model. To enable 
+speculative decoding with a draft model, set ``speculation_length`` and
+``trace_tokengen_model=False`` in the target model&#x27;s NeuronConfig. The
+draft model&#x27;s NeuronConfig should use the same configuration but with
+these additional attributes reset to their defaults.
 
-<span class="c1"># Initialize target model.</span>
-<span class="n">neuron_config</span> <span class="o">=</span> <span class="n">NeuronConfig</span><span class="p">(</span>
-    <span class="n">speculation_length</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
-    <span class="n">trace_tokengen_model</span><span class="o">=</span><span class="kc">False</span>
-<span class="p">)</span>
-<span class="n">config</span> <span class="o">=</span> <span class="n">LlamaInferenceConfig</span><span class="p">(</span>
-    <span class="n">neuron_config</span><span class="p">,</span>
-    <span class="n">load_config</span><span class="o">=</span><span class="n">load_pretrained_config</span><span class="p">(</span><span class="n">model_path</span><span class="p">)</span>
-<span class="p">)</span>
-<span class="n">model</span> <span class="o">=</span> <span class="n">NeuronLlamaForCausalLM</span><span class="p">(</span><span class="n">model_path</span><span class="p">,</span> <span class="n">config</span><span class="p">)</span>
+ Speculative decoding with a draft model currently supports only batch sizes of 1.
 
-<span class="c1"># Initialize draft model.</span>
-<span class="n">draft_neuron_config</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">neuron_config</span><span class="p">)</span>
-<span class="n">draft_neuron_config</span><span class="o">.</span><span class="n">speculation_length</span> <span class="o">**=**</span> <span class="mi">0</span>
-<span class="n">draft_neuron_config</span><span class="o">.</span><span class="n">trace_tokengen_model</span> <span class="o">**=**</span> <span class="kc">True</span>
-<span class="n">draft_config</span> <span class="o">=</span> <span class="n">LlamaInferenceConfig</span><span class="p">(</span>
-    <span class="n">draft_neuron_config</span><span class="p">,</span>
-    <span class="n">load_config</span><span class="o">=</span><span class="n">load_pretrained_config</span><span class="p">(</span><span class="n">draft_model_path</span><span class="p">)</span>
-<span class="p">)</span>
-<span class="n">draft_model</span> <span class="o">=</span> <span class="n">NeuronLlamaForCausalLM</span><span class="p">(</span><span class="n">draft_model_path</span><span class="p">,</span> <span class="n">draft_config</span><span class="p">)</span>
+.. _example-2:
 
-<span class="c1"># Compile and save models.</span>
-<span class="n">model</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">compiled_model_path</span><span class="p">)</span>
-<span class="n">draft_model</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">compiled_draft_model_path</span><span class="p">)</span>
+Example
+^^^^^^^
 
-<span class="c1"># Load models to the Neuron device.</span>
-<span class="n">model</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">compiled_model_path</span><span class="p">)</span>
-<span class="n">draft_model</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">compiled_draft_model_path</span><span class="p">)</span>
+The following example demonstrates using Llama-3.2 3B as a draft model
+for Llama-3.1 70B. The speculation length is set to 5 tokens.
 
-<span class="c1"># Load tokenizer and generation config.</span>
-<span class="n">tokenizer</span> <span class="o">**=**</span> <span class="n">AutoTokenizer</span><span class="o">.</span><span class="n">from_pretrained</span><span class="p">(</span><span class="n">model_path</span><span class="p">,</span> <span class="n">padding_side</span><span class="o">**=**</span><span class="n">neuron_config</span><span class="o">.</span><span class="n">padding_side</span><span class="p">)</span>
-<span class="n">generation_config</span> <span class="o">=</span> <span class="n">GenerationConfig</span><span class="o">.</span><span class="n">from_pretrained</span><span class="p">(</span><span class="n">model_path</span><span class="p">)</span>
+::
 
-<span class="c1"># Run generation.</span>
-<span class="n">_</span><span class="p">,</span> <span class="n">output_tokens</span> <span class="o">=</span> <span class="n">get_generate_outputs</span><span class="p">(</span>
-    <span class="n">model</span><span class="p">,</span>
-    <span class="n">prompts</span><span class="p">,</span>
-    <span class="n">tokenizer</span><span class="p">,</span>
-    <span class="n">is_hf</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-    <span class="n">draft_model</span><span class="o">=</span><span class="n">draft_model</span><span class="p">,</span>
-    <span class="n">generation_config</span><span class="o">=</span><span class="n">generation_config</span>
-<span class="p">)</span>
+   import copy
 
-<span class="nb">print</span><span class="p">(</span><span class="s2">"Generated outputs:"</span><span class="p">)</span>
-<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">output_token</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">output_tokens</span><span class="p">):</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Output </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">output_token</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-</pre></div>
-</div>
-</section>
-</section>
-<section id="medusa-speculative-decoding">
-<span id="nxd-medusa-speculative-decoding"></span><h3><a class="toc-backref" href="#id34" role="doc-backlink">Medusa Speculative Decoding</a><a class="headerlink" href="#medusa-speculative-decoding" title="Permalink to this heading">#</a></h3>
-<p>To use Medusa speculative decoding, you must use a model that is
+   from transformers import AutoTokenizer, GenerationConfig
+
+   from neuronx_distributed_inference.models.config import NeuronConfig
+   from neuronx_distributed_inference.models.llama.modeling_llama import (
+       LlamaInferenceConfig,
+       NeuronLlamaForCausalLM
+   )
+   from neuronx_distributed_inference.utils.accuracy import get_generate_outputs
+   from neuronx_distributed_inference.utils.hf_adapter import load_pretrained_config
+
+   prompts = [&quot;I believe the meaning of life is&quot;]
+
+   model_path = &quot;/home/ubuntu/models/Llama-3.1-70B&quot;
+   draft_model_path = &quot;/home/ubuntu/models/Llama-3.2-3B&quot;
+   compiled_model_path = &quot;/home/ubuntu/neuron_models/Llama-3.1-70B&quot;
+   compiled_draft_model_path = &quot;/home/ubuntu/neuron_models/Llama-3.2-3B&quot;
+
+   # Initialize target model.
+   neuron_config = NeuronConfig(
+       speculation_length=5,
+       trace_tokengen_model=False
+   )
+   config = LlamaInferenceConfig(
+       neuron_config,
+       load_config=load_pretrained_config(model_path)
+   )
+   model = NeuronLlamaForCausalLM(model_path, config)
+
+   # Initialize draft model.
+   draft_neuron_config = copy.deepcopy(neuron_config)
+   draft_neuron_config.speculation_length **=** 0
+   draft_neuron_config.trace_tokengen_model **=** True
+   draft_config = LlamaInferenceConfig(
+       draft_neuron_config,
+       load_config=load_pretrained_config(draft_model_path)
+   )
+   draft_model = NeuronLlamaForCausalLM(draft_model_path, draft_config)
+
+   # Compile and save models.
+   model.compile(compiled_model_path)
+   draft_model.compile(compiled_draft_model_path)
+
+   # Load models to the Neuron device.
+   model.load(compiled_model_path)
+   draft_model.load(compiled_draft_model_path)
+
+   # Load tokenizer and generation config.
+   tokenizer **=** AutoTokenizer.from_pretrained(model_path, padding_side**=**neuron_config.padding_side)
+   generation_config = GenerationConfig.from_pretrained(model_path)
+
+   # Run generation.
+   _, output_tokens = get_generate_outputs(
+       model,
+       prompts,
+       tokenizer,
+       is_hf=False,
+       draft_model=draft_model,
+       generation_config=generation_config
+   )
+
+   print(&quot;Generated outputs:&quot;)
+   for i, output_token in enumerate(output_tokens):
+       print(f&quot;Output {i}: {output_token}&quot;)
+
+.. _nxd-medusa-speculative-decoding:
+
+Medusa Speculative Decoding
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+To use Medusa speculative decoding, you must use a model that is
 specifically fine-tuned for Medusa speculation, such as
-<a class="reference external" data-original-href="https://huggingface.co/text-generation-inference/Mistral-7B-Instruct-v0.2-medusa">text-generation-inference/Mistral-7B-Instruct-v0.2-medusa</a>.
+`text-generation-inference/Mistral-7B-Instruct-v0.2-medusa &lt;https://huggingface.co/text-generation-inference/Mistral-7B-Instruct-v0.2-medusa&gt;`__.
 You must also provide a Medusa tree. For an example Medusa tree, see
-<code class="docutils literal notranslate"><span class="pre">medusa_mc_sim_7b_63.json</span></code> in the <code class="docutils literal notranslate"><span class="pre">examples</span></code> folder in NeuronX
-Distributed Inference.</p>
-<p>To enable Medusa, set <code class="docutils literal notranslate"><span class="pre">is_medusa=True</span></code>, set the
-<code class="docutils literal notranslate"><span class="pre">medusa_speculation_length</span></code>, set the <code class="docutils literal notranslate"><span class="pre">num_medusa_heads</span></code>, and specify
-the <code class="docutils literal notranslate"><span class="pre">medusa_tree</span></code>.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">load_json_file</span><span class="p">(</span><span class="n">json_path</span><span class="p">):</span>
-    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">json_path</span><span class="p">,</span> <span class="s2">"r"</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+``medusa_mc_sim_7b_63.json`` in the ``examples`` folder in NeuronX
+Distributed Inference.
 
-<span class="n">medusa_tree</span> <span class="o">=</span> <span class="n">load_json_file</span><span class="p">(</span><span class="s2">"medusa_mc_sim_7b_63.json"</span><span class="p">)</span>
+To enable Medusa, set ``is_medusa=True``, set the
+``medusa_speculation_length``, set the ``num_medusa_heads``, and specify
+the ``medusa_tree``.
 
-<span class="n">neuron_config</span> <span class="o">=</span> <span class="n">NeuronConfig</span><span class="p">(</span>
-    <span class="n">is_medusa</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-    <span class="n">medusa_speculation_length</span><span class="o">=</span><span class="mi">64</span><span class="p">,</span>
-    <span class="n">num_medusa_heads</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
-    <span class="n">medusa_tree</span><span class="o">=</span><span class="n">medusa_tree</span>
-<span class="p">)</span>
-</pre></div>
-</div>
-<p>To run generation with a Medusa model and the HuggingFace <code class="docutils literal notranslate"><span class="pre">generate()</span></code>
-API, set the <code class="docutils literal notranslate"><span class="pre">assistant_model</span></code> to the target model.</p>
-<p>For more information about Medusa speculative decoding, see the official
-implementation on GitHub: <a class="github reference external" data-original-href="https://github.com/FasterDecoding/Medusa">FasterDecoding/Medusa</a>.</p>
-<p>Medusa speculative decoding currently supports only batch sizes of 1.</p>
-</section>
-<section id="eagle-speculative-decoding">
-<span id="nxd-eagle-speculative-decoding"></span><h3><a class="toc-backref" href="#id35" role="doc-backlink">EAGLE Speculative Decoding</a><a class="headerlink" href="#eagle-speculative-decoding" title="Permalink to this heading">#</a></h3>
-<p>NxD Inference supports EAGLE v1 speculative decoding with a flat draft structure.</p>
-<section id="eagle-checkpoint-compatibility">
-<h4>EAGLE Checkpoint Compatibility<a class="headerlink" href="#eagle-checkpoint-compatibility" title="Permalink to this heading">#</a></h4>
-<p>To use EAGLE speculative decoding, you must use a draft
+::
+
+   def load_json_file(json_path):
+       with open(json_path, &quot;r&quot;) as f:
+           return json.load(f)
+
+   medusa_tree = load_json_file(&quot;medusa_mc_sim_7b_63.json&quot;)
+
+   neuron_config = NeuronConfig(
+       is_medusa=True,
+       medusa_speculation_length=64,
+       num_medusa_heads=4,
+       medusa_tree=medusa_tree
+   )
+
+To run generation with a Medusa model and the HuggingFace ``generate()``
+API, set the ``assistant_model`` to the target model.
+
+For more information about Medusa speculative decoding, see the official
+implementation on GitHub: https://github.com/FasterDecoding/Medusa.
+
+Medusa speculative decoding currently supports only batch sizes of 1.
+
+.. _nxd-eagle-speculative-decoding:
+
+EAGLE Speculative Decoding
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+NxD Inference supports EAGLE v1 speculative decoding with a flat draft structure.
+
+EAGLE Checkpoint Compatibility
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+To use EAGLE speculative decoding, you must use a draft
 model that is specifically fine-tuned for EAGLE speculation. Additionally, to use EAGLE with
 NxD Inference, the draft model must include the LM head weights from the target model.
-These weights are shared between the draft and target model.</p>
-<p>Because NxD Inference uses a flat draft structure, it predicts only one token per draft iteration.
-Although NxD Inference doesn’t support EAGLE with a tree structure, you can train
+These weights are shared between the draft and target model.
+
+Because NxD Inference uses a flat draft structure, it predicts only one token per draft iteration.
+Although NxD Inference doesn&#x27;t support EAGLE with a tree structure, you can train
 an EAGLE checkpoint in the same way. Note that depending on your use case and dataset, you
-might see lower acceptance rate with the flat draft structure compared with using a tree structure.</p>
-<p>NxD Inference supports EAGLE models with or without input normalization. By default,
-NxD Inference expects that the EAGLE model doesn’t use input normalization. To use
-an EAGLE model with input normalization, set <code class="docutils literal notranslate"><span class="pre">enable_eagle_draft_input_norm</span></code> to <code class="docutils literal notranslate"><span class="pre">True</span></code>
-in NeuronConfig.</p>
-<p>You can find links to pretrained EAGLE draft model checkpoints for various
-popular models in the official EAGLE repository on GitHub: <a class="github reference external" data-original-href="https://github.com/SafeAILab/EAGLE">SafeAILab/EAGLE</a>.
-However, these pretrained EAGLE model checkpoints don’t include the LM head
+might see lower acceptance rate with the flat draft structure compared with using a tree structure.
+
+NxD Inference supports EAGLE models with or without input normalization. By default,
+NxD Inference expects that the EAGLE model doesn&#x27;t use input normalization. To use
+an EAGLE model with input normalization, set ``enable_eagle_draft_input_norm`` to ``True``
+in NeuronConfig.
+
+You can find links to pretrained EAGLE draft model checkpoints for various
+popular models in the official EAGLE repository on GitHub: https://github.com/SafeAILab/EAGLE.
+However, these pretrained EAGLE model checkpoints don&#x27;t include the LM head
 weights from the target model. To use these pretrained checkpoints with NxD Inference,
-you must first copy the LM head weights from the target to the draft model.</p>
-<p>The following code demonstrates how to perform this operation for a <a class="reference external" data-original-href="https://huggingface.co/meta-llama/Llama-3.1-70B-Instruct">Llama-3.1-70B-Instruct</a>
-target model and the corresponding <a class="reference external" data-original-href="https://huggingface.co/yuhuili/EAGLE-LLaMA3-Instruct-70B">EAGLE draft</a>:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+you must first copy the LM head weights from the target to the draft model.
 
-<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">safetensors</span><span class="w"> </span><span class="kn">import</span> <span class="n">safe_open</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">safetensors.torch</span><span class="w"> </span><span class="kn">import</span> <span class="n">save_file</span>
+The following code demonstrates how to perform this operation for a `Llama-3.1-70B-Instruct &lt;https://huggingface.co/meta-llama/Llama-3.1-70B-Instruct&gt;`__
+target model and the corresponding `EAGLE draft &lt;https://huggingface.co/yuhuili/EAGLE-LLaMA3-Instruct-70B&gt;`__:
 
-<span class="n">target_model_path</span> <span class="o">=</span> <span class="s2">"Meta-Llama-3.1-70B-Instruct"</span>
-<span class="n">draft_model_path</span> <span class="o">=</span> <span class="s2">"Llama-3.1-70B-Instruct-EAGLE-Draft"</span>
+::
 
-<span class="n">DRAFT_MODEL_SAFETENSORS_NAME</span> <span class="o">=</span> <span class="s2">"model.safetensors"</span>
-<span class="n">LM_HEAD_WEIGHT_TENSOR_NAME</span> <span class="o">=</span> <span class="s2">"lm_head.weight"</span>
-<span class="n">TARGET_MODEL_SAFETENSORS_INDEX_NAME</span> <span class="o">=</span> <span class="s2">"model.safetensors.index.json"</span>
+    import json
+    import os
 
-<span class="k">def</span><span class="w"> </span><span class="nf">find_lm_head_safetensors_location</span><span class="p">(</span><span class="n">model_dir</span><span class="p">):</span>
-    <span class="n">model_index_location_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">model_dir</span><span class="p">,</span> <span class="n">TARGET_MODEL_SAFETENSORS_INDEX_NAME</span><span class="p">)</span>
+    import torch
+    from safetensors import safe_open
+    from safetensors.torch import save_file
 
-    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">model_index_location_path</span><span class="p">,</span> <span class="s1">'r'</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
-        <span class="n">model_index_locations</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+    target_model_path = &quot;Meta-Llama-3.1-70B-Instruct&quot;
+    draft_model_path = &quot;Llama-3.1-70B-Instruct-EAGLE-Draft&quot;
 
-    <span class="n">lm_head_safetensors_name</span> <span class="o">=</span> <span class="n">model_index_locations</span><span class="p">[</span><span class="s2">"weight_map"</span><span class="p">][</span><span class="n">LM_HEAD_WEIGHT_TENSOR_NAME</span><span class="p">]</span>
+    DRAFT_MODEL_SAFETENSORS_NAME = &quot;model.safetensors&quot;
+    LM_HEAD_WEIGHT_TENSOR_NAME = &quot;lm_head.weight&quot;
+    TARGET_MODEL_SAFETENSORS_INDEX_NAME = &quot;model.safetensors.index.json&quot;
 
-    <span class="k">return</span> <span class="n">lm_head_safetensors_name</span>
+    def find_lm_head_safetensors_location(model_dir):
+        model_index_location_path = os.path.join(model_dir, TARGET_MODEL_SAFETENSORS_INDEX_NAME)
 
-<span class="c1"># Find the target model `lm_head.weight` location in safetensors</span>
-<span class="n">target_lm_head_safetensors_name</span> <span class="o">=</span> <span class="n">find_lm_head_safetensors_location</span><span class="p">(</span><span class="n">target_model_path</span><span class="p">)</span>
-<span class="n">target_lm_head_safetensors_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">target_model_path</span><span class="p">,</span> <span class="n">target_lm_head_safetensors_name</span><span class="p">)</span>
+        with open(model_index_location_path, &#x27;r&#x27;) as f:
+            model_index_locations = json.load(f)
 
-<span class="c1"># Open the target model.safetensor containing `lm_head.weight`</span>
-<span class="k">with</span> <span class="n">safe_open</span><span class="p">(</span><span class="n">target_lm_head_safetensors_path</span><span class="p">,</span> <span class="n">framework</span><span class="o">=</span><span class="s2">"pt"</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
-    <span class="n">target_lm_head</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">get_tensor</span><span class="p">(</span><span class="n">LM_HEAD_WEIGHT_TENSOR_NAME</span><span class="p">)</span>
+        lm_head_safetensors_name = model_index_locations[&quot;weight_map&quot;][LM_HEAD_WEIGHT_TENSOR_NAME]
 
-<span class="c1"># Collect all tensors in the draft model</span>
-<span class="n">draft_model_safetensors_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">draft_model_path</span><span class="p">,</span> <span class="n">DRAFT_MODEL_SAFETENSORS_NAME</span><span class="p">)</span>
-<span class="n">tensors</span> <span class="o">=</span> <span class="p">{}</span>
-<span class="k">with</span> <span class="n">safe_open</span><span class="p">(</span><span class="n">draft_model_safetensors_path</span><span class="p">,</span> <span class="n">framework</span><span class="o">=</span><span class="s2">"pt"</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
-    <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">f</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-        <span class="n">tensors</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">get_tensor</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+        return lm_head_safetensors_name
 
-<span class="c1"># Add the LM head weights and save out the new draft model.safetensors file</span>
-<span class="n">tensors</span><span class="p">[</span><span class="n">LM_HEAD_WEIGHT_TENSOR_NAME</span><span class="p">]</span> <span class="o">=</span> <span class="n">target_lm_head</span><span class="o">.</span><span class="n">type</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">float16</span><span class="p">)</span>
-<span class="n">save_file</span><span class="p">(</span><span class="n">tensors</span><span class="p">,</span> <span class="n">draft_model_safetensors_path</span><span class="p">)</span>
-</pre></div>
-</div>
-</section>
-<section id="fused-speculation">
-<span id="nxd-fused-speculative-decoding"></span><h4>Fused Speculation<a class="headerlink" href="#fused-speculation" title="Permalink to this heading">#</a></h4>
-<p>EAGLE speculation uses a feature called <em>fused speculation</em>, where the
+    # Find the target model `lm_head.weight` location in safetensors
+    target_lm_head_safetensors_name = find_lm_head_safetensors_location(target_model_path)
+    target_lm_head_safetensors_path = os.path.join(target_model_path, target_lm_head_safetensors_name)
+
+    # Open the target model.safetensor containing `lm_head.weight`
+    with safe_open(target_lm_head_safetensors_path, framework=&quot;pt&quot;) as f:
+        target_lm_head = f.get_tensor(LM_HEAD_WEIGHT_TENSOR_NAME)
+
+    # Collect all tensors in the draft model
+    draft_model_safetensors_path = os.path.join(draft_model_path, DRAFT_MODEL_SAFETENSORS_NAME)
+    tensors = {}
+    with safe_open(draft_model_safetensors_path, framework=&quot;pt&quot;) as f:
+        for key in f.keys():
+            tensors[key] = f.get_tensor(key)
+
+    # Add the LM head weights and save out the new draft model.safetensors file
+    tensors[LM_HEAD_WEIGHT_TENSOR_NAME] = target_lm_head.type(torch.float16)
+    save_file(tensors, draft_model_safetensors_path)
+
+.. _nxd-fused-speculative-decoding:
+
+Fused Speculation
+^^^^^^^^^^^^^^^^^
+
+EAGLE speculation uses a feature called *fused speculation*, where the
 draft model and target model are fused into a single compiled model to
 improve performance. Fused speculation uses a different config called
 FusedSpecNeuronConfig, which specifies the model class. draft config,
-and draft model path to fuse with the target model.</p>
-</section>
-<section id="example-3">
-<span id="id4"></span><h4>Example<a class="headerlink" href="#example-3" title="Permalink to this heading">#</a></h4>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">copy</span>
+and draft model path to fuse with the target model.
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">neuronx_distributed_inference.models.config</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
-    <span class="n">FusedSpecNeuronConfig</span><span class="p">,</span>
-    <span class="n">NeuronConfig</span><span class="p">,</span>
-    <span class="n">OnDeviceSamplingConfig</span>
-<span class="p">)</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">neuronx_distributed_inference.models.llama.modeling_llama</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
-    <span class="n">NeuronLlamaForCausalLM</span><span class="p">,</span>
-    <span class="n">NeuronLlamaModel</span>
-<span class="p">)</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">neuronx_distributed_inference.utils.accuracy</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_generate_outputs</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">neuronx_distributed_inference.utils.hf_adapter</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_pretrained_config</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">transformers</span><span class="w"> </span><span class="kn">import</span> <span class="n">AutoTokenizer</span><span class="p">,</span> <span class="n">GenerationConfig</span>
+.. _example-3:
 
-<span class="n">prompt</span> <span class="o">=</span> <span class="s2">"The future of AI is"</span>
+Example
+^^^^^^^
 
-<span class="n">model_path</span> <span class="o">=</span> <span class="s2">"/home/ubuntu/models/Llama-3.1-70B-Instruct"</span>
-<span class="n">draft_model_path</span> <span class="o">=</span> <span class="s2">"/home/ubuntu/models/Llama-3.1-70B-Instruct-EAGLE-Draft"</span>
-<span class="n">compiled_model_path</span> <span class="o">=</span> <span class="s2">"/home/ubuntu/neuron_models/Llama-3.1-70B-Instruct-EAGLE"</span>
-<span class="n">max_sequence_length</span> <span class="o">=</span> <span class="mi">1024</span>
+::
 
-<span class="c1"># Initialize on-device sampling configuration.</span>
-<span class="n">on_device_sampling_config</span> <span class="o">=</span> <span class="n">OnDeviceSamplingConfig</span><span class="p">(</span>
-    <span class="n">temperature</span><span class="o">=</span><span class="mf">0.7</span><span class="p">,</span>
-    <span class="n">top_k</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span>
-    <span class="n">top_p</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
-<span class="p">)</span>
+    import copy
 
-<span class="c1"># Initialize model configuration.</span>
-<span class="n">neuron_config</span> <span class="o">=</span> <span class="n">NeuronConfig</span><span class="p">(</span>
-    <span class="c1"># Neuron supports EAGLE batch sizes greater than 1.</span>
-    <span class="c1"># We set batch size to 1 in this tutorial due to a</span>
-    <span class="c1"># limitation in the transformers library for</span>
-    <span class="c1"># generation with speculative decoding.</span>
-    <span class="c1"># For more information, see: https://github.com/huggingface/transformers/issues/32165</span>
-    <span class="n">batch_size</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
-    <span class="n">enable_eagle_speculation</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-    <span class="n">enable_fused_speculation</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-    <span class="n">max_context_length</span><span class="o">=</span><span class="n">max_sequence_length</span><span class="p">,</span>
-    <span class="n">max_length</span><span class="o">=</span><span class="n">max_sequence_length</span><span class="p">,</span>
-    <span class="n">on_device_sampling_config</span><span class="o">=</span><span class="n">on_device_sampling_config</span><span class="p">,</span>
-    <span class="n">seq_len</span><span class="o">=</span><span class="n">max_sequence_length</span><span class="p">,</span>
-    <span class="n">speculation_length</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
-    <span class="c1"># For best performance, set to the maximum tensor</span>
-    <span class="c1"># parallelism of your Neuron instance type.</span>
-    <span class="n">tp_degree</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span>
-    <span class="n">trace_tokengen_model</span><span class="o">=</span><span class="kc">False</span>
-<span class="p">)</span>
+    from neuronx_distributed_inference.models.config import (
+        FusedSpecNeuronConfig,
+        NeuronConfig,
+        OnDeviceSamplingConfig
+    )
+    from neuronx_distributed_inference.models.llama.modeling_llama import (
+        NeuronLlamaForCausalLM,
+        NeuronLlamaModel
+    )
+    from neuronx_distributed_inference.utils.accuracy import get_generate_outputs
+    from neuronx_distributed_inference.utils.hf_adapter import load_pretrained_config
+    from transformers import AutoTokenizer, GenerationConfig
 
-<span class="n">config</span> <span class="o">=</span> <span class="n">NeuronLlamaForCausalLM</span><span class="o">.</span><span class="n">get_config_cls</span><span class="p">()(</span>
-    <span class="n">neuron_config</span><span class="p">,</span> <span class="n">load_config</span><span class="o">=</span><span class="n">load_pretrained_config</span><span class="p">(</span><span class="n">model_path</span><span class="p">)</span>
-<span class="p">)</span>
+    prompt = &quot;The future of AI is&quot;
 
-<span class="c1"># Initialize draft model configuration and set EAGLE-specific values.</span>
-<span class="n">draft_neuron_config</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">neuron_config</span><span class="p">)</span>
-<span class="n">draft_neuron_config</span><span class="o">.</span><span class="n">trace_tokengen_model</span> <span class="o">=</span> <span class="kc">True</span>
-<span class="n">draft_neuron_config</span><span class="o">.</span><span class="n">enable_fused_speculation</span> <span class="o">=</span> <span class="kc">False</span>
-<span class="n">draft_neuron_config</span><span class="o">.</span><span class="n">is_eagle_draft</span> <span class="o">=</span> <span class="kc">True</span>
-<span class="n">draft_neuron_config</span><span class="o">.</span><span class="n">sequence_parallel_enabled</span> <span class="o">=</span> <span class="kc">False</span>
+    model_path = &quot;/home/ubuntu/models/Llama-3.1-70B-Instruct&quot;
+    draft_model_path = &quot;/home/ubuntu/models/Llama-3.1-70B-Instruct-EAGLE-Draft&quot;
+    compiled_model_path = &quot;/home/ubuntu/neuron_models/Llama-3.1-70B-Instruct-EAGLE&quot;
+    max_sequence_length = 1024
 
-<span class="n">draft_config</span> <span class="o">=</span> <span class="n">NeuronLlamaForCausalLM</span><span class="o">.</span><span class="n">get_config_cls</span><span class="p">()(</span>
-    <span class="n">draft_neuron_config</span><span class="p">,</span> <span class="n">load_config</span><span class="o">=</span><span class="n">load_pretrained_config</span><span class="p">(</span><span class="n">draft_model_path</span><span class="p">))</span>
+    # Initialize on-device sampling configuration.
+    on_device_sampling_config = OnDeviceSamplingConfig(
+        temperature=0.7,
+        top_k=50,
+        top_p=1.0,
+    )
 
-<span class="c1"># Initialize fused speculation configuration.</span>
-<span class="n">fused_spec_config</span> <span class="o">=</span> <span class="n">FusedSpecNeuronConfig</span><span class="p">(</span>
-    <span class="n">NeuronLlamaForCausalLM</span><span class="o">.</span><span class="n">_model_cls</span><span class="p">,</span>
-    <span class="n">draft_config</span><span class="o">=</span><span class="n">draft_config</span><span class="p">,</span>
-    <span class="n">draft_model_path</span><span class="o">=</span><span class="n">draft_model_path</span><span class="p">,</span>
-<span class="p">)</span>
-<span class="n">config</span><span class="o">.</span><span class="n">fused_spec_config</span> <span class="o">=</span> <span class="n">fused_spec_config</span>
+    # Initialize model configuration.
+    neuron_config = NeuronConfig(
+        # Neuron supports EAGLE batch sizes greater than 1.
+        # We set batch size to 1 in this tutorial due to a
+        # limitation in the transformers library for
+        # generation with speculative decoding.
+        # For more information, see: https://github.com/huggingface/transformers/issues/32165
+        batch_size = 1,
+        enable_eagle_speculation=True,
+        enable_fused_speculation=True,
+        max_context_length=max_sequence_length,
+        max_length=max_sequence_length,
+        on_device_sampling_config=on_device_sampling_config,
+        seq_len=max_sequence_length,
+        speculation_length=5,
+        # For best performance, set to the maximum tensor
+        # parallelism of your Neuron instance type.
+        tp_degree=32,
+        trace_tokengen_model=False
+    )
 
-<span class="c1"># Initialize model from configuration.</span>
-<span class="n">model</span> <span class="o">=</span> <span class="n">NeuronLlamaForCausalLM</span><span class="p">(</span><span class="n">model_path</span><span class="p">,</span> <span class="n">config</span><span class="p">)</span>
+    config = NeuronLlamaForCausalLM.get_config_cls()(
+        neuron_config, load_config=load_pretrained_config(model_path)
+    )
 
-<span class="c1"># Compile and save model.</span>
-<span class="n">model</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">compiled_model_path</span><span class="p">)</span>
+    # Initialize draft model configuration and set EAGLE-specific values.
+    draft_neuron_config = copy.deepcopy(neuron_config)
+    draft_neuron_config.trace_tokengen_model = True
+    draft_neuron_config.enable_fused_speculation = False
+    draft_neuron_config.is_eagle_draft = True
+    draft_neuron_config.sequence_parallel_enabled = False
 
-<span class="c1"># Load model to the Neuron device.</span>
-<span class="n">model</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">compiled_model_path</span><span class="p">)</span>
+    draft_config = NeuronLlamaForCausalLM.get_config_cls()(
+        draft_neuron_config, load_config=load_pretrained_config(draft_model_path))
 
-<span class="c1"># Load tokenizer and generation config.</span>
-<span class="n">tokenizer</span> <span class="o">=</span> <span class="n">AutoTokenizer</span><span class="o">.</span><span class="n">from_pretrained</span><span class="p">(</span><span class="n">model_path</span><span class="p">,</span> <span class="n">padding_side</span><span class="o">=</span><span class="n">neuron_config</span><span class="o">.</span><span class="n">padding_side</span><span class="p">)</span>
-<span class="n">generation_config</span> <span class="o">=</span> <span class="n">GenerationConfig</span><span class="o">.</span><span class="n">from_pretrained</span><span class="p">(</span><span class="n">model_path</span><span class="p">)</span>
-<span class="n">generation_config</span><span class="o">.</span><span class="n">max_length</span> <span class="o">=</span> <span class="mi">1024</span>
-<span class="c1"># pad_token_id is required for Hugging Face assisted sampling.</span>
-<span class="n">generation_config</span><span class="o">.</span><span class="n">pad_token_id</span> <span class="o">=</span> <span class="n">tokenizer</span><span class="o">.</span><span class="n">eos_token_id</span>
+    # Initialize fused speculation configuration.
+    fused_spec_config = FusedSpecNeuronConfig(
+        NeuronLlamaForCausalLM._model_cls,
+        draft_config=draft_config,
+        draft_model_path=draft_model_path,
+    )
+    config.fused_spec_config = fused_spec_config
 
-<span class="c1"># Run generation and print outputs.</span>
-<span class="n">_</span><span class="p">,</span> <span class="n">output_tokens</span> <span class="o">=</span> <span class="n">get_generate_outputs</span><span class="p">(</span>
-    <span class="n">model</span><span class="p">,</span>
-    <span class="p">[</span><span class="n">prompt</span><span class="p">],</span>
-    <span class="n">tokenizer</span><span class="p">,</span>
-    <span class="n">is_hf</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-    <span class="c1"># draft_model is not set here due to fused speculation.</span>
-    <span class="n">draft_model</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-    <span class="n">generation_config</span><span class="o">=</span><span class="n">generation_config</span>
-<span class="p">)</span>
+    # Initialize model from configuration.
+    model = NeuronLlamaForCausalLM(model_path, config)
 
-<span class="nb">print</span><span class="p">(</span><span class="s2">"Generated output:"</span><span class="p">)</span>
-<span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">output</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">output_tokens</span><span class="p">):</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">output</span><span class="p">)</span>
-</pre></div>
-</div>
-</section>
-</section>
-</section>
-<section id="moe-model-architecture-support">
-<h2><a class="toc-backref" href="#id36" role="doc-backlink">MoE model architecture support</a><a class="headerlink" href="#moe-model-architecture-support" title="Permalink to this heading">#</a></h2>
-<p>NxD Inference supports mixture-of-experts (MoE) models.
+    # Compile and save model.
+    model.compile(compiled_model_path)
+
+    # Load model to the Neuron device.
+    model.load(compiled_model_path)
+
+    # Load tokenizer and generation config.
+    tokenizer = AutoTokenizer.from_pretrained(model_path, padding_side=neuron_config.padding_side)
+    generation_config = GenerationConfig.from_pretrained(model_path)
+    generation_config.max_length = 1024
+    # pad_token_id is required for Hugging Face assisted sampling.
+    generation_config.pad_token_id = tokenizer.eos_token_id
+
+    # Run generation and print outputs.
+    _, output_tokens = get_generate_outputs(
+        model,
+        [prompt],
+        tokenizer,
+        is_hf=False,
+        # draft_model is not set here due to fused speculation.
+        draft_model=None,
+        generation_config=generation_config
+    )
+
+    print(&quot;Generated output:&quot;)
+    for _, output in enumerate(output_tokens):
+        print(output)
+
+MoE model architecture support
+------------------------------
+
+NxD Inference supports mixture-of-experts (MoE) models.
 The library includes ready-to-use modeling code for Mixtral and DBRX.
 These models are built using reusable MoE modules from NeuronX
-Distributed Core: <code class="docutils literal notranslate"><span class="pre">RouterTopK</span></code>, <code class="docutils literal notranslate"><span class="pre">ExpertMLPs</span></code>, and <code class="docutils literal notranslate"><span class="pre">MoE</span></code>. You can
-use these modules to onboard additional MoE models.</p>
-<p>NxD Inference also provides a helper function,
-<code class="docutils literal notranslate"><span class="pre">initialize_moe_module</span></code>, which you can use to initialize an MoE
-model’s MLP module from these MoE modules. For examples of how to use
+Distributed Core: ``RouterTopK``, ``ExpertMLPs``, and ``MoE``. You can
+use these modules to onboard additional MoE models.
+
+NxD Inference also provides a helper function,
+``initialize_moe_module``, which you can use to initialize an MoE
+model&#x27;s MLP module from these MoE modules. For examples of how to use
 this helper function, see the decoder layer module implementation in the
-<a class="reference external" data-original-href="https://github.com/aws-neuron/neuronx-distributed-inference/blob/main/src/neuronx_distributed_inference/models/mixtral/modeling_mixtral.py">Mixtral</a>
-and <a class="reference external" data-original-href="https://github.com/aws-neuron/neuronx-distributed-inference/blob/main/src/neuronx_distributed_inference/models/dbrx/modeling_dbrx.py">DBRX</a>
-modeling code.</p>
-</section>
-<section id="grouped-query-attention-gqa-support">
-<h2><a class="toc-backref" href="#id37" role="doc-backlink">Grouped-query attention (GQA) support</a><a class="headerlink" href="#grouped-query-attention-gqa-support" title="Permalink to this heading">#</a></h2>
-<p>NxD Inference provides a reusable attention module,
+`Mixtral &lt;https://github.com/aws-neuron/neuronx-distributed-inference/blob/main/src/neuronx_distributed_inference/models/mixtral/modeling_mixtral.py&gt;`__
+and `DBRX &lt;https://github.com/aws-neuron/neuronx-distributed-inference/blob/main/src/neuronx_distributed_inference/models/dbrx/modeling_dbrx.py&gt;`__
+modeling code.
+
+Grouped-query attention (GQA) support
+-------------------------------------
+
+NxD Inference provides a reusable attention module,
 NeuronAttentionBase, which you can use when onboarding models. This
 module is also used in NxD Inference modeling code like Llama and
-Mixtral.</p>
-<p>NxD Inference supports the following sharding strategies
-for the KV cache used in the attention module:</p>
-<ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">CONVERT_TO_MHA</span></code> — Transforms a GQA attention mechanism into a
-traditional MHA mechanism by replicating the K/V heads to evenly match
-the corresponding Q heads. This consumes more memory than would
-otherwise be used with other sharding mechanisms but works in all
-cases.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">REPLICATE_TO_TP_DEGREE</span></code> — Transforms a GQA attention mechanism such
-that there is exactlyone K/V head per tp_degree through replication
-e.g. 8 K/V heads with tp_degree=32 results in 32 K/V heads. This is
-more memory efficient but does not work for all configurations. Q
-heads are padded interleaved to retain correct alignment between Q and
-K/V heads.</p></li>
-</ul>
-<p>The NeuronAttentionBase module uses <code class="docutils literal notranslate"><span class="pre">REPLICATE_TO_TP_DEGREE</span></code> by
-default. If the TP degree isn’t divisible by the number of KV heads,
-NeuronAttentionBase uses <code class="docutils literal notranslate"><span class="pre">CONVERT_TO_MHA</span></code>.</p>
-</section>
-<section id="asyncronous-runtime-support">
-<span id="nxdi-async-mode-feature-guide"></span><h2><a class="toc-backref" href="#id38" role="doc-backlink">Asyncronous Runtime Support</a><a class="headerlink" href="#asyncronous-runtime-support" title="Permalink to this heading">#</a></h2>
-<p>NxD Inference offers certain model configurations to be run with Asyncronous Runtime Mode (Async mode).
+Mixtral.
+
+NxD Inference supports the following sharding strategies
+for the KV cache used in the attention module:
+
+- ``CONVERT_TO_MHA`` — Transforms a GQA attention mechanism into a
+  traditional MHA mechanism by replicating the K/V heads to evenly match
+  the corresponding Q heads. This consumes more memory than would
+  otherwise be used with other sharding mechanisms but works in all
+  cases.
+- ``REPLICATE_TO_TP_DEGREE`` — Transforms a GQA attention mechanism such
+  that there is exactlyone K/V head per tp_degree through replication
+  e.g. 8 K/V heads with tp_degree=32 results in 32 K/V heads. This is
+  more memory efficient but does not work for all configurations. Q
+  heads are padded interleaved to retain correct alignment between Q and
+  K/V heads.
+
+The NeuronAttentionBase module uses ``REPLICATE_TO_TP_DEGREE`` by
+default. If the TP degree isn&#x27;t divisible by the number of KV heads,
+NeuronAttentionBase uses ``CONVERT_TO_MHA``.
+
+.. _nxdi_async_mode_feature_guide:
+
+Asyncronous Runtime Support
+---------------------------
+
+NxD Inference offers certain model configurations to be run with Asyncronous Runtime Mode (Async mode).
 Async mode allows NxD Inference to parallelize CPU logic with Neuron (NEFF) logic. As a result, any CPU overheads
 within NxDI that exist between sequential model executions (ex. autoregressive loop in LLMs) are almost fully
-eliminated. This reduces latency anywhere from 5% to 20% based on the model configuration.</p>
-<p>This feature can be enabled with by setting <code class="docutils literal notranslate"><span class="pre">async_mode</span></code> to <code class="docutils literal notranslate"><span class="pre">True</span></code> in <code class="docutils literal notranslate"><span class="pre">NeuronConfig</span></code>.</p>
-<p>To use Async mode, a model configuration must meet the following prerequisites:
+eliminated. This reduces latency anywhere from 5% to 20% based on the model configuration.
+
+This feature can be enabled with by setting ``async_mode`` to ``True`` in ``NeuronConfig``.
+
+To use Async mode, a model configuration must meet the following prerequisites:
 - On-device sampling is enabled.
-- If speculation is enabled, fused speculation must also be enabled.</p>
-<p>It is highly recommended to set <code class="docutils literal notranslate"><span class="pre">async_mode</span></code> to <code class="docutils literal notranslate"><span class="pre">True</span></code> for every other case, since it offers a latency reduction.
+- If speculation is enabled, fused speculation must also be enabled.
+
+It is highly recommended to set ``async_mode`` to ``True`` for every other case, since it offers a latency reduction.
 Furthermore, this feature is a purely runtime feature, so if you have a previously compiled model, and its configuration
-doesn’t fall under the unsupported case, <code class="docutils literal notranslate"><span class="pre">async_mode</span></code> will likely be able to improve performance.</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>If you are using vLLM, this feature works independently of vLLM’s Async Engine. As a result, <code class="docutils literal notranslate"><span class="pre">async_mode</span></code> can be enabled
-whether vLLM is used or not.</p>
-</div>
-</section>
-<section id="prefix-caching-support">
-<span id="nxdi-prefix-caching"></span><h2><a class="toc-backref" href="#id39" role="doc-backlink">Prefix Caching Support</a><a class="headerlink" href="#prefix-caching-support" title="Permalink to this heading">#</a></h2>
-<p>Prefix caching is a performance optimization technique where prompts in multiple requests sharing the same prefix can reuse the
+doesn&#x27;t fall under the unsupported case, ``async_mode`` will likely be able to improve performance.
+
+.. note::
+    If you are using vLLM, this feature works independently of vLLM&#x27;s Async Engine. As a result, ``async_mode`` can be enabled
+    whether vLLM is used or not.
+
+.. _nxdi_prefix_caching:
+
+Prefix Caching Support
+----------------------
+
+Prefix caching is a performance optimization technique where prompts in multiple requests sharing the same prefix can reuse the
 previously computed KV cache. When context encoding a prompt that starts with a previously computed prefix, the encoding of the
 prefix tokens will be skipped and the corresponding KV Cache will be fetched and used for encoding the rest of the tokens (suffix).
 The performance benefit comes from the time saved by re-using the KV Cache instead of re-encoding the prefix tokens. NxD Inference
@@ -824,223 +914,242 @@ layout for prefix caching. NxD Inference does not implement its own cache evicti
 Instead, it requires external management of the block KV cache and expects active block tables and slot mappings to be provided with
 each generation request. This feature integrates with vLLM by enabling automatic prefix caching, which manages the block tables,
 handles automatic prefix matching across prompts, and performs cache evictions. More on automatic prefix caching support on vLLM
-can be found <a class="reference external" data-original-href="https://docs.vllm.ai/en/latest/design/v1/prefix_caching.html">here</a>.</p>
-<p>To enable prefix caching with NxD Inference, set <code class="docutils literal notranslate"><span class="pre">is_prefix_caching=True</span></code> in NeuronConfig along with configurations for
-block KV cache layout.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">neuron_config</span> <span class="o">=</span> <span class="n">NeuronConfig</span><span class="p">(</span>
-    <span class="n">is_prefix_caching</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-    <span class="n">is_block_kv_layout</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-    <span class="n">pa_num_blocks</span><span class="o">=</span><span class="mi">1024</span><span class="p">,</span>
-    <span class="n">pa_block_size</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span>
-<span class="p">)</span>
-</pre></div>
-</div>
-<p><code class="docutils literal notranslate"><span class="pre">is_block_kv_layout=True</span></code> and <code class="docutils literal notranslate"><span class="pre">is_prefix_caching=True</span></code> are set in NeuronConfig to enable block KV Cache layout and enable
+can be found `here &lt;https://docs.vllm.ai/en/latest/design/v1/prefix_caching.html&gt;`__.
+
+To enable prefix caching with NxD Inference, set ``is_prefix_caching=True`` in NeuronConfig along with configurations for
+block KV cache layout.
+
+::
+
+    neuron_config = NeuronConfig(
+        is_prefix_caching=True,
+        is_block_kv_layout=True,
+        pa_num_blocks=1024,
+        pa_block_size=32,
+    )
+
+``is_block_kv_layout=True`` and ``is_prefix_caching=True`` are set in NeuronConfig to enable block KV Cache layout and enable
 prefix caching. The first two dimensions of the KV cache are set to the number of blocks and block size, respectively. These
-configurations are specified using <code class="docutils literal notranslate"><span class="pre">pa_num_blocks</span></code> and <code class="docutils literal notranslate"><span class="pre">pa_block_size</span></code> in NeuronConfig. For optimal performance with Neuron,
-it’s recommended to set <code class="docutils literal notranslate"><span class="pre">pa_block_size=32</span></code>. The minimum required <code class="docutils literal notranslate"><span class="pre">pa_num_blocks</span></code> to be initialized is
-<code class="docutils literal notranslate"><span class="pre">(batch_size</span> <span class="pre">*</span> <span class="pre">max_model_len)</span> <span class="pre">/</span> <span class="pre">pa_block_size</span></code> However, it is recommended to initialize more blocks than the required minimum
+configurations are specified using ``pa_num_blocks`` and ``pa_block_size`` in NeuronConfig. For optimal performance with Neuron,
+it&#x27;s recommended to set ``pa_block_size=32``. The minimum required ``pa_num_blocks`` to be initialized is
+``(batch_size * max_model_len) / pa_block_size`` However, it is recommended to initialize more blocks than the required minimum
 to accommodate caching of common prefixes. The higher the number of blocks, the greater the likelihood of cache hits, as fewer
 cache evictions will occur. NxD Inference does not currently provide an automated solution to determine the maximum number of
 KV Cache blocks that can be initialized in HBM without exceeding available memory space. Customers are advised to experiment with
 increasing the number of blocks that balances the cache hit rate and memory taken. Any memory taken by increasing the cache will
 impact the batch sizes and sequence lengths that can be supported, so customers are sugggested to pick the correct number of blocks
-considering these trade offs and the specific inference workload they plan to run in production.</p>
-<p>NxD Inference does not use paged attention for prefix caching. Instead, it follows a different process:
-first gathering the block KV cache using the block table, then converting it to a flat KV cache layout, computing attention, and
+considering these trade offs and the specific inference workload they plan to run in production.
+
+NxD Inference does not use paged attention for prefix caching. Instead, it follows a different process:
+first gathering the block KV cache using the block table, then converting it to a flat KV cache layout, computing attention, and 
 finally scattering the computed cache back to the block KV cache layout. This approach introduces overhead during
-token generation requests due to layout conversions, which can negatively impact performance as the <code class="docutils literal notranslate"><span class="pre">max_model_len</span></code> increases.</p>
-<section id="bucketing-with-prefix-caching">
-<span id="id5"></span><h3><a class="toc-backref" href="#id40" role="doc-backlink">Bucketing with Prefix Caching</a><a class="headerlink" href="#bucketing-with-prefix-caching" title="Permalink to this heading">#</a></h3>
-<p>Prefix caching handles both the prefix (cache hit) and suffix (no cache hit) portions of input prompts during context encoding.
+token generation requests due to layout conversions, which can negatively impact performance as the ``max_model_len`` increases.
+
+.. _bucketing-with-prefix-caching:
+
+Bucketing with Prefix Caching
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Prefix caching handles both the prefix (cache hit) and suffix (no cache hit) portions of input prompts during context encoding.
 A two-dimensional bucketing system has been introduced to support context encoding when prefix caching is enabled. This system
 uses separate dimensions corresponding to the prefix and suffix (non cache-hit portion) of the input prompts. In contrast,
-token generation still uses one-dimensional bucketing based on the maximum sequence length.</p>
-<p>When bucketing is enabled, NxD Inference creates prefill (suffix) buckets (covering suffix portion) starting with powers of 2,
+token generation still uses one-dimensional bucketing based on the maximum sequence length.
+
+When bucketing is enabled, NxD Inference creates prefill (suffix) buckets (covering suffix portion) starting with powers of 2,
 ranging from 512 up to the maximum context length. The prefix buckets mirror the prefill buckets, with one key difference: a special
 prefix bucket of size 0 is added to handle requests with no cache hits. NxD Inference then creates a two-dimensional grid of all prefill
 and prefix bucket combinations, which represents the effective set of buckets during context encoding. During request processing,
 NxD Inference first identifies the smallest prefill bucket that can accommodate the largest suffix portion of the input prompts.
-If prefill padding is needed, NxD Inference prioritizes moving tokens from the prefix’s end to the prefill bucket before adding padding.
+If prefill padding is needed, NxD Inference prioritizes moving tokens from the prefix&#x27;s end to the prefill bucket before adding padding.
 It then determines the smallest prefix bucket that can fit the largest prefix across prompts. These two dimensions together determine
-the final (prefill, prefix) bucket combination used to serve the context encoding request.</p>
-<p>You can configure specific buckets to optimize inference based on the expected distribution of prefix lengths, input lengths, and
-output lengths for your model. In NeuronConfig, set <code class="docutils literal notranslate"><span class="pre">enable_bucketing=True</span></code>, and provide a list of bucket sizes in
-<code class="docutils literal notranslate"><span class="pre">context_encoding_buckets</span></code>, <code class="docutils literal notranslate"><span class="pre">prefix_buckets</span></code> and/or <code class="docutils literal notranslate"><span class="pre">token_generation_buckets</span></code>. <code class="docutils literal notranslate"><span class="pre">context_encoding_buckets</span></code> corresponds to prefill
-buckets when prefix caching is enabled.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">neuron_config</span> <span class="o">=</span> <span class="n">NeuronConfig</span><span class="p">(</span>
-    <span class="n">enable_bucketing</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-    <span class="n">context_encoding_buckets</span><span class="o">=</span><span class="p">[</span><span class="mi">512</span><span class="p">,</span> <span class="mi">1024</span><span class="p">,</span> <span class="mi">2048</span><span class="p">],</span>
-    <span class="n">prefix_buckets</span><span class="o">=</span><span class="p">[</span><span class="mi">512</span><span class="p">,</span> <span class="mi">1024</span><span class="p">]</span>
-    <span class="n">token_generation_buckets</span><span class="o">=</span><span class="p">[</span><span class="mi">2048</span><span class="p">]</span>
-<span class="p">)</span>
-</pre></div>
-</div>
-<section id="id6">
-<h4>Examples<a class="headerlink" href="#id6" title="Permalink to this heading">#</a></h4>
-<p>For <code class="docutils literal notranslate"><span class="pre">context_encoding_buckets=[512,</span> <span class="pre">1024,</span> <span class="pre">2048]</span></code> and <code class="docutils literal notranslate"><span class="pre">prefix_buckets=[512,</span> <span class="pre">1024]</span></code></p>
-<p>For requests with:</p>
-<ul class="simple">
-<li><p>Input prompt of size 1000 with no prefix, NxDI uses prefill bucket as 1024 and prefix bucket as 0.</p></li>
-<li><p>Input prompt of size 800 with 128 as the prefix size, and remaining 672 as the suffix size, NxDI first selects 1024
-as the prefill bucket. Remaining 352 prefill slots are filled up by moving entire prefix to the suffix part.
-So prefill bucket of 1024 and prefix bucket as 0 is used here.</p></li>
-<li><p>Input prompt of size 900 with 640 as the prefix size, and remaining 260 as the suffix size, NxDI first selects 512
-as the prefill bucket. Remaining 252 prefill slots are filled up by moving 252 tokens from the end of prefix to the suffix part.
-Effective prefix length now becomes 388, so prefill bucket of 512 and prefix bucket as 512 is used.</p></li>
-<li><p>Input prompt of size 1600 with 1280 as the prefix size and remaining 320 as the suffix size, NxDI selects 512 as the
-prefill bucket. Remaining 192 prefill slots are filled up by moving 192 tokens from the end of prefix to the suffix part.
-Effective prefix length now becomes 1088 which is larger than the largest prefix bucket of 1024. This leads to exception
-during the request processing.</p></li>
-</ul>
-<p>The two-dimensional bucketing system exponentially increases the number of context encoding buckets. Therefore, users should exercise caution
+the final (prefill, prefix) bucket combination used to serve the context encoding request.
+
+You can configure specific buckets to optimize inference based on the expected distribution of prefix lengths, input lengths, and
+output lengths for your model. In NeuronConfig, set ``enable_bucketing=True``, and provide a list of bucket sizes in
+``context_encoding_buckets``, ``prefix_buckets`` and/or ``token_generation_buckets``. ``context_encoding_buckets`` corresponds to prefill
+buckets when prefix caching is enabled.
+
+::
+
+    neuron_config = NeuronConfig(
+        enable_bucketing=True,
+        context_encoding_buckets=[512, 1024, 2048],
+        prefix_buckets=[512, 1024]
+        token_generation_buckets=[2048]
+    )
+
+Examples
+^^^^^^^^
+
+For ``context_encoding_buckets=[512, 1024, 2048]`` and ``prefix_buckets=[512, 1024]``
+
+For requests with:
+
+- Input prompt of size 1000 with no prefix, NxDI uses prefill bucket as 1024 and prefix bucket as 0.
+- Input prompt of size 800 with 128 as the prefix size, and remaining 672 as the suffix size, NxDI first selects 1024
+  as the prefill bucket. Remaining 352 prefill slots are filled up by moving entire prefix to the suffix part.
+  So prefill bucket of 1024 and prefix bucket as 0 is used here.
+- Input prompt of size 900 with 640 as the prefix size, and remaining 260 as the suffix size, NxDI first selects 512
+  as the prefill bucket. Remaining 252 prefill slots are filled up by moving 252 tokens from the end of prefix to the suffix part.
+  Effective prefix length now becomes 388, so prefill bucket of 512 and prefix bucket as 512 is used.
+- Input prompt of size 1600 with 1280 as the prefix size and remaining 320 as the suffix size, NxDI selects 512 as the
+  prefill bucket. Remaining 192 prefill slots are filled up by moving 192 tokens from the end of prefix to the suffix part.
+  Effective prefix length now becomes 1088 which is larger than the largest prefix bucket of 1024. This leads to exception
+  during the request processing.
+
+The two-dimensional bucketing system exponentially increases the number of context encoding buckets. Therefore, users should exercise caution
 when using auto-bucketing with large context lengths. It is recommended to limit the granularity of prefix buckets based on your
-specific workload requirements.</p>
-<p>For detailed examples of prefix caching with NxD Inference and vLLM, see <a class="reference internal" data-original-href="https://awsdocs-neuron.readthedocs-hosted.com/en/latest/libraries/nxd-inference/tutorials/trn2-llama3.3-70b-apc-tutorial.html"><span class="std std-ref">Tutorial: Using Prefix Caching with Llama-3.3-70B on Trn2 instances</span></a>.</p>
-</section>
-</section>
-</section>
-<section id="multi-lora-serving">
-<h2><a class="toc-backref" href="#id41" role="doc-backlink">Multi-LoRA Serving</a><a class="headerlink" href="#multi-lora-serving" title="Permalink to this heading">#</a></h2>
-<p>NxD Inference supports serving with multiple LoRA adapters and users can specify different LoRA adapters for their requests at runtime.
+specific workload requirements.
+
+For detailed examples of prefix caching with NxD Inference and vLLM, see :ref:`/libraries/nxd-inference/tutorials/trn2-llama3.3-70b-apc-tutorial.ipynb`.
+
+Multi-LoRA Serving
+------------------
+
+NxD Inference supports serving with multiple LoRA adapters and users can specify different LoRA adapters for their requests at runtime. 
 It also supports multi-LoRA serving with vLLM as the frontend.
 NxD Inference currently supports loading of LoRA adapters for dense model families, including Llama-2, Llama-3.1, Llama-3.2, Llama-3.3, TinyLlama, OpenLLaMA, Qwen2, and Qwen3.
-A current prerequisite is that the LoRA adapter checkpoints must be stored locally before the server is initialized and started.</p>
-<section id="enable-multi-lora-serving">
-<h3><a class="toc-backref" href="#id42" role="doc-backlink">Enable multi-LoRA serving</a><a class="headerlink" href="#enable-multi-lora-serving" title="Permalink to this heading">#</a></h3>
-<p>To enable multi-LoRA serving, provide a LoraServingConfig for <code class="docutils literal notranslate"><span class="pre">lora_config</span></code> attribute in NeuronConfig.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">lora_config</span> <span class="o">=</span> <span class="n">LoraServingConfig</span><span class="p">(</span>
-    <span class="n">max_loras</span><span class="o">=</span><span class="n">max_loras</span><span class="p">,</span>
-    <span class="n">max_cpu_loras</span><span class="o">=</span><span class="n">max_cpu_loras</span><span class="p">,</span>
-    <span class="n">batch_size</span><span class="o">=</span><span class="n">batch_size</span><span class="p">,</span>
-    <span class="n">dynamic_multi_lora</span><span class="o">=</span><span class="n">dynamic_multi_lora</span><span class="p">,</span>
-    <span class="n">base_model_quantized</span><span class="o">=</span><span class="n">quantized</span><span class="p">,</span>
-    <span class="n">lora_ckpt_json</span><span class="o">=</span><span class="n">lora_ckpt_json</span><span class="p">,</span>
-<span class="p">)</span>
-<span class="n">neuron_config</span> <span class="o">=</span> <span class="n">NeuronConfig</span><span class="p">(</span><span class="n">lora_config</span><span class="o">=</span><span class="n">lora_config</span><span class="p">)</span>
-</pre></div>
-</div>
-<p>Refer to <a class="reference internal" data-original-href="https://awsdocs-neuron.readthedocs-hosted.com/en/latest/libraries/nxd-inference/api-guides/api-guide.html#nxd-inference-api-guide"><span class="std std-ref">NxD Inference API Reference</span></a> for more details of <code class="docutils literal notranslate"><span class="pre">LoraServingConfig</span></code>.</p>
-<p>NxD Inference primarily supports the format of LoRA adapters from <a class="reference external" data-original-href="https://github.com/huggingface/peft">Huggingface PEFT</a>.
+A current prerequisite is that the LoRA adapter checkpoints must be stored locally before the server is initialized and started.
+
+Enable multi-LoRA serving
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+To enable multi-LoRA serving, provide a LoraServingConfig for ``lora_config`` attribute in NeuronConfig.
+
+::
+
+    lora_config = LoraServingConfig(
+        max_loras=max_loras,
+        max_cpu_loras=max_cpu_loras,
+        batch_size=batch_size,
+        dynamic_multi_lora=dynamic_multi_lora,
+        base_model_quantized=quantized,
+        lora_ckpt_json=lora_ckpt_json,
+    )
+    neuron_config = NeuronConfig(lora_config=lora_config)
+
+Refer to :ref:`nxd-inference-api-guide` for more details of ``LoraServingConfig``.
+
+NxD Inference primarily supports the format of LoRA adapters from `Huggingface PEFT &lt;https://github.com/huggingface/peft&gt;`__.
 Each checkpoint path is a folder that contains a checkpoint file (.safetensors, .bin, or .pt) and a configuration json file (.json).
-In addition, NxD inference also supports LoRA adapters trained from <a class="reference external" data-original-href="https://awsdocs-neuron.readthedocs-hosted.com/en/latest/libraries/neuronx-distributed/lora_finetune_developer_guide.html">NxD LoRA finetuning</a>.
-Each checkpoint path is a checkpoint file (.pt) that includes both LoRA adapter weights and the configuration.</p>
-<p>NxD Inference assumes all the LoRA adapters for multi-LoRA serving are available locally during compilation and their weights are loaded on neuron devices during serving.
-When uploading a LoRA adapter checkpoint to NxDI for multi-LoRA serving, the user is required to name the adapter with a unique adapter ID, such as <code class="docutils literal notranslate"><span class="pre">adapter_id_1</span></code>, which will be used by users to specify the LoRA adapter for serving at runtime and by NxDI for model compilation.</p>
-<p>The maximum number of concurrent LoRA adapters in device memory and host memory for serving are specified by <code class="docutils literal notranslate"><span class="pre">max_loras</span></code> and <code class="docutils literal notranslate"><span class="pre">max_cpu_loras</span></code>, respectively.
-When <code class="docutils literal notranslate"><span class="pre">dynamic_multi_lora=False</span></code>, all the LoRA adapters must be fully pre-loaded into device memory before the serving process begins.
-Dynamic multi-LoRA serving is enabled by <code class="docutils literal notranslate"><span class="pre">dynamic_multi_lora=True</span></code>, which loads more LoRA adapters to host memory and dynamically swaps them from CPU to HBM at runtime according to user requests.
-NxD Inference can quantize the base model for multi-LoRA serving with <code class="docutils literal notranslate"><span class="pre">base_model_quantized=True</span></code>.
-Refer to <a class="reference internal" data-original-href="https://awsdocs-neuron.readthedocs-hosted.com/en/latest/libraries/nxd-inference/api-guides/api-guide.html#nxd-inference-api-guide-neuron-config"><span class="std std-ref">NeuronConfig</span></a> for setting the quantization configurations.
-The set of LoRA adapters are specified by <code class="docutils literal notranslate"><span class="pre">lora_ckpt_json</span></code>, which is a JSON file describing the mapping between the adapters IDs and their local paths of the LoRA adapter checkpoint.
-Refer to <a class="reference internal" data-original-href="https://awsdocs-neuron.readthedocs-hosted.com/en/latest/libraries/nxd-inference/api-guides/api-guide.html#nxd-inference-api-guide-neuron-config"><span class="std std-ref">NeuronConfig</span></a> for the JSON format.
-For detailed examples of multi-LoRA serving in NxDI, see <a class="reference internal" data-original-href="https://awsdocs-neuron.readthedocs-hosted.com/en/latest/libraries/nxd-inference/tutorials/trn2-llama3.1-8b-multi-lora-tutorial.html"><span class="std std-ref">Tutorial: Multi-LoRA serving for Llama-3.1-8B on Trn2 instances</span></a>.</p>
-</section>
-<section id="maximum-number-of-lora-adapters-supported-in-device-memory">
-<h3><a class="toc-backref" href="#id43" role="doc-backlink">Maximum number of LoRA adapters supported in device memory</a><a class="headerlink" href="#maximum-number-of-lora-adapters-supported-in-device-memory" title="Permalink to this heading">#</a></h3>
-<p>The LoRA adapter size is much smaller than the base model, but its weights still consumes non-negligible on-device memory.
-The maximum number of LoRA adapters that can be concurrently supported in the device memory depends on the base model, the LoRA rank, the reserved HBM size for LoRA adapters, and how the LoRA adapters are sharded across TP groups.</p>
-<p>Suppose a Trainium instance is used for multi-LoRA serving and the reserved HBM size on each neuron core for LoRA adapters is 2GB.
+In addition, NxD inference also supports LoRA adapters trained from `NxD LoRA finetuning &lt;https://awsdocs-neuron.readthedocs-hosted.com/en/latest/libraries/neuronx-distributed/lora_finetune_developer_guide.html&gt;`__.
+Each checkpoint path is a checkpoint file (.pt) that includes both LoRA adapter weights and the configuration. 
+
+NxD Inference assumes all the LoRA adapters for multi-LoRA serving are available locally during compilation and their weights are loaded on neuron devices during serving.
+When uploading a LoRA adapter checkpoint to NxDI for multi-LoRA serving, the user is required to name the adapter with a unique adapter ID, such as ``adapter_id_1``, which will be used by users to specify the LoRA adapter for serving at runtime and by NxDI for model compilation.
+
+The maximum number of concurrent LoRA adapters in device memory and host memory for serving are specified by ``max_loras`` and ``max_cpu_loras``, respectively.
+When ``dynamic_multi_lora=False``, all the LoRA adapters must be fully pre-loaded into device memory before the serving process begins.
+Dynamic multi-LoRA serving is enabled by ``dynamic_multi_lora=True``, which loads more LoRA adapters to host memory and dynamically swaps them from CPU to HBM at runtime according to user requests.
+NxD Inference can quantize the base model for multi-LoRA serving with ``base_model_quantized=True``. 
+Refer to :ref:`nxd-inference-api-guide-neuron-config` for setting the quantization configurations.
+The set of LoRA adapters are specified by ``lora_ckpt_json``, which is a JSON file describing the mapping between the adapters IDs and their local paths of the LoRA adapter checkpoint.
+Refer to :ref:`nxd-inference-api-guide-neuron-config` for the JSON format.
+For detailed examples of multi-LoRA serving in NxDI, see :ref:`/libraries/nxd-inference/tutorials/trn2-llama3.1-8b-multi-lora-tutorial.ipynb`.
+
+
+Maximum number of LoRA adapters supported in device memory
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The LoRA adapter size is much smaller than the base model, but its weights still consumes non-negligible on-device memory. 
+The maximum number of LoRA adapters that can be concurrently supported in the device memory depends on the base model, the LoRA rank, the reserved HBM size for LoRA adapters, and how the LoRA adapters are sharded across TP groups.
+
+Suppose a Trainium instance is used for multi-LoRA serving and the reserved HBM size on each neuron core for LoRA adapters is 2GB.
 Each LoRA adapter has two parts, LoRA A and LoRA B, and only one of them can be partitioned with tensor parallelism and the other is just Linear layer.
 We analyze the maximum number of LoRA adapters supported in the device memory under two cases: 1/ the linear layer is duplicated, and 2/ the linear layer is sharded.
-These two cases can be specified by <code class="docutils literal notranslate"><span class="pre">lora_shard_linear_layer</span></code> in <code class="docutils literal notranslate"><span class="pre">LoraServingConfig</span></code>.</p>
-<section id="when-the-linear-layer-is-duplicated">
-<h4>When the linear layer is duplicated<a class="headerlink" href="#when-the-linear-layer-is-duplicated" title="Permalink to this heading">#</a></h4>
-<p>The weight size of a LoRA adapter on each device is around half of the total LoRA adapter size in this case.
-When the base model is Llama3.1 8B, the LoRA adapter checkpoint size with LoRA rank 16 in BF16 is around 170MB.
-Because <code class="docutils literal notranslate"><span class="pre">2GB</span> <span class="pre">/</span> <span class="pre">(170MB</span> <span class="pre">/</span> <span class="pre">2)</span> <span class="pre">=</span> <span class="pre">23</span></code>, the maximum number of concurrent LoRA adapters is 23.
-When the base model is Llama3.3 70B, the LoRA adapter checkpoint size with LoRA rank 16 in BF16 is around 830MB and we can set <code class="docutils literal notranslate"><span class="pre">max_loras=4</span></code>.
+These two cases can be specified by ``lora_shard_linear_layer`` in ``LoraServingConfig``.
+
+When the linear layer is duplicated
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The weight size of a LoRA adapter on each device is around half of the total LoRA adapter size in this case.
+When the base model is Llama3.1 8B, the LoRA adapter checkpoint size with LoRA rank 16 in BF16 is around 170MB. 
+Because ``2GB / (170MB / 2) = 23``, the maximum number of concurrent LoRA adapters is 23.
+When the base model is Llama3.3 70B, the LoRA adapter checkpoint size with LoRA rank 16 in BF16 is around 830MB and we can set ``max_loras=4``.
 We analyze the maximum number of LoRA adapters supported in NxD inference under two cases: the linear layer is duplicated and the linear layer is sharded.
-These two cases can be specified by <code class="docutils literal notranslate"><span class="pre">lora_shard_linear_layer</span></code> in <code class="docutils literal notranslate"><span class="pre">LoraServingConfig</span></code>.</p>
-<table class="table table-left">
-<thead>
-<tr class="row-odd"><th class="head stub"><p>Model</p></th>
-<th class="head"><p>Reserved Memory size</p></th>
-<th class="head"><p>LoRA rank</p></th>
-<th class="head"><p>Maximum LoRAs</p></th>
-</tr>
-</thead>
-<tbody>
-<tr class="row-even"><th class="stub"><p>Llama3.1 8B</p></th>
-<td><p>2GB</p></td>
-<td><p>16</p></td>
-<td><p>23</p></td>
-</tr>
-<tr class="row-odd"><th class="stub"><p>Llama3.1 8B</p></th>
-<td><p>2GB</p></td>
-<td><p>32</p></td>
-<td><p>12</p></td>
-</tr>
-<tr class="row-even"><th class="stub"><p>Llama3.3 70B</p></th>
-<td><p>2GB</p></td>
-<td><p>16</p></td>
-<td><p>4</p></td>
-</tr>
-<tr class="row-odd"><th class="stub"><p>Llama3.3 70B</p></th>
-<td><p>2GB</p></td>
-<td><p>32</p></td>
-<td><p>2</p></td>
-</tr>
-</tbody>
-</table>
-</section>
-<section id="when-the-linear-layer-is-sharded">
-<h4>When the linear layer is sharded<a class="headerlink" href="#when-the-linear-layer-is-sharded" title="Permalink to this heading">#</a></h4>
-<p>The linear layer in a LoRA adapter is sharded across neuron cores in a TP group at the cost of Allgather communication overehead in this case.
-The weight size of a LoRA adapter on each device is <code class="docutils literal notranslate"><span class="pre">1/TP_DEGREE</span></code> of the total LoRA adapter size.</p>
-<table class="table table-left">
-<thead>
-<tr class="row-odd"><th class="head stub"><p>Model</p></th>
-<th class="head"><p>Reserved Memory size</p></th>
-<th class="head"><p>LoRA rank</p></th>
-<th class="head"><p>TP degree</p></th>
-<th class="head"><p>Maximum LoRAs</p></th>
-</tr>
-</thead>
-<tbody>
-<tr class="row-even"><th class="stub"><p>Llama3.1 8B</p></th>
-<td><p>2GB</p></td>
-<td><p>16</p></td>
-<td><p>32</p></td>
-<td><p>376</p></td>
-</tr>
-<tr class="row-odd"><th class="stub"><p>Llama3.1 8B</p></th>
-<td><p>2GB</p></td>
-<td><p>32</p></td>
-<td><p>32</p></td>
-<td><p>188</p></td>
-</tr>
-<tr class="row-even"><th class="stub"><p>Llama3.3 70B</p></th>
-<td><p>2GB</p></td>
-<td><p>16</p></td>
-<td><p>32</p></td>
-<td><p>77</p></td>
-</tr>
-<tr class="row-odd"><th class="stub"><p>Llama3.3 70B</p></th>
-<td><p>2GB</p></td>
-<td><p>32</p></td>
-<td><p>32</p></td>
-<td><p>38</p></td>
-</tr>
-</tbody>
-</table>
-</section>
-</section>
-</section>
-<section id="disaggregated-inference-beta">
-<span id="nxdi-di-feature-guide"></span><h2><a class="toc-backref" href="#id44" role="doc-backlink">Disaggregated Inference [BETA]</a><a class="headerlink" href="#disaggregated-inference-beta" title="Permalink to this heading">#</a></h2>
-<p>Disaggregated Inference is an LLM serving architecture separates the prefill and decode phases of inference onto different hardware resources.
-Separating the compute intensive prefill phase from the memory bandwidth intensive decode phase can improve the LLM serving experience by</p>
-<p>1. Removing prefill interruptions to decode from continuous batching to reduce inter token latency (ITL). These gains can be used to
-achieve higher throughput by running with a higher decode batch size while staying under Service Level Objectives (SLO).</p>
-<ol class="arabic simple" start="2">
-<li><p>Adapt to changing traffic patterns while still remaining under application SLOs.</p></li>
-<li><p>Enable independent scaling of resources and parallelism strategies for prefill (compute bound) and decode (memory bound).</p></li>
-</ol>
-<p>See the <a class="reference internal" data-original-href="https://awsdocs-neuron.readthedocs-hosted.com/en/latest/libraries/nxd-inference/developer_guides/disaggregated-inference.html#nxdi-disaggregated-inference"><span class="std std-ref">Disaggregated Inference Developer Guide</span></a> and the <a class="reference internal" data-original-href="https://awsdocs-neuron.readthedocs-hosted.com/en/latest/libraries/nxd-inference/tutorials/disaggregated-inference-tutorial.html#nxdi-disaggregated-inference-tutorial"><span class="std std-ref">Disaggregated Inference Tutorial</span></a></p>
-<p><strong>This document is relevant for</strong>: <code class="docutils literal notranslate"><span class="pre">Inf2</span></code>, <code class="docutils literal notranslate"><span class="pre">Trn1</span></code>, <code class="docutils literal notranslate"><span class="pre">Trn2</span></code></p>
-</section>
-</section>
-<div class="section ablog__blog_comments">
-</div>
-</article></body></html>
+These two cases can be specified by ``lora_shard_linear_layer`` in ``LoraServingConfig``.
+
+.. list-table::
+    :widths: auto
+    :header-rows: 1 
+    :stub-columns: 1    
+    :align: left
+      
+    *   - Model
+        - Reserved Memory size
+        - LoRA rank
+        - Maximum LoRAs
+    
+    *   - Llama3.1 8B
+        - 2GB
+        - 16
+        - 23
+    *   - Llama3.1 8B
+        - 2GB
+        - 32
+        - 12
+    *   - Llama3.3 70B
+        - 2GB
+        - 16
+        - 4
+    *   - Llama3.3 70B
+        - 2GB
+        - 32 
+        - 2
+
+When the linear layer is sharded
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The linear layer in a LoRA adapter is sharded across neuron cores in a TP group at the cost of Allgather communication overehead in this case.
+The weight size of a LoRA adapter on each device is ``1/TP_DEGREE`` of the total LoRA adapter size.
+
+.. list-table::
+    :widths: auto
+    :header-rows: 1 
+    :stub-columns: 1    
+    :align: left
+      
+    *   - Model
+        - Reserved Memory size
+        - LoRA rank
+        - TP degree
+        - Maximum LoRAs
+    
+    *   - Llama3.1 8B
+        - 2GB
+        - 16
+        - 32
+        - 376
+    *   - Llama3.1 8B
+        - 2GB
+        - 32
+        - 32
+        - 188
+    *   - Llama3.3 70B
+        - 2GB
+        - 16
+        - 32
+        - 77
+    *   - Llama3.3 70B
+        - 2GB
+        - 32 
+        - 32
+        - 38
+
+.. _nxdi_di_feature_guide:
+
+Disaggregated Inference [BETA]
+------------------------------
+
+Disaggregated Inference is an LLM serving architecture separates the prefill and decode phases of inference onto different hardware resources.
+Separating the compute intensive prefill phase from the memory bandwidth intensive decode phase can improve the LLM serving experience by
+
+1. Removing prefill interruptions to decode from continuous batching to reduce inter token latency (ITL). These gains can be used to
+achieve higher throughput by running with a higher decode batch size while staying under Service Level Objectives (SLO).
+
+2. Adapt to changing traffic patterns while still remaining under application SLOs.
+
+3. Enable independent scaling of resources and parallelism strategies for prefill (compute bound) and decode (memory bound).
+
+See the :ref:`Disaggregated Inference Developer Guide&lt;nxdi-disaggregated-inference&gt;` and the :ref:`Disaggregated Inference Tutorial&lt;nxdi-disaggregated-inference-tutorial&gt;`
+</pre></html>

@@ -1,7302 +1,1990 @@
-Application tracing and profiling using rocprofv3
-#
-rocprofv3
-is a CLI tool that helps you optimize applications and analyze the low-level kernel details without requiring any modification in the source code.
-It’s backward compatible with its predecessor,
-rocprof
-, and provides enhanced features for application profiling with better accuracy.
-The following sections demonstrate the use of
-rocprofv3
-for application tracing and kernel counter collection using various command-line options.
-rocprofv3
-is installed with ROCm under
-/opt/rocm/bin
-. To use the tool from anywhere in the system, export the
-PATH
-variable:
-export
-PATH
-=
-$PATH
-:/opt/rocm/bin
-Before tracing or profiling your HIP application using
-rocprofv3
-, build it using:
-cmake
--B
-<build-directory>
-<source-directory>
--DCMAKE_PREFIX_PATH
-=
-/opt/rocm
-cmake
---build
-<build-directory>
---target
-all
---parallel
-<N>
-Setting GPU performance level for PMC profiling
-#
-On RDNA3 (Navi3x) and RDNA4 (Navi4x) GPUs, the
-AUTO
-performance mode disables PMC profiling in some GPU hardware blocks:
-the perfmon clock is gated off, which prevents performance counters from functioning. Setting the performance level to
-STABLE_STD
-turns the perfmon clock back on and enables PMC profiling on all GPU hardware blocks.
-This is a hardware feature enablement requirement. Without it, PMC profiling on these GPUs produces no meaningful counter
-data in some GPU hardware blocks.
-There are two ways to configure the GPU performance level:
-Option 1: Using the
-power_dpm_force_performance_level
-sysfs entry
-Set the performance level to
-profile_standard
-via the sysfs interface. Replace
-<N>
-with
-the card index (for example,
-0
-for
-card0
-):
-sudo
-chmod
-777
-/sys/class/drm/card<N>/device/power_dpm_force_performance_level
-sudo
-sh
--c
-'echo profile_standard > /sys/class/drm/card<N>/device/power_dpm_force_performance_level'
-To verify the setting:
-cat
-/sys/class/drm/card<N>/device/power_dpm_force_performance_level
-To restore the default behavior after PMC profiling:
-sudo
-sh
--c
-'echo auto > /sys/class/drm/card<N>/device/power_dpm_force_performance_level'
-Option 2: Using
-amd-smi
-Alternatively, use the
-amd-smi
-tool installed with ROCm to query and set the performance level.
-One advantage of using
-amd-smi
-is that it can be used to query and set the performance level on multiple
-GPUs in a single command. For example, to set the performance level to
-STABLE_STD
-on all GPUs in the
-system, use:
-$
-sudo
-/opt/rocm/bin/amd-smi
-set
---perf-level
-STABLE_STD
-GPU:
-0
-PERFLEVEL:
-Successfully
-set
-performance
-level
-STABLE_STD
-GPU:
-1
-PERFLEVEL:
-Successfully
-set
-performance
-level
-STABLE_STD
-The following examples show how to query and set the performance level for a specific GPU. Replace
-<N>
-with the card index:
-To check the current performance level:
-$
-sudo
-/opt/rocm/bin/amd-smi
-metric
---gpu
-<N>
---perf-level
-GPU:
-<N>
-PERF_LEVEL:
-AMDSMI_DEV_PERF_LEVEL_AUTO
-To set the performance level to
-STABLE_STD
-(the
-amd-smi
-name for
-profile_standard
-):
-$
-sudo
-/opt/rocm/bin/amd-smi
-set
---gpu
-<N>
---perf-level
-STABLE_STD
-GPU:
-<N>
-PERFLEVEL:
-Successfully
-set
-performance
-level
-STABLE_STD
-To verify the change:
-$
-sudo
-/opt/rocm/bin/amd-smi
-metric
---gpu
-<N>
---perf-level
-GPU:
-<N>
-PERF_LEVEL:
-AMDSMI_DEV_PERF_LEVEL_STABLE_STD
-To restore the default performance level after PMC profiling:
-$
-sudo
-/opt/rocm/bin/amd-smi
-set
---gpu
-<N>
---perf-level
-AUTO
-GPU:
-<N>
-PERFLEVEL:
-Successfully
-set
-performance
-level
-AUTO
 
-$
-sudo
-/opt/rocm/bin/amd-smi
-metric
---gpu
-<N>
---perf-level
-GPU:
-<N>
-PERF_LEVEL:
-AMDSMI_DEV_PERF_LEVEL_AUTO
-Application tracing
-#
-Application tracing provides the big picture of a program’s execution by collecting data on the execution times of API calls and GPU commands, such as kernel execution, async memory copy, and barrier packets. This information can be used as the first step in the profiling process to answer important questions, such as how much percentage of time was spent on memory copy and which kernel took the longest time to execute.
-To use
-rocprofv3
-for application tracing, run:
-rocprofv3
-<tracing_option>
---
-<application_path>
-Note
-All the tracing examples below use the
---output-format
-csv
-option to generate output in CSV format.
-However, the default output format is
-rocpd
-(SQLite3 database). You can simply omit the
---output-format
-option to generate output in the default format.
-rocpd
-format can be converted to other formats such as CSV, OTF2, and PFTrace using the
-rocpd
-module.
-To understand how to convert
-rocpd
-output to other formats, see
-Using rocpd output format
-.
-HIP trace
-#
-HIP trace comprises execution traces for the entire application at the HIP level. This includes HIP API functions and their asynchronous activities at the runtime level. In general, HIP APIs directly interact with the user program. It is easier to analyze HIP traces as you can directly map them to the program.
-Unlike previous iterations of
-rocprof
-, this does not enable kernel tracing, memory copy tracing, and so on. If you want to enable kernel tracing, memory copy tracing, they need to be provided explicitly.
-To trace HIP runtime APIs, use:
-rocprofv3
---hip-trace
---output-format
-csv
---
-<application_path>
-The preceding command generates a
-hip_api_trace.csv
-file prefixed with the process ID.
-$
-cat
-238_hip_api_trace.csv
-Here are the contents of
-hip_api_trace.csv
-file:
-HIP api trace
-#
-Domain
-Function
-Process_Id
-Thread_Id
-Correlation_Id
-Start_Timestamp
-End_Timestamp
-HIP_COMPILER_API_EXT
-__hipRegisterFatBinary
-15
-15
-1
-1055015439953054
-1055015439976484
-HIP_COMPILER_API_EXT
-__hipRegisterFunction
-15
-15
-2
-1055015439992584
-1055015440011104
-HIP_COMPILER_API_EXT
-__hipRegisterFunction
-15
-15
-3
-1055015440011744
-1055015440013824
-HIP_COMPILER_API_EXT
-__hipRegisterFunction
-15
-15
-4
-1055015440014244
-1055015440014534
-HIP_COMPILER_API_EXT
-__hipRegisterFunction
-15
-15
-5
-1055015440014854
-1055015440015524
-HIP_RUNTIME_API_EXT
-hipGetDeviceCount
-15
-15
-6
-1055015440617618
-1055015539800733
-HIP_RUNTIME_API_EXT
-hipSetDevice
-15
-15
-7
-1055015539819503
-1055015539821693
-HIP_RUNTIME_API_EXT
-hipDeviceSynchronize
-15
-15
-8
-1055015539832333
-1055015539840903
-HIP_RUNTIME_API_EXT
-hipStreamCreateWithFlags
-15
-15
-9
-1055015539861673
-1055015865247140
-HIP_RUNTIME_API_EXT
-hipHostMalloc
-15
-15
-10
-1055015865309761
-1055015865849494
-HIP_RUNTIME_API_EXT
-hipHostMalloc
-15
-15
-11
-1055015865850944
-1055015866265546
-HIP_RUNTIME_API_EXT
-hipHostMalloc
-15
-15
-12
-1055015866266646
-1055015867082900
-HIP_RUNTIME_API_EXT
-hipMallocAsync
-15
-15
-13
-1055015867356542
-1055015867662314
-HIP_RUNTIME_API_EXT
-hipMallocAsync
-15
-15
-14
-1055015867664174
-1055015867937465
-HIP_RUNTIME_API_EXT
-hipMallocAsync
-15
-15
-15
-1055015867938815
-1055015868219987
-HIP_RUNTIME_API_EXT
-hipMemcpyAsync
-15
-15
-16
-1055015868240137
-1055015917307652
-HIP_RUNTIME_API_EXT
-hipMemcpyAsync
-15
-15
-17
-1055015917337263
-1055015917360493
-rocprofv3
-provides options to collect traces at more granular level. For HIP, you can collect traces for HIP compile-time APIs and runtime APIs separately.
-HIP compile-time API traces
-#
-To collect HIP compile-time API traces, use:
-rocprofv3
---hip-compiler-trace
---output-format
-csv
---
-<application_path>
-The preceding command generates a
-hip_api_trace.csv
-file prefixed with the process ID.
-$
-cat
-208_hip_api_trace.csv
-Here are the contents of
-hip_api_trace.csv
-file:
-HIP compile-time api trace
-#
-Domain
-Function
-Process_Id
-Thread_Id
-Correlation_Id
-Start_Timestamp
-End_Timestamp
-HIP_COMPILER_API_EXT
-__hipRegisterFatBinary
-15
-15
-1
-1055015439953054
-1055015439976484
-HIP_COMPILER_API_EXT
-__hipRegisterFunction
-15
-15
-2
-1055015439992584
-1055015440011104
-HIP_COMPILER_API_EXT
-__hipRegisterFunction
-15
-15
-3
-1055015440011744
-1055015440013824
-HIP_COMPILER_API_EXT
-__hipRegisterFunction
-15
-15
-4
-1055015440014244
-1055015440014534
-HIP_COMPILER_API_EXT
-__hipRegisterFunction
-15
-15
-5
-1055015440014854
-1055015440015524
-HIP runtime API traces
-#
-To collect HIP runtime time API traces, use:
-rocprofv3
---hip-runtime-trace
---output-format
-csv
---
-<application_path>
-The preceding command generates a
-hip_api_trace.csv
-file prefixed with the process ID.
-$
-cat
-208_hip_api_trace.csv
-Here are the contents of
-hip_api_trace.csv
-file:
-HIP runtime api trace
-#
-Domain
-Function
-Process_Id
-Thread_Id
-Correlation_Id
-Start_Timestamp
-End_Timestamp
-HIP_RUNTIME_API_EXT
-hipGetDevicePropertiesR0600
-238
-238
-1
-1191915574691984
-1191915687784011
-HIP_RUNTIME_API_EXT
-hipMalloc
-238
-238
-2
-1191915691312459
-1191915691388696
-HIP_RUNTIME_API_EXT
-hipMalloc
-238
-238
-3
-1191915691390637
-1191915691423279
-HIP_RUNTIME_API_EXT
-hipMemcpy
-238
-238
-4
-1191915691439107
-1191916547828448
-HIP_RUNTIME_API_EXT
-hipLaunchKernel
-238
-238
-5
-1191916547842972
-1191916548408842
-HIP_RUNTIME_API_EXT
-hipMemcpy
-238
-238
-6
-1191916548412677
-1191916550217834
-HIP_RUNTIME_API_EXT
-hipFree
-238
-238
-7
-1191916562618151
-1191916562789093
-HIP_RUNTIME_API_EXT
-hipFree
-238
-238
-8
-1191916562790923
-1191916562836351
-For the description of the fields in the output file, see
-Output file fields
-.
-HSA trace
-#
-The HIP runtime library is implemented with the low-level HSA runtime. HSA API tracing is more suited for advanced users who want to understand the application behavior at the lower level. In general, tracing at the HIP level is recommended for most users. You should use HSA trace only if you are familiar with HSA runtime.
-HSA trace contains the start and end time of HSA runtime API calls and their asynchronous activities.
-rocprofv3
---hsa-trace
---output-format
-csv
---
-<application_path>
-The preceding command generates a
-hsa_api_trace.csv
-file prefixed with process ID. Note that the contents of this file have been truncated for demonstration purposes.
-$
-cat
-197_hsa_api_trace.csv
-Here are the contents of
-hsa_api_trace.csv
-file:
-HSA api trace
-#
-Domain
-Function
-Process_Id
-Thread_Id
-Correlation_Id
-Start_Timestamp
-End_Timestamp
-HSA_CORE_API
-hsa_system_get_major_extension_table
-197
-197
-1
-1507843974724237
-1507843974724947
-HSA_CORE_API
-hsa_agent_get_info
-197
-197
-3
-1507843974754471
-1507843974755014
-HSA_AMD_EXT_API
-hsa_amd_memory_pool_get_info
-197
-197
-5
-1507843974761705
-1507843974762398
-HSA_AMD_EXT_API
-hsa_amd_memory_pool_get_info
-197
-197
-6
-1507843974763901
-1507843974764030
-HSA_AMD_EXT_API
-hsa_amd_memory_pool_get_info
-197
-197
-7
-1507843974765121
-1507843974765224
-HSA_AMD_EXT_API
-hsa_amd_memory_pool_get_info
-197
-197
-8
-1507843974766196
-1507843974766328
-HSA_AMD_EXT_API
-hsa_amd_memory_pool_get_info
-197
-197
-9
-1507843974767534
-1507843974767641
-HSA_AMD_EXT_API
-hsa_amd_memory_pool_get_info
-197
-197
-10
-1507843974768639
-1507843974768779
-HSA_AMD_EXT_API
-hsa_amd_agent_iterate_memory_pools
-197
-197
-4
-1507843974758768
-1507843974769238
-HSA_CORE_API
-hsa_agent_get_info
-197
-197
-11
-1507843974771091
-1507843974771537
-rocprofv3
-provides options to collect HSA traces at more granular level. HSA traces can be collected separately for four API domains:
-HSA_AMD_EXT_API
-,
-HSA_CORE_API
-,
-HSA_IMAGE_EXT_API
-and
-HSA_FINALIZE_EXT_API
-.
-To collect HSA core API traces, use:
-rocprofv3
---hsa-core-trace
---output-format
-csv
---
-<application_path>
-The preceding command generates a
-hsa_api_trace.csv
-file prefixed with process ID. Note that the contents of this file have been truncated for demonstration purposes.
-$
-cat
-197_hsa_api_trace.csv
-Here are the contents of
-hsa_api_trace.csv
-file:
-HSA core api trace
-#
-Domain
-Function
-Process_Id
-Thread_Id
-Correlation_Id
-Start_Timestamp
-End_Timestamp
-HSA_CORE_API
-hsa_system_get_major_extension_table
-57
-57
-1
-1056813747808832
-1056813747809252
-HSA_CORE_API
-hsa_agent_get_info
-57
-57
-3
-1056813747826572
-1056813747826672
-HSA_CORE_API
-hsa_agent_get_info
-57
-57
-4
-1056813747837582
-1056813747837622
-HSA_CORE_API
-hsa_agent_get_info
-57
-57
-5
-1056813747838542
-1056813747838582
-HSA_CORE_API
-hsa_agent_get_info
-57
-57
-6
-1056813747839042
-1056813747839082
-HSA_CORE_API
-hsa_agent_get_info
-57
-57
-7
-1056813747839512
-1056813747839622
-HSA_CORE_API
-hsa_iterate_agents
-57
-57
-2
-1056813747821012
-1056813747839832
-HSA_CORE_API
-hsa_agent_get_info
-57
-57
-8
-1056813747843832
-1056813747844132
-HSA_CORE_API
-hsa_agent_get_info
-57
-57
-9
-1056813747844482
-1056813747844542
-HSA_CORE_API
-hsa_agent_iterate_isas
-57
-57
-10
-1056813747849402
-1056813747850422
-HSA_CORE_API
-hsa_isa_get_info_alt
-57
-57
-11
-1056813747853542
-1056813747875253
-HSA_CORE_API
-hsa_isa_get_info_alt
-57
-57
-12
-1056813747875883
-1056813747878353
-HSA_CORE_API
-hsa_agent_get_info
-57
-57
-13
-1056813747886343
-1056813747886403
-HSA_CORE_API
-hsa_agent_get_info
-57
-57
-54
-1056813748282015
-1056813748282085
-HSA_CORE_API
-hsa_system_get_info
-57
-57
-55
-1056813748282465
-1056813748282505
-HSA_CORE_API
-hsa_signal_create
-57
-57
-56
-1056813749083419
-1056813749085399
-HSA_CORE_API
-hsa_agent_get_info
-57
-57
-57
-1056813749741363
-1056813749741443
-HSA_CORE_API
-hsa_queue_create
-57
-57
-58
-1056813749744053
-1056813856914188
-HSA_CORE_API
-hsa_signal_create
-57
-57
-59
-1056813857149169
-1056813857154109
-HSA_CORE_API
-hsa_signal_create
-57
-57
-60
-1056813857154929
-1056813857155389
-HSA_CORE_API
-hsa_signal_create
-57
-57
-61
-1056813857155949
-1056813857156429
-HSA_CORE_API
-hsa_signal_create
-57
-57
-62
-1056813857157169
-1056813857157349
-HSA_CORE_API
-hsa_executable_create_alt
-57
-57
-63
-1056813965439362
-1056813965466952
-HSA_CORE_API
-hsa_code_object_reader_create_from_memory
-57
-57
-64
-1056813965476642
-1056813965587493
-HSA_CORE_API
-hsa_executable_load_agent_code_object
-57
-57
-65
-1056813965592483
-1056813965965295
-HSA_CORE_API
-hsa_signal_create
-57
-57
-67
-1056813966149786
-1056813966151706
-HSA_CORE_API
-hsa_signal_wait_scacquire
-57
-57
-68
-1056813966156596
-1056813966158646
-HSA_CORE_API
-hsa_signal_destroy
-57
-57
-69
-1056813966162276
-1056813966163746
-HSA_CORE_API
-hsa_executable_freeze
-57
-57
-66
-1056813965973105
-1056813966778050
-HSA_CORE_API
-hsa_executable_get_symbol_by_name
-57
-57
-70
-1056813966800070
-1056813966801880
-HSA_CORE_API
-hsa_executable_symbol_get_info
-57
-57
-71
-1056813966805750
-1056813966805980
-HSA_CORE_API
-hsa_executable_symbol_get_info
-57
-57
-72
-1056813966806300
-1056813966806340
-For the description of the fields in the output file, see
-Output file fields
-.
-Marker trace
-#
-Note
-To use
-rocprofv3
-for marker tracing, including and linking to old
-ROCTx
-works but it’s recommended to switch to the new
-ROCTx
-to utilize new APIs.
-To use the new
-ROCTx
-, include header
-"rocprofiler-sdk-roctx/roctx.h"
-and link your application with
-librocprofiler-sdk-roctx.so
-.
-To see the complete list of
-ROCTx
-APIs, see public header file
-"rocprofiler-sdk-roctx/roctx.h"
-.
-To see usage of
-ROCTx
-or marker library, see
-Using ROCTx
-.
-Kokkos trace
-#
-Kokkos
-is a C++ library for writing performance portable applications. Kokkos is widely used in scientific applications to write performance-portable code for CPUs, GPUs, and other accelerators.
-rocprofv3
-loads an inbuilt
-Kokkos Tools library
-, which emits roctx ranges with the labels passed using Kokkos APIs. For example,
-Kokkos::parallel_for(“MyParallelForLabel”,
-…)
-calls
-roctxRangePush
-internally and enables the kernel renaming option to replace the highly templated kernel names with the Kokkos labels.
-To enable the inbuilt marker support, use the
-kokkos-trace
-option. Internally, this option automatically enables
-marker-trace
-and
-kernel-rename
-:
-rocprofv3
---kokkos-trace
---output-format
-csv
---
-<application_path>
-The preceding command generates a
-marker-trace
-file prefixed with the process ID.
-$
-cat
-210_marker_api_trace.csv
-"Domain"
-,
-"Function"
-,
-"Process_Id"
-,
-"Thread_Id"
-,
-"Correlation_Id"
-,
-"Start_Timestamp"
-,
-"End_Timestamp"
-"MARKER_CORE_API"
-,
-"Kokkos::Initialization Complete"
-,4069256,4069256,1,56728499773965,56728499773965
-"MARKER_CORE_API"
-,
-"Kokkos::Impl::CombinedFunctorReducer<CountFunctor, Kokkos::Impl::FunctorAnalysis<Kokkos::Impl::FunctorPatternInterface::REDUCE, Kokkos::RangePolicy<Kokkos::Serial>, CountFunctor, long int>::Reducer, void>"
-,4069256,4069256,2,56728501756088,56728501764241
-"MARKER_CORE_API"
-,
-"Kokkos::parallel_reduce: fence due to result being value, not view"
-,4069256,4069256,4,56728501767957,56728501769600
-"MARKER_CORE_API"
-,
-"Kokkos::Finalization Complete"
-,4069256,4069256,6,56728502054554,56728502054554
-Kernel trace
-#
-To trace kernel dispatch traces, use:
-rocprofv3
---kernel-trace
---output-format
-csv
---
-<application_path>
-The preceding command generates a
-kernel_trace.csv
-file prefixed with the process ID.
-$
-cat
-199_kernel_trace.csv
-Here are the contents of
-kernel_trace.csv
-file:
-Kernel trace
-#
-Kind
-Agent_Id
-Queue_Id
-Stream_Id
-Thread_Id
-Dispatch_Id
-Kernel_Id
-Kernel_Name
-Correlation_Id
-Start_Timestamp
-End_Timestamp
-LDS_Block_Size
-Scratch_Size
-VGPR_Count
-Accum_VGPR_Count
-SGPR_Count
-Workgroup_Size_X
-Workgroup_Size_Y
-Workgroup_Size_Z
-Grid_Size_X
-Grid_Size_Y
-Grid_Size_Z
-KERNEL_DISPATCH
-Agent 4
-1
-1
-834304
-1
-10
-void addition_kernel<float>(float*, float const*, float const*, int, int)
-1
-1550151853029637
-1550151853042437
-0
-0
-8
-0
-16
-64
-1
-1
-1024
-1024
-1
-KERNEL_DISPATCH
-Agent 4
-1
-1
-834304
-4
-11
-divide_kernel(float*, float const*, float const*, int, int)
-4
-1550151853064037
-1550151853075237
-0
-0
-12
-4
-16
-64
-1
-1
-1024
-1024
-1
-KERNEL_DISPATCH
-Agent 4
-1
-1
-834304
-3
-12
-multiply_kernel(float*, float const*, float const*, int, int)
-3
-1550151853052877
-1550151853064037
-0
-0
-8
-0
-16
-64
-1
-1
-1024
-1024
-1
-KERNEL_DISPATCH
-Agent 4
-1
-1
-834304
-2
-13
-subtract_kernel(float*, float const*, float const*, int, int)
-2
-1550151853042437
-1550151853050677
-0
-0
-8
-0
-16
-64
-1
-1
-1024
-1024
-1
-KERNEL_DISPATCH
-Agent 4
-2
-2
-834304
-5
-10
-void addition_kernel<float>(float*, float const*, float const*, int, int)
-5
-1550151853082957
-1550151853094357
-0
-0
-8
-0
-16
-64
-1
-1
-1024
-1024
-1
-KERNEL_DISPATCH
-Agent 4
-2
-2
-834304
-6
-13
-subtract_kernel(float*, float const*, float const*, int, int)
-6
-1550151853094357
-1550151853103517
-0
-0
-8
-0
-16
-64
-1
-1
-1024
-1024
-1
-KERNEL_DISPATCH
-Agent 4
-4
-4
-834304
-13
-10
-void addition_kernel<float>(float*, float const*, float const*, int, int)
-13
-1550151853164197
-1550151853174037
-0
-0
-8
-0
-16
-64
-1
-1
-1024
-1024
-1
-KERNEL_DISPATCH
-Agent 4
-3
-3
-834304
-12
-11
-divide_kernel(float*, float const*, float const*, int, int)
-12
-1550151853148397
-1550151853160837
-0
-0
-12
-4
-16
-64
-1
-1
-1024
-1024
-1
-KERNEL_DISPATCH
-Agent 4
-3
-3
-834304
-11
-12
-multiply_kernel(float*, float const*, float const*, int, int)
-11
-1550151853138477
-1550151853148397
-0
-0
-8
-0
-16
-64
-1
-1
-1024
-1024
-1
-For the description of the fields in the output file, see
-Output file fields
-.
-HIP graph attribution
-#
-When profiling HIP graphs,
-rocprofv3
-can attribute individual GPU
-operations back to the specific graph node that produced them. This enables
-consumers to group dispatches across many graph launches by source node and
-to track per-node statistics over a workload’s lifetime.
-Graph attribution is emitted by direct JSON output and by the rocpd database.
-For kernel dispatches and memory copies, the graph fields are:
-graph_exec_id
-: process-monotonic ID assigned per
-hipGraphExec_t
-.
-Zero for operations that did not originate from a graph launch.
-graph_node_id
-: 0-based ordinal within a single
-hipGraphLaunch
-call.
-Zero for non-graph operations.
-In direct JSON output, these fields appear as top-level siblings of
-stream_id
-. In rocpd, they are stored on the kernel-dispatch and
-memory-copy tables and exposed through rocpd post-processing. Direct
-rocprofv3
-CSV, OTF2, and Perfetto output do not carry graph attribution;
-use rocpd conversion for those formats.
-A new
---hip-graph-trace
-flag enables a separate
-graph_launch
-JSON/rocpd record containing one row per successful
-hipGraphLaunch
-call, including
-graph_exec_id
-,
-kernel_dispatch_count
-, agent, and launch timestamps. This flag is
-independent of
---kernel-trace
-– the launch summary records are emitted
-regardless of whether kernel-dispatch tracing is subscribed. Since HIP graphs
-are part of the HIP runtime,
---hip-graph-trace
-is automatically enabled by
---hip-trace
-and
---hip-runtime-trace
-unless explicitly disabled. For
-CSV, OTF2, and Perfetto views of graph launches, collect rocpd output and
-convert it with the rocpd tools.
-The
-graph_node_id
-value identifies the same source node across launches of
-the same
-hipGraphExec_t
-if and only if
-all of the following hold:
-Segmented scheduling is in use (default; suppressed by
-DEBUG_HIP_GRAPH_SEGMENT_SCHEDULING=0
-).
-AMD_DIRECT_DISPATCH=1
-(default on Linux).
-The same host thread is the sole launcher of that
-hipGraphExec_t
-.
-The graph has not been updated via
-hipGraphExecUpdate
-between launches.
-Outside these conditions, attribution may be missing entirely for some or
-all dispatches produced by the launch. The tool maintains the per-thread
-attribution state on the thread that calls
-hipGraphLaunch
-; if HIP’s
-underlying scheduling writes AQL packets from a different host thread
-(e.g., the classic-path command-processor thread when
-AMD_DIRECT_DISPATCH=0
-, or any worker thread under non-segmented
-scheduling), those packets do not see the attribution state and their
-records are produced with zero
-graph_exec_id
-/
-graph_node_id
-fields.
-Kernel_Dispatch_Count
-on the
-HIP_GRAPH
-summary record
-may then under-report the actual count. Consumers cannot distinguish
-missing-attribution rows from genuinely non-graph rows.
-On AMD HIP, in-graph memcpy operations are typically dispatched as blit
-kernels (
-__amd_rocclr_copyBuffer
-) and surface as kernel dispatches
-rather than memory-copy records. They are still attributed (via the
-kernel-dispatch path) but appear as kernel-dispatch records, not
-memory-copy records.
-graph_exec_id
-is per-
-hipGraphExec_t
-. Two
-hipGraphInstantiate
-calls on the same source
-hipGraph_t
-produce different IDs; consumers
-wanting cross-instantiation grouping must track that separately.
-Child graphs nested via
-hipGraphAddChildGraphNode
-are attributed to the
-outer launch’s
-graph_exec_id
-; the inner graph’s instantiation ID is not
-surfaced.
-Memory copy trace
-#
-Memory copy traces track
-hipMemcpy
-and
-hipMemcpyAsync
-functions, which use the
-hsa_amd_memory_async_copy_on_engine
-HSA functions internally. To trace memory moves across the application, use:
-rocprofv3
-–-memory-copy-trace
---output-format
-csv
---
-<application_path>
-The preceding command generates a
-memory_copy_trace.csv
-file prefixed with the process ID.
-$
-cat
-197_memory_copy_trace.csv
-Here are the contents of
-memory_copy_trace.csv
-file:
-Memory copy trace
-#
-Kind
-Direction
-Stream_Id
-Source_Agent_Id
-Destination_Agent_Id
-Correlation_Id
-Start_Timestamp
-End_Timestamp
-MEMORY_COPY
-MEMORY_COPY_HOST_TO_DEVICE
-0
-Agent 0
-Agent 4
-1
-1057963336487172
-1057963336564212
-MEMORY_COPY
-MEMORY_COPY_HOST_TO_DEVICE
-0
-Agent 0
-Agent 4
-2
-1057963336783973
-1057963336859334
-MEMORY_COPY
-MEMORY_COPY_DEVICE_TO_HOST
-0
-Agent 4
-Agent 0
-23
-1057963497396292
-1057963497471732
-MEMORY_COPY
-MEMORY_COPY_DEVICE_TO_HOST
-0
-Agent 4
-Agent 0
-24
-1057963498099125
-1057963498200446
-For the description of the fields in the output file, see
-Output file fields
-.
-Memory allocation trace
-#
-Memory allocation traces track the HSA functions
-hsa_memory_allocate
-,
-hsa_amd_memory_pool_allocate
-, and
-hsa_amd_vmem_handle_create`
-. The function
-hipMalloc
-calls these underlying HSA functions allowing memory allocations to be
-tracked.
-In addition to the HSA memory allocation functions listed above, the corresponding HSA
-free functions
-hsa_memory_free
-,
-hsa_amd_memory_pool_free
-, and
-hsa_amd_vmem_handle_release
-are also tracked. Unlike the allocation functions, however, only the address of the freed memory
-is recorded. As such, the agent id and size of the freed memory are recorded as 0 in the CSV and
-JSON outputs. It should be noted that it is possible for some free functions to records a null
-pointer address of 0x0. This situation can occur when some HIP functions such as hipStreamDestroy
-call underlying HSA free functions with null pointers, even if the user never explicitly calls
-free memory functions with null pointer addresses.
-To trace memory allocations during the application run, use:
-rocprofv3
-–-memory-allocation-trace
---output-format
-csv
---
-<application_path>
-The preceding command generates a
-memory_allocation_trace.csv
-file prefixed with the process ID.
-$
-cat
-6489_memory_allocation_trace.csv
-Here are the contents of
-memory_allocation_trace.csv
-file:
-Memory allocation trace
-#
-Kind
-Operation
-Agent_Id
-Allocation_Size
-Address
-Correlation_Id
-Start_Timestamp
-End_Timestamp
-MEMORY_ALLOCATION
-MEMORY_ALLOCATION_ALLOCATE
-Agent 0
-1024
-0x00007ffb26354000
-1
-816098791282238
-816098791339655
-MEMORY_ALLOCATION
-MEMORY_ALLOCATION_ALLOCATE
-Agent 0
-1024
-0x00007ffb168d6000
-2
-816098791350331
-816098791386746
-MEMORY_ALLOCATION
-MEMORY_ALLOCATION_FREE
-0
-0x00007ffb26354000
-7
-816098791533678
-816098791678768
-MEMORY_ALLOCATION
-MEMORY_ALLOCATION_FREE
-0
-0x00007ffb168d6000
-8
-816098791681482
-816098791873422
-For the description of the fields in the output file, see
-Output file fields
-.
-Runtime trace
-#
-This is a shorthand option that targets the most relevant tracing options for a standard user by
-excluding traces for HSA runtime API and HIP compiler API.
-The HSA runtime API is excluded because it is a lower-level API upon which HIP and OpenMP target are built and
-thus, tends to be an implementation detail irrelevant to most users. Similarly, the HIP compiler API is also excluded for being an implementation detail as these functions are automatically inserted during HIP compilation.
---runtime-trace
-traces the HIP runtime API, marker API, kernel dispatches, and
-memory operations (copies, allocations, and scratch).
-rocprofv3
-–-runtime-trace
---output-format
-csv
---
-<application_path>
-Running the preceding command generates
-hip_api_trace.csv
-,
-kernel_trace.csv
-,
-memory_copy_trace.csv
-,
-scratch_memory_trace.csv
-,
-memory_allocation_trace.csv
-, and
-marker_api_trace.csv
-(if
-ROCTx
-APIs are specified in the application) files prefixed with the process ID.
-System trace
-#
-This is an all-inclusive option to collect HIP, HSA, kernel, memory copy, memory allocation, and marker trace (if
-ROCTx
-APIs are specified in the application).
-rocprofv3
-–-sys-trace
---output-format
-csv
---
-<application_path>
-Running the preceding command generates
-hip_api_trace.csv
-,
-hsa_api_trace.csv
-,
-kernel_trace.csv
-,
-memory_copy_trace.csv
-,
-scratch_memory_trace.csv
-,
-memory_allocation_trace.csv
-, and
-marker_api_trace.csv
-if
-ROCTx
-APIs are specified in the application.
-Scratch memory trace
-#
-This option collects scratch memory operation traces. Scratch is an address space on AMD GPUs roughly equivalent to the local memory in NVIDIA CUDA. The local memory in CUDA is a thread-local global memory with interleaved addressing, which is used for register spills or stack space. This option helps to trace when the
-rocr
-runtime allocates, frees, and tries to reclaim scratch memory.
-To trace scratch memory allocations during the application run, use:
-rocprofv3
-–-scratch-memory-trace
---output-format
-csv
---
-<application_path>
-The preceding command generates a
-scratch_memory_trace.csv
-file prefixed with the process ID.
-$
-cat
-100_scratch_memory_trace.csv
-Here are the contents of
-scratch_memory_trace.csv
-file:
-Scratch memory trace
-#
-Kind
-Operation
-Agent_Id
-Queue_Id
-Thread_Id
-Alloc_Flags
-Start_Timestamp
-End_Timestamp
-Allocation_Size
-SCRATCH_MEMORY
-SCRATCH_MEMORY_ALLOC
-Agent 1
-1
-5007
-1
-932256089068634
-932256089388582
-173015040
-SCRATCH_MEMORY
-SCRATCH_MEMORY_FREE
-Agent 1
-1
-5007
-1
-932256090345618
-932256090348789
-0
-SCRATCH_MEMORY
-SCRATCH_MEMORY_ALLOC
-Agent 1
-1
-5007
-1
-932256090411506
-932256090623279
-1131626496
-SCRATCH_MEMORY
-SCRATCH_MEMORY_FREE
-Agent 1
-1
-5007
-1
-932256093521432
-932256093530990
-0
-SCRATCH_MEMORY
-SCRATCH_MEMORY_ALLOC
-Agent 1
-1
-5007
-1
-932256093595575
-932256093602095
-45056000
-SCRATCH_MEMORY
-SCRATCH_MEMORY_FREE
-Agent 1
-1
-5007
-1
-932256093902695
-932256093906831
-0
-SCRATCH_MEMORY
-SCRATCH_MEMORY_ALLOC
-Agent 1
-1
-5007
-1
-932256093962398
-932256093966689
-67764224
-SCRATCH_MEMORY
-SCRATCH_MEMORY_FREE
-Agent 1
-1
-5007
-1
-932256094295337
-932256094299259
-0
-SCRATCH_MEMORY
-SCRATCH_MEMORY_ALLOC
-Agent 1
-1
-5007
-1
-932256094404371
-932256094408713
-45056000
-SCRATCH_MEMORY
-SCRATCH_MEMORY_FREE
-Agent 1
-1
-5007
-1
-932256094685921
-932256094689887
-0
-SCRATCH_MEMORY
-SCRATCH_MEMORY_ALLOC
-Agent 1
-1
-5007
-1
-932256094793960
-932256094798362
-1131626496
-SCRATCH_MEMORY
-SCRATCH_MEMORY_FREE
-Agent 1
-1
-5007
-1
-932256097416678
-932256097426118
-0
-SCRATCH_MEMORY
-SCRATCH_MEMORY_ALLOC
-Agent 1
-1
-5007
-1
-932256097478295
-932256097484647
-1025024000
-SCRATCH_MEMORY
-SCRATCH_MEMORY_FREE
-Agent 1
-1
-5007
-1
-932256100066945
-932256100076315
-0
-SCRATCH_MEMORY
-SCRATCH_MEMORY_ALLOC
-Agent 1
-1
-5007
-1
-932256100125207
-932256100131825
-1025024000
-SCRATCH_MEMORY
-SCRATCH_MEMORY_FREE
-Agent 1
-1
-5007
-1
-932256102744204
-932256102753599
-0
-For the description of the fields in the output file, see
-Output file fields
-.
-RCCL trace
-#
-This section demonstrates how to trace
-RCCL
-(Rickle) collective communication routines using rocprofv3.
-RCCL
-(pronounced “Rickle”) is a stand-alone library that provides standard collective communication operations for GPUs.
-The trace output is captured in a rocpd database file and can be converted to pftrace format for visualization in the Perfetto UI. This approach is useful for analyzing GPU communication performance and identifying bottlenecks in collective operations.
-rocprofv3
---rccl-trace
---sys-trace
---
-<application_path>
-The preceding command generates a rocpd database file prefixed with the process ID, which can be converted into PFTrace for visualization in the Perfetto UI.
-$
-/opt/rocm/bin/rocpd2pftrace
--i
-163852_results.db
-The following image visualizes the
-RCCL
-trace for the referenced
-allreduce_rccl sample application
-using the Perfetto UI.
-The host thread track and select compute streams are pinned in the visualization to enhance readability.
-This enables clear observation of the
-RCCL
-compute kernels launched during
-ncclAllReduce
-operations on the host thread.
-rocDecode trace
-#
-rocDecode
-is a high-performance video decode SDK for AMD GPUs. This option traces the rocDecode API.
-rocprofv3
---rocdecode-trace
---output-format
-csv
---
-<application_path>
-The above command generates a
-rocdecode_api_trace
-file prefixed with the process ID.
-$
-cat
-41688_rocdecode_api_trace.csv
-Here are the contents of
-rocdecode_api_trace.csv
-file:
-rocDecode trace
-#
-Domain
-Function
-Process_Id
-Thread_Id
-Correlation_Id
-Start_Timestamp
-End_Timestamp
-ROCDECODE_API
-rocDecCreateVideoParser
-41688
-41688
-583
-615449881677279
-615449882001583
-ROCDECODE_API
-rocDecGetDecoderCaps
-41688
-41688
-584
-615449882016054
-615449882163756
-ROCDECODE_API
-rocDecGetDecoderCaps
-41688
-41688
-588
-615449886038750
-615449886050880
-ROCDECODE_API
-rocDecCreateDecoder
-41688
-41688
-591
-615449886084210
-615450756910310
-ROCDECODE_API
-rocDecDecodeFrame
-41688
-41688
-595
-615450757036042
-615450767147413
-ROCDECODE_API
-rocDecGetDecodeStatus
-41688
-41688
-812
-615450836779385
-615450836779575
-Perfetto will also show rocDecode API arguments. Pointers will not be dereferenced and only the address will be displayed.
-rocJPEG trace
-#
-rocJPEG
-is a high-performance jpeg decode SDK for decoding jpeg images. This option traces the rocJPEG API.
-rocprofv3
---rocjpeg-trace
---output-format
-csv
---
-<application_path>
-The above command generates a
-rocjpeg_api_trace
-file prefixed with the process ID.
-$
-cat
-41688_rocjpeg_api_trace.csv
-Here are the contents of
-rocjpeg_api_trace.csv
-file:
-rocJPEG trace
-#
-Domain
-Function
-Process_Id
-Thread_Id
-Correlation_Id
-Start_Timestamp
-End_Timestamp
-ROCJPEG_API
-rocJpegCreate
-41884
-41884
-105
-1286306029650499
-1286306248201233
-ROCJPEG_API
-rocJpegStreamCreate
-41884
-41884
-502
-1286306248250747
-1286306248268715
-ROCJPEG_API
-rocJpegStreamParse
-41884
-41884
-503
-1286306248421385
-1286306248680757
-ROCJPEG_API
-rocJpegGetImageInfo
-41884
-41884
-504
-1286306248684203
-1286306248686556
-rocSHMEM trace
-#
-rocSHMEM
-is an intra-kernel networking library that provides GPU-centric networking through an OpenSHMEM-like interface. This option traces the rocSHMEM host-stream API (the
-rocshmem_*_on_stream
-routines that enqueue communication and synchronization operations on a HIP stream).
-Note
-rocSHMEM tracing requires rocSHMEM to be built with rocprofiler-register support (the
-USE_ROCPROFILER_REGISTER
-build option, enabled by default). See the
-rocSHMEM build documentation
-for details.
-rocprofv3
---rocshmem-trace
---
-<application_path>
-rocSHMEM is emitted directly only to the JSON and
-rocpd
-(default) output formats. CSV, Perfetto (
-.pftrace
-), and OTF2 output are produced from the rocpd database via
-rocpd
-convert
-.
---rocshmem-trace
-is also enabled implicitly by
---sys-trace
-and
---runtime-trace
-.
-rocprofv3
---rocshmem-trace
---
-<application_path>
-rocpd
-convert
--i
-out_results.db
---output-format
-csv
-The conversion generates a
-rocshmem_api_trace.csv
-file. Here are its contents:
-rocSHMEM trace
-#
-Domain
-Function
-Process_Id
-Thread_Id
-Correlation_Id
-Start_Timestamp
-End_Timestamp
-ROCSHMEM_API
-putmem_on_stream
-41688
-41688
-142
-615449881677279
-615449881701583
-ROCSHMEM_API
-getmem_on_stream
-41688
-41688
-143
-615449882016054
-615449882043756
-ROCSHMEM_API
-quiet_on_stream
-41688
-41688
-144
-615449886038750
-615449886050880
-ROCSHMEM_API
-barrier_all_on_stream
-41688
-41688
-145
-615449886084210
-615449887910310
-ROCSHMEM_API
-broadcastmem_on_stream
-41688
-41688
-146
-615450757036042
-615450767147413
-ROCSHMEM_API
-sync_all_on_stream
-41688
-41688
-147
-615450836779385
-615450837779575
-Perfetto will also show rocSHMEM API arguments. Pointers will not be dereferenced and only the address will be displayed.
-hipFILE trace
-#
-hipFILE
-is a GPU-aware file I/O library for HIP applications. This option traces the hipFILE API.
-rocprofv3
---hipfile-trace
---output-format
-json
-rocpd
---
-<application_path>
-The above command stores hipFILE API records in the JSON results file and the rocpd database file.
-The hipFILE records include API arguments. Pointers are not dereferenced unless argument
-iteration is configured to do so.
-OMPT trace
-#
-OMPT
-(OpenMP Tools Interface) is the standard interface exposed by OpenMP runtimes for tools to subscribe to runtime events. This option traces host-side OpenMP execution (parallel regions, work-sharing, tasks, sync regions, mutexes, thread lifecycle) and, for applications that offload to a device, the host-side target events (
-target
-,
-target_data_op
-,
-target_submit
-). For end-to-end examples, see
-Using rocprofv3 with OpenMP
-.
-rocprofv3
---ompt-trace
---output-format
-rocpd
---
-<application_path>
-OMPT is a rocpd-only trace: records are written to the rocpd database (the default output format) and are not emitted by the direct CSV / JSON / Perfetto / OTF2 generators. If
---ompt-trace
-is used with another
---output-format
-,
-rocprofv3
-warns and adds
-rocpd
-automatically; use
-rocpd
-convert
-to export OMPT to CSV / Perfetto / OTF2.
---ompt-trace
-is also enabled implicitly by
---sys-trace
-and
---runtime-trace
-.
-Note
-Requires an OMPT-capable OpenMP runtime that implements
-ompt_start_tool
-— for example the LLVM-based
-libomp
-shipped with ROCm / AOMP. GCC’s
-libgomp
-does not implement the OMPT interface (see the
-GOMP status page
-), so
-g++
--fopenmp
-binaries do not produce OMPT records.
-Dynamic process attachment
-#
-To profile applications dynamically without requiring to restart the application,``rocprofv3`` provides dynamic process attachment. This is particularly useful for profiling long-running applications, services, or applications in a specific state.
-Dynamic process attachment uses the
--p
-,
---pid
-, or
---attach
-options (all equivalent) followed by the target process ID. The profiler instruments the target process and collects the specified tracing or counter data for the configured duration.
-For more information, see
-Dynamic process attachment using rocprofv3
-.
-Post-processing tracing options
-#
-rocprofv3
-provides options to collect tracing summary or statistics after conclusion of a tracing session. These options are described here.
-This option collects statistics for the enabled tracing types. For example, it collects statistics of HIP APIs, when HIP trace is enabled.
-The statistics help to determine the API or function that took the most amount of time.
-rocprofv3
---stats
---hip-trace
---output-format
-csv
---
-<application_path>
-The preceding command generates a
-hip_api_stats.csv
-,
-domain_stats.csv
-and
-hip_api_trace.csv
-file prefixed with the process ID.
-$
-cat
-hip_api_stats.csv
-Here are the contents of
-hip_api_stats.csv
-file:
-HIP stats
-#
-Name
-Calls
-TotalDurationNs
-AverageNs
-Percentage
-MinNs
-MaxNs
-StdDev
-hipStreamCreateWithFlags
-4
-262497406
-65624351.500000
-85.15
-3991286
-249121840
-122332531.343496
-hipGetDeviceCount
-1
-32505687
-32505687.000000
-10.54
-32505687
-32505687
-0.00000000e+00
-hipHostMalloc
-12
-6096409
-508034.083333
-1.98
-443793
-548024
-39236.753678
-hipFree
-12
-1994421
-166201.750000
-0.6470
-7790
-1036046
-299086.860470
-hipMemcpyAsync
-12
-1368378
-114031.500000
-0.4439
-2490
-764044
-249308.051619
-hipMallocAsync
-12
-927255
-77271.250000
-0.3008
-51540
-107671
-20487.475966
-hipStreamSynchronize
-12
-870486
-72540.500000
-0.2824
-140
-866606
-250065.900069
-hipLaunchKernel
-16
-692734
-43295.875000
-0.2247
-1000
-670044
-167133.656647
-hipStreamDestroy
-4
-619905
-154976.250000
-0.2011
-92901
-339252
-122852.320356
-hipDeviceSynchronize
-4
-404252
-101063.000000
-0.1311
-570
-385212
-189518.505401
-hipHostFree
-12
-271202
-22600.166667
-0.0880
-11950
-34950
-7480.268600
-__hipRegisterFatBinary
-1
-9000
-9000.000000
-2.920e-03
-9000
-9000
-0.00000000e+00
-__hipRegisterFunction
-4
-6150
-1537.500000
-1.995e-03
-230
-5370
-2555.091323
-__hipPushCallConfiguration
-16
-2460
-153.750000
-7.980e-04
-70
-1140
-267.503894
-__hipPopCallConfiguration
-16
-2000
-125.000000
-6.488e-04
-70
-680
-151.613544
-hipGetLastError
-16
-1270
-79.375000
-4.120e-04
-50
-440
-96.295985
-hipSetDevice
-1
-660
-660.000000
-2.141e-04
-660
-660
-0.00000000e+00
-Here are the contents of
-domain_stats.csv
-file:
-Domain stats
-#
-Name
-Calls
-TotalDurationNs
-AverageNs
-Percentage
-MinNs
-MaxNs
-StdDev
-HIP_API
-13
-458514859
-35270373.769231
-100.00
-2300
-352276613
-99315857.546240
-For the description of the fields in the output file, see
-Output file fields
-.
-This option displays a summary of tracing data for the enabled tracing type, after conclusion of the profiling session.
-rocprofv3
--S
---hip-trace
---
-<application_path>
-This option displays a summary of each tracing domain for the enabled tracing type, after conclusion of the profiling session.
-rocprofv3
--D
---hsa-trace
---hip-trace
---output-format
-csv
---
-<application_path>
-The preceding command generates a
-hip_trace.csv
-and
-hsa_trace.csv
-file prefixed with the process ID along with displaying the summary of each domain.
-This option displays a summary of multiple domains for the domain names specified on the command line. The summary groups can be separated using a pipe ( | ) symbol.
-To see a summary for
-MEMORY_COPY
-domains, use:
-rocprofv3
---summary-groups
-MEMORY_COPY
---sys-trace
---
-<application_path>
-To see a summary for
-MEMORY_COPY
-and
-HIP_API
-domains, use:
-rocprofv3
---summary-groups
-'MEMORY_COPY|HIP_API'
---sys-trace
---
-<application_path>
-This option specifies the output file for the summary. By default, the summary is displayed on
-stderr
-. To specify another output file for summary, use:
-rocprofv3
--S
--D
---summary-output-file
-filename
---sys-trace
---
-<application_path>
-The preceding command generates an output file named “filename” consisting of the summary for each domain. This also generates the files for the enabled tracing types under
--sys-trace
-option.
-ROCPROFV3
-HSA_API
-SUMMARY
-:
-|
-NAME
-|
-DOMAIN
-|
-CALLS
-|
-DURATION
-(
-nsec
-)
-|
-AVERAGE
-(
-nsec
-)
-|
-PERCENT
-(
-INC
-)
-|
-MIN
-(
-nsec
-)
-|
-MAX
-(
-nsec
-)
-|
-STDDEV
-|
-|-------------------------------------------|--------------|-----------------|-----------------|-----------------|---------------|-----------------|-----------------|-----------------|
-|
-hsa_queue_create
-|
-HSA_API
-|
-4
-|
-280077621
-|
-7.002e+07
-|
-75.372632
-|
-55026812
-|
-113288760
-|
-2.885e+07
-|
-|
-hsa_amd_memory_async_copy_on_engine
-|
-HSA_API
-|
-24
-|
-55617052
-|
-2.317e+06
-|
-14.967292
-|
-7580
-|
-55195188
-|
-1.126e+07
-|
-|
-hsa_amd_memory_pool_allocate
-|
-HSA_API
-|
-67
-|
-26428438
-|
-3.945e+05
-|
-7.112246
-|
-1510
-|
-857592
-|
-1.782e+05
-|
-|
-hsa_amd_memory_pool_free
-|
-HSA_API
-|
-72
-|
-5176173
-|
-7.189e+04
-|
-1.392977
-|
-290
-|
-170374
-|
-3.903e+04
-|
-|
-hsa_executable_freeze
-|
-HSA_API
-|
-2
-|
-964125
-|
-4.821e+05
-|
-0.259459
-|
-437471
-|
-526654
-|
-6.306e+04
-|
-|
-hsa_signal_wait_scacquire
-|
-HSA_API
-|
-26
-|
-853122
-|
-3.281e+04
-|
-0.229587
-|
-2530
-|
-100782
-|
-3.394e+04
-|
-|
-hsa_executable_load_agent_code_object
-|
-HSA_API
-|
-2
-|
-616175
-|
-3.081e+05
-|
-0.165821
-|
-254476
-|
-361699
-|
-7.582e+04
-|
-|
-hsa_amd_agents_allow_access
-|
-HSA_API
-|
-35
-|
-430680
-|
-1.231e+04
-|
-0.115902
-|
-4830
-|
-55182
-|
-9.939e+03
-|
-|
-hsa_signal_store_screlease
-|
-HSA_API
-|
-56
-|
-381491
-|
-6.812e+03
-|
-0.102664
-|
-1560
-|
-41831
-|
-7.895e+03
-|
-|
-hsa_signal_create
-|
-HSA_API
-|
-107
-|
-160889
-|
-1.504e+03
-|
-0.043297
-|
-80
-|
-5650
-|
-1.475e+03
-|
-|
-hsa_code_object_reader_create_from_memory
-|
-HSA_API
-|
-2
-|
-151314
-|
-7.566e+04
-|
-0.040721
-|
-32121
-|
-119193
-|
-6.157e+04
-|
-|
-hsa_signal_load_relaxed
-|
-HSA_API
-|
-1296
-|
-137626
-|
-1.062e+02
-|
-0.037037
-|
-20
-|
-2930
-|
-2.712e+02
-|
-|
-hsa_signal_destroy
-|
-HSA_API
-|
-618
-|
-111224
-|
-1.800e+02
-|
-0.029932
-|
-40
-|
-1540
-|
-2.429e+02
-|
-|
-hsa_agent_get_info
-|
-HSA_API
-|
-65
-|
-77472
-|
-1.192e+03
-|
-0.020849
-|
-30
-|
-47121
-|
-6.341e+03
-|
-|
-hsa_amd_signal_create
-|
-HSA_API
-|
-512
-|
-61290
-|
-1.197e+02
-|
-0.016494
-|
-40
-|
-930
-|
-1.559e+02
-|
-|
-hsa_amd_signal_async_handler
-|
-HSA_API
-|
-24
-|
-52641
-|
-2.193e+03
-|
-0.014166
-|
-1180
-|
-4020
-|
-9.252e+02
-|
-|
-hsa_executable_iterate_symbols
-|
-HSA_API
-|
-14
-|
-52521
-|
-3.752e+03
-|
-0.014134
-|
-2740
-|
-6940
-|
-1.105e+03
-|
-|
-hsa_amd_memory_copy_engine_status
-|
-HSA_API
-|
-18
-|
-47370
-|
-2.632e+03
-|
-0.012748
-|
-260
-|
-7990
-|
-2.274e+03
-|
-|
-hsa_iterate_agents
-|
-HSA_API
-|
-1
-|
-41391
-|
-4.139e+04
-|
-0.011139
-|
-41391
-|
-41391
-|
-0.000e+00
-|
-|
-hsa_executable_create_alt
-|
-HSA_API
-|
-2
-|
-40470
-|
-2.024e+04
-|
-0.010891
-|
-7530
-|
-32940
-|
-1.797e+04
-|
-|
-hsa_isa_get_info_alt
-|
-HSA_API
-|
-2
-|
-30391
-|
-1.520e+04
-|
-0.008179
-|
-2490
-|
-27901
-|
-1.797e+04
-|
-|
-hsa_signal_silent_store_relaxed
-|
-HSA_API
-|
-48
-|
-24920
-|
-5.192e+02
-|
-0.006706
-|
-20
-|
-4570
-|
-7.120e+02
-|
-|
-hsa_amd_agent_iterate_memory_pools
-|
-HSA_API
-|
-5
-|
-20221
-|
-4.044e+03
-|
-0.005442
-|
-2561
-|
-8600
-|
-2.574e+03
-|
-|
-hsa_queue_add_write_index_screlease
-|
-HSA_API
-|
-56
-|
-7270
-|
-1.298e+02
-|
-0.001956
-|
-30
-|
-2310
-|
-3.471e+02
-|
-|
-hsa_amd_profiling_set_profiler_enabled
-|
-HSA_API
-|
-4
-|
-5600
-|
-1.400e+03
-|
-0.001507
-|
-1370
-|
-1470
-|
-4.690e+01
-|
-|
-hsa_executable_symbol_get_info
-|
-HSA_API
-|
-152
-|
-5470
-|
-3.599e+01
-|
-0.001472
-|
-30
-|
-340
-|
-3.563e+01
-|
-|
-hsa_queue_load_read_index_relaxed
-|
-HSA_API
-|
-56
-|
-4560
-|
-8.143e+01
-|
-0.001227
-|
-20
-|
-1310
-|
-1.863e+02
-|
-|
-hsa_executable_get_symbol_by_name
-|
-HSA_API
-|
-14
-|
-4500
-|
-3.214e+02
-|
-0.001211
-|
-110
-|
-1510
-|
-4.732e+02
-|
-|
-hsa_queue_load_read_index_scacquire
-|
-HSA_API
-|
-56
-|
-3040
-|
-5.429e+01
-|
-0.000818
-|
-30
-|
-690
-|
-8.705e+01
-|
-|
-hsa_amd_memory_pool_get_info
-|
-HSA_API
-|
-43
-|
-1770
-|
-4.116e+01
-|
-0.000476
-|
-30
-|
-270
-|
-3.640e+01
-|
-|
-hsa_system_get_info
-|
-HSA_API
-|
-4
-|
-1750
-|
-4.375e+02
-|
-0.000471
-|
-40
-|
-830
-|
-3.544e+02
-|
-|
-hsa_amd_agent_memory_pool_get_info
-|
-HSA_API
-|
-13
-|
-1140
-|
-8.769e+01
-|
-0.000307
-|
-30
-|
-640
-|
-1.664e+02
-|
-|
-hsa_agent_iterate_isas
-|
-HSA_API
-|
-1
-|
-700
-|
-7.000e+02
-|
-0.000188
-|
-700
-|
-700
-|
-0.000e+00
-|
-|
-hsa_system_get_major_extension_table
-|
-HSA_API
-|
-1
-|
-190
-|
-1.900e+02
-|
-0.000051
-|
-190
-|
-190
-|
-0.000e+00
-|
-ROCPROFV3
-HIP_API
-SUMMARY
-:
-|
-NAME
-|
-DOMAIN
-|
-CALLS
-|
-DURATION
-(
-nsec
-)
-|
-AVERAGE
-(
-nsec
-)
-|
-PERCENT
-(
-INC
-)
-|
-MIN
-(
-nsec
-)
-|
-MAX
-(
-nsec
-)
-|
-STDDEV
-|
-|------------------------------------------|--------------|-----------------|-----------------|-----------------|---------------|-----------------|-----------------|-----------------|
-|
-hipStreamCreateWithFlags
-|
-HIP_API
-|
-8
-|
-406507215
-|
-5.081e+07
-|
-71.307804
-|
-735979
-|
-233800881
-|
-7.889e+07
-|
-|
-hipGetDeviceCount
-|
-HIP_API
-|
-1
-|
-76707894
-|
-7.671e+07
-|
-13.455780
-|
-76707894
-|
-76707894
-|
-0.000e+00
-|
-|
-hipMemcpyAsync
-|
-HIP_API
-|
-24
-|
-56109444
-|
-2.338e+06
-|
-9.842485
-|
-11640
-|
-55299811
-|
-1.128e+07
-|
-|
-hipHostMalloc
-|
-HIP_API
-|
-24
-|
-13007523
-|
-5.420e+05
-|
-2.281726
-|
-416631
-|
-866382
-|
-1.206e+05
-|
-|
-hipMallocAsync
-|
-HIP_API
-|
-24
-|
-7304847
-|
-3.044e+05
-|
-1.281386
-|
-275397
-|
-353719
-|
-2.207e+04
-|
-|
-hipHostFree
-|
-HIP_API
-|
-24
-|
-2786484
-|
-1.161e+05
-|
-0.488793
-|
-72242
-|
-221646
-|
-4.606e+04
-|
-|
-hipStreamDestroy
-|
-HIP_API
-|
-8
-|
-2137924
-|
-2.672e+05
-|
-0.375026
-|
-221596
-|
-377469
-|
-5.489e+04
-|
-|
-hipLaunchKernel
-|
-HIP_API
-|
-32
-|
-2080214
-|
-6.501e+04
-|
-0.364902
-|
-8850
-|
-1608721
-|
-2.819e+05
-|
-|
-hipFree
-|
-HIP_API
-|
-24
-|
-1572948
-|
-6.554e+04
-|
-0.275920
-|
-2130
-|
-186994
-|
-4.815e+04
-|
-|
-hipStreamSynchronize
-|
-HIP_API
-|
-24
-|
-1452706
-|
-6.053e+04
-|
-0.254828
-|
-20810
-|
-135803
-|
-3.469e+04
-|
-|
-__hipRegisterFunction
-|
-HIP_API
-|
-4
-|
-294207
-|
-7.355e+04
-|
-0.051609
-|
-210
-|
-291807
-|
-1.455e+05
-|
-|
-hipDeviceSynchronize
-|
-HIP_API
-|
-4
-|
-50663
-|
-1.267e+04
-|
-0.008887
-|
-510
-|
-23621
-|
-9.554e+03
-|
-|
-__hipRegisterFatBinary
-|
-HIP_API
-|
-1
-|
-43811
-|
-4.381e+04
-|
-0.007685
-|
-43811
-|
-43811
-|
-0.000e+00
-|
-|
-__hipPushCallConfiguration
-|
-HIP_API
-|
-32
-|
-6250
-|
-1.953e+02
-|
-0.001096
-|
-60
-|
-3640
-|
-6.308e+02
-|
-|
-__hipPopCallConfiguration
-|
-HIP_API
-|
-32
-|
-4780
-|
-1.494e+02
-|
-0.000838
-|
-60
-|
-2520
-|
-4.340e+02
-|
-|
-hipGetLastError
-|
-HIP_API
-|
-32
-|
-4471
-|
-1.397e+02
-|
-0.000784
-|
-60
-|
-2381
-|
-4.092e+02
-|
-|
-hipSetDevice
-|
-HIP_API
-|
-1
-|
-2570
-|
-2.570e+03
-|
-0.000451
-|
-2570
-|
-2570
-|
-0.000e+00
-|
-ROCPROFV3
-KERNEL_DISPATCH
-SUMMARY
-:
-|
-NAME
-|
-DOMAIN
-|
-CALLS
-|
-DURATION
-(
-nsec
-)
-|
-AVERAGE
-(
-nsec
-)
-|
-PERCENT
-(
-INC
-)
-|
-MIN
-(
-nsec
-)
-|
-MAX
-(
-nsec
-)
-|
-STDDEV
-|
-|---------------------------------------------------------------------------|-----------------|-----------------|-----------------|-----------------|---------------|-----------------|-----------------|-----------------|
-|
-void
-addition_kernel
-<
-float
->
-(
-float
-*
-,
-float
-const
-*
-,
-float
-const
-*
-,
-int
-,
-int
-)
-|
-KERNEL_DISPATCH
-|
-8
-|
-184324
-|
-2.304e+04
-|
-40.681542
-|
-11200
-|
-98802
-|
-3.062e+04
-|
-|
-divide_kernel
-(
-float
-*
-,
-float
-const
-*
-,
-float
-const
-*
-,
-int
-,
-int
-)
-|
-KERNEL_DISPATCH
-|
-8
-|
-94482
-|
-1.181e+04
-|
-20.852811
-|
-10240
-|
-13520
-|
-1.061e+03
-|
-|
-multiply_kernel
-(
-float
-*
-,
-float
-const
-*
-,
-float
-const
-*
-,
-int
-,
-int
-)
-|
-KERNEL_DISPATCH
-|
-8
-|
-91763
-|
-1.147e+04
-|
-20.252709
-|
-9800
-|
-12800
-|
-9.417e+02
-|
-|
-subtract_kernel
-(
-float
-*
-,
-float
-const
-*
-,
-float
-const
-*
-,
-int
-,
-int
-)
-|
-KERNEL_DISPATCH
-|
-8
-|
-82521
-|
-1.032e+04
-|
-18.212938
-|
-8320
-|
-12920
-|
-1.436e+03
-|
-ROCPROFV3
-MEMORY_COPY
-SUMMARY
-:
-|
-NAME
-|
-DOMAIN
-|
-CALLS
-|
-DURATION
-(
-nsec
-)
-|
-AVERAGE
-(
-nsec
-)
-|
-PERCENT
-(
-INC
-)
-|
-MIN
-(
-nsec
-)
-|
-MAX
-(
-nsec
-)
-|
-STDDEV
-|
-|------------------------------------------|--------------|-----------------|-----------------|-----------------|---------------|-----------------|-----------------|-----------------|
-|
-MEMORY_COPY_HOST_TO_DEVICE
-|
-MEMORY_COPY
-|
-16
-|
-3691929
-|
-2.307e+05
-|
-85.494053
-|
-74842
-|
-284487
-|
-6.265e+04
-|
-|
-MEMORY_COPY_DEVICE_TO_HOST
-|
-MEMORY_COPY
-|
-8
-|
-626417
-|
-7.830e+04
-|
-14.505947
-|
-74842
-|
-98603
-|
-8.207e+03
-|
-ROCPROFV3
-MEMORY_ALLOCATION
-SUMMARY
-:
-|
-NAME
-|
-DOMAIN
-|
-CALLS
-|
-DURATION
-(
-nsec
-)
-|
-AVERAGE
-(
-nsec
-)
-|
-PERCENT
-(
-INC
-)
-|
-MIN
-(
-nsec
-)
-|
-MAX
-(
-nsec
-)
-|
-STDDEV
-|
-|------------------------------------------|-------------------|-----------------|-----------------|-----------------|---------------|-----------------|-----------------|-----------------|
-|
-MEMORY_ALLOCATION_ALLOCATE
-|
-MEMORY_ALLOCATION
-|
-67
-|
-26314096
-|
-3.927e+05
-|
-83.661617
-|
-950
-|
-856812
-|
-1.785e+05
-|
-|
-MEMORY_ALLOCATION_FREE
-|
-MEMORY_ALLOCATION
-|
-72
-|
-5138913
-|
-7.137e+04
-|
-16.338383
-|
-20
-|
-166234
-|
-3.882e+04
-|
-ROCPROFV3
-SUMMARY
-:
-|
-NAME
-|
-DOMAIN
-|
-CALLS
-|
-DURATION
-(
-nsec
-)
-|
-AVERAGE
-(
-nsec
-)
-|
-PERCENT
-(
-INC
-)
-|
-MIN
-(
-nsec
-)
-|
-MAX
-(
-nsec
-)
-|
-STDDEV
-|
-|---------------------------------------------------------------------------|-------------------|-----------------|-----------------|-----------------|---------------|-----------------|-----------------|-----------------|
-|
-hipStreamCreateWithFlags
-|
-HIP_API
-|
-8
-|
-406507215
-|
-5.081e+07
-|
-41.569873
-|
-735979
-|
-233800881
-|
-7.889e+07
-|
-|
-hsa_queue_create
-|
-HSA_API
-|
-4
-|
-280077621
-|
-7.002e+07
-|
-28.641044
-|
-55026812
-|
-113288760
-|
-2.885e+07
-|
-|
-hipGetDeviceCount
-|
-HIP_API
-|
-1
-|
-76707894
-|
-7.671e+07
-|
-7.844233
-|
-76707894
-|
-76707894
-|
-0.000e+00
-|
-|
-hipMemcpyAsync
-|
-HIP_API
-|
-24
-|
-56109444
-|
-2.338e+06
-|
-5.737813
-|
-11640
-|
-55299811
-|
-1.128e+07
-|
-|
-hsa_amd_memory_async_copy_on_engine
-|
-HSA_API
-|
-24
-|
-55617052
-|
-2.317e+06
-|
-5.687461
-|
-7580
-|
-55195188
-|
-1.126e+07
-|
-|
-hsa_amd_memory_pool_allocate
-|
-HSA_API
-|
-67
-|
-26428438
-|
-3.945e+05
-|
-2.702601
-|
-1510
-|
-857592
-|
-1.782e+05
-|
-|
-MEMORY_ALLOCATION_ALLOCATE
-|
-MEMORY_ALLOCATION
-|
-67
-|
-26314096
-|
-3.927e+05
-|
-2.690908
-|
-950
-|
-856812
-|
-1.785e+05
-|
-|
-hipHostMalloc
-|
-HIP_API
-|
-24
-|
-13007523
-|
-5.420e+05
-|
-1.330164
-|
-416631
-|
-866382
-|
-1.206e+05
-|
-|
-hipMallocAsync
-|
-HIP_API
-|
-24
-|
-7304847
-|
-3.044e+05
-|
-0.747002
-|
-275397
-|
-353719
-|
-2.207e+04
-|
-|
-hsa_amd_memory_pool_free
-|
-HSA_API
-|
-72
-|
-5176173
-|
-7.189e+04
-|
-0.529321
-|
-290
-|
-170374
-|
-3.903e+04
-|
-|
-MEMORY_ALLOCATION_FREE
-|
-MEMORY_ALLOCATION
-|
-72
-|
-5138913
-|
-7.137e+04
-|
-0.525511
-|
-20
-|
-166234
-|
-3.882e+04
-|
-|
-MEMORY_COPY_HOST_TO_DEVICE
-|
-MEMORY_COPY
-|
-16
-|
-3691929
-|
-2.307e+05
-|
-0.377541
-|
-74842
-|
-284487
-|
-6.265e+04
-|
-|
-hipHostFree
-|
-HIP_API
-|
-24
-|
-2786484
-|
-1.161e+05
-|
-0.284949
-|
-72242
-|
-221646
-|
-4.606e+04
-|
-|
-hipStreamDestroy
-|
-HIP_API
-|
-8
-|
-2137924
-|
-2.672e+05
-|
-0.218626
-|
-221596
-|
-377469
-|
-5.489e+04
-|
-|
-hipLaunchKernel
-|
-HIP_API
-|
-32
-|
-2080214
-|
-6.501e+04
-|
-0.212725
-|
-8850
-|
-1608721
-|
-2.819e+05
-|
-|
-hipFree
-|
-HIP_API
-|
-24
-|
-1572948
-|
-6.554e+04
-|
-0.160851
-|
-2130
-|
-186994
-|
-4.815e+04
-|
-|
-hipStreamSynchronize
-|
-HIP_API
-|
-24
-|
-1452706
-|
-6.053e+04
-|
-0.148555
-|
-20810
-|
-135803
-|
-3.469e+04
-|
-|
-hsa_executable_freeze
-|
-HSA_API
-|
-2
-|
-964125
-|
-4.821e+05
-|
-0.098592
-|
-437471
-|
-526654
-|
-6.306e+04
-|
-|
-hsa_signal_wait_scacquire
-|
-HSA_API
-|
-26
-|
-853122
-|
-3.281e+04
-|
-0.087241
-|
-2530
-|
-100782
-|
-3.394e+04
-|
-|
-MEMORY_COPY_DEVICE_TO_HOST
-|
-MEMORY_COPY
-|
-8
-|
-626417
-|
-7.830e+04
-|
-0.064058
-|
-74842
-|
-98603
-|
-8.207e+03
-|
-|
-hsa_executable_load_agent_code_object
-|
-HSA_API
-|
-2
-|
-616175
-|
-3.081e+05
-|
-0.063011
-|
-254476
-|
-361699
-|
-7.582e+04
-|
-|
-hsa_amd_agents_allow_access
-|
-HSA_API
-|
-35
-|
-430680
-|
-1.231e+04
-|
-0.044042
-|
-4830
-|
-55182
-|
-9.939e+03
-|
-|
-hsa_signal_store_screlease
-|
-HSA_API
-|
-56
-|
-381491
-|
-6.812e+03
-|
-0.039012
-|
-1560
-|
-41831
-|
-7.895e+03
-|
-|
-__hipRegisterFunction
-|
-HIP_API
-|
-4
-|
-294207
-|
-7.355e+04
-|
-0.030086
-|
-210
-|
-291807
-|
-1.455e+05
-|
-|
-void
-addition_kernel
-<
-float
->
-(
-float
-*
-,
-float
-const
-*
-,
-float
-const
-*
-,
-int
-,
-int
-)
-|
-KERNEL_DISPATCH
-|
-8
-|
-184324
-|
-2.304e+04
-|
-0.018849
-|
-11200
-|
-98802
-|
-3.062e+04
-|
-|
-hsa_signal_create
-|
-HSA_API
-|
-107
-|
-160889
-|
-1.504e+03
-|
-0.016453
-|
-80
-|
-5650
-|
-1.475e+03
-|
-|
-hsa_code_object_reader_create_from_memory
-|
-HSA_API
-|
-2
-|
-151314
-|
-7.566e+04
-|
-0.015474
-|
-32121
-|
-119193
-|
-6.157e+04
-|
-|
-hsa_signal_load_relaxed
-|
-HSA_API
-|
-1296
-|
-137626
-|
-1.062e+02
-|
-0.014074
-|
-20
-|
-2930
-|
-2.712e+02
-|
-|
-hsa_signal_destroy
-|
-HSA_API
-|
-618
-|
-111224
-|
-1.800e+02
-|
-0.011374
-|
-40
-|
-1540
-|
-2.429e+02
-|
-|
-divide_kernel
-(
-float
-*
-,
-float
-const
-*
-,
-float
-const
-*
-,
-int
-,
-int
-)
-|
-KERNEL_DISPATCH
-|
-8
-|
-94482
-|
-1.181e+04
-|
-0.009662
-|
-10240
-|
-13520
-|
-1.061e+03
-|
-|
-multiply_kernel
-(
-float
-*
-,
-float
-const
-*
-,
-float
-const
-*
-,
-int
-,
-int
-)
-|
-KERNEL_DISPATCH
-|
-8
-|
-91763
-|
-1.147e+04
-|
-0.009384
-|
-9800
-|
-12800
-|
-9.417e+02
-|
-|
-subtract_kernel
-(
-float
-*
-,
-float
-const
-*
-,
-float
-const
-*
-,
-int
-,
-int
-)
-|
-KERNEL_DISPATCH
-|
-8
-|
-82521
-|
-1.032e+04
-|
-0.008439
-|
-8320
-|
-12920
-|
-1.436e+03
-|
-|
-hsa_agent_get_info
-|
-HSA_API
-|
-65
-|
-77472
-|
-1.192e+03
-|
-0.007922
-|
-30
-|
-47121
-|
-6.341e+03
-|
-|
-hsa_amd_signal_create
-|
-HSA_API
-|
-512
-|
-61290
-|
-1.197e+02
-|
-0.006268
-|
-40
-|
-930
-|
-1.559e+02
-|
-|
-hsa_amd_signal_async_handler
-|
-HSA_API
-|
-24
-|
-52641
-|
-2.193e+03
-|
-0.005383
-|
-1180
-|
-4020
-|
-9.252e+02
-|
-|
-hsa_executable_iterate_symbols
-|
-HSA_API
-|
-14
-|
-52521
-|
-3.752e+03
-|
-0.005371
-|
-2740
-|
-6940
-|
-1.105e+03
-|
-|
-hipDeviceSynchronize
-|
-HIP_API
-|
-4
-|
-50663
-|
-1.267e+04
-|
-0.005181
-|
-510
-|
-23621
-|
-9.554e+03
-|
-|
-hsa_amd_memory_copy_engine_status
-|
-HSA_API
-|
-18
-|
-47370
-|
-2.632e+03
-|
-0.004844
-|
-260
-|
-7990
-|
-2.274e+03
-|
-|
-__hipRegisterFatBinary
-|
-HIP_API
-|
-1
-|
-43811
-|
-4.381e+04
-|
-0.004480
-|
-43811
-|
-43811
-|
-0.000e+00
-|
-|
-hsa_iterate_agents
-|
-HSA_API
-|
-1
-|
-41391
-|
-4.139e+04
-|
-0.004233
-|
-41391
-|
-41391
-|
-0.000e+00
-|
-|
-hsa_executable_create_alt
-|
-HSA_API
-|
-2
-|
-40470
-|
-2.024e+04
-|
-0.004139
-|
-7530
-|
-32940
-|
-1.797e+04
-|
-|
-hsa_isa_get_info_alt
-|
-HSA_API
-|
-2
-|
-30391
-|
-1.520e+04
-|
-0.003108
-|
-2490
-|
-27901
-|
-1.797e+04
-|
-|
-hsa_signal_silent_store_relaxed
-|
-HSA_API
-|
-48
-|
-24920
-|
-5.192e+02
-|
-0.002548
-|
-20
-|
-4570
-|
-7.120e+02
-|
-|
-hsa_amd_agent_iterate_memory_pools
-|
-HSA_API
-|
-5
-|
-20221
-|
-4.044e+03
-|
-0.002068
-|
-2561
-|
-8600
-|
-2.574e+03
-|
-|
-hsa_queue_add_write_index_screlease
-|
-HSA_API
-|
-56
-|
-7270
-|
-1.298e+02
-|
-0.000743
-|
-30
-|
-2310
-|
-3.471e+02
-|
-|
-__hipPushCallConfiguration
-|
-HIP_API
-|
-32
-|
-6250
-|
-1.953e+02
-|
-0.000639
-|
-60
-|
-3640
-|
-6.308e+02
-|
-|
-hsa_amd_profiling_set_profiler_enabled
-|
-HSA_API
-|
-4
-|
-5600
-|
-1.400e+03
-|
-0.000573
-|
-1370
-|
-1470
-|
-4.690e+01
-|
-|
-hsa_executable_symbol_get_info
-|
-HSA_API
-|
-152
-|
-5470
-|
-3.599e+01
-|
-0.000559
-|
-30
-|
-340
-|
-3.563e+01
-|
-|
-__hipPopCallConfiguration
-|
-HIP_API
-|
-32
-|
-4780
-|
-1.494e+02
-|
-0.000489
-|
-60
-|
-2520
-|
-4.340e+02
-|
-|
-hsa_queue_load_read_index_relaxed
-|
-HSA_API
-|
-56
-|
-4560
-|
-8.143e+01
-|
-0.000466
-|
-20
-|
-1310
-|
-1.863e+02
-|
-|
-hsa_executable_get_symbol_by_name
-|
-HSA_API
-|
-14
-|
-4500
-|
-3.214e+02
-|
-0.000460
-|
-110
-|
-1510
-|
-4.732e+02
-|
-|
-hipGetLastError
-|
-HIP_API
-|
-32
-|
-4471
-|
-1.397e+02
-|
-0.000457
-|
-60
-|
-2381
-|
-4.092e+02
-|
-|
-hsa_queue_load_read_index_scacquire
-|
-HSA_API
-|
-56
-|
-3040
-|
-5.429e+01
-|
-0.000311
-|
-30
-|
-690
-|
-8.705e+01
-|
-|
-hipSetDevice
-|
-HIP_API
-|
-1
-|
-2570
-|
-2.570e+03
-|
-0.000263
-|
-2570
-|
-2570
-|
-0.000e+00
-|
-|
-hsa_amd_memory_pool_get_info
-|
-HSA_API
-|
-43
-|
-1770
-|
-4.116e+01
-|
-0.000181
-|
-30
-|
-270
-|
-3.640e+01
-|
-|
-hsa_system_get_info
-|
-HSA_API
-|
-4
-|
-1750
-|
-4.375e+02
-|
-0.000179
-|
-40
-|
-830
-|
-3.544e+02
-|
-|
-hsa_amd_agent_memory_pool_get_info
-|
-HSA_API
-|
-13
-|
-1140
-|
-8.769e+01
-|
-0.000117
-|
-30
-|
-640
-|
-1.664e+02
-|
-|
-hsa_agent_iterate_isas
-|
-HSA_API
-|
-1
-|
-700
-|
-7.000e+02
-|
-0.000072
-|
-700
-|
-700
-|
-0.000e+00
-|
-|
-hsa_system_get_major_extension_table
-|
-HSA_API
-|
-1
-|
-190
-|
-1.900e+02
-|
-0.000019
-|
-190
-|
-190
-|
-0.000e+00
-|
-Configuration output
-#
-The
---output-config
-option generates a comprehensive configuration output file that contains all resolved
-rocprofv3
-settings and options used during a profiling session. This feature is essential for debugging, reproducibility, and configuration validation.
-To generate a configuration output file during profiling, use:
-rocprofv3
---output-config
---hip-trace
---
-<application_path>
-This command generates a configuration file (typically
-<process_id>_config.json
-) alongside the regular profiling output files.
-The generated JSON configuration file contains detailed information about the profiling session and is structured with a
-rocprofiler-sdk-tool
-array containing comprehensive metadata and configuration details.
-The metadata section includes essential session information such as process ID (
-pid
-), initialization and finalization timestamps (
-init_time
-,
-fini_time
-), the exact command executed, and detailed build specifications. The build specification contains version information, compiler details, git revision, system architecture, and kernel version, providing complete context for reproducing the environment.
-The config section is the most comprehensive part, containing all profiling options with their resolved boolean and numerical values. This includes tracing options like
-hip_runtime_api_trace
-,
-hip_compiler_api_trace
-,
-kernel_trace
-,
-hsa_core_api_trace
-,
-memory_copy_trace
-, and many others. It also shows advanced configuration like PC sampling settings (
-pc_sampling_method
-,
-pc_sampling_interval
-), filtering options (
-kernel_filter_include
-,
-kernel_filter_exclude
-), output formatting choices (
-csv_output
-,
-json_output
-,
-pftrace_output
-), and performance tuning parameters.
-The environment section captures all environment variables active during the profiling session, including system variables such as
-SHELL
-,
-COLORTERM
-,
-HOSTNAME
-, and ROCm-specific variables, providing complete environmental context for reproduction.
-Sample configuration output structure:
-{
-"rocprofiler-sdk-tool"
-:
-[
-{
-"metadata"
-:
-{
-"pid"
-:
-213524
-,
-"init_time"
-:
-682678344984459
-,
-"fini_time"
-:
-682678842290172
-,
-"config"
-:
-{
-"hip_runtime_api_trace"
-:
-true
-,
-"hip_compiler_api_trace"
-:
-true
-,
-"kernel_trace"
-:
-false
-,
-"hsa_core_api_trace"
-:
-false
-,
-"memory_copy_trace"
-:
-false
-,
-"counter_collection"
-:
-false
-,
-"kernel_filter_include"
-:
-".*"
-,
-"demangle"
-:
-true
-,
-"minimum_output_bytes"
-:
-0
-,
-"csv_output"
-:
-true
-,
-"json_output"
-:
-false
-,
-"output_path"
-:
-"out"
-,
-"output_file"
-:
-"1a2b3c4d5e6f/213524"
-},
-"command"
-:
-[
-"./MatrixTranspose"
-],
-"build_spec"
-:
-{
-"version_major"
-:
-1
-,
-"version_minor"
-:
-0
-,
-"compiler_id"
-:
-"GNU"
-,
-"compiler_version"
-:
-"11.4.0"
-,
-"git_revision"
-:
-"a1b2c3d4e5f6789012345678901234567890abcd"
-,
-"system_name"
-:
-"Linux"
-,
-"system_processor"
-:
-"x86_64"
-},
-"environment"
-:
-{
-"SHELL"
-:
-"/bin/bash"
-,
-"COLORTERM"
-:
-"truecolor"
-,
-"HOSTNAME"
-:
-"1a2b3c4d5e6f"
-,
-"ROCM_ROOT"
-:
-"/opt/rocm-6.4.2"
-,
-"ROCM_VERSION"
-:
-"6.4.2"
-,
-"BUILD_NUM"
-:
-"12345"
-,
-"ROCPROF_OUTPUT_PATH"
-:
-"out"
-,
-"ROCPROF_OUTPUT_CONFIG_FILE"
-:
-"1"
-,
-"ROCPROF_OUTPUT_FORMAT"
-:
-"csv"
-,
-"ROCPROF_HIP_COMPILER_API_TRACE"
-:
-"1"
-,
-"ROCPROF_HIP_RUNTIME_API_TRACE"
-:
-"1"
-,
-".... Output truncated for brevity ...."
-}
-}
-}
-]
-}
-The configuration output file provides complete transparency into
-rocprofv3
-operation, documenting all settings, defaults, and environmental context required for profiling sessions.
-Collecting traces using input file
-#
-The preceding sections describe how to collect traces by specifying the desired tracing type on the command line. You can also specify the desired tracing types in an input file in YAML (.yaml/.yml), or JSON (.json) format. You can supply any command-line option for tracing in the input file.
-Here is a sample input.yaml file for collecting tracing summary:
-jobs
-:
--
-output_directory
-:
-"@CMAKE_CURRENT_BINARY_DIR@/%env{ARBITRARY_ENV_VARIABLE}%"
-output_file
-:
-out
-output_format
-:
-[
-pftrace
-,
-json
-,
-otf2
-]
-log_level
-:
-env
-runtime_trace
-:
-true
-kernel_rename
-:
-true
-summary
-:
-true
-summary_per_domain
-:
-true
-summary_groups
-:
-[
-"KERNEL_DISPATCH|MEMORY_COPY"
-]
-summary_output_file
-:
-"summary"
-Here is a sample input.json file for collecting tracing summary:
-{
-"jobs"
-:
-[
-{
-"output_directory"
-:
-"out-directory"
-,
-"output_file"
-:
-"out"
-,
-"output_format"
-:
-[
-"pftrace"
-,
-"json"
-,
-"otf2"
-],
-"log_level"
-:
-"env"
-,
-"runtime_trace"
-:
-true
-,
-"kernel_rename"
-:
-true
-,
-"summary"
-:
-true
-,
-"summary_per_domain"
-:
-true
-,
-"summary_groups"
-:
-[
-"KERNEL_DISPATCH|MEMORY_COPY"
-],
-"summary_output_file"
-:
-"summary"
-}
-]
-}
-Here is the input schema (properties) of JSON or YAML input files:
-jobs
-(array)
-:
-rocprofv3
-input data per application run.
-Items
-(object)
-: Data for
-rocprofv3
-hip_trace
-(boolean)
-hip_runtime_trace
-(boolean)
-hip_compiler_trace
-(boolean)
-marker_trace
-(boolean)
-kernel_trace
-(boolean)
-memory_copy_trace
-(boolean)
-memory_allocation_trace
-(boolean)
-scratch_memory_trace
-(boolean)
-stats
-(boolean)
-hsa_trace
-(boolean)
-hsa_core_trace
-(boolean)
-hsa_amd_trace
-(boolean)
-hsa_finalize_trace
-(boolean)
-hsa_image_trace
-(boolean)
-sys_trace
-(boolean)
-minimum-output-data
-(integer)
-disable-signal-handlers
-(boolean)
-mangled_kernels
-(boolean)
-truncate_kernels
-(boolean)
-output_file
-(string)
-output_directory
-(string)
-output_format
-(array)
-log_level
-(string)
-preload
-(array)
-For description of the options specified under job items, see
-roprofv3 command-line options
-.
-To supply the input file for collecting traces, use:
-rocprofv3
--i
-input.yaml
---
-<application_path>
-Please note that input file format must be a valid YAML or JSON file.
-Disabling specific tracing options
-#
-When using aggregate tracing options like
---runtime-trace
-or
---sys-trace
-, you can disable specific tracing options by setting them to
-False
-. This allows fine-grained control over the traces to be collected.
-rocprofv3
---runtime-trace
---scratch-memory-trace
-=
-False
---
-<application_path>
-The preceding command enables all traces included in
---runtime-trace
-except for scratch memory tracing.
-Similarly, for
---sys-trace
-:
-rocprofv3
---sys-trace
---hsa-trace
-=
-False
---
-<application_path>
-The preceding command enables all traces included in
---sys-trace
-except for HSA API tracing.
-To disable multiple specific tracing options, use:
-rocprofv3
---sys-trace
---hsa-trace
-=
-False
---scratch-memory-trace
-=
-False
---
-<application_path>
-This feature is particularly useful to collect most traces excluding specific ones that might be unnecessary for your analysis or that generate excessive data.
-Kernel counter collection
-#
-The application tracing functionality allows you to evaluate the duration of kernel execution but is of little help in providing insight into kernel execution details. The kernel counter collection functionality allows you to select kernels for profiling and choose the basic counters or derived metrics to be collected for each kernel execution, thus providing a greater insight into kernel execution.
-AMDGPUs are equipped with hardware performance counters that can be used to measure specific values during kernel execution, which are then exported from the GPU and written into the output files at the end of the kernel execution. These performance counters vary according to the GPU. Therefore, it is recommended to examine the hardware counters that can be collected before running the profile.
-There are two types of data available for profiling: hardware basic counters and derived metrics.
-The derived metrics are the counters derived from the basic counters using mathematical expressions. Note that the basic counters and derived metrics are collectively referred as counters in this document.
-To see the counters available on the GPU, use:
-rocprofv3
---list-avail
-Sample output for the list-avail command:
-You can also customize the counters according to the requirement. Such counters are named
-Extra counters
-.
-For a comprehensive list of counters available on MI200, see
-MI200 performance counters and metrics
-.
-Note
-Counter dimension collection:
-When collecting counters with multiple dimensions or instances, such as
-TCC_MISS
-with
-DIMENSION_INSTANCE[0:15]
-, individual dimension values can’t be collected separately using bracket notation, such as
-TCC_MISS[0]
-or
-TCC_MISS[15]
-in the input files.
-To collect aggregated values:
-Specify the counter name without dimension specifiers, such as
-pmc:
-TCC_MISS
-. The
-rocprofv3
-tool automatically collects accumulated values across all instances.
-To collect values per instance:
-Use JSON output format, which includes detailed dimension information for individual counter instances.
-Counter collection using input file
-#
-Input files can be in text (.txt), YAML (.yaml/.yml), or JSON (.json) format to specify the the desired counters for collection.
-When using input file in text format, the line consisting of the counter names must begin with
-pmc
-. The number of counters that can be collected in one profiling run are limited by the GPU hardware resources. If too many counters are selected, the kernels need to be executed multiple times(multi-pass execution) to collect all the counters. For multi-pass execution, include multiple
-pmc
-rows in the input file. Counters in each
-pmc
-row can be collected in each application run.
-Here is a sample input.txt file for specifying counters for collection:
-$
-cat
-input.txt
+===== source/bin/rocprofv3.py =====
+#!/usr/bin/env python3
 
-pmc:
-GPUBusy
-SQ_WAVES
-pmc:
-GRBM_GUI_ACTIVE
-While the input file in text format can only be used for counter collection, JSON and YAML formats support all the command-line options for profiling. The input file in YAML or JSON format has an array of profiling configurations called jobs. Each job is used to configure profiling for an application execution.
-Here is the input schema (properties) of JSON or YAML input files:
-jobs
-(array)
-:
-rocprofv3
-input data per application run
-Items
-(object)
-: Data for
-rocprofv3
-pmc
-(array)
-: list of counters for collection
-kernel_include_regex
-(string)
-kernel_exclude_regex
-(string)
-kernel_iteration_range
-(string)
-mangled_kernels
-(boolean)
-truncate_kernels
-(boolean)
-output_file
-(string)
-output_directory
-(string)
-output_format
-(array)
-list_avail
-(boolean)
-log_level
-(string)
-preload
-(array)
-minimum-output-data
-(integer)
-disable-signal-handlers
-(boolean)
-pc_sampling_unit
-(string)
-pc_sampling_method
-(string)
-pc_sampling_interval
-(integer)
-pc_sampling_beta_enabled
-(boolean)
-For description of the options specified under job items, see
-roprofv3 command-line options
-.
-Here is a sample input.json file for specifying counters for collection along with the options to filter and control the output:
-$
-cat
-input.json
-{
-"jobs"
-:
-[
-{
-"pmc"
-:
-[
-"SQ_WAVES"
-,
-"GRBM_COUNT"
-,
-"GRBM_GUI_ACTIVE"
-]
+# MIT License
+#
+# Copyright (c) 2024-2025 Advanced Micro Devices, Inc. All rights reserved.
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+# THE SOFTWARE.
+
+import os
+import sys
+import argparse
+import textwrap
+import subprocess
+
+# version info for rocprofiler-sdk / rocprofv3
+CONST_VERSION_INFO = {
+    "version": "@FULL_VERSION_STRING@",
+    "git_revision": "@ROCPROFILER_SDK_GIT_REVISION@",
+    "library_arch": "@CMAKE_LIBRARY_ARCHITECTURE@",
+    "system_name": "@CMAKE_SYSTEM_NAME@",
+    "system_processor": "@CMAKE_SYSTEM_PROCESSOR@",
+    "system_version": "@CMAKE_SYSTEM_VERSION@",
+    "compiler_id": "@CMAKE_CXX_COMPILER_ID@",
+    "compiler_version": "@CMAKE_CXX_COMPILER_VERSION@",
+    "rocm_version": "@rocm_version_FULL_VERSION@",
 }
-,
-{
-"pmc"
-:
-[
-"FETCH_SIZE"
-,
-"SQ_WAVE_CYCLES"
-]
-,
-"kernel_include_regex"
-:
-".*_kernel"
-,
-"kernel_exclude_regex"
-:
-"multiply"
-,
-"kernel_iteration_range"
-:
-"[1-2],[3-4]"
-,
-"output_file"
-:
-"out"
-,
-"output_format"
-:
-[
-"csv"
-,
-"json"
-]
-,
-"truncate_kernels"
-:
-true
-}
-]
-}
-Here is a sample input.yaml file for counter collection:
-jobs
-:
--
-pmc
-:
-[
-"SQ_WAVES"
-,
-"GRBM_COUNT"
-,
-"GRBM_GUI_ACTIVE"
-]
--
-pmc
-:
-[
-"SQ_WAVE_CYCLES"
-,
-"WRITE_SIZE"
-]
-kernel_include_regex
-:
-".*_kernel"
-kernel_exclude_regex
-:
-"multiply"
-kernel_iteration_range
-:
-"[1-2],[3-4]"
-output_file
-:
-"out"
-output_format
-:
--
-"csv"
--
-"json"
-truncate_kernels
-:
-true
-To supply the input file for kernel counter collection, use:
-rocprofv3
--i
-input.yaml
---
-<application_path>
-Counter collection using command line
-#
-You can also collect the desired counters by directly specifying them in the command line instead of using an input file.
-To supply the counters in the command line, use:
-rocprofv3
---pmc
-SQ_WAVES
-GRBM_COUNT
-GRBM_GUI_ACTIVE
---
-<application_path>
-Note
-When specifying more than one counter, separate them using space or a comma.
-Job fails if the entire set of counters can’t be collected in a single pass.
-Multi-pass counter collection
-#
-When counters can’t be collected simultaneously due to hardware limitations, you can use multi-pass counter collection. This helps you collect different sets of counters across multiple profiling passes of the same application.
-Using multiple
---pmc
-flags:
-You can specify multiple
---pmc
-flags to define different counter groups. Each
---pmc
-flag represents a separate profiling pass:
-rocprofv3
---pmc
-SQ_WAVES
-SQ_WAVE_CYCLES
---pmc
-GRBM_COUNT
-GRBM_GUI_ACTIVE
---
-<application_path>
-The preceding command creates two profiling passes:
-Pass 1: Collects
-SQ_WAVES
-and
-SQ_WAVE_CYCLES
-.
-Pass 2: Collects
-GRBM_COUNT
-and
-GRBM_GUI_ACTIVE
-.
-Combining CLI and input file:
-You can combine
---pmc
-flag with an input file. The counters specified in CLI and input file are combined, creating separate passes for each counter:
-rocprofv3
--i
-input.txt
---pmc
-GRBM_COUNT
---pmc
-SQ_WAVES
---
-<application_path>
-If
-input.txt
-contains:
-pmc: FETCH_SIZE SQ_WAVES
-pmc: GRBM_GUI_ACTIVE
-The preceding command creates four profiling passes:
-Pass 1:
-GRBM_COUNT
-(from CLI).
-Pass 2:
-SQ_WAVES
-(from CLI).
-Pass 3:
-FETCH_SIZE
-SQ_WAVE_CYCLES
-(from input file).
-Pass 4:
-GRBM_GUI_ACTIVE
-(from input file).
-Output organization:
-In multi-pass counter collection, each pass generates its output in a separate
-pass_n
-subdirectory:
-output_directory/
-├── pass_1/
-│   └── counter_collection.csv
-├── pass_2/
-│   └── counter_collection.csv
-├── pass_3/
-│   └── counter_collection.csv
-└── pass_4/
-    └── counter_collection.csv
-Note
-Multi-pass counter collection is not compatible with attach mode (
---pid
-).
-Multi-pass counter collection is not compatible with
---collection-period
-.
-Each pass runs the application from start to finish.
-Extra counters
-#
-While the basic counters and derived metrics are available for collection by default, you can also define counters as per requirement. These user-defined counters with custom definitions are named extra counters.
-You can define the extra counters in a YAML file as shown:
-rocprofiler-sdk
-:
-counters-schema-version
-:
-1
-counters
-:
--
-name
-:
-GRBM_GUI_ACTIVE_SUM
-description
-:
-"Unit:
-cycles"
-properties
-:
-[]
-definitions
-:
--
-architectures
-:
--
-gfx10
--
-gfx1010
--
-gfx1030
--
-gfx1031
--
-gfx1032
--
-gfx11
--
-gfx1100
--
-gfx1101
--
-gfx1102
--
-gfx9
--
-gfx906
--
-gfx908
--
-gfx90a
--
-gfx942
-expression
-:
-reduce(GRBM_GUI_ACTIVE,max)*CU_NUM
--
-name
-:
-CPC_CPC_STAT_BUSY
-description
-:
-CPC Busy.
-properties
-:
-[]
-definitions
-:
--
-architectures
-:
--
-gfx940
--
-gfx941
-block
-:
-CPC
-event
-:
-25
-Please note, the above sample uses the
-CPC_CPC_STAT_BUSY
-counter definition for the
-gfx940
-and
-gfx941
-architectures to demonstrate the YAML schema when counters have different
-architecture-specific definitions.
-If this YAML is placed in a
-extra_counters.yaml
-file, to collect the extra counters defined
-in the
-extra_counters.yaml
-file, use the
--E
-/
---extra-counters
-option:
-rocprofv3
--E
-<path-to-extra_counters.yaml>
---pmc
-GRBM_GUI_ACTIVE_SUM
---output-format
-csv
---
-<application_path>
-Where the option
---pmc
-is used to specify the extra counters to be collected.
-Kernel counter collection output
-#
-Using
-rocprofv3
-for counter collection using input file or command line generates a
-./pmc_n/counter_collection.csv
-file prefixed with the process ID. For each
-pmc
-row, a directory
-pmc_n
-containing a
-counter_collection.csv
-file is generated, where n = 1 for the first row and so on.
-When using input file in JSON or YAML format, for each job, a directory
-pass_n
-containing a
-counter_collection.csv
-file is generated, where n = 1 for the first job and so on.
-Each row of the CSV file is an instance of kernel execution. Here is a truncated version of the output file from
-pmc_1
-:
-$
-cat
-pmc_1/218_counter_collection.csv
-Here are the contents of
-counter_collection.csv
-file:
-Counter collection
-#
-Correlation_Id
-Dispatch_Id
-Agent_Id
-Queue_Id
-Process_Id
-Thread_Id
-Grid_Size
-Kernel_Id
-Kernel_Name
-Workgroup_Size
-LDS_Block_Size
-Scratch_Size
-VGPR_Count
-Accum_VGPR_Count
-SGPR_Count
-Counter_Name
-Counter_Value
-Start_Timestamp
-End_Timestamp
-1
-1
-Agent 1
-1
-15606
-15606
-1048576
-17
-void addition_kernel<float>(float*, float const*, float const*, int, int)
-64
-0
-0
-8
-0
-16
-SQ_WAVES
-16384.000000
-3200098838431081
-3200098838483232
-2
-2
-Agent 1
-1
-15606
-15606
-1048576
-20
-subtract_kernel(float*, float const*, float const*, int, int)
-64
-0
-0
-8
-0
-16
-SQ_WAVES
-16384.000000
-3200098838589014
-3200098838638794
-3
-3
-Agent 1
-1
-15606
-15606
-1048576
-19
-multiply_kernel(float*, float const*, float const*, int, int)
-64
-0
-0
-8
-0
-16
-SQ_WAVES
-16384.000000
-3200098838746207
-3200098838793025
-4
-4
-Agent 1
-1
-15606
-15606
-1048576
-18
-divide_kernel(float*, float const*, float const*, int, int)
-64
-0
-0
-12
-0
-16
-SQ_WAVES
-16384.000000
-3200098838879399
-3200098838927550
-For the description of the fields in the output file, see
-Output file fields
-.
-Iteration based counter multiplexing
-#
-Counter multiplexing allows a single run of the program to collect groups of counters. This is useful when the counters you want to collect exceed the hardware limits and you cannot run the program multiple times for collection.
-This feature is available when using YAML (.yaml/.yml) or JSON (.json) input formats. Two new fields are introduced,
-pmc_groups
-and
-pmc_group_interval
-. The
-pmc_groups
-field is used to specify the groups of counters to be collected in each run. The
-pmc_group_interval
-field is used to specify the interval between each group of counters. Interval is per-device and increments per dispatch on the device (i.e. dispatch_id). When the interval is reached the next group is selected.
-Here is a sample input.yaml file for specifying counter multiplexing:
-jobs
-:
--
-pmc_groups
-:
-[[
-"SQ_WAVES"
-,
-"GRBM_COUNT"
-],
-[
-"GRBM_GUI_ACTIVE"
-]]
-pmc_group_interval
-:
-4
-This sample input will collect the first group of counters (
-SQ_WAVES
-,
-GRBM_COUNT
-) for the first 4 kernel executions on the device, then the second group of counters (
-GRBM_GUI_ACTIVE
-) for the next 4 kernel executions on the device, and so on.
-An example of the interval period for this input is given below:
-Device
-1
-,
-<Kernel
-A>,
-Collect
-SQ_WAVES,
-GRBM_COUNT
-Device
-1
-,
-<Kernel
-A>,
-Collect
-SQ_WAVES,
-GRBM_COUNT
-Device
-1
-,
-<Kernel
-B>,
-Collect
-SQ_WAVES,
-GRBM_COUNT
-Device
-1
-,
-<Kernel
-C>,
-Collect
-SQ_WAVES,
-GRBM_COUNT
-<Interval
-reached
-on
-Device
-1
-,
-Switching
-Counters>
-Device
-1
-,
-<Kernel
-D>,
-Collect
-GRBM_GUI_ACTIVE
-Here is the same sample in JSON format:
-{
-"jobs"
-:
-[
-{
-"pmc_groups"
-:
-[[
-"SQ_WAVES"
-,
-"GRBM_COUNT"
-]
-,
-[
-"GRBM_GUI_ACTIVE"
-]]
-,
-"pmc_group_interval"
-:
-4
-}
-]
-}
-Perfetto visualization
-#
-Perfetto
-is an open-source tracing tool that provides a detailed view of system performance. You can use Perfetto to visualize traces and performance counter data as explained in the following sections.
-Perfetto visualization for traces
-#
-Perfetto helps you to visualize the collected traces in Perfetto viewer, which is a user-friendly interface that makes it easier to analyze and understand the performance characteristics of your application.
-To generate a Perfetto trace file, use the
---output-format
-pftrace
-option along with the desired tracing options. For example, to collect system traces and generate a Perfetto trace file, use:
-rocprofv3
---sys-trace
---output-format
-pftrace
---
-<application_path>
-The generated Perfetto trace file can be opened in the
-Perfetto UI
-.
-Figure 1:
-Generic perfetto visualization
-Figure 2:
-Visualization of ROCm flow data in Perfetto
-Perfetto visualization for counter collection
-#
-When collecting performance counter data, you can visualize the counter tracks per agent in the Perfetto viewer by using the PFTrace output format. This helps you see how counter values change over time during kernel execution.
-To generate a Perfetto trace file with counter data, use:
-rocprofv3
---pmc
-SQ_WAVES
-GRBM_COUNT
---output-format
-pftrace
---
-<application_path>
-The generated Perfetto trace file can be opened in the
-Perfetto UI
-. In the viewer, performance counters will appear as counter tracks organized by agent, allowing you to visualize counter values changing over time alongside kernel executions and other traced activities.
-You can also combine this with the system trace option to get a more comprehensive view of the system’s performance. For example, you can use the following command to collect both system trace and performance counter data:
-rocprofv3
---pmc
-SQ_WAVES
-GRBM_COUNT
---sys-trace
---output-format
-pftrace
---
-<application_path>
-Scratch Memory Visualization in Perfetto
-#
-When using the
---scratch-memory-trace
-option with Perfetto output format, ROCProfiler SDK creates visualization tracks for scratch memory usage. Scratch memory operations are displayed as counter tracks organized by agent (GPU), allowing you to monitor the scratch memory allocation patterns during kernel execution.
-To generate a Perfetto trace file that includes scratch memory visualization:
-rocprofv3
---scratch-memory-trace
---output-format
-pftrace
---
-<application_path>
-In the Perfetto UI, scratch memory appears as counter tracks that show:
-Allocation peaks
-: Each peak represents scratch memory allocation for a kernel execution
-Memory usage over time
-: The height of each peak indicates the amount of memory allocated (typically in KB)
-Allocation/deallocation pattern
-: You can observe when memory is allocated at kernel start and freed at kernel end
-For applications with multiple kernel iterations, you’ll see multiple peaks in the scratch memory track, with each peak corresponding to a kernel execution. This visualization helps identify scratch memory usage patterns and potential optimization opportunities.
-For comprehensive GPU execution insights, combine scratch memory tracing with kernel tracing:
-rocprofv3
---kernel-trace
---scratch-memory-trace
---output-format
-pftrace
---
-<application_path>
-This allows you to correlate scratch memory allocation patterns with specific kernel executions in the Perfetto visualization.
-Agent info
-#
-Note
-All tracing and counter collection options generate an additional
-agent_info.csv
-file prefixed with the process ID.
-The
-agent_info.csv
-file contains information about the CPU or GPU the kernel runs on.
-$
-cat
-238_agent_info.csv
-"Node_Id"
-,
-"Logical_Node_Id"
-,
-"Agent_Type"
-,
-"Cpu_Cores_Count"
-,
-"Simd_Count"
-,
-"Cpu_Core_Id_Base"
-,
-"Simd_Id_Base"
-,
-"Max_Waves_Per_Simd"
-,
-"Lds_Size_In_Kb"
-,
-"Gds_Size_In_Kb"
-,
-"Num_Gws"
-,
-"Wave_Front_Size"
-,
-"Num_Xcc"
-,
-"Cu_Count"
-,
-"Array_Count"
-,
-"Num_Shader_Banks"
-,
-"Simd_Arrays_Per_Engine"
-,
-"Cu_Per_Simd_Array"
-,
-"Simd_Per_Cu"
-,
-"Max_Slots_Scratch_Cu"
-,
-"Gfx_Target_Version"
-,
-"Vendor_Id"
-,
-"Device_Id"
-,
-"Location_Id"
-,
-"Domain"
-,
-"Drm_Render_Minor"
-,
-"Num_Sdma_Engines"
-,
-"Num_Sdma_Xgmi_Engines"
-,
-"Num_Sdma_Queues_Per_Engine"
-,
-"Num_Cp_Queues"
-,
-"Max_Engine_Clk_Ccompute"
-,
-"Max_Engine_Clk_Fcompute"
-,
-"Sdma_Fw_Version"
-,
-"Fw_Version"
-,
-"Capability"
-,
-"Cu_Per_Engine"
-,
-"Max_Waves_Per_Cu"
-,
-"Family_Id"
-,
-"Workgroup_Max_Size"
-,
-"Grid_Max_Size"
-,
-"Local_Mem_Size"
-,
-"Hive_Id"
-,
-"Gpu_Id"
-,
-"Workgroup_Max_Dim_X"
-,
-"Workgroup_Max_Dim_Y"
-,
-"Workgroup_Max_Dim_Z"
-,
-"Grid_Max_Dim_X"
-,
-"Grid_Max_Dim_Y"
-,
-"Grid_Max_Dim_Z"
-,
-"Name"
-,
-"Vendor_Name"
-,
-"Product_Name"
-,
-"Model_Name"
-0
-,0,
-"CPU"
-,24,0,0,0,0,0,0,0,0,1,24,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3800,0,0,0,0,0,0,23,0,0,0,0,0,0,0,0,0,0,0,
-"AMD Ryzen 9 3900X 12-Core Processor"
-,
-"CPU"
-,
-"AMD Ryzen 9 3900X 12-Core Processor"
-,
-""
-1
-,1,
-"GPU"
-,0,256,0,2147487744,10,64,0,64,64,1,64,4,4,1,16,4,32,90000,4098,26751,12032,0,128,2,0,2,24,3800,1630,432,440,138420864,16,40,141,1024,4294967295,0,0,64700,1024,1024,1024,4294967295,4294967295,4294967295,
-"gfx900"
-,
-"AMD"
-,
-"Radeon RX Vega"
-,
-"vega10"
-Output file fields
-#
-The following table lists the various fields or the columns in the output CSV files generated for application tracing and kernel counter collection:
-Information type
-Field
-Description
-Dispatch information
-Agent_Id
-GPU identifier to which the kernel was submitted.
-Correlation_Id
-Unique identifier for correlation between HIP and HSA async calls during activity tracing.
-Dispatch_Id
-Dispatch identifier
-Process_Id
-Process identifier
-Thread_Id
-Thread identifier
-Queue_Id
-ROCm queue unique identifier to which the kernel was submitted.
-Stream_Id
-Identifies HIP stream ID to which kernel or memory copy operation was submitted. Defaults to 0 if the hip-stream-display option is not enabled
-Kernel information
-Grid_Size
-The total number of work-items (or, threads) launched as a part of the kernel dispatch. In HIP, this is equivalent to the total grid size multiplied by the total workgroup (or, block) size.
-Grid_Size_n
-Number of work-items (or, threads) in the nth dimension required to launch the kernel, where n = X, Y, or Z.
-Kernel_Id
-Kernel identifier
-Kernel_Name
-Kernel name
-Workgroup_Size
-The total number of work-items (or, threads) in each workgroup (or, block) launched as part of the kernel dispatch. In HIP, this is equivalent to the total block size.
-Workgroup_Size_n
-Size of the workgroup in the nth dimension as declared by the compute shader, where n = X, Y, or Z.
-Private_Segment_Size
-The amount of memory required in bytes for the combined private, spill, and arg segments for a work item.
-Group_Segment_Size
-The group segment memory required by a workgroup in bytes. This does not include any dynamically allocated group segment memory that may be added when the kernel is dispatched.
-Resource usage
-LDS_Block_Size
-Thread block size for the kernel’s Local Data Share (LDS) memory (shared memory per work-group).
-Scratch_Size
-Kernel’s scratch memory (private memory per work-item) size.
-SGPR_Count
-Kernel’s Scalar General Purpose Register (SGPR) count.
-VGPR_Count
-Kernel’s Architected Vector General Purpose Register (VGPR) count.
-Accum_VGPR_Count
-Kernel’s Accumulation Vector General Purpose Register (Accum_VGPR/AGPR) count.
-Counter data
-Counter_Name
-Name of the counter
-Counter_Value
-The numeric value measured by a specific hardware performance counter during a kernel dispatch
-Start_Timestamp
-Begin time in nanoseconds (ns) when the kernel begins execution.
-End_Timestamp
-End time in ns when the kernel finishes execution.
-Output formats
-#
-rocpd (SQLite3 Database (Default))
-CSV
-JSON (Custom format for programmatic analysis only)
-PFTrace (Perfetto trace for visualization with Perfetto)
-OTF2 (Open Trace Format for visualization with compatible third-party tools)
-The default output format is
-rocpd
-. To know more about the rocpd format, see
-Using rocpd output format
-.
-To specify the particular output format, use the
---output-format
-option followed by the desired format.
-rocprofv3
--
-i
-input
-.
-txt
---
-output
--
-format
-json
---
-<
-application_path
->
-Format selection is case-insensitive and multiple output formats are supported. While
---output-format
-json
-exclusively enables JSON output,
---output-format
-csv
-json
-pftrace
-otf2,
-rocpd
-enables all four output formats for the run.
-For PFTrace trace visualization, use the PFTrace format and open the trace in
-ui.perfetto.dev
-.
-For OTF2 trace visualization, open the trace in
-vampir.eu
-or any supported visualizer.
-Note
-For large trace files (> 10GB), it’s recommended to use OTF2 format.
-JSON output schema
-#
-rocprofv3
-supports a custom JSON output format designed for programmatic analysis and
-NOT
-for visualization.
-The schema is optimized for size while factoring in usability.
-Note
-Perfetto UI doesn’t accept this JSON output format.
-To generate the JSON output, use
---output-format
-json
-command-line option.
-Here are the properties of the JSON output schema:
-rocprofiler-sdk-tool
-(array)
-: rocprofv3 data per process (each element represents a process).
-Items
-(object)
-: Data for rocprofv3.
-metadata
-(object, required)
-: Metadata related to the profiler session.
-pid
-(integer, required)
-: Process ID.
-init_time
-(integer, required)
-: Initialization time in nanoseconds.
-fini_time
-(integer, required)
-: Finalization time in nanoseconds.
-agents
-(array, required)
-: List of agents.
-Items
-(object)
-: Data for an agent.
-size
-(integer, required)
-: Size of the agent data.
-id
-(object, required)
-: Identifier for the agent.
-handle
-(integer, required)
-: Handle for the agent.
-type
-(integer, required)
-: Type of the agent.
-cpu_cores_count
-(integer)
-: Number of CPU cores.
-simd_count
-(integer)
-: Number of SIMD units.
-mem_banks_count
-(integer)
-: Number of memory banks.
-caches_count
-(integer)
-: Number of caches.
-io_links_count
-(integer)
-: Number of I/O links.
-cpu_core_id_base
-(integer)
-: Base ID for CPU cores.
-simd_id_base
-(integer)
-: Base ID for SIMD units.
-max_waves_per_simd
-(integer)
-: Maximum waves per SIMD.
-lds_size_in_kb
-(integer)
-: Size of LDS in KB.
-gds_size_in_kb
-(integer)
-: Size of GDS in KB.
-num_gws
-(integer)
-: Number of GWS (global work size).
-wave_front_size
-(integer)
-: Size of the wave front.
-num_xcc
-(integer)
-: Number of XCC (execution compute units).
-cu_count
-(integer)
-: Number of compute units (CUs).
-array_count
-(integer)
-: Number of arrays.
-num_shader_banks
-(integer)
-: Number of shader banks.
-simd_arrays_per_engine
-(integer)
-: SIMD arrays per engine.
-cu_per_simd_array
-(integer)
-: CUs per SIMD array.
-simd_per_cu
-(integer)
-: SIMDs per CU.
-max_slots_scratch_cu
-(integer)
-: Maximum slots for scratch CU.
-gfx_target_version
-(integer)
-: GFX target version.
-vendor_id
-(integer)
-: Vendor ID.
-device_id
-(integer)
-: Device ID.
-location_id
-(integer)
-: Location ID.
-domain
-(integer)
-: Domain identifier.
-drm_render_minor
-(integer)
-: DRM render minor version.
-num_sdma_engines
-(integer)
-: Number of SDMA engines.
-num_sdma_xgmi_engines
-(integer)
-: Number of SDMA XGMI engines.
-num_sdma_queues_per_engine
-(integer)
-: Number of SDMA queues per engine.
-num_cp_queues
-(integer)
-: Number of CP queues.
-max_engine_clk_ccompute
-(integer)
-: Maximum engine clock for compute.
-max_engine_clk_fcompute
-(integer)
-: Maximum engine clock for F compute.
-sdma_fw_version
-(object)
-: SDMA firmware version.
-uCodeSDMA
-(integer, required)
-: SDMA microcode version.
-uCodeRes
-(integer, required)
-: Reserved microcode version.
-fw_version
-(object)
-: Firmware version.
-uCode
-(integer, required)
-: Microcode version.
-Major
-(integer, required)
-: Major version.
-Minor
-(integer, required)
-: Minor version.
-Stepping
-(integer, required)
-: Stepping version.
-capability
-(object, required)
-: Agent capability flags.
-HotPluggable
-(integer, required)
-: Hot pluggable capability.
-HSAMMUPresent
-(integer, required)
-: HSAMMU present capability.
-SharedWithGraphics
-(integer, required)
-: Shared with graphics capability.
-QueueSizePowerOfTwo
-(integer, required)
-: Queue size is power of two.
-QueueSize32bit
-(integer, required)
-: Queue size is 32-bit.
-QueueIdleEvent
-(integer, required)
-: Queue idle event.
-VALimit
-(integer, required)
-: VA limit.
-WatchPointsSupported
-(integer, required)
-: Watch points supported.
-WatchPointsTotalBits
-(integer, required)
-: Total bits for watch points.
-DoorbellType
-(integer, required)
-: Doorbell type.
-AQLQueueDoubleMap
-(integer, required)
-: AQL queue double map.
-DebugTrapSupported
-(integer, required)
-: Debug trap supported.
-WaveLaunchTrapOverrideSupported
-(integer, required)
-: Wave launch trap override supported.
-WaveLaunchModeSupported
-(integer, required)
-: Wave launch mode supported.
-PreciseMemoryOperationsSupported
-(integer, required)
-: Precise memory operations supported.
-DEPRECATED_SRAM_EDCSupport
-(integer, required)
-: Deprecated SRAM EDC support.
-Mem_EDCSupport
-(integer, required)
-: Memory EDC support.
-RASEventNotify
-(integer, required)
-: RAS event notify.
-ASICRevision
-(integer, required)
-: ASIC revision.
-SRAM_EDCSupport
-(integer, required)
-: SRAM EDC support.
-SVMAPISupported
-(integer, required)
-: SVM API supported.
-CoherentHostAccess
-(integer, required)
-: Coherent host access.
-DebugSupportedFirmware
-(integer, required)
-: Debug supported firmware.
-Reserved
-(integer, required)
-: Reserved field.
-counters
-(array, required)
-: Array of counter objects.
-Items
-(object)
-agent_id
-(object, required)
-: Agent ID information.
-handle
-(integer, required)
-: Handle of the agent.
-id
-(object, required)
-: Counter ID information.
-handle
-(integer, required)
-: Handle of the counter.
-is_constant
-(integer, required)
-: Indicator if the counter value is constant.
-is_derived
-(integer, required)
-: Indicator if the counter value is derived.
-name
-(string, required)
-: Name of the counter.
-description
-(string, required)
-: Description of the counter.
-block
-(string, required)
-: Block information of the counter.
-expression
-(string, required)
-: Expression of the counter.
-dimension_ids
-(array, required)
-: Array of dimension IDs.
-Items
-(integer)
-: Dimension ID.
-strings
-(object, required)
-: String records.
-callback_records
-(array)
-: Callback records.
-Items
-(object)
-kind
-(string, required)
-: Kind of the record.
-operations
-(array, required)
-: Array of operations.
-Items
-(string)
-: Operation.
-buffer_records
-(array)
-: Buffer records.
-Items
-(object)
-kind
-(string, required)
-: Kind of the record.
-operations
-(array, required)
-: Array of operations.
-Items
-(string)
-: Operation.
-marker_api
-(array)
-: Marker API records.
-Items
-(object)
-key
-(integer, required)
-: Key of the record.
-value
-(string, required)
-: Value of the record.
-counters
-(object)
-: Counter records.
-dimension_ids
-(array, required)
-: Array of dimension IDs.
-Items
-(object)
-id
-(integer, required)
-: Dimension ID.
-instance_size
-(integer, required)
-: Size of the instance.
-name
-(string, required)
-: Name of the dimension.
-pc_sample_instructions
-(array)
-: Array of decoded
-instructions matching sampled PCs from pc_sample_host_trap
-section.
-pc_sample_comments
-(array)
-: Comments matching
-assembly instructions from pc_sample_instructions array. If
-debug symbols are available, comments provide instructions
-to source-line mapping. Otherwise, a comment is an empty
-string.
-code_objects
-(array, required)
-: Code object records.
-Items
-(object)
-size
-(integer, required)
-: Size of the code object.
-code_object_id
-(integer, required)
-: ID of the code object.
-rocp_agent
-(object, required)
-: ROCP agent information.
-handle
-(integer, required)
-: Handle of the ROCP agent.
-hsa_agent
-(object, required)
-: HSA agent information.
-handle
-(integer, required)
-: Handle of the HSA agent.
-uri
-(string, required)
-: URI of the code object.
-load_base
-(integer, required)
-: Base address for loading.
-load_size
-(integer, required)
-: Size for loading.
-load_delta
-(integer, required)
-: Delta for loading.
-storage_type
-(integer, required)
-: Type of storage.
-memory_base
-(integer, required)
-: Base address for memory.
-memory_size
-(integer, required)
-: Size of memory.
-kernel_symbols
-(array, required)
-: Kernel symbol records.
-Items
-(object)
-size
-(integer, required)
-: Size of the kernel symbol.
-kernel_id
-(integer, required)
-: ID of the kernel.
-code_object_id
-(integer, required)
-: ID of the code object.
-kernel_name
-(string, required)
-: Name of the kernel.
-kernel_object
-(integer, required)
-: Object of the kernel.
-kernarg_segment_size
-(integer, required)
-: Size of the kernarg segment.
-kernarg_segment_alignment
-(integer, required)
-: Alignment of the kernarg segment.
-group_segment_size
-(integer, required)
-: Size of the group segment.
-private_segment_size
-(integer, required)
-: Size of the private segment.
-formatted_kernel_name
-(string, required)
-: Formatted name of the kernel.
-demangled_kernel_name
-(string, required)
-: Demangled name of the kernel.
-truncated_kernel_name
-(string, required)
-: Truncated name of the kernel.
-callback_records
-(object, required)
-: Callback record details.
-counter_collection
-(array)
-: Counter collection records.
-Items
-(object)
-dispatch_data
-(object, required)
-: Dispatch data details.
-size
-(integer, required)
-: Size of the dispatch data.
-correlation_id
-(object, required)
-: Correlation ID information.
-internal
-(integer, required)
-: Internal correlation ID.
-external
-(integer, required)
-: External correlation ID.
-dispatch_info
-(object, required)
-: Dispatch information details.
-size
-(integer, required)
-: Size of the dispatch information.
-agent_id
-(object, required)
-: Agent ID information.
-handle
-(integer, required)
-: Handle of the agent.
-queue_id
-(object, required)
-: Queue ID information.
-handle
-(integer, required)
-: Handle of the queue.
-kernel_id
-(integer, required)
-: ID of the kernel.
-dispatch_id
-(integer, required)
-: ID of the dispatch.
-private_segment_size
-(integer, required)
-: Size of the private segment.
-group_segment_size
-(integer, required)
-: Size of the group segment.
-workgroup_size
-(object, required)
-: Workgroup size information.
-x
-(integer, required)
-: X dimension.
-y
-(integer, required)
-: Y dimension.
-z
-(integer, required)
-: Z dimension.
-grid_size
-(object, required)
-: Grid size information.
-x
-(integer, required)
-: X dimension.
-y
-(integer, required)
-: Y dimension.
-z
-(integer, required)
-: Z dimension.
-records
-(array, required)
-: Records.
-Items
-(object)
-counter_id
-(object, required)
-: Counter ID information.
-handle
-(integer, required)
-: Handle of the counter.
-value
-(number, required)
-: Value of the counter.
-thread_id
-(integer, required)
-: Thread ID.
-arch_vgpr_count
-(integer, required)
-: Count of Architected VGPRs.
-accum_vgpr_count
-(integer, required)
-: Count of Accumulation VGPRs.
-sgpr_count
-(integer, required)
-: Count of SGPRs.
-lds_block_size_v
-(integer, required)
-: Size of LDS block.
-pc_sample_host_trap
-(array)
-: Host Trap PC Sampling records.
-Items
-(object)
-hw_id
-(object)
-: Describes hardware part on which sampled wave was running.
-chiplet
-(integer)
-: Chiplet index.
-wave_id
-(integer)
-: Wave slot index.
-simd_id
-(integer)
-: SIMD index.
-pipe_id
-(integer)
-: Pipe index.
-cu_or_wgp_id
-(integer)
-: Index of compute unit or workgroup processor.
-shader_array_id
-(integer)
-: Shader array index.
-shader_engine_id
-(integer)
-: Shader engine
-index.
-workgroup_id
-(integer)
-: Workgroup position in the 3D.
-vm_id
-(integer)
-: Virtual memory ID.
-queue_id
-(integer)
-: Queue id.
-microengine_id
-(integer)
-: ACE
-(microengine) index.
-pc
-(object)
-: Encapsulates information about
-sampled PC.
--
-code_object_id
-(integer)
-: Code object id.
--
-code_object_offset
-(integer)
-: Offset within the object if the latter is known. Otherwise, virtual address of the PC.
-exec_mask
-(integer)
-: Execution mask indicating active SIMD lanes of sampled wave.
-timestamp
-(integer)
-: Timestamp.
-dispatch_id
-(integer)
-: Dispatch id.
-correlation_id
-(object)
-: Correlation ID information.
--
-internal
-(integer)
-: Internal correlation ID.
--
-external
-(integer)
-: External correlation ID.
-rocprofiler_dim3_t
-(object)
-: Position of the workgroup in 3D grid.
-x
-(integer)
-: Dimension x.
-y
-(integer)
-: Dimension y.
-z
-(integer)
-: Dimension z.
-wave_in_group
-(integer)
-: Wave position within the workgroup (0-31).
-buffer_records
-(object, required)
-: Buffer record details.
-kernel_dispatch
-(array)
-: Kernel dispatch records.
-Items
-(object)
-size
-(integer, required)
-: Size of the dispatch.
-kind
-(integer, required)
-: Kind of the dispatch.
-operation
-(integer, required)
-: Operation of the dispatch.
-thread_id
-(integer, required)
-: Thread ID.
-correlation_id
-(object, required)
-: Correlation ID information.
-internal
-(integer, required)
-: Internal correlation ID.
-external
-(integer, required)
-: External correlation ID.
-start_timestamp
-(integer, required)
-: Start timestamp.
-end_timestamp
-(integer, required)
-: End timestamp.
-dispatch_info
-(object, required)
-: Dispatch information details.
-size
-(integer, required)
-: Size of the dispatch information.
-agent_id
-(object, required)
-: Agent ID information.
-handle
-(integer, required)
-: Handle of the agent.
-queue_id
-(object, required)
-: Queue ID information.
-handle
-(integer, required)
-: Handle of the queue.
-kernel_id
-(integer, required)
-: ID of the kernel.
-dispatch_id
-(integer, required)
-: ID of the dispatch.
-private_segment_size
-(integer, required)
-: Size of the private segment.
-group_segment_size
-(integer, required)
-: Size of the group segment.
-workgroup_size
-(object, required)
-: Workgroup size information.
-x
-(integer, required)
-: X dimension.
-y
-(integer, required)
-: Y dimension.
-z
-(integer, required)
-: Z dimension.
-grid_size
-(object, required)
-: Grid size information.
-x
-(integer, required)
-: X dimension.
-y
-(integer, required)
-: Y dimension.
-z
-(integer, required)
-: Z dimension.
-hip_api
-(array)
-: HIP API records.
-Items
-(object)
-size
-(integer, required)
-: Size of the HIP API record.
-kind
-(integer, required)
-: Kind of the HIP API.
-operation
-(integer, required)
-: Operation of the HIP API.
-correlation_id
-(object, required)
-: Correlation ID information.
-internal
-(integer, required)
-: Internal correlation ID.
-external
-(integer, required)
-: External correlation ID.
-start_timestamp
-(integer, required)
-: Start timestamp.
-end_timestamp
-(integer, required)
-: End timestamp.
-thread_id
-(integer, required)
-: Thread ID.
-hsa_api
-(array)
-: HSA API records.
-Items
-(object)
-size
-(integer, required)
-: Size of the HSA API record.
-kind
-(integer, required)
-: Kind of the HSA API.
-operation
-(integer, required)
-: Operation of the HSA API.
-correlation_id
-(object, required)
-: Correlation ID information.
-internal
-(integer, required)
-: Internal correlation ID.
-external
-(integer, required)
-: External correlation ID.
-start_timestamp
-(integer, required)
-: Start timestamp.
-end_timestamp
-(integer, required)
-: End timestamp.
-thread_id
-(integer, required)
-: Thread ID.
-marker_api
-(array)
-: Marker (ROCTx) API records.
-Items
-(object)
-size
-(integer, required)
-: Size of the Marker API record.
-kind
-(integer, required)
-: Kind of the Marker API.
-operation
-(integer, required)
-: Operation of the Marker API.
-correlation_id
-(object, required)
-: Correlation ID information.
-internal
-(integer, required)
-: Internal correlation ID.
-external
-(integer, required)
-: External correlation ID.
-start_timestamp
-(integer, required)
-: Start timestamp.
-end_timestamp
-(integer, required)
-: End timestamp.
-thread_id
-(integer, required)
-: Thread ID.
-memory_copy
-(array)
-: Async memory copy records.
-Items
-(object)
-size
-(integer, required)
-: Size of the Marker API record.
-kind
-(integer, required)
-: Kind of the Marker API.
-operation
-(integer, required)
-: Operation of the Marker API.
-correlation_id
-(object, required)
-: Correlation ID information.
-internal
-(integer, required)
-: Internal correlation ID.
-external
-(integer, required)
-: External correlation ID.
-start_timestamp
-(integer, required)
-: Start timestamp.
-end_timestamp
-(integer, required)
-: End timestamp.
-thread_id
-(integer, required)
-: Thread ID.
-dst_agent_id
-(object, required)
-: Destination Agent ID.
-handle
-(integer, required)
-: Handle of the agent.
-src_agent_id
-(object, required)
-: Source Agent ID.
-handle
-(integer, required)
-: Handle of the agent.
-bytes
-(integer, required)
-: Bytes copied.
-memory_allocation
-(array)
-: Memory allocation records.
-Items
-(object)
-size
-(integer, required)
-: Size of the Marker API record.
-kind
-(integer, required)
-: Kind of the Marker API.
-operation
-(integer, required)
-: Operation of the Marker API.
-correlation_id
-(object, required)
-: Correlation ID information.
-internal
-(integer, required)
-: Internal correlation ID.
-external
-(integer, required)
-: External correlation ID.
-start_timestamp
-(integer, required)
-: Start timestamp.
-end_timestamp
-(integer, required)
-: End timestamp.
-thread_id
-(integer, required)
-: Thread ID.
-agent_id
-(object, required)
-: Agent ID.
-handle
-(integer, required)
-: Handle of the agent.
-address
-(string, required)
-: Starting address of allocation.
-allocation_size
-(integer, required)
-: Size of allocation.
-rocDecode_api
-(array)
-: rocDecode API records.
-Items
-(object)
-size
-(integer, required)
-: Size of the rocDecode API record.
-kind
-(integer, required)
-: Kind of the rocDecode API.
-operation
-(integer, required)
-: Operation of the rocDecode API.
-correlation_id
-(object, required)
-: Correlation ID information.
-internal
-(integer, required)
-: Internal correlation ID.
-external
-(integer, required)
-: External correlation ID.
-start_timestamp
-(integer, required)
-: Start timestamp.
-end_timestamp
-(integer, required)
-: End timestamp.
-thread_id
-(integer, required)
-: Thread ID.
-hipfile_api
-(array)
-: hipFILE API records.
-Items
-(object)
-size
-(integer, required)
-: Size of the hipFILE API record.
-kind
-(integer, required)
-: Kind of the hipFILE API.
-operation
-(integer, required)
-: Operation of the hipFILE API.
-correlation_id
-(object, required)
-: Correlation ID information.
-internal
-(integer, required)
-: Internal correlation ID.
-external
-(integer, required)
-: External correlation ID.
-start_timestamp
-(integer, required)
-: Start timestamp.
-end_timestamp
-(integer, required)
-: End timestamp.
-thread_id
-(integer, required)
-: Thread ID.
+
+
+class dotdict(dict):
+    """dot.notation access to dictionary attributes"""
+
+    __getattr__ = dict.get
+    __setattr__ = dict.__setitem__
+    __delattr__ = dict.__delitem__
+
+    def __init__(self, d):
+        super(dotdict, self).__init__(d)
+        for k, v in self.items():
+            if isinstance(v, dict):
+                self.__setitem__(k, dotdict(v))
+            elif isinstance(v, (list, tuple)):
+                self.__setitem__(
+                    k,
+                    [dotdict(i) if isinstance(i, (dict)) else i for i in v],
+                )
+
+    def __getstate__(self):
+        return self.__dict__
+
+    def __setstate__(self, d):
+        self.__dict__ = d
+
+
+def patch_message(msg, *args):
+    msg = textwrap.dedent(msg)
+
+    if len(args) > 0:
+        msg = msg.format(*args)
+
+    return msg.strip("\n").strip()
+
+
+def fatal_error(msg, *args, exit_code=1):
+    msg = patch_message(msg, *args)
+    sys.stderr.write(f"[rocprofv3] Fatal error: {msg}\n")
+    sys.stderr.flush()
+    sys.exit(exit_code)
+
+
+def warning(msg, *args):
+    msg = patch_message(msg, *args)
+    sys.stderr.write(f"[rocprofv3] Warning: {msg}\n")
+    sys.stderr.flush()
+
+
+def format_help(formatter, w=120, h=40):
+    """Return a wider HelpFormatter, if possible."""
+    try:
+        kwargs = {"width": w, "max_help_position": h}
+        formatter(None, **kwargs)
+        return lambda prog: formatter(prog, **kwargs)
+    except TypeError:
+        return formatter
+
+
+def strtobool(val):
+    """Convert a string representation of truth to true or false.
+    True values are 'y', 'yes', 't', 'true', 'on', and '1'; false values
+    are 'n', 'no', 'f', 'false', 'off', and '0'.  Raises ValueError if
+    'val' is anything else.
+    """
+    if isinstance(val, (list, tuple)):
+        if len(val) > 1:
+            val_type = type(val).__name__
+            raise ValueError(f"invalid truth value {val} (type={val_type})")
+        else:
+            val = val[0]
+
+    if isinstance(val, bool):
+        return val
+    elif isinstance(val, str) and val.lower() in ("y", "yes", "t", "true", "on", "1"):
+        return True
+    elif isinstance(val, str) and val.lower() in ("n", "no", "f", "false", "off", "0"):
+        return False
+    else:
+        val_type = type(val).__name__
+        raise ValueError(f"invalid truth value {val} (type={val_type})")
+
+
+def resolve_library_path(val, args, is_sdk_lib=True):
+    from pathlib import Path
+
+    if not isinstance(args, dotdict):
+        args = dotdict(args)
+
+    ROCPROF_SDK_VERSION = ".".join(CONST_VERSION_INFO["version"].split(".")[0:3])
+    ROCPROF_SDK_SOVERSION = CONST_VERSION_INFO["version"].split(".")[0]
+
+    # set default values
+    for name, value in [
+        ["required", True],
+        ["readlink", False],
+        ["realpath", False],
+        ["sdk_version", ROCPROF_SDK_VERSION],
+        ["sdk_soversion", ROCPROF_SDK_SOVERSION],
+    ]:
+        # set the attribute if it doesn't exist or value is set to None
+        if not hasattr(args, name) or (
+            hasattr(args, name) and getattr(args, name) is None
+        ):
+            setattr(args, name, value)
+
+    if is_sdk_lib:
+        if not os.path.exists(val) and args.sdk_soversion:
+            val = f"{val}.{args.sdk_soversion}"
+
+        if not os.path.exists(val) and args.sdk_version:
+            val = f"{val}.{args.sdk_version}"
+
+    if args.required and not os.path.exists(val):
+        fatal_error(f"Failed to resolve path. '{val}' does not exist")
+
+    if os.path.islink(val):
+        if args.readlink:
+            lnk = Path(val).readlink()
+            if not lnk.is_absolute():
+                val = os.path.join(Path(val).parent.absolute(), lnk)
+            else:
+                val = f"{lnk}"
+        if args.realpath:
+            val = os.path.realpath(val)
+    else:
+        if args.realpath:
+            val = os.path.realpath(val)
+
+    return val
+
+
+def get_att_paths(args):
+
+    ROCPROFV3_DIR = os.path.dirname(os.path.realpath(__file__))
+    ROCM_DIR = os.path.dirname(ROCPROFV3_DIR)
+    if args.rocm_root is not None:
+        ROCM_DIR = os.path.abspath(args.rocm_root)
+
+    library_paths = []
+
+    if args.att_library_path:
+        library_paths.extend(args.att_library_path)
+    elif os.environ.get("ROCPROF_ATT_LIBRARY_PATH"):
+        return os.environ.get("ROCPROF_ATT_LIBRARY_PATH")
+    else:
+        default_lib_path_env = os.environ.get("LD_LIBRARY_PATH", "").split(":") + [
+            f"{ROCM_DIR}/lib"
+        ]
+        for itr in default_lib_path_env:
+            if itr not in library_paths:
+                library_paths += [itr]
+
+    return library_paths
+
+
+def check_att_capability(args, att_lib_name="librocprof-trace-decoder.so"):
+
+    library_paths = get_att_paths(args)
+
+    for path in library_paths:
+        for root, dirs, files in os.walk(path, topdown=True):
+            for itr in files:
+                if att_lib_name in itr:
+                    args.att_library_path = resolve_library_path(
+                        root, args, is_sdk_lib=False
+                    )
+                    return True
+
+    return False
+
+
+class booleanArgAction(argparse.Action):
+    def __call__(self, parser, args, value, option_string=None):
+        setattr(args, self.dest, strtobool(value))
+
+
+def parse_arguments(args=None):
+
+    usage_examples = """
+
+%(prog)s requires double-hyphen (--) before the application to be executed, e.g.
+
+    $ rocprofv3 [<rocprofv3-option> ...] -- <application> [<application-arg> ...]
+    $ rocprofv3 --hip-trace -- ./myapp -n 1
+
+For MPI applications (or other job launchers such as SLURM), place rocprofv3 inside the job launcher:
+
+    $ mpirun -n 4 rocprofv3 --hip-trace -- ./mympiapp
+
+For attachment profiling of running processes:
+
+    $ rocprofv3 --attach <PID> --hip-trace --kernel-trace
+    $ rocprofv3 --attach 1234 --attach-duration-msec 10 --hsa-trace
+
+"""
+
+    # Create the parser
+    parser = argparse.ArgumentParser(
+        description="ROCProfilerV3 Run Script",
+        usage="%(prog)s [options] -- <application> [application options]",
+        epilog=usage_examples,
+        allow_abbrev=False,
+        formatter_class=format_help(argparse.RawTextHelpFormatter),
+    )
+
+    def add_parser_bool_argument(gparser, *args, **kwargs):
+        gparser.add_argument(
+            *args,
+            **kwargs,
+            action=booleanArgAction,
+            nargs="?",
+            const=True,
+            type=str,
+            required=False,
+            metavar="BOOL",
+        )
+
+    parser.add_argument(
+        "-v",
+        "--version",
+        action="store_true",
+        help="Print the version information and exit",
+    )
+
+    io_options = parser.add_argument_group("I/O options")
+
+    io_options.add_argument(
+        "-i",
+        "--input",
+        help="Input file for run configuration (JSON or YAML) or counter collection (TXT)",
+        required=False,
+    )
+    io_options.add_argument(
+        "-o",
+        "--output-file",
+        help="For the output file name. If nothing specified default path is `%%hostname%%/%%pid%%`",
+        default=os.environ.get("ROCPROF_OUTPUT_FILE_NAME", None),
+        type=str,
+        required=False,
+    )
+    io_options.add_argument(
+        "-d",
+        "--output-directory",
+        help="For adding output path where the output files will be saved. If nothing specified default path is `%%hostname%%/%%pid%%`",
+        default=os.environ.get("ROCPROF_OUTPUT_PATH", None),
+        type=str,
+        required=False,
+    )
+    io_options.add_argument(
+        "-f",
+        "--output-format",
+        help="For adding output format (supported formats: csv, json, pftrace, otf2, rocpd)",
+        nargs="+",
+        default=None,
+        choices=("csv", "json", "pftrace", "otf2", "rocpd"),
+        type=str.lower,
+    )
+    add_parser_bool_argument(
+        io_options,
+        "--output-config",
+        help="Generate a output file of the rocprofv3 configuration, e.g. out_config.json",
+    )
+    io_options.add_argument(
+        "--log-level",
+        help="Set the desired log level",
+        default=None,
+        choices=("fatal", "error", "warning", "info", "trace", "env", "config"),
+        type=str.lower,
+    )
+    io_options.add_argument(
+        "-E",
+        "--extra-counters",
+        help="Path to YAML file containing extra counter definitions",
+        type=str,
+        required=False,
+    )
+
+    aggregate_tracing_options = parser.add_argument_group("Aggregate tracing options")
+
+    add_parser_bool_argument(
+        aggregate_tracing_options,
+        "-r",
+        "--runtime-trace",
+        help="Collect tracing data for HIP runtime API, Marker (ROCTx) API, RCCL API, rocDecode API, rocJPEG API, Memory operations (copies, scratch, and allocation), and Kernel dispatches. Similar to --sys-trace but without tracing HIP compiler API and the underlying HSA API.",
+    )
+    add_parser_bool_argument(
+        aggregate_tracing_options,
+        "-s",
+        "--sys-trace",
+        help="Collect tracing data for HIP API, HSA API, Marker (ROCTx) API, RCCL API, rocDecode API, rocJPEG API, Memory operations (copies, scratch, and allocations), and Kernel dispatches.",
+    )
+
+    basic_tracing_options = parser.add_argument_group("Basic tracing options")
+
+    # Add the arguments
+    add_parser_bool_argument(
+        basic_tracing_options,
+        "--hip-trace",
+        help="Combination of --hip-runtime-trace and --hip-compiler-trace. This option only enables the tracing of the HIP API. Unlike previous iterations of rocprof, this does not enable kernel tracing, memory copy tracing, etc",
+    )
+    add_parser_bool_argument(
+        basic_tracing_options,
+        "--marker-trace",
+        help="For collecting Marker (ROCTx) Traces. Similar to --roctx-trace option in earlier rocprof versions but with improved ROCTx library with more features",
+    )
+    add_parser_bool_argument(
+        basic_tracing_options,
+        "--kernel-trace",
+        help="For collecting Kernel Dispatch Traces",
+    )
+    add_parser_bool_argument(
+        basic_tracing_options,
+        "--memory-copy-trace",
+        help="For collecting Memory Copy Traces. This was part of HIP and HSA traces in previous rocprof versions but is now a separate option",
+    )
+    add_parser_bool_argument(
+        basic_tracing_options,
+        "--memory-allocation-trace",
+        help="For collecting Memory Allocation Traces. Displays starting address, allocation size, and agent where allocation occurred.",
+    )
+    add_parser_bool_argument(
+        basic_tracing_options,
+        "--scratch-memory-trace",
+        help="For collecting Scratch Memory operations Traces. Helps in determining scratch allocations and manage them efficiently",
+    )
+    add_parser_bool_argument(
+        basic_tracing_options,
+        "--hsa-trace",
+        help="For collecting --hsa-core-trace, --hsa-amd-trace,--hsa-image-trace and --hsa-finalizer-trace. This option only enables the tracing of the HSA API. Unlike previous iterations of rocprof, this does not enable kernel tracing, memory copy tracing, etc",
+    )
+    add_parser_bool_argument(
+        basic_tracing_options,
+        "--rccl-trace",
+        help="For collecting RCCL(ROCm Communication Collectives Library. Also pronounced as 'Rickle' ) Traces",
+    )
+    add_parser_bool_argument(
+        basic_tracing_options,
+        "--kokkos-trace",
+        help="Enable built-in Kokkos Tools support (implies --marker-trace and --kernel-rename)",
+    )
+    add_parser_bool_argument(
+        basic_tracing_options,
+        "--rocdecode-trace",
+        help="For collecting rocDecode Traces",
+    )
+    add_parser_bool_argument(
+        basic_tracing_options,
+        "--rocjpeg-trace",
+        help="For collecting rocJPEG Traces",
+    )
+
+    extended_tracing_options = parser.add_argument_group("Granular tracing options")
+
+    add_parser_bool_argument(
+        extended_tracing_options,
+        "--hip-runtime-trace",
+        help="For collecting HIP Runtime API Traces, e.g. public HIP API functions starting with 'hip' (i.e. hipSetDevice).",
+    )
+    add_parser_bool_argument(
+        extended_tracing_options,
+        "--hip-compiler-trace",
+        help="For collecting HIP Compiler generated code Traces, e.g. HIP API functions starting with '__hip' (i.e. __hipRegisterFatBinary).",
+    )
+    add_parser_bool_argument(
+        extended_tracing_options,
+        "--hsa-core-trace",
+        help="For collecting HSA API Traces (core API), e.g. HSA functions prefixed with only 'hsa_' (i.e. hsa_init).",
+    )
+    add_parser_bool_argument(
+        extended_tracing_options,
+        "--hsa-amd-trace",
+        help="For collecting HSA API Traces (AMD-extension API), e.g. HSA function prefixed with 'hsa_amd_' (i.e. hsa_amd_coherency_get_type).",
+    )
+    add_parser_bool_argument(
+        extended_tracing_options,
+        "--hsa-image-trace",
+        help="For collecting HSA API Traces (Image-extension API), e.g. HSA functions prefixed with only 'hsa_ext_image_' (i.e. hsa_ext_image_get_capability).",
+    )
+    add_parser_bool_argument(
+        extended_tracing_options,
+        "--hsa-finalizer-trace",
+        help="For collecting HSA API Traces (Finalizer-extension API), e.g. HSA functions prefixed with only 'hsa_ext_program_' (i.e. hsa_ext_program_create).",
+    )
+
+    counter_collection_options = parser.add_argument_group("Counter collection options")
+
+    counter_collection_options.add_argument(
+        "--pmc",
+        help=(
+            "Specify Performance Monitoring Counters to collect(comma OR space separated in case of more than 1 counters). "
+            "Note: job will fail if entire set of counters cannot be collected in single pass"
+        ),
+        default=None,
+        nargs="*",
+    )
+
+    pc_sampling_options = parser.add_argument_group("PC sampling options")
+
+    add_parser_bool_argument(
+        pc_sampling_options,
+        "--pc-sampling-beta-enabled",
+        help="enable pc sampling support; beta version",
+    )
+
+    pc_sampling_options.add_argument(
+        "--pc-sampling-unit",
+        help="",
+        default=None,
+        type=str.lower,
+        choices=("instructions", "cycles", "time"),
+    )
+
+    pc_sampling_options.add_argument(
+        "--pc-sampling-method",
+        help="",
+        default=None,
+        type=str.lower,
+        choices=("stochastic", "host_trap"),
+    )
+
+    pc_sampling_options.add_argument(
+        "--pc-sampling-interval",
+        help="",
+        default=None,
+        type=int,
+    )
+
+    post_processing_options = parser.add_argument_group("Post-processing tracing options")
+
+    add_parser_bool_argument(
+        post_processing_options,
+        "--stats",
+        help="For collecting statistics of enabled tracing types. Must be combined with one or more tracing options. No default kernel stats unlike previous rocprof versions",
+    )
+    add_parser_bool_argument(
+        post_processing_options,
+        "-S",
+        "--summary",
+        help="Output single summary of tracing data at the conclusion of the profiling session",
+    )
+    add_parser_bool_argument(
+        post_processing_options,
+        "-D",
+        "--summary-per-domain",
+        help="Output summary for each tracing domain at the conclusion of the profiling session",
+    )
+    post_processing_options.add_argument(
+        "--summary-groups",
+        help="Output a summary for each set of domains matching the regular expression, e.g. 'KERNEL_DISPATCH|MEMORY_COPY' will generate a summary from all the tracing data in the KERNEL_DISPATCH and MEMORY_COPY domains; '*._API' will generate a summary from all the tracing data in the HIP_API, HSA_API, and MARKER_API domains",
+        nargs="+",
+        default=None,
+        type=str,
+        metavar="REGULAR_EXPRESSION",
+    )
+
+    summary_options = parser.add_argument_group("Summary options")
+
+    summary_options.add_argument(
+        "--summary-output-file",
+        help="Output summary to a file, stdout, or stderr (default: stderr)",
+        default=None,
+        type=str,
+    )
+    summary_options.add_argument(
+        "-u",
+        "--summary-units",
+        help="Timing units for output summary",
+        default=None,
+        type=str,
+        choices=("sec", "msec", "usec", "nsec"),
+    )
+
+    kernel_naming_options = parser.add_argument_group("Kernel naming options")
+
+    add_parser_bool_argument(
+        kernel_naming_options,
+        "-M",
+        "--mangled-kernels",
+        help="Do not demangle the kernel names",
+    )
+    add_parser_bool_argument(
+        kernel_naming_options,
+        "-T",
+        "--truncate-kernels",
+        help="Truncate the demangled kernel names. In earlier rocprof versions, this was known as --basenames [on/off]",
+    )
+    add_parser_bool_argument(
+        kernel_naming_options,
+        "--kernel-rename",
+        help="Use region names defined by roctxRangePush/roctxRangePop regions to rename the kernels. Known as --roctx-rename in earlier rocprof versions",
+    )
+
+    filter_options = parser.add_argument_group("Filtering options")
+
+    filter_options.add_argument(
+        "--kernel-include-regex",
+        help="Include the kernels matching this filter from counter-collection and thread-trace data (non-matching kernels will be excluded)",
+        default=None,
+        type=str,
+        metavar="REGULAR_EXPRESSION",
+    )
+    filter_options.add_argument(
+        "--kernel-exclude-regex",
+        help="Exclude the kernels matching this filter from counter-collection and thread-trace data (applied after --kernel-include-regex option)",
+        default=None,
+        type=str,
+        metavar="REGULAR_EXPRESSION",
+    )
+    filter_options.add_argument(
+        "--kernel-iteration-range",
+        help="Iteration range",
+        nargs="+",
+        default=None,
+        type=str,
+    )
+    filter_options.add_argument(
+        "-P",
+        "--collection-period",
+        help="The times are specified in seconds by default, but the unit can be changed using the `--collection-period-unit` option. Start Delay Time is the time in seconds before the collection begins, Collection Time is the duration in seconds for which data is collected, and Rate is the number of times the cycle is repeated. A repeat of 0 indicates that the cycle will repeat indefinitely. Users can specify multiple configurations, each defined by a triplet in the format `start_delay:collection_time:repeat`",
+        nargs="+",
+        default=None,
+        type=str,
+        metavar=("(START_DELAY_TIME):(COLLECTION_TIME):(REPEAT)"),
+    )
+    filter_options.add_argument(
+        "--collection-period-unit",
+        help="To change the unit used in `--collection-period` or `-P`, you can specify the desired unit using the `--collection-period-unit` option. The available units are `hour` for hours, `min` for minutes, `sec` for seconds, `msec` for milliseconds, `usec` for microseconds, and `nsec` for nanoseconds",
+        nargs=1,
+        default=["sec"],
+        type=str,
+        choices=("hour", "min", "sec", "msec", "usec", "nsec"),
+    )
+    add_parser_bool_argument(
+        filter_options,
+        "--selected-regions",
+        help="If set, rocprofv3 will only profile regions of code surrounded by roctxProfilerResume(0) and roctxProfilerPause(0)",
+    )
+
+    perfetto_options = parser.add_argument_group("Perfetto-specific options")
+
+    perfetto_options.add_argument(
+        "--perfetto-backend",
+        help="Perfetto data collection backend. 'system' mode requires starting traced and perfetto daemons",
+        default=None,
+        type=str,
+        nargs=1,
+        choices=("inprocess", "system"),
+    )
+    perfetto_options.add_argument(
+        "--perfetto-buffer-size",
+        help="Size of buffer for perfetto output in KB. default: 1 GB",
+        default=None,
+        type=int,
+        metavar="KB",
+    )
+    perfetto_options.add_argument(
+        "--perfetto-buffer-fill-policy",
+        help="Policy for handling new records when perfetto has reached the buffer limit",
+        default=None,
+        type=str,
+        choices=("discard", "ring_buffer"),
+    )
+    perfetto_options.add_argument(
+        "--perfetto-shmem-size-hint",
+        help="Perfetto shared memory size hint in KB. default: 64 KB",
+        default=None,
+        type=int,
+        metavar="KB",
+    )
+
+    display_options = parser.add_argument_group("Display options")
+
+    add_parser_bool_argument(
+        display_options,
+        "-L",
+        "--list-avail",
+        help="List available PC sampling configurations and metrics for counter collection. Backed by a valid YAML file. In earlier rocprof versions, this was known as --list-basic, --list-derived and --list-counters",
+    )
+
+    add_parser_bool_argument(
+        display_options,
+        "--group-by-queue",
+        help="For displaying the HIP streams that kernels and memory copy operations are submitted to rather than HSA queues.",
+    )
+
+    advanced_options = parser.add_argument_group("Advanced options")
+
+    advanced_options.add_argument(
+        "--preload",
+        help="Libraries to prepend to LD_PRELOAD (useful for sanitizer libraries)",
+        default=os.environ.get("ROCPROF_PRELOAD", "").split(":"),
+        nargs="*",
+    )
+
+    advanced_options.add_argument(
+        "--rocm-root",
+        help="Use the given path as the root ROCm path instead of the relative path of this script",
+        type=str,
+        metavar="PATH",
+        default=None,
+    )
+    advanced_options.add_argument(
+        "--sdk-soversion",
+        help="Use provided rocprofiler-sdk shared object version number when resolving library paths, e.g. `--sdk-soversion=X` for librocprofiler-sdk.so.X",
+        type=int,
+        default=None,
+    )
+    advanced_options.add_argument(
+        "--sdk-version",
+        help="Use provided rocprofiler-sdk version number when resolving library paths, e.g. `--sdk-version=X.Y.Z` for librocprofiler-sdk.so.X.Y.Z",
+        type=str,
+        default=None,
+    )
+    add_parser_bool_argument(
+        advanced_options,
+        "--readlink",
+        help=argparse.SUPPRESS,
+    )
+    add_parser_bool_argument(
+        advanced_options,
+        "--realpath",
+        help=argparse.SUPPRESS,
+    )
+    advanced_options.add_argument(
+        "--benchmark-mode",
+        choices=(
+            "disabled-sdk-contexts",
+            "sdk-buffer-overhead",
+            "sdk-callback-overhead",
+            "tool-runtime-overhead",
+            "execution-profile",
+        ),
+        help=argparse.SUPPRESS,
+        default=None,
+        type=str.lower,
+    )
+    advanced_options.add_argument(
+        "-A",
+        "--agent-index",
+        choices=("absolute", "relative", "type-relative"),
+        help="""absolute == node_id, e.g. Agent-0, Agent-2, Agent-4- absolute index of the agent regardless of cgroups masking.
+        This is a monotonically increasing number that is incremented for every folder in /sys/class/kfd/kfd/topology/nodes.
+    relative == logical_node_id,
+        e.g. Agent-0, Agent-1, Agent-2- relative index of the agent accounting for cgroups masking.
+        This is a monotonically increasing number which is incremented for every folder in /sys/class/kfd/kfd/topology/nodes/ whose properties file was non-empty.
+    type-relative == logical_node_type_id,
+        e.g. CPU-0, GPU-0, GPU-1- relative index of the agent accounting for cgroups masking where indexing starts at zero for each agent type.
+        It is a monotonically increasing number for each agent type and is incremented for every type folder in /sys/class/kfd/kfd/topology/nodes/ whose properties file is non-empty.
+        If agent-index is not provided then the default value for it is relative.""",
+    )
+    # below is available for CI because LD_PRELOADing a library linked to a sanitizer library
+    # causes issues in apps where HIP is part of shared library.
+    add_parser_bool_argument(
+        advanced_options,
+        "--suppress-marker-preload",
+        help=argparse.SUPPRESS,
+    )
+
+    # just echo the command line
+    add_parser_bool_argument(
+        advanced_options,
+        "--echo",
+        help=argparse.SUPPRESS,
+    )
+
+    add_parser_bool_argument(
+        advanced_options,
+        "--disable-signal-handlers",
+        help="""Enables the signal handlers in the rocprofv3 tool.
+        When --disable-signal-handlers is set to true,
+        and application has its signal handler on SIGSEGV or similar installed,
+        then its signal handler will be used, not the rocprofv3 signal handler.
+        Note: glog still installs signal handlers which provide backtraces""",
+    )
+
+    add_parser_bool_argument(
+        advanced_options,
+        "--process-sync",
+        help="""Enables the process synchronization in the rocprofv3 tool finalization stage.
+        When --process-sync is set to true,
+        and rocprofv3 tool will force process to wait for its peer processes finishing write the trace data,
+        then they proceed.
+        Note: some workloads will teminate the process group when one of the process is finished""",
+    )
+
+    advanced_options.add_argument(
+        "--minimum-output-data",
+        help="""Output files are generated only if output data size > minimum output data".
+        It can be used for controlling the generation of output files so that user don't recieve empty files.
+        The input is in KB units.""",
+        default=None,
+        type=int,
+        metavar="KB",
+    )
+
+    advanced_options.add_argument(
+        "-p",
+        "--pid",
+        "--attach",
+        help="""Attach to a target process by pid and execute as a tool from within said process.""",
+        type=int,
+        default=None,
+    )
+
+    advanced_options.add_argument(
+        "--attach-duration-msec",
+        help="""When --pid is used, sets the amount of time in milliseconds the profiler will be attached before detaching. When unset, the profiler will wait until Enter is pressed to detach.""",
+        type=int,
+        default=None,
+    )
+
+    if args is None:
+        args = sys.argv[1:]
+
+    rocp_args = args[:]
+
+    app_args = []
+
+    for idx, itr in enumerate(args):
+        if itr == "--":
+            rocp_args = args[0:idx]
+            app_args = args[(idx + 1) :]
+            break
+
+    att_options = parser.add_argument_group("Advanced Thread Trace (ATT) options")
+
+    add_parser_bool_argument(
+        att_options,
+        "--advanced-thread-trace",
+        "--att",
+        help="Enables thread trace",
+    )
+
+    att_options.add_argument(
+        "--att-library-path",
+        help="Search path to decoder library.",
+        default=None,
+        nargs="+",
+    )
+
+    att_options.add_argument(
+        "--att-target-cu",
+        help="Target compute unit ID (or WGP). Default 1",
+        default=None,
+    )
+
+    att_options.add_argument(
+        "--att-simd-select",
+        help="Bitmask of SIMDs to enable (gfx9) or SIMD ID (gfx10+). Default 0xF",
+        default=None,
+        type=str,
+    )
+
+    att_options.add_argument(
+        "--att-consecutive-kernels",
+        help="Consecutive kernels to profile with ATT. Default 0",
+        default=None,
+        type=str,
+    )
+
+    att_options.add_argument(
+        "--att-buffer-size",
+        help="Thread trace buffer size. Default 256MB",
+        default=None,
+        type=str,
+    )
+
+    att_options.add_argument(
+        "--att-shader-engine-mask",
+        help="Bitmask of shader engines to enable. Default 0x1",
+        default=None,
+        type=str,
+    )
+
+    att_options.add_argument(
+        "--att-gpu-index",
+        help="Comma-separated list of GPU index(es) to enable thread trace. Default: All",
+        default=None,
+        type=str,
+    )
+
+    att_options.add_argument(
+        "--att-perfcounters",
+        help="(gfx9) List of performance counters, and optionally their SIMD mask.",
+        default=None,
+        type=str.upper,
+    )
+
+    att_options.add_argument(
+        "--att-perfcounter-ctrl",
+        help="(gfx9) Integer in [1,32] range specifying collection period. 0 = disabled.",
+        default=None,
+        type=int,
+    )
+
+    att_options.add_argument(
+        "--att-activity",
+        help="(gfx9) Collect HW activity counters. Integer in [1,16] range specifying collection period. Recommended: 8",
+        default=None,
+        type=int,
+    )
+
+    add_parser_bool_argument(
+        att_options,
+        "--att-serialize-all",
+        default=False,
+        help="Serialize all kernels, not just the traced ones.",
+    )
+
+    return (parser.parse_args(rocp_args), app_args)
+
+
+def parse_yaml(yaml_file):
+    try:
+        import yaml
+    except ImportError as e:
+        fatal_error(
+            f"{e}\n\nYAML package is not installed. Run '{sys.executable} -m pip install pyyaml' or use JSON or text format"
+        )
+    try:
+        lst = []
+        with open(yaml_file, "r") as file:
+            data = yaml.safe_load(file)
+        for itr in data["jobs"]:
+            # TODO: support naming jobs
+            # if isinstance(itr, str):
+            #     itr = data["jobs"][itr]
+            itr["sub_directory"] = "pass_"
+            lst.append(itr)
+
+        return [dotdict(itr) for itr in lst]
+
+    except yaml.YAMLError as exc:
+        fatal_error(f"{exc}")
+
+    return None
+
+
+def parse_json(json_file):
+    import json
+
+    try:
+        lst = []
+        with open(json_file, "r") as file:
+            data = json.load(file)
+        for itr in data["jobs"]:
+            itr["sub_directory"] = "pass_"
+            lst.append(itr)
+
+        return [dotdict(itr) for itr in lst]
+
+    except Exception as e:
+        fatal_error(f"{e}")
+
+    return None
+
+
+def parse_text(text_file):
+    def process_line(line):
+        if "pmc:" not in line:
+            return ""
+        line = line.strip()
+        pos = line.find("#")
+        if pos >= 0:
+            line = line[0:pos]
+
+        def _dedup(_line, _sep):
+            for itr in _sep:
+                _line = " ".join(_line.split(itr))
+            return _line.strip()
+
+        # remove tabs and duplicate spaces
+        return _dedup(line.replace("pmc:", ""), ["\n", "\t", " "]).split(" ")
+
+    try:
+        with open(text_file, "r") as file:
+            return [
+                litr
+                for litr in [process_line(itr) for itr in file.readlines()]
+                if len(litr) > 0
+            ]
+    except Exception as e:
+        fatal_error(f"{e}")
+
+    return None
+
+
+def parse_input(input_file):
+
+    _, extension = os.path.splitext(input_file)
+    if extension == ".txt":
+        text_input = parse_text(input_file)
+        text_input_lst = [{"pmc": itr, "sub_directory": "pmc_"} for itr in text_input]
+        return [dotdict(itr) for itr in text_input_lst]
+    elif extension in (".yaml", ".yml"):
+        return parse_yaml(input_file)
+    elif extension == ".json":
+        return parse_json(input_file)
+    else:
+        fatal_error(
+            f"Input file '{input_file}' does not have a recognized extension (.txt, .json, .yaml, .yml)\n"
+        )
+
+    return None
+
+
+def has_set_attr(obj, key):
+    if obj and hasattr(obj, key) and getattr(obj, key) is not None:
+        return True
+    else:
+        return False
+
+
+def patch_args(data):
+    """Used to handle certain fields which might be specified as a string instead of an array or vice-versa"""
+
+    if hasattr(data, "kernel_iteration_range") and isinstance(
+        data.kernel_iteration_range, str
+    ):
+        data.kernel_iteration_range = [data.kernel_iteration_range]
+    return data
+
+
+def get_args(
+    cmd_args, inp_args, filter=None, require_in_both=False, ignore_prev_inp=None
+):
+    """
+    Merges key and values in dict cmd_args and inp_args and returns the merged dict. This is typically used to combine
+    arguments from multiple sources (e.g. command line and an input file).
+
+    If a key has conflicting values in cmd_args and inp_args, a RuntimeError is thrown.
+    If a filter is provided (as a list of regex strings), only keys matching at least one filter regex will throw a
+    RuntimeError for conflicting values. If the key with conflicting values does not match a filter, a warning is
+    generated instead, and the value from cmd_args is used in the merged dict.
+    If require_in_both is True, all keys must be present in both cmd_args and inp_args or a RuntimeError is thrown.
+    This is typically used when arguments must match exactly.
+    If a filter is provided and require_in_both is True, only keys matching at least one filter regex will throw a
+    RuntimeError if they are not present in both cmd_args and inp_args. If the key does not match a filter, a warning
+    is generated instead, and the unique key is used in the merged dict.
+    """
+
+    import re
+
+    filter_regex = re.compile(filter) if filter is not None else None
+    ignored_regex = re.compile(ignore_prev_inp) if ignore_prev_inp is not None else None
+
+    def ensure_type(name, var, type_id):
+        if not isinstance(var, type_id):
+            raise TypeError(
+                f"{name} is of type {type(var).__name__}, expected {type_id.__name__}"
+            )
+
+    if isinstance(cmd_args, argparse.Namespace):
+        ensure_type("cmd_args", cmd_args, argparse.Namespace)
+        ensure_type("inp_args", inp_args, dotdict)
+
+        cmd_keys = list(cmd_args.__dict__.keys())
+        inp_keys = list(inp_args.keys())
+
+    else:
+        ensure_type("cmd_args", cmd_args, dotdict)
+        ensure_type("inp_args", inp_args, dotdict)
+
+        cmd_keys = list(cmd_args.keys())
+        inp_keys = list(inp_args.keys())
+
+    data = {}
+
+    def is_ignored(key):
+        if ignored_regex:
+            return ignored_regex.match(key)
+        return False
+
+    def get_attr(key):
+        if has_set_attr(cmd_args, key):
+            return getattr(cmd_args, key)
+        elif is_ignored(key):
+            return None
+        elif has_set_attr(inp_args, key):
+            return getattr(inp_args, key)
+        return None
+
+    def is_filtered(key):
+        if filter_regex:
+            return filter_regex.match(key)
+        else:
+            # if there are no filters, all keys match
+            return True
+        return False
+
+    for itr in set(cmd_keys + inp_keys):
+        # check for conflicting args between the two argument lists
+        if (
+            has_set_attr(cmd_args, itr)
+            and has_set_attr(inp_args, itr)
+            and getattr(cmd_args, itr) != getattr(inp_args, itr)
+        ):
+            if is_filtered(itr):
+                raise RuntimeError(
+                    f"Option '{itr}' has conflicting values: {getattr(cmd_args, itr)} vs {getattr(inp_args, itr)}"
+                )
+            else:
+                warning(
+                    f"Option '{itr}' has been modified. {itr}={getattr(cmd_args, itr)} (previously {itr}={getattr(inp_args, itr)})"
+                )
+
+        # if require_in_both was set, check for keys unique to each argument list
+        if require_in_both and (
+            has_set_attr(cmd_args, itr) != has_set_attr(inp_args, itr)
+        ):
+            if is_filtered(itr):
+                raise RuntimeError(
+                    f"Option '{itr}' was only present in one argument list : {getattr(cmd_args, itr, None)} vs {getattr(inp_args, itr, None)}"
+                )
+            else:
+                warning(
+                    f"Option '{itr}' was only present in one argument list, but will be used : {itr}={get_attr(itr)}"
+                )
+
+        # has preference towards command line args
+        data[itr] = get_attr(itr)
+
+    return patch_args(dotdict(data))
+
+
+def run(app_args, args, **kwargs):
+
+    app_env = dict(os.environ)
+    use_execv = kwargs.get("use_execv", True)
+    app_pass = kwargs.get("pass_id", None)
+
+    def setattrifnone(obj, attr, value):
+        if getattr(obj, f"{attr}") is None:
+            setattr(obj, f"{attr}", value)
+
+    def update_env(env_var, env_val, **kwargs):
+        """Local function for updating application environment which supports
+        various options for dealing with existing environment variables
+        """
+        _overwrite = kwargs.get("overwrite", True)
+        _prepend = kwargs.get("prepend", False)
+        _append = kwargs.get("append", False)
+        _join_char = kwargs.get("join_char", ":")
+
+        # only overwrite if env_val evaluates as true
+        _overwrite_if_true = kwargs.get("overwrite_if_true", False)
+        # only overwrite if env_val evaluates as false
+        _overwrite_if_false = kwargs.get("overwrite_if_false", False)
+
+        _formatter = kwargs.get(
+            "formatter",
+            lambda x: f"{x}" if not isinstance(x, bool) else "1" if x else "0",
+        )
+
+        for itr in kwargs.keys():
+            if itr not in (
+                "overwrite",
+                "prepend",
+                "append",
+                "join_char",
+                "overwrite_if_true",
+                "overwrite_if_false",
+                "formatter",
+            ):
+                fatal_error(
+                    f"Internal error in update_env('{env_var}', {env_val}, {itr}={kwargs[itr]}). Invalid key: {itr}"
+                )
+
+        if env_val is None:
+            return app_env.get(env_var, None)
+
+        _val = _formatter(env_val)
+        _curr_val = app_env.get(env_var, None)
+
+        def _write_env_value():
+            if _overwrite_if_true:
+                if bool(env_val) is True:
+                    app_env[env_var] = _val
+            elif _overwrite_if_false:
+                if bool(env_val) is False:
+                    app_env[env_var] = _val
+            else:
+                app_env[env_var] = _val
+
+        if _curr_val is not None:
+            if not _overwrite:
+                pass
+            elif _prepend:
+                app_env[env_var] = (
+                    "{}{}{}".format(_val, _join_char, _curr_val) if _val else _curr_val
+                ).strip(":")
+            elif _append:
+                app_env[env_var] = (
+                    "{}{}{}".format(_curr_val, _join_char, _val) if _val else _curr_val
+                ).strip(":")
+            elif _overwrite:
+                _write_env_value()
+        else:
+            _write_env_value()
+
+        return app_env.get(env_var, None)
+
+    update_env("ROCPROFILER_LIBRARY_CTOR", True)
+
+    ROCPROFV3_DIR = os.path.dirname(os.path.realpath(__file__))
+    ROCM_DIR = os.path.dirname(ROCPROFV3_DIR)
+    if args.rocm_root is not None:
+        ROCM_DIR = os.path.abspath(args.rocm_root)
+    ROCPROF_TOOL_LIBRARY = f"{ROCM_DIR}/lib/rocprofiler-sdk/librocprofiler-sdk-tool.so"
+    ROCPROF_SDK_LIBRARY = f"{ROCM_DIR}/lib/librocprofiler-sdk.so"
+    ROCPROF_ROCTX_LIBRARY = f"{ROCM_DIR}/lib/librocprofiler-sdk-roctx.so"
+    ROCPROF_KOKKOSP_LIBRARY = (
+        f"{ROCM_DIR}/lib/rocprofiler-sdk/librocprofiler-sdk-tool-kokkosp.so"
+    )
+    ROCPROF_LIST_AVAIL_TOOL_LIBRARY = (
+        f"{ROCM_DIR}/lib/rocprofiler-sdk/librocprofv3-list-avail.so"
+    )
+    ROCPROF_ATTACH_TOOL_LIBRARY = f"{ROCM_DIR}/lib/librocprofiler-sdk-rocattach.so"
+
+    ROCPROF_TOOL_LIBRARY = resolve_library_path(ROCPROF_TOOL_LIBRARY, args)
+    ROCPROF_SDK_LIBRARY = resolve_library_path(ROCPROF_SDK_LIBRARY, args)
+    ROCPROF_ROCTX_LIBRARY = resolve_library_path(ROCPROF_ROCTX_LIBRARY, args)
+    ROCPROF_KOKKOSP_LIBRARY = resolve_library_path(ROCPROF_KOKKOSP_LIBRARY, args)
+    ROCPROF_LIST_AVAIL_TOOL_LIBRARY = resolve_library_path(
+        ROCPROF_LIST_AVAIL_TOOL_LIBRARY, args
+    )
+    ROCPROF_ATTACH_TOOL_LIBRARY = resolve_library_path(ROCPROF_ATTACH_TOOL_LIBRARY, args)
+
+    prepend_preload = [itr for itr in args.preload if itr]
+    append_preload = [
+        ROCPROF_TOOL_LIBRARY,
+        ROCPROF_SDK_LIBRARY,
+    ]
+
+    if not args.pid:
+        update_env("LD_PRELOAD", ":".join(prepend_preload), prepend=True)
+        update_env("LD_PRELOAD", ":".join(append_preload), append=True)
+
+    update_env(
+        "ROCP_TOOL_LIBRARIES",
+        f"{ROCPROF_TOOL_LIBRARY}",
+        append=True,
+    )
+    update_env(
+        "LD_LIBRARY_PATH",
+        f"{ROCM_DIR}/lib",
+        append=True,
+    )
+
+    _output_file = args.output_file
+    _output_path = (
+        args.output_directory if args.output_directory is not None else os.getcwd()
+    )
+
+    update_env("ROCPROF_OUTPUT_FILE_NAME", _output_file)
+    update_env("ROCPROF_OUTPUT_PATH", _output_path)
+    update_env("ROCPROF_OUTPUT_CONFIG_FILE", args.output_config, overwrite_if_true=True)
+    if app_pass is not None and args.sub_directory is not None:
+        app_env["ROCPROF_OUTPUT_PATH"] = os.path.join(
+            f"{_output_path}", f"{args.sub_directory}{app_pass}"
+        )
+
+    if args.list_avail and (
+        args.output_file is not None or args.output_directory is not None
+    ):
+        update_env("ROCPROF_OUTPUT_LIST_AVAIL_FILE", True)
+
+    if not args.output_format:
+        args.output_format = ["rocpd"]
+
+    update_env(
+        "ROCPROF_OUTPUT_FORMAT", ",".join(args.output_format), append=True, join_char=","
+    )
+
+    if args.kokkos_trace:
+        update_env("KOKKOS_TOOLS_LIBS", ROCPROF_KOKKOSP_LIBRARY, append=True)
+        for itr in (
+            "marker_trace",
+            "kernel_rename",
+        ):
+            setattrifnone(args, itr, True)
+
+    if args.sys_trace:
+        for itr in (
+            "hip_trace",
+            "hsa_trace",
+            "marker_trace",
+            "kernel_trace",
+            "memory_copy_trace",
+            "memory_allocation_trace",
+            "scratch_memory_trace",
+            "rccl_trace",
+            "rocdecode_trace",
+            "rocjpeg_trace",
+        ):
+            setattrifnone(args, itr, True)
+
+    if args.runtime_trace:
+        for itr in (
+            "hip_runtime_trace",
+            "marker_trace",
+            "kernel_trace",
+            "memory_copy_trace",
+            "memory_allocation_trace",
+            "scratch_memory_trace",
+            "rccl_trace",
+            "rocdecode_trace",
+            "rocjpeg_trace",
+        ):
+            setattrifnone(args, itr, True)
+
+    if args.hip_trace:
+        for itr in ("compiler", "runtime"):
+            setattrifnone(args, f"hip_{itr}_trace", True)
+
+    if args.hsa_trace:
+        for itr in ("core", "amd", "image", "finalizer"):
+            setattrifnone(args, f"hsa_{itr}_trace", True)
+
+    trace_count = 0
+    trace_opts = ["--hip-trace", "--hsa-trace"]
+    for opt, env_val in dict(
+        [
+            ["hip_compiler_trace", "HIP_COMPILER_API_TRACE"],
+            ["hip_runtime_trace", "HIP_RUNTIME_API_TRACE"],
+            ["hsa_core_trace", "HSA_CORE_API_TRACE"],
+            ["hsa_amd_trace", "HSA_AMD_EXT_API_TRACE"],
+            ["hsa_image_trace", "HSA_IMAGE_EXT_API_TRACE"],
+            ["hsa_finalizer_trace", "HSA_FINALIZER_EXT_API_TRACE"],
+            ["marker_trace", "MARKER_API_TRACE"],
+            ["rccl_trace", "RCCL_API_TRACE"],
+            ["rocdecode_trace", "ROCDECODE_API_TRACE"],
+            ["rocjpeg_trace", "ROCJPEG_API_TRACE"],
+            ["kernel_trace", "KERNEL_TRACE"],
+            ["memory_copy_trace", "MEMORY_COPY_TRACE"],
+            ["memory_allocation_trace", "MEMORY_ALLOCATION_TRACE"],
+            ["scratch_memory_trace", "SCRATCH_MEMORY_TRACE"],
+            ["group_by_queue", "GROUP_BY_QUEUE"],
+        ]
+    ).items():
+        val = getattr(args, f"{opt}")
+        update_env(f"ROCPROF_{env_val}", val, overwrite_if_true=True)
+        trace_count += 1 if val else 0
+        trace_opts += ["--{}".format(opt.replace("_", "-"))]
+
+    for opt in ["advanced_thread_trace", "pmc", "pc_sampling_beta_enabled"]:
+        if not hasattr(args, f"{opt}"):
+            continue
+        val = getattr(args, f"{opt}")
+        trace_count += 1 if val else 0
+        trace_opts += ["--{}".format(opt.replace("_", "-"))]
+
+    if args.pmc_groups:
+        trace_count += 1
+
+    # if marker tracing was requested, LD_PRELOAD the rocprofiler-sdk-roctx library
+    # to override the roctx symbols of an app linked to the old roctracer roctx
+    if args.marker_trace and not args.suppress_marker_preload:
+        update_env("LD_PRELOAD", ROCPROF_ROCTX_LIBRARY, append=True)
+
+    if trace_count == 0 and len(app_args) != 0:
+        warning("No tracing options were enabled.")
+
+        # if no tracing was enabled but the options below were enabled, raise an error
+        for oitr in [
+            "stats",
+            "summary",
+            "summary-per-domain",
+            "summary-groups",
+            "summary-output-file",
+            "summary-units",
+        ]:
+            _attr = oitr.replace("-", "_")
+            if not hasattr(args, _attr):
+                fatal_error(
+                    f"Internal error. parser does not support --{oitr} argument (i.e. args.{_attr})"
+                )
+            elif getattr(args, _attr):
+                _len = max([len(f"{key}") for key in args.keys()])
+                _args = "\n    ".join(
+                    sorted([f"{key:<{_len}} = {val}" for key, val in args.items()])
+                )
+                fatal_error(
+                    """
+                    No tracing options were enabled for --{} option.
+
+                    Configuration argument values:
+                        {}
+
+                    Tracing options:
+                        {}
+                    """,
+                    oitr,
+                    f"{_args}",
+                    "\n    ".join(trace_opts),
+                )
+
+        rocprofiler_ci_env = os.environ.get("ROCPROFILER_CI", "0")
+        if strtobool(rocprofiler_ci_env):
+            fatal_error(
+                f"rocprofv3 tracing options are required when ROCPROFILER_CI={rocprofiler_ci_env}"
+            )
+
+    _summary_groups = "##@@##".join(args.summary_groups) if args.summary_groups else None
+    _summary_output_fname = args.summary_output_file
+    if args.summary and _summary_output_fname is None:
+        _summary_output_fname = "stderr"
+    elif args.summary and _summary_output_fname.lower() in ("stdout", "stderr"):
+        _summary_output_fname = _summary_output_fname.lower()
+
+    update_env("ROCPROF_STATS", args.stats, overwrite_if_true=True)
+    update_env("ROCPROF_STATS_SUMMARY", args.summary, overwrite_if_true=True)
+    update_env("ROCPROF_STATS_SUMMARY_UNITS", args.summary_units, overwrite=True)
+    update_env("ROCPROF_STATS_SUMMARY_OUTPUT", _summary_output_fname, overwrite=True)
+    update_env("ROCPROF_STATS_SUMMARY_GROUPS", _summary_groups, overwrite=True)
+    update_env(
+        "ROCPROF_STATS_SUMMARY_PER_DOMAIN",
+        args.summary_per_domain,
+        overwrite_if_true=True,
+    )
+    update_env(
+        "ROCPROF_DEMANGLE_KERNELS",
+        not args.mangled_kernels,
+        overwrite_if_false=True,
+    )
+    update_env(
+        "ROCPROF_TRUNCATE_KERNELS",
+        args.truncate_kernels,
+        overwrite_if_true=True,
+    )
+    update_env(
+        "ROCPROF_SELECTED_REGIONS",
+        args.selected_regions,
+        overwrite_if_true=True,
+    )
+
+    if args.list_avail:
+        update_env(
+            "ROCPROF_LIST_AVAIL_TOOL_LIBRARY",
+            ROCPROF_LIST_AVAIL_TOOL_LIBRARY,
+            overwrite_if_true=True,
+        )
+
+    if args.pid:
+        update_env(
+            "ROCPROF_ATTACH_TOOL_LIBRARY",
+            ROCPROF_ATTACH_TOOL_LIBRARY,
+            overwrite_if_true=True,
+        )
+
+    if args.collection_period:
+        factors = {
+            "hour": 60 * 60 * 1e9,
+            "min": 60 * 1e9,
+            "sec": 1e9,
+            "msec": 1e6,
+            "usec": 1e3,
+            "nsec": 1,
+        }
+
+        def to_nanosec(val):
+            return int(float(val) * factors[args.collection_period_unit[0]])
+
+        def convert_triplet(delay, duration, repeat):
+            return ":".join(
+                [
+                    f"{itr}"
+                    for itr in [to_nanosec(delay), to_nanosec(duration), int(repeat)]
+                ]
+            )
+
+        periods = [convert_triplet(*itr.split(":")) for itr in args.collection_period]
+        update_env(
+            "ROCPROF_COLLECTION_PERIOD",
+            ";".join(periods),
+            overwrite_if_true=True,
+        )
+
+    if args.log_level and args.log_level not in ("env", "config"):
+        for itr in ("ROCPROF", "ROCPROFILER", "ROCTX"):
+            update_env(
+                f"{itr}_LOG_LEVEL",
+                args.log_level,
+            )
+
+    if args.benchmark_mode:
+        if args.benchmark_mode == "execution-profile":
+            if args.group_by_queue is None:
+                update_env(
+                    "ROCPROF_GROUP_BY_QUEUE",
+                    False,
+                    overwrite=True,
+                )
+            elif args.group_by_queue:
+                fatal_error(
+                    "rocprofv3 requires --group-by-queue=false for --benchmark-mode=execution-profile"
+                )
+
+        update_env(
+            "ROCPROF_BENCHMARK_MODE",
+            args.benchmark_mode,
+        )
+
+    for opt, env_val in dict(
+        [
+            ["kernel_rename", "KERNEL_RENAME"],
+        ]
+    ).items():
+        val = getattr(args, f"{opt}")
+        if val is not None:
+            update_env(f"ROCPROF_{env_val}", val, overwrite_if_true=True)
+
+    for opt, env_val in dict(
+        [
+            ["perfetto_buffer_size", "PERFETTO_BUFFER_SIZE_KB"],
+            ["perfetto_shmem_size_hint", "PERFETTO_SHMEM_SIZE_HINT_KB"],
+            ["perfetto_fill_policy", "PERFETTO_BUFFER_FILL_POLICY"],
+            ["perfetto_backend", "PERFETTO_BACKEND"],
+        ]
+    ).items():
+        val = getattr(args, f"{opt}")
+        if val is not None:
+            if isinstance(val, (list, tuple, set)):
+                val = ", ".join(val)
+            update_env(f"ROCPROF_{env_val}", val, overwrite=True)
+
+    def log_config(_env):
+
+        cfg_init_message = "\n- rocprofv3 configuration{}:\n".format(
+            "" if app_pass is None else f" (pass {app_pass})"
+        )
+        if args.log_level in ("info", "trace", "config"):
+            _len = max([len(f"{key}") for key in args.keys()])
+            _args = sorted([f"{key:<{_len}} = {val}" for key, val in args.items()])
+            sys.stderr.write(cfg_init_message)
+            cfg_init_message = None
+            for itr in _args:
+                sys.stderr.write(f"    - {itr}\n")
+
+        env_init_message = "\n- rocprofv3 environment{}:\n".format(
+            "" if app_pass is None else f" (pass {app_pass})"
+        )
+        if args.log_level in ("info", "trace", "env"):
+            existing_env = dict(os.environ)
+            for key, itr in _env.items():
+                if key not in existing_env.keys():
+                    if env_init_message:
+                        sys.stderr.write(env_init_message)
+                        env_init_message = None
+                    sys.stderr.write(f"    - {key}={itr}\n")
+
+        if cfg_init_message is None or env_init_message is None:
+            sys.stderr.write("\n")
+        sys.stderr.flush()
+
+    if args.list_avail:
+        update_env("ROCPROFILER_PC_SAMPLING_BETA_ENABLED", "on")
+        path = os.path.join(f"{ROCM_DIR}", "bin/rocprofv3-avail")
+        if app_args:
+            exit_code = subprocess.check_call(
+                [sys.executable, path, "info", "--pmc"],
+                env=app_env,
+            )
+            if exit_code != 0:
+                fatal_error("rocprofv3-avail exit with error")
+
+            exit_code = subprocess.check_call(
+                [sys.executable, path, "info", "--pc-sampling"],
+                env=app_env,
+            )
+        else:
+            app_args = [sys.executable, path, "info", "--pmc"]
+            for itr in ("ROCPROF", "ROCPROFILER", "ROCTX"):
+                update_env(
+                    f"{itr}_LOG_LEVEL",
+                    "error",
+                )
+            exit_code = subprocess.check_call(
+                [sys.executable, path, "info", "--pc-sampling"],
+                env=app_env,
+            )
+
+    elif args.pid:
+        update_env("ROCPROF_ATTACH_PID", args.pid)
+        if args.attach_duration_msec is not None:
+            update_env("ROCPROF_ATTACH_DURATION", f"{args.attach_duration_msec}")
+        path = os.path.join(f"{ROCM_DIR}", "bin/rocprof-attach")
+        if app_args:
+            exit_code = subprocess.check_call([sys.executable, path], env=app_env)
+        else:
+            app_args = [sys.executable, path]
+
+    elif not app_args and not args.echo:
+        log_config(app_env)
+        fatal_error("No application provided")
+
+    if args.kernel_include_regex:
+        update_env(
+            "ROCPROF_KERNEL_FILTER_INCLUDE_REGEX",
+            args.kernel_include_regex,
+        )
+
+    if args.kernel_exclude_regex:
+        update_env(
+            "ROCPROF_KERNEL_FILTER_EXCLUDE_REGEX",
+            args.kernel_exclude_regex,
+        )
+
+    if args.kernel_iteration_range:
+        update_env("ROCPROF_KERNEL_FILTER_RANGE", ", ".join(args.kernel_iteration_range))
+
+    if args.agent_index:
+        update_env("ROCPROF_AGENT_INDEX", args.agent_index)
+
+    if args.extra_counters is not None:
+        with open(args.extra_counters, "r") as e_file:
+            e_file_contents = e_file.read()
+            update_env("ROCPROF_EXTRA_COUNTERS_CONTENTS", e_file_contents, overwrite=True)
+
+    if args.pmc and args.pmc_groups:
+        fatal_error("Cannot specify both --pmc and (input file) pmc_groups")
+
+    if args.pmc:
+        update_env("ROCPROF_COUNTER_COLLECTION", True, overwrite=True)
+        update_env(
+            "ROCPROF_COUNTERS", "pmc: {}".format(" ".join(args.pmc)), overwrite=True
+        )
+
+    if args.pmc_groups:
+        group_env = ""
+        update_env("ROCPROF_COUNTER_COLLECTION", True, overwrite=True)
+
+        for row in map(" ".join, args.pmc_groups):
+            # pmc: added to allow for the same parser to be shared between the two
+            #      counter collection modes. Output will be new line delimited between
+            #      groups.
+            group_env += f"pmc: {row}\n"
+        group_env = group_env.rstrip()
+
+        update_env("ROCPROF_COUNTER_GROUPS", group_env, overwrite=True)
+
+        if args.pmc_group_interval:
+            update_env(
+                "ROCPROF_COUNTER_GROUPS_INTERVAL",
+                f"{str(args.pmc_group_interval)}",
+                overwrite=True,
+            )
+
+    if args.pc_sampling_unit or args.pc_sampling_method or args.pc_sampling_interval:
+
+        if (
+            not args.pc_sampling_beta_enabled
+            and os.environ.get("ROCPROFILER_PC_SAMPLING_BETA_ENABLED", None) is None
+        ):
+            fatal_error(
+                "PC sampling unavailable. The feature is implicitly disabled. To enable it, use --pc-sampling-beta-enable option or set ROCPROFILER_PC_SAMPLING_BETA_ENABLED=ON in the environment"
+            )
+
+        update_env(
+            "ROCPROFILER_PC_SAMPLING_BETA_ENABLED",
+            args.pc_sampling_beta_enabled,
+            overwrite_if_true=True,
+        )
+
+        if not (
+            args.pc_sampling_unit
+            and args.pc_sampling_method
+            and args.pc_sampling_interval
+        ):
+            fatal_error("All three PC sampling configurations need to be set")
+
+        if args.pc_sampling_interval <= 0:
+            fatal_error("PC sampling interval must be a positive number.")
+
+        update_env("ROCPROF_PC_SAMPLING_UNIT", args.pc_sampling_unit)
+        update_env("ROCPROF_PC_SAMPLING_METHOD", args.pc_sampling_method)
+        update_env("ROCPROF_PC_SAMPLING_INTERVAL", args.pc_sampling_interval)
+
+    if args.disable_signal_handlers is not None:
+        update_env("ROCPROF_SIGNAL_HANDLERS", not args.disable_signal_handlers)
+
+    if args.process_sync is not None:
+        update_env("ROCPROF_PROCESS_SYNC", args.process_sync)
+
+    if args.minimum_output_data:
+        update_env("ROCPROF_MINIMUM_OUTPUT_BYTES", args.minimum_output_data * 1024)
+
+    if args.advanced_thread_trace:
+
+        def int_auto(num_str):
+            if isinstance(num_str, str):
+                if "0x" in num_str:
+                    return int(num_str, 16)
+                else:
+                    return int(num_str, 10)
+            elif isinstance(num_str, int):
+                return num_str
+            else:
+                raise ValueError(
+                    f"{type(num_str)} is not supported. {num_str} should be of type integer or string."
+                )
+
+        update_env("ROCPROF_ADVANCED_THREAD_TRACE", True, overwrite=True)
+
+        if args.att_target_cu is not None:
+            update_env(
+                "ROCPROF_ATT_PARAM_TARGET_CU",
+                int_auto(args.att_target_cu),
+                overwrite=True,
+            )
+
+        if args.att_shader_engine_mask:
+            update_env(
+                "ROCPROF_ATT_PARAM_SHADER_ENGINE_MASK",
+                int_auto(args.att_shader_engine_mask),
+                overwrite=True,
+            )
+        if args.att_buffer_size:
+            update_env(
+                "ROCPROF_ATT_PARAM_BUFFER_SIZE",
+                int_auto(args.att_buffer_size),
+                overwrite=True,
+            )
+        if args.att_simd_select:
+            update_env(
+                "ROCPROF_ATT_PARAM_SIMD_SELECT",
+                int_auto(args.att_simd_select),
+                overwrite=True,
+            )
+        if args.att_consecutive_kernels:
+            update_env(
+                "ROCPROF_ATT_CONSECUTIVE_KERNELS",
+                int_auto(args.att_consecutive_kernels),
+                overwrite=True,
+            )
+        if args.att_serialize_all:
+            update_env(
+                "ROCPROF_ATT_PARAM_SERIALIZE_ALL",
+                args.att_serialize_all,
+                overwrite=True,
+            )
+        if args.att_gpu_index:
+            update_env(
+                "ROCPROF_ATT_PARAM_GPU_INDEX",
+                args.att_gpu_index,
+                overwrite=True,
+            )
+        if check_att_capability(args):
+            update_env(
+                "ROCPROF_ATT_LIBRARY_PATH",
+                args.att_library_path,
+                overwrite=True,
+            )
+        else:
+            fatal_error(
+                f"rocprof-trace-decoder library path not found in {get_att_paths(args)}"
+            )
+
+        if args.att_perfcounters:
+            if args.pmc:
+                fatal_error("ATT perfcounters cannot be enabled with PMC")
+            else:
+                update_env(
+                    "ROCPROF_ATT_PARAM_PERFCOUNTERS",
+                    args.att_perfcounters,
+                    overwrite=True,
+                )
+        if args.att_perfcounter_ctrl:
+            if args.pmc:
+                fatal_error("ATT perfcounters cannot be enabled with PMC")
+            else:
+                update_env(
+                    "ROCPROF_ATT_PARAM_PERFCOUNTER_CTRL",
+                    args.att_perfcounter_ctrl,
+                    overwrite=True,
+                )
+        if args.att_activity:
+            if args.pmc:
+                fatal_error("ATT activity cannot be enabled with PMC")
+            elif args.att_perfcounters or args.att_perfcounter_ctrl:
+                fatal_error(
+                    "ATT activity cannot be enabled with att-perfcounters or att-perfcounter-ctrl."
+                )
+            else:
+                update_env(
+                    "ROCPROF_ATT_PARAM_PERFCOUNTER_CTRL",
+                    args.att_activity,
+                    overwrite=True,
+                )
+                update_env(
+                    "ROCPROF_ATT_PARAM_PERFCOUNTERS",
+                    "SQ_BUSY_CU_CYCLES SQ_VALU_MFMA_BUSY_CYCLES SQ_ACTIVE_INST_VALU SQ_ACTIVE_INST_LDS SQ_ACTIVE_INST_VMEM SQ_ACTIVE_INST_FLAT SQ_ACTIVE_INST_SCA SQ_ACTIVE_INST_MISC",
+                    overwrite=True,
+                )
+
+    if args.log_level in ("info", "trace", "env", "config"):
+        log_config(app_env)
+
+    if use_execv:
+        if args.echo:
+            sys.stderr.flush()
+            print(f"command: {app_args}")
+            sys.stdout.flush()
+        else:
+            # does not return
+            os.execvpe(app_args[0], app_args, env=app_env)
+    else:
+        if args.echo:
+            sys.stderr.flush()
+            print(f"command: {app_args}")
+            sys.stdout.flush()
+            return 0
+        try:
+            exit_code = subprocess.check_call(app_args, env=app_env)
+            if exit_code != 0:
+                fatal_error("Application exited with non-zero exit code", exit_code)
+        except Exception as e:
+            fatal_error(f"{e}\n")
+        return exit_code
+
+
+def main(argv=None):
+
+    cmd_args, app_args = parse_arguments(argv)
+
+    if cmd_args.version:
+        for key, itr in CONST_VERSION_INFO.items():
+            print(f"    {key:>16}: {itr}")
+        return 0
+
+    # If no arguments provided, show help and exit
+    if (argv is None and len(sys.argv) == 1) or (argv is not None and len(argv) == 0):
+        parse_arguments(["--help"])
+        return 0
+
+    inp_args = (
+        parse_input(cmd_args.input) if getattr(cmd_args, "input") else [dotdict({})]
+    )
+
+    if len(inp_args) == 1:
+        args = get_args(cmd_args, inp_args[0])
+
+        if args.pid:
+            # For reattachment support, args must be the same as previous rocprofv3 sessions
+            # Store args in a temporary file for future sessions. If the temporary file already exists,
+            # compare those args and error out if the tracing options are not the same.
+            import pickle
+
+            if args.collection_period:
+                fatal_error("--collection-period is not compatible with attach mode")
+
+            fname = f"/tmp/rocprofv3_attach_{args.pid}.pkl"
+            if not os.path.exists(fname):
+                # if this is the first attachment, write the temp configuration file for future attachments
+                with open(fname, "wb") as ofs:
+                    if args.log_level in ("config", "info", "trace"):
+                        print(f"Saving attach configuration to {fname}...")
+                    pickle.dump(args, ofs)
+            else:
+                # if this is not the first attachment
+                # load the configuration from the previous attachment
+                with open(fname, "rb") as ifs:
+                    if args.log_level in ("config", "info", "trace"):
+                        print(f"Loading attach configuration from {fname}...")
+                    prev_args = pickle.load(ifs)
+
+                # get_args will compare the arguments used to the previous attachments's arguments
+                # arguments matching the filter will throw an error if they are different
+                args = get_args(
+                    args,
+                    dotdict(prev_args),
+                    # when updating this filter, please also update documentation on reattachment
+                    # in using-rocprofv3-process-attachment.rst
+                    filter=r".*_trace|^pc_sampling_.*$|^att_.*$|"
+                    r"^(pmc|pmc_groups|output_config|extra_counters)$|"
+                    r"^kernel_(include_regex|exclude_regex|iteration_range)$",
+                    require_in_both=True,
+                    # Allow this value to be None if it is not set in current cmd line
+                    ignore_prev_inp=r"attach_duration_msec",
+                )
+
+        pass_idx = None
+        if has_set_attr(args, "pmc") and len(args.pmc) > 0:
+            pass_idx = 1
+        ec = run(app_args, args, pass_id=pass_idx)
+    else:
+        ec = 0
+        for idx, itr in enumerate(inp_args):
+            args = get_args(cmd_args, itr)
+            _ec = run(
+                app_args,
+                args,
+                pass_id=(idx + 1),
+                use_execv=False,
+            )
+            if _ec is not None and _ec != 0:
+                ec = _ec
+
+    # return error code
+    return ec if not None else 0
+
+
+if __name__ == "__main__":
+    ec = main(sys.argv[1:])
+    sys.exit(ec)
+
+
+===== README.md =====
+# ROCprofiler-SDK:  Application Profiling, Tracing, and Performance Analysis
+
+> [!IMPORTANT]
+We are phasing out development and support for `ROCTracer, ROCprofiler, rocprof, and rocprofv2` in favour of `ROCprofiler-SDK` and `rocprofv3` in upcoming ROCm releases. Starting with the `ROCm 6.4` release, only critical defect fixes will be addressed for older versions of the profiling tools and libraries. We encourage all users to upgrade to the latest version of the `ROCprofiler-SDK` library and the `rocprofv3` tool to ensure continued support and access to new features.
+
+    Please note that we anticipate the end of life for ROCprofiler V1/V2 and ROCTracer within nine months after the ROCm 7.0 release, aligning with the Q1 2026.
+
+## Overview
+
+ROCprofiler-SDK is AMD’s new and improved tooling infrastructure, providing a hardware-specific low-level performance analysis interface for profiling and tracing GPU compute applications. To see what's changed, [Click Here](source/docs/conceptual/comparing-with-legacy-tools.rst)
+
+> [!NOTE]
+> The published documentation is available at [ROCprofiler-SDK documentation](https://rocm.docs.amd.com/projects/rocprofiler-sdk/en/latest/index.html) in an organized, easy-to-read format, with search and a table of contents. The documentation source files reside in the `rocprofiler-sdk/source/docs` folder of this repository. As with all ROCm projects, the documentation is open source. For more information on contributing to the documentation, see [Contribute to ROCm documentation](https://rocm.docs.amd.com/en/latest/contribute/contributing.html).
+
+## GPU Metrics
+
+- GPU hardware counters
+- Dispatch Counter Collection
+- Device Counter Collection
+- PC Sampling (Host Trap)
+- Thread trace and ROCprof trace decoder (SQTT, ATT).
+
+## API Trace Support
+
+- HIP API tracing
+- HSA API tracing
+- Marker (ROCTx) tracing
+- Memory copy tracing
+- Memory allocation tracing
+- Page Migration Event tracing
+- Scratch Memory tracing
+- RCCL API tracing
+- rocDecode API tracing
+- rocJPEG API tracing
+
+## Parallelism API Support
+
+- HIP
+- HSA
+- MPI
+- Kokkos-Tools (KokkosP)
+- OpenMP-Tools (OMPT)
+
+## Tool Support
+
+rocprofv3 is the command line tool built using the rocprofiler-sdk library and shipped with the ROCm stack. It supports both launching applications with profiling enabled and attaching to already running processes for dynamic profiling using `--attach`/`--pid`/`-p` options.
+
+To see details on the command line options of rocprofv3, please see rocprofv3 user guide
+[Click Here](source/docs/how-to/using-rocprofv3.rst)
+
+## Documentation
+
+We make use of doxygen to generate API documentation automatically. The generated document can be found in the following path:
+
+``` bash
+<ROCM_PATH>/share/html/rocprofiler-sdk
+```
+
+ROCM_PATH by default is /opt/rocm
+It can be set by the user in different locations if needed.
+
+## Build and Installation
+
+```bash
+git clone --no-checkout --filter=blob:none https://github.com/ROCm/rocm-systems.git
+cd rocm-systems
+git sparse-checkout init --cone
+git sparse-checkout set projects/rocprofiler-sdk
+git checkout develop
+cmake                                         \
+      -B rocprofiler-sdk-build                \
+      -DCMAKE_INSTALL_PREFIX=/opt/rocm        \
+      -DCMAKE_PREFIX_PATH=/opt/rocm           \
+      projects/rocprofiler-sdk
+
+cmake --build rocprofiler-sdk-build --target all --parallel $(nproc)
+```
+
+To install ROCprofiler, run:
+
+```cmake --build rocprofiler-sdk-build --target install```
+
+Please see the detailed section on build and installation here: [Click Here](source/docs/install/installation.rst)
+
+## Support
+
+Please report issues on GitHub OR send an email to <dl.ROCm-Profiler.support@amd.com>
+
+## Limitations
+
+- Individual XCC mode is not supported.
+
+- By default, PC sampling API is disabled. To use PC sampling. Setting the `ROCPROFILER_PC_SAMPLING_BETA_ENABLED` environment variable grants access to the PC Sampling experimental beta feature. This feature is still under development and may not be completely stable.
+  - **Risk Acknowledgment**: By activating this environment variable, you acknowledge and accept the following potential risks:
+    - **Hardware Freeze**: This beta feature could cause your hardware to freeze unexpectedly.
+    - **Need for Cold Restart**: In the event of a hardware freeze, you may need to perform a cold restart (turning the hardware off and on) to restore normal operations.
+    Please use this beta feature cautiously. It may affect your system's stability and performance. Proceed at your own risk.
+
+  - At this point, we do not recommend stress-testing the beta implementation.
+
+  - Correlation IDs provided by the PC sampling service are verified only for HIP API calls.
+
+  - Timestamps in PC sampling records might not be 100% accurate.
+
+  - For low PC-sampling frequencies with intervals < 65k cycles, a lot of error samples might be delivered. We're working on optimizing this to allow lower sampling frequencies.
+
+- gfx11 and gfx12 architectures require a stable power state for counter collection. This includes AMD Radeon RX 7000 series GPUs and newer.
+  ```bash
+  # For device <N>. Use 'rocm-smi' or 'amd-smi monitor' to see device number.
+  sudo amd-smi set -g <N> -l stable_std
+  # After profiling, set power state back to 'auto'
+  sudo amd-smi set -g <N> -l auto
+  ```
+
+  The gfx version can be found via `amd-smi static --asic -g <N>` in the `TARGET_GRAPHICS_VERSION` field:
+
+  ```bash
+  $ amd-smi static -a -g 2
+  GPU: 2
+      ASIC:
+          MARKET_NAME: Navi 33 [Radeon Pro W7500]
+          VENDOR_ID: 0x1002
+          VENDOR_NAME: Advanced Micro Devices Inc. [AMD/ATI]
+          SUBVENDOR_ID: 0x1002
+          DEVICE_ID: 0x7489
+          SUBSYSTEM_ID: 0x0e0d
+          REV_ID: 0x00
+          ASIC_SERIAL: N/A
+          OAM_ID: N/A
+          NUM_COMPUTE_UNITS: 28
+          TARGET_GRAPHICS_VERSION: gfx1102
+  ```
+- On `RHEL8.X` or similar distributions, there could be a missing dependency for `libsqlite3x-devel`. To workaround this for now, user can:
+  ```bash
+    sudo dnf install libsqlite3x-devel
+    sudo ln -s /lib64/libsqlite3.so /usr/local/lib/libsqlite3.so
+  ```

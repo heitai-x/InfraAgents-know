@@ -28,20 +28,19 @@ RSI 的下一次使用是继续检验和扩展理解的机会。成功可能提�
 
 ## 来源与推导
 
-- S-ACE：[完整原文](../../references/S-ACE/reader.html) · [全文文本](../../references/S-ACE/fulltext.txt)
-- S-GEPA：[完整原文](../../references/S-GEPA/reader.html) · [全文文本](../../references/S-GEPA/fulltext.txt)
-- S-SELF-CORRECTION：[完整原文](../../references/S-SELF-CORRECTION/reader.html) · [全文文本](../../references/S-SELF-CORRECTION/fulltext.txt)
-- S-REFLEXION：[完整原文](../../references/S-REFLEXION/reader.html) · [全文文本](../../references/S-REFLEXION/fulltext.txt)
-
 - [S-ACE：Agentic Context Engineering: Evolving Contexts for Self-Improving Language Models](../sources/S-ACE.md)：ACE 的已读方法部分组织生成、反思和整理职责，并采用局部增量维护上下文条目，避免反复重写时丢失细节。
+  [完整原文](../../references/S-ACE/reader.html) · [全文文本](../../references/S-ACE/fulltext.txt)
 
-- [S-GEPA：GEPA: Reflective Prompt Evolution Can Outperform Reinforcement Learning](../sources/S-GEPA.md)：已核对摘要与官方项目说明：利用可评价轨迹中的反思反馈提出候选，并依据评价保留具有价值或互补性的候选。
+- [S-GEPA：GEPA: Reflective Prompt Evolution Can Outperform Reinforcement Learning](../sources/S-GEPA.md)：所归档的 GEPA v2 论文利用可评价轨迹中的反思反馈提出候选，并通过评价保留有价值或互补的候选。这里的来源资格仅来自这份固定论文版本。
+  [完整原文](../../references/S-GEPA/reader.html) · [全文文本](../../references/S-GEPA/fulltext.txt)
 
 - [S-SELF-CORRECTION：Large Language Models Cannot Self-Correct Reasoning Yet](../sources/S-SELF-CORRECTION.md)：该研究讨论其所考察设置下，仅依赖模型自身、缺少外部反馈的推理自纠正能力限制。结论具有实验设置范围。
+  [完整原文](../../references/S-SELF-CORRECTION/reader.html) · [全文文本](../../references/S-SELF-CORRECTION/fulltext.txt)
 
 - [S-REFLEXION：Reflexion: Language Agents with Verbal Reinforcement Learning](../sources/S-REFLEXION.md)：Reflexion 把任务反馈转为文字反思，并在后续尝试中使用这些记忆。改进载体是显式经验文本，而非必须修改模型权重。
+  [完整原文](../../references/S-REFLEXION/reader.html) · [全文文本](../../references/S-REFLEXION/fulltext.txt)
 
-上文的公式展开、容量算例与组合设计是 InfraAgents 在这些机制基础上的推导，具体推导已写在本条正文中。来源入口均为本地释义，可继续读取其定义与使用关系。版本 4，2026-09-20。
+正文中的公式展开、容量算例与组合设计是基于这些来源的推导；设定算例不冒充实测。来源版本受 2026-04-30 上限约束，编辑日期 2026-10-22 不作为事实发布日期。此独立 base 版本内的章节修订号从 1 开始，原章节身份与版本映射保存在版本清单。
 
 ## 延伸阅读
 

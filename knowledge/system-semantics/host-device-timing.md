@@ -14,9 +14,11 @@ host 调用开始、命令进入设备队列、kernel 开始、host API 返回�
 
 一张执行依赖图中，从请求到达到可消费输出的最长依赖路径决定完成延迟。加速不在这条路径上的工作，可能只释放资源而不立即缩短该请求；释放资源又可能改善其他排队请求。局部与负载下整体效应应分开推导。
 
-## 原项目案例支持什么
+## 由合成事件说明统计口径
 
-[CASE-0001](../cases/CASE-0001-nsys-observability.md) 的原始清单保存微型 CUDA 采集与分析。在该记录中，首次关联设备开始减 host API 结束为 −1116 ns；3 个 kernel 累计 4352 ns，2 次 memcpy 累计 4896 ns。这些数字用于说明事件关系和统计口径，不能用来推断模型吞吐。原有版本和证据保留在历史中。
+设一次异步 API 在主机时刻 0 开始、在 5 结束，关联设备工作在 3 开始、在 8 结束，则设备开始减 API 结束等于 −2。这里的单位任意，数字是为解释偏序关系而设定的算例，不是项目实测。负值与异步执行关系相容；能否对具体 trace 作同样解释，还需确认时钟域和事件关联。
+
+若两个独立 kernel 区间为 [0,10] 和 [5,15]，累计时长为 20，忙碌区间并集为 15。这些可复算关系足以保留时间统计的推导能力，无需借用截止日之后的工程案例。
 
 ## 如何由时间线选择改动
 
@@ -26,17 +28,13 @@ host 调用开始、命令进入设备队列、kernel 开始、host API 返回�
 
 ## 来源与推导
 
-- S-CUDA-ASYNC：[完整原文](../../references/S-CUDA-ASYNC/reader.html) · [全文文本](../../references/S-CUDA-ASYNC/fulltext.txt)
-- S-NSYS：[完整原文](../../references/S-NSYS/reader.html) · [全文文本](../../references/S-NSYS/fulltext.txt)
-- S-CASE-0001：[完整原文](../../references/S-CASE-0001/reader.html) · [全文文本](../../references/S-CASE-0001/fulltext.txt)
-
 - [S-CUDA-ASYNC：CUDA Programming Guide — Asynchronous Execution](../sources/S-CUDA-ASYNC.md)：CUDA stream 表达设备工作的顺序，event 可以在不同执行队列间建立完成依赖。host 调用返回、设备工作开始和设备完成属于不同事件。
+  [完整原文](../../references/S-CUDA-ASYNC/reader.html) · [全文文本](../../references/S-CUDA-ASYNC/fulltext.txt)
 
-- [S-NSYS：Nsight Systems — Post-Collection Analysis Guide](../sources/S-NSYS.md)：Nsight Systems 的原始事件与导出可用于查看 host API、设备 kernel、复制和关联信息。事件属于具体进程、线程、设备和时间窗口。
+- [S-NSYS：Nsight Systems 2024.6 — User Guide](../sources/S-NSYS.md)：Nsight Systems 2024.6 用户指南描述 host API、设备 kernel、复制、范围和相关事件的采集与查看。进程、线程、设备、采集范围和时间窗口共同限定观测含义。
+  [完整原文](../../references/S-NSYS/reader.html) · [全文文本](../../references/S-NSYS/fulltext.txt)
 
-- [S-CASE-0001：InfraAgents CASE-0001 evidence manifest](../sources/S-CASE-0001.md)：本地证据清单记录微型 CUDA 采集、导出、缺表对照和事件关联。所记首次设备开始减 host API 结束为 −1116 ns；3 kernel 累计 4352 ns、2 memcpy 累计 4896 ns。
-
-上文的公式展开、容量算例与组合设计是 InfraAgents 在这些机制基础上的推导，具体推导已写在本条正文中。来源入口均为本地释义，可继续读取其定义与使用关系。版本 4，2026-09-20。
+正文中的公式展开、容量算例与组合设计是基于这些来源的推导；设定算例不冒充实测。来源版本受 2026-04-30 上限约束，编辑日期 2026-10-22 不作为事实发布日期。此独立 base 版本内的章节修订号从 1 开始，原章节身份与版本映射保存在版本清单。
 
 ## 延伸阅读
 

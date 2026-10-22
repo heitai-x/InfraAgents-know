@@ -2,11 +2,9 @@
 
 ## 本地完整原文
 
-[完整原文阅读](../../references/S-SELF-CORRECTION/reader.html) · [全文文本](../../references/S-SELF-CORRECTION/fulltext.txt) · [原始文件](../../references/S-SELF-CORRECTION/original.pdf)
+[完整原文](../../references/S-SELF-CORRECTION/reader.html) · [全文文本](../../references/S-SELF-CORRECTION/fulltext.txt)
 
-完整 PDF：17 页，版本 2310.01798v2。
-
-资料形态：按已核对范围整理的本地非代码释义。原文版本：2024 / v2。
+固定版本：2310.01798v2。来源版本日期：2024-03-14；整理核对日期：2026-10-22。
 
 ## 来源支持的机制与定义
 
@@ -16,8 +14,6 @@
 
 InfraAgents 使用代码执行、独立检查和原始环境反馈支撑知识更新；生成者与审查者赞同不能替代事实。
 
-## 阅读范围与出处身份
+## 适用边界
 
-所研究设置下缺少外部反馈的自纠正限制。
-
-核对日期：2026-09-20。原文标题、版本与原始地址保留在来源登记元数据中；上述内容是来源释义与本库推导的区分，不冒充原文逐字副本。
+机制与接口说明；不构成当前目标的性能或可达性证明。 原始版本、日期依据与归档范围见本地 provenance.json；版本日期不证明模型训练实际包含该资料。

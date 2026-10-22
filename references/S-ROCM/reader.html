@@ -1,676 +1,788 @@
-<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; frame-src 'self'; object-src 'self'; media-src 'self'; base-uri 'none'; form-action 'none'"><title>Hardware implementation — HIP 7.15.0 Documentation</title><style>body{font:16px/1.75 system-ui,sans-serif;color:#202631;background:#fff;margin:0 auto;padding:40px;max-width:1100px}h1,h2,h3{line-height:1.3}pre,code{font-family:Consolas,monospace}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#f4f6f8;padding:18px}table{border-collapse:collapse;display:block;overflow-x:auto}td,th{border:1px solid #ccd3dc;padding:8px}img,svg{max-width:100%;height:auto}figure{margin:24px 0}.archive-note{border-left:4px solid #2563eb;padding:12px 20px;background:#eef4ff}math{font-size:1.1em}iframe{width:100%;height:85vh;border:1px solid #ccd3dc}a{color:#1658a5}</style></head><body><p class="archive-note">本地原文阅读副本。正文与资料文件已归档；原始响应、版本和校验信息见同目录 manifest.json。网页导航与在线脚本不执行。</p><article class="bd-article">
-<section id="hardware-implementation">
-<span id="id1"></span><h1>Hardware implementation<a class="headerlink" href="#hardware-implementation" title="Link to this heading">#</a></h1>
-<p>This topic describes the hardware architecture of AMD GPUs supported by HIP,
+<!doctype html><html lang="en"><meta charset="utf-8"><title>HIP：Hardware implementation</title><style>body{max-width:1100px;margin:40px auto;padding:0 24px;line-height:1.6}pre{white-space:pre-wrap;overflow-wrap:anywhere}img{max-width:100%;height:auto}</style><h1>HIP：Hardware implementation</h1><pre>
+===== docs/understand/hardware_implementation.rst =====
+.. meta::
+  :description: This chapter describes the hardware implementation of AMD GPUs supported by HIP.
+  :keywords: AMD, ROCm, HIP, hardware, GPU, architecture, compute unit, VALU, SALU, cache, memory hierarchy, CDNA, RDNA
+
+.. _hardware_implementation:
+
+*******************************************************************************
+Hardware implementation
+*******************************************************************************
+
+This topic describes the hardware architecture of AMD GPUs supported by HIP,
 focusing on the internal organization and operation of GPU hardware components.
 Understanding these hardware details helps you optimize GPU applications and
-achieve maximum performance.</p>
-<section id="overall-gpu-architecture">
-<h2>Overall GPU architecture<a class="headerlink" href="#overall-gpu-architecture" title="Link to this heading">#</a></h2>
-<p>AMD GPUs consist of interconnected blocks of digital circuits that work
+achieve maximum performance.
+
+Overall GPU architecture
+========================
+
+AMD GPUs consist of interconnected blocks of digital circuits that work
 together to execute complex parallel computing tasks. Unlike central
 processing units (CPUs), which dedicate significant silicon area to
 instruction flow control, branch prediction, and complex caching hierarchies,
 GPUs allocate the majority of their die area to arithmetic pipelines. This
 design choice enables extreme throughput density for data-parallel workloads.
 The architecture is organized hierarchically to enable massive parallelism
-while efficiently managing resources.</p>
-<section id="command-processor-and-control">
-<h3>Command processor and control<a class="headerlink" href="#command-processor-and-control" title="Link to this heading">#</a></h3>
-<p>The command processor (CP) serves as the primary interface between the CPU and
+while efficiently managing resources.
+
+Command processor and control
+-----------------------------
+
+The command processor (CP) serves as the primary interface between the CPU and
 GPU, receiving and distributing commands for execution. The CP consists of two
-main components:</p>
-<ul class="simple">
-<li><p><strong>Command processor fetcher (CPF)</strong>: Fetches commands from memory and passes
-them to the command processor packet processor (CPC) for processing.</p></li>
-<li><p><strong>Command processor packet processor (CPC)</strong>: A microcontroller that decodes
-the fetched commands and dispatches kernels to the workgroup processors for
-scheduling.</p></li>
-</ul>
-<p>The command processor handles several types of operations:</p>
-<ul class="simple">
-<li><p>Kernel launches, which are forwarded to asynchronous compute engines (ACEs)</p></li>
-<li><p>Memory transfers, which are delegated to direct memory access (DMA) engines</p></li>
-<li><p>Synchronization operations and memory fences</p></li>
-</ul>
-<p><strong>DMA engines</strong> handle memory transfers between CPU and GPU memory without CPU
+main components:
+
+* **Command processor fetcher (CPF)**: Fetches commands from memory and passes
+  them to the command processor packet processor (CPC) for processing.
+* **Command processor packet processor (CPC)**: A microcontroller that decodes
+  the fetched commands and dispatches kernels to the workgroup processors for
+  scheduling.
+
+The command processor handles several types of operations:
+
+* Kernel launches, which are forwarded to asynchronous compute engines (ACEs)
+* Memory transfers, which are delegated to direct memory access (DMA) engines
+* Synchronization operations and memory fences
+
+**DMA engines** handle memory transfers between CPU and GPU memory without CPU
 involvement after initialization. Most GPUs contain two DMA engines, enabling
 concurrent bidirectional transfers to better utilize PCIe bandwidth. The DMA
 engines fetch data in small chunks and can process transfers in parallel but
-cannot handle multiple copy commands on the same engine simultaneously.</p>
-<p><strong>Asynchronous compute engines (ACEs)</strong> break down kernels into workgroups for
+cannot handle multiple copy commands on the same engine simultaneously.
+
+**Asynchronous compute engines (ACEs)** break down kernels into workgroups for
 distribution to shader processor input (SPI) blocks. Multiple ACEs enable
 concurrent kernel execution, with each ACE capable of dispatching one kernel
 at a time. ACEs process commands from different queues asynchronously,
-enabling overlap between different kernel executions and memory operations.</p>
-</section>
-<section id="hierarchical-organization">
-<h3>Hierarchical organization<a class="headerlink" href="#hierarchical-organization" title="Link to this heading">#</a></h3>
-<p>The GPU organizes compute resources in a three-level hierarchy that enables
-modular design and resource sharing:</p>
-<ol class="arabic simple">
-<li><p><strong>Shader engines (SE)</strong>: Top-level organizational units containing multiple
-shader arrays and shared resources</p></li>
-<li><p><strong>Shader arrays</strong>: Groups of compute units (CUs) sharing instruction and
-scalar caches</p></li>
-<li><p><strong>Compute units (CU)</strong>: Basic execution units containing the arithmetic
-logic units (ALUs) and registers for thread execution</p></li>
-</ol>
-<figure class="align-center" id="id5">
-<a class="reference internal image-reference" data-original-href="https://rocm.docs.amd.com/projects/HIP/en/latest/_images/selayout.png"><img alt="Diagram showing the hierarchical organization of compute units grouped into shader engines on AMD GPUs" src="assets/ff38508e2d2f8e5d20fce059.png" style="width: 800px;"/>
-</a>
-<figcaption>
-<p><span class="caption-text">Hierarchical organization of compute units into shader engines</span><a class="headerlink" href="#id5" title="Link to this image">#</a></p>
-</figcaption>
-</figure>
-<p>This hierarchical design allows different GPU configurations using the same
-underlying architecture.</p>
-</section>
-</section>
-<section id="shader-engine-components">
-<h2>Shader engine components<a class="headerlink" href="#shader-engine-components" title="Link to this heading">#</a></h2>
-<p>Shader engines group multiple compute units together, sharing resources to improve efficiency and reduce redundancy. Each shader engine contains
-several key components shared across its compute units.</p>
-<section id="workgroup-manager-spi">
-<h3>Workgroup manager (SPI)<a class="headerlink" href="#workgroup-manager-spi" title="Link to this heading">#</a></h3>
-<p>The workgroup manager, also called the shader processor input (SPI), bridges
+enabling overlap between different kernel executions and memory operations.
+
+Hierarchical organization
+-------------------------
+
+The GPU organizes compute resources in a three-level hierarchy that enables
+modular design and resource sharing:
+
+1. **Shader engines (SE)**: Top-level organizational units containing multiple
+   shader arrays and shared resources
+2. **Shader arrays**: Groups of compute units (CUs) sharing instruction and
+   scalar caches
+3. **Compute units (CU)**: Basic execution units containing the arithmetic
+   logic units (ALUs) and registers for thread execution
+
+.. figure:: ../data/understand/hardware_implementation/selayout.png
+   :align: center
+   :alt: Diagram showing the hierarchical organization of compute units
+         grouped into shader engines on AMD GPUs
+   :width: 800
+
+   Hierarchical organization of compute units into shader engines
+
+This hierarchical design allows different GPU configurations using the same
+underlying architecture.
+
+Shader engine components
+========================
+
+Shader engines group multiple compute units together, sharing resources to improve efficiency and reduce redundancy. Each shader engine contains
+several key components shared across its compute units.
+
+Workgroup manager (SPI)
+-----------------------
+
+The workgroup manager, also called the shader processor input (SPI), bridges
 the command processor and compute units. After the CP processes a kernel
-dispatch, the SPI:</p>
-<ul class="simple">
-<li><p>Receives workgroups from the ACEs</p></li>
-<li><p>Schedules workgroups onto available compute units</p></li>
-<li><p>Initializes registers with kernel parameters</p></li>
-<li><p>Ensures all warps of a workgroup execute on the same CU for synchronization</p></li>
-<li><p>Monitors resource availability and queues workgroups when resources are
-exhausted</p></li>
-</ul>
-<p>The SPI tracks four critical resources that limit concurrent execution:</p>
-<ul class="simple">
-<li><p>warp slots (execution contexts)</p></li>
-<li><p>Vector general-purpose registers (VGPRs)</p></li>
-<li><p>Scalar general-purpose registers (SGPRs)</p></li>
-<li><p>Local data share (LDS) memory</p></li>
-</ul>
-<p>Workgroup-to-CU mapping is non-deterministic and based on available resources.
+dispatch, the SPI:
+
+* Receives workgroups from the ACEs
+* Schedules workgroups onto available compute units
+* Initializes registers with kernel parameters
+* Ensures all warps of a workgroup execute on the same CU for synchronization
+* Monitors resource availability and queues workgroups when resources are
+  exhausted
+
+The SPI tracks four critical resources that limit concurrent execution:
+
+* warp slots (execution contexts)
+* Vector general-purpose registers (VGPRs)
+* Scalar general-purpose registers (SGPRs)
+* Local data share (LDS) memory
+
+Workgroup-to-CU mapping is non-deterministic and based on available resources.
 You should not assume any specific mapping pattern, as the same kernel
-launched multiple times can have different workgroup distributions.</p>
-</section>
-<section id="scalar-l1-data-cache-sl1d">
-<span id="sl1"></span><h3>Scalar L1 data cache (sL1D)<a class="headerlink" href="#scalar-l1-data-cache-sl1d" title="Link to this heading">#</a></h3>
-<p>The scalar L1 data cache (sL1D) serves scalar memory operations from multiple
+launched multiple times can have different workgroup distributions.
+
+.. _sl1:
+
+Scalar L1 data cache (sL1D)
+---------------------------
+
+The scalar L1 data cache (sL1D) serves scalar memory operations from multiple
 CUs within a shader array. The sL1D is shared between CUs and caches data that
-is uniform across a warp, including:</p>
-<ul class="simple">
-<li><p>Kernel arguments and pointers</p></li>
-<li><p>Grid and block dimensions</p></li>
-<li><p>Constants accessed uniformly across threads</p></li>
-<li><p>Data from <code class="docutils literal notranslate"><span class="pre">__constant__</span></code> memory when accessed uniformly</p></li>
-</ul>
-<p>Unlike the vector L1 cache, the sL1D doesn’t use a “hit-on-miss” approach,
+is uniform across a warp, including:
+
+* Kernel arguments and pointers
+* Grid and block dimensions
+* Constants accessed uniformly across threads
+* Data from ``__constant__`` memory when accessed uniformly
+
+Unlike the vector L1 cache, the sL1D doesn&#x27;t use a &quot;hit-on-miss&quot; approach,
 meaning subsequent requests to the same pending cache line count as duplicated
-misses rather than hits.</p>
-</section>
-<section id="l1-instruction-cache-l1i">
-<h3>L1 instruction cache (L1I)<a class="headerlink" href="#l1-instruction-cache-l1i" title="Link to this heading">#</a></h3>
-<p>The L1 instruction cache (L1I) is a read-only cache shared between multiple
-CUs in a shader array. Like the sL1D, it’s backed by the L2 cache and doesn’t
-use the “hit-on-miss” approach. The L1I stores kernel instructions fetched by
-the compute units, reducing instruction fetch latency and L2 cache pressure.</p>
-</section>
-</section>
-<section id="compute-unit-architecture">
-<span id="compute-unit"></span><h2>Compute unit architecture<a class="headerlink" href="#compute-unit-architecture" title="Link to this heading">#</a></h2>
-<p>The compute unit (CU) is the fundamental execution block of AMD GPUs, serving
+misses rather than hits.
+
+L1 instruction cache (L1I)
+--------------------------
+
+The L1 instruction cache (L1I) is a read-only cache shared between multiple
+CUs in a shader array. Like the sL1D, it&#x27;s backed by the L2 cache and doesn&#x27;t
+use the &quot;hit-on-miss&quot; approach. The L1I stores kernel instructions fetched by
+the compute units, reducing instruction fetch latency and L2 cache pressure.
+
+.. _compute_unit:
+
+Compute unit architecture
+=========================
+
+The compute unit (CU) is the fundamental execution block of AMD GPUs, serving
 as the atomic building block for massive parallelism. Each CU is responsible
 for executing kernels through its various specialized components and
 pipelines. Data flows into these pipelines, undergoes arithmetic
 transformation, and exits as results, to maximize the number
-of such transformations per clock cycle.</p>
-<p>CUs enable latency hiding through massive hardware multithreading. A single CU
+of such transformations per clock cycle.
+
+CUs enable latency hiding through massive hardware multithreading. A single CU
 can manage thousands of concurrent threads organized as a number of warps, each
 containing 32 (RDNA) or 64 (CDNA) threads. This massive concurrency allows the
 hardware to hide memory access latency by executing other warps while some wait
-for data.</p>
-<figure class="align-center" id="id6">
-<a class="reference internal image-reference" data-original-href="https://rocm.docs.amd.com/projects/HIP/en/latest/_images/gcn_compute_unit.png"><img alt="Detailed diagram of an AMD CDNA compute unit showing internal components and data flow" src="assets/1ffa203d08fd54e41b631968.png" style="width: 800px;"/>
-</a>
-<figcaption>
-<p><span class="caption-text">Internal architecture of an AMD CDNA compute unit</span><a class="headerlink" href="#id6" title="Link to this image">#</a></p>
-</figcaption>
-</figure>
-<section id="sequencer-and-scheduling">
-<span id="wave-scheduling"></span><h3>Sequencer and scheduling<a class="headerlink" href="#sequencer-and-scheduling" title="Link to this heading">#</a></h3>
-<p>The instruction sequencer (SQ) serves as the control center of each compute
+for data.
+
+.. figure:: ../data/understand/hardware_implementation/gcn_compute_unit.png
+   :align: center
+   :alt: Detailed diagram of an AMD CDNA compute unit showing internal
+         components and data flow
+   :width: 800
+
+   Internal architecture of an AMD CDNA compute unit
+
+.. _wave-scheduling:
+
+Sequencer and scheduling
+------------------------
+
+The instruction sequencer (SQ) serves as the control center of each compute
 unit, managing instruction flow through the execution pipelines. The sequencer
 maintains warp state and coordinates instruction execution across different
-functional units.</p>
-<p><strong>Warp organization</strong>: The sequencer organizes active warps into four pools,
+functional units.
+
+**Warp organization**: The sequencer organizes active warps into four pools,
 each containing slots for up to ten warps (eight on the CDNA2 MI200 Series).
-Each slot includes:</p>
-<ul class="simple">
-<li><p>Warp-level registers (program counter, execution mask, and others)</p></li>
-<li><p>Instruction buffer for prefetched instructions</p></li>
-<li><p>State information for scheduling decisions</p></li>
-</ul>
-<p>This organization theoretically allows up to 40 concurrent warps per CU, though
-actual occupancy is typically limited by register and LDS usage.</p>
-<p><strong>Instruction fetching</strong>: The fetch arbiter selects one warp per cycle to fetch
+Each slot includes:
+
+* Warp-level registers (program counter, execution mask, and others)
+* Instruction buffer for prefetched instructions
+* State information for scheduling decisions
+
+This organization theoretically allows up to 40 concurrent warps per CU, though
+actual occupancy is typically limited by register and LDS usage.
+
+**Instruction fetching**: The fetch arbiter selects one warp per cycle to fetch
 instructions from memory, prioritizing the oldest warps. Each CU can fetch up to
-32 bytes (4-8 instructions) per cycle.</p>
-<p><strong>Instruction issuing</strong>: The issue arbiter determines which instructions
+32 bytes (4-8 instructions) per cycle.
+
+**Instruction issuing**: The issue arbiter determines which instructions
 execute each cycle, selecting warps from one pool per cycle in round-robin
 fashion. The arbiter can issue multiple instructions per cycle to different
-execution units, with a theoretical maximum of five instructions per cycle:</p>
-<ul class="simple">
-<li><p>One VALU instruction</p></li>
-<li><p>One vector memory operation</p></li>
-<li><p>One SALU and/or scalar memory operation</p></li>
-<li><p>One LDS operation</p></li>
-<li><p>One branch operation</p></li>
-</ul>
-<p>Instructions always issue at warp granularity, with all threads in the warp
+execution units, with a theoretical maximum of five instructions per cycle:
+
+* One VALU instruction
+* One vector memory operation
+* One SALU and/or scalar memory operation
+* One LDS operation
+* One branch operation
+
+Instructions always issue at warp granularity, with all threads in the warp
 executing the same instruction in lockstep. The hardware can perform
 single-cycle context switching between warps with zero overhead, as all warp
 contexts remain resident on the CU. This enables efficient latency hiding,
 allowing the CU to switch to another warp immediately when the current warp
-encounters a stall condition such as a memory access.</p>
-</section>
-<section id="execution-pipelines">
-<h3>Execution pipelines<a class="headerlink" href="#execution-pipelines" title="Link to this heading">#</a></h3>
-<p>Each CU contains multiple specialized execution pipelines that
+encounters a stall condition such as a memory access.
+
+Execution pipelines
+-------------------
+
+Each CU contains multiple specialized execution pipelines that
 process different types of instructions in parallel, enabling efficient
-utilization of the hardware resources.</p>
-<section id="vector-arithmetic-logic-unit-valu">
-<span id="valu"></span><h4>Vector arithmetic logic unit (VALU)<a class="headerlink" href="#vector-arithmetic-logic-unit-valu" title="Link to this heading">#</a></h4>
-<p>The VALU executes vector instructions across entire warps, with each thread
+utilization of the hardware resources.
+
+.. _valu:
+
+Vector arithmetic logic unit (VALU)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The VALU executes vector instructions across entire warps, with each thread
 potentially operating on different data. For CDNA architectures, the VALU
-consists of:</p>
-<ul class="simple">
-<li><p><strong>Four SIMD processors</strong>: Each containing 16 single-precision ALUs (or
-equivalent), for 64 total ALUs per CU. In CDNA3, these are SIMD64 pipelines
-that can execute 256 operations per cycle per CU.</p></li>
-<li><p><strong>Vector register files</strong>: 256-512 KiB of VGPR storage split across the
-four SIMDs. VGPRs are organized as 32-bit lanes, providing flexibility for
-mixed-precision computations.</p></li>
-<li><p><strong>Instruction buffers</strong>: Storage for up to 8-10 warps per SIMD</p></li>
-</ul>
-<p>On architectures with 64-thread warps and 16-instruction wide SIMD units,
+consists of:
+
+* **Four SIMD processors**: Each containing 16 single-precision ALUs (or
+  equivalent), for 64 total ALUs per CU. In CDNA3, these are SIMD64 pipelines
+  that can execute 256 operations per cycle per CU.
+* **Vector register files**: 256-512 KiB of VGPR storage split across the
+  four SIMDs. VGPRs are organized as 32-bit lanes, providing flexibility for
+  mixed-precision computations.
+* **Instruction buffers**: Storage for up to 8-10 warps per SIMD
+
+On architectures with 64-thread warps and 16-instruction wide SIMD units,
 executing one instruction takes four cycles (one cycle per 16 threads). The
 four SIMD design ensures full utilization when sufficient warps are available,
-as a new instruction can issue to each SIMD every cycle.</p>
-<p>The VALU serves as the primary arithmetic engine, executing the majority of
+as a new instruction can issue to each SIMD every cycle.
+
+The VALU serves as the primary arithmetic engine, executing the majority of
 computation in GPU kernels. Data flows into these pipelines, undergoes
 arithmetic transformation, and exits as results, with the goal of maximizing
-the number of such transformations per clock cycle.</p>
-<p>For CDNA architectures with matrix operations, the VALU also dispatches matrix
-fused multiply-add (MFMA) instructions to specialized matrix units.</p>
-</section>
-<section id="register-pressure-and-occupancy">
-<h4>Register pressure and occupancy<a class="headerlink" href="#register-pressure-and-occupancy" title="Link to this heading">#</a></h4>
-<p>Register usage directly impacts CU occupancy. Each warp requires a
+the number of such transformations per clock cycle.
+
+For CDNA architectures with matrix operations, the VALU also dispatches matrix
+fused multiply-add (MFMA) instructions to specialized matrix units.
+
+Register pressure and occupancy
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Register usage directly impacts CU occupancy. Each warp requires a
 portion of the finite VGPR and SGPR pools. Higher register usage per thread
-reduces the maximum number of concurrent warps, potentially limiting the CU’s
+reduces the maximum number of concurrent warps, potentially limiting the CU&#x27;s
 ability to hide latency. Mixed-precision workloads can optimize register usage
-by storing lower-precision values in fewer registers.</p>
-</section>
-<section id="scalar-arithmetic-logic-unit-salu">
-<h4>Scalar arithmetic logic unit (SALU)<a class="headerlink" href="#scalar-arithmetic-logic-unit-salu" title="Link to this heading">#</a></h4>
-<p>The SALU executes instructions uniformly across all threads in a warp, handling
-operations such as:</p>
-<ul class="simple">
-<li><p>Control flow (branches, loops)</p></li>
-<li><p>Address calculations</p></li>
-<li><p>Loading kernel arguments and constants</p></li>
-<li><p>Managing warp-uniform values</p></li>
-</ul>
-<p>The SALU includes:</p>
-<ul class="simple">
-<li><p>A scalar processor for arithmetic and logic operations</p></li>
-<li><p>12.5 KiB of SGPR storage per CU</p></li>
-<li><p>A scalar memory (SMEM) unit for memory operations</p></li>
-</ul>
-<p>Scalar operations reduce pressure on vector units and registers by handling
-uniform computations efficiently.</p>
-</section>
-<section id="vector-memory-unit-vmem">
-<h4>Vector memory unit (VMEM)<a class="headerlink" href="#vector-memory-unit-vmem" title="Link to this heading">#</a></h4>
-<p>The VMEM unit handles all vector memory operations, including loads, stores,
+by storing lower-precision values in fewer registers.
+
+Scalar arithmetic logic unit (SALU)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The SALU executes instructions uniformly across all threads in a warp, handling
+operations such as:
+
+* Control flow (branches, loops)
+* Address calculations
+* Loading kernel arguments and constants
+* Managing warp-uniform values
+
+The SALU includes:
+
+* A scalar processor for arithmetic and logic operations
+* 12.5 KiB of SGPR storage per CU
+* A scalar memory (SMEM) unit for memory operations
+
+Scalar operations reduce pressure on vector units and registers by handling
+uniform computations efficiently.
+
+Vector memory unit (VMEM)
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The VMEM unit handles all vector memory operations, including loads, stores,
 and atomic operations. Each thread supplies its own address and data, though
 the hardware optimizes access through memory coalescing when threads access
 nearby addresses. The VMEM unit connects to the vector L1 cache and implements
-both address generation and coalescing logic.</p>
-</section>
-<section id="branch-unit">
-<h4>Branch unit<a class="headerlink" href="#branch-unit" title="Link to this heading">#</a></h4>
-<p>The branch unit executes jumps and branches for control flow changes affecting
+both address generation and coalescing logic.
+
+Branch unit
+^^^^^^^^^^^
+
+The branch unit executes jumps and branches for control flow changes affecting
 entire warps. Note that the branch unit handles warp-level control flow, not
 execution mask updates for thread divergence, which are handled through
-predication.</p>
-</section>
-<section id="special-function-unit-sfu">
-<span id="sfu"></span><h4>Special function unit (SFU)<a class="headerlink" href="#special-function-unit-sfu" title="Link to this heading">#</a></h4>
-<p>The special function units accelerate certain arithmetic operations that are
-too complex and/or costly to implement purely within the standard vector ALUs.</p>
-<p>SFUs are responsible for executing transcendental and reciprocal mathematical
-functions, operations such as <code class="docutils literal notranslate"><span class="pre">exp</span></code>, <code class="docutils literal notranslate"><span class="pre">log</span></code>, <code class="docutils literal notranslate"><span class="pre">sin</span></code>, <code class="docutils literal notranslate"><span class="pre">cos</span></code>, <code class="docutils literal notranslate"><span class="pre">rcp</span></code>
-(reciprocal), and <code class="docutils literal notranslate"><span class="pre">rsqrt</span></code> (reciprocal square root). These are heavily used
+predication.
+
+.. _sfu:
+
+Special function unit (SFU)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The special function units accelerate certain arithmetic operations that are
+too complex and/or costly to implement purely within the standard vector ALUs.
+
+SFUs are responsible for executing transcendental and reciprocal mathematical
+functions, operations such as ``exp``, ``log``, ``sin``, ``cos``, ``rcp``
+(reciprocal), and ``rsqrt`` (reciprocal square root). These are heavily used
 in scientific, physics, and machine learning workloads, particularly in
-activation functions such as GELU, sigmoid, and/or softmax.</p>
-<p>Each CU includes a set of specialized pipelines and/or transcendental
+activation functions such as GELU, sigmoid, and/or softmax.
+
+Each CU includes a set of specialized pipelines and/or transcendental
 function units (TFUs) that handle these operations with dedicated hardware.
 While their throughput is lower than that of the primary SIMD pipelines, they
 enable these functions to execute efficiently without consuming general ALU
-bandwidth.</p>
-<p>From the compiler’s perspective, these operations map to specific AMDGPU ISA
-instructions, such as:</p>
-<ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">v_exp_f32</span></code> - compute exponential base e</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">v_log_f32</span></code> - compute natural logarithm</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">v_sin_f32</span></code>, <code class="docutils literal notranslate"><span class="pre">v_cos_f32</span></code> - compute sine and/or cosine</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">v_rsq_f32</span></code>, <code class="docutils literal notranslate"><span class="pre">v_rcp_f32</span></code> - compute reciprocal and/or reciprocal square
-root</p></li>
-</ul>
-<p>In CDNA3-based GPUs (such as MI300), SFU throughput and latency have been
-tuned for deep learning primitives. For instance, exponentiation (<code class="docutils literal notranslate"><span class="pre">exp</span></code>) and
-logarithm (<code class="docutils literal notranslate"><span class="pre">log</span></code>) functions are now pipelined to complete in a few cycles
+bandwidth.
+
+From the compiler&#x27;s perspective, these operations map to specific AMDGPU ISA
+instructions, such as:
+
+* ``v_exp_f32`` - compute exponential base e
+* ``v_log_f32`` - compute natural logarithm
+* ``v_sin_f32``, ``v_cos_f32`` - compute sine and/or cosine
+* ``v_rsq_f32``, ``v_rcp_f32`` - compute reciprocal and/or reciprocal square
+  root
+
+In CDNA3-based GPUs (such as MI300), SFU throughput and latency have been
+tuned for deep learning primitives. For instance, exponentiation (``exp``) and
+logarithm (``log``) functions are now pipelined to complete in a few cycles
 per lane, allowing vectorized activation functions in large-scale matrix
-workloads to execute without significant stalls.</p>
-<p>For programmers targeting ROCm and/or HIP, these SFU-accelerated operations
-are typically accessed through math intrinsics such as <code class="docutils literal notranslate"><span class="pre">__expf</span></code>, <code class="docutils literal notranslate"><span class="pre">__logf</span></code>,
-and/or <code class="docutils literal notranslate"><span class="pre">__sinf</span></code>, which the compiler lowers to the corresponding AMDGPU ISA
-instructions at compile time.</p>
-</section>
-<section id="load-store-unit-lsu">
-<span id="lsu"></span><h4>Load/store unit (LSU)<a class="headerlink" href="#load-store-unit-lsu" title="Link to this heading">#</a></h4>
-<p>The load/store units handle the transfer of data between the compute units and
-the GPU’s memory subsystems. They are responsible for issuing, tracking, and
+workloads to execute without significant stalls.
+
+For programmers targeting ROCm and/or HIP, these SFU-accelerated operations
+are typically accessed through math intrinsics such as ``__expf``, ``__logf``,
+and/or ``__sinf``, which the compiler lowers to the corresponding AMDGPU ISA
+instructions at compile time.
+
+.. _lsu:
+
+Load/store unit (LSU)
+^^^^^^^^^^^^^^^^^^^^^
+
+The load/store units handle the transfer of data between the compute units and
+the GPU&#x27;s memory subsystems. They are responsible for issuing, tracking, and
 retiring memory operations, including loads from and stores to global memory,
-local shared memory, and caches, for thousands of concurrent threads.</p>
-<p>Each CU includes a set of LSUs tightly integrated with its vector
+local shared memory, and caches, for thousands of concurrent threads.
+
+Each CU includes a set of LSUs tightly integrated with its vector
 and scalar pipelines. These units handle memory instructions generated by
-active warps, such as <code class="docutils literal notranslate"><span class="pre">buffer_load</span></code>, <code class="docutils literal notranslate"><span class="pre">buffer_store</span></code>, and
-<code class="docutils literal notranslate"><span class="pre">flat_load_dword</span></code>, and route them through the GPU’s hierarchical memory
-system.</p>
-<p>The LSU’s responsibilities include:</p>
-<ul class="simple">
-<li><p>Managing vector memory accesses for SIMD instructions</p></li>
-<li><p>Coordinating local data share (LDS) reads and writes</p></li>
-<li><p>Accessing the L0 and/or L1 caches and forwarding requests to the L2 cache
-and high-bandwidth memory (HBM)</p></li>
-<li><p>Handling synchronization and atomic operations between threads and workgroups</p></li>
-</ul>
-<p>LSUs manage thousands of outstanding memory requests per GPU, dynamically
+active warps, such as ``buffer_load``, ``buffer_store``, and
+``flat_load_dword``, and route them through the GPU&#x27;s hierarchical memory
+system.
+
+The LSU&#x27;s responsibilities include:
+
+* Managing vector memory accesses for SIMD instructions
+* Coordinating local data share (LDS) reads and writes
+* Accessing the L0 and/or L1 caches and forwarding requests to the L2 cache
+  and high-bandwidth memory (HBM)
+* Handling synchronization and atomic operations between threads and workgroups
+
+LSUs manage thousands of outstanding memory requests per GPU, dynamically
 scheduling them to hide memory latency. While arithmetic pipelines continue
 executing other warps, the LSUs maintain queues of pending transactions and
-reorder responses as data returns from memory.</p>
-</section>
-<section id="matrix-fused-multiply-add-mfma">
-<span id="mfma-units"></span><h4>Matrix fused multiply-add (MFMA)<a class="headerlink" href="#matrix-fused-multiply-add-mfma" title="Link to this heading">#</a></h4>
-<p>CDNA architectures (MI100 and newer) include specialized matrix acceleration
+reorder responses as data returns from memory.
+
+.. _mfma_units:
+
+Matrix fused multiply-add (MFMA)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+CDNA architectures (MI100 and newer) include specialized matrix acceleration
 units for high-throughput matrix operations. These units execute independently
 from other VALU operations, allowing overlap between matrix and vector
-computations. MFMA units support various data types including <code class="docutils literal notranslate"><span class="pre">INT8</span></code>,
-<code class="docutils literal notranslate"><span class="pre">FP16</span></code>, <code class="docutils literal notranslate"><span class="pre">BF16</span></code>, and <code class="docutils literal notranslate"><span class="pre">FP32</span></code>, with different throughput characteristics
-for each.</p>
-<p>Matrix cores are GPU execution units that perform large-scale matrix
+computations. MFMA units support various data types including ``INT8``,
+``FP16``, ``BF16``, and ``FP32``, with different throughput characteristics
+for each.
+
+Matrix cores are GPU execution units that perform large-scale matrix
 operations in a single instruction. In AMD architectures, these units are
 formally known as MFMA (matrix fused multiply-add) units, the core hardware
 blocks responsible for accelerating deep learning, high-performance computing
-(HPC), and dense linear-algebra workloads on modern Instinct GPUs.</p>
-<p>Operating on entire tiles of matrices per instruction allows MFMA units to
+(HPC), and dense linear-algebra workloads on modern Instinct GPUs.
+
+Operating on entire tiles of matrices per instruction allows MFMA units to
 deliver far greater arithmetic throughput and energy efficiency than scalar
 and/or vector ALUs. Rather than fetching and decoding thousands of per-element
 multiply-add instructions, each MFMA instruction processes an entire matrix
 fragment, drastically reducing power per operation and increasing overall
 throughput. The MFMA units implement a mini-systolic array design that
-efficiently processes matrix tiles.</p>
-<p>An example MFMA instruction from the AMDGPU ISA is:</p>
-<div class="highlight-amdgpu notranslate"><div class="highlight"><pre><span></span><span class="k">v_mfma_f32_16x16x4f16</span><span class="w"> </span><span class="nv">v</span>[<span class="na">0:15</span>],<span class="w"> </span><span class="nv">v</span>[<span class="na">16:31</span>],<span class="w"> </span><span class="nv">v</span>[<span class="na">32:47</span>],<span class="w"> </span><span class="nv">v</span>[<span class="na">0:15</span>]
-</pre></div>
-</div>
-<p>This instruction performs a matrix multiplication and accumulation
-<span class="math notranslate nohighlight">\(\pmb{D}=\pmb{A} \times \pmb{B} + \pmb{C}\)</span>, where the fragments
-<span class="math notranslate nohighlight">\(\pmb{A}\)</span>, <span class="math notranslate nohighlight">\(\pmb{B}\)</span>, and <span class="math notranslate nohighlight">\(\pmb{C}\)</span> are stored in VGPRs.
-The suffix <code class="docutils literal notranslate"><span class="pre">16x16x4f16</span></code> indicates a tile size of <span class="math notranslate nohighlight">\(16 \times 16\)</span>, with
-an inner dimension of <span class="math notranslate nohighlight">\(4\)</span>, operating on half-precision (FP16) inputs and
-accumulating into 32-bit floating-point outputs.</p>
-<p>Programmers can access MFMA functionality at multiple levels: through
+efficiently processes matrix tiles.
+
+An example MFMA instruction from the AMDGPU ISA is:
+
+.. code-block:: amdgpu
+
+   v_mfma_f32_16x16x4f16 v[0:15], v[16:31], v[32:47], v[0:15]
+
+This instruction performs a matrix multiplication and accumulation
+:math:`\pmb{D}=\pmb{A} \times \pmb{B} + \pmb{C}`, where the fragments
+:math:`\pmb{A}`, :math:`\pmb{B}`, and :math:`\pmb{C}` are stored in VGPRs.
+The suffix ``16x16x4f16`` indicates a tile size of :math:`16 \times 16`, with
+an inner dimension of :math:`4`, operating on half-precision (FP16) inputs and
+accumulating into 32-bit floating-point outputs.
+
+Programmers can access MFMA functionality at multiple levels: through
 optimized libraries, compiler intrinsics, and/or inline assembly, providing
-flexibility for different use cases.</p>
-<p>The MFMA units use both standard VGPRs and additional accumulation VGPRs
+flexibility for different use cases.
+
+The MFMA units use both standard VGPRs and additional accumulation VGPRs
 (AGPRs) on supported architectures, providing up to 512 KiB of combined
-register storage per CU.</p>
-</section>
-<section id="data-movement-engine-cdna-3-cdna-4">
-<span id="dme"></span><h4>Data movement engine (CDNA 3 / CDNA 4)<a class="headerlink" href="#data-movement-engine-cdna-3-cdna-4" title="Link to this heading">#</a></h4>
-<p>CDNA 3 and CDNA 4 architectures include specialized Data Movement Engine (DME)
+register storage per CU.
+
+.. _dme:
+
+Data movement engine (CDNA 3 / CDNA 4)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+CDNA 3 and CDNA 4 architectures include specialized Data Movement Engine (DME)
 hardware units designed to accelerate access to multi-dimensional tensor data
 in GPU memory. DMEs perform high-throughput, low-overhead copies between
 global memory (HBM) and the on-chip memory hierarchy, particularly the Local
-Data Share (LDS) and L0 and/or L1 caches, without consuming compute resources.</p>
-<p>A DME issues bulk memory transactions for contiguous and/or affine data
+Data Share (LDS) and L0 and/or L1 caches, without consuming compute resources.
+
+A DME issues bulk memory transactions for contiguous and/or affine data
 regions, such as tensors laid out as multi-dimensional arrays in global
 memory. The hardware computes memory addresses for large block transfers in
 parallel, offloading this work from the SIMD pipelines and reducing pressure
 on both the register file and the instruction scheduler. This enables higher
 sustained bandwidth and lower latency for operations involving tiled matrix
-and/or tensor data.</p>
-<p>In practice, DMEs handle transfers of the form
-<span class="math notranslate nohighlight">\(\text{addr}=\text{stride} \times \text{index} + \text{offset}\)</span> across
+and/or tensor data.
+
+In practice, DMEs handle transfers of the form
+:math:`\text{addr}=\text{stride} \times \text{index} + \text{offset}` across
 many threads and dimensions simultaneously. By performing these affine address
 calculations directly in hardware, the DME avoids the need for per-thread
-address arithmetic, freeing up scalar ALUs and registers for computation.</p>
-<p>The DME design provides two key advantages:</p>
-<ul class="simple">
-<li><p><strong>Resource decoupling</strong>: By removing large tensor copies from the main
-execution pipelines, the CU can continue executing arithmetic instructions
-while data movement occurs in the background.</p></li>
-<li><p><strong>Asynchronous execution model</strong>: A single warp can issue a DME copy command,
-immediately resume computation, and later synchronize only when the transfer
-has completed. This enables producer-consumer parallelism.</p></li>
-</ul>
-<p>Programmers can access this functionality through asynchronous copy intrinsics
-in ROCm, such as <code class="docutils literal notranslate"><span class="pre">__builtin_amdgcn_async_work_group_copy</span></code>, which map
+address arithmetic, freeing up scalar ALUs and registers for computation.
+
+The DME design provides two key advantages:
+
+* **Resource decoupling**: By removing large tensor copies from the main
+  execution pipelines, the CU can continue executing arithmetic instructions
+  while data movement occurs in the background.
+* **Asynchronous execution model**: A single warp can issue a DME copy command,
+  immediately resume computation, and later synchronize only when the transfer
+  has completed. This enables producer-consumer parallelism.
+
+Programmers can access this functionality through asynchronous copy intrinsics
+in ROCm, such as ``__builtin_amdgcn_async_work_group_copy``, which map
 directly to hardware-level DME operations. These intrinsics allow explicit
-control over data transfer overlap, synchronization, and cache placement.</p>
-</section>
-</section>
-<section id="local-data-share-lds">
-<span id="lds"></span><h3>Local data share (LDS)<a class="headerlink" href="#local-data-share-lds" title="Link to this heading">#</a></h3>
-<p>The local data share provides fast on-CU scratchpad memory for communication
-between threads in a workgroup.</p>
-<figure class="align-center" id="id7">
-<a class="reference internal image-reference" data-original-href="https://rocm.docs.amd.com/projects/HIP/en/latest/_images/lds.svg"><img alt="Diagram showing the organization of local data share with banks and connections to SIMD units" src="assets/699e550c16191bedbcafb4f0.svg" style="width: 800px;"/>
-</a>
-<figcaption>
-<p><span class="caption-text">Local data share organization and SIMD connections</span><a class="headerlink" href="#id7" title="Link to this image">#</a></p>
-</figcaption>
-</figure>
-<p><strong>Organization</strong>: The LDS contains 32 (CDNA, CDNA 2, and CDNA 3) or 64 (CDNA 4
+control over data transfer overlap, synchronization, and cache placement.
+
+.. _lds:
+
+Local data share (LDS)
+----------------------
+
+The local data share provides fast on-CU scratchpad memory for communication
+between threads in a workgroup.
+
+.. figure:: ../data/understand/hardware_implementation/lds.svg
+   :align: center
+   :alt: Diagram showing the organization of local data share with banks and
+         connections to SIMD units
+   :width: 800
+
+   Local data share organization and SIMD connections
+
+**Organization**: The LDS contains 32 (CDNA, CDNA 2, and CDNA 3) or 64 (CDNA 4
 and RDNA 2, RDNA 3, and RDNA 4) banks, each 4-bytes wide, providing 128 (CDNA,
 CDNA 2, and CDNA 3) or 256 (CDNA 4 and RDNA 2, RDNA 3, and RDNA 4) bytes per
 cycle total bandwidth. Each bank can be accessed independently every cycle for
 reads, writes, and/or atomic operations. The SIMDs connect to the LDS in pairs,
-with each pair sharing a 64-byte bidirectional port.</p>
-<p><strong>Access patterns</strong>: A single warp can achieve up to 64 bytes per cycle
+with each pair sharing a 64-byte bidirectional port.
+
+**Access patterns**: A single warp can achieve up to 64 bytes per cycle
 throughput (16 lanes per cycle). The actual bandwidth depends on data size and
-access patterns:</p>
-<ul class="simple">
-<li><p>4-byte values: 8 cycles for 64 threads (50% peak bandwidth)</p></li>
-<li><p>16-byte values: 20 cycles for 64 threads (80% peak bandwidth)</p></li>
-</ul>
-<p><strong>Conflict resolution</strong>: The LDS includes hardware to detect and resolve bank
+access patterns:
+
+* 4-byte values: 8 cycles for 64 threads (50% peak bandwidth)
+* 16-byte values: 20 cycles for 64 threads (80% peak bandwidth)
+
+**Conflict resolution**: The LDS includes hardware to detect and resolve bank
 conflicts when multiple threads access different addresses in the same bank.
 Conflicts are resolved by serializing accesses across multiple cycles. Address
 conflicts (multiple threads atomically updating the same address) are similarly
 serialized. Broadcasting from the same address to multiple threads is handled
-efficiently without conflicts.</p>
-</section>
-<section id="vector-l1-cache">
-<span id="vl1"></span><h3>Vector L1 cache<a class="headerlink" href="#vector-l1-cache" title="Link to this heading">#</a></h3>
-<p>Each CU contains a dedicated vector L1 data cache (vL1D) serving vector memory
-operations. Key characteristics include:</p>
-<ul class="simple">
-<li><p>Write-through design (writes go directly to L2)</p></li>
-<li><p>Optimization for high-bandwidth streaming access patterns</p></li>
-<li><p>Coherent with other CUs through software management</p></li>
-<li><p>Typical size of 16 KB per CU</p></li>
-</ul>
-<p>The vector cache tags are checked for all vector memory operations, with
+efficiently without conflicts.
+
+.. _vl1:
+
+Vector L1 cache
+---------------
+
+Each CU contains a dedicated vector L1 data cache (vL1D) serving vector memory
+operations. Key characteristics include:
+
+* Write-through design (writes go directly to L2)
+* Optimization for high-bandwidth streaming access patterns
+* Coherent with other CUs through software management
+* Typical size of 16 KB per CU
+
+The vector cache tags are checked for all vector memory operations, with
 misses forwarded to the L2 cache. The write-through design simplifies
-coherence at the cost of write bandwidth.</p>
-</section>
-</section>
-<section id="memory-hierarchy-and-system">
-<h2>Memory hierarchy and system<a class="headerlink" href="#memory-hierarchy-and-system" title="Link to this heading">#</a></h2>
-<p>The GPU memory system provides the bandwidth and capacity needed for massive
-parallel computation while managing data coherence and access efficiency.</p>
-<section id="memory-organization">
-<span id="hbm"></span><h3>Memory organization<a class="headerlink" href="#memory-organization" title="Link to this heading">#</a></h3>
-<figure class="align-default" id="id8">
-<a class="reference internal image-reference" data-original-href="https://rocm.docs.amd.com/projects/HIP/en/latest/_images/cdna2_gcd.png"><img alt="Block diagram showing four compute engines with L2 cache, memory controllers, and Infinity Fabric interconnect on CDNA2" src="assets/0d5241b492746d0eba0c5287.png" style="width: 800px;"/>
-</a>
-<figcaption>
-<p><span class="caption-text">CDNA2 Graphics Compute Die organization showing memory subsystem</span><a class="headerlink" href="#id8" title="Link to this image">#</a></p>
-</figcaption>
-</figure>
-<p>AMD GPUs typically use high-bandwidth memory (HBM) for data-intensive
+coherence at the cost of write bandwidth.
+
+Memory hierarchy and system
+===========================
+
+The GPU memory system provides the bandwidth and capacity needed for massive
+parallel computation while managing data coherence and access efficiency.
+
+.. _hbm:
+
+Memory organization
+-------------------
+
+.. figure:: ../data/understand/hardware_implementation/cdna2_gcd.png
+  :alt: Block diagram showing four compute engines with L2 cache, memory
+        controllers, and Infinity Fabric interconnect on CDNA2
+  :width: 800
+
+  CDNA2 Graphics Compute Die organization showing memory subsystem
+
+AMD GPUs typically use high-bandwidth memory (HBM) for data-intensive
 workloads, providing significantly higher bandwidth than traditional GDDR
 memory at the cost of slightly higher latency. HBM achieves this through
 vertical stacking of memory dies and wide memory buses, enabling massive
-parallel access to memory channels.</p>
-<p>The memory system includes:</p>
-<ul class="simple">
-<li><p><strong>Memory channels</strong>: Multiple independent memory controllers (typically 8-16)</p></li>
-<li><p><strong>L2 cache banks</strong>: Distributed cache banks serving as the coherence point</p></li>
-<li><p><strong>Infinity Fabric</strong>: High-speed interconnect for data routing</p></li>
-</ul>
-</section>
-<section id="l2-cache-architecture">
-<h3>L2 cache architecture<a class="headerlink" href="#l2-cache-architecture" title="Link to this heading">#</a></h3>
-<p>The L2 cache serves as the coherence point for all GPU memory accesses and is
+parallel access to memory channels.
+
+The memory system includes:
+
+* **Memory channels**: Multiple independent memory controllers (typically 8-16)
+* **L2 cache banks**: Distributed cache banks serving as the coherence point
+* **Infinity Fabric**: High-speed interconnect for data routing
+
+L2 cache architecture
+---------------------
+
+The L2 cache serves as the coherence point for all GPU memory accesses and is
 shared by all compute units. The L2 consists of multiple independent channels
-(32 on CDNA GPUs at 256-byte interleaving) that operate in parallel.</p>
-<figure class="align-center" id="id9">
-<a class="reference internal image-reference" data-original-href="https://rocm.docs.amd.com/projects/HIP/en/latest/_images/l2perf_model.png"><img alt="Diagram showing L2 cache to Infinity Fabric transaction flow with request categorization and routing" src="assets/60864d20b61f6320f2db3c64.png" style="width: 800px;"/>
-</a>
-<figcaption>
-<p><span class="caption-text">L2 cache to Infinity Fabric transaction flow</span><a class="headerlink" href="#id9" title="Link to this image">#</a></p>
-</figcaption>
-</figure>
-<p><strong>Key characteristics</strong>:</p>
-<ul class="simple">
-<li><p><strong>Channel organization</strong>: Each channel handles a portion of the address
-space, with addresses interleaved across channels for load balancing.</p></li>
-<li><p><strong>Hit-on-miss behavior</strong>: If a request arrives for a pending cache line
-fill, it counts as a hit, improving the effective hit rate.</p></li>
-<li><p><strong>Write coalescing</strong>: Multiple writes to the same cache line are combined.</p></li>
-<li><p><strong>Atomic operation support</strong>: Atomics execute directly in the L2 cache for
-coherence.</p></li>
-</ul>
-<p><strong>L2-Fabric interface</strong>: Requests missing in L2 are routed through Infinity
-Fabric to the appropriate memory location, which could be:</p>
-<ul class="simple">
-<li><p>Local HBM on the same GPU</p></li>
-<li><p>Remote GPU memory (in multi-GPU systems)</p></li>
-<li><p>System memory (CPU DRAM)</p></li>
-</ul>
-<p>The interface categorizes requests by type (read and/or write), size (32B
-and/or 64B), and destination for optimal routing.</p>
-</section>
-<section id="memory-coherence">
-<span id="id2"></span><h3>Memory coherence<a class="headerlink" href="#memory-coherence" title="Link to this heading">#</a></h3>
-<p>GPU memory coherence differs significantly from CPU designs to optimize for
-throughput over latency:</p>
-<p><strong>Write-through L1 caches</strong>: All writes update both L1 and L2, ensuring L2
+(32 on CDNA GPUs at 256-byte interleaving) that operate in parallel.
+
+.. figure:: ../data/understand/hardware_implementation/l2perf_model.png
+   :align: center
+   :alt: Diagram showing L2 cache to Infinity Fabric transaction flow with
+         request categorization and routing
+   :width: 800
+
+   L2 cache to Infinity Fabric transaction flow
+
+**Key characteristics**:
+
+* **Channel organization**: Each channel handles a portion of the address
+  space, with addresses interleaved across channels for load balancing.
+* **Hit-on-miss behavior**: If a request arrives for a pending cache line
+  fill, it counts as a hit, improving the effective hit rate.
+* **Write coalescing**: Multiple writes to the same cache line are combined.
+* **Atomic operation support**: Atomics execute directly in the L2 cache for
+  coherence.
+
+**L2-Fabric interface**: Requests missing in L2 are routed through Infinity
+Fabric to the appropriate memory location, which could be:
+
+* Local HBM on the same GPU
+* Remote GPU memory (in multi-GPU systems)
+* System memory (CPU DRAM)
+
+The interface categorizes requests by type (read and/or write), size (32B
+and/or 64B), and destination for optimal routing.
+
+.. _memory_coherence:
+
+Memory coherence
+----------------
+
+GPU memory coherence differs significantly from CPU designs to optimize for
+throughput over latency:
+
+**Write-through L1 caches**: All writes update both L1 and L2, ensuring L2
 always has the latest data. This eliminates the need for complex coherence
-protocols between L1 caches but requires higher write bandwidth.</p>
-<p><strong>Software-managed coherence</strong>: Coherence between CUs requires explicit
-synchronization through:</p>
-<ul class="simple">
-<li><p>Memory fences for ordering</p></li>
-<li><p>Cache invalidation instructions</p></li>
-<li><p>Atomic operations (executed at L2 level)</p></li>
-<li><p>Kernel boundaries (implicit synchronization)</p></li>
-</ul>
-<p><strong>Write combining</strong>: To handle partial cache line updates from different CUs,
+protocols between L1 caches but requires higher write bandwidth.
+
+**Software-managed coherence**: Coherence between CUs requires explicit
+synchronization through:
+
+* Memory fences for ordering
+* Cache invalidation instructions
+* Atomic operations (executed at L2 level)
+* Kernel boundaries (implicit synchronization)
+
+**Write combining**: To handle partial cache line updates from different CUs,
 the GPU uses write masks indicating which bytes to update. This prevents false
-sharing issues while maintaining correctness.</p>
-</section>
-<section id="memory-coalescing">
-<h3>Memory coalescing<a class="headerlink" href="#memory-coalescing" title="Link to this heading">#</a></h3>
-<p>Memory coalescing combines memory accesses from multiple threads into fewer
+sharing issues while maintaining correctness.
+
+Memory coalescing
+-----------------
+
+Memory coalescing combines memory accesses from multiple threads into fewer
 transactions, significantly improving bandwidth utilization. The coalescing
 hardware in the VMEM unit analyzes addresses from all threads in a warp and
-groups them into the minimum number of cache line requests.</p>
-<p><strong>Coalesced access pattern</strong>: When consecutive threads access consecutive
+groups them into the minimum number of cache line requests.
+
+**Coalesced access pattern**: When consecutive threads access consecutive
 memory addresses, the hardware can combine all 64 thread requests into as few
-as 4-8 cache line requests (depending on data size and alignment).</p>
-<p><strong>Non-coalesced access pattern</strong>: When threads access widely separated
+as 4-8 cache line requests (depending on data size and alignment).
+
+**Non-coalesced access pattern**: When threads access widely separated
 addresses, each thread can generate a separate memory transaction, reducing
-effective bandwidth by up to 16x or more.</p>
-<p>To achieve optimal memory performance:</p>
-<ul class="simple">
-<li><p>Ensure consecutive threads access consecutive memory addresses</p></li>
-<li><p>Align data structures to cache line boundaries (64B and/or 128B)</p></li>
-<li><p>Use structure-of-arrays rather than array-of-structures layouts</p></li>
-<li><p>Consider padding to avoid bank conflicts</p></li>
-</ul>
-</section>
-</section>
-<section id="architecture-variants">
-<h2>Architecture variants<a class="headerlink" href="#architecture-variants" title="Link to this heading">#</a></h2>
-<p>AMD supports multiple GPU architecture families optimized for different use
-cases while maintaining HIP compatibility.</p>
-<section id="cdna-architecture">
-<span id="id3"></span><h3>CDNA architecture<a class="headerlink" href="#cdna-architecture" title="Link to this heading">#</a></h3>
-<p>CDNA (Compute DNA) specializes in high-performance computing and machine
-learning workloads. Key features include:</p>
-<figure class="align-default" id="id10">
-<a class="reference internal image-reference" data-original-href="https://rocm.docs.amd.com/projects/HIP/en/latest/_images/cdna3_cu.png"><img alt="Block diagram showing CDNA3 compute unit with matrix core unit, shader cores, L1 cache, and local data share" src="assets/888801c1c84e1c8477387b73.png" style="width: 800px;"/>
-</a>
-<figcaption>
-<p><span class="caption-text">CDNA3 compute unit with matrix acceleration</span><a class="headerlink" href="#id10" title="Link to this image">#</a></p>
-</figcaption>
-</figure>
-<p><strong>Matrix Core Unit</strong>: Specialized hardware for matrix multiply-accumulate
+effective bandwidth by up to 16x or more.
+
+To achieve optimal memory performance:
+
+* Ensure consecutive threads access consecutive memory addresses
+* Align data structures to cache line boundaries (64B and/or 128B)
+* Use structure-of-arrays rather than array-of-structures layouts
+* Consider padding to avoid bank conflicts
+
+Architecture variants
+=====================
+
+AMD supports multiple GPU architecture families optimized for different use
+cases while maintaining HIP compatibility.
+
+.. _cdna_architecture:
+
+CDNA architecture
+-----------------
+
+CDNA (Compute DNA) specializes in high-performance computing and machine
+learning workloads. Key features include:
+
+.. figure:: ../data/understand/hardware_implementation/cdna3_cu.png
+  :alt: Block diagram showing CDNA3 compute unit with matrix core unit, shader
+        cores, L1 cache, and local data share
+  :width: 800
+
+  CDNA3 compute unit with matrix acceleration
+
+**Matrix Core Unit**: Specialized hardware for matrix multiply-accumulate
 operations, providing significantly more throughput than vector units for
-supported operations. Matrix cores support multiple precisions (<code class="docutils literal notranslate"><span class="pre">INT8</span></code>,
-<code class="docutils literal notranslate"><span class="pre">FP16</span></code>, <code class="docutils literal notranslate"><span class="pre">BF16</span></code>, <code class="docutils literal notranslate"><span class="pre">FP32</span></code>) with varying performance characteristics.</p>
-<p><strong>Accumulation VGPRs (AGPRs)</strong>: Additional register file space (up to 256 KB)
+supported operations. Matrix cores support multiple precisions (``INT8``,
+``FP16``, ``BF16``, ``FP32``) with varying performance characteristics.
+
+**Accumulation VGPRs (AGPRs)**: Additional register file space (up to 256 KB)
 dedicated to matrix accumulation, doubling the available register storage for
 matrix operations. Data movement between VGPRs and AGPRs uses specialized
-instructions (<code class="docutils literal notranslate"><span class="pre">v_accvgpr_*</span></code>).</p>
-<p><strong>Enhanced memory bandwidth</strong>: CDNA GPUs typically use HBM2, HBM2e, and/or
-HBM3 memory technology.</p>
-<p><strong>Multi-die designs</strong>: CDNA2 (MI250) and CDNA3 (MI300) use chiplet
+instructions (``v_accvgpr_*``).
+
+**Enhanced memory bandwidth**: CDNA GPUs typically use HBM2, HBM2e, and/or
+HBM3 memory technology.
+
+**Multi-die designs**: CDNA2 (MI250) and CDNA3 (MI300) use chiplet
 architectures with multiple dies connected through high-speed links, scaling
-to higher compute and memory capacities.</p>
-</section>
-<section id="rdna-architecture">
-<span id="id4"></span><h3>RDNA architecture<a class="headerlink" href="#rdna-architecture" title="Link to this heading">#</a></h3>
-<p>RDNA optimizes for graphics and lower-latency compute workloads through
-fundamental architectural changes:</p>
-<figure class="align-default" id="id11">
-<a class="reference internal image-reference" data-original-href="https://rocm.docs.amd.com/projects/HIP/en/latest/_images/rdna3_cu.png"><img alt="Block diagram showing RDNA3 work group processor with dual compute units, shared caches, and 32-wide SIMD units" src="assets/d3381bb5c72fb6c424a0291b.png" style="width: 800px;"/>
-</a>
-<figcaption>
-<p><span class="caption-text">RDNA3 work group processor architecture</span><a class="headerlink" href="#id11" title="Link to this image">#</a></p>
-</figcaption>
-</figure>
-<p><strong>Wave32 execution</strong>: Primary execution mode uses 32-thread warps, reducing
-divergence penalties and register pressure.</p>
-<p><strong>Dual compute units</strong>: The work group processor (WGP) replaces standalone
-CUs, containing two closely coupled compute units sharing resources:</p>
-<ul class="simple">
-<li><p>Each CU has two 32-wide SIMD units</p></li>
-<li><p>Warps execute in a single cycle on 32-wide SIMDs</p></li>
-<li><p>Reduced instruction latency improves responsiveness</p></li>
-</ul>
-<p><strong>Three-level cache hierarchy</strong>:</p>
-<ul class="simple">
-<li><p><strong>L0 cache</strong>: Per-CU cache</p></li>
-<li><p><strong>L1 cache</strong>: Shared between CUs in a WGP (new intermediate level)</p></li>
-<li><p><strong>L2 cache</strong>: Global cache shared across all WGPs</p></li>
-</ul>
-<p><strong>128-byte cache lines</strong>: Aligning with Wave32 access patterns (32 threads × 4
-bytes = 128 bytes).</p>
-<p>These RDNA optimizations target gaming workloads where latency matters more
+to higher compute and memory capacities.
+
+.. _rdna_architecture:
+
+RDNA architecture
+-----------------
+
+RDNA optimizes for graphics and lower-latency compute workloads through
+fundamental architectural changes:
+
+.. figure:: ../data/understand/hardware_implementation/rdna3_cu.png
+  :alt: Block diagram showing RDNA3 work group processor with dual compute
+        units, shared caches, and 32-wide SIMD units
+  :width: 800
+
+  RDNA3 work group processor architecture
+
+**Wave32 execution**: Primary execution mode uses 32-thread warps, reducing
+divergence penalties and register pressure.
+
+**Dual compute units**: The work group processor (WGP) replaces standalone
+CUs, containing two closely coupled compute units sharing resources:
+
+* Each CU has two 32-wide SIMD units
+* Warps execute in a single cycle on 32-wide SIMDs
+* Reduced instruction latency improves responsiveness
+
+**Three-level cache hierarchy**:
+
+* **L0 cache**: Per-CU cache
+* **L1 cache**: Shared between CUs in a WGP (new intermediate level)
+* **L2 cache**: Global cache shared across all WGPs
+
+**128-byte cache lines**: Aligning with Wave32 access patterns (32 threads × 4
+bytes = 128 bytes).
+
+These RDNA optimizations target gaming workloads where latency matters more
 than pure throughput, though the architecture remains capable for general
-compute tasks.</p>
-</section>
-</section>
-<section id="performance-considerations">
-<h2>Performance considerations<a class="headerlink" href="#performance-considerations" title="Link to this heading">#</a></h2>
-<p>Understanding hardware characteristics helps you optimize GPU applications for
-maximum performance.</p>
-<section id="occupancy-and-resource-limits">
-<h3>Occupancy and resource limits<a class="headerlink" href="#occupancy-and-resource-limits" title="Link to this heading">#</a></h3>
-<p>Occupancy measures the ratio of active warps to maximum possible
+compute tasks.
+
+Performance considerations
+==========================
+
+Understanding hardware characteristics helps you optimize GPU applications for
+maximum performance.
+
+Occupancy and resource limits
+-----------------------------
+
+Occupancy measures the ratio of active warps to maximum possible
 warps on a CU. Higher occupancy generally improves latency hiding but is
-limited by:</p>
-<ul class="simple">
-<li><p><strong>Register usage</strong>: Each warp requires VGPRs and SGPRs from finite
-pools</p></li>
-<li><p><strong>LDS allocation</strong>: Shared memory used per workgroup</p></li>
-<li><p><strong>warp slots</strong>: Fixed number of execution contexts per CU</p></li>
-<li><p><strong>Workgroup size</strong>: Smaller workgroups can waste resources</p></li>
-</ul>
-<p>Balancing these resources is critical for achieving optimal occupancy. Tools
-such as <code class="docutils literal notranslate"><span class="pre">rocprofv3</span></code> can help analyze occupancy and identify limiting
-factors.</p>
-</section>
-<section id="latency-hiding-through-multithreading">
-<h3>Latency hiding through multithreading<a class="headerlink" href="#latency-hiding-through-multithreading" title="Link to this heading">#</a></h3>
-<p>GPUs hide memory and instruction latency through massive hardware multithreading
+limited by:
+
+* **Register usage**: Each warp requires VGPRs and SGPRs from finite
+  pools
+* **LDS allocation**: Shared memory used per workgroup
+* **warp slots**: Fixed number of execution contexts per CU
+* **Workgroup size**: Smaller workgroups can waste resources
+
+Balancing these resources is critical for achieving optimal occupancy. Tools
+such as ``rocprofv3`` can help analyze occupancy and identify limiting
+factors.
+
+Latency hiding through multithreading
+-------------------------------------
+
+GPUs hide memory and instruction latency through massive hardware multithreading
 rather than complex CPU techniques such as out-of-order execution and/or
-speculation. With sufficient warps:</p>
-<ul class="simple">
-<li><p>Memory latency is hidden by executing other warps during waits</p></li>
-<li><p>Pipeline latencies are covered by round-robin warp scheduling</p></li>
-<li><p>No context switch overhead as all contexts remain resident</p></li>
-</ul>
-<p>The hardware can switch between warps every cycle, maintaining high ALU
-utilization even with long-latency operations in flight.</p>
-</section>
-<section id="memory-bandwidth-utilization">
-<h3>Memory bandwidth utilization<a class="headerlink" href="#memory-bandwidth-utilization" title="Link to this heading">#</a></h3>
-<p>Effective memory bandwidth depends on access patterns:</p>
-<ul class="simple">
-<li><p><strong>Coalesced access</strong>: Can achieve 70-90% of peak bandwidth</p></li>
-<li><p><strong>Random access</strong>: Might achieve only 5-15% of peak bandwidth</p></li>
-<li><p><strong>Bank conflicts</strong>: Can serialize LDS access, reducing throughput</p></li>
-</ul>
-<p>Memory-bound kernels should focus on:</p>
-<ul class="simple">
-<li><p>Maximizing coalescing through proper data layout</p></li>
-<li><p>Prefetching and data reuse in LDS</p></li>
-<li><p>Balancing computation with memory access</p></li>
-<li><p>Using appropriate cache policies</p></li>
-</ul>
-</section>
-<section id="hardware-specific-optimizations">
-<h3>Hardware-specific optimizations<a class="headerlink" href="#hardware-specific-optimizations" title="Link to this heading">#</a></h3>
-<p>Different AMD GPU architectures benefit from tailored optimizations:</p>
-<p><strong>For CDNA</strong>:</p>
-<ul class="simple">
-<li><p>Optimize for 64-thread warp granularity</p></li>
-<li><p>Leverage matrix cores for applicable algorithms</p></li>
-<li><p>Consider AGPR usage for register spilling</p></li>
-</ul>
-<p><strong>For RDNA</strong>:</p>
-<ul class="simple">
-<li><p>Design for 32-thread warp execution</p></li>
-<li><p>Utilize improved divergence handling</p></li>
-<li><p>Take advantage of additional cache level</p></li>
-</ul>
-<p><strong>Architecture-agnostic</strong>:</p>
-<ul class="simple">
-<li><p>Minimize divergent control flow</p></li>
-<li><p>Ensure memory access coalescing</p></li>
-<li><p>Balance resource usage for occupancy</p></li>
-<li><p>Overlap computation with memory access</p></li>
-</ul>
-</section>
-</section>
-<section id="summary">
-<h2>Summary<a class="headerlink" href="#summary" title="Link to this heading">#</a></h2>
-<p>AMD GPU hardware architecture provides massive parallelism through
+speculation. With sufficient warps:
+
+* Memory latency is hidden by executing other warps during waits
+* Pipeline latencies are covered by round-robin warp scheduling
+* No context switch overhead as all contexts remain resident
+
+The hardware can switch between warps every cycle, maintaining high ALU
+utilization even with long-latency operations in flight.
+
+Memory bandwidth utilization
+----------------------------
+
+Effective memory bandwidth depends on access patterns:
+
+* **Coalesced access**: Can achieve 70-90% of peak bandwidth
+* **Random access**: Might achieve only 5-15% of peak bandwidth
+* **Bank conflicts**: Can serialize LDS access, reducing throughput
+
+Memory-bound kernels should focus on:
+
+* Maximizing coalescing through proper data layout
+* Prefetching and data reuse in LDS
+* Balancing computation with memory access
+* Using appropriate cache policies
+
+Hardware-specific optimizations
+-------------------------------
+
+Different AMD GPU architectures benefit from tailored optimizations:
+
+**For CDNA**:
+
+* Optimize for 64-thread warp granularity
+* Leverage matrix cores for applicable algorithms
+* Consider AGPR usage for register spilling
+
+**For RDNA**:
+
+* Design for 32-thread warp execution
+* Utilize improved divergence handling
+* Take advantage of additional cache level
+
+**Architecture-agnostic**:
+
+* Minimize divergent control flow
+* Ensure memory access coalescing
+* Balance resource usage for occupancy
+* Overlap computation with memory access
+
+Summary
+=======
+
+AMD GPU hardware architecture provides massive parallelism through
 hierarchical organization of compute resources, specialized execution units,
 and a sophisticated memory system. Understanding these hardware details, from
 the command processor through shader engines to individual compute units and
-the memory hierarchy, enables you to write more efficient GPU applications.</p>
-<p>Key hardware concepts for optimization include:</p>
-<ul class="simple">
-<li><p>Workgroup scheduling and resource management by the SPI</p></li>
-<li><p>Instruction scheduling and warp execution in compute units</p></li>
-<li><p>Memory coalescing and cache behavior</p></li>
-<li><p>Architecture-specific features (matrix cores, Wave32 and/or Wave64 modes)</p></li>
-<li><p>Resource limits affecting occupancy</p></li>
-</ul>
-<p>For details on mapping parallel algorithms to this hardware, see the
-<a class="reference internal" data-original-href="https://rocm.docs.amd.com/projects/HIP/en/latest/understand/programming_model.html#programming-model"><span class="std std-ref">Introduction to the HIP programming model</span></a> chapter. For specific optimization techniques,
-consult the performance optimization guides in the ROCm documentation.</p>
-</section>
-</section>
-</article></body></html>
+the memory hierarchy, enables you to write more efficient GPU applications.
+
+Key hardware concepts for optimization include:
+
+* Workgroup scheduling and resource management by the SPI
+* Instruction scheduling and warp execution in compute units
+* Memory coalescing and cache behavior
+* Architecture-specific features (matrix cores, Wave32 and/or Wave64 modes)
+* Resource limits affecting occupancy
+
+For details on mapping parallel algorithms to this hardware, see the
+:ref:`programming_model` chapter. For specific optimization techniques,
+consult the performance optimization guides in the ROCm documentation.
+</pre><figure><figcaption>docs/data/understand/hardware_implementation/selayout.png</figcaption><img src="upstream/docs/data/understand/hardware_implementation/selayout.png"></figure><figure><figcaption>docs/data/understand/hardware_implementation/gcn_compute_unit.png</figcaption><img src="upstream/docs/data/understand/hardware_implementation/gcn_compute_unit.png"></figure><figure><figcaption>docs/data/understand/hardware_implementation/lds.svg</figcaption><img src="upstream/docs/data/understand/hardware_implementation/lds.svg"></figure><figure><figcaption>docs/data/understand/hardware_implementation/cdna2_gcd.png</figcaption><img src="upstream/docs/data/understand/hardware_implementation/cdna2_gcd.png"></figure><figure><figcaption>docs/data/understand/hardware_implementation/l2perf_model.png</figcaption><img src="upstream/docs/data/understand/hardware_implementation/l2perf_model.png"></figure><figure><figcaption>docs/data/understand/hardware_implementation/cdna3_cu.png</figcaption><img src="upstream/docs/data/understand/hardware_implementation/cdna3_cu.png"></figure><figure><figcaption>docs/data/understand/hardware_implementation/rdna3_cu.png</figcaption><img src="upstream/docs/data/understand/hardware_implementation/rdna3_cu.png"></figure></html>

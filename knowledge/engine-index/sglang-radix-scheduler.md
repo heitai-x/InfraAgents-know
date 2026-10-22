@@ -4,7 +4,19 @@ SGLang 将共享前缀组织成 Radix 结构，调度器围绕命中状态和可
 
 ## 已核对的源码锚点
 
-固定提交 dd83b54611897a5f80f4df59e69756bd2fb4b8ab：python/sglang/srt/managers/scheduler.py 的 Scheduler 在第 433 行，get_next_batch_to_run 在第 3648 行，run_batch 在第 4337 行。python/sglang/srt/mem_cache/radix_cache.py 的 RadixCache 在第 321 行，match_prefix 在第 396 行，insert 在第 456 行，evict 在第 643 行。原始符号与哈希见 [定位证据](../../docs/evidence/knowledge-source-locations-20260920.json)。
+本页核对固定提交 cf346bb15de90c447ed498ad5e99aae407e04ce2，提交日期为 2026-04-30。以下坐标由完整归档源码解析取得，只定位这一版本。
+
+| 文件 | 符号 | 行号 |
+|---|---|---|
+| python/sglang/srt/managers/scheduler.py | Scheduler | 322 |
+| python/sglang/srt/managers/scheduler.py | get_next_batch_to_run | 2388 |
+| python/sglang/srt/managers/scheduler.py | run_batch | 2864 |
+| python/sglang/srt/mem_cache/radix_cache.py | RadixCache | 321 |
+| python/sglang/srt/mem_cache/radix_cache.py | match_prefix | 398 |
+| python/sglang/srt/mem_cache/radix_cache.py | insert | 468 |
+| python/sglang/srt/mem_cache/radix_cache.py | evict | 608 |
+
+[完整原文与本地阅读](../../references/S-SGLANG-CODE/reader.html)；[源码定位证据](../../docs/evidence/astra-source-locations.json)。
 
 ## 一次请求如何穿过结构
 
@@ -24,14 +36,13 @@ RadixAttention 提供了前缀结构复用的具体方案，不要求所有目�
 
 ## 来源与推导
 
-- S-SGLANG：[完整原文](../../references/S-SGLANG/reader.html) · [全文文本](../../references/S-SGLANG/fulltext.txt)
-- S-SGLANG-CODE：[完整原文](../../references/S-SGLANG-CODE/reader.html) · [全文文本](../../references/S-SGLANG-CODE/fulltext.txt)
-
 - [S-SGLANG：SGLang: Efficient Execution of Structured Language Model Programs](../sources/S-SGLANG.md)：SGLang 的 RadixAttention 利用 token 前缀树组织复用状态，结构化执行场景可以复用重复前缀计算。
+  [完整原文](../../references/S-SGLANG/reader.html) · [全文文本](../../references/S-SGLANG/fulltext.txt)
 
-- [S-SGLANG-CODE：SGLang — scheduler and radix cache source locations](../sources/S-SGLANG-CODE.md)：实际核对提交 dd83b546 的 scheduler.py 与 radix_cache.py：Scheduler、get_next_batch_to_run、run_batch，以及 RadixCache 的 match_prefix、insert、evict。定位与文件 SHA 已保存到本项目证据。
+- [S-SGLANG-CODE：SGLang — scheduler and radix cache source locations](../sources/S-SGLANG-CODE.md)：固定历史提交中的 scheduler.py 与 radix_cache.py 展示 Scheduler、批次选择和执行，以及 RadixCache 的前缀匹配、插入与淘汰。精确符号和行号随本版本源码单独记录。
+  [完整原文](../../references/S-SGLANG-CODE/reader.html) · [全文文本](../../references/S-SGLANG-CODE/fulltext.txt)
 
-上文的公式展开、容量算例与组合设计是 InfraAgents 在这些机制基础上的推导，具体推导已写在本条正文中。来源入口均为本地释义，可继续读取其定义与使用关系。版本 4，2026-09-20。
+正文中的公式展开、容量算例与组合设计是基于这些来源的推导；设定算例不冒充实测。来源版本受 2026-04-30 上限约束，编辑日期 2026-10-22 不作为事实发布日期。此独立 base 版本内的章节修订号从 1 开始，原章节身份与版本映射保存在版本清单。
 
 ## 延伸阅读
 

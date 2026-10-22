@@ -4,9 +4,17 @@ ModelRunner 把逻辑调度结果转成设备输入与持久批状态，并将�
 
 ## 固定版本入口
 
-v0.24.0 的 vllm/v1/worker/gpu_model_runner.py 中，GPUModelRunner 在第 421 行，execute_model 在第 4056 行，sample_tokens 在第 4435 行，initialize_kv_cache 在第 7309 行，get_kv_cache_spec 在第 7465 行。实际文件哈希见 [证据](../../docs/evidence/expert-source-locations-20260920.json)。
+本页核对固定提交 9c61864bf8a911a8369f35d79d538c7f11cf3dc2，提交日期为 2026-04-30。以下坐标由完整归档源码解析取得，只定位这一版本。
 
-execute_model 的输入是 SchedulerOutput。方法更新 persistent batch 状态，准备 encoder/attention 等执行信息并选择模型路径；部分路径将 execute 与 sample 分离，并保存 ExecuteModelState。返回空结果也可能是无 token 或 connector 工作，不能仅据返回值判断请求已经完成。
+| 文件 | 符号 | 行号 |
+|---|---|---|
+| vllm/v1/worker/gpu_model_runner.py | GPUModelRunner | 394 |
+| vllm/v1/worker/gpu_model_runner.py | execute_model | 3791 |
+| vllm/v1/worker/gpu_model_runner.py | sample_tokens | 4144 |
+| vllm/v1/worker/gpu_model_runner.py | initialize_kv_cache | 6812 |
+| vllm/v1/worker/gpu_model_runner.py | get_kv_cache_spec | 6949 |
+
+[完整原文与本地阅读](../../references/S-VLLM-RUNNER/reader.html)；[源码定位证据](../../docs/evidence/astra-source-locations.json)。
 
 ## 从请求错配追踪三段映射
 
@@ -22,17 +30,16 @@ execute_model 的输入是 SchedulerOutput。方法更新 persistent batch 状�
 
 ## 来源与推导
 
-- S-VLLM-RUNNER：[完整原文](../../references/S-VLLM-RUNNER/reader.html) · [全文文本](../../references/S-VLLM-RUNNER/fulltext.txt)
-- S-VLLM-CODE：[完整原文](../../references/S-VLLM-CODE/reader.html) · [全文文本](../../references/S-VLLM-CODE/fulltext.txt)
-- S-TORCH-CUDA：[完整原文](../../references/S-TORCH-CUDA/reader.html) · [全文文本](../../references/S-TORCH-CUDA/fulltext.txt)
-
 - [S-VLLM-RUNNER：vLLM — GPUModelRunner source reference](../sources/S-VLLM-RUNNER.md)：GPUModelRunner 将调度输出映射为持久 batch、压紧输入、attention metadata、模型执行与采样结果。模型状态规格最终映射到物理缓存 tensor。
+  [完整原文](../../references/S-VLLM-RUNNER/reader.html) · [全文文本](../../references/S-VLLM-RUNNER/fulltext.txt)
 
-- [S-VLLM-CODE：vLLM V1 固定标签源码](../sources/S-VLLM-CODE.md)：实际读取 v0.24.0 的 Scheduler、KVCacheManager 和 GPUModelRunner 三文件，核对 token 进度、分配参数、执行/采样状态和延迟释放相关入口。
+- [S-VLLM-CODE：vLLM V1 固定标签源码](../sources/S-VLLM-CODE.md)：固定历史提交的 Scheduler、KVCacheManager、GPUModelRunner、coordinator 和 block pool 展示 token 进度、分配、执行与采样、层组和回收之间的关系。接口含义以所归档的提交为准。
+  [完整原文](../../references/S-VLLM-CODE/reader.html) · [全文文本](../../references/S-VLLM-CODE/fulltext.txt)
 
 - [S-TORCH-CUDA：PyTorch — CUDA semantics](../sources/S-TORCH-CUDA.md)：PyTorch CUDA 运算通常异步提交；不同 stream 的依赖需显式表达，allocator 还需要知道跨 stream 的使用。CUDA Graph 的重放路径依赖稳定的地址与兼容的执行结构。
+  [完整原文](../../references/S-TORCH-CUDA/reader.html) · [全文文本](../../references/S-TORCH-CUDA/fulltext.txt)
 
-上文的公式展开、容量算例与组合设计是 InfraAgents 在这些机制基础上的推导，具体推导已写在本条正文中。来源入口均为本地释义，可继续读取其定义与使用关系。版本 4，2026-09-20。
+正文中的公式展开、容量算例与组合设计是基于这些来源的推导；设定算例不冒充实测。来源版本受 2026-04-30 上限约束，编辑日期 2026-10-22 不作为事实发布日期。此独立 base 版本内的章节修订号从 1 开始，原章节身份与版本映射保存在版本清单。
 
 ## 延伸阅读
 

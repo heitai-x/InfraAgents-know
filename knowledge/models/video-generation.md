@@ -24,17 +24,16 @@ VAE 分块解码降低峰值内存，但时间卷积需要前后文或状态。�
 
 ## 来源与推导
 
-- S-WAN：[完整原文](../../references/S-WAN/reader.html) · [全文文本](../../references/S-WAN/fulltext.txt)
-- S-DIT：[完整原文](../../references/S-DIT/reader.html) · [全文文本](../../references/S-DIT/fulltext.txt)
-- S-DIFFUSERS：[完整原文](../../references/S-DIFFUSERS/reader.html) · [全文文本](../../references/S-DIFFUSERS/fulltext.txt)
-
 - [S-WAN：Wan: Open and Advanced Large-Scale Video Generative Models](../sources/S-WAN.md)：Wan 的视频生成报告涉及时空建模和视频潜空间/解码结构；输出帧与压缩潜表示具有不同的时间和空间粒度。
+  [完整原文](../../references/S-WAN/reader.html) · [全文文本](../../references/S-WAN/fulltext.txt)
 
 - [S-DIT：Scalable Diffusion Models with Transformers](../sources/S-DIT.md)：DiT 使用 Transformer 处理潜空间 patch，去噪计算的 token 几何由 latent 网格和 patch 化决定。
+  [完整原文](../../references/S-DIT/reader.html) · [全文文本](../../references/S-DIT/fulltext.txt)
 
-- [S-DIFFUSERS：Diffusers：Schedulers](../sources/S-DIFFUSERS.md)：Diffusers 的 scheduler 说明连接模型预测、当前 latent 和时间步更新；不同预测参数化与 scheduler 配置需要相容。
+- [S-DIFFUSERS：Diffusers — Scheduler 与 DDIM（固定历史源码）](../sources/S-DIFFUSERS.md)：Diffusers 的固定 scheduler 源码定义 scheduler 配置、模型预测与时间步更新；DDIM 文件给出 latent 更新及 prediction_type 的不同分支。当前材料不把后续版本的默认参数当作通用规则。
+  [完整原文](../../references/S-DIFFUSERS/reader.html) · [全文文本](../../references/S-DIFFUSERS/fulltext.txt)
 
-上文的公式展开、容量算例与组合设计是 InfraAgents 在这些机制基础上的推导，具体推导已写在本条正文中。来源入口均为本地释义，可继续读取其定义与使用关系。版本 3，2026-09-20。
+正文中的公式展开、容量算例与组合设计是基于这些来源的推导；设定算例不冒充实测。来源版本受 2026-04-30 上限约束，编辑日期 2026-10-22 不作为事实发布日期。此独立 base 版本内的章节修订号从 1 开始，原章节身份与版本映射保存在版本清单。
 
 ## 延伸阅读
 

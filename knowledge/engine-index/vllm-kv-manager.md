@@ -4,15 +4,28 @@ KVCacheManager 将逻辑 token 进度转换成层组块分配，命中长度、�
 
 ## 固定坐标和职责
 
-v0.24.0 的 vllm/v1/core/kv_cache_manager.py 中，KVCacheBlocks 在第 26 行，KVCacheManager 在第 110 行，allocate_slots 在第 244 行，free 在第 460 行，pop_blocks_for_free 在第 483 行。哈希与完整方法定位在 [证据](../../docs/evidence/expert-source-locations-20260920.json)。
+本页核对固定提交 9c61864bf8a911a8369f35d79d538c7f11cf3dc2，提交日期为 2026-04-30。以下坐标由完整归档源码解析取得，只定位这一版本。
 
-get_computed_blocks 从 prefix 状态寻找可直接复用的块。该版本把最长命中限制在请求 token 数减一，以便重算得到所需 logits；块对齐还可能使重算超过一个 token。这个具体实现解释了“全 prompt 已命中”为什么不总等于零次模型工作。
+| 文件 | 符号 | 行号 |
+|---|---|---|
+| vllm/v1/core/kv_cache_manager.py | KVCacheBlocks | 22 |
+| vllm/v1/core/kv_cache_manager.py | KVCacheManager | 106 |
+| vllm/v1/core/kv_cache_manager.py | get_computed_blocks | 183 |
+| vllm/v1/core/kv_cache_manager.py | can_fit_full_sequence | 225 |
+| vllm/v1/core/kv_cache_manager.py | allocate_slots | 265 |
+| vllm/v1/core/kv_cache_manager.py | free | 437 |
+
+[完整原文与本地阅读](../../references/S-VLLM-KV/reader.html)；[源码定位证据](../../docs/evidence/astra-source-locations.json)。
+
+get_computed_blocks 将完整命中的最大长度限制在请求 token 数减一，以重算所需 logits；块对齐可能使重算超过一个 token。这说明前缀全部命中仍可能需要模型工作。
 
 ## 分配参数表达多种状态
 
-allocate_slots 区分新算 token、新命中的本地块、外部已算状态、lookahead 和 encoder token。delay_cache_blocks 用于尚未完成的传输等路径；reserved_blocks 和 full_sequence_must_fit 表达资源保留/admission 条件。读这些参数时，应对应到逻辑状态，而不是把所有长度相加后称为已完成前缀。
+allocate_slots 区分新算 token、新命中的本地块、外部已算状态、lookahead 和 encoder token。delay_cache_blocks 用于延后把尚未完成的传输状态发布为可复用缓存。读这些参数时，应分别还原已计算、待计算、预留和可共享状态，不能把全部长度相加后称为已完成前缀。
 
-层组 coordinator 决定不同状态族怎样联合分配与命中。通用异构缓存原理见关联章节；0.18 的设计文档可解释演化背景，其中具体功能限制不应直接移植成 0.24 的结论。
+本版本另有 can_fit_full_sequence，按完整序列、已有命中与窗口规则计算需要的块，并与 block pool 空闲块比较；这是准入检查。它不把一次通过的容量检查自动变成之后每次分配都已成功的事实。
+
+层组 coordinator 决定不同状态族怎样联合分配和命中。异构缓存设计文档与这些接口均绑定本库登记的同一历史提交；各状态族的共同恢复条件仍由正文中的状态模型解释。
 
 ## 与回收的接口
 
@@ -24,17 +37,16 @@ allocate_slots 区分新算 token、新命中的本地块、外部已算状态�
 
 ## 来源与推导
 
-- S-VLLM-KV：[完整原文](../../references/S-VLLM-KV/reader.html) · [全文文本](../../references/S-VLLM-KV/fulltext.txt)
-- S-VLLM-CODE：[完整原文](../../references/S-VLLM-CODE/reader.html) · [全文文本](../../references/S-VLLM-CODE/fulltext.txt)
-- S-VLLM-HYBRID：[完整原文](../../references/S-VLLM-HYBRID/reader.html) · [全文文本](../../references/S-VLLM-HYBRID/fulltext.txt)
-
 - [S-VLLM-KV：vLLM — KVCacheManager source reference](../sources/S-VLLM-KV.md)：KVCacheManager 的相关接口区分已命中状态、新 token 分配、lookahead、外部状态和释放。层组与实际可恢复状态参与分配判断。
+  [完整原文](../../references/S-VLLM-KV/reader.html) · [全文文本](../../references/S-VLLM-KV/fulltext.txt)
 
-- [S-VLLM-CODE：vLLM V1 固定标签源码](../sources/S-VLLM-CODE.md)：实际读取 v0.24.0 的 Scheduler、KVCacheManager 和 GPUModelRunner 三文件，核对 token 进度、分配参数、执行/采样状态和延迟释放相关入口。
+- [S-VLLM-CODE：vLLM V1 固定标签源码](../sources/S-VLLM-CODE.md)：固定历史提交的 Scheduler、KVCacheManager、GPUModelRunner、coordinator 和 block pool 展示 token 进度、分配、执行与采样、层组和回收之间的关系。接口含义以所归档的提交为准。
+  [完整原文](../../references/S-VLLM-CODE/reader.html) · [全文文本](../../references/S-VLLM-CODE/fulltext.txt)
 
-- [S-VLLM-HYBRID：vLLM：Hybrid KV Cache Manager](../sources/S-VLLM-HYBRID.md)：已读 0.18 设计文档注明其基于提交 458e74，区分 KV hidden bytes、token block size 和物理 page size，讨论层组统一池以及各组前缀命中的交集。
+- [S-VLLM-HYBRID：vLLM：Hybrid KV Cache Manager](../sources/S-VLLM-HYBRID.md)：固定历史设计文档区分 KV hidden bytes、token block size 和物理 page size，讨论异构层分组、统一分配以及各组可恢复前缀的交集。具体功能限制只适用于该文档版本。
+  [完整原文](../../references/S-VLLM-HYBRID/reader.html) · [全文文本](../../references/S-VLLM-HYBRID/fulltext.txt)
 
-上文的公式展开、容量算例与组合设计是 InfraAgents 在这些机制基础上的推导，具体推导已写在本条正文中。来源入口均为本地释义，可继续读取其定义与使用关系。版本 4，2026-09-20。
+正文中的公式展开、容量算例与组合设计是基于这些来源的推导；设定算例不冒充实测。来源版本受 2026-04-30 上限约束，编辑日期 2026-10-22 不作为事实发布日期。此独立 base 版本内的章节修订号从 1 开始，原章节身份与版本映射保存在版本清单。
 
 ## 延伸阅读
 

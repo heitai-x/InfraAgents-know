@@ -1,9 +1,6 @@
 CUDA C++ Best Practices Guide
+The programming guide to using the CUDA Toolkit to obtain the best performance from NVIDIA GPUs.
 1.
-Overview
-
-The CUDA C++ Best Practices Guide provides practical guidelines for writing high-performance CUDA applications. It covers optimization strategies across memory usage, parallel execution, and instruction-level efficiency. The guide helps developers identify performance bottlenecks, leverage GPU architecture effectively, and apply profiling tools to fine-tune applications. It’s an essential resource for maximizing throughput and achieving scalable, efficient CUDA programs.
-2.
 Preface
 
 This Best Practices Guide is a manual to help developers obtain the best performance from NVIDIA
@@ -12,7 +9,7 @@ CUDA
 ®
 GPUs. It presents established parallelization and optimization techniques and explains coding metaphors and idioms that can greatly simplify programming for CUDA-capable GPU architectures.
 While the contents can be used as a reference manual, you should be aware that some topics are revisited in different contexts as various programming and configuration topics are explored. As a result, it is recommended that first-time readers proceed through the guide sequentially. This approach will greatly improve your understanding of effective programming practices and enable you to better use the guide for reference later.
-2.1.
+1.1.
 Who Should Read This Guide?
 
 The discussions in this guide all use the C++ programming language, so you should be comfortable reading C++ code.
@@ -20,22 +17,22 @@ This guide refers to and relies on several other documents that you should have 
 https://docs.nvidia.com/cuda/
 . The following documents are especially important resources:
 CUDA Installation Guide
-CUDA Programming Guide
+CUDA C++ Programming Guide
 CUDA Toolkit Reference Manual
-In particular, the optimization section of this guide assumes that you have already successfully downloaded and installed the CUDA Toolkit (if not, please refer to the relevant CUDA Installation Guide for your platform) and that you have a basic familiarity with the CUDA C++ programming language and environment (if not, please refer to the CUDA Programming Guide).
-2.2.
+In particular, the optimization section of this guide assumes that you have already successfully downloaded and installed the CUDA Toolkit (if not, please refer to the relevant CUDA Installation Guide for your platform) and that you have a basic familiarity with the CUDA C++ programming language and environment (if not, please refer to the CUDA C++ Programming Guide).
+1.2.
 Assess, Parallelize, Optimize, Deploy
 
 This guide introduces the
 Assess, Parallelize, Optimize, Deploy(APOD)
 design cycle for applications with the goal of helping application developers to rapidly identify the portions of their code that would most readily benefit from GPU acceleration, rapidly realize that benefit, and begin leveraging the resulting speedups in production as early as possible.
 APOD is a cyclical process: initial speedups can be achieved, tested, and deployed with only minimal initial investment of time, at which point the cycle can begin again by identifying further optimization opportunities, seeing additional speedups, and then deploying the even faster versions of the application into production.
-2.2.1.
+1.2.1.
 Assess
 
 For an existing project, the first step is to assess the application to locate the parts of the code that are responsible for the bulk of the execution time. Armed with this knowledge, the developer can evaluate these bottlenecks for parallelization and start to investigate GPU acceleration.
 By understanding the end-user’s requirements and constraints and by applying Amdahl’s and Gustafson’s laws, the developer can determine the upper bound of performance improvement from acceleration of the identified portions of the application.
-2.2.2.
+1.2.2.
 Parallelize
 
 Having identified the hotspots and having done the basic exercises to set goals and expectations, the developer needs to parallelize the code. Depending on the original code, this can be as simple as calling into an existing GPU-optimized library such as
@@ -46,19 +43,19 @@ cuFFT
 Thrust
 , or it could be as simple as adding a few preprocessor directives as hints to a parallelizing compiler.
 On the other hand, some applications’ designs will require some amount of refactoring to expose their inherent parallelism. As even CPU architectures will require exposing parallelism in order to improve or simply maintain the performance of sequential applications, the CUDA family of parallel programming languages (CUDA C++, CUDA Fortran, etc.) aims to make the expression of this parallelism as simple as possible, while simultaneously enabling operation on CUDA-capable GPUs designed for maximum parallel throughput.
-2.2.3.
+1.2.3.
 Optimize
 
 After each round of application parallelization is complete, the developer can move to optimizing the implementation to improve performance. Since there are many possible optimizations that can be considered, having a good understanding of the needs of the application can help to make the process as smooth as possible. However, as with APOD as a whole, program optimization is an iterative process (identify an opportunity for optimization, apply and test the optimization, verify the speedup achieved, and repeat), meaning that it is not necessary for a programmer to spend large amounts of time memorizing the bulk of all possible optimization strategies prior to seeing good speedups. Instead, strategies can be applied incrementally as they are learned.
 Optimizations can be applied at various levels, from overlapping data transfers with computation all the way down to fine-tuning floating-point operation sequences. The available profiling tools are invaluable for guiding this process, as they can help suggest a next-best course of action for the developer’s optimization efforts and provide references into the relevant portions of the optimization section of this guide.
-2.2.4.
+1.2.4.
 Deploy
 
 Having completed the GPU acceleration of one or more components of the application it is possible to compare the outcome with the original expectation. Recall that the initial
 assess
 step allowed the developer to determine an upper bound for the potential speedup attainable by accelerating given hotspots.
 Before tackling other hotspots to improve the total speedup, the developer should consider taking the partially parallelized implementation and carry it through to production. This is important for a number of reasons; for example, it allows the user to profit from their investment as early as possible (the speedup may be partial but is still valuable), and it minimizes risk for the developer and the user by providing an evolutionary rather than revolutionary set of changes to the application.
-2.3.
+1.3.
 Recommendations and Best Practices
 
 Throughout this guide, specific recommendations are made regarding the design and implementation of CUDA C++ code. These recommendations are categorized by priority, which is a blend of the effect of the recommendation and its scope. Actions that present substantial improvements for most CUDA applications have the highest priority, while small optimizations that affect only very specific situations are given a lower priority.
@@ -68,12 +65,12 @@ Note
 Code samples throughout the guide omit error checking for conciseness. Production code should, however, systematically check the error code returned by each API call and check for failures in kernel launches by calling
 cudaGetLastError()
 .
-2.4.
+1.4.
 Assessing Your Application
 
 From supercomputers to mobile phones, modern processors increasingly rely on parallelism to provide performance. The core computational unit, which includes control, arithmetic, registers and typically some cache, is replicated some number of times and connected to memory via a network. As a result, all modern processors require parallel code in order to achieve good utilization of their computational power.
 While processors are evolving to expose more fine-grained parallelism to the programmer, many existing applications have evolved either as serial codes or as coarse-grained parallel codes (for example, where the data is decomposed into regions processed in parallel, with sub-regions shared using MPI). In order to profit from any modern processor architecture, GPUs included, the first steps are to assess the application to identify the hotspots, determine whether they can be parallelized, and understand the relevant workloads both now and in the future.
-3.
+2.
 Heterogeneous Computing
 
 CUDA programming involves running code on two different platforms concurrently: a
@@ -83,7 +80,7 @@ devices
 .
 While NVIDIA GPUs are frequently associated with graphics, they are also powerful arithmetic engines capable of running thousands of lightweight threads in parallel. This capability makes them well suited to computations that can leverage parallel execution.
 However, the device is based on a distinctly different design from the host system, and it’s important to understand those differences and how they determine the performance of CUDA applications in order to use CUDA effectively.
-3.1.
+2.1.
 Differences between Host and Device
 
 The primary differences are in threading model and in separate physical memories:
@@ -92,7 +89,7 @@ Execution pipelines on host systems can support a limited number of concurrent t
 smallest
 executable unit of parallelism on a CUDA device comprises 32 threads (termed a
 warp
-of threads). Modern NVIDIA GPUs can support up to 2048 active threads concurrently per multiprocessor (see Features and Specifications of the CUDA Programming Guide) On GPUs with 80 multiprocessors, this leads to more than 160,000 concurrently active threads.
+of threads). Modern NVIDIA GPUs can support up to 2048 active threads concurrently per multiprocessor (see Features and Specifications of the CUDA C++ Programming Guide) On GPUs with 80 multiprocessors, this leads to more than 160,000 concurrently active threads.
 Threads
 Threads on a CPU are generally heavyweight entities. The operating system must swap threads on and off CPU execution channels to provide multithreading capability. Context switches (when two threads are swapped) are therefore slow and expensive. By comparison, threads on GPUs are extremely lightweight. In a typical system, thousands of threads are queued up for work (in warps of 32 threads each). If the GPU must wait on one warp of threads, it simply begins executing work on another. Because separate registers are allocated to all active threads, no swapping of registers or other state need occur when switching among GPU threads. Resources stay allocated to each thread until it completes its execution. In short, CPU cores are designed to
 minimize latency
@@ -106,7 +103,7 @@ The host system and the device each have their own distinct attached physical me
 What Runs on a CUDA-Enabled Device?
 .
 These are the primary hardware differences between CPU hosts and GPU devices with respect to parallel programming. Other differences are discussed as they arise elsewhere in this document. Applications composed with these differences in mind can treat the host and device together as a cohesive heterogeneous system wherein each processing unit is leveraged to do the kind of work it does best: sequential work on the host and parallel work on the device.
-3.2.
+2.2.
 What Runs on a CUDA-Enabled Device?
 
 The following issues should be considered when determining what parts of an application to run on the device:
@@ -132,14 +129,14 @@ coalescing
 On Systems on a Chip with integrated GPUs, such as NVIDIA® Tegra®, host and device memory are physically the same, but there is still a logical distinction between host and device memory. See the
 Application Note on CUDA for Tegra
 for details.
-4.
+3.
 Application Profiling
 
-4.1.
+3.1.
 Profile
 
 Many codes accomplish a significant portion of the work with a relatively small amount of code. Using a profiler, the developer can identify such hotspots and start to compile a list of candidates for parallelization.
-4.1.1.
+3.1.1.
 Creating the Profile
 
 There are many possible approaches to profiling the code, but in all cases the objective is the same: to identify the function or functions in which the application is spending most of its execution time.
@@ -169,7 +166,7 @@ Each sample counts as 0.01 seconds.
   0.00      0.06     0.00        1     0.00    10.11  print
   0.00      0.06     0.00        1     0.00     0.00  profil
   0.00      0.06     0.00        1     0.00    50.00  report
-4.1.2.
+3.1.2.
 Identifying Hotspots
 
 In the example above, we can clearly see that the function
@@ -182,7 +179,7 @@ calcStats()
 and
 calcSummaryData()
 . Parallelizing these functions as well should increase our speedup potential. However, since APOD is a cyclical process, we might opt to parallelize these functions in a subsequent APOD pass, thereby limiting the scope of our work in any given pass to a smaller set of incremental changes.
-4.1.3.
+3.1.3.
 Understanding Scaling
 
 The amount of performance benefit an application will realize by running on CUDA depends entirely on the extent to which it can be parallelized. Code that cannot be sufficiently parallelized should run on the host, unless doing so would result in excessive transfers between the host and the device.
@@ -194,7 +191,7 @@ Strong Scaling and Amdahl’s Law
 describes strong scaling, which allows us to set an upper bound for the speedup with a fixed problem size.
 Weak Scaling and Gustafson’s Law
 describes weak scaling, where the speedup is attained by growing the problem size. In many applications, a combination of strong and weak scaling is desirable.
-4.1.3.1.
+3.1.3.1.
 Strong Scaling and Amdahl’s Law
 
 Strong scaling is a measure of how, for a fixed overall problem size, the time to solution decreases as more processors are added to a system. An application that exhibits linear strong scaling has a speedup equal to the number of processors used.
@@ -225,7 +222,7 @@ N
 does little to improve performance. Therefore, to get the largest speedup for a fixed problem size, it is worthwhile to spend effort on increasing
 P
 , maximizing the amount of code that can be parallelized.
-4.1.3.2.
+3.1.3.2.
 Weak Scaling and Gustafson’s Law
 
 Weak scaling is a measure of how the time to solution changes as more processors are added to a system with a fixed problem size
@@ -241,13 +238,13 @@ is the fraction of the total serial execution time taken by the portion of code 
 N
 is the number of processors over which the parallel portion of the code runs.
 Another way of looking at Gustafson’s Law is that it is not the problem size that remains constant as we scale up the system but rather the execution time. Note that Gustafson’s Law assumes that the ratio of serial to parallel execution remains constant, reflecting additional cost in setting up and handling the larger problem.
-4.1.3.3.
+3.1.3.3.
 Applying Strong and Weak Scaling
 
 Understanding which type of scaling is most applicable to an application is an important part of estimating speedup. For some applications the problem size will remain constant and hence only strong scaling is applicable. An example would be modeling how two molecules interact with each other, where the molecule sizes are fixed.
 For other applications, the problem size will grow to fill the available processors. Examples include modeling fluids or structures as meshes or grids and some Monte Carlo simulations, where increasing the problem size provides increased accuracy.
 Having understood the application profile, the developer should understand how the problem size would change if the computational performance changes and then apply either Amdahl’s or Gustafson’s Law to determine an upper bound for the speedup.
-5.
+4.
 Parallelizing Your Application
 
 Having identified the hotspots and having done the basic exercises to set goals and expectations, the developer needs to parallelize the code. Depending on the original code, this can be as simple as calling into an existing GPU-optimized library such as
@@ -258,11 +255,11 @@ cuFFT
 Thrust
 , or it could be as simple as adding a few preprocessor directives as hints to a parallelizing compiler.
 On the other hand, some applications’ designs will require some amount of refactoring to expose their inherent parallelism. As even CPU architectures require exposing this parallelism in order to improve or simply maintain the performance of sequential applications, the CUDA family of parallel programming languages (CUDA C++, CUDA Fortran, etc.) aims to make the expression of this parallelism as simple as possible, while simultaneously enabling operation on CUDA-capable GPUs designed for maximum parallel throughput.
-6.
+5.
 Getting Started
 
-There are several key strategies for parallelizing sequential code. While the details of how to apply these strategies to a particular application is a complex and problem-specific topic, the general themes listed here apply regardless of whether we are parallelizing code to run on multicore CPUs or for use on CUDA GPUs.
-6.1.
+There are several key strategies for parallelizing sequential code. While the details of how to apply these strategies to a particular application is a complex and problem-specific topic, the general themes listed here apply regardless of whether we are parallelizing code to run on for multicore CPUs or for use on CUDA GPUs.
+5.1.
 Parallel Libraries
 
 The most straightforward approach to parallelizing an application is to leverage existing libraries that take advantage of parallel architectures on our behalf. The CUDA Toolkit includes a number of such libraries that have been fine-tuned for NVIDIA CUDA GPUs, such as
@@ -280,7 +277,7 @@ has an interface similar to that of
 FFTW
 , etc.
 Also of note is the Thrust library, which is a parallel C++ template library similar to the C++ Standard Template Library. Thrust provides a rich collection of data parallel primitives such as scan, sort, and reduce, which can be composed together to implement complex algorithms with concise, readable source code. By describing your computation in terms of these high-level abstractions you provide Thrust with the freedom to select the most efficient implementation automatically. As a result, Thrust can be utilized in rapid prototyping of CUDA applications, where programmer productivity matters most, as well as in production, where robustness and absolute performance are crucial.
-6.2.
+5.2.
 Parallelizing Compilers
 
 Another common approach to parallelization of sequential codes is to make use of parallelizing compilers. Often this means the use of directives-based approaches, where the programmer uses a pragma or other similar notation to provide hints to the compiler about where parallelism can be found without needing to modify or adapt the underlying code itself. By exposing parallelism to the compiler, directives allow the compiler to do the detailed work of mapping the computation onto the parallel architecture.
@@ -288,20 +285,20 @@ The OpenACC standard provides a set of compiler directives to specify loops and 
 See
 http://www.openacc.org/
 for details.
-6.3.
+5.3.
 Coding to Expose Parallelism
 
 For applications that need additional functionality or performance beyond what existing parallel libraries or parallelizing compilers can provide, parallel programming languages such as CUDA C++ that integrate seamlessly with existing sequential code are essential.
 Once we have located a hotspot in our application’s profile assessment and determined that custom code is the best approach, we can use CUDA C++ to expose the parallelism in that portion of our code as a CUDA kernel. We can then launch this kernel onto the GPU and retrieve the results without requiring major rewrites to the rest of our application.
 This approach is most straightforward when the majority of the total running time of our application is spent in a few relatively isolated portions of the code. More difficult to parallelize are applications with a very flat profile - i.e., applications where the time spent is spread out relatively evenly across a wide portion of the code base. For the latter variety of application, some degree of code refactoring to expose the inherent parallelism in the application might be necessary, but keep in mind that this refactoring work will tend to benefit all future architectures, CPU and GPU alike, so it is well worth the effort should it become necessary.
-7.
+6.
 Getting the Right Answer
 
 Obtaining the right answer is clearly the principal goal of all computation. On parallel systems, it is possible to run into difficulties not typically found in traditional serial-oriented programming. These include threading issues, unexpected values due to the way floating-point values are computed, and challenges arising from differences in the way CPU and GPU processors operate. This chapter examines issues that can affect the correctness of returned data and points to appropriate solutions.
-7.1.
+6.1.
 Verification
 
-7.1.1.
+6.1.1.
 Reference Comparison
 
 A key aspect of correctness verification for modifications to any existing program is to establish some mechanism whereby previous known-good reference outputs from representative inputs can be compared to new results. After each change is made, ensure that the results match using whatever criteria apply to the particular algorithm. Some will expect bitwise identical results, which is not always possible, especially where floating-point arithmetic is concerned; see
@@ -310,7 +307,7 @@ regarding numerical accuracy. For other algorithms, implementations may be consi
 Note that the process used for validating numerical results can easily be extended to validate performance results as well. We want to ensure that each change we make is correct
 and
 that it improves performance (and by how much). Checking these things frequently as an integral part of our cyclical APOD process will help ensure that we achieve the desired results as rapidly as possible.
-7.1.2.
+6.1.2.
 Unit Testing
 
 A useful counterpart to the reference comparisons described above is to structure the code itself in such a way that is readily verifiable at the unit level. For example, we can write our CUDA kernels as a collection of many short
@@ -335,7 +332,7 @@ __device__
 functions, we can easily call those functions from both the host code
 and
 the device code without duplication.
-7.2.
+6.2.
 Debugging
 
 CUDA-GDB is a port of the GNU Debugger that runs on Linux and Mac; see:
@@ -347,28 +344,28 @@ https://developer.nvidia.com/nsight-visual-studio-edition
 Several third-party debuggers support CUDA debugging as well; see:
 https://developer.nvidia.com/debugging-solutions
 for more details.
-7.3.
+6.3.
 Numerical Accuracy and Precision
 
-Incorrect or unexpected results arise principally from issues of floating-point accuracy due to the way floating-point values are computed and stored. The following sections explain the principal items of interest. Other peculiarities of floating-point arithmetic are presented in Features and Technical Specifications of the CUDA Programming Guide as well as in a whitepaper and accompanying webinar on floating-point precision and performance available from
+Incorrect or unexpected results arise principally from issues of floating-point accuracy due to the way floating-point values are computed and stored. The following sections explain the principal items of interest. Other peculiarities of floating-point arithmetic are presented in Features and Technical Specifications of the CUDA C++ Programming Guide as well as in a whitepaper and accompanying webinar on floating-point precision and performance available from
 https://developer.nvidia.com/content/precision-performance-floating-point-and-ieee-754-compliance-nvidia-gpus
 .
-7.3.1.
+6.3.1.
 Single vs. Double Precision
 
 Devices of
 CUDA Compute Capability
 1.3 and higher provide native support for double-precision floating-point values (that is, values 64 bits wide). Results obtained using double-precision arithmetic will frequently differ from the same operation performed via single-precision arithmetic due to the greater precision of the former and due to rounding issues. Therefore, it is important to be sure to compare values of like precision and to express the results within a certain tolerance rather than expecting them to be exact.
-7.3.2.
+6.3.2.
 Floating Point Math Is Not Associative
 
 Each floating-point arithmetic operation involves a certain amount of rounding. Consequently, the order in which arithmetic operations are performed is important. If A, B, and C are floating-point values, (A+B)+C is not guaranteed to equal A+(B+C) as it is in symbolic math. When you parallelize computations, you potentially change the order of operations and therefore the parallel results might not match sequential results. This limitation is not specific to CUDA, but an inherent part of parallel computation on floating-point values.
-7.3.3.
+6.3.3.
 IEEE 754 Compliance
 
-All CUDA compute devices follow the IEEE 754 standard for binary floating-point representation, with some small exceptions. These exceptions, which are detailed in Features and Technical Specifications of the CUDA Programming Guide, can lead to results that differ from IEEE 754 values computed on the host system.
+All CUDA compute devices follow the IEEE 754 standard for binary floating-point representation, with some small exceptions. These exceptions, which are detailed in Features and Technical Specifications of the CUDA C++ Programming Guide, can lead to results that differ from IEEE 754 values computed on the host system.
 One of the key differences is the fused multiply-add (FMA) instruction, which combines multiply-add operations into a single instruction execution. Its result will often differ slightly from results obtained by doing the two operations separately.
-7.3.4.
+6.3.4.
 x86 80-bit Computations
 
 x86 processors can use an 80-bit
@@ -376,20 +373,20 @@ double extended precision
 math when performing floating-point calculations. The results of these calculations can frequently differ from pure 64-bit operations performed on the CUDA device. To get a closer match between values, set the x86 host processor to use regular double or single precision (64 bits and 32 bits, respectively). This is done with the
 FLDCW
 x86 assembly instruction or the equivalent operating system API.
-8.
+7.
 Optimizing CUDA Applications
 
 After each round of application parallelization is complete, the developer can move to optimizing the implementation to improve performance. Since there are many possible optimizations that can be considered, having a good understanding of the needs of the application can help to make the process as smooth as possible. However, as with APOD as a whole, program optimization is an iterative process (identify an opportunity for optimization, apply and test the optimization, verify the speedup achieved, and repeat), meaning that it is not necessary for a programmer to spend large amounts of time memorizing the bulk of all possible optimization strategies prior to seeing good speedups. Instead, strategies can be applied incrementally as they are learned.
 Optimizations can be applied at various levels, from overlapping data transfers with computation all the way down to fine-tuning floating-point operation sequences. The available profiling tools are invaluable for guiding this process, as they can help suggest a next-best course of action for the developer’s optimization efforts and provide references into the relevant portions of the optimization section of this guide.
-9.
+8.
 Performance Metrics
 
 When attempting to optimize CUDA code, it pays to know how to measure performance accurately and to understand the role that bandwidth plays in performance measurement. This chapter discusses how to correctly measure performance using CPU timers and CUDA events. It then explores how bandwidth affects performance metrics and how to mitigate some of the challenges it poses.
-9.1.
+8.1.
 Timing
 
 CUDA calls and kernel executions can be timed using either CPU or GPU timers. This section examines the functionality, advantages, and pitfalls of both approaches.
-9.1.1.
+8.1.1.
 Using CPU Timers
 
 Any CPU timer can be used to measure the elapsed time of a CUDA call or kernel execution. The details of various CPU timing approaches are outside the scope of this document, but developers should always be aware of the resolution their timing calls provide.
@@ -407,7 +404,7 @@ cudaEventSynchronize()
 blocks until a given event in a particular stream has been recorded by the GPU. Because the driver may interleave execution of CUDA calls from other non-default streams, calls in other streams may be included in the timing.
 Because the default stream, stream 0, exhibits serializing behavior for work on the device (an operation in the default stream can begin only after all preceding calls in any stream have completed; and no subsequent operation in any stream can begin until it finishes), these functions can be used reliably for timing in the default stream.
 Be aware that CPU-to-GPU synchronization points such as those mentioned in this section imply a stall in the GPU’s processing pipeline and should thus be used sparingly to minimize their performance impact.
-9.1.2.
+8.1.2.
 Using CUDA GPU Timers
 
 The CUDA event API provides calls that create and destroy events, record events (including a timestamp), and convert timestamp differences into a floating-point value in milliseconds.
@@ -497,7 +494,7 @@ stop
 events. This value is expressed in milliseconds and has a resolution of approximately half a microsecond. Like the other calls in this listing, their specific operation, parameters, and return values are described in the
 CUDA Toolkit Reference Manual
 . Note that the timings are measured on the GPU clock, so the timing resolution is operating-system-independent.
-9.2.
+8.2.
 Bandwidth
 
 Bandwidth - the rate at which data can be transferred - is one of the most important gating factors for performance. Almost all changes to code should be made in the context of how they affect bandwidth. As described in
@@ -507,13 +504,13 @@ To measure performance accurately, it is useful to calculate theoretical and eff
 Note
 High Priority:
 Use the effective bandwidth of your computation as a metric when measuring performance and optimization benefits.
-9.2.1.
+8.2.1.
 Theoretical Bandwidth Calculation
 
 Theoretical bandwidth can be calculated using hardware specifications available in the product literature. For example, the NVIDIA Tesla V100 uses HBM2 (double data rate) RAM with a memory clock rate of 877 MHz and a 4096-bit-wide memory interface.
 Using these data items, the peak theoretical memory bandwidth of the NVIDIA Tesla V100 is 898 GB/s:
 \(\left. \left( 0.877 \times 10^{9} \right. \times (4096/8) \times 2 \right) \div 10^{9} = 898\text{GB/s}\)
-In this calculation, the memory clock rate is converted into Hz, multiplied by the interface width (divided by 8, to convert bits to bytes) and multiplied by 2 due to the double data rate. Finally, this product is divided by 10
+In this calculation, the memory clock rate is converted in to Hz, multiplied by the interface width (divided by 8, to convert bits to bytes) and multiplied by 2 due to the double data rate. Finally, this product is divided by 10
 9
 to convert the result to GB/s.
 Note
@@ -525,7 +522,7 @@ for the final calculation. In such a case, the bandwidth would be 836.4 GiB/s. I
 Note
 On GPUs with GDDR memory with ECC enabled the available DRAM is reduced by 6.25% to allow for the storage of ECC bits. Fetching ECC bits for each memory transaction also reduced the effective bandwidth by approximately 20% compared to the same GPU with ECC disabled, though the exact impact of ECC on bandwidth can be higher and depends on the memory access pattern. HBM2 memories, on the other hand, provide dedicated ECC resources, allowing overhead-free ECC protection.
 2
-9.2.2.
+8.2.2.
 Effective Bandwidth Calculation
 
 Effective bandwidth is calculated by timing specific program activities and by knowing how data is accessed by the program. To do so, use this equation:
@@ -544,7 +541,7 @@ write), divided by 10
 (or 1,024
 3
 ) to obtain GB of memory transferred. This number is divided by the time in seconds to obtain GB/s.
-9.2.3.
+8.2.3.
 Throughput Reported by Visual Profiler
 
 For devices with
@@ -565,11 +562,11 @@ Coalesced Access to Global Memory
 ). For global memory accesses, this comparison of requested memory bandwidth to actual memory bandwidth is reported by the Global Memory Load Efficiency and Global Memory Store Efficiency metrics.
 2
 As an exception, scattered writes to HBM2 see some overhead from ECC but much less than the overhead with similar access patterns on ECC-protected GDDR5 memory.
-10.
+9.
 Memory Optimizations
 
 Memory optimizations are the most important area for performance. The goal is to maximize the use of the hardware by maximizing bandwidth. Bandwidth is best served by using as much fast memory and as little slow-access memory as possible. This chapter discusses the various kinds of memory on the host and device and how best to set up data items to use the memory effectively.
-10.1.
+9.1.
 Data Transfer Between Host and Device
 
 The peak theoretical bandwidth between the device memory and the GPU is much higher (898 GB/s on the NVIDIA Tesla V100, for example) than the peak theoretical bandwidth between host memory and device memory (16 GB/s on the PCIe x16 Gen3). Hence, for best overall application performance, it is important to minimize data transfer between the host and the device, even if that means running kernels on the GPU that do not demonstrate any speedup compared with running them on the host CPU.
@@ -582,10 +579,10 @@ Finally, higher bandwidth between the host and the device is achieved when using
 page-locked
 (or
 pinned
-) memory, as discussed in the CUDA Programming Guide and the
+) memory, as discussed in the CUDA C++ Programming Guide and the
 Pinned Memory
 section of this document.
-10.1.1.
+9.1.1.
 Pinned Memory
 
 Page-locked or pinned memory transfers attain the highest bandwidth between the host and the device. On PCIe x16 Gen3 cards, for example, pinned memory can attain roughly 12 GB/s transfer rates.
@@ -598,7 +595,7 @@ For regions of system memory that have already been pre-allocated,
 cudaHostRegister()
 can be used to pin the memory on-the-fly without the need to allocate a separate buffer and copy the data into it.
 Pinned memory should not be overused. Excessive use can reduce overall system performance because pinned memory is a scarce resource, but how much is too much is difficult to know in advance. Furthermore, the pinning of system memory is a heavyweight operation compared to most normal system memory allocations, so as with all optimizations, test the application and the systems it runs on for optimal performance parameters.
-10.1.2.
+9.1.2.
 Asynchronous and Overlapping Transfers with Computation
 
 Data transfers between the host and the device using
@@ -861,7 +858,7 @@ tE + tT
 for the sequential version. If the transfer time exceeds the execution time, a rough estimate for the overall time is
 tT + tE/nStreams
 .
-10.1.3.
+9.1.3.
 Zero Copy
 
 Zero copy
@@ -958,7 +955,7 @@ in exactly the
 same was as it would if a_map referred to a location in device memory.
 Note
 Mapped pinned host memory allows you to overlap CPU-GPU memory transfers with computation while avoiding the use of CUDA streams. But since any repeated access to such memory areas causes repeated CPU-GPU transfers, consider creating a second area in device memory to manually cache the previously read host memory data.
-10.1.4.
+9.1.4.
 Unified Virtual Addressing
 
 Devices of
@@ -979,8 +976,8 @@ cudaHostRegister()
 cudaHostGetDevicePointer()
 remains necessary in that case.
 UVA is also a necessary precondition for enabling peer-to-peer (P2P) transfer of data directly across the PCIe bus or NVLink for supported GPUs in supported configurations, bypassing host memory.
-See the CUDA Programming Guide for further explanations and software requirements for UVA and P2P.
-10.2.
+See the CUDA C++ Programming Guide for further explanations and software requirements for UVA and P2P.
+9.2.
 Device Memory Spaces
 
 CUDA devices use several memory spaces, which have different characteristics that reflect their distinct usages in CUDA applications. These
@@ -990,7 +987,7 @@ Figure 2
 Figure 2
 Memory spaces on a CUDA device
 
-Of these different memory spaces, global memory is the most plentiful; see Features and Technical Specifications of the CUDA Programming Guide for the amounts of memory available in each memory space at each
+Of these different memory spaces, global memory is the most plentiful; see Features and Technical Specifications of the CUDA C++ Programming Guide for the amounts of memory available in each memory space at each
 compute capability
 level. Global, local, and texture memory have the greatest access latency, followed by constant memory, shared memory, and the register file.
 The various principal traits of the memory types are shown in
@@ -1046,21 +1043,21 @@ Cached in L1 and L2 by default on devices of compute capability 6.0 and 7.x; cac
 ††
 Cached in L1 and L2 by default except on devices of compute capability 5.x; devices of compute capability 5.x cache locals only in L2.
 In the case of texture access, if a texture reference is bound to a linear array in global memory, then the device code can write to the underlying array. Texture references that are bound to CUDA arrays can be written to via surface-write operations by binding a surface to the same underlying CUDA array storage). Reading from a texture while writing to its underlying global memory array in the same kernel launch should be avoided because the texture caches are read-only and are not invalidated when the associated global memory is modified.
-10.2.1.
+9.2.1.
 Coalesced Access to Global Memory
 
 A very important performance consideration in programming for CUDA-capable GPU architectures is the coalescing of global memory accesses. Global memory loads and stores by threads of a warp are coalesced by the device into as few as possible transactions.
 Note
 High Priority:
 Ensure global memory accesses are coalesced whenever possible.
-The access requirements for coalescing depend on the compute capability of the device and are documented in the CUDA Programming Guide.
+The access requirements for coalescing depend on the compute capability of the device and are documented in the CUDA C++ Programming Guide.
 For devices of compute capability 6.0 or higher, the requirements can be summarized quite easily: the concurrent accesses of the threads of a warp will coalesce into a number of transactions equal to the number of 32-byte transactions necessary to service all of the threads of the warp.
 For certain devices of compute capability 5.2, L1-caching of accesses to global memory can be optionally enabled. If L1-caching is enabled on these devices, the number of required transactions is equal to the number of required 128-byte aligned segments.
 Note
 On devices of compute capability 6.0 or higher, L1-caching is the default, however the data access unit is 32-byte regardless of whether global loads are cached in L1 or not.
 On devices with GDDR memory, accessing memory in a coalesced way is even more important when ECC is turned on. Scattered accesses increase ECC memory transfer overhead, especially when writing data to global memory.
 Coalescing concepts are illustrated in the following simple examples. These examples assume compute capability 6.0 or higher and that accesses are for 4-byte words, unless otherwise noted.
-10.2.1.1.
+9.2.1.1.
 A Simple Access Pattern
 
 The first and simplest case of coalescing can be achieved by any CUDA-enabled device of compute capability 6.0 or higher: the
@@ -1080,11 +1077,11 @@ Coalesced access
 This access pattern results in four 32-byte transactions, indicated by the red rectangles.
 If from any of the four 32-byte segments only a subset of the words are requested (e.g. if several threads had accessed the
 same word or if some threads did not participate in the access), the full segment is fetched anyway. Furthermore, if accesses
-by the threads of the warp had been permuted within or across the four segments, still only four 32-byte transactions would
+by the threads of the warp had been permuted within or accross the four segments, still only four 32-byte transactions would
 have been performed by a device with
 compute capability
 6.0 or higher.
-10.2.1.2.
+9.2.1.2.
 A Sequential but Misaligned Access Pattern
 
 If sequential threads in a warp access memory that is sequential but not aligned with a 32-byte segment, five 32-byte segments
@@ -1097,7 +1094,7 @@ Misaligned sequential addresses that fall within five 32-byte segments
 Memory allocated through the CUDA Runtime API, such as via
 cudaMalloc()
 , is guaranteed to be aligned to at least 256 bytes. Therefore, choosing sensible thread block sizes, such as multiples of the warp size (i.e., 32 on current GPUs), facilitates memory accesses by warps that are properly aligned. (Consider what would happen to the memory addresses accessed by the second, third, and subsequent thread blocks if the thread block size was not a multiple of warp size, for example.)
-10.2.1.3.
+9.2.1.3.
 Effects of Misaligned Accesses
 
 It is easy and informative to explore the ramifications of misaligned accesses using a simple copy kernel, such as the one
@@ -1174,7 +1171,7 @@ of the memory throughput achieved with no offsets.
 In this particular example, the offset memory throughput achieved is, however, approximately 9/10
 th
 , because adjacent warps reuse the cache lines their neighbors fetched. So while the impact is still evident it is not as large as we might have expected. It would have been more so if adjacent warps had not exhibited such a high degree of reuse of the over-fetched cache lines.
-10.2.1.4.
+9.2.1.4.
 Strided Accesses
 
 As seen above, in the case of misaligned sequential accesses, caches help to alleviate the performance impact. It may be different with non-unit-strided accesses, however, and this is a pattern that occurs frequently when dealing with multidimensional data or matrices. For this reason, ensuring that as much as possible of the data in each cache line fetched is actually used is an important part of performance optimization of memory accesses on these devices.
@@ -1249,14 +1246,14 @@ Performance of strideCopy kernel
 As illustrated in
 Figure 7
 , non-unit-stride global memory accesses should be avoided whenever possible. One method for doing so utilizes shared memory, which is discussed in the next section.
-10.2.2.
+9.2.2.
 L2 Cache
 
 Starting with CUDA 11.0, devices of compute capability 8.0 and above have the capability to influence persistence of data in the L2 cache. Because L2 cache is on-chip, it potentially provides higher bandwidth and lower latency accesses to global memory.
 For more details refer to the L2 Access Management section in the
-CUDA Programming Guide
+CUDA C++ Programming Guide
 .
-10.2.2.1.
+9.2.2.1.
 L2 Cache Access Window
 
 When a CUDA kernel accesses a data region in the global memory repeatedly, such data accesses can be considered to be
@@ -1356,7 +1353,7 @@ num_bytes
 parameter and the size of L2 cache, one may need to tune the value of
 hitRatio
 to avoid thrashing of L2 cache lines.
-10.2.2.2.
+9.2.2.2.
 Tuning the Access Window Hit-Ratio
 
 The
@@ -1553,11 +1550,11 @@ such that a random 20 MB of the total persistent data is resident in the L2 set-
 Figure 10
 The performance of the sliding-window benchmark with tuned hit-ratio
 
-10.2.3.
+9.2.3.
 Shared Memory
 
 Because it is on-chip, shared memory has much higher bandwidth and lower latency than local and global memory - provided there are no bank conflicts between the threads, as detailed in the following section.
-10.2.3.1.
+9.2.3.1.
 Shared Memory and Memory Banks
 
 To achieve high memory bandwidth for concurrent accesses, shared memory is divided into equally sized memory modules (
@@ -1574,7 +1571,7 @@ To minimize bank conflicts, it is important to understand how memory addresses m
 On devices of compute capability 5.x or newer, each bank has a bandwidth of 32 bits every clock cycle, and successive 32-bit words are assigned to successive banks. The warp size is 32 threads and the number of banks is also 32, so bank conflicts can occur between any threads in the warp. See
 Compute Capability 5.x
 for further details.
-10.2.3.2.
+9.2.3.2.
 Shared Memory in Matrix Multiplication (C=AB)
 
 Shared memory enables cooperation between threads in a block. When multiple threads in a block use the same data from global memory, shared memory can be used to access the data from global memory only once. Shared memory can also be used to avoid uncoalesced memory accesses by loading and storing data in a coalesced pattern from global memory and then reordering it in shared memory. Aside from memory bank conflicts, there is no penalty for non-sequential or unaligned accesses by a warp in shared memory.
@@ -2075,7 +2072,7 @@ Using shared memory to eliminate redundant reads of a tile of B
 Note
 Medium Priority:
 Use shared memory to avoid redundant transfers from global memory.
-10.2.3.3.
+9.2.3.3.
 Shared Memory in Matrix Multiplication (C=AAT)
 
 A variant of the previous matrix multiplication can be used to illustrate how strided accesses to global memory, as well as shared memory bank conflicts, are handled. This variant simply uses the transpose of A in place of B, so C = AA
@@ -2417,7 +2414,7 @@ The examples in this section have illustrated three reasons to use shared memory
 To enable coalesced accesses to global memory, especially to avoid large strides (for general matrices, strides are much larger than 32)
 To eliminate (or reduce) redundant loads from global memory
 To avoid wasted bandwidth
-10.2.3.4.
+9.2.3.4.
 Asynchronous Copy from Global Memory to Shared Memory
 
 CUDA 11.0 introduces an
@@ -2426,7 +2423,7 @@ feature that can be used within device code to explicitly manage the asynchronou
 For more details refer to the
 memcpy_async
 section in the
-CUDA Programming Guide
+CUDA C++ Programming Guide
 .
 To understand the performance difference between synchronous copy and asynchronous copy of data from global memory to shared memory, consider the following micro benchmark CUDA kernels for demonstrating the synchronous and asynchronous approaches. Asynchronous copies are hardware accelerated for NVIDIA A100 GPU.
 template
@@ -2684,7 +2681,7 @@ The async-copy does not require the
 copy_count
 parameter to be a multiple of 4, to maximize performance through compiler optimizations.
 Overall, best performance is achieved when using asynchronous copies with an element of size 8 or 16 bytes.
-10.2.4.
+9.2.4.
 Local Memory
 
 Local memory is so named because its scope is local to the thread, not because of its physical location. In fact, local memory is off-chip. Hence, access to local memory is as expensive as access to global memory. In other words, the term
@@ -2708,12 +2705,12 @@ st.local
 mnemonics. If it has not, subsequent compilation phases might still decide otherwise, if they find the variable consumes too much register space for the targeted architecture. There is no way to check this for a specific variable, but the compiler reports total local memory usage per kernel (lmem) when run with the
 --ptxas-options=-v
 option.
-10.2.5.
+9.2.5.
 Texture Memory
 
 The read-only texture memory space is cached. Therefore, a texture fetch costs one device memory read only on a cache miss; otherwise, it just costs one read from the texture cache. The texture cache is optimized for 2D spatial locality, so threads of the same warp that read texture addresses that are close together will achieve best performance. Texture memory is also designed for streaming fetches with a constant latency; that is, a cache hit reduces DRAM bandwidth demand, but not fetch latency.
 In certain addressing situations, reading device memory through texture fetching can be an advantageous alternative to reading device memory from global or constant memory.
-10.2.5.1.
+9.2.5.1.
 Additional Texture Capabilities
 
 If textures are fetched using
@@ -2777,11 +2774,11 @@ N
 x
 of 1.3 is clamped to 1.0; whereas in wrap mode, it is converted to 0.3
 Within a kernel call, the texture cache is not kept coherent with respect to global memory writes, so texture fetches from addresses that have been written via global stores in the same kernel call return undefined data. That is, a thread can safely read a memory location via texture if the location has been updated by a previous kernel call or memory copy, but not if it has been previously updated by the same thread or another thread within the same kernel call.
-10.2.6.
+9.2.6.
 Constant Memory
 
 There is a total of 64 KB constant memory on a device. The constant memory space is cached. As a result, a read from constant memory costs one memory read from device memory only on a cache miss; otherwise, it just costs one read from the constant cache. Accesses to different addresses by threads within a warp are serialized, thus the cost scales linearly with the number of unique addresses read by all threads within a warp. As such, the constant cache is best when threads in the same warp accesses only a few distinct locations. If all threads of a warp access the same location, then constant memory can be as fast as a register access.
-10.2.7.
+9.2.7.
 Registers
 
 Generally, accessing a register consumes zero extra clock cycles per instruction, but delays may occur due to register read-after-write dependencies and register memory bank conflicts.
@@ -2790,13 +2787,13 @@ float4
 or
 int4
 types.
-10.2.7.1.
+9.2.7.1.
 Register Pressure
 
-Register pressure occurs when there are not enough registers available for a given task. Even though each multiprocessor contains thousands of 32-bit registers (see Features and Technical Specifications of the CUDA Programming Guide), these are partitioned among concurrent threads. To prevent the compiler from allocating too many registers, use the
+Register pressure occurs when there are not enough registers available for a given task. Even though each multiprocessor contains thousands of 32-bit registers (see Features and Technical Specifications of the CUDA C++ Programming Guide), these are partitioned among concurrent threads. To prevent the compiler from allocating too many registers, use the
 -maxrregcount=N
-compiler command-line option or the launch bounds kernel definition qualifier (see Execution Configuration of the CUDA Programming Guide) to control the maximum number of registers to allocated per thread.
-10.3.
+compiler command-line option or the launch bounds kernel definition qualifier (see Execution Configuration of the CUDA C++ Programming Guide) to control the maximum number of registers to allocated per thread.
+9.3.
 Allocation
 
 Device memory allocation and de-allocation via
@@ -2808,25 +2805,22 @@ cudaMallocAsync()
 and
 cudaFreeAsync()
 which are stream ordered pool allocators to manage device memory.
-10.4.
+9.4.
 NUMA Best Practices
 
 Some recent Linux distributions enable automatic NUMA balancing (or “
 AutoNUMA
 ”) by default. In some instances, operations performed by automatic NUMA balancing may degrade the performance of applications running on NVIDIA GPUs. For optimal performance, users should manually tune the NUMA characteristics of their application.
-The optimal NUMA tuning will depend on the characteristics and desired hardware affinities of each application and node, but in general applications computing on NVIDIA GPUs are advised to choose a policy that disables automatic NUMA balancing. For example, on a dual-socket x86_64 node (where the CPUs correspond to NUMA nodes 0 and 1), use:
-numactl --membind=0,1
-to bind memory allocations to the CPUs. Note that NUMA node numbering can vary between platforms; use
-numactl
---hardware
-to confirm the topology of your system.
-11.
+The optimal NUMA tuning will depend on the characteristics and desired hardware affinities of each application and node, but in general applications computing on NVIDIA GPUs are advised to choose a policy that disables automatic NUMA balancing. For example, on IBM Newell POWER9 nodes (where the CPUs correspond to NUMA nodes 0 and 8), use:
+numactl --membind=0,8
+to bind memory allocations to the CPUs.
+10.
 Execution Configuration Optimizations
 
 One of the keys to good performance is to keep the multiprocessors on the device as busy as possible. A device in which work is poorly balanced across the multiprocessors will deliver suboptimal performance. Hence, it’s important to design your application to use threads and blocks in a way that maximizes hardware utilization and to limit practices that impede the free distribution of work. A key concept in this effort is occupancy, which is explained in the following sections.
 Hardware utilization can also be improved in some cases by designing your application so that multiple, independent kernels can execute at the same time. Multiple kernels executing at the same time is known as concurrent kernel execution. Concurrent kernel execution is described below.
 Another important concept is the management of system resources allocated for a particular task. How to manage this resource utilization is discussed in the final sections of this chapter.
-11.1.
+10.1.
 Occupancy
 
 Thread instructions are executed sequentially in CUDA, and, as a result, executing other warps when one warp is paused or stalled is the only way to hide latencies and keep the hardware busy. Some metric related to the number of active warps on a multiprocessor is therefore important in determining how effectively the hardware is kept busy. This metric is
@@ -2845,7 +2839,7 @@ __launch_bounds__(maxThreadsPerBlock,minBlocksPerMultiprocessor)
 can improve performance in some cases. The right value for
 minBlocksPerMultiprocessor
 should be determined using a detailed per kernel analysis.
-11.1.1.
+10.1.1.
 Calculating Occupancy
 
 One of several factors that determine occupancy is register availability. Register storage enables threads to keep local variables nearby for low-latency access. However, the set of registers (known as the
@@ -2868,8 +2862,8 @@ options=v
 option of
 nvcc
 details the number of registers
-used per thread for each kernel. See Hardware Multithreading of the CUDA Programming Guide for the register allocation formulas for devices of various compute
-capabilities and Features and Technical Specifications of the CUDA Programming Guide for the total number of registers available on those devices. Alternatively,
+used per thread for each kernel. See Hardware Multithreading of the CUDA C++ Programming Guide for the register allocation formulas for devices of various compute
+capabilities and Features and Technical Specifications of the CUDA C++ Programming Guide for the total number of registers available on those devices. Alternatively,
 NVIDIA provides an occupancy calculator as part of Nsight Compute; refer to
 https://docs.nvidia.com/nsight-compute/NsightCompute/index.html#occupancy-calculator
 .
@@ -2879,16 +2873,16 @@ Using the CUDA Occupancy Calculator to project GPU multiprocessor occupancy
 An application can also use the Occupancy API from the CUDA Runtime, e.g.
 cudaOccupancyMaxActiveBlocksPerMultiprocessor
 , to dynamically select launch configurations based on runtime parameters.
-11.2.
+10.2.
 Hiding Register Dependencies
 
 Note
 Medium Priority:
 To hide latency arising from register dependencies, maintain sufficient numbers of active threads per multiprocessor (i.e., sufficient occupancy).
-Register dependencies arise when an instruction uses a result stored in a register written by an instruction before it. The latency of most arithmetic instructions is typically 4 cycles on devices of compute capability 7.0. So threads must wait approximately 4 cycles before using an arithmetic result. However, this latency can be completely hidden by the execution of threads in other warps. See
+Register dependencies arise when an instruction uses a result stored in a register written by an instruction before it. The latency of most arithmetic instructions is typically 4 cycles on devices of compute capability 7.0. So threads must wait approximatly 4 cycles before using an arithmetic result. However, this latency can be completely hidden by the execution of threads in other warps. See
 Registers
 for details.
-11.3.
+10.3.
 Thread and Block Heuristics
 
 Note
@@ -2915,12 +2909,12 @@ Use several smaller thread blocks rather than one large thread block per multipr
 __syncthreads()
 .
 Note that when a thread block allocates more registers than are available on a multiprocessor, the kernel launch fails, as it will when too much shared memory or too many threads are requested.
-11.4.
+10.4.
 Effects of Shared Memory
 
 Shared memory can be helpful in several situations, such as helping to coalesce or eliminate redundant access to global memory. However, it also can act as a constraint on occupancy. In many cases, the amount of shared memory required by a kernel is related to the block size that was chosen, but the mapping of threads to shared memory elements does not need to be one-to-one. For example, it may be desirable to use a 64x64 element shared memory array in a kernel, but because the maximum number of threads per block is 1024, it is not possible to launch a kernel with 64x64 threads per block. In such cases, kernels with 32x32 or 64x16 threads can be launched with each thread processing four elements of the shared memory array. The approach of using a single thread to process multiple elements of a shared memory array can be beneficial even if limits such as threads per block are not an issue. This is because some operations common to each element can be performed by the thread once, amortizing the cost over the number of shared memory elements processed by the thread.
 A useful technique to determine the sensitivity of performance to occupancy is through experimentation with the amount of dynamically allocated shared memory, as specified in the third parameter of the execution configuration. By simply increasing this parameter (without modifying the kernel), it is possible to effectively reduce the occupancy of the kernel and measure its effect on performance.
-11.5.
+10.5.
 Concurrent Kernel Execution
 
 As described in
@@ -2973,7 +2967,7 @@ stream2
 (
 data_2
 );
-11.6.
+10.6.
 Multiple contexts
 
 CUDA work occurs within a process space for a particular GPU known as a
@@ -3025,389 +3019,17 @@ exclusive process mode
 , which limits the number of contexts per GPU to one. This context can be current to as many threads as desired within the creating process, and
 cuDevicePrimaryCtxRetain
 will fail if a non-primary context that was created with the CUDA driver API already exists on the device.
-12.
+11.
 Instruction Optimization
 
 Awareness of how instructions are executed often permits low-level optimizations that can be useful, especially in code that is run frequently (the so-called hot spot in a program). Best practices suggest that this optimization be performed after all higher-level optimizations have been completed.
-12.1.
+11.1.
 Arithmetic Instructions
 
-To maximize instruction throughput the application should:
-Minimize the use of arithmetic instructions with low throughput; this includes trading precision for speed when it does not affect the end result, such as using intrinsic instead of regular functions (intrinsic functions are listed in the
-CUDA Programming Guide
-), single-precision instead of double-precision, or flushing denormalized numbers to zero;
-Minimize divergent warps caused by control flow instructions as detailed in
-Control Flow Instructions
-Reduce the number of instructions, for example, by optimizing out synchronization points whenever possible as described in
-Synchronization Instruction
-or by using restricted pointers as described in the
-CUDA Programming Guide
+Single-precision floats provide the best performance, and their use is highly encouraged. The throughput of individual arithmetic operations is detailed in the
+CUDA C++ Programming Guide
 .
-In this section, throughputs are given in number of operations per clock cycle per multiprocessor. For a warp size of 32, one instruction corresponds to 32 operations, so if N is the number of operations per clock cycle, the instruction throughput is N/32 instructions per clock cycle.
-All throughputs are for one multiprocessor. They must be multiplied by the number of multiprocessors in the device to get throughput for the whole device.
-12.1.1.
-Throughput of Native Arithmetic Instructions
-
-The following table gives the throughputs of the arithmetic instructions that are natively supported in hardware for devices of various compute capabilities.
-Note
-This table reflects the max theoretical throughput of the mentioned operations.
-In some cases, these throughputs may only be achieved via specific sequences of
-instructions that require special care when using a compiler.
-Most rows provide a
-PTX instruction
-as an example of lower-level instruction expected to achieve the listed throughput.
-This PTX instruction may not be the only instructions able to perform the described operation(s).
-Table 5
-Throughput of Native Arithmetic Instructions. (Number of Results per Clock Cycle per Multiprocessor)
-
-Compute Capability
-7.5
-8.0
-8.6 / 8.9
-9.0
-10.0
-10.3
-12.0 / 12.1
-16-bit floating-point add, multiply, multiply-add (2-way SIMD):
-add.f16x2
-64
-3
-128
-4
-64
-128
-64
-16-bit floating-point minimum, maximum (2-way SIMD):
-max.f16x2
-Multiple instruct.
-64
-128
-64
-32-bit floating-point add, multiply, multiply-add:
-add.f32
-64
-128
-32-bit floating-point minimum, maximum:
-max.f32
-64
-128
-64
-64-bit floating-point add, multiply, multiply-add:
-add.f64
-2
-32
-2
-64
-64
-2
-32-bit approximate floating-point reciprocal, reciprocal square root, base-2 logarithm, base 2 exponential, sine, cosine:
-lg2.approx.f32
-16
-5
-32-bit integer add, subtract:
-add.s32
-128
-32-bit integer extended-precision add, extended-precision subtract, 3-operand addition: multiple PTX instructions
-64
-32-bit integer multiply, multiply-add, extended-precision multiply-add:
-mad.lo.s32
-64
-6
-32-bit integer shift:
-shl.b32
-64
-64-bit integer add:
-add.s64
-32
-64
-32-bit integer minimum, maximum:
-min.s32
-64
-128
-32-bit integer bit reverse:
-not.b32
-64
-32-bit bitwise AND, OR, XOR:
-xor.b32
-64
-count of leading zeros, most significant non-sign bit:
-clz.b32
-16
-population count:
-popc.b32
-16
-warp shuffle
-7
-:
-shfl.sync.idx.b32
-16
-32
-warp vote
-8
-:
-vote.sync.ballot.b32
-64
-128
-sum of absolute difference:
-sad.s32
-64
-32
-2-way SIMD absolute difference: multiple PTX instructions
-Multiple instruct.
-4-way SIMD absolute difference:
-vabsdiff4.u32.u32.u32
-64
-9
-32
-9
-Type conversions from 8-bit and 16-bit integer to 32-bit integer types:
-cvt.u32.u16
-64
-Type conversions from and to 64-bit floating-point types:
-cvt.f64.f32
-2
-16
-2
-16
-2
-Type conversion between 16-bit and 32-bit floating-point types:
-cvt.f32.f16
-64
-10
-Type conversion between 32-bit integer and 32-bit floating-point types:
-cvt.rn.f32.s32
-16
-64
-11
-DPX (32-bit and 2-way SIMD 16-bit): multiple PTX instructions
-Multiple instruct.
-64
-12
-64
-13
-3
-multiple instructions for __nv_bfloat16
-4
-64 for __nv_bfloat16
-5
-for reciprocal: approximate using
-__fdividef(1.F,
-x)
-6
-32 for extended-precision
-7
-assuming converged threads
-8
-assuming converged threads
-9
-(
-1
-,
-2
-)
-22 for signed version
-10
-32 for __nv_bfloat16->float, 16 for float->__half, 16 for float->__nv_bfloat16 (SM > 7.5), multiple instructions for float->__nv_bfloat16 (SM 7.5)
-11
-16 for float->32-bit integer type (SM <= 10.0), 2 for float->32-bit integer type (SM > 10.0)
-12
-multiple instructions for intrinsics with boolean predicate outputs
-13
-128 for intrinsics with 2 operands, multiple instructions for intrinsics with boolean predicate outputs
-Other instructions and functions are implemented on top of the native instructions. The implementation may be different for devices of different compute capabilities, and the number of native instructions after compilation may fluctuate with every compiler version. For complicated functions, there can be multiple code paths depending on input.
-cuobjdump
-can be used to inspect a particular implementation in a
-cubin
-object.
-The implementation of some functions are readily available on the CUDA header files (
-math_functions.h
-,
-device_functions.h
-, …).
-In general, code compiled with
--ftz=true
-(denormalized numbers are flushed to zero) tends to have higher performance than code compiled with
--ftz=false
-. Similarly, code compiled with
--prec-div=false
-(less precise division) tends to have higher performance code than code compiled with
--prec-div=true
-, and code compiled with
--prec-sqrt=false
-(less precise square root) tends to have higher performance than code compiled with
--prec-sqrt=true
-. The nvcc user manual describes these compilation flags in more details.
-Single-Precision Floating-Point Division
-__fdividef(x,
-y)
-(see the
-CUDA Programming Guide
-) provides faster single-precision floating-point division than the division operator.
-Single-Precision Floating-Point Reciprocal Square Root
-To preserve IEEE-754 semantics the compiler can optimize
-1.0/sqrtf()
-into
-rsqrtf()
-only when both reciprocal and square root are approximate, (i.e., with
--prec-div=false
-and
--prec-sqrt=false
-). It is therefore recommended to invoke
-rsqrtf()
-directly where desired.
-Single-Precision Floating-Point Square Root
-Single-precision floating-point square root is implemented as a reciprocal square root followed by a reciprocal instead of a reciprocal square root followed by a multiplication so that it gives correct results for 0 and infinity.
-Sine and Cosine
-sinf(x)
-,
-cosf(x)
-,
-tanf(x)
-,
-sincosf(x)
-, and corresponding double-precision instructions are much more expensive and even more so if the argument x is large in magnitude.
-More precisely, the argument reduction code (see the
-CUDA Programming Guide
-for implementation) comprises two code paths referred to as the fast path and the slow path, respectively.
-The fast path is used for arguments sufficiently small in magnitude and essentially consists of a few multiply-add operations. The slow path is used for arguments large in magnitude and consists of lengthy computations required to achieve correct results over the entire argument range.
-At present, the argument reduction code for the trigonometric functions selects the fast path for arguments whose magnitude is less than
-105615.0f
-for the single-precision functions, and less than
-2147483648.0
-for the double-precision functions.
-As the slow path requires more registers than the fast path, an attempt has been made to reduce register pressure in the slow path by storing some intermediate variables in local memory, which may affect performance because of local memory high latency and bandwidth (see the
-CUDA Programming Guide
-). At present, 28 bytes of local memory are used by single-precision functions, and 44 bytes are used by double-precision functions. However, the exact amount is subject to change.
-Due to the lengthy computations and use of local memory in the slow path, the throughput of these trigonometric functions is lower by one order of magnitude when the slow path reduction is required as opposed to the fast path reduction.
-Integer Arithmetic
-Integer division and modulo operation are costly as they compile to up to 20 instructions. They can be replaced with bitwise operations in some cases: If
-n
-is a power of 2, (
-i/n
-) is equivalent to
-(i>>log2(n))
-and
-(i%n)
-is equivalent to (
-i&(n-1)
-); the compiler will perform these conversions if
-n
-is literal.
-__brev
-and
-__popc
-map to a single instruction and
-__brevll
-and
-__popcll
-to a few instructions.
-__[u]mul24
-are legacy intrinsic functions that no longer have any reason to be used.
-Half Precision Arithmetic
-In order to achieve good performance for 16-bit precision floating-point add, multiply or multiply-add, it is recommended that the
-half2
-datatype is used for
-half
-precision and
-__nv_bfloat162
-be used for
-__nv_bfloat16
-precision. Vector intrinsics (for example,
-__hadd2
-,
-__hsub2
-,
-__hmul2
-,
-__hfma2
-) can then be used to do two operations in a single instruction. Using
-half2
-or
-__nv_bfloat162
-in place of two calls using
-half
-or
-__nv_bfloat16
-may also help performance of other intrinsics, such as warp shuffles.
-The intrinsic
-__halves2half2
-is provided to convert two
-half
-precision values to the
-half2
-datatype.
-The intrinsic
-__halves2bfloat162
-is provided to convert two
-__nv_bfloat
-precision values to the
-__nv_bfloat162
-datatype.
-Type Conversion
-Sometimes, the compiler must insert conversion instructions, introducing additional execution cycles. This is the case for:
-Functions operating on variables of type
-char
-or
-short
-whose operands generally need to be converted to
-int
-,
-Double-precision floating-point constants (i.e., those constants defined without any type suffix) used as input to single-precision floating-point computations (as mandated by C/C++ standards).
-This last case can be avoided by using single-precision floating-point constants, defined with an
-f
-suffix such as
-3.141592653589793f
-,
-1.0f
-,
-0.5f
-.
-12.1.2.
-Control Flow Instructions
-
-Any flow control instruction (
-if
-,
-switch
-,
-do
-,
-for
-,
-while
-) can significantly impact the effective instruction throughput by causing threads of the same warp to diverge (i.e., to follow different execution paths). If this happens, the different executions paths have to be serialized, increasing the total number of instructions executed for this warp.
-To obtain best performance in cases where the control flow depends on the thread ID, the controlling condition should be written so as to minimize the number of divergent warps. This is possible because the distribution of the warps across the block is deterministic as mentioned in the
-CUDA Programming Guide
-. A trivial example is when the controlling condition only depends on (
-threadIdx
-/
-warpSize
-) where
-warpSize
-is the warp size. In this case, no warp diverges since the controlling condition is perfectly aligned with the warps.
-Sometimes, the compiler may unroll loops or it may optimize out short
-if
-or
-switch
-blocks by using branch predication instead, as detailed below. In these cases, no warp can ever diverge. The programmer can also control loop unrolling using the
-#pragma
-unroll
-directive (see the
-CUDA Programming Guide
-).
-When using branch predication none of the instructions whose execution depends on the controlling condition gets skipped. Instead, each of them is associated with a per-thread condition code or predicate that is set to true or false based on the controlling condition and although each of these instructions gets scheduled for execution, only the instructions with a true predicate are actually executed. Instructions with a false predicate do not write results, and also do not evaluate addresses or read operands.
-12.1.3.
-Synchronization Instruction
-
-Throughput for
-__syncthreads()
-is 32 operations per clock cycle for devices of compute capability 6.0, 16 operations per clock cycle for devices of compute capability 7.x as well as 8.x and 64 operations per clock cycle for devices of compute capability 5.x, 6.1 and 6.2.
-Note that
-__syncthreads()
-can impact performance by forcing the multiprocessor to idle as detailed in the
-CUDA Programming Guide
-.
-12.1.4.
+11.1.1.
 Division Modulo Operations
 
 Note
@@ -3425,9 +3047,9 @@ is a power of 2, (
 \(i\&\left( {n - 1} \right)\)
 ).
 The compiler will perform these conversions if n is literal. (For further information, refer to Performance Guidelines in the
-CUDA Programming Guide
+CUDA C++ Programming Guide
 ).
-12.1.5.
+11.1.2.
 Loop Counters Signed vs. Unsigned
 
 Note
@@ -3470,7 +3092,7 @@ i
 is declared as unsigned, the overflow semantics prevent the compiler from using some optimizations that might otherwise have applied, such as strength reduction. If instead
 i
 is declared as signed, where the overflow semantics are undefined, the compiler has more leeway to use these optimizations.
-12.1.6.
+11.1.3.
 Reciprocal Square Root
 
 The reciprocal square root should always be invoked explicitly as
@@ -3482,7 +3104,7 @@ for double precision. The compiler optimizes
 into
 rsqrtf()
 only when this does not violate IEEE-754 semantics.
-12.1.7.
+11.1.4.
 Other Arithmetic Instructions
 
 Note
@@ -3509,7 +3131,7 @@ For single-precision code, use of the float type and the single-precision math f
 It should also be noted that the CUDA math library’s complementary error function,
 erfcf()
 , is particularly fast with full single-precision accuracy.
-12.1.8.
+11.1.5.
 Exponentiation With Small Fractional Arguments
 
 For some fractional exponents, exponentiation can be accelerated significantly compared to the use of
@@ -3529,7 +3151,7 @@ signbit(x)
 ==
 0
 .
-Table 6
+Table 5
 Formulae for exponentiation by small fractions
 
 Computation
@@ -3658,7 +3280,7 @@ x
 r
 =
 (1/x)*rsqrt(x)
-12.1.9.
+11.1.6.
 Math Libraries
 
 Note
@@ -3695,7 +3317,7 @@ expf(x)
 . The latter become even more expensive (about an order of magnitude slower) if the magnitude of the argument
 x
 needs to be reduced. Moreover, in such cases, the argument-reduction code uses local memory, which can affect performance even more because of the high latency of local memory. More details are available in the
-CUDA Programming Guide
+CUDA C++ Programming Guide
 .
 Note also that whenever sine and cosine of the same argument are computed, the
 sincos
@@ -3770,7 +3392,7 @@ function rather than the generic exponentiation functions
 pow()
 or
 powf()
-, as the former are significantly faster than the latter. Likewise, for exponentiation with an exponent of -1/3, use
+, as the former are significantly faster than the latter. Likewise, for exponentation with an exponent of -1/3, use
 rcbrt()
 or
 rcbrtf()
@@ -3814,7 +3436,7 @@ multiplies by
 only implicitly, effectively using an infinitely precise mathematical
 π
 rather than a single- or double-precision approximation thereof.)
-12.1.10.
+11.1.7.
 Precision-related Compiler Flags
 
 By default, the
@@ -3835,7 +3457,7 @@ __functionName()
 call. This makes the code run faster at the cost of diminished precision and accuracy. See
 Math Libraries
 .
-12.2.
+11.2.
 Memory Instructions
 
 Note
@@ -3869,10 +3491,10 @@ threadIdx
 x
 ];
 Much of this global memory latency can be hidden by the thread scheduler if there are sufficient independent arithmetic instructions that can be issued while waiting for the global memory access to complete. However, it is best to avoid accessing global memory whenever possible.
-13.
+12.
 Control Flow
 
-13.1.
+12.1.
 Branching and Divergence
 
 Note
@@ -3890,7 +3512,7 @@ for
 while
 ) can significantly affect the instruction throughput by causing threads of the same warp to diverge; that is, to follow different execution paths. If this happens, the different execution paths must be executed separately; this increases the total number of instructions executed for this warp.
 To obtain best performance in cases where the control flow depends on the thread ID, the controlling condition should be written so as to minimize the number of divergent warps.
-This is possible because the distribution of the warps across the block is deterministic as mentioned in SIMT Architecture of the CUDA Programming Guide. A trivial example is when the controlling condition depends only on (
+This is possible because the distribution of the warps across the block is deterministic as mentioned in SIMT Architecture of the CUDA C++ Programming Guide. A trivial example is when the controlling condition depends only on (
 threadIdx
 /
 WSIZE
@@ -3902,7 +3524,7 @@ For branches including just a few instructions, warp divergence generally result
 Starting with the Volta architecture, Independent Thread Scheduling allows a warp to remain diverged outside of the data-dependent conditional block. An explicit
 __syncwarp()
 can be used to guarantee that the warp has reconverged for subsequent instructions.
-13.2.
+12.2.
 Branch Predication
 
 Note
@@ -3914,24 +3536,24 @@ or
 switch
 statements by using branch predication instead. In these cases, no warp can ever diverge. The programmer can also control loop unrolling using
 #pragma unroll
-For more information on this pragma, refer to the CUDA Programming Guide.
+For more information on this pragma, refer to the CUDA C++ Programming Guide.
 When using branch predication, none of the instructions whose execution depends on the controlling condition is skipped. Instead, each such instruction is associated with a per-thread condition code or predicate that is set to true or false according to the controlling condition. Although each of these instructions is scheduled for execution, only the instructions with a true predicate are actually executed. Instructions with a false predicate do not write results, and they also do not evaluate addresses or read operands.
 The compiler replaces a branch instruction with predicated instructions only if the number of instructions controlled by the branch condition is less than or equal to a certain threshold.
-14.
+13.
 Deploying CUDA Applications
 
 Having completed the GPU acceleration of one or more components of the application it is possible to compare the outcome with the original expectation. Recall that the initial
 assess
 step allowed the developer to determine an upper bound for the potential speedup attainable by accelerating given hotspots.
 Before tackling other hotspots to improve the total speedup, the developer should consider taking the partially parallelized implementation and carry it through to production. This is important for a number of reasons; for example, it allows the user to profit from their investment as early as possible (the speedup may be partial but is still valuable), and it minimizes risk for the developer and the user by providing an evolutionary rather than revolutionary set of changes to the application.
-15.
+14.
 Understanding the Programming Environment
 
 With each generation of NVIDIA processors, new features are added to the GPU that CUDA can leverage. Consequently, it’s important to understand the characteristics of the architecture.
 Programmers should be aware of two version numbers. The first is the
 compute capability
 , and the second is the version number of the CUDA Runtime and CUDA Driver APIs.
-15.1.
+14.1.
 CUDA Compute Capability
 
 The
@@ -3950,8 +3572,8 @@ Sample CUDA configuration data reported by deviceQuery
 The major and minor revision numbers of the compute capability are shown on the seventh line of
 Figure 16
 . Device 0 of this system has compute capability 7.0.
-More details about the compute capabilities of various GPUs are in CUDA-Enabled GPUs and Compute Capabilities of the CUDA Programming Guide. In particular, developers should note the number of multiprocessors on the device, the number of registers and the amount of memory available, and any special capabilities of the device.
-15.2.
+More details about the compute capabilities of various GPUs are in CUDA-Enabled GPUs and Compute Capabilities of the CUDA C++ Programming Guide. In particular, developers should note the number of multiprocessors on the device, the number of registers and the amount of memory available, and any special capabilities of the device.
+14.2.
 Additional Hardware Data
 
 Certain hardware features are not described by the compute capability. For example, the ability to overlap kernel execution with asynchronous data transfers between the host and the device is available on most but not all GPUs irrespective of the compute capability. In such cases, call
@@ -3961,7 +3583,7 @@ asyncEngineCount
 field of the device property structure indicates whether overlapping kernel execution and data transfers is possible (and, if so, how many concurrent transfers are possible); likewise, the
 canMapHostMemory
 field indicates whether zero-copy data transfers can be performed.
-15.3.
+14.3.
 Which Compute Capability Target
 
 To target specific versions of NVIDIA hardware and CUDA software, use the
@@ -3978,7 +3600,7 @@ nvcc
 See
 Building for Maximum Compatibility
 for further discussion of the flags used for building code for multiple generations of CUDA-capable device simultaneously.
-15.4.
+14.4.
 CUDA Runtime
 
 The host runtime component of the CUDA software environment can be used only by host functions. It provides functions to handle the following:
@@ -4005,8 +3627,8 @@ cuda_runtime_api.h
 C++-style convenience wrappers (
 cuda_runtime.h
 ) built on top of the C-style functions.
-For more information on the Runtime API, refer to CUDA Runtime of the CUDA Programming Guide.
-16.
+For more information on the Runtime API, refer to CUDA Runtime of the CUDA C++ Programming Guide.
+15.
 CUDA Compatibility Developer’s Guide
 
 CUDA Toolkit is released on a monthly release cadence to deliver new features, performance improvements, and critical bug fixes. CUDA compatibility allows users to update the latest CUDA Toolkit software (including the compiler, libraries, and tools) without requiring update to the entire driver stack.
@@ -4022,7 +3644,7 @@ The CUDA compiler (nvcc), provides a way to handle CUDA and non-CUDA code (by sp
 CUDA Driver API
 ) a low-level programming interface for applications to target NVIDIA hardware.
 Built on top of these technologies are CUDA libraries, some of which are included in the CUDA Toolkit, while others such as cuDNN may be released independently of the CUDA Toolkit.
-16.1.
+15.1.
 CUDA Toolkit Versioning
 
 Starting with CUDA 11, the toolkit versions are based on an industry-standard semantic versioning scheme: .X.Y.Z, where:
@@ -4046,13 +3668,13 @@ provides two benefits:
 By leveraging semantic versioning across components in the CUDA Toolkit, an application can be built for one CUDA minor release (for example 11.1) and work across all future minor releases within the major family (i.e. 11.x).
 The CUDA runtime has relaxed the minimum driver version check and thus no longer requires a driver upgrade when moving to a new minor release.
 The CUDA driver ensures backward Binary Compatibility is maintained for compiled CUDA applications. Applications compiled with CUDA toolkit versions as old as 3.2 will run on newer drivers.
-16.2.
+15.2.
 Source Compatibility
 
 We define source compatibility as a set of guarantees provided by the library, where a well-formed application built against a specific version of the library (using the SDK) will continue to build and run without errors when a newer version of the SDK is installed.
 Both the CUDA driver and the CUDA runtime are not source compatible across the different SDK releases. APIs can be deprecated and removed. Therefore, an application that compiled successfully on an older version of the toolkit may require changes in order to compile against a newer version of the toolkit.
 Developers are notified through deprecation and documentation mechanisms of any current or upcoming changes. This does not mean that application binaries compiled using an older toolkit will not be supported anymore. Application binaries rely on CUDA Driver API interface and even though the CUDA Driver API itself may also have changed across toolkit versions, CUDA guarantees Binary Compatibility of the CUDA Driver API interface.
-16.3.
+15.3.
 Binary Compatibility
 
 We define binary compatibility as a set of guarantees provided by the library, where an application targeting the said library will continue to work when dynamically linked against a different version of the library.
@@ -4102,7 +3724,7 @@ Result = FAIL
 Refer to the
 CUDA Toolkit Release Notes
 for details for the minimum driver version and the version of the driver shipped with the toolkit.
-16.3.1.
+15.3.1.
 CUDA Binary (cubin) Compatibility
 
 A slightly related but important topic is one of application binary compatibility across GPU architectures in CUDA.
@@ -4116,15 +3738,15 @@ z≥y
 .
 To execute code on devices of specific compute capability, an application must load binary or PTX code that is compatible with this compute capability. For portability, that is, to be able to execute code on future GPU architectures with higher compute capability (for which no binary code can be generated yet), an application must load PTX code that will be just-in-time compiled by the NVIDIA driver for these future devices.
 More information on cubins, PTX and application compatibility can be found in the
-CUDA Programming Guide
+CUDA C++ Programming Guide
 .
-16.4.
+15.4.
 CUDA Compatibility Across Minor Releases
 
 By leveraging the semantic versioning, starting with CUDA 11, components in the CUDA Toolkit will remain binary compatible across the minor versions of the toolkit. In order to maintain binary compatibility across minor versions, the CUDA runtime no longer bumps up the minimum driver version required for every minor release - this only happens when a major release is shipped.
 One of the main reasons a new toolchain requires a new minimum driver is to handle the JIT compilation of PTX code and the JIT linking of binary code.
 In this section, we will review the usage patterns that may require new user workflows when taking advantage of the compatibility features of the CUDA platform.
-16.4.1.
+15.4.1.
 Existing CUDA Applications within Minor Versions of CUDA
 
 $
@@ -4373,7 +3995,7 @@ Result
 PASS
 By using new CUDA versions, users can benefit from new CUDA programming model APIs, compiler optimizations and math library features.
 The following sections discuss some caveats and considerations.
-16.4.1.1.
+15.4.1.1.
 Handling New CUDA Features and Driver APIs
 
 A subset of CUDA APIs don’t need a new driver and they can all be used without any driver dependencies. For example,
@@ -4522,7 +4144,7 @@ CUDA_ERROR_INSUFFICIENT_DRIVER
 A new error code is added to indicate that the functionality is missing from the driver you are running against:
 cudaErrorCallRequiresNewerDriver
 .
-16.4.1.2.
+15.4.1.2.
 Using PTX
 
 PTX defines a virtual machine and ISA for general purpose parallel thread execution. PTX programs are translated at load time to the target hardware instruction set via the JIT Compiler which is part of the CUDA driver. As PTX is compiled by the CUDA driver, new toolchains will generate PTX that is not compatible with the older CUDA driver. This is not a problem when PTX is used for future device compatibility (the most common case), but can lead to issues when used for runtime compilation.
@@ -4760,7 +4382,7 @@ return
 elf
 ;
 }
-16.4.1.3.
+15.4.1.3.
 Dynamic Code Generation
 
 NVRTC is a runtime compilation library for CUDA C++. It accepts CUDA C++ source code in character string form and creates handles that can be used to obtain the PTX. The PTX string generated by NVRTC can be loaded by cuModuleLoadData and cuModuleLoadDataEx.
@@ -5099,8 +4721,6 @@ cuCtxCreate
 &
 context
 ,
-NULL
-,
 0
 ,
 cuDevice
@@ -5178,7 +4798,7 @@ delete
 code
 ;
 }
-16.4.1.4.
+15.4.1.4.
 Recommendations for building a minor-version compatible library
 
 We recommend that the CUDA runtime be statically linked to minimize dependencies. Verify that your library doesn’t leak dependencies, breakages, namespaces, etc. outside your established ABI contract.
@@ -5186,7 +4806,7 @@ Follow semantic versioning for your library’s soname. Having a semantically ve
 Conditionally use features to remain compatible against older drivers. If no new features are used (or if they are used conditionally with fallbacks provided) you’ll be able to remain compatible.
 Don’t expose ABI structures that can change. A pointer to a structure with a size embedded is a better solution.
 When linking with dynamic libraries from the toolkit, the library must be equal to or newer than what is needed by any one of the components involved in the linking of your application. For example, if you link against the CUDA 11.1 dynamic runtime, and use functionality from 11.1, as well as a separate shared library that was linked against the CUDA 11.2 dynamic runtime that requires 11.2 functionality, the final link step must include a CUDA 11.2 or newer dynamic runtime.
-16.4.1.5.
+15.4.1.5.
 Recommendations for taking advantage of minor version compatibility in your application
 
 Certain functionality might not be available so you should query where applicable. This is common for building applications that are GPU architecture, platform and compiler agnostic. However we now add “the underlying driver” to that mix.
@@ -5196,10 +4816,10 @@ cuGetProcAddress
 CUDA Driver API :: CUDA Toolkit Documentation
 .
 When using a shared or static library, follow the release notes of said library to determine if the library supports minor version compatibility.
-17.
+16.
 Preparing for Deployment
 
-17.1.
+16.1.
 Testing for CUDA Availability
 
 When deploying a CUDA application, it is often desirable to ensure that the application will continue to function properly even if the target machine does not have a CUDA-capable GPU and/or a sufficient version of the NVIDIA Driver installed. (Developers targeting a single machine with known configuration may choose to skip this section.)
@@ -5222,10 +4842,10 @@ The
 cudaGetDeviceProperties()
 function reports various features of the available devices, including the
 CUDA Compute Capability
-of the device (see also the Compute Capabilities section of the CUDA Programming Guide). See
+of the device (see also the Compute Capabilities section of the CUDA C++ Programming Guide). See
 Version Management
 for details on how to query the available CUDA software API versions.
-17.2.
+16.2.
 Error Handling
 
 All CUDA Runtime API calls return an error code of type
@@ -5255,7 +4875,7 @@ Note
 The CUDA Toolkit Samples provide several helper functions for error checking with the various CUDA APIs; these helper functions are located in the
 samples/common/inc/helper_cuda.h
 file in the CUDA Toolkit.
-17.3.
+16.3.
 Building for Maximum Compatibility
 
 Each generation of CUDA-capable device has an associated
@@ -5322,7 +4942,7 @@ nvcc
 command line, which is why the examples above use
 -gencode=
 explicitly.
-17.4.
+16.4.
 Distributing the CUDA Runtime and Libraries
 
 CUDA applications are built against the CUDA Runtime library, which handles device, memory, and kernel management. Unlike the CUDA Driver, the CUDA Runtime guarantees neither forward nor backward binary compatibility across versions. It is therefore best to
@@ -5355,7 +4975,7 @@ dynamically-linked version of the CUDA Runtime library
 be
 bundled with
 the application executable when distributing that application.
-17.4.1.
+16.4.1.
 CUDA Toolkit Library Redistribution
 
 The CUDA Toolkit’s End-User License Agreement (EULA) allows for redistribution of many of the CUDA libraries under certain terms and conditions. This allows applications that depend on these libraries
@@ -5365,7 +4985,7 @@ Note
 This does
 not
 apply to the NVIDIA Driver; the end user must still download and install an NVIDIA Driver appropriate to their GPU(s) and operating system.
-17.4.1.1.
+16.4.1.1.
 Which Files to Redistribute
 
 When redistributing the dynamically-linked versions of one or more CUDA libraries, it is important to identify the exact files that need to be redistributed. The following examples use the cuBLAS library from CUDA Toolkit 5.5 as an illustration:
@@ -5455,7 +5075,7 @@ File Type: EXECUTABLE IMAGE
     ...
     cublas64_55.dll
     ...
-17.4.1.2.
+16.4.1.2.
 Where to Install Redistributed CUDA Libraries
 
 Once the correct library files are identified for redistribution, they must be configured for installation into a location where the application will be able to find them.
@@ -5498,10 +5118,10 @@ AddDllDirectory()
 should be used instead of
 SetDllDirectory()
 . Please see the MSDN documentation for these routines for more information.
-18.
+17.
 Deployment Infrastructure Tools
 
-18.1.
+17.1.
 Nvidia-SMI
 
 The NVIDIA System Management Interface (
@@ -5512,8 +5132,8 @@ is targeted at Tesla and certain Quadro GPUs, though limited support is also ava
 nvidia-smi
 ships with NVIDIA GPU display drivers on Linux, and with 64-bit Windows Server 2008 R2 and Windows 7.
 nvidia-smi
-can output queried information as XML or as human-readable plain text either to standard output or to a file. See the nvidia-smi documentation for details. Please note that new versions of nvidia-smi are not guaranteed to be backward-compatible with previous versions.
-18.1.1.
+can output queried information as XML or as human-readable plain text either to standard output or to a file. See the nvidia-smi documenation for details. Please note that new versions of nvidia-smi are not guaranteed to be backward-compatible with previous versions.
+17.1.1.
 Queryable state
 
 ECC error counts
@@ -5532,7 +5152,7 @@ Power management
 The current board power draw and power limits are reported for products that report these measurements.
 Identification
 Various dynamic and static information is reported, including board serial numbers, PCI device IDs, VBIOS/Inforom version numbers and product names.
-18.1.2.
+17.1.2.
 Modifiable state
 
 ECC mode
@@ -5545,7 +5165,7 @@ Persistence mode
 Indicate whether the NVIDIA driver stays loaded when no applications are connected to the GPU. It is best to enable this option in most circumstances.
 GPU reset
 Reinitialize the GPU hardware and software state via a secondary bus reset.
-18.2.
+17.2.
 NVML
 
 The NVIDIA Management Library (NVML) is a C-based interface that provides direct access to the queries and commands exposed via
@@ -5560,13 +5180,13 @@ nvidia-smi
 See
 https://developer.nvidia.com/nvidia-management-library-nvml
 for additional information.
-18.3.
+17.3.
 Cluster Management Tools
 
 Managing your GPU cluster will help achieve maximum GPU utilization and help you and your users extract the best possible performance. Many of the industry’s most popular cluster management tools support CUDA GPUs via NVML. For a listing of some of these tools, see
 https://developer.nvidia.com/cluster-management
 .
-18.4.
+17.4.
 Compiler JIT Cache Management Tools
 
 Any PTX device code loaded by an application at runtime is compiled further to binary code by the device driver. This is called
@@ -5574,8 +5194,8 @@ just-in-time compilation
 (
 JIT
 ). Just-in-time compilation increases application load time but allows applications to benefit from latest compiler improvements. It is also the only way for applications to run on devices that did not exist at the time the application was compiled.
-When JIT compilation of PTX device code is used, the NVIDIA driver caches the resulting binary code on disk. Some aspects of this behavior such as cache location and maximum cache size can be controlled via the use of environment variables; see Just in Time Compilation of the CUDA Programming Guide.
-18.5.
+When JIT compilation of PTX device code is used, the NVIDIA driver caches the resulting binary code on disk. Some aspects of this behavior such as cache location and maximum cache size can be controlled via the use of environment variables; see Just in Time Compilation of the CUDA C++ Programming Guide.
+17.5.
 CUDA_VISIBLE_DEVICES
 
 It is possible to rearrange the collection of installed CUDA devices that will be visible to and enumerated by a CUDA application prior to the start of that application by way of the
@@ -5584,11 +5204,11 @@ environment variable.
 Devices to be made visible to the application should be included as a comma-separated list in terms of the system-wide list of enumerable devices. For example, to use only devices 0 and 2 from the system-wide list of devices, set
 CUDA_VISIBLE_DEVICES=0,2
 before launching the application. The application will then enumerate these devices as device 0 and device 1, respectively.
-19.
+18.
 Recommendations and Best Practices
 
 This chapter contains a summary of the recommendations for optimization that are explained in this document.
-19.1.
+18.1.
 Overall Performance Optimization Strategies
 
 Performance optimization revolves around three basic strategies:
@@ -5599,10 +5219,10 @@ Maximizing parallel execution starts with structuring the algorithm in a way tha
 Optimizing memory usage starts with minimizing data transfers between the host and the device because those transfers have much lower bandwidth than internal device data transfers. Kernel access to global memory also should be minimized by maximizing the use of shared memory on the device. Sometimes, the best optimization might even be to avoid any data transfer in the first place by simply recomputing the data whenever it is needed.
 The effective bandwidth can vary by an order of magnitude depending on the access pattern for each type of memory. The next step in optimizing memory usage is therefore to organize memory accesses according to the optimal memory access patterns. This optimization is especially important for global memory accesses, because latency of access costs hundreds of clock cycles. Shared memory accesses, in counterpoint, are usually worth optimizing only when there exists a high degree of bank conflicts.
 As for optimizing instruction usage, the use of arithmetic instructions that have low throughput should be avoided. This suggests trading precision for speed when it does not affect the end result, such as using intrinsics instead of regular functions or single precision instead of double precision. Finally, particular attention must be paid to control flow instructions due to the SIMT (single instruction multiple thread) nature of the device.
-20.
+19.
 nvcc Compiler Switches
 
-20.1.
+19.1.
 nvcc
 
 The NVIDIA
@@ -5615,7 +5235,7 @@ specifies the maximum number of registers kernels can use at a per-file level. S
 Register Pressure
 . (See also the
 __launch_bounds__
-qualifier discussed in Execution Configuration of the CUDA Programming Guide to control the number of registers used on a per-kernel basis.)
+qualifier discussed in Execution Configuration of the CUDA C++ Programming Guide to control the number of registers used on a per-kernel basis.)
 --ptxas-options=-v
 or
 -Xptxas=-v
@@ -5636,10 +5256,10 @@ __functionName()
 call. This makes the code run faster at the cost of diminished precision and accuracy. See
 Math Libraries
 .
-21.
+20.
 Notices
 
-21.1.
+20.1.
 Notice
 
 This document is provided for information purposes only and shall not be regarded as a warranty of a certain functionality, condition, or quality of a product. NVIDIA Corporation (“NVIDIA”) makes no representations or warranties, expressed or implied, as to the accuracy or completeness of the information contained in this document and assumes no responsibility for any errors contained herein. NVIDIA shall have no liability for the consequences or use of such information or for any infringement of patents or other rights of third parties that may result from its use. This document is not a commitment to develop, release, or deliver any Material (defined below), code, or functionality.
@@ -5651,11 +5271,11 @@ NVIDIA makes no representation or warranty that products based on this document 
 No license, either expressed or implied, is granted under any NVIDIA patent right, copyright, or other NVIDIA intellectual property right under this document. Information published by NVIDIA regarding third-party products or services does not constitute a license from NVIDIA to use such products or services or a warranty or endorsement thereof. Use of such information may require a license from a third party under the patents or other intellectual property rights of the third party, or a license from NVIDIA under the patents or other intellectual property rights of NVIDIA.
 Reproduction of information in this document is permissible only if approved in advance by NVIDIA in writing, reproduced without alteration and in full compliance with all applicable export laws and regulations, and accompanied by all associated conditions, limitations, and notices.
 THIS DOCUMENT AND ALL NVIDIA DESIGN SPECIFICATIONS, REFERENCE BOARDS, FILES, DRAWINGS, DIAGNOSTICS, LISTS, AND OTHER DOCUMENTS (TOGETHER AND SEPARATELY, “MATERIALS”) ARE BEING PROVIDED “AS IS.” NVIDIA MAKES NO WARRANTIES, EXPRESSED, IMPLIED, STATUTORY, OR OTHERWISE WITH RESPECT TO THE MATERIALS, AND EXPRESSLY DISCLAIMS ALL IMPLIED WARRANTIES OF NONINFRINGEMENT, MERCHANTABILITY, AND FITNESS FOR A PARTICULAR PURPOSE. TO THE EXTENT NOT PROHIBITED BY LAW, IN NO EVENT WILL NVIDIA BE LIABLE FOR ANY DAMAGES, INCLUDING WITHOUT LIMITATION ANY DIRECT, INDIRECT, SPECIAL, INCIDENTAL, PUNITIVE, OR CONSEQUENTIAL DAMAGES, HOWEVER CAUSED AND REGARDLESS OF THE THEORY OF LIABILITY, ARISING OUT OF ANY USE OF THIS DOCUMENT, EVEN IF NVIDIA HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGES. Notwithstanding any damages that customer might incur for any reason whatsoever, NVIDIA’s aggregate and cumulative liability towards customer for the products described herein shall be limited in accordance with the Terms of Sale for the product.
-21.2.
+20.2.
 OpenCL
 
 OpenCL is a trademark of Apple Inc. used under license to the Khronos Group Inc.
-21.3.
+20.3.
 Trademarks
 
 NVIDIA and the NVIDIA logo are trademarks or registered trademarks of NVIDIA Corporation in the U.S. and other countries. Other company and product names may be trademarks of the respective companies with which they are associated.

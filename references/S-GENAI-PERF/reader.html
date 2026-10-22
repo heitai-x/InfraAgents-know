@@ -1,475 +1,1283 @@
-<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; frame-src 'self'; object-src 'self'; media-src 'self'; base-uri 'none'; form-action 'none'"><title>GenAI-Perf — NVIDIA Triton Inference Server</title><style>body{font:16px/1.75 system-ui,sans-serif;color:#202631;background:#fff;margin:0 auto;padding:40px;max-width:1100px}h1,h2,h3{line-height:1.3}pre,code{font-family:Consolas,monospace}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#f4f6f8;padding:18px}table{border-collapse:collapse;display:block;overflow-x:auto}td,th{border:1px solid #ccd3dc;padding:8px}img,svg{max-width:100%;height:auto}figure{margin:24px 0}.archive-note{border-left:4px solid #2563eb;padding:12px 20px;background:#eef4ff}math{font-size:1.1em}iframe{width:100%;height:85vh;border:1px solid #ccd3dc}a{color:#1658a5}</style></head><body><p class="archive-note">本地原文阅读副本。正文与资料文件已归档；原始响应、版本和校验信息见同目录 manifest.json。网页导航与在线脚本不执行。</p><article class="bd-article">
-<section id="genai-perf">
-<h1>GenAI-Perf<a class="headerlink" href="#genai-perf" title="Link to this heading">#</a></h1>
-<p>GenAI-Perf is a command line tool for measuring the throughput and
-latency of generative AI models as served through an inference server.
+<!doctype html><html lang="en"><meta charset="utf-8"><title>NVIDIA GenAI-Perf</title><style>body{max-width:1100px;margin:40px auto;padding:0 24px;line-height:1.6}pre{white-space:pre-wrap;overflow-wrap:anywhere}img{max-width:100%;height:auto}</style><h1>NVIDIA GenAI-Perf</h1><pre>
+===== genai-perf/README.md =====
+&lt;!--
+Copyright (c) 2024-2026, NVIDIA CORPORATION &amp; AFFILIATES. All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions
+are met:
+ * Redistributions of source code must retain the above copyright
+   notice, this list of conditions and the following disclaimer.
+ * Redistributions in binary form must reproduce the above copyright
+   notice, this list of conditions and the following disclaimer in the
+   documentation and/or other materials provided with the distribution.
+ * Neither the name of NVIDIA CORPORATION nor the names of its
+   contributors may be used to endorse or promote products derived
+   from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ``AS IS&#x27;&#x27; AND ANY
+EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
+OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+--&gt;
+
+# GenAI-Perf
+
+⚠️ **GenAI-Perf is being phased out.** We are no longer actively developing new features for GenAI-Perf. For new performance benchmarking needs, please use [AIPerf](https://github.com/ai-dynamo/aiperf) instead.
+
+GenAI-Perf is a command line tool for measuring the throughput and latency of
+generative AI models as served through an inference server.
 For large language models (LLMs), GenAI-Perf provides metrics such as
-<a class="reference external" href="#output_token_throughput_metric">output token throughput</a>, <a class="reference external" href="#time_to_first_token_metric">time to
-first token</a>, <a class="reference external" href="#inter_token_latency_metric">inter token
-latency</a>, and <a class="reference external" href="#request_throughput_metric">request
-throughput</a>. For a full list of metrics
-please see the <a class="reference external" href="#metrics">Metrics section</a>.</p>
-<p>Users specify a model name, an inference server URL, the type of inputs
-to use (synthetic or from dataset), and the type of load to generate
-(number of concurrent requests, request rate).</p>
-<p>GenAI-Perf generates the specified load, measures the performance of the
-inference server and reports the metrics in a simple table as console
-output. The tool also logs all results in a csv and json file that can
-be used to derive additional metrics and visualizations. The inference
-server must already be running when GenAI-Perf is run.</p>
-<p>You can use GenAI-Perf to run performance benchmarks on - <a class="reference external" data-original-href="https://docs.nvidia.com/deeplearning/triton-inference-server/user-guide/docs/perf_benchmark/docs/tutorial.md">Large
-Language Models</a> - <a class="reference external" data-original-href="https://docs.nvidia.com/deeplearning/triton-inference-server/user-guide/docs/perf_benchmark/docs/multi_modal.md">Vision Language
-Models</a> - <a class="reference external" data-original-href="https://docs.nvidia.com/deeplearning/triton-inference-server/user-guide/docs/perf_benchmark/docs/embeddings.md">Embedding
-Models</a> - <a class="reference external" data-original-href="https://docs.nvidia.com/deeplearning/triton-inference-server/user-guide/docs/perf_benchmark/docs/rankings.md">Ranking Models</a> -
-<a class="reference external" data-original-href="https://docs.nvidia.com/deeplearning/triton-inference-server/user-guide/docs/perf_benchmark/docs/lora.md">Multiple LoRA Adapters</a></p>
-<blockquote>
-<div><p>[!Note] GenAI-Perf is currently in early release and under rapid
-development. While we will try to remain consistent, command line
-options and functionality are subject to change as the tool matures.</p>
-</div></blockquote>
-<!--
+[output token throughput](#output_token_throughput_metric),
+[time to first token](#time_to_first_token_metric),
+[time to second token](#time_to_second_token_metric),
+[inter token latency](#inter_token_latency_metric), and
+[request throughput](#request_throughput_metric).
+For a full list of metrics please see the [Metrics section](#metrics).
+
+Users specify a model name, an inference server URL, the type of inputs to use
+(synthetic or from a dataset defined via a file), and the type of load to generate
+(number of concurrent requests, request rate).
+
+GenAI-Perf generates the specified load, measures the performance of the
+inference server and reports the metrics in a simple table as console output.
+The tool also logs all results in a csv and json file that can be used to derive
+additional metrics and visualizations. The inference server must already be
+running when GenAI-Perf is run.
+
+You can use GenAI-Perf to run performance benchmarks on
+- [Large Language Models](docs/tutorial.md)
+- [Multi-Modal Language Models](docs/multi_modal.md)
+- [Embedding Models](docs/embeddings.md)
+- [Ranking Models](docs/rankings.md)
+- [Multiple LoRA Adapters](docs/lora.md)
+
+You can also use GenAI-Perf to run benchmarks on your
+custom APIs using either
+[customizable frontends](docs/customizable_frontends.md)
+or
+[customizable payloads](docs/customizable_payloads.md).
+Customizable frontends provide more customizability,
+while customizable payloads allow you to specify
+specific payload schemas using a Jinja2 template.
+
+&lt;/br&gt;
+
+&lt;!--
 ======================
 INSTALLATION
 ======================
---><section id="installation">
-<h2>Installation<a class="headerlink" href="#installation" title="Link to this heading">#</a></h2>
-<p>The easiest way to install GenAI-Perf is through <a class="reference external" data-original-href="https://ngc.nvidia.com/catalog/containers/nvidia:tritonserver">Triton Server SDK
-container</a>.
-Install the latest release using the following command:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">export</span><span class="w"> </span><span class="nv">RELEASE</span><span class="o">=</span><span class="s2">"yy.mm"</span><span class="w"> </span><span class="c1"># e.g. export RELEASE="24.06"</span>
+--&gt;
 
-docker<span class="w"> </span>run<span class="w"> </span>-it<span class="w"> </span>--net<span class="o">=</span>host<span class="w"> </span>--gpus<span class="o">=</span>all<span class="w">  </span>nvcr.io/nvidia/tritonserver:<span class="si">${</span><span class="nv">RELEASE</span><span class="si">}</span>-py3-sdk
+## Installation
 
-<span class="c1"># Check out genai_perf command inside the container:</span>
-genai-perf<span class="w"> </span>--help
-</pre></div>
-</div>
-<details open=""><p>Alternatively, to install from source:</p>
-<p>Since GenAI-Perf depends on Perf Analyzer, you’ll need to install the
-Perf Analyzer binary:</p>
-<section id="install-perf-analyzer-ubuntu-python-3-8">
-<h3>Install Perf Analyzer (Ubuntu, Python 3.8+)<a class="headerlink" href="#install-perf-analyzer-ubuntu-python-3-8" title="Link to this heading">#</a></h3>
-<p><strong>NOTE</strong>: you must already have CUDA 12 installed (checkout the <a class="reference external" data-original-href="https://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html">CUDA
-installation
-guide</a>).</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>tritonclient
+The easiest way to install GenAI-Perf is through pip.
+### Install GenAI-Perf (Ubuntu 24.04, Python 3.10+)
 
-apt<span class="w"> </span>update<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>apt<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span>--no-install-recommends<span class="w"> </span>libb64-0d<span class="w"> </span>libcurl4
-</pre></div>
-</div>
-<p>You can also build Perf Analyzer <a class="reference external" data-original-href="https://docs.nvidia.com/deeplearning/triton-inference-server/user-guide/docs/docs/install.md#build-from-source">from
-source</a> as well.</p>
-</section>
-<section id="install-genai-perf-from-source">
-<h3>Install GenAI-Perf from source<a class="headerlink" href="#install-genai-perf-from-source" title="Link to this heading">#</a></h3>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/triton-inference-server/perf_analyzer.git<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">cd</span><span class="w"> </span>perf_analyzer
+```bash
+pip install genai-perf
+```
+**NOTE**: you must already have CUDA 12 installed
 
-pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span>genai-perf
-</pre></div>
-</div>
-</section></details><!--
+
+&lt;details&gt;
+
+&lt;summary&gt;Alternatively, to install the container:&lt;/summary&gt;
+
+[Triton Server SDK container](https://ngc.nvidia.com/catalog/containers/nvidia:tritonserver)
+
+Pull the latest release using the following command:
+
+```bash
+export RELEASE=&quot;25.01&quot;
+
+docker run -it --net=host --gpus=all  nvcr.io/nvidia/tritonserver:${RELEASE}-py3-sdk
+
+# Validate the genai-perf command works inside the container:
+genai-perf --help
+```
+
+You can also build Perf Analyzer [from source](../docs/install.md#build-from-source) to use alongside GenAI-Perf as well.
+
+&lt;/details&gt;
+
+&lt;/br&gt;
+
+&lt;!--
 ======================
 QUICK START
 ======================
---></section>
-</section>
-<section id="quick-start">
-<h2>Quick Start<a class="headerlink" href="#quick-start" title="Link to this heading">#</a></h2>
-<p>In this quick start, we will use GenAI-Perf to run performance
-benchmarking on the GPT-2 model running on Triton Inference Server with
-a TensorRT-LLM engine.</p>
-<section id="serve-gpt-2-tensorrt-llm-model-using-triton-cli">
-<h3>Serve GPT-2 TensorRT-LLM model using Triton CLI<a class="headerlink" href="#serve-gpt-2-tensorrt-llm-model-using-triton-cli" title="Link to this heading">#</a></h3>
-<p>You can follow the <a class="reference external" data-original-href="https://github.com/triton-inference-server/triton_cli?tab=readme-ov-file#serving-a-trt-llm-model">quickstart
-guide</a>
-on Triton CLI github repo to run GPT-2 model locally. The full
-instructions are copied below for convenience:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># This container comes with all of the dependencies for building TRT-LLM engines</span>
-<span class="c1"># and serving the engine with Triton Inference Server.</span>
-docker<span class="w"> </span>run<span class="w"> </span>-ti<span class="w"> </span><span class="se">\</span>
-<span class="w">    </span>--gpus<span class="w"> </span>all<span class="w"> </span><span class="se">\</span>
-<span class="w">    </span>--network<span class="o">=</span>host<span class="w"> </span><span class="se">\</span>
-<span class="w">    </span>--shm-size<span class="o">=</span>1g<span class="w"> </span>--ulimit<span class="w"> </span><span class="nv">memlock</span><span class="o">=</span>-1<span class="w"> </span><span class="se">\</span>
-<span class="w">    </span>-v<span class="w"> </span>/tmp:/tmp<span class="w"> </span><span class="se">\</span>
-<span class="w">    </span>-v<span class="w"> </span><span class="si">${</span><span class="nv">HOME</span><span class="si">}</span>/models:/root/models<span class="w"> </span><span class="se">\</span>
-<span class="w">    </span>-v<span class="w"> </span><span class="si">${</span><span class="nv">HOME</span><span class="si">}</span>/.cache/huggingface:/root/.cache/huggingface<span class="w"> </span><span class="se">\</span>
-<span class="w">    </span>nvcr.io/nvidia/tritonserver:24.05-trtllm-python-py3
+--&gt;
 
-<span class="c1"># Install the Triton CLI</span>
-pip<span class="w"> </span>install<span class="w"> </span>git+https://github.com/triton-inference-server/triton_cli.git@0.0.8
+## Quick Start
 
-<span class="c1"># Build TRT LLM engine and generate a Triton model repository pointing at it</span>
-triton<span class="w"> </span>remove<span class="w"> </span>-m<span class="w"> </span>all
-triton<span class="w"> </span>import<span class="w"> </span>-m<span class="w"> </span>gpt2<span class="w"> </span>--backend<span class="w"> </span>tensorrtllm
+In this quick start, we will use GenAI-Perf to run performance benchmarking on
+the GPT-2 model running on Triton Inference Server with a TensorRT-LLM engine.
 
-<span class="c1"># Start Triton pointing at the default model repository</span>
-triton<span class="w"> </span>start
-</pre></div>
-</div>
-</section>
-<section id="running-genai-perf">
-<h3>Running GenAI-Perf<a class="headerlink" href="#running-genai-perf" title="Link to this heading">#</a></h3>
-<p>Now we can run GenAI-Perf from Triton Inference Server SDK container:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">export</span><span class="w"> </span><span class="nv">RELEASE</span><span class="o">=</span><span class="s2">"yy.mm"</span><span class="w"> </span><span class="c1"># e.g. export RELEASE="24.06"</span>
+### Serve GPT-2 TensorRT-LLM model using Triton CLI
 
-docker<span class="w"> </span>run<span class="w"> </span>-it<span class="w"> </span>--net<span class="o">=</span>host<span class="w"> </span>--rm<span class="w"> </span>--gpus<span class="o">=</span>all<span class="w"> </span>nvcr.io/nvidia/tritonserver:<span class="si">${</span><span class="nv">RELEASE</span><span class="si">}</span>-py3-sdk
+You can follow the [quickstart guide](https://github.com/triton-inference-server/triton_cli?tab=readme-ov-file#serving-a-trt-llm-model)
+in the Triton CLI Github repository to serve GPT-2 on the Triton server with the TensorRT-LLM backend.
+**NOTE**: pip dependency error messages can be safely ignored.
 
-<span class="c1"># Run GenAI-Perf in the container:</span>
-genai-perf<span class="w"> </span>profile<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>-m<span class="w"> </span>gpt2<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--service-kind<span class="w"> </span>triton<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--backend<span class="w"> </span>tensorrtllm<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--num-prompts<span class="w"> </span><span class="m">100</span><span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--random-seed<span class="w"> </span><span class="m">123</span><span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--synthetic-input-tokens-mean<span class="w"> </span><span class="m">200</span><span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--synthetic-input-tokens-stddev<span class="w"> </span><span class="m">0</span><span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--streaming<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--output-tokens-mean<span class="w"> </span><span class="m">100</span><span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--output-tokens-stddev<span class="w"> </span><span class="m">0</span><span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--output-tokens-mean-deterministic<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--tokenizer<span class="w"> </span>hf-internal-testing/llama-tokenizer<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--concurrency<span class="w"> </span><span class="m">1</span><span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--measurement-interval<span class="w"> </span><span class="m">4000</span><span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--profile-export-file<span class="w"> </span>my_profile_export.json<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--url<span class="w"> </span>localhost:8001
-</pre></div>
-</div>
-<p>Example output:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>                                   LLM Metrics
-┏━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━━┳━━━━━━━━┳━━━━━━━━┳━━━━━━━━┳━━━━━━━━┓
-┃                Statistic ┃    avg ┃    min ┃    max ┃    p99 ┃    p90 ┃    p75 ┃
-┡━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━━╇━━━━━━━━╇━━━━━━━━╇━━━━━━━━╇━━━━━━━━┩
-│ Time to first token (ms) │  11.70 │   9.88 │  17.21 │  14.35 │  12.01 │  11.87 │
-│ Inter token latency (ms) │   1.46 │   1.08 │   1.89 │   1.87 │   1.62 │   1.52 │
-│     Request latency (ms) │ 161.24 │ 153.45 │ 200.74 │ 200.66 │ 179.43 │ 162.23 │
-│   Output sequence length │ 103.39 │  95.00 │ 134.00 │ 120.08 │ 107.30 │ 105.00 │
-│    Input sequence length │ 200.01 │ 200.00 │ 201.00 │ 200.13 │ 200.00 │ 200.00 │
-└──────────────────────────┴────────┴────────┴────────┴────────┴────────┴────────┘
-Output token throughput (per sec): 635.61
-Request throughput (per sec): 6.15
-</pre></div>
-</div>
-<p>See <a class="reference external" data-original-href="https://docs.nvidia.com/deeplearning/triton-inference-server/user-guide/docs/perf_benchmark/docs/tutorial.md">Tutorial</a> for additional examples.</p>
-<!--
+The full instructions are copied below for convenience:
+
+```bash
+# This container comes with all of the dependencies for building TRT-LLM engines
+# and serving the engine with Triton Inference Server.
+docker run -ti \
+    --gpus all \
+    --network=host \
+    --shm-size=1g --ulimit memlock=-1 \
+    -v /tmp:/tmp \
+    -v ${HOME}/.cache/huggingface:/root/.cache/huggingface \
+    nvcr.io/nvidia/tritonserver:25.01-trtllm-python-py3
+
+# Install the Triton CLI
+pip install git+https://github.com/triton-inference-server/triton_cli.git@0.1.2
+
+# Build TRT LLM engine and generate a Triton model repository pointing at it
+triton remove -m all
+triton import -m gpt2 --backend tensorrtllm
+
+# Start Triton pointing at the default model repository
+triton start
+```
+
+### Running GenAI-Perf
+
+Now we can run GenAI-Perf inside the Triton Inference Server SDK container:
+
+```bash
+genai-perf profile \
+  -m gpt2 \
+  --backend tensorrtllm \
+  --streaming
+```
+
+Example output:
+
+```
+                              NVIDIA GenAI-Perf | LLM Metrics
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━━┳━━━━━━━━┳━━━━━━━━┳━━━━━━━━┳━━━━━━━━┓
+┃                         Statistic ┃    avg ┃    min ┃    max ┃    p99 ┃    p90 ┃    p75 ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━━╇━━━━━━━━╇━━━━━━━━╇━━━━━━━━╇━━━━━━━━┩
+│          Time to first token (ms) │  16.26 │  12.39 │  17.25 │  17.09 │  16.68 │  16.56 │
+│          Inter token latency (ms) │   1.85 │   1.55 │   2.04 │   2.02 │   1.97 │   1.92 │
+│              Request latency (ms) │ 499.20 │ 451.01 │ 554.61 │ 548.69 │ 526.13 │ 514.19 │
+│            Output sequence length │ 261.90 │ 256.00 │ 298.00 │ 296.60 │ 270.00 │ 265.00 │
+│             Input sequence length │ 550.06 │ 550.00 │ 553.00 │ 551.60 │ 550.00 │ 550.00 │
+│ Output token throughput (per sec) │ 520.87 │    N/A │    N/A │    N/A │    N/A │    N/A │
+│      Request throughput (per sec) │   1.99 │    N/A │    N/A │    N/A │    N/A │    N/A │
+└───────────────────────────────────┴────────┴────────┴────────┴────────┴────────┴────────┘
+```
+
+See [Tutorial](docs/tutorial.md) for additional examples.
+
+&lt;/br&gt;
+
+&lt;!--
+=====================
+Config File
+====================
+--&gt;
+## Configuration File
+In addition to setting options via the command-line, GenAI-Perf supports the passing in of a config file (in YAML format). The command is:&lt;/br&gt;
+```bash
+genai-perf config -f &lt;config_file&gt;
+```
+
+### Creating a Template Config File
+In order to make it easier for you to use config files, we have added a new subcommand that generates a template config file containing all possible options, pre-populated to their default settings. The command to create this is:&lt;/br&gt;
+```bash
+genai-perf create-template
+```
+By default the config file is named `genai_perf_config.yaml`, but you can change that by passing in a custom name using the `-f` option.&lt;/br&gt;
+For less experienced users, you can include `-v/--verbose` and the config file will also contain descriptions for each option (similar to what you would see using `-h` from the command line).
+
+Here is a sample section of what the template config file looks like:
+```
+  endpoint:
+    model_selection_strategy: round_robin
+    backend: tensorrtllm
+    custom:
+    type: kserve
+    streaming: False
+    server_metrics_urls: http://localhost:8002/metrics
+    url: localhost:8001
+    grpc_method:
+```
+and with `--verbose`:
+```bash
+ endpoint:
+    # When multiple model are specified, this is how a specific model should be assigned to a prompt.
+    # round_robin: nth prompt in the list gets assigned to n-mod len(models).
+    # random: assignment is uniformly random
+    model_selection_strategy: round_robin
+
+    # When benchmarking Triton, this is the backend of the model.
+    # For the TENSORRT-LLM backend,you currently must set &#x27;exclude_input_in_output&#x27; to true
+    # in the model config to not echo the input tokens
+    backend: tensorrtllm
+
+    # Set a custom endpoint that differs from the OpenAI defaults.
+    custom:
+
+    # The type to send requests to on the server.
+    type: kserve
+
+    # An option to enable the use of the streaming API.
+    streaming: False
+
+    # The list of server metrics URLs.
+    # These are used for Telemetry metric reporting.
+    server_metrics_urls: http://localhost:9400/metrics
+
+    # URL of the endpoint to target for benchmarking.
+    url: localhost:8001
+
+    # A fully-qualified gRPC method name in &#x27;&lt;package&gt;.&lt;service&gt;/&lt;method&gt;&#x27; format.
+    # The option is only supported by dynamic gRPC service kind and is
+    # required to identify the RPC to use when sending requests to the server.
+    grpc_method:
+```
+
+### Overriding Config Options
+Once you have setup your config file to your liking, there could be times where you might want to re-profile with just a few options changed.&lt;/br&gt;
+Rather than editing your config you can include the `--override-config` option on the CLI along with the options you want to change. For example:
+```bash
+genai-perf config -f genai_perf_config.yaml --override-config --warmup-request-count 100 --concurrency 32
+```
+&lt;/br&gt;
+
+&lt;!--
+=====================
+Analyze Subcommand
+====================
+--&gt;
+## Analyze
+GenAI-Perf can be used to sweep through PA or GenAI-Perf stimulus allowing the user to profile multiple scenarios with a single command.
+See [Analyze](docs/analyze.md) for details on how this subcommand can be utilized.
+
+&lt;!--
 ======================
 VISUALIZATION
 ======================
---></section>
-</section>
-<section id="visualization">
-<h2>Visualization<a class="headerlink" href="#visualization" title="Link to this heading">#</a></h2>
-<p>GenAI-Perf can also generate various plots that visualize the
-performance of the current profile run. This is disabled by default but
-users can easily enable it by passing the <code class="docutils literal notranslate"><span class="pre">--generate-plots</span></code> option
-when running the benchmark:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>genai-perf<span class="w"> </span>profile<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>-m<span class="w"> </span>gpt2<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--service-kind<span class="w"> </span>triton<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--backend<span class="w"> </span>tensorrtllm<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--streaming<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--concurrency<span class="w"> </span><span class="m">1</span><span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--generate-plots
-</pre></div>
-</div>
-<p>This will generate a <a class="reference external" data-original-href="https://docs.nvidia.com/deeplearning/triton-inference-server/user-guide/docs/perf_benchmark/docs/compare.md#example-plots">set of default
-plots</a> such as: - Time to first token
-(TTFT) analysis - Request latency analysis - TTFT vs Input sequence
-lengths - Inter token latencies vs Token positions - Input sequence
-lengths vs Output sequence lengths</p>
-<section id="using-compare-subcommand-to-visualize-multiple-runs">
-<h3>Using <code class="docutils literal notranslate"><span class="pre">compare</span></code> Subcommand to Visualize Multiple Runs<a class="headerlink" href="#using-compare-subcommand-to-visualize-multiple-runs" title="Link to this heading">#</a></h3>
-<p>The <code class="docutils literal notranslate"><span class="pre">compare</span></code> subcommand in GenAI-Perf facilitates users in comparing
-multiple profile runs and visualizing the differences through plots.</p>
-<section id="usage">
-<h4>Usage<a class="headerlink" href="#usage" title="Link to this heading">#</a></h4>
-<p>Assuming the user possesses two profile export JSON files, namely
-<code class="docutils literal notranslate"><span class="pre">profile1.json</span></code> and <code class="docutils literal notranslate"><span class="pre">profile2.json</span></code>, they can execute the
-<code class="docutils literal notranslate"><span class="pre">compare</span></code> subcommand using the <code class="docutils literal notranslate"><span class="pre">--files</span></code> option:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>genai-perf<span class="w"> </span>compare<span class="w"> </span>--files<span class="w"> </span>profile1.json<span class="w"> </span>profile2.json
-</pre></div>
-</div>
-<p>Executing the above command will perform the following actions under the
-<code class="docutils literal notranslate"><span class="pre">compare</span></code> directory: 1. Generate a YAML configuration file
-(e.g. <code class="docutils literal notranslate"><span class="pre">config.yaml</span></code>) containing the metadata for each plot generated
-during the comparison process. 2. Automatically generate the <a class="reference external" data-original-href="https://docs.nvidia.com/deeplearning/triton-inference-server/user-guide/docs/perf_benchmark/docs/compare.md#example-plots">default
-set of plots</a> (e.g. TTFT vs. Input
-Sequence Lengths) that compare the two profile runs.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>compare
-├── config.yaml
-├── distribution_of_input_sequence_lengths_to_output_sequence_lengths.jpeg
-├── request_latency.jpeg
-├── time_to_first_token.jpeg
-├── time_to_first_token_vs_input_sequence_lengths.jpeg
-├── token-to-token_latency_vs_output_token_position.jpeg
-└── ...
-</pre></div>
-</div>
-</section>
-<section id="customization">
-<h4>Customization<a class="headerlink" href="#customization" title="Link to this heading">#</a></h4>
-<p>Users have the flexibility to iteratively modify the generated YAML
-configuration file to suit their specific requirements. They can make
-alterations to the plots according to their preferences and execute the
-command with the <code class="docutils literal notranslate"><span class="pre">--config</span></code> option followed by the path to the
-modified configuration file:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>genai-perf<span class="w"> </span>compare<span class="w"> </span>--config<span class="w"> </span>compare/config.yaml
-</pre></div>
-</div>
-<p>This command will regenerate the plots based on the updated
-configuration settings, enabling users to refine the visual
-representation of the comparison results as per their needs.</p>
-<p>See <a class="reference external" data-original-href="https://docs.nvidia.com/deeplearning/triton-inference-server/user-guide/docs/perf_benchmark/docs/compare.md">Compare documentation</a> for more details.</p>
-<!--
+--&gt;
+
+## Visualization
+
+GenAI-Perf can also generate various plots that visualize the performance of the
+current profile run. This is disabled by default but users can easily enable it
+by passing the `--generate-plots` option when running the benchmark:
+
+```bash
+genai-perf profile \
+  -m gpt2 \
+  --backend tensorrtllm \
+  --streaming \
+  --concurrency 1 \
+  --generate-plots
+```
+
+This will generate a [set of default plots](docs/example_plots.md) such as:
+- Time to first token (TTFT) analysis
+- Request latency analysis
+- TTFT vs Input sequence lengths
+- Inter token latencies vs Token positions
+- Input sequence lengths vs Output sequence lengths
+
+&lt;/br&gt;
+
+&lt;!--
+=====================
+PROCESS EXPORT FILES SUBCOMMAND
+====================
+--&gt;
+## Process Export Files
+
+GenAI-Perf can be used to process multiple profile export files from distributed runs and generate outputs with aggregated metrics.
+See [Process Export Files](docs/process_export_files.md) for details on how this subcommand can be utilized.
+
+&lt;/br&gt;
+
+
+&lt;!--
 ======================
 MODEL INPUTS
 ======================
---></section>
-</section>
-</section>
-<section id="model-inputs">
-<h2>Model Inputs<a class="headerlink" href="#model-inputs" title="Link to this heading">#</a></h2>
-<p>GenAI-Perf supports model input prompts from either synthetically
-generated inputs, or from the HuggingFace
-<a class="reference external" data-original-href="https://huggingface.co/datasets/Open-Orca/OpenOrca">OpenOrca</a> or
-<a class="reference external" data-original-href="https://huggingface.co/datasets/cnn_dailymail">CNN_DailyMail</a>
-datasets. This is specified using the <code class="docutils literal notranslate"><span class="pre">--input-dataset</span></code> CLI option.</p>
-<p>When the dataset is synthetic, you can specify the following options: *
-<code class="docutils literal notranslate"><span class="pre">--num-prompts</span> <span class="pre">&lt;int&gt;</span></code>: The number of unique prompts to generate as
-stimulus, &gt;= 1. * <code class="docutils literal notranslate"><span class="pre">--synthetic-input-tokens-mean</span> <span class="pre">&lt;int&gt;</span></code>: The mean of
-number of tokens in the generated prompts when using synthetic data, &gt;=
-1. * <code class="docutils literal notranslate"><span class="pre">--synthetic-input-tokens-stddev</span> <span class="pre">&lt;int&gt;</span></code>: The standard deviation
-of number of tokens in the generated prompts when using synthetic data,
-&gt;= 0. * <code class="docutils literal notranslate"><span class="pre">--random-seed</span> <span class="pre">&lt;int&gt;</span></code>: The seed used to generate random
-values, &gt;= 0.</p>
-<p>When the dataset is coming from HuggingFace, you can specify the
-following options: * <code class="docutils literal notranslate"><span class="pre">--input-dataset</span> <span class="pre">{openorca,cnn_dailymail}</span></code>:
-HuggingFace dataset to use for benchmarking. * <code class="docutils literal notranslate"><span class="pre">--num-prompts</span> <span class="pre">&lt;int&gt;</span></code>:
-The number of unique prompts to generate as stimulus, &gt;= 1.</p>
-<p>When the dataset is coming from a file, you can specify the following
-options: * <code class="docutils literal notranslate"><span class="pre">--input-file</span> <span class="pre">&lt;path&gt;</span></code>: The input file containing the
-prompts to use for benchmarking as JSON objects.</p>
-<p>For any dataset, you can specify the following options: *
-<code class="docutils literal notranslate"><span class="pre">--output-tokens-mean</span> <span class="pre">&lt;int&gt;</span></code>: The mean number of tokens in each
-output. Ensure the <code class="docutils literal notranslate"><span class="pre">--tokenizer</span></code> value is set correctly, &gt;= 1. *
-<code class="docutils literal notranslate"><span class="pre">--output-tokens-stddev</span> <span class="pre">&lt;int&gt;</span></code>: The standard deviation of the number
-of tokens in each output. This is only used when output-tokens-mean is
-provided, &gt;= 1. * <code class="docutils literal notranslate"><span class="pre">--output-tokens-mean-deterministic</span></code>: When using
-<code class="docutils literal notranslate"><span class="pre">--output-tokens-mean</span></code>, this flag can be set to improve precision by
-setting the minimum number of tokens equal to the requested number of
-tokens. This is currently supported with the Triton service-kind. Note
-that there is still some variability in the requested number of output
-tokens, but GenAi-Perf attempts its best effort with your model to get
-the right number of output tokens.</p>
-<p>You can optionally set additional model inputs with the following
-option: * <code class="docutils literal notranslate"><span class="pre">--extra-inputs</span> <span class="pre">&lt;input_name&gt;:&lt;value&gt;</span></code>: An additional input
-for use with the model with a singular value, such as <code class="docutils literal notranslate"><span class="pre">stream:true</span></code> or
-<code class="docutils literal notranslate"><span class="pre">max_tokens:5</span></code>. This flag can be repeated to supply multiple extra
-inputs.</p>
-<p>For <a class="reference external" data-original-href="https://docs.nvidia.com/deeplearning/triton-inference-server/user-guide/docs/perf_benchmark/docs/tutorial.md">Large Language Models</a>, there is no batch size
-(i.e. batch size is always <code class="docutils literal notranslate"><span class="pre">1</span></code>). Each request includes the inputs for
-one individual inference. Other modes such as the
-<a class="reference external" data-original-href="https://docs.nvidia.com/deeplearning/triton-inference-server/user-guide/docs/perf_benchmark/docs/embeddings.md">embeddings</a> and <a class="reference external" data-original-href="https://docs.nvidia.com/deeplearning/triton-inference-server/user-guide/docs/perf_benchmark/docs/rankings.md">rankings</a>
-endpoints support client-side batching, where <code class="docutils literal notranslate"><span class="pre">--batch-size</span> <span class="pre">N</span></code> means
-that each request sent will include the inputs for <code class="docutils literal notranslate"><span class="pre">N</span></code> separate
-inferences, allowing them to be processed together.</p>
-<!--
+--&gt;
+
+## Model Inputs
+
+GenAI-Perf supports model input prompts from either synthetically generated
+inputs, or from a dataset defined via a file.
+
+When the dataset is synthetic, you can specify the following options:
+* `--num-dataset-entries &lt;int&gt;`: The number of unique payloads to sample from.
+  These will be reused until benchmarking is complete.
+* `--synthetic-input-tokens-mean &lt;int&gt;`: The mean of number of tokens in the
+  generated prompts when using synthetic data, &gt;= 1.
+* `--synthetic-input-tokens-stddev &lt;int&gt;`: The standard deviation of number of
+  tokens in the generated prompts when using synthetic data, &gt;= 0.
+* `--random-seed &lt;int&gt;`: The seed used to generate random values, &gt;= 0.
+* `--request-count &lt;int&gt;`: The number of requests to benchmark
+* `--warmup-request-count &lt;int&gt;`: The number of requests to send before
+benchmarking
+
+When the dataset is coming from a file, you can specify the following
+options:
+* `--input-file &lt;path&gt;`: The input file or directory containing the prompts or
+  filepaths to images to use for benchmarking as JSON objects.
+
+For any dataset, you can specify the following options:
+* `--num-prefix-prompts &lt;int&gt;`: The number of synthetic prefix prompts to
+  sample from. If this value is &gt;0, synthetic prefix prompts will be prepended
+  to user prompts.
+* `--output-tokens-mean &lt;int&gt;`: The mean number of tokens in each output. Ensure
+  the `--tokenizer` value is set correctly, &gt;= 1.
+* `--output-tokens-stddev &lt;int&gt;`: The standard deviation of the number of tokens
+  in each output. This is only used when output-tokens-mean is provided, &gt;= 1.
+* `--output-tokens-mean-deterministic`: When using `--output-tokens-mean`, this
+  flag can be set to improve precision by setting the minimum number of tokens
+  equal to the requested number of tokens. This is currently supported with
+  Triton. Note that there is still some variability in the
+  requested number of output tokens, but GenAi-Perf attempts its best effort
+  with your model to get the right number of output tokens.
+* `--prefix-prompt-length &lt;int&gt;`: The number of tokens to include in each
+  prefix prompt. This value is only used if --num-prefix-prompts is positive.
+
+You can optionally set additional model inputs with the following option:
+* `--extra-inputs &lt;input_name&gt;:&lt;value&gt;`: An additional input for use with the
+  model with a singular value, such as `stream:true` or `max_tokens:5`. This
+  flag can be repeated to supply multiple extra inputs.
+
+For [Large Language Models](docs/tutorial.md), there is no batch size (i.e.
+batch size is always `1`). Each request includes the inputs for one individual
+inference. Other modes such as the [embeddings](docs/embeddings.md) and
+[rankings](docs/rankings.md) endpoints support client-side batching, where
+`--batch-size-text N` means that each request sent will include the inputs for
+`N` separate inferences, allowing them to be processed together.
+
+&lt;/br&gt;
+
+### Use moon_cake file as input payload
+
+Genai-perf supports `--input-file payload:&lt;file&gt;` as the command option to use a payload file with a fixed schedule workload for profiling.
+
+The payload file is in [moon_cake format](https://github.com/kvcache-ai/Mooncake) which contains a `timestamp` field and you can optionally add `input_length`, `output_length`, `text_input`, `session_id`, `hash_ids` and `priority`. For further examples using these fields, you can refer to our [multi-turn session benchmark tutorial](https://github.com/triton-inference-server/perf_analyzer/blob/main/genai-perf/docs/multi_turn.md#approach-2-benchmark-with-a-custom-dataset).
+
+Here is an example file:
+
+```
+{
+    &quot;timestamp&quot;: 0,
+    &quot;input_length&quot;: 6955,
+    &quot;output_length&quot;: 52,
+    &quot;hash_ids&quot;: [46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 2353, 2354]
+}
+{
+    &quot;timestamp&quot;: 10535,	# in milli-second
+    &quot;input_length&quot;: 6472,
+    &quot;output_length&quot;: 26,
+    &quot;hash_ids&quot;: [46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 2366]
+}
+{
+    &quot;timestamp&quot;: 27482,
+    &quot;input_length&quot;: 6955,
+    &quot;output_length&quot;: 52,
+    &quot;hash_ids&quot;: [46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 2353, 2354]
+}
+```
+
+`hash_ids` are a list of hash_id, each of which maps to a unique synthetic prompt sequence with `block_size` (current block size is 512) of tokens after tokenizer encoding, defined in [create_synthetic_prompt](https://github.com/triton-inference-server/perf_analyzer/blob/main/genai-perf/genai_perf/inputs/retrievers/synthetic_prompt_generator.py#L37). Since the same hash_id maps to the same input block, it is effective to test features such as kv cache and speculative decoding.
+
+### How to generate a payload file
+
+#### 1. Synthetic data from sampling
+[Nvidia Dynamo](https://github.com/ai-dynamo/dynamo) provides [a script](https://github.com/ai-dynamo/dynamo/blob/main/benchmarks/sin_load_generator/sin_synth.py) (with [README](https://github.com/ai-dynamo/dynamo/blob/main/benchmarks/sin_load_generator/README.md)) to generate synthetic moon_cake style payload:
+```bash
+python sin_synth.py \
+    --time-duration 600 \
+    --request-rate-min 5 \
+    --request-rate-max 20 \
+    --request-rate-period 150 \
+    --isl1 3000 \
+    --osl1 150 \
+    --isl2 3000 \
+    --osl2 150
+```
+This will generate a mooncake style payload file with
+- duration = 600 seconds
+- isl/osl = 3000/150
+- request rate varies sinusoidally from 0.75 to 3 requests with a period of 150 seconds
+For other models and GPU SKUs, adjust the request rate ranges accordingly to match the load.
+
+Example genai-perf command to run the generated payload:
+```bash
+genai-perf profile \
+    --tokenizer deepseek-ai/DeepSeek-R1-Distill-Llama-8B \
+    -m deepseek-ai/DeepSeek-R1-Distill-Llama-8B \
+    --endpoint-type chat \
+    --url http://localhost:8000 \
+    --streaming \
+    --input-file payload:sin_b512_t600_rr5.0-20.0-150.0_io3000150-3000150-0.2-0.8-10.jsonl
+```
+
+#### 2. Record real traffic and replay
+
+We recommend users to build a traffic footprint collector over their inference service to generate the moon_cake format payload file based on real service traffic. Although popular inference servers do not support this feature, users can add this feature to their inference service.
+
+Example code:
+```python
+# Hypothetical integration with the inference engine
+import InferenceEngine  # Assume this exists
+
+engine = InferenceEngine()
+logger = Logger(&quot;mooncake_traffic.jsonl&quot;)
+
+def process_request(prompt: str):
+    result = engine.infer(prompt)
+    logger.log_request({
+        &quot;input_length&quot;: len(engine.tokenize(prompt)),
+        &quot;output_length&quot;: len(engine.tokenize(result)),
+        &quot;text_input&quot;: prompt,
+        &quot;session_id&quot;: str(uuid.uuid4()),
+        &quot;hash_ids&quot;: engine.get_kvcache_hashes(prompt),
+        &quot;priority&quot;: 1
+    })
+    return result
+```
+
+
+&lt;!--
+======================
+AUTHENTICATION
+======================
+--&gt;
+
+## Authentication
+
+GenAI-Perf can benchmark secure endpoints such as OpenAI, which require API
+key authentication. To do so, you must add your API key directly in the command.
+Add the following flag to your command.
+
+```bash
+-H &quot;Authorization: Bearer ${API_KEY}&quot; -H &quot;Accept: text/event-stream&quot;
+```
+
+&lt;/br&gt;
+
+&lt;!--
 ======================
 METRICS
 ======================
---></section>
-<section id="metrics">
-<h2>Metrics<a class="headerlink" href="#metrics" title="Link to this heading">#</a></h2>
-<p>GenAI-Perf collects a diverse set of metrics that captures the
-performance of the inference server.</p>
-<div class="pst-scrollable-table-container"><table class="table">
-<thead>
-<tr class="row-odd"><th class="head"><p>Metric</p></th>
-<th class="head"><p>Description</p></th>
-<th class="head"><p>Aggregations</p></th>
-</tr>
-</thead>
-<tbody>
-<tr class="row-even"><td><p>Time to First Token</p></td>
-<td><p>Time between when a
-request is sent and
-when its first
-response is received,
-one value per request
-in benchmark</p></td>
-<td><p>Avg, min, max, p99,
-p90, p75</p></td>
-</tr>
-<tr class="row-odd"><td><p>Inter Token Latency</p></td>
-<td><p>Time between
-intermediate
-responses for a
-single request
-divided by the number
-of generated tokens
-of the latter
-response, one value
-per response per
-request in benchmark</p></td>
-<td><p>Avg, min, max, p99,
-p90, p75</p></td>
-</tr>
-<tr class="row-even"><td><p>Request Latency</p></td>
-<td><p>Time between when a
-request is sent and
-when its final
-response is received,
-one value per request
-in benchmark</p></td>
-<td><p>Avg, min, max, p99,
-p90, p75</p></td>
-</tr>
-<tr class="row-odd"><td><p>Output Sequence
-Length</p></td>
-<td><p>Total number of
-output tokens of a
-request, one value
-per request in
-benchmark</p></td>
-<td><p>Avg, min, max, p99,
-p90, p75</p></td>
-</tr>
-<tr class="row-even"><td><p>Input Sequence Length</p></td>
-<td><p>Total number of input
-tokens of a request,
-one value per request
-in benchmark</p></td>
-<td><p>Avg, min, max, p99,
-p90, p75</p></td>
-</tr>
-<tr class="row-odd"><td><p>Output Token
-Throughput</p></td>
-<td><p>Total number of
-output tokens from
-benchmark divided by
-benchmark duration</p></td>
-<td><p>None–one value per
-benchmark</p></td>
-</tr>
-<tr class="row-even"><td><p>Request Throughput</p></td>
-<td><p>Number of final
-responses from
-benchmark divided by
-benchmark duration</p></td>
-<td><p>None–one value per
-benchmark</p></td>
-</tr>
-</tbody>
-</table>
-</div>
-<!--
+--&gt;
+
+## Metrics
+
+GenAI-Perf collects a diverse set of metrics that captures the performance of
+the inference server.
+
+| Metric | Description | Aggregations |
+| - | - | - |
+| &lt;span id=&quot;time_to_first_token_metric&quot;&gt;Time to First Token&lt;/span&gt; | Time between when a request is sent and when its first response is received, one value per request in benchmark | Avg, min, max, p99, p90, p75 |
+| &lt;span id=&quot;time_to_second_token_metric&quot;&gt;Time to Second Token&lt;/span&gt; | Time between when the first streaming response is received and when the second streaming response is received, one value per request in benchmark | Avg, min, max, p99, p90, p75 |
+| &lt;span id=&quot;inter_token_latency_metric&quot;&gt;Inter Token Latency&lt;/span&gt; | Time between intermediate responses for a single request divided by the number of generated tokens of the latter response, one value per response per request in benchmark | Avg, min, max, p99, p90, p75 |
+| &lt;span id=&quot;output_token_throughput_per_user_metric&quot;&gt;Output Token Throughput Per User&lt;/span&gt; | Total number of output tokens (excluding the first token) divided by the total duration of the generation phase of each request | Avg, min, max, p99, p90, p75 |
+| Request Latency | Time between when a request is sent and when its final response is received, one value per request in benchmark | Avg, min, max, p99, p90, p75 |
+| Output Sequence Length | Total number of output tokens of a request, one value per request in benchmark | Avg, min, max, p99, p90, p75 |
+| Input Sequence Length | Total number of input tokens of a request, one value per request in benchmark | Avg, min, max, p99, p90, p75 |
+| &lt;span id=&quot;output_token_throughput_metric&quot;&gt;Output Token Throughput&lt;/span&gt; | Total number of output tokens from benchmark divided by benchmark duration | None–one value per benchmark |
+| &lt;span id=&quot;request_throughput_metric&quot;&gt;Request Throughput&lt;/span&gt; | Number of final responses from benchmark divided by benchmark duration | None–one value per benchmark |
+
+&lt;/br&gt;
+
+### GPU Telemetry
+
+During benchmarking, GPU metrics such as GPU power usage, GPU utilization, energy consumption, and total GPU memory
+are automatically collected. These metrics are collected from the `/metrics` endpoint
+exposed by the [DCGM Exporter](https://github.com/NVIDIA/dcgm-exporter), which must be running on the **same machine** as the inference server.
+
+GenAI-Perf collects the following GPU metrics during benchmarking:
+
+### Power Metrics
+- `gpu_power_usage`
+- `gpu_power_limit`
+- `energy_consumption`
+
+### Memory Metrics
+- `total_gpu_memory`
+- `gpu_memory_used`
+- `gpu_memory_free`
+
+### Temperature Metrics
+- `gpu_temperature`
+- `gpu_memory_temperature`
+
+### Clock Metrics
+- `gpu_clock_sm`
+- `gpu_clock_memory`
+
+### Utilization Metrics
+- `gpu_utilization`
+- `sm_utilization`
+- `memory_copy_utilization`
+- `video_encoder_utilization`
+- `video_decoder_utilization`
+
+### ECC Metrics
+- `total_ecc_sbe_volatile`
+- `total_ecc_dbe_volatile`
+- `total_ecc_sbe_aggregate`
+- `total_ecc_dbe_aggregate`
+
+### Errors and Violations Metrics
+- `xid_last_error`
+- `power_throttle_duration`
+- `thermal_throttle_duration`
+
+### Retired Pages Metrics
+- `retired_pages_sbe`
+- `retired_pages_dbe`
+
+### NVLink Error Metrics
+- `total_nvlink_crc_flit_errors`
+- `total_nvlink_crc_data_errors`
+
+### PCIE Metrics
+- `pcie_transmit_throughput`
+- `pcie_receive_throughput`
+- `pcie_replay_counter`
+
+&gt; [!Note]
+&gt; Use the `--verbose` flag to print telemetry metrics on the console.
+
+To collect GPU metrics, follow the [GPU Telmetry tutorial](docs/gpu_telemetry.md).
+Use the provided [`custom-metrics.csv`](./docs/assets/custom_gpu_metrics.csv) to ensure all required metrics are included in the output.
+
+&lt;/br&gt;
+
+&lt;!--
 ======================
 COMMAND LINE OPTIONS
 ======================
---></section>
-<section id="command-line-options">
-<h2>Command Line Options<a class="headerlink" href="#command-line-options" title="Link to this heading">#</a></h2>
-<p>Show the help message and exit.</p>
-<section id="endpoint-options">
-<h3>Endpoint Options:<a class="headerlink" href="#endpoint-options" title="Link to this heading">#</a></h3>
-<p>The names of the models to benchmark. A single model is recommended,
-unless you are <a class="reference external" data-original-href="https://docs.nvidia.com/deeplearning/triton-inference-server/user-guide/docs/perf_benchmark/docs/lora.md">profiling multiple LoRA adapters</a>.
-(default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p>
-<p>When multiple models are specified, this is how a specific model is
-assigned to a prompt. Round robin means that each model receives a
-request in order. Random means that assignment is uniformly random
-(default: <code class="docutils literal notranslate"><span class="pre">round_robin</span></code>)</p>
-<p>When using the “triton” service-kind, this is the backend of the model.
-For the TRT-LLM backend, you currently must set
-<code class="docutils literal notranslate"><span class="pre">exclude_input_in_output</span></code> to true in the model config to not echo the
-input tokens in the output. (default: tensorrtllm)</p>
-<p>Set a custom endpoint that differs from the OpenAI defaults. (default:
-<code class="docutils literal notranslate"><span class="pre">None</span></code>)</p>
-<p>The endpoint-type to send requests to on the server. This is only used
-with the <code class="docutils literal notranslate"><span class="pre">openai</span></code> service-kind. (default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p>
-<p>The kind of service perf_analyzer will generate load for. In order to
-use <code class="docutils literal notranslate"><span class="pre">openai</span></code>, you must specify an api via <code class="docutils literal notranslate"><span class="pre">--endpoint-type</span></code>.
-(default: <code class="docutils literal notranslate"><span class="pre">triton</span></code>)</p>
-<p>An option to enable the use of the streaming API. (default: <code class="docutils literal notranslate"><span class="pre">False</span></code>)</p>
-<p>URL of the endpoint to target for benchmarking. (default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p>
-</section>
-<section id="input-options">
-<h3>Input Options<a class="headerlink" href="#input-options" title="Link to this heading">#</a></h3>
-<p>The batch size of the requests GenAI-Perf should send. This is currently
-only supported with the <a class="reference external" data-original-href="https://docs.nvidia.com/deeplearning/triton-inference-server/user-guide/docs/perf_benchmark/docs/embeddings.md">embeddings</a>,
-image_retrieval, and <a class="reference external" data-original-href="https://docs.nvidia.com/deeplearning/triton-inference-server/user-guide/docs/perf_benchmark/docs/rankings.md">rankings</a> endpoint types.
-(default: <code class="docutils literal notranslate"><span class="pre">1</span></code>)</p>
-<p>Provide additional inputs to include with every request. You can repeat
-this flag for multiple inputs. Inputs should be in an input_name:value
-format. Alternatively, a string representing a json formatted dict can
-be provided. (default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p>
-<p>The HuggingFace dataset to use for prompts. (default: <code class="docutils literal notranslate"><span class="pre">openorca</span></code>)</p>
-<p>The input file containing the prompts to use for profiling. Each line
-should be a JSON object with a ‘text_input’ field in JSONL format.
-Example: {“text_input”: “Your prompt here”}”</p>
-<p>The number of unique prompts to generate as stimulus. (default: <code class="docutils literal notranslate"><span class="pre">100</span></code>)</p>
-<p>The mean number of tokens in each output. Ensure the <code class="docutils literal notranslate"><span class="pre">--tokenizer</span></code>
-value is set correctly. (default: <code class="docutils literal notranslate"><span class="pre">-1</span></code>)</p>
-<p>When using <code class="docutils literal notranslate"><span class="pre">--output-tokens-mean</span></code>, this flag can be set to improve
-precision by setting the minimum number of tokens equal to the requested
-number of tokens. This is currently supported with the Triton
-service-kind. Note that there is still some variability in the requested
-number of output tokens, but GenAi-Perf attempts its best effort with
-your model to get the right number of output tokens. (default:
-<code class="docutils literal notranslate"><span class="pre">False</span></code>)</p>
-<p>The standard deviation of the number of tokens in each output. This is
-only used when <code class="docutils literal notranslate"><span class="pre">--output-tokens-mean</span></code> is provided. (default: <code class="docutils literal notranslate"><span class="pre">0</span></code>)</p>
-<p>The seed used to generate random values. (default: <code class="docutils literal notranslate"><span class="pre">0</span></code>)</p>
-<p>The mean of number of tokens in the generated prompts when using
-synthetic data. (default: <code class="docutils literal notranslate"><span class="pre">550</span></code>)</p>
-<p>The standard deviation of number of tokens in the generated prompts when
-using synthetic data. (default: <code class="docutils literal notranslate"><span class="pre">0</span></code>)</p>
-</section>
-<section id="profiling-options">
-<h3>Profiling Options<a class="headerlink" href="#profiling-options" title="Link to this heading">#</a></h3>
-<p>The concurrency value to benchmark. (default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p>
-<p>The time interval used for each measurement in milliseconds. Perf
-Analyzer will sample a time interval specified and take measurement over
-the requests completed within that time interval. (default: <code class="docutils literal notranslate"><span class="pre">10000</span></code>)</p>
-<p>Sets the request rate for the load generated by PA. (default: <code class="docutils literal notranslate"><span class="pre">None</span></code>)</p>
-<p>The allowed variation in latency measurements when determining if a
-result is stable. The measurement is considered as stable if the ratio
-of max / min from the recent 3 measurements is within (stability
-percentage) in terms of both infer per second and latency. (default:
-<code class="docutils literal notranslate"><span class="pre">999</span></code>)</p>
-</section>
-<section id="output-options">
-<h3>Output Options<a class="headerlink" href="#output-options" title="Link to this heading">#</a></h3>
-<p>The directory to store all the (output) artifacts generated by
-GenAI-Perf and Perf Analyzer. (default: <code class="docutils literal notranslate"><span class="pre">artifacts</span></code>)</p>
-<p>An option to enable the generation of plots. (default: False)</p>
-<p>The path where the perf_analyzer profile export will be generated. By
-default, the profile export will be to <code class="docutils literal notranslate"><span class="pre">profile_export.json</span></code>. The
-genai-perf files will be exported to
-<code class="docutils literal notranslate"><span class="pre">&lt;profile_export_file&gt;_genai_perf.json</span></code> and
-<code class="docutils literal notranslate"><span class="pre">&lt;profile_export_file&gt;_genai_perf.csv</span></code>. For example, if the profile
-export file is <code class="docutils literal notranslate"><span class="pre">profile_export.json</span></code>, the genai-perf file will be
-exported to <code class="docutils literal notranslate"><span class="pre">profile_export_genai_perf.csv</span></code>. (default:
-<code class="docutils literal notranslate"><span class="pre">profile_export.json</span></code>)</p>
-</section>
-<section id="other-options">
-<h3>Other Options<a class="headerlink" href="#other-options" title="Link to this heading">#</a></h3>
-<p>The HuggingFace tokenizer to use to interpret token metrics from prompts
-and responses. (default: <code class="docutils literal notranslate"><span class="pre">hf-internal-testing/llama-tokenizer</span></code>)</p>
-<p>An option to enable verbose mode. (default: <code class="docutils literal notranslate"><span class="pre">False</span></code>)</p>
-<p>An option to print the version and exit.</p>
-<!--
+--&gt;
+
+## Command Line Options
+
+##### `-h`
+##### `--help`
+
+Show the help message and exit.
+
+### Config Options
+
+##### `-f`
+##### `--file`
+
+The path to the config file - REQUIRED.
+
+##### `--override-config`
+
+An option that allows the user to override values specified in the config file.
+
+### Template Options
+
+##### `-f`
+##### `--file`
+
+The name of the template file to be created. Default is `genai_perf_config.yaml`.
+
+### Endpoint Options:
+
+##### `-m &lt;list&gt;`
+##### `--model &lt;list&gt;`
+
+The names of the models to benchmark.
+A single model is recommended, unless you are
+[profiling multiple LoRA adapters](docs/lora.md). (default: `None`)
+
+##### `--model-selection-strategy {round_robin, random}`
+
+When multiple models are specified, this is how a specific model
+is assigned to a prompt. Round robin means that each model receives
+a request in order. Random means that assignment is uniformly random
+(default: `round_robin`)
+
+##### `--backend {tensorrtllm,vllm}`
+
+When benchmarking Triton, this is the backend of the model.
+(default: tensorrtllm)
+
+##### `--endpoint &lt;str&gt;`
+
+Set a custom endpoint that differs from the OpenAI defaults. (default: `None`)
+
+##### `--endpoint-type &lt;str&gt;`
+
+The endpoint-type to send requests to on the server. (default: `kserve`)
+
+##### `--server-metrics-urls &lt;list&gt;`
+
+The list of server metrics URLs. These are used for Telemetry metric
+reporting when benchmarking. Example usage: --server-metrics-urls
+http://server1:9400/metrics http://server2:9400/metrics.
+(default: `http://localhost:9400/metrics`)
+
+##### `--streaming`
+
+An option to enable the use of the streaming API. (default: `False`)
+
+##### `-u &lt;url&gt;`
+##### `--url &lt;url&gt;`
+
+URL of the endpoint to target for benchmarking. (default: `None`)
+
+##### `--grpc-method &lt;str&gt;`
+
+A fully-qualified gRPC method name in &#x27;&lt;package&gt;.&lt;service&gt;/&lt;method&gt;&#x27; format.
+The option is only supported with dynamic gRPC and is required to
+identify the RPC to use when sending requests to the server. (default: `None`)
+
+### Input Options
+
+##### `--audio-length-mean &lt;int&gt;`
+
+The mean length of audio data in seconds. (default: `0`)
+
+##### `--audio-length-stddev &lt;int&gt;`
+
+The standard deviation of the length of audio data in seconds.
+(default: `0`)
+
+##### `--audio-format &lt;str&gt;`
+
+The format of the audio data. Currently we support wav and mp3 format.
+(default: `wav`)
+
+##### `--audio-depths &lt;int&gt;`
+
+A list of audio bit depths to randomly select from in bits.
+(default: `[16]`)
+
+##### `--audio-sample-rates &lt;int&gt;`
+
+A list of audio sample rates to randomly select from in kHz.
+(default: `[16]`)
+
+##### `--audio-num-channels &lt;int&gt;`
+
+The number of audio channels to use for the audio data generation.
+Currently only 1 (mono) and 2 (stereo) are supported.
+(default: `1` (mono channel))
+
+##### `-b &lt;int&gt;`
+##### `--batch-size &lt;int&gt;`
+##### `--batch-size-text &lt;int&gt;
+
+The text batch size of the requests GenAI-Perf should send.
+(default: `1`)
+##### `--batch-size-text &lt;int&gt;
+
+The text batch size of the requests GenAI-Perf should send.
+(default: `1`)
+
+##### `--batch-size-audio &lt;int&gt;`
+
+The audio batch size of the requests GenAI-Perf should send.
+This is currently only supported with the OpenAI `multimodal` endpoint type.
+(default: `1`)
+
+##### `--batch-size-text &lt;int&gt;`
+
+The text batch size of the requests GenAI-Perf should send.
+This is currently only supported with the
+[embeddings](docs/embeddings.md), and
+[rankings](docs/rankings.md) endpoint types.
+(default: `1`)
+
+##### `--batch-size-image &lt;int&gt;`
+
+The image batch size of the requests GenAI-Perf should send.
+This is currently only supported with the
+image retrieval endpoint type.
+(default: `1`)
+
+##### `--extra-inputs &lt;str&gt;`
+
+Provide additional inputs to include with every request. You can repeat this
+flag for multiple inputs. Inputs should be in an input_name:value format.
+Alternatively, a string representing a json formatted dict can be provided.
+(default: `None`)
+
+##### `--header &lt;str&gt;`
+##### `--H &lt;str&gt;`
+Add a custom header to the requests. Headers must be specified as
+&#x27;Header:Value&#x27;. You can repeat this flag for multiple headers.
+(default: `None`)
+
+##### `--input-file &lt;path&gt;`
+
+The input file or directory for profiling. Each line should be a JSON object
+with a `text` or `image` field in JSONL format. Example:
+`{&quot;text&quot;: &quot;Your prompt here&quot;}`. To use synthetic files, prefix with
+`synthetic:` followed by a comma-separated list of filenames without
+extensions (Example: `synthetic:queries,passages`). To use a payload file with
+a fixed schedule workload, prefix with `payload:` followed by the filename
+(Example: `payload:input.jsonl`). (default: `None`)
+
+##### `--num-dataset-entries &lt;int&gt;`
+
+The number of unique payloads to sample from. These will be reused until
+benchmarking is complete. (default: `100`)
+
+##### `--num-prefix-prompts &lt;int&gt;`
+
+The number of prefix prompts to select from. If this value is not zero, these
+are prompts that are prepended to input prompts. This is useful for
+benchmarking models that use a K-V cache. (default: `0`)
+
+##### `--output-tokens-mean &lt;int&gt;`
+##### `--osl`
+
+The mean number of tokens in each output. Ensure the `--tokenizer` value is set
+correctly. (default: `-1`)
+
+##### `--output-tokens-mean-deterministic`
+
+When using `--output-tokens-mean`, this flag can be set to improve precision by
+setting the minimum number of tokens equal to the requested number of tokens.
+This is currently supported with Triton. Note that there is
+still some variability in the requested number of output tokens, but GenAi-Perf
+attempts its best effort with your model to get the right number of output
+tokens. (default: `False`)
+
+##### `--output-tokens-stddev &lt;int&gt;`
+
+The standard deviation of the number of tokens in each output. This is only used
+when `--output-tokens-mean` is provided. (default: `0`)
+
+##### `--random-seed &lt;int&gt;`
+
+The seed used to generate random values. If not provided, a random seed will be
+used.
+
+##### `--request-count &lt;int&gt;`
+##### `--num-requests &lt;int&gt;`
+
+The number of requests to use for measurement.
+(default: `10`)
+
+##### `--synthetic-input-tokens-mean &lt;int&gt;`
+##### `--isl`
+
+The mean of number of tokens in the generated prompts when using synthetic
+data. (default: `550`)
+
+##### `--synthetic-input-tokens-stddev &lt;int&gt;`
+
+The standard deviation of number of tokens in the generated prompts when
+using synthetic data. (default: `0`)
+
+##### `--prefix-prompt-length &lt;int&gt;`
+
+The number of tokens in each prefix prompt. This value is only used if
+--num-prefix-prompts is positive. Note that due to the prefix and user prompts
+being concatenated, the number of tokens in the final prompt may be off by one.
+(default: `100`)
+
+##### `--image-width-mean &lt;int&gt;`
+
+The mean width of images in pixels when generating synthetic image data.
+(default: `0`)
+
+##### `--image-width-stddev &lt;int&gt;`
+
+The standard deviation of width of images in pixels when generating synthetic image data.
+(default: `0`)
+
+##### `--image-height-mean &lt;int&gt;`
+
+The mean height of images in pixels when generating synthetic image data.
+(default: `0`)
+
+##### `--image-height-stddev &lt;int&gt;`
+
+The standard deviation of height of images in pixels when generating synthetic image data.
+(default: `0`)
+
+##### `--image-format &lt;str&gt;`
+
+The compression format of the images. If format is not selected,
+format of generated image is selected at random.
+
+##### `--warmup-request-count &lt;int&gt;`
+##### `--num-warmup-requests &lt;int&gt;`
+
+The number of warmup requests to send before benchmarking. (default: `0`)
+
+### Profiling Options
+
+##### `--concurrency &lt;int&gt;`
+
+The concurrency value to benchmark. (default: `None`)
+
+##### `--measurement-interval &lt;int&gt;`
+##### `-p &lt;int&gt;`
+
+The time interval used for each measurement in milliseconds.
+Perf Analyzer will sample a time interval specified and take
+measurement over the requests completed within that time interval.
+When using the default stability percentage, GenAI-Perf will benchmark
+for 3*(measurement_interval) milliseconds.
+
+##### `--request-rate &lt;float&gt;`
+
+Sets the request rate for the load generated by PA. (default: `None`)
+
+##### `--fixed-schedule`
+
+An option to enable fixed schedule (trace) inference load mode. (default:
+`False`)
+
+##### `-s &lt;float&gt;`
+##### `--stability-percentage &lt;float&gt;`
+
+The allowed variation in latency measurements when determining if a result is
+stable. The measurement is considered as stable if the ratio of max / min from
+the recent 3 measurements is within (stability percentage) in terms of both
+infer per second and latency. (default: `999`)
+
+### Output Options
+
+##### `--artifact-dir`
+
+The directory to store all the (output) artifacts generated by GenAI-Perf and
+Perf Analyzer. (default: `artifacts`)
+
+##### `--checkpoint-dir`
+The directory to store/restore the checkpoint generated by GenAI-Perf.
+
+##### `--generate-plots`
+
+An option to enable the generation of plots. (default: False)
+
+##### `--enable-checkpointing`
+Enables the checkpointing of the GenAI-Perf state.
+This is useful for running GenAI-Perf in a stateful manner. (default: False)
+
+##### `--profile-export-file &lt;path&gt;`
+
+The path where the perf_analyzer profile export will be generated. By default,
+the profile export will be to `profile_export.json`. The genai-perf files will be
+exported to `&lt;profile_export_file&gt;_genai_perf.json` and
+`&lt;profile_export_file&gt;_genai_perf.csv`. For example, if the profile
+export file is `profile_export.json`, the genai-perf file will be exported to
+`profile_export_genai_perf.csv`. (default: `profile_export.json`)
+
+### Session Options
+
+##### `--num-sessions`
+
+The number of sessions to simulate. This is used when generating synthetic
+session data. (default: `0`)
+
+##### `--session-concurrency &lt;int&gt;`
+
+The number of concurrent sessions to benchmark. This must be specified
+when benchmarking sessions. (default: `0`)
+
+##### `--session-delay-ratio &lt;float&gt;`
+
+A ratio to scale multi-turn delays when using a payload file. This allows adjusting
+the timing between turns in a session without changing the payload file.
+(default: `1.0`)
+
+##### `--session-turn-delay-mean`
+
+The mean delay (in milliseconds) between turns in a session.
+(default: `0`)
+
+##### `--session-turn-delay-stddev`
+
+The standard deviation of the delay (in milliseconds) between turns in a session.
+(default: `0`)
+
+##### `--session-turns-mean`
+
+The mean number of turns per session.
+(default: `1`)
+
+##### `--session-turns-stddev`
+
+The standard deviation of the number of turns per session.
+(default: `0`)
+
+### Tokenizer Options
+
+##### `--tokenizer &lt;str&gt;`
+
+The HuggingFace tokenizer to use to interpret token metrics from prompts and
+responses. The value can be the name of a tokenizer or the filepath of the
+tokenizer. The default value is the model name.
+(default: &quot;&lt;model_value&gt;&quot;)
+
+##### `--tokenizer-revision &lt;str&gt;`
+
+The specific tokenizer model version to use. It can be a branch
+name, tag name, or commit ID. (default: `main`)
+
+##### `--tokenizer-trust-remote-code`
+
+Allow custom tokenizer to be downloaded and executed. This carries security
+risks and should only be used for repositories you trust. This is only
+necessary for custom tokenizers stored in HuggingFace Hub.  (default: `False`)
+
+### Other Options
+
+##### `-v`
+##### `--verbose`
+
+An option to enable verbose mode. (default: `False`)
+
+##### `--version`
+
+An option to print the version and exit.
+
+##### `-g &lt;list&gt;`
+##### `--goodput &lt;list&gt;`
+
+An option to provide constraints in order to compute goodput. Specify goodput
+constraints as &#x27;key:value&#x27; pairs, where the key is a valid metric name, and the
+value is a number representing either milliseconds or a throughput value per
+second. For example, &#x27;request_latency:300&#x27; or
+&#x27;output_token_throughput_per_user:600&#x27;. Multiple key:value pairs can be
+provided, separated by spaces. (default: `None`)
+
+
+&lt;/br&gt;
+
+&lt;!--
 ======================
 Known Issues
 ======================
---></section>
-</section>
-<section id="known-issues">
-<h2>Known Issues<a class="headerlink" href="#known-issues" title="Link to this heading">#</a></h2>
-<ul class="simple">
-<li><p>GenAI-Perf can be slow to finish if a high request-rate is provided</p></li>
-<li><p>Token counts may not be exact</p></li>
-</ul>
-</section>
-<div class="section ablog__blog_comments">
-</div>
-</article></body></html>
+--&gt;
+
+## Known Issues
+
+* GenAI-Perf can be slow to finish if a high request-rate is provided
+* Token counts may not be exact
+
+
+===== genai-perf/docs/goodput.md =====
+&lt;!--
+Copyright (c) 2024-2025, NVIDIA CORPORATION &amp; AFFILIATES. All rights reserved.
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions
+are met:
+ * Redistributions of source code must retain the above copyright
+   notice, this list of conditions and the following disclaimer.
+ * Redistributions in binary form must reproduce the above copyright
+   notice, this list of conditions and the following disclaimer in the
+   documentation and/or other materials provided with the distribution.
+ * Neither the name of NVIDIA CORPORATION nor the names of its
+   contributors may be used to endorse or promote products derived
+   from this software without specific prior written permission.
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ``AS IS&#x27;&#x27; AND ANY
+EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
+OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+--&gt;
+
+# Benchmark Goodput with GenAI-Perf
+
+## Context
+
+Goodput is defined as the number of completed requests per second
+that meet specified metric constraints, also called service level
+objectives.
+
+For example, perhaps you want to measure the user experience of your service
+by considering throughput only including requests where the time to first token
+is under 50ms and inter-token latency is under 10ms.
+
+GenAI-Perf provides this value as goodput.
+
+## Tutorials
+
+Below you can find tutorials on how to benchmark different models
+using goodput.
+
+### Examples
+
+- [LLM Examples](#LLM)
+
+- [Embedding Model Examples](#embeddings)
+
+### Profile LLM Goodput&lt;a id=&quot;LLM&quot;&gt;&lt;/a&gt;
+
+#### Profile Goodput on an OpenAI Chat Completions API-compatible server
+
+```bash
+docker run -it --net=host --rm --gpus=all vllm/vllm-openai:latest --model HuggingFaceH4/zephyr-7b-beta --dtype float16
+```
+
+#### Run GenAI-Perf with Goodput Constraints
+
+```bash
+genai-perf profile \
+    -m HuggingFaceH4/zephyr-7b-beta \
+    --endpoint-type chat \
+    --streaming \
+    --request-count 10 \
+    --goodput time_to_first_token:75 inter_token_latency:19.75
+```
+
+Example output:
+
+```
+                                    NVIDIA GenAI-Perf | LLM Metrics
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━┓
+┃                         Statistic ┃      avg ┃      min ┃      max ┃      p99 ┃      p90 ┃      p75 ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━━┩
+│          Time to first token (ms) │    78.10 │    63.55 │   111.13 │   109.61 │    95.91 │    73.07 │
+│          Inter token latency (ms) │    19.32 │    19.30 │    19.36 │    19.36 │    19.35 │    19.33 │
+│              Request latency (ms) │ 6,740.76 │ 4,387.10 │ 8,930.90 │ 8,929.88 │ 8,920.69 │ 8,905.37 │
+│            Output sequence length │   345.80 │   225.00 │   458.00 │   458.00 │   458.00 │   458.00 │
+│             Input sequence length │   550.00 │   550.00 │   550.00 │   550.00 │   550.00 │   550.00 │
+│ Output token throughput (per sec) │    51.20 │      N/A │      N/A │      N/A │      N/A │      N/A │
+│      Request throughput (per sec) │     0.15 │      N/A │      N/A │      N/A │      N/A │      N/A │
+│         Request goodput (per sec) │     0.12 │      N/A │      N/A │      N/A │      N/A │      N/A │
+└───────────────────────────────────┴──────────┴──────────┴──────────┴──────────┴──────────┴──────────┘
+```
+
+### Profile Embeddings Model Goodput&lt;a id=&quot;embeddings&quot;&gt;&lt;/a&gt;
+
+#### Create a Sample Embeddings Input File
+
+To create a sample embeddings input file, use the following command:
+
+```bash
+echo &#x27;{&quot;text&quot;: &quot;What was the first car ever driven?&quot;}
+{&quot;text&quot;: &quot;Who served as the 5th President of the United States of America?&quot;}
+{&quot;text&quot;: &quot;Is the Sydney Opera House located in Australia?&quot;}
+{&quot;text&quot;: &quot;In what state did they film Shrek 2?&quot;}&#x27; &gt; embeddings.jsonl
+```
+
+This will generate a file named embeddings.jsonl with the following content:
+```jsonl
+{&quot;text&quot;: &quot;What was the first car ever driven?&quot;}
+{&quot;text&quot;: &quot;Who served as the 5th President of the United States of America?&quot;}
+{&quot;text&quot;: &quot;Is the Sydney Opera House located in Australia?&quot;}
+{&quot;text&quot;: &quot;In what state did they film Shrek 2?&quot;}
+```
+
+#### Start an OpenAI Embeddings-Compatible Server
+
+To start an OpenAI embeddings-compatible server, run the following command:
+```bash
+docker run -it --net=host --rm --gpus=all vllm/vllm-openai:latest --model intfloat/e5-mistral-7b-instruct --dtype float16 --max-model-len 1024
+```
+
+#### Run GenAI-Perf with goodput constraints
+
+```bash
+genai-perf profile \
+    -m intfloat/e5-mistral-7b-instruct \
+    --endpoint-type embeddings \
+    --batch-size-text 2 \
+    --input-file embeddings.jsonl \
+    --measurement-interval 1000 \
+    --goodput request_latency:22.5
+```
+Example output:
+
+```
+                     NVIDIA GenAI-Perf | Embeddings Metrics
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━┳━━━━━━━┳━━━━━━━━┳━━━━━━━┳━━━━━━━┳━━━━━━━┓
+┃                    Statistic ┃   avg ┃   min ┃    max ┃   p99 ┃   p90 ┃   p75 ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━╇━━━━━━━╇━━━━━━━━╇━━━━━━━╇━━━━━━━╇━━━━━━━┩
+│         Request latency (ms) │ 23.23 │ 21.98 │ 147.53 │ 23.74 │ 22.75 │ 22.52 │
+│ Request throughput (per sec) │ 42.95 │   N/A │    N/A │   N/A │   N/A │   N/A │
+│    Request goodput (per sec) │ 30.40 │   N/A │    N/A │   N/A │   N/A │   N/A │
+└──────────────────────────────┴───────┴───────┴────────┴───────┴───────┴───────┘
+```
+
+===== genai-perf/docs/multi_turn.md =====
+&lt;!--
+Copyright (c) 2025, NVIDIA CORPORATION &amp; AFFILIATES. All rights reserved.
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions
+are met:
+ * Redistributions of source code must retain the above copyright
+   notice, this list of conditions and the following disclaimer.
+ * Redistributions in binary form must reproduce the above copyright
+   notice, this list of conditions and the following disclaimer in the
+   documentation and/or other materials provided with the distribution.
+ * Neither the name of NVIDIA CORPORATION nor the names of its
+   contributors may be used to endorse or promote products derived
+   from this software without specific prior written permission.
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ``AS IS&#x27;&#x27; AND ANY
+EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
+OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+--&gt;
+
+# Benchmark Multi-Turn Chat with GenAI-Perf
+
+GenAI-Perf allows you to benchmark multi-turn chat. This can be used for
+simulating multiple turns in a conversation in a way that matches real-world
+user behavior.
+
+You can use either synthetic data or a custom dataset.
+This tutorial will guide you through setting up a model server and running a
+profiling session with simulated conversations or a predefined dataset.
+
+## Table of Contents
+
+- [Start a Chat Model Server](#start-a-chat-model-server)
+- [Approach 1: Benchmark with Synthetic Data](#approach-1-benchmark-with-synthetic-data)
+- [Approach 2: Benchmark with a Custom Dataset](#approach-2-benchmark-with-a-custom-dataset)
+- [Review the Output](#review-the-output)
+
+## Start a Chat Model Server
+
+First, launch a vLLM server with an chat endpoint:
+
+```bash
+docker run -it --net=host --rm --gpus=all \
+  vllm/vllm-openai:latest \
+  --model TinyLlama/TinyLlama-1.1B-Chat-v1.0 \
+  --dtype float16 \
+  --max-model-len 1024
+```
+
+## Approach 1: Benchmark with Synthetic Data
+
+Use synthetic data to simulate multiple chat sessions with controlled token
+input and response lengths.
+
+```bash
+genai-perf profile \
+  -m TinyLlama/TinyLlama-1.1B-Chat-v1.0 \
+  --endpoint-type chat \
+  --num-sessions 10 \
+  --session-concurrency 5 \
+  --session-turns-mean 2 \
+  --session-turns-stddev 0 \
+  --session-turn-delay-mean 1000 \
+  --session-turn-delay-stddev 5 \
+  --synthetic-input-tokens-mean 50 \
+  --output-tokens-mean 50 \
+  --num-prefix-prompts 3 \
+  --prefix-prompt-length 15
+```
+
+### Understand Key Arguments
+
+#### Required Arguments
+- `--num-sessions 10`: Simulates 10 independent chat sessions.
+- `--session-concurrency 5`: Enables session mode and runs up to 5 sessions in
+parallel.
+
+#### Optional Arguments
+- `--session-turns-mean 2`: Each session has an average of 2 turns.
+- `--session-turn-delay-mean 1000`: Introduces a 1-second delay between user
+turns (simulating real-world interaction).
+- `--synthetic-input-tokens-mean 50`: Each user input averages 50 tokens.
+- `--output-tokens-mean 50`: Each model response averages 50 tokens.
+- `--num-prefix-prompts 3`: Uses a pool of 3 system prompts for the first
+turn in each session.
+- `--prefix-prompt-length 15`: Each prefix prompt contains 15 tokens.
+
+---
+
+## Approach 2: Benchmark with a Custom Dataset
+
+If you prefer to benchmark using a predefined dataset, create a JSONL input file
+with the dataset.
+
+### Example Input File
+
+```bash
+echo &#x27;{&quot;session_id&quot;: &quot;f81d4fae-7dec-11d0-a765-00a0c91e6bf6&quot;, &quot;delay&quot;: 1000, &quot;input_length&quot;: 50, &quot;output_length&quot;: 10}
+{&quot;session_id&quot;: &quot;f81d4fae-7dec-11d0-a765-00a0c91e6bf6&quot;, &quot;delay&quot;: 2000, &quot;input_length&quot;: 50, &quot;output_length&quot;: 10}
+{&quot;session_id&quot;: &quot;f81d4fae-7dec-11d0-a765-00a0c91e6bf6&quot;, &quot;input_length&quot;: 100, &quot;output_length&quot;: 10}
+{&quot;session_id&quot;: &quot;113059749145936325402354257176981405696&quot;, &quot;delay&quot;: 1000, &quot;input_length&quot;: 25, &quot;output_length&quot;: 20}
+{&quot;session_id&quot;: &quot;113059749145936325402354257176981405696&quot;, &quot;input_length&quot;: 20, &quot;output_length&quot;: 20}&#x27; &gt; inputs.jsonl
+```
+
+### Understand Key Arguments
+
+Most of the arguments are the same as the synthetic data approach.
+The new ones are detailed below.
+
+#### Optional Arguments
+- `--session-delay-ratio`: Modifies the delays in the payload file. The delays
+are multiplied by this ratio. This makes it easier to tune delays to represent
+different scenarios.
+
+### Understand Key Fields
+
+#### Required Fields
+- `delay`: Sets the delay in milliseconds to wait after receiving a response
+before sending the next request. This field is required except for the
+last turn in a session.
+
+#### Optional Fields
+- `input_length`: Sets the token length of the input for this request.
+- `output_length`: Sets the token length of the output for this request.
+- `text`: Provides the prompt text, if you prefer to bring your own rather
+than have it be synthetically generated.
+
+### Run GenAI-Perf with Custom Input
+
+```bash
+genai-perf profile \
+  -m TinyLlama/TinyLlama-1.1B-Chat-v1.0 \
+  --endpoint-type chat \
+  --input-file payload:inputs.jsonl \
+  --session-concurrency 2 \
+  --session-delay-ratio 0.5
+```
+
+## Review the Output
+
+Example output:
+
+```
+                             NVIDIA GenAI-Perf | LLM Metrics
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━┳━━━━━━━━┳━━━━━━━━┳━━━━━━━━┳━━━━━━━┓
+┃                         Statistic ┃    avg ┃   min ┃    max ┃    p99 ┃    p90 ┃   p75 ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━╇━━━━━━━━╇━━━━━━━━╇━━━━━━━━╇━━━━━━━┩
+│              Request Latency (ms) │  80.88 │ 50.25 │ 124.29 │ 123.21 │ 113.50 │ 97.31 │
+│   Output Sequence Length (tokens) │  14.00 │ 10.00 │  20.00 │  20.00 │  20.00 │ 20.00 │
+│    Input Sequence Length (tokens) │  38.80 │ 22.00 │  50.00 │  50.00 │  50.00 │ 50.00 │
+│ Output Token Throughput (per sec) │ 315.70 │   N/A │    N/A │    N/A │    N/A │   N/A │
+│      Request Throughput (per sec) │  22.55 │   N/A │    N/A │    N/A │    N/A │   N/A │
+│             Request Count (count) │   5.00 │   N/A │    N/A │    N/A │    N/A │   N/A │
+└───────────────────────────────────┴────────┴───────┴────────┴────────┴────────┴───────┘
+```
+</pre></html>
