@@ -20,6 +20,26 @@ Python 分支读设备标量会产生同步；构造新的 tensor、隐式 dtype
 
 编译和 graph 可以改变调度成本，却不替代这些语义。先固定模块模式和请求状态关系，再验证 eager/compiled 的函数关系，能够将模型错误与执行优化错误分开定位。
 
+## 把模型接入分成可检查的边界
+
+首先用 [加载契约](checkpoint-loading.md) 对齐参数名称、轴、别名、dtype 与 device；其次固定 processor 输出和单请求 forward；最后接入每请求状态、并批和优化后端。各阶段保留同一模型函数的参考输入与结果，可以把一次大的“引擎不一致”拆成最早发生分歧的边界。
+
+模块初始化后还可能在第一次实际输入时生成位置表、选择算法或创建临时缓存。预热需要覆盖计划服务的执行路径，并确认新创建对象的 device、dtype 与共享方式。第一次请求触发共享 buffer 扩容时，应避免其他线程同时读取尚未发布完整的新对象；不可变版本替换或明确的同步边界比依赖调用顺序更容易验证。
+
+## 原生扩展与执行上下文
+
+原生算子接收的不只是一个数据指针，还应约定 shape、stride、dtype、device、当前执行 stream、输出别名和 workspace 生命周期。扩展内部偷偷切到另一个 stream、保存指向可重用临时区的地址，或者返回前没有建立必要依赖，都会让 eager 单线程成功而并发失败。同步返回、异步返回并建立事件依赖，是不同的合法接口，调用方必须知道采用哪一种。
+
+执行上下文在实际运行模型的线程内建立。初始化线程的梯度模式不能代替 worker 的上下文；异步任务也可能把前处理、模型提交和后处理交给不同执行域。是否释放语言运行时锁、是否能并行执行 CPU 工作，需要由具体扩展实现确认，不应由“原生”这个名字推断。线程池和有界队列的资源关系见 [主机运行时](../system-semantics/host-runtime.md)。
+
+## eager、编译与图执行的对照
+
+先固定一条无编译的参考路径，再逐步加入编译、布局变换、融合和状态复用。对照除了输出数值，还包括新旧状态、别名、错误行为以及 shape 边界。编译 guard 不满足后重新编译或回到其他路径会改变性能分布；只计命中已有 executable 的请求无法代表冷形状负载。
+
+例：一个优化把 QKV 投影合并，并把 RoPE 与 KV 写入融合。分层对照应先检查合并后的 Q/K/V 分段，再检查旋转结果和写入位置，最后检查 attention/logits；直接比较最终 token 容易把轴错误误判成浮点差异。对量化或近似 kernel 另设质量验证，不把 eager 参考的单一容差扩大到任意近似路径。
+
+当 Python 调度主导时，减少调用与提交次数有价值；当矩阵或内存路径主导时，复杂编译缓存可能只增加启动和容量成本。把编译命中率、首次成本、工作区峰值和真实服务延迟一起比较，才知道该 Task 是否值得引入更多执行模式。
+
 <!-- infraagents:provenance -->
 
 ## 来源与推导
@@ -34,6 +54,16 @@ Python 分支读设备标量会产生同步；构造新的 tensor、隐式 dtype
   [完整原文](../../references/S-TORCH-REPRO/reader.html) · [全文文本](../../references/S-TORCH-REPRO/fulltext.txt)
 
 正文中的公式展开、容量算例与组合设计是基于这些来源的推导；设定算例不冒充实测。来源版本受 2026-04-30 上限约束，编辑日期 2026-10-22 不作为事实发布日期。此独立 base 版本内的章节修订号从 1 开始，原章节身份与版本映射保存在版本清单。
+
+
+
+### 本次扩写补充来源
+
+- [S-TORCH-DYNAMIC：PyTorch — Dynamic Shapes](../sources/S-TORCH-DYNAMIC.md)：编译会基于 shape、stride、dtype、常量等条件特化，并用 guard 确定专门程序是否可继续使用；部分维度可以符号化，变化也可能触发重编译。
+  [完整原文](../../references/S-TORCH-DYNAMIC/reader.html) · [全文文本](../../references/S-TORCH-DYNAMIC/fulltext.txt)
+
+- [S-TORCH-NUMERIC：PyTorch — Numerical accuracy](../sources/S-TORCH-NUMERIC.md)：浮点运算不满足实数运算的全部结合性质，批量方式、归约顺序和平台路径可以产生数值差异。数值格式、累加精度和极端输入影响误差。
+  [完整原文](../../references/S-TORCH-NUMERIC/reader.html) · [全文文本](../../references/S-TORCH-NUMERIC/fulltext.txt)
 
 ## 延伸阅读
 

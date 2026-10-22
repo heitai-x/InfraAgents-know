@@ -7,13 +7,18 @@
       "category": "algorithms",
       "title": "连续批处理：从自回归依赖到迭代调度",
       "summary": "连续批处理将资源分配单位从整条请求改成一次可执行的 token 推进；批次是请求状态的临时视图。",
-      "revision": 1,
+      "revision": 2,
       "status": "seed",
       "tags": [
         "continuous batching",
         "连续批处理",
         "迭代",
-        "scheduler"
+        "scheduler",
+        "FCFS",
+        "公平调度",
+        "deadline",
+        "抢占",
+        "未知输出长度"
       ],
       "scope": {
         "model_families": [
@@ -34,11 +39,15 @@
         "K-ALG-007",
         "K-ALG-008",
         "K-SYS-002",
-        "K-WORK-002"
+        "K-WORK-002",
+        "K-SYS-012",
+        "K-WORK-005",
+        "K-WORK-010",
+        "K-SYS-015"
       ],
       "evidence": [],
       "updated_at": "2026-10-22",
-      "sha256": "095f12dca2b80c372463ef9cb4d0358c83bc3ae97effbf9f24974c968ff47c0f"
+      "sha256": "156a7dd70b2126dd00afe8fcde002c96ded6c6eb69483c94071f559fecbc7e99"
     },
     {
       "id": "K-ALG-002",
@@ -233,7 +242,7 @@
       "category": "algorithms",
       "title": "分块 Prefill：服务时间切片与历史可见性",
       "summary": "分块 prefill 将长输入的执行切成可调度时间片；每块仍读取其之前完整且有效的上下文。",
-      "revision": 1,
+      "revision": 2,
       "status": "seed",
       "tags": [
         "chunked prefill",
@@ -255,11 +264,15 @@
       "related": [
         "K-ALG-001",
         "K-ALG-004",
-        "K-WORK-005"
+        "K-WORK-005",
+        "K-HW-001",
+        "K-WORK-010",
+        "K-SYS-012",
+        "K-TOOLS-007"
       ],
       "evidence": [],
       "updated_at": "2026-10-22",
-      "sha256": "bf3546d19be01c6f7a462ab39dfe0a5194ba7592d7775f901e6cad9ae5ea0172"
+      "sha256": "86c0b343390920574f6679da9f0eff8e24537991a8e0919a735aadc2ac7c043f"
     },
     {
       "id": "K-ALG-008",
@@ -732,7 +745,7 @@
       "category": "frameworks",
       "title": "PyTorch 推理：模块模式、Autograd 与状态突变",
       "summary": "推理行为由模型模式、梯度记录、dtype/device、模块状态与执行路径共同决定。",
-      "revision": 1,
+      "revision": 2,
       "status": "seed",
       "tags": [
         "PyTorch",
@@ -751,16 +764,23 @@
       "source_ids": [
         "S-TORCH-INFERENCE",
         "S-TORCH-CUDA",
-        "S-TORCH-REPRO"
+        "S-TORCH-REPRO",
+        "S-TORCH-DYNAMIC",
+        "S-TORCH-NUMERIC"
       ],
       "related": [
         "K-FW-002",
         "K-FW-004",
-        "K-SYS-003"
+        "K-SYS-003",
+        "K-FW-011",
+        "K-ALG-016",
+        "K-SYS-015",
+        "K-TOOLS-006",
+        "K-SYS-012"
       ],
       "evidence": [],
       "updated_at": "2026-10-22",
-      "sha256": "54c01ce9bbd83b9a9bdcc84a273e19cf98ffb8766830618e9274789479155cc1"
+      "sha256": "683d5b7f5323ab43af402fbe4719539ab4ad0d20d290db019d041070e8887fff"
     },
     {
       "id": "K-FW-002",
@@ -768,7 +788,7 @@
       "category": "frameworks",
       "title": "数值参考：误差尺度、条件数与首次分歧",
       "summary": "一个有解释力的数值参考保持任务函数和输入一致，再分层衡量实现重排与近似产生的差异。",
-      "revision": 1,
+      "revision": 2,
       "status": "seed",
       "tags": [
         "numerical",
@@ -788,16 +808,21 @@
       "source_ids": [
         "S-TORCH-NUMERIC",
         "S-TORCH-REPRO",
-        "S-GPTQ"
+        "S-GPTQ",
+        "S-INT8"
       ],
       "related": [
         "K-ALG-004",
         "K-ALG-005",
-        "K-TOOLS-006"
+        "K-TOOLS-006",
+        "K-ALG-016",
+        "K-FW-012",
+        "K-TOOLS-007",
+        "K-SYS-012"
       ],
       "evidence": [],
       "updated_at": "2026-10-22",
-      "sha256": "05035c4d192e04d6c193fe3f3ad1f59997c073c965865dc7286ee0c02b6a6d75"
+      "sha256": "a70beff4c73683f897d9c0c1fb291539051e20b2c31adfd90a3f6677c411596f"
     },
     {
       "id": "K-FW-003",
@@ -1103,7 +1128,7 @@
       "category": "hardware",
       "title": "容量、算术强度与服务 Roofline",
       "summary": "容量决定系统能容纳哪些状态，带宽与计算能力决定搬运和处理这些状态的下界，关键路径决定哪些下界实际显现。",
-      "revision": 1,
+      "revision": 2,
       "status": "seed",
       "tags": [
         "roofline",
@@ -1120,16 +1145,22 @@
       "source_ids": [
         "S-CUDA-BEST",
         "S-PAGED",
-        "S-FLASH"
+        "S-FLASH",
+        "S-CPU-TUNING",
+        "S-SERVERLESSLLM"
       ],
       "related": [
         "K-ALG-005",
         "K-MODEL-001",
-        "K-WORK-006"
+        "K-WORK-006",
+        "K-HW-010",
+        "K-SYS-012",
+        "K-SYS-015",
+        "K-TOOLS-007"
       ],
       "evidence": [],
       "updated_at": "2026-10-22",
-      "sha256": "45a0fe37649dd07003db6863832c956d9486bf170e72d75b8dcfb6276db172bf"
+      "sha256": "58e9e2f9292d24457d7281a22e646242ba607096f204ba7a30feea621353f3e3"
     },
     {
       "id": "K-HW-002",
@@ -1391,13 +1422,17 @@
       "category": "hardware",
       "title": "CPU 推理：线程、缓存层级与 NUMA 分区",
       "summary": "CPU 服务优化需要同时管理向量算术、内存带宽、线程调度与请求级并发，更多线程不等于更多有效工作。",
-      "revision": 1,
+      "revision": 2,
       "status": "seed",
       "tags": [
         "cpu",
         "NUMA",
         "线程",
-        "vectorization"
+        "vectorization",
+        "绑核",
+        "线程池",
+        "TLB",
+        "CPU bandwidth"
       ],
       "scope": {
         "model_families": [],
@@ -1409,16 +1444,24 @@
       },
       "source_ids": [
         "S-CPU-TUNING",
-        "S-TORCH-NUMERIC"
+        "S-TORCH-NUMERIC",
+        "S-GOTO",
+        "S-INT8",
+        "S-PERF"
       ],
       "related": [
         "K-HW-001",
         "K-WORK-002",
-        "K-FW-001"
+        "K-FW-001",
+        "K-HW-010",
+        "K-FW-012",
+        "K-SYS-015",
+        "K-SYS-012",
+        "K-TOOLS-003"
       ],
       "evidence": [],
       "updated_at": "2026-10-22",
-      "sha256": "ad56a769b26524a9c06c4c7b249db16b5fea3e2a0499e5524418a426c8ef833f"
+      "sha256": "2f48de03875b90417b29b039736a4b9532d5b8a8681dc6c28d7707b9271084e6"
     },
     {
       "id": "K-MODEL-001",
@@ -1426,13 +1469,17 @@
       "category": "models",
       "title": "从模型计算图推导 Prefill、Decode 与持久状态",
       "summary": "模型接入首先是一项计算图和状态语义工作：识别哪些量随 token、位置、请求和阶段变化，再选择执行机制。",
-      "revision": 1,
+      "revision": 2,
       "status": "seed",
       "tags": [
         "prefill",
         "decode",
         "计算图",
-        "模型结构"
+        "模型结构",
+        "模型接入",
+        "checkpoint",
+        "forward",
+        "状态契约"
       ],
       "scope": {
         "model_families": [
@@ -1445,17 +1492,25 @@
       "source_ids": [
         "S-TRANSFORMER",
         "S-HF-CACHE",
-        "S-SARATHI"
+        "S-SARATHI",
+        "S-MISTRAL",
+        "S-MLA",
+        "S-MAMBA",
+        "S-WHISPER",
+        "S-QWEN-VL"
       ],
       "related": [
         "K-MODEL-002",
         "K-MODEL-004",
         "K-MODEL-006",
-        "K-SYS-007"
+        "K-SYS-007",
+        "K-FW-011",
+        "K-ALG-016",
+        "K-SYS-012"
       ],
       "evidence": [],
       "updated_at": "2026-10-22",
-      "sha256": "830eb74aee7f9606cac977d642649f7dfef59f0c8808d1fdacda8dd3247139aa"
+      "sha256": "a6f18dae36287c0cceda00b2c7d1a7ffb305a828187ccb22174b7443a200ed9f"
     },
     {
       "id": "K-MODEL-002",
@@ -2071,7 +2126,7 @@
       "category": "system-semantics",
       "title": "输入输出语义：Tokenizer、Chat Template 与流式文本",
       "summary": "模型处理的是规范化后的 token/特征序列，服务协议必须精确保存从用户输入到模型输入再到输出文本的映射。",
-      "revision": 1,
+      "revision": 2,
       "status": "seed",
       "tags": [
         "tokenizer",
@@ -2094,11 +2149,15 @@
       "related": [
         "K-ALG-003",
         "K-MODEL-008",
-        "K-ALG-011"
+        "K-ALG-011",
+        "K-FW-011",
+        "K-WORK-010",
+        "K-SYS-015",
+        "K-TOOLS-006"
       ],
       "evidence": [],
       "updated_at": "2026-10-22",
-      "sha256": "af718e2cf3c20f84fa90dff10c0a8abec31bb9951339db3cd8a1218f0ce4f636"
+      "sha256": "89f4bad055aa5169e14d460ca7b4fc96c0f70a7e4d046510ced32b6bf9e2c198"
     },
     {
       "id": "K-SYS-008",
@@ -2175,7 +2234,7 @@
       "category": "system-semantics",
       "title": "系统设计推导：把模型、缓存、执行与目标组合起来",
       "summary": "专家指导的产物是一条从任务条件到系统结构的推导链：状态模型、资源模型、候选设计及其可区分的结果。",
-      "revision": 1,
+      "revision": 2,
       "status": "seed",
       "tags": [
         "系统设计",
@@ -2194,17 +2253,29 @@
         "S-SARATHI",
         "S-DISTSERVE",
         "S-MLA",
-        "S-NXDI"
+        "S-NXDI",
+        "S-CPU-TUNING",
+        "S-GOTO",
+        "S-INT8",
+        "S-STATS"
       ],
       "related": [
         "K-ALG-001",
         "K-ALG-009",
         "K-FW-005",
-        "K-WORK-006"
+        "K-WORK-006",
+        "K-FW-011",
+        "K-ALG-016",
+        "K-HW-010",
+        "K-FW-012",
+        "K-SYS-012",
+        "K-SYS-015",
+        "K-WORK-010",
+        "K-TOOLS-007"
       ],
       "evidence": [],
       "updated_at": "2026-10-22",
-      "sha256": "4cd59934955b8c6c45a27106c05d8e8f294fec11ace694530850d9a549b679ef"
+      "sha256": "e2ba1aa2ffa443b8b577f7aabc0bcb402fff56bb324feac94efc313e33fa5610"
     },
     {
       "id": "K-TOOLS-001",
@@ -2393,7 +2464,7 @@
       "category": "tools",
       "title": "正确性 Oracle：函数参考、状态变形与服务契约",
       "summary": "正确性验证需要一组互补的 oracle：数值函数、状态转换、采样分布和外部协议分别有可检查的关系。",
-      "revision": 1,
+      "revision": 2,
       "status": "seed",
       "tags": [
         "correctness",
@@ -2412,17 +2483,23 @@
         "S-TORCH-NUMERIC",
         "S-TORCH-REPRO",
         "S-HF-CACHE",
-        "S-ASGI"
+        "S-ASGI",
+        "S-INT8"
       ],
       "related": [
         "K-FW-002",
         "K-SYS-003",
         "K-SYS-008",
-        "K-SYS-006"
+        "K-SYS-006",
+        "K-ALG-016",
+        "K-SYS-012",
+        "K-WORK-010",
+        "K-TOOLS-007",
+        "K-FW-011"
       ],
       "evidence": [],
       "updated_at": "2026-10-22",
-      "sha256": "b69638d7d81377e934646f8b608d10c367b126f86290cf244cb002753666eade"
+      "sha256": "4a9633cae7fe6a67174776a45e259faed2bfef3bd50385a6867f3339037bd0de"
     },
     {
       "id": "K-WORK-001",
@@ -2430,7 +2507,7 @@
       "category": "workloads",
       "title": "服务指标：事件边界、Token 间隔与用户时间",
       "summary": "一个延迟指标是两个明确事件的时间差；指标名字相同而事件定义不同，会导致不同结论。",
-      "revision": 1,
+      "revision": 2,
       "status": "seed",
       "tags": [
         "TTFT",
@@ -2453,11 +2530,15 @@
       "related": [
         "K-SYS-008",
         "K-MODEL-011",
-        "K-SYS-001"
+        "K-SYS-001",
+        "K-WORK-010",
+        "K-TOOLS-007",
+        "K-SYS-015",
+        "K-WORK-005"
       ],
       "evidence": [],
       "updated_at": "2026-10-22",
-      "sha256": "672ec36e11318068aa91d751d6abb9980a7263ceed7871806faabaefb50d5ea5"
+      "sha256": "6aa75b8243c1e608d6d9a54e7754af49ac7b4c6ffc343b812a9a44db49dfba49"
     },
     {
       "id": "K-WORK-002",
@@ -2465,7 +2546,7 @@
       "category": "workloads",
       "title": "到达过程与并发：排队、反馈和饱和点",
       "summary": "负载生成器定义了系统受到的压力；闭环并发和独立到达率回答不同容量问题。",
-      "revision": 1,
+      "revision": 2,
       "status": "seed",
       "tags": [
         "arrival",
@@ -2488,11 +2569,13 @@
       "related": [
         "K-WORK-005",
         "K-ALG-001",
-        "K-WORK-006"
+        "K-WORK-006",
+        "K-WORK-010",
+        "K-TOOLS-007"
       ],
       "evidence": [],
       "updated_at": "2026-10-22",
-      "sha256": "c7394fe55b68307f6831ba76067eea8871cfcfa472e1aaaf9cf59864def94096"
+      "sha256": "986f34774c8890dfc163176991b15f6f839683a588bc88f481b5510bc114fe6d"
     },
     {
       "id": "K-WORK-003",
@@ -2500,7 +2583,7 @@
       "category": "workloads",
       "title": "工作负载分布：长度、复用、模态与相关性",
       "summary": "系统成本由输入输出的联合分布决定；平均长度会丢失影响缓存、批次和尾部行为的结构。",
-      "revision": 1,
+      "revision": 2,
       "status": "seed",
       "tags": [
         "workload",
@@ -2522,11 +2605,15 @@
       "related": [
         "K-ALG-003",
         "K-FW-004",
-        "K-MODEL-008"
+        "K-MODEL-008",
+        "K-WORK-010",
+        "K-TOOLS-007",
+        "K-WORK-005",
+        "K-SYS-007"
       ],
       "evidence": [],
       "updated_at": "2026-10-22",
-      "sha256": "c8ee6a5834a25ec956a0c91fa9f069adf1556f1512d2b21eabcb8b10174ca7de"
+      "sha256": "b1b68f0d2a6d640c4b64c2bc98560b9e9a79a6a60b445899949b5db15b96aa90"
     },
     {
       "id": "K-WORK-004",
@@ -2534,7 +2621,7 @@
       "category": "workloads",
       "title": "性能实验：稳定态、对照与不确定性",
       "summary": "可比较的性能结果来自相同任务函数与负载条件，以及能够解释波动的测量窗口。",
-      "revision": 1,
+      "revision": 2,
       "status": "seed",
       "tags": [
         "benchmark",
@@ -2551,16 +2638,22 @@
       "source_ids": [
         "S-GENAI-PERF",
         "S-TORCH-PROFILER",
-        "S-NCU"
+        "S-NCU",
+        "S-STATS",
+        "S-TORCH-REPRO"
       ],
       "related": [
         "K-WORK-002",
         "K-WORK-005",
-        "K-TOOLS-002"
+        "K-TOOLS-002",
+        "K-TOOLS-007",
+        "K-FW-011",
+        "K-WORK-010",
+        "K-TOOLS-006"
       ],
       "evidence": [],
       "updated_at": "2026-10-22",
-      "sha256": "08501624977e3d0a0442a0f9cf1156c190662e93eb801c4feb3c741f5a10b18c"
+      "sha256": "7e839f0863c25fd6ebc0653b878bebda20236e6280a23a837fef110858f1801e"
     },
     {
       "id": "K-WORK-005",
@@ -2568,7 +2661,7 @@
       "category": "workloads",
       "title": "Goodput：联合 SLO、拒绝和容量前沿",
       "summary": "服务能力是单位时间内完成有效任务且满足约束的数量，不能用总生成速度替代。",
-      "revision": 1,
+      "revision": 2,
       "status": "seed",
       "tags": [
         "goodput",
@@ -2590,11 +2683,15 @@
       "related": [
         "K-WORK-001",
         "K-WORK-002",
-        "K-WORK-006"
+        "K-WORK-006",
+        "K-ALG-001",
+        "K-WORK-010",
+        "K-TOOLS-007",
+        "K-SYS-015"
       ],
       "evidence": [],
       "updated_at": "2026-10-22",
-      "sha256": "0918ec27cb50021976c41d96b7cbb3b030365a42f2faf1d334da9cdde519b522"
+      "sha256": "6ca0d099f7cf89b51c6e6556628abdc873b99d01aaebd1db6ff4db4b148cf45a"
     },
     {
       "id": "K-WORK-006",
@@ -2602,7 +2699,7 @@
       "category": "workloads",
       "title": "容量设计：驻留、服务率与阶段配比",
       "summary": "容量设计把每请求资源需求和阶段服务时间连接到到达过程，得出实例数、并发和缓存预算。",
-      "revision": 1,
+      "revision": 2,
       "status": "seed",
       "tags": [
         "capacity planning",
@@ -2619,17 +2716,23 @@
       "source_ids": [
         "S-PAGED",
         "S-DISTSERVE",
-        "S-MLPERF-LLM"
+        "S-MLPERF-LLM",
+        "S-SERVERLESSLLM"
       ],
       "related": [
         "K-HW-001",
         "K-ALG-013",
         "K-WORK-002",
-        "K-SYS-010"
+        "K-SYS-010",
+        "K-SYS-012",
+        "K-FW-011",
+        "K-SYS-015",
+        "K-WORK-010",
+        "K-TOOLS-007"
       ],
       "evidence": [],
       "updated_at": "2026-10-22",
-      "sha256": "2f69ed4bdcb428f0da4a524e5ba63adc4e9c37860f619e6c22cf9910c00e6c86"
+      "sha256": "d33782fcb76cdf6f05f294f82b539bad4c119292a8f27248fac2ac721794ca8c"
     },
     {
       "id": "K-FW-011",

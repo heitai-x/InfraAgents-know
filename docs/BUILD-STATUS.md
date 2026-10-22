@@ -8,12 +8,20 @@
 
 章节完成要有模型与状态、合法替代方案、资源账、组合条件、区分实验和选择反转条件；不能通过写出文件、达到篇数或通过格式检查宣称内容已经完整。组合场景的验证设计也不能冒充真实 Task 的性能收益实验。
 
-当前已把第一批 8 篇接入正式目录和原有读取接口：权重加载、基础算子、CPU GEMM/GEMV、CPU 低位执行、内存分配、主机运行时、多轮负载与实验统计。当前总数为 81 篇、83 个来源；这些新篇在实施计划中记为 integrated_draft，引用机制段已核对，整篇来源复核及与完整场景的共同复核仍在进行。原有 73 篇正文尚未扩写，保持此前修订身份。
+当前已把第一批 8 篇接入正式目录和原有读取接口：权重加载、基础算子、CPU GEMM/GEMV、CPU 低位执行、内存分配、主机运行时、多轮负载与实验统计。当前总数为 81 篇、83 个来源；新篇在实施计划中记为 integrated_draft，仍需整库组合与最终语义复核。
 
-本批检查：[结构与时间资格](evidence/p0-integration-audit.json)、[检索与链接](evidence/p0-retrieval-check.json)、[实际读取接口](evidence/p0-runtime-read.json)、[来源阅读范围](evidence/p0-source-review.json)。81 篇和 83 个来源通过原框架审计，无时间排除项；1425 个当前正文、来源与主要索引中的本地链接有效。8 个定向查询均将对应新专题列在首位；此检查不代表任意措辞的检索效果。实际 RepositoryKnowledge 在 attributable/seed、freeze_initial/deferred 配置下读取了新增正文及来源归档。
+原有 73 篇中已有 16 篇更新至修订 2：模型接入、框架执行、数值参考、CPU、资源 roofline、tokenization、连续批、分块 prefill、正确性 oracle、全部 6 篇 workload 和系统设计推导。对应修订 1 的正文与 metadata 已保存在 history，和原始 Astra 提交逐字节/逐字段核对一致。其余 57 篇仍在待办中。
+
+[系统设计推导](../knowledge/system-semantics/design-synthesis.md) 已加入 C01 CPU 多请求生成的完整场景：固定设定 → KV/容量 → 三种执行候选 → 带宽下界 → prefill/主机预算 → 验证 → 选择反转。它明确显示“容量容得下”和“ITL 达标”是不同判断，所有数值均为设定算例，未冒充真实引擎测试。
+
+首批新增检查：[结构与时间资格](evidence/p0-integration-audit.json)、[检索与链接](evidence/p0-retrieval-check.json)、[实际读取接口](evidence/p0-runtime-read.json)。这些文件记录首批提交当时的 1425 个链接与新增章节查询结果。
+
+当前检查见 [基础链修订验证](evidence/p0-foundations-validation.json)：81 篇和 83 个来源通过原框架审计，无时间排除项；1841 个当前正文、来源、索引和主要说明文件中的本地链接有效；16 个旧修订可精确读取，16 个当前修订通过真实 RepositoryKnowledge 的受限 seed 配置读取，8 个定向查询找到目标专题。算例同时复算。检查范围不包括任意措辞的检索效果或 Agent/引擎实际性能。
 
 已完成 32 篇固定论文原文的采集，只有本批引用的 7 篇进入 source registry；其余仍在编辑暂存区，不向运行时暴露。Goto 资料的公开镜像是作者稿，按 2016-11-30 固定提交绑定版本，明确没有冒用 2008 年最终出版日期。
 
-后续继续完成原 73 篇的逐项扩写/关联核查、剩余 27 个新专题、12 类完整场景及平台相关来源。源码中的 snapshot 导航替换问题仍记为框架限制，不冒称本轮已经修复。当前扩充工作尚未推送 GitHub 或替换远端实验使用的知识目录。
+来源阅读进度已从 [首批机制段核对](evidence/p0-source-review.json) 推进到 [整篇技术正文与附录复核](evidence/p0-source-full-review.json)：ServerlessLLM、RMSNorm、RoFormer、整数推理、vAttention 与此前完成的 Goto 作者稿均已完成相应阅读。STATS 的 §6 等引用机制段已读，其余证明与实验部分仍需继续核对。原文归档字节没有因阅读说明更新而改变。
+
+后续继续完成剩余 57 篇既有章节的扩写/关联核查、27 个新专题、其余 11 类完整场景及整库复核。集群、存储服务和部署环境仍在这份完整计划内。源码中的 snapshot 导航替换问题仍记为框架限制，不冒称本轮已经修复。当前扩充工作尚未推送 GitHub 或替换远端实验使用的知识目录。
 
 本次是用户授权的 base 内容整理，保留章节 ID、修订历史、catalog/source schema 和既有运行时读取逻辑。运行期 learned 知识仍由 Evolution 提案、独立复核和原发布流程管理；本轮不制造运行证据或伪造该流程的审核结论。

@@ -4,7 +4,7 @@
 
 | 条目 | 版本与状态 | 核心认识 |
 |---|---|---|
-| [K-MODEL-001：从模型计算图推导 Prefill、Decode 与持久状态](prefill-decode-state.md) | v1 · seed | 模型接入首先是一项计算图和状态语义工作：识别哪些量随 token、位置、请求和阶段变化，再选择执行机制。 |
+| [K-MODEL-001：从模型计算图推导 Prefill、Decode 与持久状态](prefill-decode-state.md) | v2 · seed | 模型接入首先是一项计算图和状态语义工作：识别哪些量随 token、位置、请求和阶段变化，再选择执行机制。 |
 | [K-MODEL-002：MHA、GQA 与 MQA：头映射和带宽复用](gqa-kv-heads.md) | v1 · seed | GQA 让多个 query heads 读取同一组 K/V；逻辑共享可以减少状态，但是否减少实际访存取决于 kernel。 |
 | [K-MODEL-003：MoE：路由、Dispatch/Combine 与专家负载](moe-routing.md) | v1 · seed | MoE 的条件计算节省激活 FLOPs，但全部专家的驻留和路由后的不均衡决定真实服务成本。 |
 | [K-MODEL-004：SSM 与混合模型：递归状态、扫描与恢复](recurrent-hybrid-state.md) | v1 · seed | 递归状态是前缀的压缩摘要；它支持低增长成本的 decode，却改变了前缀复用、回滚和批次管理方式。 |
