@@ -1,0 +1,70 @@
+{
+  "source_id": "S-DEEPSEEKV3",
+  "reviewed_at": "2026-10-23",
+  "version": "2412.19437v1",
+  "available_at": "2024-12-27",
+  "source_cutoff_inclusive": "2026-04-30",
+  "full_paper_or_document_review_complete": true,
+  "locations": "全部技术正文 PDF pp.4–36、前置摘要/目录 pp.1–3 与技术附录 B/C pp.47–53 已读；附录47页训练曲线、49–53页全部专家负载图已逐页视觉核对。pp.36–44参考文献与pp.45–47贡献名单核对范围但不递归引用外链。",
+  "coverage": "固定DeepSeek-V3 v1的MLA、sigmoid affinity/带bias选择与原affinity归一化gating、细粒度/共享专家、node-limited路由、MTP与分阶段推理部署；结合完整训练/评测上下文明确部署结论和未来工作的边界。",
+  "limitations": "仅2412.19437v1，不是V4资料或任何模型训练截止证据。DualPipe的前反向重叠、FP8训练消融和训练成本不直接构成推理性能；FP8按操作保留高精度且累加精度观察绑定其H800实现。辅助损失自由的主均衡策略仍有很小的sequence-wise辅助项，训练整体均衡不保证在线小批均衡。附录专家图来自16B消融模型而非671B部署。MTP可在正常推理移除，训练收益与启用投机后的运行收益分开，接受率和TPS不保证其他目标。部署段的32/320卡布局属于其策略，不是模型理论最少硬件；动态冗余与部分decode微批重叠仍在探索。训练成本按假设GPU租价且排除先前研究/消融；评测绑定当时版本、提示、输出上限和抽样，不能当作当前模型排名或InfraAgents结果。实际RMSNorm、宽度缩放、tokenizer和RoPE扩展必须按制品核对。",
+  "chapters_checked": [
+    {
+      "id": "K-ALG-015",
+      "path": "algorithms/parallelism.md",
+      "sha256": "161a883561e39371ea22a1430c385546c402db2f993d8a37c6f37e03e1e4bd17",
+      "read_scope": "完整机制正文，含四卡MLA/MoE场景与所有资源算例",
+      "assessment": "自行设定的32层/4卡场景与真实DeepSeek部署明确分开；逐卡latent复制、输出增长、TP/EP边界和通信量未冒充论文规格。"
+    },
+    {
+      "id": "K-MODEL-003",
+      "path": "models/moe-routing.md",
+      "sha256": "f7b00bde22fbeada937690805ad5f1c45e7a4a51b802e3164241505cc7ddeed1",
+      "read_scope": "完整机制正文，含grouped GEMM、专家副本、bias/gating与卸载组合",
+      "assessment": "选择bias与输出gating、在线副本与专家函数、已实施与探索部署均区分正确。"
+    },
+    {
+      "id": "K-MODEL-006",
+      "path": "models/mla.md",
+      "sha256": "0618d400badda1a1978ef32629f8ece28468820b0b34701fb767baab0eb65e3b",
+      "read_scope": "完整机制正文，含矩阵吸收、量化位置与TP状态复制",
+      "assessment": "吸收代数和资源算例正确，但建议明确简式未展开实际latent RMSNorm与额外scale，以免被直接当完整DeepSeek forward。"
+    }
+  ],
+  "findings": [
+    {
+      "location": "§2.1 pp.7–10 and §4.2 p.22",
+      "finding": "架构的简化线性式未展开§4.2明确提到的latent后RMSNorm和宽度瓶颈scale；实际checkpoint还包含具体几何与位置扩展。",
+      "action": "建议MLA章补简式与完整制品契约边界，吸收不能越过非线性归一化。"
+    },
+    {
+      "location": "§3.2–3.3 pp.12–18 and Appendix B pp.47–48",
+      "finding": "DualPipe依赖训练forward/backward配对，FP8训练包含高精度保留与特定H800累加修正；16B/230B训练消融不能变成任意推理质量保证。",
+      "action": "来源限制补齐；当前引用正文没有将训练收益写成推理结果。"
+    },
+    {
+      "location": "§3.4 pp.19–20, §4.5.3 pp.27–28, Appendix C pp.48–53",
+      "finding": "专家复制支持在线不均衡；动态冗余与decode双微批尚在探索；专家分布图源于16B消融。",
+      "action": "保留现有MoE和并行章节的范围限定，来源说明增加图的模型范围。"
+    },
+    {
+      "location": "§4.5.1 p.26 and §5.4.3 p.35",
+      "finding": "MTP训练对比在推理时移除MTP；投机加速属于另一个执行配置，不能把训练质量和1.8×TPS合成普遍免费收益。",
+      "action": "来源限制明确两种用途，不新增未核对的投机算法细节。"
+    }
+  ],
+  "suggested_chapter_additions": {
+    "K-MODEL-006": "## 简化吸收式与实际制品的边界\n\n以上线性式用于解释缓存表示与矩阵吸收，不能代替完整模型配置。[DeepSeek-V3 v1](../sources/S-DEEPSEEKV3.md) §4.2 还明确在压缩 latent 后使用额外 RMSNorm，并在宽度瓶颈应用缩放。实现时应把实际归一化后的 latent、query路径、额外尺度和位置配置接入参考；上投影对该 latent 的线性关系仍可用于吸收，但不能把非线性归一化跨过矩阵乘法随意消去。若图中省略这些操作，错误可能来自模型还原，不能被解释为吸收后的普通舍入差异。"
+  },
+  "visual_evidence": [
+    "figures/deepseek-v3-page-47.png",
+    "figures/deepseek-v3-page-49.png",
+    "figures/deepseek-v3-page-50.png",
+    "figures/deepseek-v3-page-51.png",
+    "figures/deepseek-v3-page-52.png",
+    "figures/deepseek-v3-page-53.png"
+  ],
+  "performance_results_reused": false,
+  "runtime_experiments_performed": false,
+  "canonical_modified": false
+}

@@ -97,3 +97,22 @@
 | [S-EAGLE](sources/S-EAGLE.md) | 2401.15077v1 | 2024-01-26 |
 | [S-RDMA](sources/S-RDMA.md) | rdma-core v54.0 commit 77128e6b6d32a1aad7c1bec9d6eb1f061b63cf39 | 2024-10-06 |
 | [S-GPUDIRECT](sources/S-GPUDIRECT.md) | CUDA 12.8.0 | 2025-01-21 |
+| [S-ALPASERVE](sources/S-ALPASERVE.md) | 2302.11665v1 | 2023-02-22 |
+| [S-SLORA](sources/S-SLORA.md) | 2311.03285v1 | 2023-11-06 |
+| [S-BORG](sources/S-BORG.md) | EuroSys 2015 published paper | 2015-04-24 |
+| [S-CEPH06](sources/S-CEPH06.md) | OSDI 2006 published paper | 2006-11-30 |
+| [S-LINUX-RESOURCES](sources/S-LINUX-RESOURCES.md) | Linux v6.12 commit adc218676eef25575469234709c2d87185ca223a | 2024-11-17 |
+| [S-NVIDIA-PLUGIN](sources/S-NVIDIA-PLUGIN.md) | v0.16.1 commit cb6e45ec357705e6458f753eb04a4bde31ec18cf | 2024-07-23 |
+| [S-MLX-EXEC](sources/S-MLX-EXEC.md) | Git e8ebdebeeb655feaa85a51f6b24ece5b6d5518d1 (2026-04-28) | 2026-04-28 |
+| [S-DEEPSEEKV3](sources/S-DEEPSEEKV3.md) | 2412.19437v1 | 2024-12-27 |
+| [S-CACHEBLEND](sources/S-CACHEBLEND.md) | 2405.16444v1 | 2024-05-26 |
+| [S-BERT](sources/S-BERT.md) | 1810.04805v1 | 2018-10-11 |
+| [S-FAISS](sources/S-FAISS.md) | 2401.08281v1 | 2024-01-16 |
+| [S-RESNET](sources/S-RESNET.md) | 1512.03385v1 | 2015-12-10 |
+| [S-DLRM](sources/S-DLRM.md) | 1906.00091v1 | 2019-05-31 |
+| [S-GRAPHSAGE](sources/S-GRAPHSAGE.md) | 1706.02216v1 | 2017-06-07 |
+| [S-SMOOTHQUANT](sources/S-SMOOTHQUANT.md) | 2211.10438v1 | 2022-11-18 |
+| [S-AWQ](sources/S-AWQ.md) | 2306.00978v1 | 2023-06-01 |
+| [S-TVM](sources/S-TVM.md) | 1802.04799v1 | 2018-02-12 |
+| [S-ANSOR](sources/S-ANSOR.md) | 2006.06762v1 | 2020-06-11 |
+| [S-FLASHINFERPAPER](sources/S-FLASHINFERPAPER.md) | 2501.01005v1 | 2025-01-02 |

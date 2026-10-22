@@ -20,6 +20,32 @@ DiT 将 latent 切成 patch tokens。空间边长扩大使 token 数和 attentio
 
 输出是一张图而非 token 流，用户目标可能是整图延迟、图像吞吐、分辨率或质量。中间预览图的交付是附加服务语义，会增加解码与网络成本。VAE tiling 能降低峰值空间，但 tile overlap 与拼接也会影响边界质量，应从感受野解释其处理。
 
+## Scheduler 是数值执行契约
+
+以固定 Diffusers 源码中的 DDIM 为可检查例。记 aₜ 为累计 alpha，xₜ 为当前 latent，模型预测噪声 ε。无额外截断时，预测原样本为 x̂₀=(xₜ−√(1−aₜ)ε)/√aₜ；到所选前一时点 s 的更新为 xₛ=√aₛx̂₀+√(1−aₛ−σ²)ε+σz，其中 σ 由 eta 与 aₜ/aₛ 决定。s 属于 scheduler 的时间步安排，不能把循环序号或简单 t−1 直接代入。
+
+若模型输出预测原样本或 v，源码采用不同换算；以 v 为例，x̂₀=√aₜxₜ−√(1−aₜ)v，ε=√aₜv+√(1−aₜ)xₜ。若应用 clipping 或 thresholding，是否重算 ε 也是明确定义的分支。该版本特别提醒动态 thresholding 不适用于其所述 latent-space 扩散情形。模型输出 shape 对得上，不代表 prediction_type、缩放、时间步与输出含义相容。
+
+请求状态至少包括当前 latent、实际时间步位置、scheduler 配置、条件、guidance、随机生成器或每步噪声；使用多步求解器时，还需其历史预测。切换 batch 或暂停恢复必须按请求保留这些对象。让两个请求共享可变 scheduler 进度或随机流，可能使单请求参考通过而混合服务错误。
+
+## 固定条件复用与跨步近似
+
+固定文本与固定投影产生的 cross K/V 可以复用，但 timestep 调制、图像 latent self-attention 和随 latent 改变的中间激活通常不是固定对象。跨步复用 attention/FFN 输出、跳过部分 unconditional 计算或减少去噪步数，均需作为独立近似候选登记。
+
+Wan 固定报告利用跨步 attention 与后期 CFG 相似性，按验证集选择缓存步并做补偿；其“lossless”措辞对应作者报告的评估条件，不构成数值恒等或所有 prompt 的质量保证。知识库在选择这类方法时，应保留未缓存参考、早/中/晚时间步、强 guidance、不同分辨率和稀有构图的质量对照，防止误差沿迭代累积。
+
+CFG 两分支可以顺序运行、沿 batch 合并，或分设备执行后合成。分设备需要每步保持相同 latent 和时间条件，并传回合成所需预测；这不免除同步。DiT 的 tensor/context parallel 则切分单分支计算，两者的通信与内存不同。按 checkpoint 的条件方式检查是否确实存在可缓存 cross 投影：原始 DiT 论文同时研究 in-context、cross-attention、adaLN 等条件方式，不能给所有 DiT 假定同一 cross KV。
+
+## 场景：24 GiB 预算的图像生成
+
+以下为结构与时间设定。任务输出 1024×1024 图像，latent 空间压缩 8 倍、patch 边长 2，去噪 token 数为 64×64=4096；hidden 设 1536、16 heads、BF16。单份 hidden 为 12 MiB，显式完整 attention scores 为每 head 32 MiB、合计 512 MiB。分块 attention 可避免完整分数落存储，但其他激活、FFN、CFG 和 VAE 工作区仍需计算。
+
+设权重常驻 8 GiB，单 CFG 分支峰值 workspace 为 6 GiB，设备可用 24 GiB。候选 A 顺序执行两分支，主项 14 GiB；B 合并两分支，按两份 workspace 的保守设定为 20 GiB。实际共享或额外 workspace 需测量。候选 C 在 B 上引入跨步缓存或更少求解步，属于质量可能变化的路径，不能与 A/B 的实现等价比较混在一起。
+
+设条件编码 40 ms，单分支去噪 30 ms，合并双分支 45 ms，scheduler 每步 1 ms，30 步，最终 VAE 120 ms，则 A 为 40+30×61+120=1990 ms，B 为 40+30×46+120=1540 ms。数字仅用于复算选择：B 节省调用和更好聚批的假设若不成立，收益消失；若高分辨率或其他请求使 20 GiB 超预算，A 即使较慢也可能是合法选择。
+
+验证固定初始 latent、条件、scheduler、guidance 和每步噪声，先比较逐步预测、更新后 latent 与最终图像；对 C 再用预先保留的 prompt/seed 集合评估质量、构图与分辨率，不挑选最好看的样本。首轮编译、稳态、排队和 VAE 分开报告。VAE 切块必须检查卷积 halo、归一化/attention 的全局依赖及拼接；只有覆盖全部依赖时才可主张等价，overlap 不能普遍保证无缝或无误差。
+
 <!-- infraagents:provenance -->
 
 ## 来源与推导
@@ -34,6 +60,13 @@ DiT 将 latent 切成 patch tokens。空间边长扩大使 token 数和 attentio
   [完整原文](../../references/S-DIFFUSERS/reader.html) · [全文文本](../../references/S-DIFFUSERS/fulltext.txt)
 
 正文中的公式展开、容量算例与组合设计是基于这些来源的推导；设定算例不冒充实测。来源版本受 2026-04-30 上限约束，编辑日期 2026-10-22 不作为事实发布日期。此独立 base 版本内的章节修订号从 1 开始，原章节身份与版本映射保存在版本清单。
+
+
+
+### 本次扩写补充来源
+
+- [S-WAN：Wan: Open and Advanced Large-Scale Video Generative Models](../sources/S-WAN.md)：Wan 的视频生成报告涉及时空建模和视频潜空间/解码结构；输出帧与压缩潜表示具有不同的时间和空间粒度。
+  [完整原文](../../references/S-WAN/reader.html) · [全文文本](../../references/S-WAN/fulltext.txt)
 
 ## 延伸阅读
 

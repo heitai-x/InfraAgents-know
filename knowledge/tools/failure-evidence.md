@@ -18,6 +18,29 @@
 
 当修复改变了某条依赖或布局关系，并使预期现象恢复，记录这条关系及其条件。临时路径、一次机器不足和偶发网络故障通常留在案例。反复出现且可解释的模式才适合提炼成机制知识，例如“分配器不知道跨 stream 使用会提前重用地址”。
 
+## 将故障注入绑定到状态边界
+
+故障实验先定义预期契约和恢复点，再选择能区分原因的注入。下表是一组验证设计，不表示这些实验已经在目标服务运行。
+
+| 故障 | 保留的触发条件 | 需要的证据与判定 |
+|---|---|---|
+| 主机 OOM/内存节流 | 限额与加载峰值、页缓存或 IPC 同时存在 | cgroup 有效限制、memory.events、最早失败分配与进程终态；区分 memory.high 压力和 OOM kill |
+| GPU 容量不足 | 权重、KV 增长、adapter 换入或 workspace 峰值 | 各对象有效/预留/在途字节与首次失败；不能只看请求结束后的空闲显存 |
+| 存储超时/截断 | 正在读取一个固定版本的特定分片或范围 | 已完成范围、后端错误、发布状态与缓冲引用；未完成数据不能进入计算 |
+| 部分 rank 退出 | 全组已提交的操作顺序与动态 batch 元数据 | 所有 rank 的最早事件、失败传播和共同终态；通信超时可能只是后果 |
+| 网络断开或确认丢失 | 已交付位置、在途状态和唯一提交权 | 重试/接管记录、是否重复内容、旧代次是否失效及迟到操作是否安全 |
+| 滚动更新中失败 | 新旧版本同时存在，部分实例已切流 | 版本绑定、实际就绪数、排空请求和回退后的容量；不能只检查进程重新启动 |
+
+资源故障分为环境限额、容量设计不足和泄漏，不应一律通过扩大资源后宣布修复。I/O 超时还要区分排队、设备服务、网络传输、重试与应用等待；超时阈值变大只改变表象，未必解释根因。
+
+## 重复、压力与恢复的证据
+
+在隔离测试环境内使用相同输入与状态边界比较故障前、故障中、恢复后；故障概率或持续时间改变时，保留相同 offered workload。统计失败请求、拒绝、恢复时间、无效计算和受影响的其他租户，不把失败样本从吞吐分母中删掉。
+
+反复注入取消、分片失败与重试后停止新输入，检查私有状态与在途引用结束，共享池回到已定义的空闲基线。允许保留的编译缓存、arena 或公共权重应有解释；无法解释的逐轮增长才是进一步查找泄漏的直接信号。
+
+修复验证同时包含触发故障的小例、仍保留并发关系的压力例和未参与诊断的代表负载。修复若改变重试、路由或缓存策略，还要检查输出提交与版本身份，防止把崩溃变成静默错误。一个故障点通过只能支持该路径与条件，不能被写成全部故障恢复已经正确。
+
 <!-- infraagents:provenance -->
 
 ## 来源与推导
@@ -32,6 +55,19 @@
   [完整原文](../../references/S-TORCH-NUMERIC/reader.html) · [全文文本](../../references/S-TORCH-NUMERIC/fulltext.txt)
 
 正文中的公式展开、容量算例与组合设计是基于这些来源的推导；设定算例不冒充实测。来源版本受 2026-04-30 上限约束，编辑日期 2026-10-22 不作为事实发布日期。此独立 base 版本内的章节修订号从 1 开始，原章节身份与版本映射保存在版本清单。
+
+
+
+### 本次扩写补充来源
+
+- [S-LINUX-RESOURCES：Linux 6.12 — cgroup v2 and powercap](../sources/S-LINUX-RESOURCES.md)：Linux v6.12 的完整 cgroup v2 文档定义资源层级、CPU quota/权重、内存压力/上限、cpuset、进程和设备/RDMA 控制；完整 powercap 文档定义计量域、能量单位/范围和功率约束窗口。
+  [完整原文](../../references/S-LINUX-RESOURCES/reader.html) · [全文文本](../../references/S-LINUX-RESOURCES/fulltext.txt)
+
+- [S-RDMA：rdma-core v54.0 — registration, work requests, completion queues and events](../sources/S-RDMA.md)：固定 verbs 文档给出 MR 注册、WR 提交、CQE、事件通知及本地缓冲复用规则；包含 inline 例外、错误字段与一次性通知。
+  [完整原文](../../references/S-RDMA/reader.html) · [全文文本](../../references/S-RDMA/fulltext.txt)
+
+- [S-LINUX-IO：Linux 6.12 — Block multi-queue and iomap I/O documentation](../sources/S-LINUX-IO.md)：Linux v6.12 的 blk-mq 文档区分软件/硬件队列与乱序完成；iomap design/operations 区分文件映射、pagecache、直接 I/O、部分完成和写回。
+  [完整原文](../../references/S-LINUX-IO/reader.html) · [全文文本](../../references/S-LINUX-IO/fulltext.txt)
 
 ## 延伸阅读
 

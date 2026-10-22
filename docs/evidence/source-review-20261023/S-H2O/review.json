@@ -1,0 +1,112 @@
+{
+  "schema_version": 1,
+  "source_id": "S-H2O",
+  "version": "2306.14048v1",
+  "available_at": "2023-06-24",
+  "reviewed_at": "2026-10-23",
+  "source_cutoff_inclusive": "2026-04-30",
+  "original_sha256": "8a9e338a7a105ce3d062578ad950764104e0666e2dc1a5eaf64638f8a4a31dc4",
+  "source_original_modified": false,
+  "review_status": "technical_full_text_review_complete_with_source_errors_flagged",
+  "reviewer": "delegated retrieval_compilation agent",
+  "review_scope": {
+    "main_text_pages": "1–10",
+    "technical_appendix_pages": "17–45",
+    "bibliography_pages": "11–16",
+    "excludes": "No linked-paper recursive import, code reproduction, target-model performance trial, or formal proof certification."
+  },
+  "chapter_review": {
+    "entry_id": "K-ALG-021",
+    "path": "knowledge/algorithms/kv-compression.md",
+    "reviewed_sha256": "58e106268914ef76d07b124c23181090c2ba72340e74d02029b23988afe6e9d1",
+    "conclusion": "The existing chapter correctly treats eviction as approximation and does not claim universal quality or transfer paper speedups. Add operational and evidence boundaries; no existing theorem is used as a correctness oracle."
+  },
+  "findings": [
+    {
+      "id": "H2O-01",
+      "kind": "budget_contract",
+      "locations": "§5.1 p.7; Appendix A p.18",
+      "fact": "Main text divides a total budget between heavy hitters and recent tokens; Appendix A uses k for each partition, totalling 2k. Evaluation ratios are described relative to prompt length.",
+      "action": "Name B_H, B_R, total B and percentage denominator, and distinguish fixed capacity from a growing current-history percentage."
+    },
+    {
+      "id": "H2O-02",
+      "kind": "execution_contract",
+      "locations": "Appendix A pp.18–19; Appendix B.2 p.20",
+      "fact": "Preallocated cache and recent circular queue avoid general compaction; implementation describes per-head eviction. Cumulative scores favour older entries, and averaging degraded reported task performance.",
+      "action": "Preserve logical positions, score identities and slot generations; explicitly design score exposure and GQA shared-KV selection rather than copying per-query-head allocation."
+    },
+    {
+      "id": "H2O-03",
+      "kind": "quality_boundary",
+      "locations": "§3.1 p.4; Appendix D.16 pp.39–40",
+      "fact": "Reported sparsity counts entries below 1% of each row maximum; it is threshold-defined, not exact zero.",
+      "action": "Do not infer 20x exact compression or quality from the sparsity percentage; validate dropped mass, output effects and future dependence."
+    },
+    {
+      "id": "H2O-04",
+      "kind": "experiment_scope",
+      "locations": "§5.2 pp.8–9; Appendix A p.18; Appendix C.2 p.22",
+      "fact": "Synthetic padded equal lengths and fixed generation counts are used for throughput; denominator includes prefill+decode. Some OPT long-context measurements exceed training context and are explicitly speed potential tests. C.2 throughput compression is of weights via FlexGen.",
+      "action": "Retain workload and quality separation; do not describe these as measured online-tail latency or arbitrary KV quantization combinations."
+    },
+    {
+      "id": "H2O-05",
+      "kind": "source_condition_inconsistency",
+      "locations": "PDF p.37 Definition D.28 and Lemma D.29, also p.38 Lemma D.30",
+      "observation": "D.28 states opt_i >= (1-gamma) opt_(i-1); the induction condition states opt_i >= (1-gamma) opt_(i+1). These constrain opposite time directions.",
+      "check": {
+        "gamma": 0.1,
+        "old_opt": 1.0,
+        "new_opt": 2.0,
+        "definition_satisfied": true,
+        "induction_satisfied": false
+      },
+      "visual_evidence": [
+        "images/h2o-v1-p37.png"
+      ],
+      "action": "Treat theorem as source-reported under explicit conditions; do not certify its printed proof or use it as an output-quality oracle."
+    },
+    {
+      "id": "H2O-06",
+      "kind": "printed_gradient_sign_error",
+      "locations": "PDF p.42 Lemma D.44 Part 4 versus Part 5",
+      "observation": "Part 4 gives the standard softmax derivative with a negative f f^T component; Part 5 prints a positive component for the squared-error gradient.",
+      "check": {
+        "A": [
+          1,
+          0
+        ],
+        "b": [
+          1,
+          0
+        ],
+        "x": 1.0986122886681098,
+        "p": [
+          0.7500000000000001,
+          0.25
+        ],
+        "printed": -0.2812499999999999,
+        "chain_rule": -0.09374999999999997,
+        "central_difference": -0.09374999997147082,
+        "epsilon": 1e-06
+      },
+      "visual_evidence": [
+        "images/h2o-v1-p42.png"
+      ],
+      "action": "Do not copy the printed formula; correct gradient is A^T[diag(f)-f f^T](f-b). This is in auxiliary sparsity-loss analysis, not evidence that runtime eviction code is wrong."
+    }
+  ],
+  "source_note_update": {
+    "coverage": "固定 v1 描述累计 attention 与近期 token 的预算拆分、按 head 的淘汰与环形槽更新，评估不同模型/任务，并在附录给出实现、合成吞吐设置和带条件的评分函数分析。",
+    "derivation": "将当前可见历史的近似保留与跨请求缓存淘汰分开；明确预算分母、每 head/GQA 组合、评分与整理开销，并按实际设置连接数值、质量和系统测量。",
+    "limitations": "经验稀疏性由每行 max 的 1% 阈值定义，不是严格零或无损保证。附录局部公式/条件存在已视觉核对的打印不一致，全文复核不等于其数学保证已形式化认证。合成等长性能实验和超 OPT 训练上下文的速度测试不能当作目标长期质量证据；附录 C.2 主要为权重压缩吞吐。",
+    "locations": "完整阅读 PDF pp.1–10 主文、pp.17–27 附录目录/实现/限制/实验、pp.28–45 理论附录 D.1–D.22。pp.11–16 为参考文献列表，不递归导入所引文献。p.37、p.42、p.44 已视觉核对。",
+    "full_review": true
+  },
+  "recommended_addendum": "K-ALG-021-addendum.md",
+  "numerical_checks": {
+    "gradient": -0.09374999997147082,
+    "relative_budget_after_generation": 0.13333333333333333
+  }
+}

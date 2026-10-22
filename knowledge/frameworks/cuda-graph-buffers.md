@@ -38,6 +38,28 @@ capture 将设备工作及其依赖记录为图，实例化后重复 launch。�
 
 一种完整的设计说明应能回答：哪些工作被捕获，哪些依赖值可变，哪些地址必须持续存在，何时切桶，谁写入下一代，谁确认上一代最后一次读取完成。这些答案决定图与连续批、交叉注意力、投机和取消能否正确组合。
 
+## 卸载、LoRA 和多 stream 的组合条件
+
+卸载权重时，图捕获的设备地址必须在每次 replay 读取时指向已经完成换入的正确层/版本。固定 staging 地址可以轮流装不同内容，但同一地址还被旧 replay 读取时不能覆盖。换入完成事件应在消费 stream 等待；最后一次读取完成后才允许下次填充。主机权重存在不代表设备数据已就绪，地址仍有效也不代表内容版本正确。
+
+LoRA 路径若捕获了具体 adapter 指针，切换 adapter 需要使用受支持的图更新、另一图或固定槽填充；若 kernel 通过稳定 metadata 间接选择 adapter，则仍需保证目标槽、rank、布局与在途代次满足契约。固定 rank 桶可以承接较小 rank，前提是 padding 对低秩增量的数学贡献为零，scale 与 routing 一致。模型权重合并、adapter 切换和 cache 身份须同时保持兼容。
+
+多 stream 捕获/replay 要在依赖图中包含输入、KV、通信、输出及释放关系。一个 event 保护输入并不自动保护共享 workspace；两个图单独执行都正确，不证明同时 replay 正确。共享图池只在生命周期与重放顺序满足条件时节省容量，需要检查并发最大活跃集合。
+
+## 固定地址不等于任意计划都可重放
+
+FlashInfer 2501.01005v1 描述了将动态工作队列写入固定 workspace、以固定 grid 的 attention/contraction kernel 消费它的具体方案。这说明动态任务能够在合适表示下进入固定图，但不是所有 wrapper 选项的统一保证。
+
+当前知识版本收录的 FlashInfer 2026-04-30 固定源码中，BatchPrefillWithPagedKVCacheWrapper 的 plan 明确不能被 CUDA Graph 或 torch.compile 捕获。其 fixed_split_size 文档还明确指出：即使 batch 固定，KV 长度变化仍可能改变 CTA 数，因此图兼容性不保证。确定性归约与图兼容性应分别检查，不能从一个标志推出另一个。这里依据的是已归档接口，不递归引用文档链接中的后续内容。
+
+图输入可以容纳的最大 query 行数、page index 数、tail 长度与 partial-output 数量，需要按具体路径建立上界。超界时切换合法图/普通执行或拒绝该计划；不应截断页表来让 replay 勉强运行。计划复用还需保持 backend、head 几何、mask 与实际分段依赖一致。
+
+## 图池应进入容量和收益账
+
+设定四个桶各额外占 64 MiB，合计 256 MiB；若同一资源池中的 KV 每 token 占 128 KiB，这相当于 2,048 token 的容量。这个算例展示图池与并发/上下文容量的直接竞争，不表示真实图一定占该容量。捕获更多桶既能减少 padding，也可能降低可准入请求数，进而增大排队。
+
+验证应包含反复捕获/释放、跨桶切换、并发 replay、取消后迟到完成、卸载槽复用、adapter 更换和超容量输入。检查最终输出与 reference、持久缓冲代次、峰值分配和稳定态基线，确认释放后回到预期占用。不能只以一次 replay 的 kernel 时间判断图策略；需要在相同 offered workload 下看完整时延、完成率以及图池挤占后的有效容量。
+
 <!-- infraagents:provenance -->
 
 ## 来源与推导
@@ -55,6 +77,13 @@ capture 将设备工作及其依赖记录为图，实例化后重复 launch。�
   [完整原文](../../references/S-TRTLLM/reader.html) · [全文文本](../../references/S-TRTLLM/fulltext.txt)
 
 正文中的公式展开、容量算例与组合设计是基于这些来源的推导；设定算例不冒充实测。来源版本受 2026-04-30 上限约束，编辑日期 2026-10-22 不作为事实发布日期。此独立 base 版本内的章节修订号从 1 开始，原章节身份与版本映射保存在版本清单。
+
+
+
+### 本次扩写补充来源
+
+- [S-FLASHINFERPAPER：FlashInfer: Efficient and Customizable Attention Engine for LLM Inference Serving](../sources/S-FLASHINFERPAPER.md)：固定 v1 描述 BSR/ragged/可组合 KV 表示、attention 状态合并、JIT 变体、动态负载计划与 CUDA Graph workspace，以及 GQA 和 FP8 KV 路径。
+  [完整原文](../../references/S-FLASHINFERPAPER/reader.html) · [全文文本](../../references/S-FLASHINFERPAPER/fulltext.txt)
 
 ## 延伸阅读
 

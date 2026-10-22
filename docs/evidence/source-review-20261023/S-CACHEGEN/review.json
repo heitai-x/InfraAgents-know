@@ -1,0 +1,44 @@
+{
+  "source_id": "S-CACHEGEN",
+  "reviewed_at": "2026-10-23",
+  "version": "2310.07240v1",
+  "available_at": "2023-10-11",
+  "source_cutoff_inclusive": "2026-04-30",
+  "full_paper_or_document_review_complete": true,
+  "locations": "完整技术正文 PDF pp.1–13 与 §10 附录 p.20 已读；pp.13–19 参考文献不递归引入。重点核对 §4.2 编码/重建参考、§4.3 成本式、§4.4 实现、§5.4 评估边界及 §7 局限。",
+  "coverage": "锚点重建差分、逐层量化、按通道/层组织熵编码、预编码多种等级与在线压缩缓存/原文本选择；网络、解码和模型计算共同计时。",
+  "limitations": "固定 v1 的 TTFT 排除检索选择阶段，编码在离线完成；量化有损而熵编码无损，不能称整条管线无损。其在线估计假设已知带宽/RTT、简化网络模型，未覆盖强带宽波动；自由文本生成与超大模型未充分评估。缓存恢复后仍需计算新 query 对历史的 attention，Cprocess 仅依赖 prompt 长度的经验式不是通用成本函数。多文档独立KV不能因此被视为精确可拼接。概率分布的共享范围在设计段和实现段表述不同，具体格式必须明确实际编码模型和版本；正文不采用简化背景中的近常数 decode 或 token 一字节假设。",
+  "chapters_checked": [
+    "K-ALG-021",
+    "K-SYS-013"
+  ],
+  "findings": [
+    {
+      "location": "§4.2 pp.6–7",
+      "finding": "delta 基于解码后的 anchor，而非原始anchor；熵编码无损只对已经量化的符号成立。",
+      "action": "现有 KV 压缩正文正确，保留既有说明。"
+    },
+    {
+      "location": "§4.3 Equation1 p.8 and §7 p.13",
+      "finding": "Cprocess(Lprompt) 对历史长度的依赖被经验模型省略；同时假定已知带宽和简单传输模型。",
+      "action": "来源限制说明，并建议正文加入以实际 query/history/batch 形状校准恢复后计算的段落。"
+    },
+    {
+      "location": "§4.2 p.7 and §4.4 p.8",
+      "finding": "前者说同一LLM共享离线概率分布，后者说概率由对应context的符号频率得到；不能据此猜定具体bitstream元数据省略规则。",
+      "action": "来源记录范围差异；实现契约应显式携带/引用编码模型，不能把未核对格式当现成规范。"
+    },
+    {
+      "location": "§5.4 pp.11–12 and Appendix p.20",
+      "finding": "部分比较用了不同模型或理想化token选择；附录仅一条LongChat示例，不能证明普遍自由生成质量。",
+      "action": "正文继续独立定义质量对照，不采用论文质量比和速度比为本项目结果。"
+    }
+  ],
+  "suggested_chapter_additions": {
+    "K-ALG-021": "## 压缩控制器的预测边界\n\n压缩等级选择应在质量允许的候选内比较完整在线路径。缓存已经恢复，也仍需让新 query 读取相应历史并执行 attention；这部分随 query 长度、可见历史、batch、表示和实际 kernel 改变。不能把某个系统仅以 prompt 长度拟合的经验函数作为通用计算式。带宽、源端排队和CPU解码负载变化时，需要重新校准预测，并报告错选导致的超时而不只报告平均压缩比。\n\n熵编码的概率表、分组、量化参数、锚点重建规则与版本应构成同一格式契约。解码器不能从当前模型名称猜测编码时用了哪份统计分布；不同模型/内容分布改变编码效率，采用错误概率表还会破坏恢复。控制器既要检验码流可解，也要检验重建后的状态属于同一合法前缀。"
+  },
+  "formula_review": "确认现有 D、r、Tc、B 的传输临界点算例正确；公式区分单次编码在线成本与预先编码。原文有简化或歧义的范围表达（如4-bit范围及概率表共享范围），本库不据此定义具体bit格式。",
+  "performance_results_reused": false,
+  "runtime_experiments_performed": false,
+  "canonical_modified": false
+}

@@ -86,6 +86,33 @@ CPU 线性层比较无打包/预打包、合适线程数和不同 M 形态。若
 
 若低负载仅有一个请求，A 的简单路径可能更合适；若独立 NUMA 域容量和带宽足够，C 的隔离价值可能超过权重复制代价；若长历史主导流量，继续增加 batch 的收益会下降；若任务转为离线且放宽 ITL，可以选择更大批和更粗 prefill。该场景给出的结论是条件化设计与待测量项，不是未经执行的性能承诺。
 
+## 十二类完整场景如何连成知识体系
+
+设计场景将各章的机制放进共同任务边界。下面的入口均包含声明条件下的候选与资源推导；它们给出可检验的设计，不表示已经在目标硬件完成性能实验。读取时先固定任务函数、质量与服务边界，再选择相应路径。
+
+| 任务形态 | 完整场景入口 | 需要一起检验的关系 |
+|---|---|---|
+| C01 CPU 多请求生成 | 本章 CPU 场景 | 权重/KV 流量、线程与 prefill 时间片、开放到达和 ITL |
+| C02 单 GPU 交互 | [CUDA 平台](../hardware/cuda-execution.md) | 容量、带宽、内核/主机间隙、准入与实际输出 |
+| C03 长上下文高复用 | [前缀缓存](../algorithms/prefix-cache-identity.md) | 物理共享容量、逻辑读取流量、路由与长尾 |
+| C04 显存不足与三级存储 | [多级驻留](../algorithms/tiered-residency.md) | 有效副本、预取、共享带宽、双缓冲与恢复 |
+| C05 CPU–GPU 混合执行 | [异构计算](../algorithms/heterogeneous-execution.md) | 计算放置、完整传输路径、结果合并和主机竞争 |
+| C06 多卡 MLA/MoE | [多设备并行](../algorithms/parallelism.md) | 逐 rank 容量、head/latent/专家归属、通信与偏斜 |
+| C07 P/D 与远端 KV | [分离服务](../algorithms/disaggregated-serving.md) | 首内容、第二 token、迁移提交和池配比 |
+| C08 多模型/LoRA | [多模型放置](../workloads/multi-model-placement.md) | 共同基座、adapter/KV 预算、冷加载与租户等待 |
+| C09 流式语音 | [转写](../models/encoder-decoder-streaming.md)、[语音生成](../models/speech-generation.md) | 稳定文字、可播放音频、各阶段状态与消费时钟 |
+| C10 VLM/全模态 | [视觉语言](../models/vision-language.md)、[全模态](../models/omni-multimodal.md) | 媒体处理、特征/前缀缓存、分支同步与打断 |
+| C11 图像视频扩散 | [图像扩散](../models/image-diffusion.md)、[视频生成](../models/video-generation.md) | 求解器、CFG、时空切分、VAE 与最终媒体质量 |
+| C12 非生成推理 | [embedding/重排](../models/embedding-reranking.md)、[检索/RAG](retrieval-pipeline.md)、[视觉识别](../models/vision-inference.md)、[推荐](../models/recommendation-inference.md)、[GNN](../models/graph-inference.md) | 各自的输入函数、状态与任务指标；五种契约分别验证 |
+
+这些场景也会交叉：RAG 可以调用 embedding、检索、重排和生成；多模态服务可以同时需要多模型放置与低延迟音频。组合时必须重新计算共同资源与状态，不能把单场景的独占带宽或独立质量结果直接相加。
+
+## 实例方案要能落到服务和平台
+
+一个内核或单实例方案满足资源上限之后，还需要 [集群放置](../workloads/cluster-resource-placement.md) 找到满足拓扑和故障余量的执行组，以 [存储服务](storage-services.md) 保证制品、缓存与提交对象的相应语义，并在 [部署环境](deployment-environment.md) 的实际配额、设备和版本下验证。集群空闲卡数、进程存活或模型文件存在，都不能独立证明服务容量已经可用。
+
+每次组合都保留同一条说明链：任务条件与实际输入 → 状态及共同恢复点 → 计算/流量/容量/排队 → 合法候选 → 交互约束 → 独立参考和区分实验 → 条件改变后的重新选择。最终结论应能解释候选为何被保留或淘汰，而不是把每一种优化都叠到默认实现上。
+
 <!-- infraagents:provenance -->
 
 ## 来源与推导

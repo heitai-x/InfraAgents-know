@@ -183,15 +183,21 @@
       "path": "algorithms/quantization-contract.md",
       "category": "algorithms",
       "title": "量化：误差传播、分组尺度与执行格式",
-      "summary": "量化把数值表示、数据布局和执行内核一起改变；收益由减少的字节与新增的变换成本共同决定。",
-      "revision": 1,
+      "summary": "权重/激活/KV 的校准、缩放与执行格式共同决定量化收益；分别验证制品解释、真实 kernel 和任务质量。",
+      "revision": 2,
       "status": "seed",
       "tags": [
         "quantization",
         "GPTQ",
         "W4A16",
         "量化",
-        "scale"
+        "scale",
+        "AWQ",
+        "SmoothQuant",
+        "校准集",
+        "FP8",
+        "重打包",
+        "dispatch"
       ],
       "scope": {
         "model_families": [],
@@ -202,16 +208,24 @@
       "source_ids": [
         "S-GPTQ",
         "S-TORCH-NUMERIC",
-        "S-CUDA-CAPABILITY"
+        "S-CUDA-CAPABILITY",
+        "S-AWQ",
+        "S-SMOOTHQUANT",
+        "S-FLASHINFERPAPER"
       ],
       "related": [
         "K-HW-004",
         "K-FW-002",
-        "K-MODEL-002"
+        "K-MODEL-002",
+        "K-FW-012",
+        "K-ALG-021",
+        "K-HW-010",
+        "K-HW-011",
+        "K-TOOLS-007"
       ],
       "evidence": [],
-      "updated_at": "2026-10-22",
-      "sha256": "34b1e7e243c67a1364eb5f5069336149672be41d928cbd9b2706528c8643b155"
+      "updated_at": "2026-10-23",
+      "sha256": "1ff1082b95610754539212473ba3a562ed9725713e5b882d264a56c79d713403"
     },
     {
       "id": "K-ALG-006",
@@ -341,14 +355,17 @@
       "category": "algorithms",
       "title": "异构状态缓存：层组、恢复位置与联合分配",
       "summary": "混合模型的缓存是多类状态的联合系统，统一的是逻辑恢复位置，物理块形状可以不同。",
-      "revision": 1,
+      "revision": 2,
       "status": "seed",
       "tags": [
         "heterogeneous KV",
         "混合缓存",
         "SSM",
         "LCM",
-        "层组"
+        "层组",
+        "joint state bundle",
+        "state migration",
+        "transactional reservation"
       ],
       "scope": {
         "model_families": [],
@@ -365,11 +382,16 @@
         "K-MODEL-004",
         "K-MODEL-006",
         "K-MODEL-007",
-        "K-ALG-003"
+        "K-ALG-003",
+        "K-ALG-017",
+        "K-ALG-018",
+        "K-SYS-012",
+        "K-SYS-014",
+        "K-ALG-024"
       ],
       "evidence": [],
-      "updated_at": "2026-10-22",
-      "sha256": "4a1d780adcdf0d649739dc6113bbbf8bec1c9690c7a3d6127b904f4bcb907436"
+      "updated_at": "2026-10-23",
+      "sha256": "c9d7ef861fd1243cb4a605a38405fe1c7ddb2cfc24a653a97a83080ad065d02b"
     },
     {
       "id": "K-ALG-010",
@@ -377,13 +399,16 @@
       "category": "algorithms",
       "title": "交叉注意力缓存：固定源、独立几何与可见性",
       "summary": "当 encoder 输出和投影权重固定时，cross-attention 的 K/V 与 decoder 步数无关，可以一次生成、多次读取。",
-      "revision": 1,
+      "revision": 2,
       "status": "seed",
       "tags": [
         "cross attention",
         "encoder decoder",
         "交叉注意力",
-        "context KV"
+        "context KV",
+        "source revision",
+        "cross KV residency",
+        "stage handoff"
       ],
       "scope": {
         "model_families": [],
@@ -400,11 +425,16 @@
         "K-MODEL-005",
         "K-ALG-002",
         "K-FW-006",
-        "K-MODEL-008"
+        "K-MODEL-008",
+        "K-ALG-017",
+        "K-ALG-018",
+        "K-SYS-015",
+        "K-SYS-014",
+        "K-SYS-012"
       ],
       "evidence": [],
-      "updated_at": "2026-10-22",
-      "sha256": "60ea1084cd6924296d75ee6aea2253cc1d9052375e8c6323a9f7cf7f2f4c4ae2"
+      "updated_at": "2026-10-23",
+      "sha256": "aa8313c1df241ae8dabe2bc7a5f57e7189bc5e1260e232eb30835d399f1499e3"
     },
     {
       "id": "K-ALG-011",
@@ -527,13 +557,18 @@
       "category": "algorithms",
       "title": "多 LoRA 服务：低秩计算、驻留与缓存身份",
       "summary": "LoRA 为共享基座增加低秩映射；多适配器服务将模型复用问题转换成按请求选择增量权重的问题。",
-      "revision": 1,
+      "revision": 2,
       "status": "seed",
       "tags": [
         "LoRA",
         "adapter",
         "低秩",
-        "多租户"
+        "多租户",
+        "共同内存池",
+        "异 rank",
+        "adapter 预取",
+        "公平等待",
+        "热切换"
       ],
       "scope": {
         "model_families": [],
@@ -544,16 +579,23 @@
       "source_ids": [
         "S-LORA",
         "S-VLLM-PREFIX",
-        "S-TORCH-NUMERIC"
+        "S-TORCH-NUMERIC",
+        "S-SLORA"
       ],
       "related": [
         "K-ALG-003",
         "K-ALG-001",
-        "K-FW-005"
+        "K-FW-005",
+        "K-SYS-012",
+        "K-WORK-007",
+        "K-SYS-011",
+        "K-SYS-016",
+        "K-ALG-018",
+        "K-TOOLS-007"
       ],
       "evidence": [],
-      "updated_at": "2026-10-22",
-      "sha256": "5c59c1fcfd307c94ec6686ae737d507d039271d13b70f0ca78beccd20317e0d6"
+      "updated_at": "2026-10-23",
+      "sha256": "3cba63cc43866f40cca61ad911f32115e9beaa5c4adff9559b4deb592fd3d4d7"
     },
     {
       "id": "K-ALG-015",
@@ -561,7 +603,7 @@
       "category": "algorithms",
       "title": "推理并行：张量分解、流水、专家与上下文",
       "summary": "并行策略改变张量归属和同步边界；选择依据是每阶段的计算、状态与通信分解。",
-      "revision": 1,
+      "revision": 2,
       "status": "seed",
       "tags": [
         "TP",
@@ -570,7 +612,10 @@
         "EP",
         "CP",
         "parallelism",
-        "并行"
+        "并行",
+        "per-layer ledger",
+        "parallel groups",
+        "MLA MoE scenario"
       ],
       "scope": {
         "model_families": [],
@@ -581,17 +626,23 @@
       "source_ids": [
         "S-NCCL-COLLECTIVE",
         "S-CUDA-TOPOLOGY",
-        "S-MIXTRAL"
+        "S-MIXTRAL",
+        "S-DEEPSEEKV3"
       ],
       "related": [
         "K-HW-002",
         "K-MODEL-003",
         "K-ALG-013",
-        "K-SYS-005"
+        "K-SYS-005",
+        "K-HW-014",
+        "K-ALG-019",
+        "K-MODEL-006",
+        "K-SYS-012",
+        "K-TOOLS-007"
       ],
       "evidence": [],
-      "updated_at": "2026-10-22",
-      "sha256": "9cec2ebe27c69751fb34c408b82fc0b2dcc7d523a8c7d6ddfd37024fea2a65a6"
+      "updated_at": "2026-10-23",
+      "sha256": "161a883561e39371ea22a1430c385546c402db2f993d8a37c6f37e03e1e4bd17"
     },
     {
       "id": "K-ENGINE-001",
@@ -942,15 +993,22 @@
       "path": "frameworks/compile-dynamic-shapes.md",
       "category": "frameworks",
       "title": "编译与动态形状：Guard、分桶和变体成本",
-      "summary": "编译把一组可证明成立的执行假设变成专门程序；动态服务需要管理这些假设覆盖的形状与状态空间。",
-      "revision": 1,
+      "summary": "图获取、IR/lowering、布局和 guard 将函数映射到目标程序；编译缓存及在线变体必须保持副作用、容量与生命周期契约。",
+      "revision": 2,
       "status": "seed",
       "tags": [
         "compile",
         "dynamic shapes",
         "guard",
         "重编译",
-        "bucketing"
+        "bucketing",
+        "IR",
+        "lowering",
+        "布局传播",
+        "融合",
+        "编译缓存",
+        "TVM",
+        "Ansor"
       ],
       "scope": {
         "model_families": [],
@@ -963,31 +1021,44 @@
       "source_ids": [
         "S-TORCH-DYNAMIC",
         "S-NXDI",
-        "S-TRITON"
+        "S-TRITON",
+        "S-TVM",
+        "S-ANSOR"
       ],
       "related": [
         "K-FW-005",
         "K-ALG-007",
-        "K-WORK-003"
+        "K-WORK-003",
+        "K-FW-011",
+        "K-SYS-011",
+        "K-FW-007",
+        "K-MODEL-013",
+        "K-MODEL-014",
+        "K-MODEL-016"
       ],
       "evidence": [],
-      "updated_at": "2026-10-22",
-      "sha256": "ec4015ce391d92514aa995c395c9e375a0ddbf44ac680c3ba982a98af64395db"
+      "updated_at": "2026-10-23",
+      "sha256": "50c53e4310e29020b5897f9c069420f4933dd792a50d452e9ff2a3aa827d210c"
     },
     {
       "id": "K-FW-005",
       "path": "frameworks/cuda-graph-buffers.md",
       "category": "frameworks",
       "title": "CUDA Graph：捕获边界、计划状态与变长服务",
-      "summary": "CUDA Graph 重放一组已捕获的设备工作；服务动态性通过稳定缓冲中的值、分桶和捕获外控制面承接。",
-      "revision": 1,
+      "summary": "CUDA Graph 的固定地址、动态计划和在途内容所有权需共同验证；卸载、adapter 切换和图池竞争改变合法性与收益。",
+      "revision": 2,
       "status": "seed",
       "tags": [
         "CUDA Graph",
         "稳定地址",
         "capture",
         "replay",
-        "workspace"
+        "workspace",
+        "graph pool",
+        "LoRA",
+        "offload",
+        "fixed_split_size",
+        "并发重放"
       ],
       "scope": {
         "model_families": [],
@@ -1003,32 +1074,43 @@
         "S-TORCH-CUDA",
         "S-CUDA-ASYNC",
         "S-FI",
-        "S-TRTLLM"
+        "S-TRTLLM",
+        "S-FLASHINFERPAPER"
       ],
       "related": [
         "K-ALG-008",
         "K-ALG-010",
         "K-FW-006",
-        "K-SYS-004"
+        "K-SYS-004",
+        "K-ALG-019",
+        "K-ALG-014",
+        "K-ALG-017",
+        "K-SYS-012",
+        "K-SYS-011"
       ],
       "evidence": [],
-      "updated_at": "2026-10-22",
-      "sha256": "ffe1ef32d0e0d598a197892f13d53dc848089bf48d83ba7a478dd5cd3875bc08"
+      "updated_at": "2026-10-23",
+      "sha256": "34232a876bf3cc6904ad796423659dc8b4bc250532e6d2213e0d0f5d1fd88e6c"
     },
     {
       "id": "K-FW-006",
       "path": "frameworks/attention-backends.md",
       "category": "frameworks",
       "title": "Attention Backend：语义、布局与执行契约的交集",
-      "summary": "选择 attention backend 是匹配可见性、张量几何、状态布局和执行模式，性能排名只对确定的运行点成立。",
-      "revision": 1,
+      "summary": "具体版本接口的 mask、head、分页与计划条件决定 backend 可替换性；分区合并和转换开销需纳入完整验证。",
+      "revision": 2,
       "status": "seed",
       "tags": [
         "attention backend",
         "SDPA",
         "FlashInfer",
         "FlashAttention",
-        "mask alignment"
+        "mask alignment",
+        "能力表",
+        "LSE",
+        "attention composition",
+        "布局转换",
+        "接口版本"
       ],
       "scope": {
         "model_families": [],
@@ -1040,31 +1122,42 @@
         "S-SDPA",
         "S-FA-IMPL",
         "S-FI",
-        "S-AITER"
+        "S-AITER",
+        "S-FLASHINFERPAPER"
       ],
       "related": [
         "K-ALG-004",
         "K-ALG-010",
         "K-FW-005",
-        "K-MODEL-006"
+        "K-MODEL-006",
+        "K-ALG-022",
+        "K-ALG-021",
+        "K-HW-011",
+        "K-ALG-003",
+        "K-TOOLS-006"
       ],
       "evidence": [],
-      "updated_at": "2026-10-22",
-      "sha256": "73811bc9331cd9c0d6edfbc82120ae8cd752f01d5f13268224fe7fbd1e18d625"
+      "updated_at": "2026-10-23",
+      "sha256": "01009cca4251544f55e6478d8bb99f2af1aeb3a043d027ff3279692215917bac"
     },
     {
       "id": "K-FW-007",
       "path": "frameworks/triton-kernels.md",
       "category": "frameworks",
       "title": "Triton Kernel：块程序、布局与融合边界",
-      "summary": "Triton 用块级程序描述张量工作，性能来自把复用、归约和线程布局映射到目标 GPU 资源。",
-      "revision": 1,
+      "summary": "由真实矩阵形状推导 program、线程与片上资源，再用合法性和端到端收益约束 tile、流水及调优预算。",
+      "revision": 2,
       "status": "seed",
       "tags": [
         "Triton",
         "tile",
         "autotune",
-        "fusion"
+        "fusion",
+        "register spill",
+        "线程布局",
+        "pipeline stages",
+        "调优预算",
+        "split-K"
       ],
       "scope": {
         "model_families": [],
@@ -1078,16 +1171,24 @@
       "source_ids": [
         "S-TRITON",
         "S-CUDA-BEST",
-        "S-ROCM"
+        "S-ROCM",
+        "S-TVM",
+        "S-ANSOR"
       ],
       "related": [
         "K-ALG-004",
         "K-HW-005",
-        "K-HW-006"
+        "K-HW-006",
+        "K-HW-011",
+        "K-HW-010",
+        "K-HW-004",
+        "K-FW-004",
+        "K-TOOLS-003",
+        "K-TOOLS-007"
       ],
       "evidence": [],
-      "updated_at": "2026-10-22",
-      "sha256": "1bbc1546adb54c034b7cb66a5c0dab4b6f29aea4813c421fb98fd78ca10d62b0"
+      "updated_at": "2026-10-23",
+      "sha256": "35f35dde0def4be2bc2e14e4c0a476d5b38e535d3a0b2284643fb52f16f1fdba"
     },
     {
       "id": "K-FW-008",
@@ -1095,12 +1196,15 @@
       "category": "frameworks",
       "title": "MLX 服务：惰性求值、编译与请求状态",
       "summary": "MLX 的数组表达式可以延迟执行，服务循环必须明确计算何时提交、何时完成和何时释放状态。",
-      "revision": 1,
+      "revision": 2,
       "status": "seed",
       "tags": [
         "MLX",
         "lazy evaluation",
-        "惰性求值"
+        "惰性求值",
+        "explicit state",
+        "compile cache",
+        "stream dependency"
       ],
       "scope": {
         "model_families": [],
@@ -1114,16 +1218,21 @@
       },
       "source_ids": [
         "S-MLX",
-        "S-MLX-MEM"
+        "S-MLX-MEM",
+        "S-MLX-EXEC"
       ],
       "related": [
         "K-HW-007",
         "K-ALG-008",
-        "K-SYS-004"
+        "K-SYS-004",
+        "K-SYS-012",
+        "K-SYS-015",
+        "K-FW-011",
+        "K-HW-013"
       ],
       "evidence": [],
-      "updated_at": "2026-10-22",
-      "sha256": "f7c8de8122e1126b044682324f55789ba3f15152c03ec857ae898cc1eaf9afdf"
+      "updated_at": "2026-10-23",
+      "sha256": "c308a8ac651460ede6b6e53d3413bea4c4a7707b757516faf8a752b35872b6c1"
     },
     {
       "id": "K-FW-009",
@@ -1131,13 +1240,16 @@
       "category": "frameworks",
       "title": "Neuron/NxD：静态程序承接动态生成",
       "summary": "Neuron 服务通过形状桶、设备驻留状态和分布式执行组，把可变请求映射到编译后的程序族。",
-      "revision": 1,
+      "revision": 2,
       "status": "seed",
       "tags": [
         "Neuron",
         "NxD",
         "NEFF",
-        "bucketing"
+        "bucketing",
+        "NEFF lifecycle",
+        "bucket transition",
+        "block to flat"
       ],
       "scope": {
         "model_families": [],
@@ -1154,11 +1266,16 @@
       "related": [
         "K-HW-008",
         "K-FW-004",
-        "K-ALG-009"
+        "K-ALG-009",
+        "K-FW-011",
+        "K-SYS-011",
+        "K-SYS-014",
+        "K-ALG-002",
+        "K-MODEL-002"
       ],
       "evidence": [],
-      "updated_at": "2026-10-22",
-      "sha256": "9e15656afa6a0d189bfe2234a867eccad82091206203eaa47413f1f92028ae6e"
+      "updated_at": "2026-10-23",
+      "sha256": "0a7be25e54019cb53d80e180594d1eb633cfdd9e9a058cb340a2c07dee7f3f0e"
     },
     {
       "id": "K-FW-010",
@@ -1166,13 +1283,16 @@
       "category": "frameworks",
       "title": "NKI：Partition 轴、片上生存期与 Attention 数据流",
       "summary": "NKI 的 tile 是带硬件轴语义的片上对象；布局与生存期共同决定 DMA、矩阵和归约引擎的供给。",
-      "revision": 1,
+      "revision": 2,
       "status": "seed",
       "tags": [
         "NKI",
         "partition",
         "tiling",
-        "PSUM"
+        "PSUM",
+        "SBUF footprint",
+        "PSUM lifetime",
+        "tile legality"
       ],
       "scope": {
         "model_families": [],
@@ -1189,11 +1309,14 @@
       "related": [
         "K-HW-008",
         "K-ALG-004",
-        "K-HW-001"
+        "K-HW-001",
+        "K-ALG-016",
+        "K-HW-011",
+        "K-FW-004"
       ],
       "evidence": [],
-      "updated_at": "2026-10-22",
-      "sha256": "4db1bf114fcdffa7f66d1664d85580a4a975395602ff476e4459bab70d5901cb"
+      "updated_at": "2026-10-23",
+      "sha256": "abc8dbd0be6a05a8b52ed4686ab2d0e27f893c6e182656c36c514306c0799a16"
     },
     {
       "id": "K-HW-001",
@@ -1324,15 +1447,20 @@
       "path": "hardware/precision-and-kernel-support.md",
       "category": "hardware",
       "title": "数值格式、打包布局与矩阵指令",
-      "summary": "硬件支持某种 dtype、库能接受该 dtype、目标形状有高效 kernel，是三个不同层次的能力。",
-      "revision": 1,
+      "summary": "固定架构/指令能力、量化参数布局与实际 dispatch 分别核验，防止把存储格式、指令支持和目标内核性能混为一谈。",
+      "revision": 2,
       "status": "seed",
       "tags": [
         "FP8",
         "BF16",
         "INT4",
         "Tensor Core",
-        "dtype"
+        "dtype",
+        "WMMA",
+        "scale layout",
+        "INT32 overflow",
+        "CPU dispatch",
+        "FP8 KV"
       ],
       "scope": {
         "model_families": [],
@@ -1345,16 +1473,24 @@
       "source_ids": [
         "S-CUDA-CAPABILITY",
         "S-TORCH-NUMERIC",
-        "S-GPTQ"
+        "S-GPTQ",
+        "S-SMOOTHQUANT",
+        "S-AWQ",
+        "S-FLASHINFERPAPER"
       ],
       "related": [
         "K-ALG-005",
         "K-HW-005",
-        "K-HW-006"
+        "K-HW-006",
+        "K-FW-012",
+        "K-HW-010",
+        "K-HW-011",
+        "K-TOOLS-003",
+        "K-ALG-021"
       ],
       "evidence": [],
-      "updated_at": "2026-10-22",
-      "sha256": "051a3a6dc899418e047ddb518a6f6b45b15788537f7c6594dde5e8a623cf1084"
+      "updated_at": "2026-10-23",
+      "sha256": "7185979b8429b7d44fd34ec0910bbe85c617a457cc4d9d9055920e73d07bc5d3"
     },
     {
       "id": "K-HW-005",
@@ -1480,14 +1616,17 @@
       "category": "hardware",
       "title": "Trainium：HBM、SBUF、PSUM 与编译执行",
       "summary": "Trainium 的高效执行来自把张量分块映射到片上存储和专用引擎，同时让静态可执行程序承接动态服务状态。",
-      "revision": 1,
+      "revision": 2,
       "status": "seed",
       "tags": [
         "trainium",
         "Neuron",
         "SBUF",
         "PSUM",
-        "NKI"
+        "NKI",
+        "HBM traffic",
+        "executable residency",
+        "bank contention"
       ],
       "scope": {
         "model_families": [],
@@ -1504,11 +1643,15 @@
       "related": [
         "K-FW-009",
         "K-FW-010",
-        "K-ALG-009"
+        "K-ALG-009",
+        "K-FW-011",
+        "K-HW-014",
+        "K-ALG-015",
+        "K-SYS-012"
       ],
       "evidence": [],
-      "updated_at": "2026-10-22",
-      "sha256": "122c307a2ee77fa8ba681093e0a2e1c1fa501e6bfc046714b745c5720ef40b54"
+      "updated_at": "2026-10-23",
+      "sha256": "0773594917538d150957f945b6c9268e1aca64bb83e041aec2315c1cb0984019"
     },
     {
       "id": "K-HW-009",
@@ -1563,7 +1706,7 @@
       "category": "models",
       "title": "从模型计算图推导 Prefill、Decode 与持久状态",
       "summary": "模型接入首先是一项计算图和状态语义工作：识别哪些量随 token、位置、请求和阶段变化，再选择执行机制。",
-      "revision": 2,
+      "revision": 3,
       "status": "seed",
       "tags": [
         "prefill",
@@ -1603,8 +1746,8 @@
         "K-SYS-012"
       ],
       "evidence": [],
-      "updated_at": "2026-10-22",
-      "sha256": "a6f18dae36287c0cceda00b2c7d1a7ffb305a828187ccb22174b7443a200ed9f"
+      "updated_at": "2026-10-23",
+      "sha256": "fa02b9460240604dc99171c61dbb62c78f99bc2a8afcd2079ba69ed78d387864"
     },
     {
       "id": "K-MODEL-002",
@@ -1612,13 +1755,16 @@
       "category": "models",
       "title": "MHA、GQA 与 MQA：头映射和带宽复用",
       "summary": "GQA 让多个 query heads 读取同一组 K/V；逻辑共享可以减少状态，但是否减少实际访存取决于 kernel。",
-      "revision": 1,
+      "revision": 2,
       "status": "seed",
       "tags": [
         "GQA",
         "MQA",
         "KV heads",
-        "缓存头数"
+        "缓存头数",
+        "uneven heads",
+        "quantized pages",
+        "replicated KV"
       ],
       "scope": {
         "model_families": [
@@ -1631,17 +1777,22 @@
       "source_ids": [
         "S-GQA",
         "S-HF-CACHE",
-        "S-FI"
+        "S-FI",
+        "S-KIVI",
+        "S-NXDI"
       ],
       "related": [
         "K-ALG-002",
         "K-ALG-004",
         "K-MODEL-006",
-        "K-HW-001"
+        "K-HW-001",
+        "K-ALG-021",
+        "K-ALG-015",
+        "K-SYS-009"
       ],
       "evidence": [],
-      "updated_at": "2026-10-22",
-      "sha256": "e1ef892adc4e90412a813c86e48a7440589c16ab65782b05420aaa6d7b9c94f4"
+      "updated_at": "2026-10-23",
+      "sha256": "d381f8374bdc2df2a4e3096f5ab9a93e3bd2493db369cb23339ab61e8c5b5da2"
     },
     {
       "id": "K-MODEL-003",
@@ -1649,14 +1800,17 @@
       "category": "models",
       "title": "MoE：路由、Dispatch/Combine 与专家负载",
       "summary": "MoE 的条件计算节省激活 FLOPs，但全部专家的驻留和路由后的不均衡决定真实服务成本。",
-      "revision": 1,
+      "revision": 2,
       "status": "seed",
       "tags": [
         "MoE",
         "routing",
         "dispatch",
         "combine",
-        "expert parallel"
+        "expert parallel",
+        "grouped GEMM",
+        "expert replicas",
+        "routing skew"
       ],
       "scope": {
         "model_families": [
@@ -1669,16 +1823,22 @@
       "source_ids": [
         "S-MIXTRAL",
         "S-MLA",
-        "S-NCCL-COLLECTIVE"
+        "S-NCCL-COLLECTIVE",
+        "S-DEEPSEEKV3"
       ],
       "related": [
         "K-ALG-015",
         "K-HW-002",
-        "K-WORK-003"
+        "K-WORK-003",
+        "K-ALG-019",
+        "K-ALG-020",
+        "K-HW-010",
+        "K-HW-011",
+        "K-SYS-012"
       ],
       "evidence": [],
-      "updated_at": "2026-10-22",
-      "sha256": "dc60169adbd1f064986187694775e8e151808a2868ac218ff74d6af8fd52fff7"
+      "updated_at": "2026-10-23",
+      "sha256": "f7b00bde22fbeada937690805ad5f1c45e7a4a51b802e3164241505cc7ddeed1"
     },
     {
       "id": "K-MODEL-004",
@@ -1686,14 +1846,17 @@
       "category": "models",
       "title": "SSM 与混合模型：递归状态、扫描与恢复",
       "summary": "递归状态是前缀的压缩摘要；它支持低增长成本的 decode，却改变了前缀复用、回滚和批次管理方式。",
-      "revision": 1,
+      "revision": 2,
       "status": "seed",
       "tags": [
         "Mamba",
         "SSM",
         "recurrent",
         "混合模型",
-        "state checkpoint"
+        "state checkpoint",
+        "associative scan",
+        "speculative rollback",
+        "joint checkpoint"
       ],
       "scope": {
         "model_families": [
@@ -1712,11 +1875,15 @@
       "related": [
         "K-ALG-009",
         "K-ALG-006",
-        "K-ALG-003"
+        "K-ALG-003",
+        "K-ALG-017",
+        "K-ALG-024",
+        "K-HW-011",
+        "K-SYS-014"
       ],
       "evidence": [],
-      "updated_at": "2026-10-22",
-      "sha256": "2960cff6c854622b8566afdb74fedb7d2f333aed0577a4da10a549a849ed3acd"
+      "updated_at": "2026-10-23",
+      "sha256": "b05d62f616ddc062975f04ccba7f505a85b2090f0839473d67e734fcbd64ae26"
     },
     {
       "id": "K-MODEL-005",
@@ -1724,14 +1891,17 @@
       "category": "models",
       "title": "Encoder-decoder：源表示、两套 Attention 与流式边界",
       "summary": "Encoder-decoder 将源编码和目标生成分开；固定源复用、流式追加和目标自回归具有不同的依赖结构。",
-      "revision": 1,
+      "revision": 2,
       "status": "seed",
       "tags": [
         "encoder decoder",
         "Whisper",
         "Moonshine",
         "ASR",
-        "streaming"
+        "streaming",
+        "ASR commit",
+        "WER latency",
+        "streaming scenario"
       ],
       "scope": {
         "model_families": [
@@ -1752,11 +1922,16 @@
       "related": [
         "K-ALG-010",
         "K-MODEL-011",
-        "K-SYS-007"
+        "K-SYS-007",
+        "K-SYS-015",
+        "K-SYS-004",
+        "K-WORK-005",
+        "K-MODEL-012",
+        "K-TOOLS-007"
       ],
       "evidence": [],
-      "updated_at": "2026-10-22",
-      "sha256": "661a1a8c927819850a111071b668635007cc1b884edb54636779ddbfde9aaba4"
+      "updated_at": "2026-10-23",
+      "sha256": "147fa3bc49d6b6423d7ba03ecc311b87345ee7c2c934a4b0007ad59b2ed72bf4"
     },
     {
       "id": "K-MODEL-006",
@@ -1764,13 +1939,16 @@
       "category": "models",
       "title": "MLA：压缩状态、矩阵吸收与解耦 RoPE",
       "summary": "MLA 通过缓存低维 latent 改变 KV 的表示；真正节省 decode 流量需要执行内核沿压缩表示计算。",
-      "revision": 1,
+      "revision": 3,
       "status": "seed",
       "tags": [
         "MLA",
         "DeepSeek",
         "latent",
-        "矩阵吸收"
+        "矩阵吸收",
+        "latent quantization",
+        "TP replicated latent",
+        "workspace audit"
       ],
       "scope": {
         "model_families": [],
@@ -1781,16 +1959,22 @@
       "source_ids": [
         "S-MLA",
         "S-FI",
-        "S-TORCH-NUMERIC"
+        "S-TORCH-NUMERIC",
+        "S-DEEPSEEKV3",
+        "S-KIVI"
       ],
       "related": [
         "K-MODEL-002",
         "K-ALG-004",
-        "K-ALG-009"
+        "K-ALG-009",
+        "K-ALG-021",
+        "K-ALG-015",
+        "K-HW-011",
+        "K-SYS-009"
       ],
       "evidence": [],
-      "updated_at": "2026-10-22",
-      "sha256": "fa3da9c009c7004551d8e484c3a1122cb9e3a5819ab0379cc0c3ee2bfcdfc0ae"
+      "updated_at": "2026-10-23",
+      "sha256": "1f0c786d7dde16c9f946254f6ad1046c7d409e1c9a11e3a383f1750ffe1646e1"
     },
     {
       "id": "K-MODEL-007",
@@ -1798,13 +1982,16 @@
       "category": "models",
       "title": "窗口与稀疏 Attention：可见性、位置和状态保留",
       "summary": "窗口限制的是每个 query 的直接可见历史；逻辑位置与跨层信息传播仍然持续演进。",
-      "revision": 1,
+      "revision": 2,
       "status": "seed",
       "tags": [
         "sliding window",
         "稀疏注意力",
         "ring buffer",
-        "SWA"
+        "SWA",
+        "native sparsity",
+        "approximate pruning",
+        "sparse index cost"
       ],
       "scope": {
         "model_families": [],
@@ -1815,16 +2002,21 @@
       "source_ids": [
         "S-MISTRAL",
         "S-HF-CACHE",
-        "S-VLLM-HYBRID"
+        "S-VLLM-HYBRID",
+        "S-KIVI",
+        "S-H2O"
       ],
       "related": [
         "K-SYS-003",
         "K-ALG-009",
-        "K-ALG-004"
+        "K-ALG-004",
+        "K-ALG-021",
+        "K-ALG-018",
+        "K-HW-011"
       ],
       "evidence": [],
-      "updated_at": "2026-10-22",
-      "sha256": "1c84b3453fcfbd190279221ef618b69fef3ffd784d7b19a8f31329bf2048b7c7"
+      "updated_at": "2026-10-23",
+      "sha256": "3e3111991f3800dfd1c40559f585403c1af37ddab120399f9b34aaa2541f681d"
     },
     {
       "id": "K-MODEL-008",
@@ -1832,14 +2024,17 @@
       "category": "models",
       "title": "视觉语言模型：Patch、模态桥接与联合位置",
       "summary": "VLM 的真实输入规模由处理器生成的视觉 token 决定，文本长度只描述其中一部分。",
-      "revision": 1,
+      "revision": 2,
       "status": "seed",
       "tags": [
         "VLM",
         "vision language",
         "MRoPE",
         "Qwen2.5-VL",
-        "多模态"
+        "多模态",
+        "media pipeline",
+        "visual cache",
+        "VLM scenario"
       ],
       "scope": {
         "model_families": [],
@@ -1855,11 +2050,15 @@
       "related": [
         "K-ALG-010",
         "K-SYS-007",
-        "K-WORK-003"
+        "K-WORK-003",
+        "K-SYS-015",
+        "K-SYS-012",
+        "K-ALG-023",
+        "K-WORK-005"
       ],
       "evidence": [],
-      "updated_at": "2026-10-22",
-      "sha256": "61d9efb1a7c0c49461742efdfd6b261536a7a95a93e559f909c5dc48ccf4e668"
+      "updated_at": "2026-10-23",
+      "sha256": "c45ceef4d245f3de46f6d3ca219883f495deddd0d5355f19dd64a6ba9e14bd25"
     },
     {
       "id": "K-MODEL-009",
@@ -1867,14 +2066,17 @@
       "category": "models",
       "title": "图像扩散：迭代求解、条件复用与 CFG",
       "summary": "扩散服务围绕不断变化的 latent 做多步求解；可复用对象由每步依赖决定，不能沿用自回归 KV 的全部规则。",
-      "revision": 1,
+      "revision": 2,
       "status": "seed",
       "tags": [
         "diffusion",
         "DiT",
         "CFG",
         "图像生成",
-        "VAE"
+        "VAE",
+        "scheduler numerics",
+        "diffusion cache",
+        "CFG batching"
       ],
       "scope": {
         "model_families": [],
@@ -1885,17 +2087,22 @@
       "source_ids": [
         "S-LDM",
         "S-DIT",
-        "S-DIFFUSERS"
+        "S-DIFFUSERS",
+        "S-WAN"
       ],
       "related": [
         "K-MODEL-010",
         "K-ALG-010",
         "K-FW-004",
-        "K-WORK-005"
+        "K-WORK-005",
+        "K-HW-011",
+        "K-ALG-015",
+        "K-SYS-012",
+        "K-TOOLS-007"
       ],
       "evidence": [],
-      "updated_at": "2026-10-22",
-      "sha256": "c6590f041f9ba7885d6ac36facf5cd1b76fcfa5f2c216c3f51716540eca70007"
+      "updated_at": "2026-10-23",
+      "sha256": "f08b493a7f620357ffd83d063ee0a797ffa886046659e08271c3face962000e6"
     },
     {
       "id": "K-MODEL-010",
@@ -1903,13 +2110,16 @@
       "category": "models",
       "title": "视频生成：时空 Token、全局耦合与分块解码",
       "summary": "视频生成把时间加入 latent 几何，时间压缩、时空 attention 和输出解码共同决定可服务规模。",
-      "revision": 1,
+      "revision": 2,
       "status": "seed",
       "tags": [
         "video generation",
         "视频生成",
         "时空",
-        "3D VAE"
+        "3D VAE",
+        "spatiotemporal sharding",
+        "causal VAE state",
+        "video scenario"
       ],
       "scope": {
         "model_families": [],
@@ -1925,11 +2135,15 @@
       "related": [
         "K-MODEL-009",
         "K-ALG-015",
-        "K-HW-001"
+        "K-HW-001",
+        "K-HW-014",
+        "K-SYS-015",
+        "K-SYS-012",
+        "K-WORK-005"
       ],
       "evidence": [],
-      "updated_at": "2026-10-22",
-      "sha256": "c8d69151274ecff6afc8166bb6218dae222fcd8100150df7778899a829022b06"
+      "updated_at": "2026-10-23",
+      "sha256": "d6ebd708a7b9de12dfae97659345b1ccec8a694133be812e25a67f2e22246da7"
     },
     {
       "id": "K-MODEL-011",
@@ -1937,14 +2151,17 @@
       "category": "models",
       "title": "语音生成：Codec Token、声学块与播放时钟",
       "summary": "语音服务需要把模型生成时钟转换为音频播放时钟，首包和稳定供给由多个阶段共同决定。",
-      "revision": 1,
+      "revision": 2,
       "status": "seed",
       "tags": [
         "TTS",
         "speech generation",
         "codec",
         "音频",
-        "首包"
+        "首包",
+        "audio chunk deadlines",
+        "codec lookahead",
+        "playback cancellation"
       ],
       "scope": {
         "model_families": [],
@@ -1960,11 +2177,16 @@
       "related": [
         "K-MODEL-005",
         "K-WORK-001",
-        "K-SYS-008"
+        "K-SYS-008",
+        "K-SYS-015",
+        "K-SYS-004",
+        "K-SYS-014",
+        "K-WORK-005",
+        "K-MODEL-009"
       ],
       "evidence": [],
-      "updated_at": "2026-10-22",
-      "sha256": "f405efc3e4c56868346fe9ffa8524d57449d63cf972da44161f35b05d8b5e8de"
+      "updated_at": "2026-10-23",
+      "sha256": "9cab040f27f77dc8040a6cc6f0ae96a175542e4379e2262ca2cdb53fb9aee3a4"
     },
     {
       "id": "K-MODEL-012",
@@ -1972,14 +2194,17 @@
       "category": "models",
       "title": "全模态系统：多时钟、分支依赖与背压",
       "summary": "全模态推理是多个有依赖的计算分支组成的系统；文本、视频和音频不能压成同一个 token 长度。",
-      "revision": 1,
+      "revision": 2,
       "status": "seed",
       "tags": [
         "omni",
         "Thinker",
         "Talker",
         "多时钟",
-        "全模态"
+        "全模态",
+        "full duplex system",
+        "multimodal resource budget",
+        "branch backpressure"
       ],
       "scope": {
         "model_families": [],
@@ -1996,11 +2221,16 @@
         "K-MODEL-008",
         "K-MODEL-011",
         "K-SYS-008",
-        "K-WORK-003"
+        "K-WORK-003",
+        "K-SYS-015",
+        "K-SYS-014",
+        "K-WORK-005",
+        "K-WORK-010",
+        "K-SYS-012"
       ],
       "evidence": [],
-      "updated_at": "2026-10-22",
-      "sha256": "f236375421f51d89914c0936f90225c5b154913b6f0a865783b28077c1b93f7d"
+      "updated_at": "2026-10-23",
+      "sha256": "f1fc4dc6611ad1b53ad8cc7f2abf0cbf9b9b2022d2d22c64dc712a39943d9d15"
     },
     {
       "id": "K-SYS-001",
@@ -2052,14 +2282,19 @@
       "category": "system-semantics",
       "title": "请求身份：逻辑序列、批次视图与结果归属",
       "summary": "请求是长期语义对象，batch 行与物理槽是临时执行位置；正确性依赖它们之间可追溯的映射。",
-      "revision": 1,
+      "revision": 2,
       "status": "seed",
       "tags": [
         "request",
         "batch index",
         "请求归属",
         "identity",
-        "epoch"
+        "epoch",
+        "会话",
+        "分支",
+        "模型版本",
+        "租户",
+        "恢复代次"
       ],
       "scope": {
         "model_families": [],
@@ -2075,11 +2310,17 @@
       "related": [
         "K-ALG-001",
         "K-ALG-011",
-        "K-ALG-008"
+        "K-ALG-008",
+        "K-ALG-024",
+        "K-WORK-010",
+        "K-SYS-011",
+        "K-SYS-014",
+        "K-SYS-016",
+        "K-ALG-023"
       ],
       "evidence": [],
-      "updated_at": "2026-10-22",
-      "sha256": "a42bf51800569a66de7e3a3aa5f2b7d6aa3a7e0cf5a19b26cd273c9d7c954c57"
+      "updated_at": "2026-10-23",
+      "sha256": "856dab119bd58b29a2a4a48826a05aab387df4101c185b142162aa5bdf65d4cb"
     },
     {
       "id": "K-SYS-003",
@@ -2133,14 +2374,19 @@
       "category": "system-semantics",
       "title": "取消与完成：业务终止、设备排空和资源回收",
       "summary": "取消撤销未来服务意图，完成证明既有工作已结束；物理资源重用必须等待最后一个使用者。",
-      "revision": 1,
+      "revision": 2,
       "status": "seed",
       "tags": [
         "取消请求",
         "资源释放",
         "异步完成",
         "cancellation",
-        "lifetime"
+        "lifetime",
+        "传输取消",
+        "部分 I/O",
+        "进程退出",
+        "资源守恒",
+        "排空"
       ],
       "scope": {
         "model_families": [],
@@ -2151,16 +2397,25 @@
       "source_ids": [
         "S-ASGI",
         "S-CUDA-ALLOC",
-        "S-CUDA-ASYNC"
+        "S-CUDA-ASYNC",
+        "S-RDMA",
+        "S-LINUX-IO",
+        "S-SERVERLESSLLM"
       ],
       "related": [
         "K-ALG-008",
         "K-FW-003",
-        "K-SYS-008"
+        "K-SYS-008",
+        "K-SYS-011",
+        "K-SYS-012",
+        "K-SYS-014",
+        "K-SYS-018",
+        "K-HW-014",
+        "K-TOOLS-005"
       ],
       "evidence": [],
-      "updated_at": "2026-10-22",
-      "sha256": "d1fea776b5c347da84bb3fc4787b10ce1a653a396327859b35abeae284ee3569"
+      "updated_at": "2026-10-23",
+      "sha256": "919052c77f65a13c9dc09aad03341ed31f0820dbbdcb2750b5789f349f9e86c1"
     },
     {
       "id": "K-SYS-005",
@@ -2292,14 +2547,19 @@
       "category": "system-semantics",
       "title": "服务协议：接收、流式背压与终止语义",
       "summary": "推理服务将内部生成状态映射为可观察的网络事件；接收、执行完成和客户端收到结果是不同的完成点。",
-      "revision": 1,
+      "revision": 2,
       "status": "seed",
       "tags": [
         "HTTP",
         "SSE",
         "ASGI",
         "backpressure",
-        "服务协议"
+        "服务协议",
+        "执行域",
+        "配额",
+        "滚动发布",
+        "故障状态测试",
+        "重试语义"
       ],
       "scope": {
         "model_families": [],
@@ -2310,16 +2570,24 @@
       "source_ids": [
         "S-ASGI",
         "S-OTEL",
-        "S-GENAI-PERF"
+        "S-GENAI-PERF",
+        "S-BORG",
+        "S-NVIDIA-PLUGIN"
       ],
       "related": [
         "K-SYS-004",
         "K-WORK-001",
-        "K-MODEL-011"
+        "K-MODEL-011",
+        "K-SYS-015",
+        "K-SYS-011",
+        "K-SYS-014",
+        "K-SYS-016",
+        "K-WORK-008",
+        "K-TOOLS-005"
       ],
       "evidence": [],
-      "updated_at": "2026-10-22",
-      "sha256": "bdef28a67d7aa9f9b025759bfdaf8a0f706112cf9ef8bfec8beed1ce5c2ebdfd"
+      "updated_at": "2026-10-23",
+      "sha256": "f68e94189e886407e217a22cea44bb4767d6611200d8b657d656e00c925c8eb8"
     },
     {
       "id": "K-SYS-009",
@@ -2367,14 +2635,18 @@
       "path": "system-semantics/design-synthesis.md",
       "category": "system-semantics",
       "title": "系统设计推导：把模型、缓存、执行与目标组合起来",
-      "summary": "专家指导的产物是一条从任务条件到系统结构的推导链：状态模型、资源模型、候选设计及其可区分的结果。",
-      "revision": 2,
+      "summary": "把任务、模型状态、资源账、候选、组合约束和验证连成设计链；CPU算例与十二类系统场景提供贯通阅读入口。",
+      "revision": 3,
       "status": "seed",
       "tags": [
         "系统设计",
         "design synthesis",
         "专家指导",
-        "组合推导"
+        "组合推导",
+        "完整系统",
+        "组合场景",
+        "设计入口",
+        "十二类场景"
       ],
       "scope": {
         "model_families": [],
@@ -2405,11 +2677,32 @@
         "K-SYS-012",
         "K-SYS-015",
         "K-WORK-010",
-        "K-TOOLS-007"
+        "K-TOOLS-007",
+        "K-ALG-003",
+        "K-HW-005",
+        "K-ALG-017",
+        "K-ALG-020",
+        "K-ALG-015",
+        "K-ALG-013",
+        "K-WORK-007",
+        "K-MODEL-005",
+        "K-MODEL-008",
+        "K-MODEL-009",
+        "K-MODEL-010",
+        "K-MODEL-011",
+        "K-MODEL-012",
+        "K-MODEL-013",
+        "K-SYS-017",
+        "K-MODEL-014",
+        "K-MODEL-015",
+        "K-MODEL-016",
+        "K-WORK-011",
+        "K-SYS-018",
+        "K-SYS-019"
       ],
       "evidence": [],
-      "updated_at": "2026-10-22",
-      "sha256": "e2ba1aa2ffa443b8b577f7aabc0bcb402fff56bb324feac94efc313e33fa5610"
+      "updated_at": "2026-10-23",
+      "sha256": "a769af3d7a1b18a662391160fd09ff7e4b2d0822ba88229f47bc6b765ad7b05c"
     },
     {
       "id": "K-TOOLS-001",
@@ -2602,14 +2895,19 @@
       "category": "tools",
       "title": "失败分析：最早偏离、最小复现与机制归因",
       "summary": "失败记录的价值在于还原系统从哪一个状态开始偏离预期，并区分输入、实现、资源和外部环境。",
-      "revision": 1,
+      "revision": 2,
       "status": "seed",
       "tags": [
         "failure",
         "reproducer",
         "OOM",
         "timeout",
-        "最小复现"
+        "最小复现",
+        "故障注入",
+        "I/O 超时",
+        "部分 rank",
+        "恢复",
+        "长期压力"
       ],
       "scope": {
         "model_families": [],
@@ -2620,16 +2918,24 @@
       "source_ids": [
         "S-PY-SUBPROCESS",
         "S-CUDA-ASYNC",
-        "S-TORCH-NUMERIC"
+        "S-TORCH-NUMERIC",
+        "S-LINUX-RESOURCES",
+        "S-RDMA",
+        "S-LINUX-IO"
       ],
       "related": [
         "K-SYS-006",
         "K-SYS-005",
-        "K-TOOLS-006"
+        "K-TOOLS-006",
+        "K-SYS-004",
+        "K-SYS-014",
+        "K-SYS-018",
+        "K-SYS-019",
+        "K-TOOLS-007"
       ],
       "evidence": [],
-      "updated_at": "2026-10-22",
-      "sha256": "25a9894c3c28f9d3332e46ae916fed73478553834e78ad9220682498343a0946"
+      "updated_at": "2026-10-23",
+      "sha256": "23dfc65dcbd319c1789dcb80b62f6c843bb5db8c076e86a00643cff546700067"
     },
     {
       "id": "K-TOOLS-006",
@@ -2951,7 +3257,7 @@
       "category": "algorithms",
       "title": "基础算子：从张量契约到合法融合",
       "summary": "算子契约包含轴、布局、数值和别名；合法融合需要保持函数与状态关系，再比较字节、启动和资源占用。",
-      "revision": 1,
+      "revision": 2,
       "status": "seed",
       "tags": [
         "GEMM",
@@ -2987,8 +3293,8 @@
         "K-FW-011"
       ],
       "evidence": [],
-      "updated_at": "2026-10-22",
-      "sha256": "5027223d65833590aedfb49acdaf2b8545cc1b974f28b03d2d2cd20ba25e7158"
+      "updated_at": "2026-10-23",
+      "sha256": "4f83a7b40dc7880348304cf8a3439d418fc9e911f6051e687488f8e83bdf6e03"
     },
     {
       "id": "K-HW-010",
@@ -2996,7 +3302,7 @@
       "category": "hardware",
       "title": "CPU GEMM/GEMV：寄存器、缓存与线程划分",
       "summary": "CPU 线性层需把 shape 的重用机会落实到寄存器、cache/TLB、打包和线程分区；同一配置不适用于全部 GEMV/GEMM。",
-      "revision": 1,
+      "revision": 2,
       "status": "seed",
       "tags": [
         "CPU",
@@ -3031,8 +3337,8 @@
         "K-SYS-015"
       ],
       "evidence": [],
-      "updated_at": "2026-10-22",
-      "sha256": "1a1ead0ce506a162967647fbbfa66de7f13da743f47071b17e9ab3642d07b7c9"
+      "updated_at": "2026-10-23",
+      "sha256": "8ce38535a37fc19684a58b3c9243f28eccaa2af58205ae262a288e3c948c71cb"
     },
     {
       "id": "K-FW-012",
@@ -3164,7 +3470,7 @@
       "category": "workloads",
       "title": "多轮与分支负载：依赖、状态驻留和到达过程",
       "summary": "会话依赖、思考时间和分支决定真实到达与状态驻留；前缀复用收益需要和会话成功、容量及重用距离一起衡量。",
-      "revision": 1,
+      "revision": 2,
       "status": "seed",
       "tags": [
         "multi-turn",
@@ -3198,8 +3504,8 @@
         "K-SYS-004"
       ],
       "evidence": [],
-      "updated_at": "2026-10-22",
-      "sha256": "ff99ad008815b635a36b4176ffd5fb1e8752c69cf7e12c60d38221ab41142f66"
+      "updated_at": "2026-10-23",
+      "sha256": "01bc154d3bd07ebf4822ee074ab91a0998159e4fe5f7d14c4c36198442666be5"
     },
     {
       "id": "K-TOOLS-007",
@@ -3248,7 +3554,7 @@
       "category": "hardware",
       "title": "GPU 矩阵与归约流水：布局、资源和完成依赖",
       "summary": "GPU tile、片上布局和异步流水共同受寄存器、共享存储及完成依赖约束；GEMM 与 attention 的最优组织随形状和架构改变。",
-      "revision": 1,
+      "revision": 2,
       "status": "seed",
       "tags": [
         "GPU",
@@ -3288,8 +3594,8 @@
         "K-HW-001"
       ],
       "evidence": [],
-      "updated_at": "2026-10-22",
-      "sha256": "c7c7048ac643ee4446d005fd0ff1b12c7cc211f6c7564e33faf4b5d7072aa61f"
+      "updated_at": "2026-10-23",
+      "sha256": "c89333e36034b5a9ea27762b73f0fc487c202a7ce8dd7d38d72ec35fc67258ce"
     },
     {
       "id": "K-ALG-017",
@@ -3466,7 +3772,7 @@
       "category": "algorithms",
       "title": "CPU–GPU 计算放置：传数据、传结果与共同提交",
       "summary": "CPU–GPU 分工比较冷权重搬运、CPU 计算与分片合并的完整关键路径；激活稀疏预测须有独立质量契约。",
-      "revision": 1,
+      "revision": 2,
       "status": "seed",
       "tags": [
         "CPU GPU",
@@ -3499,8 +3805,8 @@
         "K-SYS-004"
       ],
       "evidence": [],
-      "updated_at": "2026-10-22",
-      "sha256": "735f4115d4071b04bd0b628f6feed47479149c24dcf1aceb42bcdcc8b219cba9"
+      "updated_at": "2026-10-23",
+      "sha256": "7d0e23df334c5550a832153ef298e5fb32f35156944453852480e4600b0f6c50"
     },
     {
       "id": "K-HW-013",
@@ -3548,7 +3854,7 @@
       "category": "algorithms",
       "title": "KV 压缩：表示、近似保留与传输格式",
       "summary": "KV 量化、历史裁剪与传输编码改变不同成本与语义；分组轴、残余区、元数据和质量必须分别计入。",
-      "revision": 1,
+      "revision": 3,
       "status": "seed",
       "tags": [
         "KV compression",
@@ -3582,8 +3888,8 @@
         "K-TOOLS-007"
       ],
       "evidence": [],
-      "updated_at": "2026-10-22",
-      "sha256": "0d0fcd0ddf73410616f6354cd154f825ed9cffac9f7fe5fbbb8c111900f7a1d2"
+      "updated_at": "2026-10-23",
+      "sha256": "b106cc93bcd9d5acfce5e7766eb25f5c1fbd4ba7844dd1fe6454fc08cc1d99f4"
     },
     {
       "id": "K-SYS-013",
@@ -3796,6 +4102,594 @@
       "evidence": [],
       "updated_at": "2026-10-22",
       "sha256": "42157d4da17ab8ffd7a0aa2f5cd57a1cacdf1a989757261993f6671ae231de3a"
+    },
+    {
+      "id": "K-SYS-011",
+      "path": "system-semantics/model-lifecycle.md",
+      "category": "system-semantics",
+      "title": "模型生命周期：加载、就绪、排空与版本切换",
+      "summary": "模型就绪需要完整制品、执行路径和容量；请求绑定版本，新旧并存、排空和卸载由共同生命周期约束。",
+      "revision": 1,
+      "status": "seed",
+      "tags": [
+        "模型生命周期",
+        "readiness",
+        "冷启动",
+        "滚动更新",
+        "版本切换",
+        "预热",
+        "排空"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-SERVERLESSLLM",
+        "S-BORG",
+        "S-NVIDIA-PLUGIN",
+        "S-TORCH-INFERENCE"
+      ],
+      "related": [
+        "K-FW-011",
+        "K-SYS-004",
+        "K-SYS-008",
+        "K-SYS-014",
+        "K-WORK-008",
+        "K-SYS-018",
+        "K-SYS-019"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-23",
+      "sha256": "120147b62064624928974d827f10e5e7ad748ae780025882ef1c458ee2ff8c48"
+    },
+    {
+      "id": "K-WORK-007",
+      "path": "workloads/multi-model-placement.md",
+      "category": "workloads",
+      "title": "多模型放置：共同容量、混合执行与租户公平",
+      "summary": "多模型与 LoRA 的共享条件决定共同容量、混合执行和公平等待；完整场景联合比较合并、共享及分组路径。",
+      "revision": 1,
+      "status": "seed",
+      "tags": [
+        "多模型",
+        "LoRA",
+        "adapter",
+        "多租户",
+        "放置",
+        "共同内存池",
+        "公平",
+        "rank",
+        "C08"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-ALPASERVE",
+        "S-SLORA",
+        "S-LORA",
+        "S-VLLM-PREFIX"
+      ],
+      "related": [
+        "K-ALG-014",
+        "K-SYS-012",
+        "K-ALG-001",
+        "K-ALG-023",
+        "K-WORK-008",
+        "K-SYS-016",
+        "K-WORK-011"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-23",
+      "sha256": "d60397111d36bfb52045d741842175cc794fbb37af694406558bdbd992133171"
+    },
+    {
+      "id": "K-WORK-008",
+      "path": "workloads/elastic-serving.md",
+      "category": "workloads",
+      "title": "弹性服务：启动延迟、可用容量与排空",
+      "summary": "扩缩容要以实际就绪容量和启动/排空延迟解释队列；冷启动流量、故障余量与状态所有权决定策略是否可行。",
+      "revision": 1,
+      "status": "seed",
+      "tags": [
+        "弹性服务",
+        "autoscale",
+        "冷启动",
+        "热备用",
+        "扩缩容",
+        "滚动发布",
+        "排空",
+        "突发"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-SERVERLESSLLM",
+        "S-ALPASERVE",
+        "S-BORG"
+      ],
+      "related": [
+        "K-SYS-011",
+        "K-WORK-007",
+        "K-WORK-009",
+        "K-WORK-011",
+        "K-SYS-018",
+        "K-SYS-014",
+        "K-WORK-005"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-23",
+      "sha256": "782ba12ac9d0af5f8dbdd477e0c706230ae14e7f54d2795ab3b385eaeb8b39f4"
+    },
+    {
+      "id": "K-WORK-009",
+      "path": "workloads/cost-and-energy.md",
+      "category": "workloads",
+      "title": "服务成本与能耗：按合格结果计算资源代价",
+      "summary": "成本与能耗以相同质量/SLO 的合格结果为分母，计入闲置、加载和失败，并区分计量域、积分与价格假设。",
+      "revision": 1,
+      "status": "seed",
+      "tags": [
+        "成本",
+        "能耗",
+        "energy",
+        "goodput",
+        "RAPL",
+        "功率",
+        "计量域",
+        "资源效率"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-LINUX-RESOURCES",
+        "S-MLPERF-SCENARIOS",
+        "S-MLPERF-LLM"
+      ],
+      "related": [
+        "K-WORK-001",
+        "K-WORK-004",
+        "K-WORK-008",
+        "K-WORK-007",
+        "K-TOOLS-007",
+        "K-SYS-019"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-23",
+      "sha256": "bf9b2c1d084f562d584b391ec9e22b6893540691dd7686f65599e8c2a9fef157"
+    },
+    {
+      "id": "K-SYS-016",
+      "path": "system-semantics/tenant-isolation.md",
+      "category": "system-semantics",
+      "title": "租户隔离：资源份额、缓存命名空间与故障边界",
+      "summary": "租户身份、缓存权限、资源限额和故障域需要分别约束；固定文档区分 cgroup、time-slicing、MPS 与 MIG 资源契约。",
+      "revision": 1,
+      "status": "seed",
+      "tags": [
+        "租户隔离",
+        "MIG",
+        "MPS",
+        "time-slicing",
+        "cgroup",
+        "缓存命名空间",
+        "配额",
+        "故障域"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-LINUX-RESOURCES",
+        "S-NVIDIA-PLUGIN",
+        "S-BORG",
+        "S-VLLM-PREFIX"
+      ],
+      "related": [
+        "K-SYS-002",
+        "K-SYS-004",
+        "K-SYS-008",
+        "K-ALG-003",
+        "K-WORK-007",
+        "K-WORK-011",
+        "K-SYS-019",
+        "K-TOOLS-005"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-23",
+      "sha256": "0ca7501a80e750152a5fb3b9815c77f9e3f9aa393ff7546b3f05375958f88606"
+    },
+    {
+      "id": "K-WORK-011",
+      "path": "workloads/cluster-resource-placement.md",
+      "category": "workloads",
+      "title": "集群放置：资源向量、拓扑、执行组与故障域",
+      "summary": "集群放置先检查逐 rank 资源和拓扑，再比较装箱、局部性、共同启动与故障后容量；总空闲量不保证可部署。",
+      "revision": 1,
+      "status": "seed",
+      "tags": [
+        "集群",
+        "放置",
+        "gang",
+        "资源向量",
+        "碎片",
+        "故障域",
+        "拓扑",
+        "超售"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-BORG",
+        "S-ALPASERVE",
+        "S-CUDA-TOPOLOGY"
+      ],
+      "related": [
+        "K-ALG-015",
+        "K-HW-002",
+        "K-HW-009",
+        "K-WORK-007",
+        "K-WORK-008",
+        "K-SYS-016",
+        "K-SYS-018",
+        "K-SYS-019"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-23",
+      "sha256": "235de985ced67e21bfe6727ff2e91be680e8def602ad02a3f3e9de2b3ca1b8a1"
+    },
+    {
+      "id": "K-SYS-018",
+      "path": "system-semantics/storage-services.md",
+      "category": "system-semantics",
+      "title": "推理存储服务：制品、缓存、索引与提交记录",
+      "summary": "权重、KV、索引和提交记录具有不同持久性；版本清单、对象可见性、分发与恢复竞争共同决定推理存储契约。",
+      "revision": 1,
+      "status": "seed",
+      "tags": [
+        "存储服务",
+        "对象存储",
+        "文件存储",
+        "块存储",
+        "制品分发",
+        "版本发布",
+        "持久性",
+        "故障恢复"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-CEPH06",
+        "S-SERVERLESSLLM",
+        "S-LINUX-IO",
+        "S-BORG"
+      ],
+      "related": [
+        "K-FW-011",
+        "K-HW-012",
+        "K-ALG-017",
+        "K-SYS-013",
+        "K-SYS-014",
+        "K-SYS-011",
+        "K-WORK-008",
+        "K-WORK-011"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-23",
+      "sha256": "283ceab23fbbf5c27bbb4486b56c2123459a19a00229c5baae70d09c18062661"
+    },
+    {
+      "id": "K-SYS-019",
+      "path": "system-semantics/deployment-environment.md",
+      "category": "system-semantics",
+      "title": "部署环境：版本契约、可见设备与真实资源边界",
+      "summary": "镜像、宿主驱动、设备身份与有效 quota 共同定义部署环境；就绪、资源峰值和代表路径验证才能支持服务可用性。",
+      "revision": 1,
+      "status": "seed",
+      "tags": [
+        "部署环境",
+        "驱动",
+        "容器",
+        "设备可见性",
+        "CPU quota",
+        "NUMA",
+        "readiness",
+        "资源边界"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-NVIDIA-PLUGIN",
+        "S-LINUX-RESOURCES",
+        "S-TORCH-CUDA",
+        "S-BORG"
+      ],
+      "related": [
+        "K-HW-009",
+        "K-HW-002",
+        "K-HW-014",
+        "K-FW-011",
+        "K-SYS-011",
+        "K-SYS-015",
+        "K-SYS-016",
+        "K-SYS-014",
+        "K-TOOLS-005"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-23",
+      "sha256": "1b47e39a7f36c9f1cba4dc1792ad9243fd69d083ae1d6a7bb13bfd80dae1a8a5"
+    },
+    {
+      "id": "K-ALG-022",
+      "path": "algorithms/context-reuse.md",
+      "category": "algorithms",
+      "title": "非前缀上下文复用：依赖、位置与选择性重算",
+      "summary": "非前缀文本重复不保证逐层状态相同；按上文、位置与可见性判断精确复用，并对选择性重算独立计量质量和加载成本。",
+      "revision": 1,
+      "status": "seed",
+      "tags": [
+        "非前缀复用",
+        "CacheBlend",
+        "上下文依赖",
+        "RoPE",
+        "选择性重算",
+        "RAG"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-CACHEBLEND",
+        "S-ROPE",
+        "S-PAGED",
+        "S-SGLANG"
+      ],
+      "related": [
+        "K-ALG-003",
+        "K-ALG-018",
+        "K-ALG-021",
+        "K-SYS-013",
+        "K-SYS-017",
+        "K-FW-006"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-23",
+      "sha256": "ddd8fa928d5ebd9876aca4971dc357b666ea999be9b148e3e88404c9e271ab13"
+    },
+    {
+      "id": "K-MODEL-013",
+      "path": "models/embedding-reranking.md",
+      "category": "models",
+      "title": "Embedding 与重排：编码函数、批量与评分契约",
+      "summary": "编码器、pooling、normalize 与句对评分共同定义 embedding/重排函数；长度聚批、padding 与输入版本决定成本及结果。",
+      "revision": 1,
+      "status": "seed",
+      "tags": [
+        "embedding",
+        "reranking",
+        "encoder-only",
+        "BERT",
+        "pooling",
+        "normalize",
+        "非生成推理",
+        "C12"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-BERT",
+        "S-FAISS",
+        "S-TORCH-NUMERIC"
+      ],
+      "related": [
+        "K-SYS-007",
+        "K-ALG-016",
+        "K-FW-004",
+        "K-WORK-003",
+        "K-SYS-017",
+        "K-TOOLS-006"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-23",
+      "sha256": "44f22a27c9b4a11579bed108952f18722d90cd0d4c326db189c865d7e51aef38"
+    },
+    {
+      "id": "K-SYS-017",
+      "path": "system-semantics/retrieval-pipeline.md",
+      "category": "system-semantics",
+      "title": "向量检索与 RAG：索引、版本与端到端质量",
+      "summary": "检索的距离契约、候选过滤和索引版本共同决定合法结果；Flat/IVF/图搜索与压缩需连接材料相关性和完整 RAG 时间预算。",
+      "revision": 1,
+      "status": "seed",
+      "tags": [
+        "向量检索",
+        "RAG",
+        "Faiss",
+        "IVF",
+        "PQ",
+        "HNSW",
+        "recall",
+        "索引更新",
+        "C12"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-FAISS",
+        "S-CACHEBLEND",
+        "S-BERT"
+      ],
+      "related": [
+        "K-MODEL-013",
+        "K-ALG-022",
+        "K-SYS-018",
+        "K-HW-012",
+        "K-WORK-005",
+        "K-TOOLS-007"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-23",
+      "sha256": "bd09460502715f214c20ffdd68bdbc6bb9373668a849ca602b75d5e933ff40d0"
+    },
+    {
+      "id": "K-MODEL-014",
+      "path": "models/vision-inference.md",
+      "category": "models",
+      "title": "视觉识别与卷积：空间布局、预处理与任务输出",
+      "summary": "视觉识别把图像变换、卷积布局、残差生命周期与分类/检测输出连接；按分辨率、工作区和几何契约验证完整请求。",
+      "revision": 1,
+      "status": "seed",
+      "tags": [
+        "CNN",
+        "卷积",
+        "ResNet",
+        "vision",
+        "检测",
+        "NMS",
+        "im2col",
+        "C12"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-RESNET",
+        "S-TVM",
+        "S-TORCH-NUMERIC"
+      ],
+      "related": [
+        "K-ALG-016",
+        "K-FW-004",
+        "K-HW-004",
+        "K-SYS-015",
+        "K-MODEL-008",
+        "K-TOOLS-006"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-23",
+      "sha256": "a3b95c24c3838a54df90db945066257c0960e20a24929ed2812838fc5a3528a0"
+    },
+    {
+      "id": "K-MODEL-015",
+      "path": "models/recommendation-inference.md",
+      "category": "models",
+      "title": "推荐推理：稀疏表、特征交互与请求批量",
+      "summary": "推荐推理分别计量稀疏表 lookup、bag 聚合、特征交互与 dense 计算，并以特征/参数版本约束分片、缓存和更新。",
+      "revision": 1,
+      "status": "seed",
+      "tags": [
+        "推荐",
+        "DLRM",
+        "embedding table",
+        "EmbeddingBag",
+        "稀疏特征",
+        "表分片",
+        "C12"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-DLRM",
+        "S-TORCH-NUMERIC"
+      ],
+      "related": [
+        "K-ALG-016",
+        "K-ALG-017",
+        "K-ALG-020",
+        "K-HW-009",
+        "K-HW-014",
+        "K-WORK-003"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-23",
+      "sha256": "a36b0addea05174460d8f51179643665f98c51c6aa4a4d9dec235535948dd06d"
+    },
+    {
+      "id": "K-MODEL-016",
+      "path": "models/graph-inference.md",
+      "category": "models",
+      "title": "图模型推理：邻居依赖、采样与不规则执行",
+      "summary": "图推理先展开邻居依赖再逐层聚合；采样、图/特征版本、去重语义和不规则搬运共同决定质量与资源上界。",
+      "revision": 1,
+      "status": "seed",
+      "tags": [
+        "GNN",
+        "GraphSAGE",
+        "邻居采样",
+        "聚合",
+        "图分片",
+        "特征缓存",
+        "C12"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-GRAPHSAGE",
+        "S-TVM",
+        "S-TORCH-NUMERIC"
+      ],
+      "related": [
+        "K-ALG-016",
+        "K-ALG-020",
+        "K-SYS-015",
+        "K-HW-014",
+        "K-WORK-003",
+        "K-TOOLS-007"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-23",
+      "sha256": "343135d67c7fd61ed1e7fb82185df7a8f30ebfc86cb5427dfd9e6313046fe6fe"
     }
   ]
 }

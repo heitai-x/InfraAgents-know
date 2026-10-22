@@ -1,0 +1,41 @@
+{
+  "source_id": "S-FLEXGEN",
+  "reviewed_at": "2026-10-23",
+  "version": "2303.06865v1",
+  "available_at": "2023-03-13",
+  "source_cutoff_inclusive": "2026-04-30",
+  "full_paper_or_document_review_complete": true,
+  "locations": "完整技术正文 PDF pp.1–11，以及附录 A.1–A.4 pp.15–25 已读；pp.12–14 为参考文献，未递归引入外链。核对 §4 搜索空间、§5 近似方法、§6 评估与附录理论/成本模型/额外实验。",
+  "coverage": "按层/批遍历、权重/激活/KV 三层放置、CPU attention 委托与理想重叠成本模型；4-bit 表示、V 稀疏读取及吞吐/延迟评估。",
+  "limitations": "固定 v1 面向允许高延迟的吞吐任务。§4 成本模型假定理想重叠并放松离散放置，可能 OOM，作者需要手动调整；附录近优 I/O 结论限定无 CPU 委托、无限规则工作流与简化存储模型，并不证明端到端调度最优。§5 压缩格式需解回 FP16，因 CPU 解压成本该实现启用量化时关闭 CPU delegation；其 4-bit 与稀疏质量结果仅覆盖所测 OPT/任务。吞吐实验使用 dummy weights，部分长运行外推；质量实验使用真实权重。附录政策消融与主表的 OS page cache 设置不同，不能直接混合收益数字。",
+  "chapters_checked": [
+    "K-ALG-017",
+    "K-ALG-018",
+    "K-ALG-019",
+    "K-ALG-020"
+  ],
+  "findings": [
+    {
+      "location": "§5 p.8",
+      "finding": "量化与 CPU delegation 在固定实现中并非同时启用；已接入的独立机制没有错误数值声明，但组合时容易误把两项收益相加。",
+      "action": "建议在异构执行章补充这一明确的组合限制。"
+    },
+    {
+      "location": "Appendix A.2 pp.15–18",
+      "finding": "2× 近优性讨论限定理论权重 I/O，忽略较小激活项并假设无 CPU compute、规则无限序列；diagonal schedule 尚未实现。",
+      "action": "来源说明补足范围；当前正文只采用层间复用动机，无需更改为理论保证。"
+    },
+    {
+      "location": "§6 p.8 and Appendix A.4 p.24",
+      "finding": "吞吐与质量使用不同权重，部分 benchmark 外推，政策消融禁用 OS page cache。",
+      "action": "来源限制明确披露；正文继续不用论文速度作为本项目结果。"
+    }
+  ],
+  "suggested_chapter_additions": {
+    "K-ALG-020": "## 具体系统中的组合限制\n\n[FlexGen v1](../sources/S-FLEXGEN.md) §5 为减少迁移字节，将权重和 KV 存为低位表示并在计算前恢复 FP16；由于当时 CPU 解压开销明显，其实现启用量化时关闭 CPU attention delegation。因此，CPU attention 减少搬运与低位缓存减少容量是可分别研究的机制，不能直接把同一论文两种配置的收益相乘。若在新的 CPU 内核中组合它们，需重新测解码、主存读取、attention 与主机其他工作，并独立验证量化质量和状态语义。"
+  },
+  "formula_review": "核对 FP16 权重和普通 MHA KV 的维度账；正文按实际 Hkv 单独计算，未照搬论文 hidden-size 简化。T/bls 在固定生成长度下可作为同一搜索目标，但不是任意 n 下可直接比较的 s/token 指标。未对原论文定理作形式化验证。",
+  "performance_results_reused": false,
+  "runtime_experiments_performed": false,
+  "canonical_modified": false
+}

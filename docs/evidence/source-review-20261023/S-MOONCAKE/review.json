@@ -1,0 +1,44 @@
+{
+  "source_id": "S-MOONCAKE",
+  "reviewed_at": "2026-10-23",
+  "version": "2407.00079v1",
+  "available_at": "2024-06-24",
+  "source_cutoff_inclusive": "2026-04-30",
+  "full_paper_or_document_review_complete": true,
+  "locations": "完整技术正文 PDF pp.1–17 已读，重点 §3–6 的状态/调度/预测和 §7 的完整评估、§9 后续方向；pp.17–21 为参考文献，没有额外技术附录，未递归引入外链。",
+  "coverage": "共享KV池、链式前缀身份、Messenger传输、分层流式prefill、CPP、缓存亲和与热点副本、P/D联合准入及预测性提前拒绝。",
+  "limitations": "仅固定 2407.00079v1，版本坐标为2024-06-24，不引入后续修订。全部报告实验使用dummy LLaMA2-70B结构和重放/设定trace，不评价真实模型内容质量；公共数据实验按低负载延迟倍数设SLO，真实trace实验另有30秒TTFT/0.1秒TBT设置，不能混同。长上下文模拟比较中vLLM被配置为单请求处理，不能当成当前最强共置基线。预测早拒绝采用统一decode持续时间td的系统级启发式，逐请求输出长度预测、动态P/D调整和若干异构方案仍属后续方向。§5.2 prose 的重算/传输比较方向存在不一致；Algorithm1比值未展开零本地命中的边界，正文采用独立总成本比较，不照抄该条件。",
+  "chapters_checked": [
+    "K-ALG-003",
+    "K-ALG-013",
+    "K-SYS-013",
+    "K-ALG-023"
+  ],
+  "findings": [
+    {
+      "location": "§5.2 p.9 and Algorithm1 p.8",
+      "finding": "段落将'additional prefill time shorter than transfer time'与主动取远端KV并列，方向与收益比较不符；伪代码对best_prefix/local_prefix比值未说明分母为零的情况。",
+      "action": "来源注记这一局限。当前正文明确比较完整时间且未采用该比值，未发现需要撤销的结论。"
+    },
+    {
+      "location": "§6.4 pp.12–13",
+      "finding": "已实现预测按统一td模拟decode完成，并非已解决精确输出长度预测。",
+      "action": "当前P/D与路由正文将预测作为候选、并保留本地检查/预留，符合来源；来源说明应明确启发式假设。"
+    },
+    {
+      "location": "§7.1.2–7.1.3 p.15",
+      "finding": "模拟长上下文比较采用单请求vLLM，真实trace另有固定SLO；摘要75%不是可直接移植的当前引擎提升。",
+      "action": "扩展来源限制，正文不引用速度收益，无需再加性能结论。"
+    },
+    {
+      "location": "§9 pp.16–17",
+      "finding": "异构attention分离、动态P/D比例、分级优先策略仍为研究方向；池内闲置主机资源也并非无机会成本。",
+      "action": "现有正文按候选设计和实际资源账描述，未将这些方向写成v1既有能力。"
+    }
+  ],
+  "suggested_chapter_additions": {},
+  "formula_review": "检查缓存匹配与传输/排队/执行成本方向、CPP层间依赖、SLO与goodput范围。当前章节的512MiB迁移、链路下界和首/次token时间轴自洽；缓存共享容量没有被直接当作同倍率HBM流量下降。原文的比值条件和prose歧义不移植到本库。",
+  "performance_results_reused": false,
+  "runtime_experiments_performed": false,
+  "canonical_modified": false
+}

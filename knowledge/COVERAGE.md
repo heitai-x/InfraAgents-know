@@ -4,6 +4,8 @@
 
 下表是原 73 篇对固定参考集的映射，不是整个推理领域的完整性证明。新增专题、既有章节扩写及组合场景统一记录在 [扩充计划](../docs/expansion-plan.json)；当前实际可读内容以 [完整索引](INDEX.md) 为准。
 
+本轮 24 个推理能力域、三项平台依赖与十二类组合场景的范围见 [推理范围与组合验证](../docs/inference-coverage.md)。本表保留原有参考映射。
+
 ## 阅读层次
 
 [模型](models/README.md) → [算法与状态](algorithms/README.md) → [硬件](hardware/README.md) / [框架](frameworks/README.md) → [系统组合](system-semantics/design-synthesis.md) → [工作负载与容量](workloads/README.md)。[引擎](engine-index/README.md) 提供固定版本的实现映射，[工具](tools/README.md) 解释如何观测和验证机制。

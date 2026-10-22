@@ -31,6 +31,35 @@ SDPA 是框架级算子，会按条件选择实现；FlashAttention 提供特定
 
 不同 prefill/decode backend 可共享持久缓存，但布局、量化 scales 和写入约定必须一致。跨 backend 比较使用固定张量与可见关系，再评价端到端成本，才能区分数学接入错误和资源效率差异。
 
+## 固定来源下的具体接口能力
+
+下表绑定本知识版本已经归档的接口范围。能力属于某个函数和配置，不能从一行推出整个库的全部组合均受支持。
+
+| 固定接口 | 已明确的输入/语义 | 接入时必须保留的边界 |
+|---|---|---|
+| PyTorch SDPA，提交 647b6a2，2026-04-30 | Q 为 …×Hq×L×E，K/V 的历史长 S 可不同；bool mask 的 true 参与 attention；显式 dropout_p；GQA 有 head 整除条件 | 普通张量参数不直接解释引擎页表；非方形 is_causal 左上对齐；具体 fused dispatch 还受 dtype、shape 与平台限制 |
+| FlashAttention 的 flash_attn_func 及 varlen 接口，提交 c5f6ff4，2026-04-30 | 文档列出 MQA/GQA、窗口与 ALiBi；v2.1 起非等长 causal 右下对齐 | 常规入口与 KV-cache/分页入口不可混用参数；同名 deterministic 参数的文档针对 backward，不是任意跨批逐位一致性的承诺 |
+| FlashInfer BatchPrefillWithPagedKVCacheWrapper，提交 070fabf，2026-04-30 | query indptr、KV page indptr/indices、末页长度，NHD/HND 布局；自定义 mask、窗口、位置模式和不同 QK/VO head 维 | plan 与 run 分离；plan 不可捕获；提供 custom mask 时普通 causal 选项不再替代它；某些 split 设置不保证图兼容 |
+| FlashInfer 论文 2501.01005v1，2025-01-02 | BSR/ragged 表示、分区 attention 状态合并、动态工作队列与固定 workspace 的方案 | 属于论文中的具体设计和实验版本，不能用来覆盖后来固定源码中更具体的限制 |
+
+不同条目之间需要有明确转换。SDPA 的 H、L 轴与常见 B×L×H×D 接口不同；只调整 shape 而未调整 stride/数据解释会读错。FlashInfer 固定源码说明未预打包的 custom mask 会额外 pack；这一项属于接入开销。AITER 等其他后端的项目总览不能补齐某个具体算子签名，应沿所选版本的实际函数建立同等细度的契约。
+
+## 分区 attention 合并的额外不变量
+
+若同一 query 的合法 K/V 集合拆成互不重叠的 I、J，且每一部分使用相同 score 定义和位置/数值解释，可以保留归一化输出 O 与 log-sum-exp l。取 m=max(l_I,l_J)，权重 a=exp(l_I−m)、b=exp(l_J−m)，合并输出为 (aO_I+bO_J)/(a+b)，新的 l=m+log(a+b)。用 max 做平移避免直接 exponent 大 l 溢出。
+
+互不重叠是必要条件：共享前缀已经在 I 中出现，就不能在 J 的完整历史中再计一次，否则它的概率质量被重复增加。只有输出 O 而没有归一化尺度，通常不能通过普通平均恢复整体 attention。空分区、全 mask 行、LSE 是自然对数还是其他底、scale/softcap 的顺序也必须统一。
+
+共享 prefix 的多个 query 仍有各自 Q，复用主要是 K/V 的读取与存储；不能共享本应不同的 attention 输出。分页表示本身只说明存储间接寻址，稀疏可见性若删除了原函数允许访问的位置，则是另一个质量敏感算法，不能从“同为块稀疏表示”推出精确等价。
+
+## 转换成本与可复算反例
+
+设一层 K/V 各有 L=8,192、Hkv=8、d=128、FP16，合计 2×8,192×8×128×2=32 MiB。若每次调用先完整 gather 到连续布局，需要读取旧布局并写入新布局，单是转换至少产生约 64 MiB 有效字节，之后 attention 还会读取新缓冲。更快的连续 kernel 只有在抵消这些转换、额外驻留与同步后才构成收益。
+
+独立小例中，对同一 query 设两个 logits 都为 0，V 分别为 0、2，则整体输出为 1。各分区输出为 0 和 2、LSE 同为 0，合并得 1；若第二分区同时包含第一个位置，错误合并会重复计数，得到 2/3。对 Q 长 2、K 长 5 的因果输入，再显式验证两行可见集合，而不只比较输出 shape。
+
+接入测试应覆盖 GQA 的 head 映射、QK 与 VO 维度差异、非整页、窗口边界、prefix/suffix 不重叠、无可见 key、位置偏置和 quantization scale。对同一逻辑状态依次记录转换、plan、kernel、合并和输出路由的耗时/内存，并用独立稠密数学参考验证。长历史、低 batch 时分区可能增加并行度；短历史或转换占主导时，简单路径可能更快。选择应由接口交集与完整执行成本决定。
+
 <!-- infraagents:provenance -->
 
 ## 来源与推导
@@ -48,6 +77,13 @@ SDPA 是框架级算子，会按条件选择实现；FlashAttention 提供特定
   [完整原文](../../references/S-AITER/reader.html) · [全文文本](../../references/S-AITER/fulltext.txt)
 
 正文中的公式展开、容量算例与组合设计是基于这些来源的推导；设定算例不冒充实测。来源版本受 2026-04-30 上限约束，编辑日期 2026-10-22 不作为事实发布日期。此独立 base 版本内的章节修订号从 1 开始，原章节身份与版本映射保存在版本清单。
+
+
+
+### 本次扩写补充来源
+
+- [S-FLASHINFERPAPER：FlashInfer: Efficient and Customizable Attention Engine for LLM Inference Serving](../sources/S-FLASHINFERPAPER.md)：固定 v1 描述 BSR/ragged/可组合 KV 表示、attention 状态合并、JIT 变体、动态负载计划与 CUDA Graph workspace，以及 GQA 和 FP8 KV 路径。
+  [完整原文](../../references/S-FLASHINFERPAPER/reader.html) · [全文文本](../../references/S-FLASHINFERPAPER/fulltext.txt)
 
 ## 延伸阅读
 

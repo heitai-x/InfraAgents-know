@@ -1,0 +1,43 @@
+{
+  "source_id": "S-LLUMNIX",
+  "reviewed_at": "2026-10-23",
+  "version": "2406.03243v1",
+  "available_at": "2024-06-05",
+  "source_cutoff_inclusive": "2026-04-30",
+  "full_paper_or_document_review_complete": true,
+  "locations": "完整技术正文 PDF pp.1–14 与 Artifact Appendix p.19 已读；pp.15–18 参考文献不递归引入。重点核对 §4.2 分阶段迁移/握手、§4.4 虚拟使用量、§5 容错、§6 实验及附录原型与正式实现差异。",
+  "coverage": "append-only KV 的多阶段复制、目的预留/中止/提交；全局实例配对与本地请求选择；虚拟GPU内存占用统一表达去碎片、优先级与排空，以及实际迁移/调度实验边界。",
+  "limitations": "固定 v1。append-only 不自动适用于窗口覆盖、SSM递归状态或投机回滚；低停顿不代表迁移总成本或故障恢复免费。§5 描述实例失效时中止其请求，组件重启不保证活跃请求无缝恢复；p.19明确实验artifact不具备该正式版本的容错，不得用性能实验充当容错验证。Gloo/CPU staging选择针对其当时并发通信条件，不证明所有NCCL版本普遍不能并行。主评估为16张A10，64实例扩展性实验用测量时长的sleep替代GPU执行。decode P99针对每请求平均token延迟，不能等同于逐token间隔P99；36%成本指标是平均实例数，不是具体计费或能耗。",
+  "chapters_checked": [
+    "K-SYS-009",
+    "K-SYS-014",
+    "K-ALG-023"
+  ],
+  "findings": [
+    {
+      "location": "§4.2 pp.5–6 and §6.2 p.10",
+      "finding": "追赶依赖复制比状态生成快且原前缀不变；实验中只需两阶段，但不能把这一阶段数或常数停顿推广到慢链路。",
+      "action": "当前路由迁移正文有B>g、几何收敛与停止追赶条件，保留。"
+    },
+    {
+      "location": "§5 p.9 and Artifact Appendix p.19",
+      "finding": "正式实现和用于论文实验的原型不同；实验原型没有容错；实例失败会中止其运行请求。",
+      "action": "来源说明明确该区别。当前恢复正文将所需协议作为独立设计要求，不将Llumnix性能实验当容灾保证，未发现必须改写的归属错误。"
+    },
+    {
+      "location": "§4.4.3 p.8",
+      "finding": "F=(M−sumV)/B 是特定同模型状态几何下的启发式；若量纲是字节，还需按每token字节归一化才能解释为可继续迭代数，空batch等边界未在伪代码展开。",
+      "action": "来源记录适用条件；当前正文没有照抄该式，也明确内存标量不能预测全部时延。"
+    },
+    {
+      "location": "§6 pp.9–13",
+      "finding": "性能负载主要由公开长度分布/合成到达生成；主硬件16A10，64实例实验模拟GPU；decode指标平均会掩盖单次停顿，成本是平均实例数。",
+      "action": "来源限制补齐指标与模拟边界；保持正文对迁移全过程、停顿、无效工作与实际SLO的分开验证。"
+    }
+  ],
+  "suggested_chapter_additions": {},
+  "formula_review": "重新核对当前几何追赶算例：1000MiB初态、10MiB/s增长、100MiB/s复制，三阶段10/1/0.1s后剩1MiB，暂停复制0.01s，总11.11s；B=8MiB/s时无法几何追上。源最后副本释放与目的提交之间的故障窗口由现有恢复章独立处理，未假定原文握手自动保证持久恢复。",
+  "performance_results_reused": false,
+  "runtime_experiments_performed": false,
+  "canonical_modified": false
+}
