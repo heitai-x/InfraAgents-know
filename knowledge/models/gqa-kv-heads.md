@@ -45,7 +45,7 @@ GQA 让多个 query heads 读取同一组 K/V；逻辑共享可以减少状态�
 - [S-GQA：GQA: Training Generalized Multi-Query Transformer Models from Multi-Head Checkpoints](../sources/S-GQA.md)：GQA 让一组 query heads 共享 K/V heads；MQA 是只保留一组 K/V 的特殊形态。输出 query head 数与 KV head 数需要分别描述。
   [完整原文](../../references/S-GQA/reader.html) · [全文文本](../../references/S-GQA/fulltext.txt)
 
-- [S-HF-CACHE：Transformers — Caching](../sources/S-HF-CACHE.md)：Transformers 的缓存说明区分已存历史 K/V、新输入、attention mask 和 cache position。增量前向需要让新 token 的位置与已有缓存长度一致。
+- [S-HF-CACHE：Transformers — Caching](../sources/S-HF-CACHE.md)：固定文档说明逐层复用历史 K/V、计算并合并新增 K/V，以及增量循环的 attention mask 应覆盖历史与新增 token；并区分 Dynamic、Static、StaticSlidingWindow 等缓存存储形态。
   [完整原文](../../references/S-HF-CACHE/reader.html) · [全文文本](../../references/S-HF-CACHE/fulltext.txt)
 
 - [S-FI：FlashInfer：Attention kernels](../sources/S-FI.md)：截止日前的 FlashInfer 固定源码区分 query 分段、KV 页表及末页长度。相关 wrapper 的 plan 安排计算与工作区，run 执行 attention；plan 的捕获限制与图模式缓冲须按该版本接口核对。

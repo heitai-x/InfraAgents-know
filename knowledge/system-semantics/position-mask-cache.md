@@ -6,7 +6,7 @@
 
 因果 attention 的合法关系是 key 的逻辑位置不晚于 query。矩阵中的行列编号只有在 Q/K 起点一致时才直接代表这一关系。Q 是历史尾部的一小段而 K 包含全历史时，简单上三角或下三角布尔构造可能错位。
 
-cache_position 常表达 KV 写入的逻辑步，position_ids 表达模型的位置编码输入，padding mask 表达哪些位置存在，attention mask 表达存在位置之间谁可见。某些模型下它们数值相同，但概念不同，左 padding、prefix cache、滑动窗口和多模态会使其分离。
+缓存推进或写入位置、模型的位置编码输入、padding 的有效范围以及 attention 可见性，是需要分别建模的关系。某些实现使用 cache_position、position_ids 等字段；具体维度、是否计入 padding 及更新方式要按 Task 固定模型与框架核对，不能从字段名推断它们等于逻辑长度或物理槽号。本库对这些关系作机制推导，未将字段合同归因于只说明历史 K/V 与 mask 的缓存概览。左 padding、前缀共享、滑动窗口和多模态会使这些关系进一步分离。
 
 ## 一个位置算例
 
@@ -52,7 +52,7 @@ SSM、cross-attention 和扩散需要各自的可见性定义，不能硬套同�
 
 ## 来源与推导
 
-- [S-HF-CACHE：Transformers — Caching](../sources/S-HF-CACHE.md)：Transformers 的缓存说明区分已存历史 K/V、新输入、attention mask 和 cache position。增量前向需要让新 token 的位置与已有缓存长度一致。
+- [S-HF-CACHE：Transformers — Caching](../sources/S-HF-CACHE.md)：固定文档说明逐层复用历史 K/V、计算并合并新增 K/V，以及增量循环的 attention mask 应覆盖历史与新增 token；并区分 Dynamic、Static、StaticSlidingWindow 等缓存存储形态。
   [完整原文](../../references/S-HF-CACHE/reader.html) · [全文文本](../../references/S-HF-CACHE/fulltext.txt)
 
 - [S-TRANSFORMER：Attention Is All You Need](../sources/S-TRANSFORMER.md)：Transformer 的 attention 用 query 与 keys 的分数生成归一化权重，再对 values 加权；encoder-decoder attention 的 Q 来自 decoder，K/V 来自 encoder 表示。

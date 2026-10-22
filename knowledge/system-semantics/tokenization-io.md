@@ -10,7 +10,7 @@ tokenizer 版本、normalization、特殊 token 配置和 truncation 策略共�
 
 ## Padding 与长度
 
-不同模型/框架对左 padding、右 padding、position 和末 token logits 抽取有不同约定。attention mask 说明真实输入，cache_position 说明逻辑推进。长输入截断是任务语义选择：丢开头可能丢系统指令，丢尾部可能丢用户问题；服务不能把截断当成纯性能优化而不记录。
+不同模型/框架对左 padding、右 padding、位置编码和末 token logits 抽取有不同约定。有效输入、模型位置编码与缓存推进需要分别表示；attention mask 与各位置/缓存字段的形状、padding 规则和更新顺序按所选实现核对。长输入截断是任务语义选择：丢开头可能丢系统指令，丢尾部可能丢用户问题；服务不能把截断当成纯性能优化而不记录。
 
 ## 增量 detokenization
 
@@ -49,7 +49,7 @@ stop string 可能跨多个 token 或多个网络 chunk，检测要保留足够�
 - [S-CHAT：Transformers：Chat templates](../sources/S-CHAT.md)：Chat template 将消息序列变为包含角色边界、特殊 token 和生成提示的模型输入；tokenizer 自动添加特殊 token 的方式会影响最终序列。
   [完整原文](../../references/S-CHAT/reader.html) · [全文文本](../../references/S-CHAT/fulltext.txt)
 
-- [S-HF-CACHE：Transformers — Caching](../sources/S-HF-CACHE.md)：Transformers 的缓存说明区分已存历史 K/V、新输入、attention mask 和 cache position。增量前向需要让新 token 的位置与已有缓存长度一致。
+- [S-HF-CACHE：Transformers — Caching](../sources/S-HF-CACHE.md)：固定文档说明逐层复用历史 K/V、计算并合并新增 K/V，以及增量循环的 attention mask 应覆盖历史与新增 token；并区分 Dynamic、Static、StaticSlidingWindow 等缓存存储形态。
   [完整原文](../../references/S-HF-CACHE/reader.html) · [全文文本](../../references/S-HF-CACHE/fulltext.txt)
 
 - [S-ASGI：ASGI — HTTP and WebSocket Message Format](../sources/S-ASGI.md)：ASGI HTTP/WebSocket 规范定义接收、发送、响应体和断开相关事件；断开通知与发送失败可能存在时间上的竞争。

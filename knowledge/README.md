@@ -1,6 +1,6 @@
 # Astra 截止日前的 InfraAgents base 知识库
 
-当前为 base-gpt-6-astra-2026-04-30-v2-building，来源版本上限 2026-04-30（包含该日）。保留原有 73 篇与八类组织，已接入 21 个新专题，共 94 篇；整库仍在扩充，见 [构建进度](../docs/BUILD-STATUS.md)。
+当前为 base-gpt-6-astra-2026-04-30-v2.1 复审候选，来源版本上限 2026-04-30（包含该日）。保留原有 73 篇与八类组织，已接入 35 个新专题，共 108 篇、114 项固定来源。初版建设与验收见 [构建记录](../docs/BUILD-STATUS.md)，本次新审查和修订见 [审查记录](../docs/evidence/knowledge-review-loop-20261023/round-1/review.md)。
 
 [系统组合](system-semantics/design-synthesis.md) → [设计入口](DESIGN.md) → [主题索引](INDEX.md)；[诊断入口](DIAGNOSIS.md) 与 [覆盖矩阵](COVERAGE.md) 保留反向阅读路径。
 
