@@ -1,4 +1,14 @@
-# 推理知识库 v2 交付记录
+# 推理知识库 v2.1 交付记录
+
+v2.1 已完成本轮独立审查与修订闭环：第一轮发现两项 P2 和一项 P3，修订后第二轮对实际内容提交 `69408e3fc62c8d34e576c2f1ce6d247488d568b9` 给出 **KB PASS**。详见 [第一轮](evidence/knowledge-review-loop-20261023/round-1/review.md)、[第二轮](evidence/knowledge-review-loop-20261023/round-2/review.md) 和 [历史及来源核对](evidence/knowledge-review-loop-20261023/round-2/repair-checks.json)。
+
+修订包括合法的 MoE distinct top-2 分派算例、HF 缓存概览的来源归因边界和入口状态。13 篇当前章节各增加一次 revision；旧正文与 metadata 精确保留，其余 95 篇和全部原始归档未改变。当前仍为 108 篇、114 项固定来源，历史修订增为 96 份，来源版本上限仍为 2026-04-30。
+
+当前验证绑定 GPU 兼容运行时 `0802c3f140e0b46e26bfdd686ae55662db39c042`：实际 `full + seed_and_learned`、五角色 Luna 和九项受限原文策略通过，完整读取 108 篇和 204 个当前/历史版本，27 个受限原文入口全部被拒绝，详见 [当前实际接口验证](evidence/knowledge-review-loop-20261023/round-2/runtime-probe.json)。独立审查两轮累计完整阅读 108 篇正文，原文阅读范围为 19 项（9 项完整文本、10 项相关范围），未宣称重读全部 114 项来源。
+
+下列内容记录 v2 建设及其当时的验收。`final-linux-validation.json` 和 v2 发布/交付回执保持原始历史证据；它们不替代本轮 v2.1 的实际内容验证。知识库通过不等于新的真实 GPU Task 已运行或达成目标。
+
+## v2 建设与验收历史
 
 本轮已完成声明范围内的知识库修订：**108 篇专题、114 项固定来源、12 类完整场景**。原 73 篇全部处理，35 篇新增全部接入，C12 包含 embedding/重排、检索/RAG、CNN/检测、推荐和 GNN 五份独立契约。资料版本上限保持 **2026-04-30（含当天）**；编辑、复核与验收日期为 **2026-10-23**。
 
@@ -32,7 +42,7 @@ Windows 早期检查的目录提升失败保留在历史记录；最终验收使
 
 ## 版本与后续使用
 
-当前内容版本为 `base-gpt-6-astra-2026-04-30-v2`，分支为 `gpt-6-astra-2026-04-30`。main 保留原始未限时 base，DeepSeek 日期分支未创建。知识库可通过现有参数选择，见 [使用说明](USAGE.md)。运行期 learned 继续由原有 Evolution、独立复核和发布流程管理。
+v2 当时的内容版本为 `base-gpt-6-astra-2026-04-30-v2`，分支为 `gpt-6-astra-2026-04-30`。main 保留原始未限时 base，DeepSeek 日期分支未创建。知识库可通过现有参数选择，见 [使用说明](USAGE.md)。运行期 learned 继续由原有 Evolution、独立复核和发布流程管理。
 
 [GitHub 发布核对](evidence/v2-publication.json)和[远端交付核对](evidence/v2-remote-delivery.json)均已通过。不可变内容标签为 `astra-2026-04-30-v2`，提交 `fdce576c5972c25b91ad81ba887c616d717ea3ca`，发布时全部 1645 个版本控制文件的 Git 树与本地一致。远端独立目录为 `/mnt/infra_agents/knowledge-worktrees/gpt-6-astra-2026-04-30-v2`，内容身份、来源资格和运行时文件身份再次核对通过；原 v1 目录和实际实验没有切换。
 
