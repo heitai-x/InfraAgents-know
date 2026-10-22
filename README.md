@@ -2,7 +2,7 @@
 
 InfraAgents 的独立知识仓库。不同分支承载不同内容版本，保持相同的目录、章节 ID 和现有读取接口。
 
-当前分支：**gpt-6-astra-2026-04-30**。已完成本轮推理知识库 v2：108 个 seed 专题、114 项固定来源和 12 类完整设计场景。资料版本上限为 2026-04-30；范围、交叉复核与完整读取验证见 [交付记录](docs/BUILD-STATUS.md) 和 [覆盖说明](docs/inference-coverage.md)。
+当前分支：**gpt-6-astra-2026-04-30**。当前为 v2.1 独立复审候选：108 个 seed 专题、114 项固定来源和 12 类完整设计场景。v2 已交付；本次根据新一轮独立审查修正 MoE 算例和 HF 缓存来源归因，保留旧修订与原始归档，等待对实际新版本复审。资料版本上限仍为 2026-04-30；本轮发现及修订见 [独立审查](docs/evidence/knowledge-review-loop-20261023/round-1/review.md)，此前交付范围见 [交付记录](docs/BUILD-STATUS.md) 和 [覆盖说明](docs/inference-coverage.md)。
 
 | 分支 | 内容 |
 |---|---|
