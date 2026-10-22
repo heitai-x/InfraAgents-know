@@ -4,12 +4,12 @@
 
 | 条目 | 版本与状态 | 核心认识 |
 |---|---|---|
-| [K-SYS-001：主机与设备时间：偏序、区间并集和关键路径](host-device-timing.md) | v1 · seed | 服务延迟来自生产、提交、执行与消费之间的依赖路径；主机 API 区间与设备工作区间可以重叠。 |
+| [K-SYS-001：主机与设备时间：偏序、区间并集和关键路径](host-device-timing.md) | v2 · seed | 服务延迟来自生产、提交、执行与消费之间的依赖路径；主机 API 区间与设备工作区间可以重叠。 |
 | [K-SYS-002：请求身份：逻辑序列、批次视图与结果归属](request-batch-identity.md) | v1 · seed | 请求是长期语义对象，batch 行与物理槽是临时执行位置；正确性依赖它们之间可追溯的映射。 |
-| [K-SYS-003：位置、Mask 与缓存：同一可见性关系的三种表示](position-mask-cache.md) | v1 · seed | 缓存中的内容必须对应模型定义的逻辑位置；mask 决定读取集合，物理布局只决定这些内容放在哪里。 |
+| [K-SYS-003：位置、Mask 与缓存：同一可见性关系的三种表示](position-mask-cache.md) | v2 · seed | 缓存中的内容必须对应模型定义的逻辑位置；mask 决定读取集合，物理布局只决定这些内容放在哪里。 |
 | [K-SYS-004：取消与完成：业务终止、设备排空和资源回收](cancellation-resource-completion.md) | v1 · seed | 取消撤销未来服务意图，完成证明既有工作已结束；物理资源重用必须等待最后一个使用者。 |
 | [K-SYS-005：集合通信：参与集合、操作顺序与失败传播](collective-ordering.md) | v2 · seed | 分布式前向是一组共同执行协议；每个 rank 的局部控制流必须形成匹配的通信序列。 |
-| [K-SYS-006：工程认识如何成为可迁移的专家知识](evidence-and-independent-checks.md) | v1 · seed | 知识的增量是对系统机制与设计关系的新增解释；运行结果为这些解释提供事实、区分和修正。 |
+| [K-SYS-006：工程认识如何成为可迁移的专家知识](evidence-and-independent-checks.md) | v2 · seed | 知识的增量是对系统机制与设计关系的新增解释；运行结果为这些解释提供事实、区分和修正。 |
 | [K-SYS-007：输入输出语义：Tokenizer、Chat Template 与流式文本](tokenization-io.md) | v2 · seed | 模型处理的是规范化后的 token/特征序列，服务协议必须精确保存从用户输入到模型输入再到输出文本的映射。 |
 | [K-SYS-008：服务协议：接收、流式背压与终止语义](service-protocol.md) | v1 · seed | 推理服务将内部生成状态映射为可观察的网络事件；接收、执行完成和客户端收到结果是不同的完成点。 |
 | [K-SYS-009：分布式状态迁移：身份、传输与提交点](distributed-state-transfer.md) | v2 · seed | 状态迁移是一项所有权和可见性协议；字节到达只有在布局和版本被共同解释后才成为可用模型状态。 |

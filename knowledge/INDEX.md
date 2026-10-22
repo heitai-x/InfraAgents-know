@@ -99,11 +99,11 @@
 
 | 条目 | 版本与状态 | 核心认识 |
 |---|---|---|
-| [K-ENGINE-001：vLLM V1：从 Token 进度到调度输出](engine-index/vllm-scheduler.md) | v1 · seed | vLLM V1 的调度可沿请求 token 进度理解，再追踪预算、缓存分配和执行结果怎样改变下一轮状态。 |
-| [K-ENGINE-002：vLLM KV 管理：命中、分配和延迟释放](engine-index/vllm-kv-manager.md) | v1 · seed | KVCacheManager 将逻辑 token 进度转换成层组块分配，命中长度、保留容量和可回收块各有独立含义。 |
-| [K-ENGINE-003：vLLM ModelRunner：调度视图到设备状态](engine-index/vllm-model-runner.md) | v1 · seed | ModelRunner 把逻辑调度结果转成设备输入与持久批状态，并将前向和采样结果按请求归还。 |
-| [K-ENGINE-004：SGLang：Radix 复用与调度状态的连接](engine-index/sglang-radix-scheduler.md) | v1 · seed | SGLang 将共享前缀组织成 Radix 结构，调度器围绕命中状态和可执行批次推进请求。 |
-| [K-ENGINE-005：TensorRT-LLM：执行器、Overlap 与传输责任](engine-index/tensorrt-llm.md) | v1 · seed | TensorRT-LLM 的执行器将请求调度、模型执行、采样和资源管理组合成后台迭代，适合研究异步服务的责任划分。 |
+| [K-ENGINE-001：vLLM V1：从 Token 进度到调度输出](engine-index/vllm-scheduler.md) | v2 · seed | vLLM V1 的调度可沿请求 token 进度理解，再追踪预算、缓存分配和执行结果怎样改变下一轮状态。 |
+| [K-ENGINE-002：vLLM KV 管理：命中、分配和延迟释放](engine-index/vllm-kv-manager.md) | v2 · seed | KVCacheManager 将逻辑 token 进度转换成层组块分配，命中长度、保留容量和可回收块各有独立含义。 |
+| [K-ENGINE-003：vLLM ModelRunner：调度视图到设备状态](engine-index/vllm-model-runner.md) | v2 · seed | ModelRunner 把逻辑调度结果转成设备输入与持久批状态，并将前向和采样结果按请求归还。 |
+| [K-ENGINE-004：SGLang：Radix 复用与调度状态的连接](engine-index/sglang-radix-scheduler.md) | v2 · seed | SGLang 将共享前缀组织成 Radix 结构，调度器围绕命中状态和可执行批次推进请求。 |
+| [K-ENGINE-005：TensorRT-LLM：执行器、Overlap 与传输责任](engine-index/tensorrt-llm.md) | v2 · seed | TensorRT-LLM 的执行器将请求调度、模型执行、采样和资源管理组合成后台迭代，适合研究异步服务的责任划分。 |
 
 ## 工具
 
@@ -111,10 +111,10 @@
 
 | 条目 | 版本与状态 | 核心认识 |
 |---|---|---|
-| [K-TOOLS-001：可观测性：执行事件与采集事件的映射](tools/trace-observability.md) | v1 · seed | trace 是由采集范围和工具机制生成的观测，不是系统全部执行事实的无损副本。 |
-| [K-TOOLS-002：时间线分析：从请求路径定位执行瓶颈](tools/timeline-attribution.md) | v1 · seed | 时间线分析先建立关联和依赖，再用区间与关键路径解释延迟；热点累计时长只是入口。 |
-| [K-TOOLS-003：Kernel 计数器：吞吐、访存与 Replay 语境](tools/kernel-counter-replay.md) | v1 · seed | 硬件计数器帮助识别单 kernel 的资源限制，但它测到的执行可能与正常并发服务具有不同环境。 |
-| [K-TOOLS-004：框架 Profiler：算子归属、内存与图边界](tools/framework-profiler-scope.md) | v1 · seed | 框架 profiler 解释模型操作怎样落到设备工作，并通过 shape、调用栈与内存事件连接两层视图。 |
+| [K-TOOLS-001：可观测性：执行事件与采集事件的映射](tools/trace-observability.md) | v2 · seed | trace 是由采集范围和工具机制生成的观测，不是系统全部执行事实的无损副本。 |
+| [K-TOOLS-002：时间线分析：从请求路径定位执行瓶颈](tools/timeline-attribution.md) | v2 · seed | 时间线分析先建立关联和依赖，再用区间与关键路径解释延迟；热点累计时长只是入口。 |
+| [K-TOOLS-003：Kernel 计数器：吞吐、访存与 Replay 语境](tools/kernel-counter-replay.md) | v2 · seed | 硬件计数器帮助识别单 kernel 的资源限制，但它测到的执行可能与正常并发服务具有不同环境。 |
+| [K-TOOLS-004：框架 Profiler：算子归属、内存与图边界](tools/framework-profiler-scope.md) | v2 · seed | 框架 profiler 解释模型操作怎样落到设备工作，并通过 shape、调用栈与内存事件连接两层视图。 |
 | [K-TOOLS-005：失败分析：最早偏离、最小复现与机制归因](tools/failure-evidence.md) | v1 · seed | 失败记录的价值在于还原系统从哪一个状态开始偏离预期，并区分输入、实现、资源和外部环境。 |
 | [K-TOOLS-006：正确性 Oracle：函数参考、状态变形与服务契约](tools/correctness-oracles.md) | v2 · seed | 正确性验证需要一组互补的 oracle：数值函数、状态转换、采样分布和外部协议分别有可检查的关系。 |
 | [K-TOOLS-007：性能实验：独立重复、效应量与尾部证据](tools/statistical-experiments.md) | v1 · seed | 性能结论需要与独立重复层级相匹配的效应量和不确定性；尾部失败、搜索偏差和保留验证不能由样本数量替代。 |
@@ -139,12 +139,12 @@
 
 | 条目 | 版本与状态 | 核心认识 |
 |---|---|---|
-| [K-SYS-001：主机与设备时间：偏序、区间并集和关键路径](system-semantics/host-device-timing.md) | v1 · seed | 服务延迟来自生产、提交、执行与消费之间的依赖路径；主机 API 区间与设备工作区间可以重叠。 |
+| [K-SYS-001：主机与设备时间：偏序、区间并集和关键路径](system-semantics/host-device-timing.md) | v2 · seed | 服务延迟来自生产、提交、执行与消费之间的依赖路径；主机 API 区间与设备工作区间可以重叠。 |
 | [K-SYS-002：请求身份：逻辑序列、批次视图与结果归属](system-semantics/request-batch-identity.md) | v1 · seed | 请求是长期语义对象，batch 行与物理槽是临时执行位置；正确性依赖它们之间可追溯的映射。 |
-| [K-SYS-003：位置、Mask 与缓存：同一可见性关系的三种表示](system-semantics/position-mask-cache.md) | v1 · seed | 缓存中的内容必须对应模型定义的逻辑位置；mask 决定读取集合，物理布局只决定这些内容放在哪里。 |
+| [K-SYS-003：位置、Mask 与缓存：同一可见性关系的三种表示](system-semantics/position-mask-cache.md) | v2 · seed | 缓存中的内容必须对应模型定义的逻辑位置；mask 决定读取集合，物理布局只决定这些内容放在哪里。 |
 | [K-SYS-004：取消与完成：业务终止、设备排空和资源回收](system-semantics/cancellation-resource-completion.md) | v1 · seed | 取消撤销未来服务意图，完成证明既有工作已结束；物理资源重用必须等待最后一个使用者。 |
 | [K-SYS-005：集合通信：参与集合、操作顺序与失败传播](system-semantics/collective-ordering.md) | v2 · seed | 分布式前向是一组共同执行协议；每个 rank 的局部控制流必须形成匹配的通信序列。 |
-| [K-SYS-006：工程认识如何成为可迁移的专家知识](system-semantics/evidence-and-independent-checks.md) | v1 · seed | 知识的增量是对系统机制与设计关系的新增解释；运行结果为这些解释提供事实、区分和修正。 |
+| [K-SYS-006：工程认识如何成为可迁移的专家知识](system-semantics/evidence-and-independent-checks.md) | v2 · seed | 知识的增量是对系统机制与设计关系的新增解释；运行结果为这些解释提供事实、区分和修正。 |
 | [K-SYS-007：输入输出语义：Tokenizer、Chat Template 与流式文本](system-semantics/tokenization-io.md) | v2 · seed | 模型处理的是规范化后的 token/特征序列，服务协议必须精确保存从用户输入到模型输入再到输出文本的映射。 |
 | [K-SYS-008：服务协议：接收、流式背压与终止语义](system-semantics/service-protocol.md) | v1 · seed | 推理服务将内部生成状态映射为可观察的网络事件；接收、执行完成和客户端收到结果是不同的完成点。 |
 | [K-SYS-009：分布式状态迁移：身份、传输与提交点](system-semantics/distributed-state-transfer.md) | v2 · seed | 状态迁移是一项所有权和可见性协议；字节到达只有在布局和版本被共同解释后才成为可用模型状态。 |
