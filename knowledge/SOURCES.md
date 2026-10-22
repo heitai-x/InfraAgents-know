@@ -1,6 +1,6 @@
 # 固定来源登记
 
-| 来源 | 固定版本 | 版本日期 |
+| 来源 | 固定版本 | 版本坐标日期 |
 |---|---|---|
 | [S-PAGED](sources/S-PAGED.md) | 2309.06180v1 | 2023-09-12 |
 | [S-FLASH](sources/S-FLASH.md) | 2205.14135v2 | 2022-06-23 |
@@ -78,3 +78,10 @@
 | [S-METAL-TOOLS](sources/S-METAL-TOOLS.md) | Git e8ebdebeeb655feaa85a51f6b24ece5b6d5518d1 (2026-04-28) | 2026-04-28 |
 | [S-NEURON-EXPLORER](sources/S-NEURON-EXPLORER.md) | Git ceca8d914d1c4ca531bd27d8e37581b039dcad2b (2026-04-30) | 2026-04-30 |
 | [S-PERF](sources/S-PERF.md) | Git e027c218c482c6a0ae1948129ccda3b0a2033368 (2026-04-30) | 2026-04-30 |
+| [S-SERVERLESSLLM](sources/S-SERVERLESSLLM.md) | 2401.14351v1 | 2024-01-25 |
+| [S-RMSNORM](sources/S-RMSNORM.md) | 1910.07467v1 | 2019-10-16 |
+| [S-ROPE](sources/S-ROPE.md) | 2104.09864v1 | 2021-04-20 |
+| [S-INT8](sources/S-INT8.md) | 1712.05877v1 | 2017-12-15 |
+| [S-VATTENTION](sources/S-VATTENTION.md) | 2405.04437v1 | 2024-05-07 |
+| [S-GOTO](sources/S-GOTO.md) | Author manuscript archived at tpn/pdfs commit 67ceef2b223ca15bdf6e257303df4fea63970aaa | 2016-11-30 |
+| [S-STATS](sources/S-STATS.md) | 2007.10899v1 | 2020-07-21 |

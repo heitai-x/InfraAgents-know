@@ -6,7 +6,7 @@
 
 ## 算法
 
-[分类入口](algorithms/README.md)，共 15 条。
+[分类入口](algorithms/README.md)，共 16 条。
 
 | 条目 | 版本与状态 | 核心认识 |
 |---|---|---|
@@ -25,6 +25,7 @@
 | [K-ALG-013：Prefill/Decode 分离：状态传输与队列耦合](algorithms/disaggregated-serving.md) | v1 · seed | 分离式服务把两个阶段的资源策略解耦，同时引入 KV 传输、布局转换和跨节点状态提交。 |
 | [K-ALG-014：多 LoRA 服务：低秩计算、驻留与缓存身份](algorithms/lora-serving.md) | v1 · seed | LoRA 为共享基座增加低秩映射；多适配器服务将模型复用问题转换成按请求选择增量权重的问题。 |
 | [K-ALG-015：推理并行：张量分解、流水、专家与上下文](algorithms/parallelism.md) | v1 · seed | 并行策略改变张量归属和同步边界；选择依据是每阶段的计算、状态与通信分解。 |
+| [K-ALG-016：基础算子：从张量契约到合法融合](algorithms/operator-primitives.md) | v1 · seed | 算子契约包含轴、布局、数值和别名；合法融合需要保持函数与状态关系，再比较字节、启动和资源占用。 |
 
 ## 模型
 
@@ -47,7 +48,7 @@
 
 ## 硬件平台
 
-[分类入口](hardware/README.md)，共 9 条。
+[分类入口](hardware/README.md)，共 10 条。
 
 | 条目 | 版本与状态 | 核心认识 |
 |---|---|---|
@@ -60,10 +61,11 @@
 | [K-HW-007：Apple Silicon：统一内存、带宽与交互式推理](hardware/metal-unified-memory.md) | v1 · seed | 统一内存减少显式设备间搬运，但 CPU/GPU 仍共享容量、带宽并通过依赖控制可见性。 |
 | [K-HW-008：Trainium：HBM、SBUF、PSUM 与编译执行](hardware/trainium-dataflow.md) | v1 · seed | Trainium 的高效执行来自把张量分块映射到片上存储和专用引擎，同时让静态可执行程序承接动态服务状态。 |
 | [K-HW-009：CPU 推理：线程、缓存层级与 NUMA 分区](hardware/cpu-serving.md) | v1 · seed | CPU 服务优化需要同时管理向量算术、内存带宽、线程调度与请求级并发，更多线程不等于更多有效工作。 |
+| [K-HW-010：CPU GEMM/GEMV：寄存器、缓存与线程划分](hardware/cpu-linear-kernels.md) | v1 · seed | CPU 线性层需把 shape 的重用机会落实到寄存器、cache/TLB、打包和线程分区；同一配置不适用于全部 GEMV/GEMM。 |
 
 ## 框架
 
-[分类入口](frameworks/README.md)，共 10 条。
+[分类入口](frameworks/README.md)，共 12 条。
 
 | 条目 | 版本与状态 | 核心认识 |
 |---|---|---|
@@ -77,6 +79,8 @@
 | [K-FW-008：MLX 服务：惰性求值、编译与请求状态](frameworks/mlx-serving.md) | v1 · seed | MLX 的数组表达式可以延迟执行，服务循环必须明确计算何时提交、何时完成和何时释放状态。 |
 | [K-FW-009：Neuron/NxD：静态程序承接动态生成](frameworks/neuron-serving.md) | v1 · seed | Neuron 服务通过形状桶、设备驻留状态和分布式执行组，把可变请求映射到编译后的程序族。 |
 | [K-FW-010：NKI：Partition 轴、片上生存期与 Attention 数据流](frameworks/nki-tiling.md) | v1 · seed | NKI 的 tile 是带硬件轴语义的片上对象；布局与生存期共同决定 DMA、矩阵和归约引擎的供给。 |
+| [K-FW-011：权重加载：从制品身份到可执行布局](frameworks/checkpoint-loading.md) | v1 · seed | 加载必须同时建立张量语义、执行布局、完整参数与就绪边界；流式流水的价值由启动关键路径和峰值副本决定。 |
+| [K-FW-012：CPU 低位执行：解包、补偿与累加路径](frameworks/cpu-quantized-kernels.md) | v1 · seed | 低位存储、解包和实际乘加是不同执行路径；补偿、组尺度、累加宽度和舍入共同决定正确性与收益。 |
 
 ## 引擎源码索引
 
@@ -92,7 +96,7 @@
 
 ## 工具
 
-[分类入口](tools/README.md)，共 6 条。
+[分类入口](tools/README.md)，共 7 条。
 
 | 条目 | 版本与状态 | 核心认识 |
 |---|---|---|
@@ -102,10 +106,11 @@
 | [K-TOOLS-004：框架 Profiler：算子归属、内存与图边界](tools/framework-profiler-scope.md) | v1 · seed | 框架 profiler 解释模型操作怎样落到设备工作，并通过 shape、调用栈与内存事件连接两层视图。 |
 | [K-TOOLS-005：失败分析：最早偏离、最小复现与机制归因](tools/failure-evidence.md) | v1 · seed | 失败记录的价值在于还原系统从哪一个状态开始偏离预期，并区分输入、实现、资源和外部环境。 |
 | [K-TOOLS-006：正确性 Oracle：函数参考、状态变形与服务契约](tools/correctness-oracles.md) | v1 · seed | 正确性验证需要一组互补的 oracle：数值函数、状态转换、采样分布和外部协议分别有可检查的关系。 |
+| [K-TOOLS-007：性能实验：独立重复、效应量与尾部证据](tools/statistical-experiments.md) | v1 · seed | 性能结论需要与独立重复层级相匹配的效应量和不确定性；尾部失败、搜索偏差和保留验证不能由样本数量替代。 |
 
 ## 工作负载
 
-[分类入口](workloads/README.md)，共 6 条。
+[分类入口](workloads/README.md)，共 7 条。
 
 | 条目 | 版本与状态 | 核心认识 |
 |---|---|---|
@@ -115,10 +120,11 @@
 | [K-WORK-004：性能实验：稳定态、对照与不确定性](workloads/measurement-comparability.md) | v1 · seed | 可比较的性能结果来自相同任务函数与负载条件，以及能够解释波动的测量窗口。 |
 | [K-WORK-005：Goodput：联合 SLO、拒绝和容量前沿](workloads/slo-goodput.md) | v1 · seed | 服务能力是单位时间内完成有效任务且满足约束的数量，不能用总生成速度替代。 |
 | [K-WORK-006：容量设计：驻留、服务率与阶段配比](workloads/capacity-planning.md) | v1 · seed | 容量设计把每请求资源需求和阶段服务时间连接到到达过程，得出实例数、并发和缓存预算。 |
+| [K-WORK-010：多轮与分支负载：依赖、状态驻留和到达过程](workloads/session-workloads.md) | v1 · seed | 会话依赖、思考时间和分支决定真实到达与状态驻留；前缀复用收益需要和会话成功、容量及重用距离一起衡量。 |
 
 ## 系统语义与一致性
 
-[分类入口](system-semantics/README.md)，共 10 条。
+[分类入口](system-semantics/README.md)，共 12 条。
 
 | 条目 | 版本与状态 | 核心认识 |
 |---|---|---|
@@ -132,6 +138,8 @@
 | [K-SYS-008：服务协议：接收、流式背压与终止语义](system-semantics/service-protocol.md) | v1 · seed | 推理服务将内部生成状态映射为可观察的网络事件；接收、执行完成和客户端收到结果是不同的完成点。 |
 | [K-SYS-009：分布式状态迁移：身份、传输与提交点](system-semantics/distributed-state-transfer.md) | v1 · seed | 状态迁移是一项所有权和可见性协议；字节到达只有在布局和版本被共同解释后才成为可用模型状态。 |
 | [K-SYS-010：系统设计推导：把模型、缓存、执行与目标组合起来](system-semantics/design-synthesis.md) | v1 · seed | 专家指导的产物是一条从任务条件到系统结构的推导链：状态模型、资源模型、候选设计及其可区分的结果。 |
+| [K-SYS-012：内存分配：地址、容量与在途所有权](system-semantics/memory-allocators.md) | v1 · seed | 分配器同时管理地址、物理容量与异步所有权；比较连续池、块表和虚拟映射时必须计入碎片、工作区和在途页。 |
+| [K-SYS-015：服务主机运行时：执行域、队列与缓冲所有权](system-semantics/host-runtime.md) | v1 · seed | 主机执行域、队列和缓冲所有权共同限制推理服务；背压与取消必须连接模型调度和在途资源完成。 |
 
 ## 运行与演进
 

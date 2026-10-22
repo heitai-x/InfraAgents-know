@@ -2,6 +2,8 @@
 
 本版本保留原知识库的主题组织和覆盖映射。该映射是编辑结构，不以参考项目的日期证明知识的时间资格；事实依据只来自逐条登记的截止日前原始资料。
 
+下表是原 73 篇对固定参考集的映射，不是整个推理领域的完整性证明。新增专题、既有章节扩写及组合场景统一记录在 [扩充计划](../docs/expansion-plan.json)；当前实际可读内容以 [完整索引](INDEX.md) 为准。
+
 ## 阅读层次
 
 [模型](models/README.md) → [算法与状态](algorithms/README.md) → [硬件](hardware/README.md) / [框架](frameworks/README.md) → [系统组合](system-semantics/design-synthesis.md) → [工作负载与容量](workloads/README.md)。[引擎](engine-index/README.md) 提供固定版本的实现映射，[工具](tools/README.md) 解释如何观测和验证机制。

@@ -1,0 +1,1761 @@
+{
+  "schema_version": 1,
+  "baseline_commit": "373f65727593cfc3a82b5578b72682e21e88c48e",
+  "source_cutoff_inclusive": "2026-04-30",
+  "started_at": "2026-10-22",
+  "status": "in_progress",
+  "scope": "完整推理知识库，包含推理依赖的集群、存储和部署；不扩展为训练平台全生命周期。",
+  "domains": [
+    {
+      "id": "D01",
+      "name": "任务、负载、SLO 与资源目标",
+      "coverage": "foundation",
+      "priority": "P0",
+      "current_ids": [
+        "K-WORK-001",
+        "K-WORK-002",
+        "K-WORK-003",
+        "K-WORK-004",
+        "K-WORK-005",
+        "K-WORK-006"
+      ],
+      "gap": "补回合依赖、突发/长尾、质量约束、成本/能耗和设备预算，建立可比较的目标函数。",
+      "acceptance": "同一负载同时说明到达、长度、复用、取消、质量、尾延迟和可用资源，并能解释目标改变后的方案变化。"
+    },
+    {
+      "id": "D02",
+      "name": "模型结构与输入输出语义",
+      "coverage": "foundation",
+      "priority": "P0",
+      "current_ids": [
+        "K-MODEL-001",
+        "K-MODEL-002",
+        "K-MODEL-004",
+        "K-MODEL-005",
+        "K-MODEL-006",
+        "K-MODEL-007",
+        "K-SYS-003",
+        "K-SYS-007"
+      ],
+      "gap": "补 checkpoint→配置→权重→算子→请求状态的一致性链；扩展 encoder-only 和非生成模型。",
+      "acceptance": "能从固定模型版本还原所有持久状态、形状和数值契约，并建立独立参考。"
+    },
+    {
+      "id": "D03",
+      "name": "模型制品、权重加载与冷启动",
+      "coverage": "missing",
+      "priority": "P0",
+      "current_ids": [
+        "K-FW-001",
+        "K-FW-004",
+        "K-HW-004"
+      ],
+      "gap": "新增分片读取、文件/驻留布局、mmap/流式加载、格式转换、tied weights、预热和版本切换。",
+      "acceptance": "解释峰值主存/显存和启动关键路径，并验证缺片、错格式、加载取消及新旧版本并存。"
+    },
+    {
+      "id": "D04",
+      "name": "基础算子与数值计算",
+      "coverage": "partial",
+      "priority": "P0",
+      "current_ids": [
+        "K-ALG-004",
+        "K-FW-002",
+        "K-HW-004",
+        "K-MODEL-001"
+      ],
+      "gap": "补 GEMM/GEMV、embedding、norm、RoPE、激活、softmax、reduction/gather/scatter 的完整契约与融合关系。",
+      "acceptance": "逐算子说明形状、布局、精度、误差与成本，能够构成完整 forward 并定位首次分歧。"
+    },
+    {
+      "id": "D05",
+      "name": "GPU 架构与内核实现",
+      "coverage": "partial",
+      "priority": "P1",
+      "current_ids": [
+        "K-HW-005",
+        "K-HW-006",
+        "K-HW-008",
+        "K-FW-007",
+        "K-FW-010",
+        "K-ALG-004"
+      ],
+      "gap": "深入 tile、矩阵指令、共享存储、寄存器、异步流水、warp/wave 分工和平台资源差异。",
+      "acceptance": "由实际 shape 推导两个合法内核方案、资源占用及性能反转条件，接回端到端评估。"
+    },
+    {
+      "id": "D06",
+      "name": "CPU 架构、内核与线程运行时",
+      "coverage": "partial",
+      "priority": "P0",
+      "current_ids": [
+        "K-HW-009",
+        "K-HW-001",
+        "K-HW-004",
+        "K-TOOLS-003"
+      ],
+      "gap": "补 cache/TLB、SIMD/矩阵指令、GEMV/GEMM 预打包、低位解包、NUMA、线程池/绑核和 allocator。",
+      "acceptance": "把小 batch decode 和 prefill 的计算/带宽账落实到线程、内存布局和可验证的 perf 信号。"
+    },
+    {
+      "id": "D07",
+      "name": "量化、压缩与近似计算",
+      "coverage": "foundation",
+      "priority": "P1",
+      "current_ids": [
+        "K-ALG-005",
+        "K-HW-004",
+        "K-MODEL-007",
+        "K-FW-002"
+      ],
+      "gap": "补具体校准方法、低精度 kernel 路径、KV 量化/裁剪、稀疏与质量损失的适用范围。",
+      "acceptance": "每种近似独立登记质量约束和校准分布，解释省下的字节及新增计算，不暗示普遍无损。"
+    },
+    {
+      "id": "D08",
+      "name": "KV 与其他状态的分配、共享和回收",
+      "coverage": "foundation",
+      "priority": "P0",
+      "current_ids": [
+        "K-ALG-002",
+        "K-ALG-003",
+        "K-ALG-009",
+        "K-ALG-010",
+        "K-SYS-004",
+        "K-MODEL-004",
+        "K-MODEL-006",
+        "K-ENGINE-002"
+      ],
+      "gap": "补通用 allocator、虚拟地址替代、碎片/峰值压力、状态包和迁移接口；保留已有精确机制。",
+      "acceptance": "对跨页、共享分叉、抢占、取消、恢复和多状态池给出资源守恒及独立 oracle。"
+    },
+    {
+      "id": "D09",
+      "name": "HBM、DRAM、SSD 分层存储",
+      "coverage": "missing",
+      "priority": "P1",
+      "current_ids": [
+        "K-HW-003",
+        "K-ALG-001",
+        "K-ALG-014",
+        "K-SYS-009"
+      ],
+      "gap": "新增权重/KV/专家的驻留、换入换出、预取、I/O 队列、缓存替换和重算比较。",
+      "acceptance": "给出完整迁移状态、容量与带宽账，比较保留/搬运/重算，验证部分完成和失败回收。"
+    },
+    {
+      "id": "D10",
+      "name": "CPU 与 GPU 协同计算",
+      "coverage": "missing",
+      "priority": "P1",
+      "current_ids": [
+        "K-HW-003",
+        "K-HW-007",
+        "K-ALG-008",
+        "K-MODEL-003"
+      ],
+      "gap": "新增按层/算子/专家/状态分配计算的成本模型；区分搬数据到 GPU 与把计算留在 CPU。",
+      "acceptance": "说明计算放置、同步与传输对象，在稠密和稀疏前提下分别推导何时值得协同。"
+    },
+    {
+      "id": "D11",
+      "name": "执行器、编译与异步运行时",
+      "coverage": "foundation",
+      "priority": "P0",
+      "current_ids": [
+        "K-FW-001",
+        "K-FW-003",
+        "K-FW-004",
+        "K-FW-005",
+        "K-FW-007",
+        "K-FW-008",
+        "K-FW-009",
+        "K-ALG-008",
+        "K-ENGINE-003",
+        "K-ENGINE-005",
+        "K-FW-006"
+      ],
+      "gap": "补 IR/lowering、合法融合、布局传播、主机开销、编译缓存和多代流水的资源竞争。",
+      "acceptance": "明确编译/执行/调度边界，证明变化的地址、形状、状态和跨后端语义仍然一致。"
+    },
+    {
+      "id": "D12",
+      "name": "单实例调度与准入",
+      "coverage": "foundation",
+      "priority": "P0",
+      "current_ids": [
+        "K-ALG-001",
+        "K-ALG-007",
+        "K-WORK-002",
+        "K-WORK-005",
+        "K-WORK-006",
+        "K-ENGINE-001"
+      ],
+      "gap": "补 fairness、deadline、优先级、未知输出长度、抢占恢复和负载驱动的策略选择。",
+      "acceptance": "在同一质量与 offered workload 下比较吞吐、拒绝、等待、饥饿和尾延迟。"
+    },
+    {
+      "id": "D13",
+      "name": "采样、投机与分支生成",
+      "coverage": "foundation",
+      "priority": "P1",
+      "current_ids": [
+        "K-ALG-006",
+        "K-ALG-011",
+        "K-ALG-012",
+        "K-SYS-002"
+      ],
+      "gap": "补 beam/多样本树、草稿策略、验证树、动态预算和 grammar/RNG/KV 的共同提交。",
+      "acceptance": "分别验证贪心、分布一致和允许近似的目标，覆盖拒绝、回滚和分支生命周期。"
+    },
+    {
+      "id": "D14",
+      "name": "MoE 执行与专家管理",
+      "coverage": "foundation",
+      "priority": "P1",
+      "current_ids": [
+        "K-MODEL-003",
+        "K-MODEL-006",
+        "K-ALG-015"
+      ],
+      "gap": "补专家分组 kernel、路由偏斜、复制/布局、卸载、通信重叠及在线小批条件。",
+      "acceptance": "区分模型允许的路由规则与系统放置；追踪 token→专家→返回位置及慢端资源。"
+    },
+    {
+      "id": "D15",
+      "name": "多设备并行与拓扑映射",
+      "coverage": "foundation",
+      "priority": "P1",
+      "current_ids": [
+        "K-ALG-015",
+        "K-HW-002",
+        "K-SYS-005",
+        "K-MODEL-002"
+      ],
+      "gap": "补并行组合的逐层字节/延迟账、非整除划分、CP、异构节点与阶段差异。",
+      "acceptance": "对候选 TP/PP/DP/EP/CP 组合说明容量、通信、气泡及形状合法性，建立共同结果参考。"
+    },
+    {
+      "id": "D16",
+      "name": "网络传输与通信实现",
+      "coverage": "partial",
+      "priority": "P1",
+      "current_ids": [
+        "K-HW-002",
+        "K-SYS-005",
+        "K-SYS-009"
+      ],
+      "gap": "补传输协议、注册缓冲、DMA/网络完成、RDMA、NIC 亲和、拥塞与通信计算重叠。",
+      "acceptance": "能追踪发送、接收、可见与回收事件，识别顺序错误和拥塞；数值参数绑定实际平台版本。"
+    },
+    {
+      "id": "D17",
+      "name": "P/D 分离、全局缓存与路由",
+      "coverage": "partial",
+      "priority": "P1",
+      "current_ids": [
+        "K-ALG-013",
+        "K-ALG-003",
+        "K-SYS-009",
+        "K-WORK-006",
+        "K-ENGINE-004",
+        "K-ENGINE-005"
+      ],
+      "gap": "扩写全局目录、放置/副本、局部与远端命中、动态迁移、失效和前缀亲和路由。",
+      "acceptance": "比较共置/分离、远端缓存/重算，并覆盖网络竞争、热点、接管失败和池配比。"
+    },
+    {
+      "id": "D18",
+      "name": "服务宿主、操作系统与 I/O",
+      "coverage": "partial",
+      "priority": "P0",
+      "current_ids": [
+        "K-SYS-008",
+        "K-SYS-007",
+        "K-HW-009",
+        "K-HW-003"
+      ],
+      "gap": "补线程/进程模型、事件循环、IPC/共享内存、tokenizer 池、连接和流式队列。",
+      "acceptance": "将请求从入口到模型再到客户端的所有缓冲和背压连接起来，测出 host 成本。"
+    },
+    {
+      "id": "D19",
+      "name": "多模型、多租户和弹性部署",
+      "coverage": "missing",
+      "priority": "P2",
+      "current_ids": [
+        "K-ALG-014",
+        "K-WORK-006",
+        "K-SYS-008"
+      ],
+      "gap": "新增模型放置、共同容量、租户配额、资源隔离、autoscale、冷启动与滚动切换。",
+      "acceptance": "在突发与混合模型下解释公平性、干扰、启动延迟、版本一致性和可用成本。"
+    },
+    {
+      "id": "D20",
+      "name": "故障恢复、隔离与长期可靠性",
+      "coverage": "partial",
+      "priority": "P1",
+      "current_ids": [
+        "K-SYS-004",
+        "K-SYS-005",
+        "K-SYS-008",
+        "K-SYS-009",
+        "K-TOOLS-005"
+      ],
+      "gap": "补进程/rank/I/O 故障恢复、缓存污染、租户隔离、资源泄漏和长期状态压力。",
+      "acceptance": "每类故障明确哪些输出已提交、是否可重试、谁清理状态及何时恢复服务。"
+    },
+    {
+      "id": "D21",
+      "name": "多模态、语音和扩散服务",
+      "coverage": "foundation",
+      "priority": "P2",
+      "current_ids": [
+        "K-MODEL-005",
+        "K-MODEL-008",
+        "K-MODEL-009",
+        "K-MODEL-010",
+        "K-MODEL-011",
+        "K-MODEL-012",
+        "K-ALG-010"
+      ],
+      "gap": "扩写阶段专用 kernel、跨阶段聚批、预后处理、流式提交、质量和多时钟资源竞争。",
+      "acceptance": "形成 ASR/TTS、VLM、图像/视频及全双工场景的端到端时序与质量性能联合案例。"
+    },
+    {
+      "id": "D22",
+      "name": "Embedding、检索和其他推理负载",
+      "coverage": "missing",
+      "priority": "P2",
+      "current_ids": [
+        "K-MODEL-001",
+        "K-WORK-003"
+      ],
+      "gap": "新增 encoder-only、reranking、向量检索/RAG、CNN、推荐 embedding 表与 GNN 的状态/算子/资源模型。",
+      "acceptance": "每类至少给一个完整计算链和质量指标，避免用自回归 token 视角替代其真实成本。"
+    },
+    {
+      "id": "D23",
+      "name": "观测、验证与实验统计",
+      "coverage": "foundation",
+      "priority": "P0",
+      "current_ids": [
+        "K-TOOLS-001",
+        "K-TOOLS-002",
+        "K-TOOLS-003",
+        "K-TOOLS-004",
+        "K-TOOLS-005",
+        "K-TOOLS-006",
+        "K-WORK-004",
+        "K-FW-002",
+        "K-SYS-001"
+      ],
+      "gap": "补区组/配对设计、置信区间、尾部样本、自相关、搜索选择偏差、故障注入及独立保留验证。",
+      "acceptance": "区分局部正确性、机制解释、端到端收益和跨任务可迁移性；报告不确定性与失败样本。"
+    },
+    {
+      "id": "D24",
+      "name": "完整系统推导与设计探索",
+      "coverage": "partial",
+      "priority": "P0",
+      "current_ids": [
+        "K-SYS-010",
+        "K-SYS-006",
+        "K-WORK-006"
+      ],
+      "gap": "补候选设计空间、依赖/冲突关系、成本模型校准、对照选择以及至少十个完整组合案例。",
+      "acceptance": "给定 workload 能从约束推导多个方案、预言收益/失败、设计区分实验，并解释何时换方案。"
+    }
+  ],
+  "existing_chapters": [
+    {
+      "id": "K-ALG-001",
+      "path": "algorithms/iteration-batching.md",
+      "current": "迭代推进、四种长度、token/页预算和三种抢占成本。",
+      "gap": "补 FCFS、优先级、短作业估计、deadline 与公平调度的选择条件；给出未知输出长度、恢复和长请求饥饿的完整时序。",
+      "action": "实质扩写",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "K-ALG-002",
+      "path": "algorithms/paged-kv-capacity.md",
+      "current": "页映射、布局、碎片算例、共享尾页、引用与执行完成。",
+      "gap": "保留推导；连接通用分配器、虚拟地址方案和分层迁移；增加跨页/分叉/回收的组合验证矩阵。",
+      "action": "保留主体并补关联验证",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "K-ALG-003",
+      "path": "algorithms/prefix-cache-identity.md",
+      "current": "依赖闭包、块哈希/Radix、共同恢复位置与淘汰价值。",
+      "gap": "扩写可执行的淘汰选择、复用距离和缓存污染分析；区分精确前缀复用与非前缀近似拼接。",
+      "action": "实质扩写",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "K-ALG-004",
+      "path": "algorithms/attention-io.md",
+      "current": "在线 softmax 合并、IO、split-K、mask 与数值误差。",
+      "gap": "保留数学核心；连接各平台 tile/pipeline 的具体推导和融合失败反例，避免把一个 kernel 配置泛化。",
+      "action": "保留主体并补关联验证",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "K-ALG-005",
+      "path": "algorithms/quantization-contract.md",
+      "current": "W/A/KV 误差、分组尺度、元数据成本、质量约束。",
+      "gap": "补校准集构造、GPTQ/AWQ/SmoothQuant 的适用差异、FP8 路径、重打包、敏感层和质量回归设计。",
+      "action": "实质扩写",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "K-ALG-006",
+      "path": "algorithms/speculation-budget.md",
+      "current": "随机接受修正、确认边界、bonus token、收益模型。",
+      "gap": "补树形验证、特征草稿/MTP 的状态条件、多请求验证预算、动态草稿长度以及低接受率的退出条件。",
+      "action": "实质扩写",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "K-ALG-007",
+      "path": "algorithms/chunked-prefill.md",
+      "current": "时间切片、历史可见性、q/h 成本和混合批布局。",
+      "gap": "补基于延迟预算的块长选择与误差校准、优先级/长上下文/多模态混合时的策略比较。",
+      "action": "实质扩写",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "K-ALG-008",
+      "path": "algorithms/async-scheduling.md",
+      "current": "CPU/设备重叠、同代快照、双缓冲、取消和晚到结果。",
+      "gap": "扩写两代以上流水、结果依赖的设备端保持、队列背压以及共享 copy engine/带宽时的收益判断。",
+      "action": "实质扩写",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "K-ALG-009",
+      "path": "algorithms/heterogeneous-state-cache.md",
+      "current": "状态族、三种池布局、恢复集合交集和联合预留。",
+      "gap": "保留主体；连接按层卸载、混合状态迁移与恢复失败的事务边界，补复合状态算例。",
+      "action": "保留主体并补关联验证",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "K-ALG-010",
+      "path": "algorithms/cross-attention-cache.md",
+      "current": "cross KV 的依赖推导、两套几何、流式源版本。",
+      "gap": "保留主体；连接多阶段排队与存储分层；验证源更新、取消和跨 backend 切换的组合。",
+      "action": "保留主体并补关联验证",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "K-ALG-011",
+      "path": "algorithms/batched-sampling.md",
+      "current": "采样变换顺序、logits 行映射、请求随机流和分布 oracle。",
+      "gap": "保留主体；将 beam、多样本分支的重排放入新增专题，补分布检验样本设计。",
+      "action": "保留主体并补关联验证",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "K-ALG-012",
+      "path": "algorithms/structured-output.md",
+      "current": "语言状态、token 边界、约束概率、投机和取消组合。",
+      "gap": "保留主体；连接语法编译/缓存成本、失败输入和 session workload，不把工具调用状态等同于 grammar。",
+      "action": "保留主体并补关联验证",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "K-ALG-013",
+      "path": "algorithms/disaggregated-serving.md",
+      "current": "P/D 分离成本、KV 字节、异构分片转换和接管。",
+      "gap": "补池配比的动态调整、跨实例路由、带宽争用、传输失效、短长混合负载和共置/分离临界点。",
+      "action": "实质扩写",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "K-ALG-014",
+      "path": "algorithms/lora-serving.md",
+      "current": "低秩计算、混合 rank、adapter 驻留和缓存身份。",
+      "gap": "补 adapter/KV 联合内存分配、热切换、租户配额、分组 kernel 与公平排队的定量比较。",
+      "action": "实质扩写",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "K-ALG-015",
+      "path": "algorithms/parallelism.md",
+      "current": "TP/PP/DP/EP/CP 的张量归属和通信成本。",
+      "gap": "补每层通信与 buffer 的逐项账本、并行组合候选表、非整除形状、拓扑约束和通信重叠的条件。",
+      "action": "实质扩写",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "K-ENGINE-001",
+      "path": "engine-index/vllm-scheduler.md",
+      "current": "固定版本 scheduler 坐标与 token 进度阅读路径。",
+      "gap": "保留导航用途；后续扩写必须引用截止前固定源码，不把引擎默认策略当作目标 workload 的最优策略。",
+      "action": "保留导航并补关联",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "K-ENGINE-002",
+      "path": "engine-index/vllm-kv-manager.md",
+      "current": "固定版本 KV 分配、准入检查、命中和延迟释放。",
+      "gap": "保留导航；连接新分配器与分层存储的机制差异，不用接口存在证明卸载策略完整。",
+      "action": "保留导航并补关联",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "K-ENGINE-003",
+      "path": "engine-index/vllm-model-runner.md",
+      "current": "固定版本 runner、三段映射与前向/采样边界。",
+      "gap": "保留导航；补与独立引擎数据契约的对应关系，源码受限任务仍使用非代码机制正文。",
+      "action": "保留导航并补关联",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "K-ENGINE-004",
+      "path": "engine-index/sglang-radix-scheduler.md",
+      "current": "固定版本 Radix、匹配、引用保护、淘汰和调度。",
+      "gap": "保留导航；分布式缓存、异构卸载需要各自证据，不由 RadixCache 类名外推出这些能力。",
+      "action": "保留导航并补关联",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "K-ENGINE-005",
+      "path": "engine-index/tensorrt-llm.md",
+      "current": "固定版本执行器、采样 overlap 和多使用者传输保护。",
+      "gap": "保留导航；后续按层预取、远端存储与故障恢复不能只凭 AsyncTransferManager 名称填补。",
+      "action": "保留导航并补关联",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "K-FW-001",
+      "path": "frameworks/inference-eval.md",
+      "current": "eval/inference_mode、参数/buffer/请求状态和 Python 开销。",
+      "gap": "扩写模型接入与权重加载流程、线程上下文、原生扩展边界及 eager/compiled 的等价验证。",
+      "action": "实质扩写",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "K-FW-002",
+      "path": "frameworks/numerical-reference.md",
+      "current": "等价层级、容差、logits margin 和首次分歧。",
+      "gap": "保留数值原则；补每类近似方案与任务质量的对应测试，连接统计及长期状态测试。",
+      "action": "保留主体并补关联验证",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "K-FW-003",
+      "path": "frameworks/streams-allocator.md",
+      "current": "stream 依赖、allocator 生命周期和共享 workspace。",
+      "gap": "保留主体；连接多层存储的双端完成与缓冲池压力，补取消/失败竞态的组合测试。",
+      "action": "保留主体并补关联验证",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "K-FW-004",
+      "path": "frameworks/compile-dynamic-shapes.md",
+      "current": "guard、联合分桶、冷成本与 CUDA Graph 边界。",
+      "gap": "扩写图获取、IR/lowering、合法融合、布局传播、重编译与缓存失效；区分编译器职责和执行器职责。",
+      "action": "实质扩写",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "K-FW-005",
+      "path": "frameworks/cuda-graph-buffers.md",
+      "current": "捕获/重放、静态容量、plan/run、代次与收益模型。",
+      "gap": "保留主体；增加与卸载、LoRA、多 stream 的组合条件和图池占用验证。",
+      "action": "保留主体并补关联验证",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "K-FW-006",
+      "path": "frameworks/attention-backends.md",
+      "current": "attention 共同函数、非方形 causal、布局与 backend 契约。",
+      "gap": "保留契约；完善固定版本能力表与转换成本测量，不以库名列举代替接口覆盖。",
+      "action": "保留主体并补关联验证",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "K-FW-007",
+      "path": "frameworks/triton-kernels.md",
+      "current": "tile、布局、融合、autotune 与跨平台约束。",
+      "gap": "补从矩阵形状到程序/线程布局的完整推导、寄存器 spill、流水阶段及调优预算分配。",
+      "action": "实质扩写",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "K-FW-008",
+      "path": "frameworks/mlx-serving.md",
+      "current": "MLX 惰性求值、共享内存所有权和编译边界。",
+      "gap": "补固定版本的求值/stream 路径、显式状态更新、内存压力与特化收益算例。",
+      "action": "实质扩写",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "K-FW-009",
+      "path": "frameworks/neuron-serving.md",
+      "current": "Neuron 编译产物身份、形状桶与设备驻留状态。",
+      "gap": "补 executable 加载生命周期、桶间状态延续、并行组和失败恢复的端到端实例。",
+      "action": "实质扩写",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "K-FW-010",
+      "path": "frameworks/nki-tiling.md",
+      "current": "NKI partition/free 轴、片上生存期和 DMA 流水。",
+      "gap": "补矩阵与 reduction 的具体 tile 资源账、合法约束及不同形状性能分支。",
+      "action": "实质扩写",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "K-HW-001",
+      "path": "hardware/memory-and-roofline.md",
+      "current": "容量/流量/FLOPs 三账、roofline 与 Amdahl。",
+      "gap": "扩为多级内存/通信/主机的资源账本；给可持续参数测量、共享争用和成本/能耗归因方法。",
+      "action": "实质扩写",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "K-HW-002",
+      "path": "hardware/topology-parallelism.md",
+      "current": "拓扑图、alpha-beta、ring 流量和 NUMA 亲和。",
+      "gap": "补 RDMA/传输完成、NIC/GPU 亲和、注册缓冲、拥塞、集体算法选择及共用链路竞争。",
+      "action": "实质扩写",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "K-HW-003",
+      "path": "hardware/host-device-transfer.md",
+      "current": "pageable/pinned、准备/传输/计算流水与缓冲所有权。",
+      "gap": "扩写小消息与大块搬运、双向竞争、批量传输、预取深度；把输入流水扩展到权重和 KV 搬运。",
+      "action": "实质扩写",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "K-HW-004",
+      "path": "hardware/precision-and-kernel-support.md",
+      "current": "表示/乘法/累加精度、矩阵形状与权重打包。",
+      "gap": "补固定平台指令与 dtype 能力表、尾块、scale 布局、转换路径和 CPU/GPU 实际 dispatch 核验。",
+      "action": "实质扩写",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "K-HW-005",
+      "path": "hardware/cuda-execution.md",
+      "current": "CUDA 执行层级、合并访问、attention tile 和图执行。",
+      "gap": "补 GEMM/GEMV、Tensor Core 数据流、warp specialization、异步片上搬运、bank conflict/spill 和计数器预测。",
+      "action": "实质扩写",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "K-HW-006",
+      "path": "hardware/rocm-execution.md",
+      "current": "ROCm CU/wave/LDS、MFMA、backend 与资源差异。",
+      "gap": "补具体 CDNA/RDNA 代际的布局、矩阵指令与通信差异；避免照抄 CUDA 数值配置。",
+      "action": "实质扩写",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "K-HW-007",
+      "path": "hardware/metal-unified-memory.md",
+      "current": "Apple 统一内存、求值依赖与系统容量竞争。",
+      "gap": "补 CPU/GPU 共享带宽与容量实账、压缩/交换干扰、能耗与交互延迟的设计分支。",
+      "action": "实质扩写",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "K-HW-008",
+      "path": "hardware/trainium-dataflow.md",
+      "current": "Trainium HBM/SBUF/PSUM、DMA 和静态桶。",
+      "gap": "补按算子的片上占用/搬运时序、模型并行与 executable 驻留的完整成本案例。",
+      "action": "实质扩写",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "K-HW-009",
+      "path": "hardware/cpu-serving.md",
+      "current": "线程超额订阅、NUMA、权重打包和阶段服务时间。",
+      "gap": "重点扩写 GEMM/GEMV、向量/矩阵指令、cache/TLB、低位解包、线程池/绑核、预取与 perf 证据。",
+      "action": "实质扩写",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "K-MODEL-001",
+      "path": "models/prefill-decode-state.md",
+      "current": "自回归依赖、prefill/decode、模型档案和结构入口。",
+      "gap": "扩写从 checkpoint 到独立 forward 的接入链、基础算子、位置变体和非生成模型；补固定版本结构表。",
+      "action": "实质扩写",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "K-MODEL-002",
+      "path": "models/gqa-kv-heads.md",
+      "current": "query/KV 头映射、容量、原生复用与 TP 复制。",
+      "gap": "保留主体；补量化、分页、非整除 TP 的组合验证，不引入无依据的模型转换。",
+      "action": "保留主体并补关联验证",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "K-MODEL-003",
+      "path": "models/moe-routing.md",
+      "current": "路由、dispatch/combine、权重容量与专家负载。",
+      "gap": "扩写 grouped GEMM、专家布局/复制、CPU/SSD 卸载、通信重叠和偏斜负载；区分模型路由与系统调度。",
+      "action": "实质扩写",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "K-MODEL-004",
+      "path": "models/recurrent-hybrid-state.md",
+      "current": "递推/scan、卷积状态、检查点与共同恢复位置。",
+      "gap": "保留状态模型；补混合层的存储迁移和投机恢复算例，并连接专用 scan 内核。",
+      "action": "保留主体并补关联验证",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "K-MODEL-005",
+      "path": "models/encoder-decoder-streaming.md",
+      "current": "encoder/cross/self 三段、缓存与流式稳定源。",
+      "gap": "补完整 ASR 请求时序、encoder/decode 队列分工、流式上下文承诺及 WER/延迟联合验证。",
+      "action": "实质扩写",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "K-MODEL-006",
+      "path": "models/mla.md",
+      "current": "latent、矩阵吸收、解耦 RoPE 和两阶段表示。",
+      "gap": "保留推导；补量化与 TP/EP 的组合、workspace/历史展开的可观测核验。",
+      "action": "保留主体并补关联验证",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "K-MODEL-007",
+      "path": "models/sliding-window-attention.md",
+      "current": "窗口、环形槽、位置、有效稀疏块和生命周期。",
+      "gap": "扩写原生稀疏结构与运行近似裁剪的区别、稀疏索引生成成本、长上下文质量与 KV 压缩比较。",
+      "action": "实质扩写",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "K-MODEL-008",
+      "path": "models/vision-language.md",
+      "current": "视觉 token 几何、桥接/位置、batch 与缓存。",
+      "gap": "补媒体处理、encoder、decoder 三阶段调度和缓存预算；明确图像理解/定位的验证实例。",
+      "action": "实质扩写",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "K-MODEL-009",
+      "path": "models/image-diffusion.md",
+      "current": "扩散执行链、CFG、条件复用和质量/步数。",
+      "gap": "补 scheduler 数值路径、跨步近似缓存、DiT 并行、VAE 切块的边界及时间/质量对照。",
+      "action": "实质扩写",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "K-MODEL-010",
+      "path": "models/video-generation.md",
+      "current": "时空 token 成本、计算与语义分块、VAE 和多卡。",
+      "gap": "补具体时空分片/通信、视频编码管线、混合分辨率调度与时间一致性 oracle。",
+      "action": "实质扩写",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "K-MODEL-011",
+      "path": "models/speech-generation.md",
+      "current": "声学 token、lookahead、overlap 和播放缓冲。",
+      "gap": "补 codec/vocoder 阶段资源、chunk 调度、打断和抖动的联合实验，给不同生成链的完整算例。",
+      "action": "实质扩写",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "K-MODEL-012",
+      "path": "models/omni-multimodal.md",
+      "current": "多时钟、分支依赖、背压、块身份与联合质量。",
+      "gap": "补多阶段资源分配、客户端节奏与抢占、全双工交互及跨模态排队/同步的成本模型。",
+      "action": "实质扩写",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "K-SYS-001",
+      "path": "system-semantics/host-device-timing.md",
+      "current": "偏序、并集、关键路径与合成时间算例。",
+      "gap": "保留主体；连接跨主机时钟误差、链路传输和执行重叠的证据边界。",
+      "action": "保留主体并补关联验证",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "K-SYS-002",
+      "path": "system-semantics/request-batch-identity.md",
+      "current": "请求/分支/位置/代次与 batch 压紧逆映射。",
+      "gap": "保留主体；连接 beam、session、远端迁移和恢复时的统一身份测试。",
+      "action": "保留主体并补关联验证",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "K-SYS-003",
+      "path": "system-semantics/position-mask-cache.md",
+      "current": "绝对位置、mask、cache_position 与变形关系。",
+      "gap": "保留主体；补权重格式/位置变体接入表及稀疏、量化、混合状态的组合验证。",
+      "action": "保留主体并补关联验证",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "K-SYS-004",
+      "path": "system-semantics/cancellation-resource-completion.md",
+      "current": "终止、三种引用、代次和迁移责任。",
+      "gap": "扩写传输取消、存储失败和进程退出的状态表；给出压力下资源最终归零的验证方案。",
+      "action": "实质扩写",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "K-SYS-005",
+      "path": "system-semantics/collective-ordering.md",
+      "current": "参与集合、collective 顺序、共同 batch 与失败传播。",
+      "gap": "补通信组重建、rank 恢复、部分失败和多组并发；与 transport 层完成信号对应。",
+      "action": "实质扩写",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "K-SYS-006",
+      "path": "system-semantics/evidence-and-independent-checks.md",
+      "current": "来源/推导/观测区分、独立核对和增量修订。",
+      "gap": "补内容局部断言的来源定位、冲突作用范围、章节组合验证和知识收益的受控实验设计。",
+      "action": "实质扩写",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "K-SYS-007",
+      "path": "system-semantics/tokenization-io.md",
+      "current": "模板、tokenizer、padding、流式 detokenization 和 stop。",
+      "gap": "补模型制品一致性、长会话/工具回合输入和 tokenizer CPU 路径的优化边界。",
+      "action": "实质扩写",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "K-SYS-008",
+      "path": "system-semantics/service-protocol.md",
+      "current": "外部完成事件、背压、取消重试和 API 行为。",
+      "gap": "补线程/进程/事件循环、IPC、请求队列、配额和滚动发布；形成服务故障状态测试。",
+      "action": "实质扩写",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "K-SYS-009",
+      "path": "system-semantics/distributed-state-transfer.md",
+      "current": "状态描述、预留/传输/发布、重试和收益。",
+      "gap": "扩写本地多层与跨节点迁移的不同失败面、持久缓存版本与崩溃后的责任恢复。",
+      "action": "实质扩写",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "K-SYS-010",
+      "path": "system-semantics/design-synthesis.md",
+      "current": "四种组合场景，从模型/状态到资源和 SLO。",
+      "gap": "扩成至少十类可复算的端到端设计案例；每例比较两个以上方案并说明选择反转条件。",
+      "action": "实质扩写",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "K-TOOLS-001",
+      "path": "tools/trace-observability.md",
+      "current": "采集覆盖、缺失含义与关联范围。",
+      "gap": "补磁盘、CPU NUMA、网络、内存迁移的信号覆盖；建立假设到可区分观测的完整表。",
+      "action": "实质扩写",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "K-TOOLS-002",
+      "path": "tools/timeline-attribution.md",
+      "current": "请求到批次/kernel 的关联、空洞与关键路径。",
+      "gap": "补跨节点和 I/O 队列时间线，区分共享物理工作和逻辑请求收益；给正反两类归因案例。",
+      "action": "实质扩写",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "K-TOOLS-003",
+      "path": "tools/kernel-counter-replay.md",
+      "current": "计数器、occupancy/stall、replay 扰动。",
+      "gap": "补 CPU cache/TLB、向量路径、GPU spill/流水和网络/磁盘计数器的机制对应，固定工具版本。",
+      "action": "实质扩写",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "K-TOOLS-004",
+      "path": "tools/framework-profiler-scope.md",
+      "current": "框架算子与 kernel/内存的对应及五平台观测。",
+      "gap": "补可执行的观测选择方法和工具不可用时的测量边界；不能以表格列出平台代替真实能力。",
+      "action": "实质扩写",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "K-TOOLS-005",
+      "path": "tools/failure-evidence.md",
+      "current": "最早失败、保留触发关系的最小复现。",
+      "gap": "扩写 OOM、I/O 超时、部分 rank 故障、网络断开和恢复的故障注入方案。",
+      "action": "实质扩写",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "K-TOOLS-006",
+      "path": "tools/correctness-oracles.md",
+      "current": "数值、状态、概率、协议的互补 oracle。",
+      "gap": "补组合覆盖、性质测试、并发竞态、长时间资源守恒以及独立保留验证的实例。",
+      "action": "实质扩写",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "K-WORK-001",
+      "path": "workloads/metric-events.md",
+      "current": "TTFT/TPOT/ITL 的事件定义和聚合。",
+      "gap": "补 session、embedding、检索、图像/语音完整用户指标，以及成本/能耗的有效输出分母。",
+      "action": "实质扩写",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "K-WORK-002",
+      "path": "workloads/arrival-and-concurrency.md",
+      "current": "开闭环、Little 关系、coordinated omission。",
+      "gap": "补突发、长尾、优先级、过载排队的量化推导与 trace 重放设计；区别依赖回合和独立到达。",
+      "action": "实质扩写",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "K-WORK-003",
+      "path": "workloads/input-distribution.md",
+      "current": "长度/复用/模态/取消的联合分布和边界。",
+      "gap": "补多轮 agent、RAG、离线批、embedding、推荐和图计算的代表负载档案。",
+      "action": "实质扩写",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "K-WORK-004",
+      "path": "workloads/measurement-comparability.md",
+      "current": "冷/稳态、配对条件、重复和 profiler 扰动。",
+      "gap": "重点补置信区间、配对与区组设计、尾部样本、自相关、多重搜索偏差和停止规则。",
+      "action": "实质扩写",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "K-WORK-005",
+      "path": "workloads/slo-goodput.md",
+      "current": "联合 SLO、admission、容量曲线和可行性。",
+      "gap": "补公平性、优先级与成本目标；区分拒绝、降质、延后服务的协议和比较标准。",
+      "action": "实质扩写",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "K-WORK-006",
+      "path": "workloads/capacity-planning.md",
+      "current": "驻留、阶段服务率、链路与主机容量。",
+      "gap": "扩写多资源服务曲面、P/D/CPU/网络配比、弹性与冷启动、成本/能耗和参数校准。",
+      "action": "实质扩写",
+      "status": "pending",
+      "evidence": []
+    }
+  ],
+  "new_topics": [
+    {
+      "id": "N01",
+      "title": "模型制品与权重加载",
+      "domain": "D03",
+      "priority": "P0",
+      "path": "frameworks/checkpoint-loading.md",
+      "scope": "分片与 tensor 映射、mmap/流式读取、tied weights、dtype/布局转换、峰值副本和设备放置。",
+      "acceptance": "给出同一 checkpoint 的两条加载路径及峰值内存账；检测缺片、轴错位和重复副本。",
+      "sources": [
+        "ServerlessLLM",
+        "S-TORCH-INFERENCE"
+      ],
+      "entry_id": "K-FW-011",
+      "status": "integrated_draft",
+      "evidence": [
+        "knowledge/frameworks/checkpoint-loading.md",
+        "docs/evidence/p0-source-review.json"
+      ],
+      "remaining": [
+        "整篇来源复核",
+        "与扩写后的既有章节及完整场景共同复核"
+      ]
+    },
+    {
+      "id": "N02",
+      "title": "模型启动与版本生命周期",
+      "domain": "D03",
+      "priority": "P2",
+      "path": "system-semantics/model-lifecycle.md",
+      "scope": "加载、编译、预热、就绪、排空、替换与回滚；模型、tokenizer、adapter、图和缓存的共同身份。",
+      "acceptance": "演示老请求完成与新版本接管，并比较冷启动和常驻部署。",
+      "sources": [
+        "ServerlessLLM",
+        "S-TORCH-DYNAMIC"
+      ],
+      "entry_id": "K-SYS-011",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "N03",
+      "title": "基础算子与融合链",
+      "domain": "D04",
+      "priority": "P0",
+      "path": "algorithms/operator-primitives.md",
+      "scope": "GEMM/GEMV、embedding、norm、RoPE、激活、softmax、gather/scatter 的形状、数值和数据流。",
+      "acceptance": "完整 decoder 层逐算子参考、两个融合边界及误差/流量账；正文用公式和图，代码留工程。",
+      "sources": [
+        "TVM",
+        "S-TRANSFORMER",
+        "S-TORCH-NUMERIC"
+      ],
+      "entry_id": "K-ALG-016",
+      "status": "integrated_draft",
+      "evidence": [
+        "knowledge/algorithms/operator-primitives.md",
+        "docs/evidence/p0-source-review.json"
+      ],
+      "remaining": [
+        "整篇来源复核",
+        "与扩写后的既有章节及完整场景共同复核"
+      ]
+    },
+    {
+      "id": "N04",
+      "title": "CPU GEMM 和 GEMV 数据流",
+      "domain": "D06",
+      "priority": "P0",
+      "path": "hardware/cpu-linear-kernels.md",
+      "scope": "cache blocking、预打包、SIMD/矩阵指令、尾块、TLB、NUMA 与线程分区。",
+      "acceptance": "小 M decode 与大 M prefill 各推导两种布局，预测缓存/带宽变化并给 perf 验证。",
+      "sources": [
+        "S-CPU-TUNING",
+        "Ansor"
+      ],
+      "entry_id": "K-HW-010",
+      "status": "integrated_draft",
+      "evidence": [
+        "knowledge/hardware/cpu-linear-kernels.md",
+        "docs/evidence/p0-source-review.json"
+      ],
+      "remaining": [
+        "整篇来源复核",
+        "与扩写后的既有章节及完整场景共同复核"
+      ]
+    },
+    {
+      "id": "N05",
+      "title": "CPU 低位权重执行",
+      "domain": "D06",
+      "priority": "P0",
+      "path": "frameworks/cpu-quantized-kernels.md",
+      "scope": "量化文件到运行布局、向量解包、scale、累加、融合解量化及精度回归。",
+      "acceptance": "算清压缩后容量、解包工作和临时副本；证明为何更小文件未必更快。",
+      "sources": [
+        "S-CPU-TUNING",
+        "S-GPTQ",
+        "AWQ"
+      ],
+      "entry_id": "K-FW-012",
+      "status": "integrated_draft",
+      "evidence": [
+        "knowledge/frameworks/cpu-quantized-kernels.md",
+        "docs/evidence/p0-source-review.json"
+      ],
+      "remaining": [
+        "整篇来源复核",
+        "与扩写后的既有章节及完整场景共同复核"
+      ]
+    },
+    {
+      "id": "N06",
+      "title": "GPU 矩阵与归约流水",
+      "domain": "D05",
+      "priority": "P1",
+      "path": "hardware/gpu-kernel-pipelines.md",
+      "scope": "Tensor Core/MFMA 等固定架构资源、tile、异步片上搬运、warp/wave 分工、bank conflict 和 spill。",
+      "acceptance": "一个 GEMM 与一个 attention 的数据依赖/资源图；逐平台核实合法能力和不同 shape 的反转点。",
+      "sources": [
+        "FlashAttention3",
+        "FlashInferPaper",
+        "S-CUDA-BEST",
+        "S-ROCM"
+      ],
+      "entry_id": "K-HW-011",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "N07",
+      "title": "分配器、地址与工作区",
+      "domain": "D08",
+      "priority": "P0",
+      "path": "system-semantics/memory-allocators.md",
+      "scope": "通用内存池、分配粒度、虚拟/物理地址、碎片、workspace、图池及引用与完成关系。",
+      "acceptance": "比较页表方案和连续虚拟地址方案；给高并发分配/取消/峰值的资源守恒验证。",
+      "sources": [
+        "vAttention",
+        "S-CUDA-ALLOC"
+      ],
+      "entry_id": "K-SYS-012",
+      "status": "integrated_draft",
+      "evidence": [
+        "knowledge/system-semantics/memory-allocators.md",
+        "docs/evidence/p0-source-review.json"
+      ],
+      "remaining": [
+        "整篇来源复核",
+        "与扩写后的既有章节及完整场景共同复核"
+      ]
+    },
+    {
+      "id": "N08",
+      "title": "多级存储的驻留与迁移",
+      "domain": "D09",
+      "priority": "P1",
+      "path": "algorithms/tiered-residency.md",
+      "scope": "HBM/DRAM/SSD 的对象、位置、有效副本、预取、淘汰、提交与回收；权重和可变状态分开。",
+      "acceptance": "对同一 workload 比较保留、搬运与重算，并画完整迁移时序和失败责任。",
+      "sources": [
+        "FlexGen",
+        "Mooncake"
+      ],
+      "entry_id": "K-ALG-017",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "N09",
+      "title": "存储 I/O 与加载流水",
+      "domain": "D09",
+      "priority": "P1",
+      "path": "hardware/storage-io.md",
+      "scope": "文件布局、页缓存/直接 I/O 的选择、顺序/随机访问、队列深度、staging、DMA 和 CPU 开销。",
+      "acceptance": "从 SSD 经主存到设备计算的路径逐项计时计字节；比较块大小和并发，绑定具体 OS/设备版本。",
+      "sources": [
+        "FlexGen",
+        "ServerlessLLM"
+      ],
+      "entry_id": "K-HW-012",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "N10",
+      "title": "KV 卸载与预取",
+      "domain": "D09",
+      "priority": "P1",
+      "path": "algorithms/kv-offload-prefetch.md",
+      "scope": "按层/块 KV 迁移、共享引用、层间提前量、读写状态、预取预算和恢复位置。",
+      "acceptance": "比较搬 KV 与重算前缀的临界点；覆盖部分命中、取消、传输失败和页复用。",
+      "sources": [
+        "FlexGen",
+        "Mooncake",
+        "CacheGen"
+      ],
+      "entry_id": "K-ALG-018",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "N11",
+      "title": "权重与专家的加载卸载",
+      "domain": "D09",
+      "priority": "P1",
+      "path": "algorithms/weight-expert-offload.md",
+      "scope": "权重块/层/专家驻留、热点、预取、batch 复用、压缩和在途版本；与 KV 迁移区别。",
+      "acceptance": "分别对稠密层和 MoE 路由推导传输预算，验证错误预取与热点变化的代价。",
+      "sources": [
+        "FlexGen",
+        "PowerInfer",
+        "DeepSeekV3"
+      ],
+      "entry_id": "K-ALG-019",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "N12",
+      "title": "CPU 与 GPU 的计算放置",
+      "domain": "D10",
+      "priority": "P1",
+      "path": "algorithms/heterogeneous-execution.md",
+      "scope": "层/算子/专家/状态分配、计算与传输临界点、共享带宽、合并结果和精度契约。",
+      "acceptance": "对稠密与具激活稀疏前提的模型分别比较三种放置；不把 PowerInfer 前提泛化为所有模型。",
+      "sources": [
+        "PowerInfer",
+        "FlexGen"
+      ],
+      "entry_id": "K-ALG-020",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "N13",
+      "title": "统一内存与显式迁移的选择",
+      "domain": "D10",
+      "priority": "P1",
+      "path": "hardware/shared-memory-paths.md",
+      "scope": "离散设备、统一地址、物理共享、页迁移和一致性分别建模，解释 pinning、可见性和带宽竞争。",
+      "acceptance": "用同一生产消费图比较两种硬件路径，所有 coherence/零拷贝能力按固定官方版本确认。",
+      "sources": [
+        "S-MLX-MEM",
+        "S-CUDA-ASYNC",
+        "S-CUDA-TOPOLOGY"
+      ],
+      "entry_id": "K-HW-013",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "N14",
+      "title": "KV 压缩与近似保留",
+      "domain": "D07",
+      "priority": "P1",
+      "path": "algorithms/kv-compression.md",
+      "scope": "K/V 分组轴、残余高精度区、压缩传输、重要 token 保留与原生窗口的语义差异。",
+      "acceptance": "分别测存储、流量、质量与元数据成本，含长上下文和分布迁移的反例。",
+      "sources": [
+        "KIVI",
+        "H2O",
+        "CacheGen"
+      ],
+      "entry_id": "K-ALG-021",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "N15",
+      "title": "非前缀上下文复用",
+      "domain": "D17",
+      "priority": "P2",
+      "path": "algorithms/context-reuse.md",
+      "scope": "RAG 多片段顺序、位置、cross-token 依赖，精确前缀复用与选择性重算/近似复用的区别。",
+      "acceptance": "改变片段顺序与上文后验证缓存合法性；重算量和质量损失共同计入收益。",
+      "sources": [
+        "CacheBlend",
+        "S-VLLM-PREFIX"
+      ],
+      "entry_id": "K-ALG-022",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "N16",
+      "title": "分布式 KV 存储",
+      "domain": "D17",
+      "priority": "P1",
+      "path": "system-semantics/distributed-kv-store.md",
+      "scope": "目录、位置、副本、失效、远端读取、分层容量与带宽，逻辑命中与可恢复状态。",
+      "acceptance": "比较本地/远端/重算，覆盖热点、源失效、旧版本和副本不一致。",
+      "sources": [
+        "Mooncake",
+        "CacheGen"
+      ],
+      "entry_id": "K-SYS-013",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "N17",
+      "title": "通信传输与完成协议",
+      "domain": "D16",
+      "priority": "P1",
+      "path": "hardware/transport-and-rdma.md",
+      "scope": "发送/接收/可见/回收、注册缓冲、NIC 亲和、GPU direct 路径和拥塞；区分协议与硬件能力。",
+      "acceptance": "给两个 rank 的逐事件时序，验证零消息、部分失败和通信计算共享资源；补固定官方传输资料。",
+      "sources": [
+        "S-NCCL-COLLECTIVE",
+        "S-NCCL-GROUP",
+        "Mooncake"
+      ],
+      "entry_id": "K-HW-014",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "N18",
+      "title": "请求与执行组恢复",
+      "domain": "D20",
+      "priority": "P1",
+      "path": "system-semantics/serving-recovery.md",
+      "scope": "进程/rank/网络/磁盘失效、已提交前缀、重试语义、状态重建和排空。",
+      "acceptance": "故障矩阵逐项说明可交付输出、重复风险、恢复点和资源清理，不把 timeout 当根因。",
+      "sources": [
+        "S-ASGI",
+        "S-NCCL-GROUP",
+        "Llumnix"
+      ],
+      "entry_id": "K-SYS-014",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "N19",
+      "title": "多模型放置与租户资源",
+      "domain": "D19",
+      "priority": "P2",
+      "path": "workloads/multi-model-placement.md",
+      "scope": "模型/adapter 共同驻留、资源配额、共享/隔离、突发与干扰、放置和公平性。",
+      "acceptance": "比较复制与共享并行的布局，明确低频租户等待、缓存隔离和成本。",
+      "sources": [
+        "AlpaServe",
+        "SLoRA"
+      ],
+      "entry_id": "K-WORK-007",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "N20",
+      "title": "路由与运行中迁移",
+      "domain": "D17",
+      "priority": "P1",
+      "path": "algorithms/routing-and-migration.md",
+      "scope": "最短队列/前缀亲和/负载预测、请求迁移、优先级与路由测量延迟。",
+      "acceptance": "构造热点前缀和长短混合负载，比较节省计算与增加排队/迁移成本。",
+      "sources": [
+        "Llumnix",
+        "Mooncake"
+      ],
+      "entry_id": "K-ALG-023",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "N21",
+      "title": "弹性、启动与部署切换",
+      "domain": "D19",
+      "priority": "P2",
+      "path": "workloads/elastic-serving.md",
+      "scope": "实例配比、扩缩容延迟、缓存预热、模型局部性、排空、滚动更新和就绪条件。",
+      "acceptance": "突发前后解释 SLO、空闲资源和冷启动成本，验证缩容中的请求和状态所有权。",
+      "sources": [
+        "ServerlessLLM",
+        "AlpaServe"
+      ],
+      "entry_id": "K-WORK-008",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "N22",
+      "title": "主机执行器与服务 I/O",
+      "domain": "D18",
+      "priority": "P0",
+      "path": "system-semantics/host-runtime.md",
+      "scope": "线程池/进程池、事件循环、IPC/共享内存、tokenizer、结果封包、连接与有界队列。",
+      "acceptance": "端到端 CPU 时间账；比较至少两种执行组织并覆盖慢客户端与取消。",
+      "sources": [
+        "S-CPU-TUNING",
+        "S-ASGI",
+        "S-PY-SUBPROCESS"
+      ],
+      "entry_id": "K-SYS-015",
+      "status": "integrated_draft",
+      "evidence": [
+        "knowledge/system-semantics/host-runtime.md",
+        "docs/evidence/p0-source-review.json"
+      ],
+      "remaining": [
+        "整篇来源复核",
+        "与扩写后的既有章节及完整场景共同复核"
+      ]
+    },
+    {
+      "id": "N23",
+      "title": "服务成本与能耗",
+      "domain": "D01",
+      "priority": "P2",
+      "path": "workloads/cost-and-energy.md",
+      "scope": "每合格请求的设备/主机/存储/网络成本、空闲与冷启动、功耗和质量/时延约束。",
+      "acceptance": "避免用峰值 token/s 代替有效成本；使用用户给定价格/实测能耗而非写死现价。",
+      "sources": [
+        "S-MLPERF-SCENARIOS",
+        "MLPerfPaper",
+        "S-NSYS"
+      ],
+      "entry_id": "K-WORK-009",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "N24",
+      "title": "资源隔离与缓存边界",
+      "domain": "D20",
+      "priority": "P2",
+      "path": "system-semantics/tenant-isolation.md",
+      "scope": "进程/设备资源隔离、配额、缓存命名空间、敏感 trace、输入限额和故障影响面。",
+      "acceptance": "多租户污染与耗尽测试；MIG/MPS/OS 的具体能力另取截止前官方版本，不能靠泛化描述。",
+      "sources": [
+        "S-ASGI",
+        "S-VLLM-PREFIX",
+        "AlpaServe"
+      ],
+      "entry_id": "K-SYS-016",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "N25",
+      "title": "Embedding 与重排推理",
+      "domain": "D22",
+      "priority": "P2",
+      "path": "models/embedding-reranking.md",
+      "scope": "encoder-only、pooling、normalize、双塔/交叉编码器、长度聚批和质量指标。",
+      "acceptance": "从文本到 embedding/score 的完整链，含顺序、padding、截断与检索质量验证。",
+      "sources": [
+        "BERT",
+        "Faiss"
+      ],
+      "entry_id": "K-MODEL-013",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "N26",
+      "title": "向量检索与 RAG 管线",
+      "domain": "D22",
+      "priority": "P2",
+      "path": "system-semantics/retrieval-pipeline.md",
+      "scope": "索引构建/查询/更新、recall/延迟/内存、embedding 版本、检索→重排→生成的阶段预算。",
+      "acceptance": "比较两种索引/查询配置，定义新旧索引版本与端到端质量及 TTFT。",
+      "sources": [
+        "Faiss",
+        "CacheBlend"
+      ],
+      "entry_id": "K-SYS-017",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "N27",
+      "title": "视觉识别与卷积推理",
+      "domain": "D22",
+      "priority": "P2",
+      "path": "models/vision-inference.md",
+      "scope": "CNN/视觉编码器、卷积布局、分辨率聚批、预后处理与任务输出；不与视频生成混淆。",
+      "acceptance": "完整图像输入到分类/检测结果链，补对应固定模型与算子来源后再扩写检测细节。",
+      "sources": [
+        "ResNet",
+        "MLPerfPaper",
+        "TVM"
+      ],
+      "entry_id": "K-MODEL-014",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "N28",
+      "title": "推荐模型与大 embedding 表",
+      "domain": "D22",
+      "priority": "P2",
+      "path": "models/recommendation-inference.md",
+      "scope": "稀疏特征、embedding gather、交互与稠密层、表分片/缓存、热点和请求批量。",
+      "acceptance": "将 embedding 带宽与 dense 计算分别计账，给请求质量和并行通信验证。",
+      "sources": [
+        "DLRM",
+        "MLPerfPaper"
+      ],
+      "entry_id": "K-MODEL-015",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "N29",
+      "title": "图模型与不规则推理",
+      "domain": "D22",
+      "priority": "P2",
+      "path": "models/graph-inference.md",
+      "scope": "邻居采样、聚合、节点特征、图分片/缓存、批量不规则性与图版本。",
+      "acceptance": "区分采样近似与全邻域参考，测特征搬运、稀疏算子和端到端结果。",
+      "sources": [
+        "GraphSAGE",
+        "TVM"
+      ],
+      "entry_id": "K-MODEL-016",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "N30",
+      "title": "多样本与搜索分支状态",
+      "domain": "D13",
+      "priority": "P1",
+      "path": "algorithms/branch-generation.md",
+      "scope": "beam/多样本树的父子映射、共享前缀、分叉写入、排序、RNG、提交和释放。",
+      "acceptance": "通过分支合并/淘汰/重排的逐步参考；区别搜索目标和保持目标分布的投机。",
+      "sources": [
+        "S-SPEC",
+        "EAGLE",
+        "S-PAGED"
+      ],
+      "entry_id": "K-ALG-024",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "N31",
+      "title": "多轮与工具交互负载",
+      "domain": "D01",
+      "priority": "P0",
+      "path": "workloads/session-workloads.md",
+      "scope": "回合依赖、工具等待、think time、会话局部性、分支与取消、恢复时的完整输入。",
+      "acceptance": "生成与工具耗时分开，区分会话闭环和独立用户到达；测端到端完成而非单调用速度。",
+      "sources": [
+        "S-SGLANG",
+        "S-CHAT",
+        "S-MLPERF-LLM"
+      ],
+      "entry_id": "K-WORK-010",
+      "status": "integrated_draft",
+      "evidence": [
+        "knowledge/workloads/session-workloads.md",
+        "docs/evidence/p0-source-review.json"
+      ],
+      "remaining": [
+        "整篇来源复核",
+        "与扩写后的既有章节及完整场景共同复核"
+      ]
+    },
+    {
+      "id": "N32",
+      "title": "实验统计与搜索偏差",
+      "domain": "D23",
+      "priority": "P0",
+      "path": "tools/statistical-experiments.md",
+      "scope": "配对/区组、置信区间、尾部样本、自相关、多次候选比较、停止规则和保留评估。",
+      "acceptance": "对合成数据复算估计量；展示挑最好一次的偏差，并给真实实验的预先定义协议。",
+      "sources": [
+        "MLPerfPaper",
+        "S-GENAI-PERF",
+        "S-TORCH-REPRO"
+      ],
+      "entry_id": "K-TOOLS-007",
+      "status": "integrated_draft",
+      "evidence": [
+        "knowledge/tools/statistical-experiments.md",
+        "docs/evidence/p0-source-review.json"
+      ],
+      "remaining": [
+        "整篇来源复核",
+        "与扩写后的既有章节及完整场景共同复核"
+      ]
+    },
+    {
+      "id": "N33",
+      "title": "集群资源、放置与故障域",
+      "domain": "D19",
+      "priority": "P2",
+      "path": "workloads/cluster-resource-placement.md",
+      "scope": "资源向量、拓扑约束、gang 准入、碎片、超售、配额、故障域和控制/数据平面关系。",
+      "acceptance": "给出两个推理部署的放置方案；解释单机可行但集群不可行、冷启动和故障后容量。",
+      "sources": [],
+      "entry_id": "K-WORK-011",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "N34",
+      "title": "推理存储服务与制品分发",
+      "domain": "D09",
+      "priority": "P1",
+      "path": "system-semantics/storage-services.md",
+      "scope": "对象/文件/块语义、范围读取、共享缓存、版本发布、持久性与可重建状态、带宽和故障域。",
+      "acceptance": "区分权重、KV、索引、日志的持久性；设计完整发布/读取/失败时序及共享存储预算。",
+      "sources": [],
+      "entry_id": "K-SYS-018",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "N35",
+      "title": "推理部署环境与资源边界",
+      "domain": "D18",
+      "priority": "P2",
+      "path": "system-semantics/deployment-environment.md",
+      "scope": "运行环境与驱动/运行时契约、CPU/内存限额、设备暴露、NUMA/NIC 亲和、健康与就绪。",
+      "acceptance": "解释容器可启动但服务不可用的具体失败链，形成配置、探测、排空和回滚关系。",
+      "sources": [],
+      "entry_id": "K-SYS-019",
+      "status": "pending",
+      "evidence": []
+    }
+  ],
+  "scenarios": [
+    {
+      "id": "C01",
+      "title": "CPU 多请求生成",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "C02",
+      "title": "单 GPU 交互",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "C03",
+      "title": "长上下文高复用",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "C04",
+      "title": "显存不足与三级存储",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "C05",
+      "title": "CPU–GPU 混合执行",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "C06",
+      "title": "多卡 MLA/MoE",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "C07",
+      "title": "P/D 与远端 KV",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "C08",
+      "title": "多模型/LoRA",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "C09",
+      "title": "流式语音",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "C10",
+      "title": "VLM/全模态",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "C11",
+      "title": "图像视频扩散",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "C12",
+      "title": "非生成推理：embedding、检索、CNN、推荐、GNN 各自验证",
+      "status": "pending",
+      "evidence": []
+    }
+  ],
+  "integration": {
+    "navigation": "pending",
+    "catalog_and_sources": "pending",
+    "temporal_and_history": "pending",
+    "runtime_read_and_retrieval": "pending",
+    "full_scope_review": "pending",
+    "github_and_remote_delivery": "pending"
+  },
+  "batch_records": [
+    {
+      "id": "p0-new-chapters",
+      "date": "2026-10-22",
+      "status": "integrated_draft",
+      "new_topics": [
+        "N01",
+        "N03",
+        "N04",
+        "N05",
+        "N07",
+        "N22",
+        "N31",
+        "N32"
+      ],
+      "evidence": [
+        "docs/evidence/p0-integration-audit.json",
+        "docs/evidence/p0-retrieval-check.json",
+        "docs/evidence/p0-runtime-read.json",
+        "docs/evidence/p0-source-review.json"
+      ]
+    }
+  ]
+}

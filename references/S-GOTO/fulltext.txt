@@ -1,0 +1,2065 @@
+=== PDF page 1 ===
+Anatomy of High-Performance Matrix
+Multiplication
+KAZUSHIGE GOTO
+The University of Texas at Austin
+and
+ROBERT A. VAN DE GEIJN
+The University of Texas at Austin
+We present the basic principles which underlie the high-performance implementation of the matrix-
+matrix multiplication that is part of the widely used GotoBLAS library.
+Design decisions are
+justiﬁed by successively reﬁning a model of architectures with multilevel memories. A simple but
+eﬀective algorithm for executing this operation results. Implementations on a broad selection of
+architectures are shown to achieve near-peak performance.
+Categories and Subject Descriptors: G.4 [Mathematical Software]: —Eﬃciency
+General Terms: Algorithms;Performance
+Additional Key Words and Phrases: linear algebra, matrix multiplication, basic linear algebra
+subprogrms
+1.
+INTRODUCTION
+Implementing matrix multiplication so that near-optimal performance is attained
+requires a thorough understanding of how the operation must be layered at the
+macro level in combination with careful engineering of high-performance kernels
+at the micro level. This paper primarily addresses the macro issues, namely how
+to exploit a high-performance “inner-kernel”, more so than the the micro issues
+related to the design and engineering of that “inner-kernel”.
+In [Gunnels et al. 2001] a layered approach to the implementation of matrix
+multiplication was reported. The approach was shown to optimally amortize the
+required movement of data between two adjacent memory layers of an architecture
+with a complex multi-level memory. Like other work in the area [Agarwal et al.
+1994; Whaley et al. 2001], that paper ([Gunnels et al. 2001]) casts computation in
+terms of an “inner-kernel” that computes C := ˜AB + C for some mc × kc matrix
+˜A that is stored contiguously in some packed format and ﬁts in cache memory.
+Unfortunately, the model for the memory hierarchy that was used is unrealistic in
+Authors’ addresses: Kazushige Goto, Texas Advanced Computing Center, The University of Texas
+at Austin, Austin, TX 78712, kgoto@tacc.utexas.edu. Robert A. van de Geijn, Department of
+Computer Sciences, The University of Texas at Austin, Austin, TX 78712, rvdg@cs.utexas.edu.
+Permission to make digital/hard copy of all or part of this material without fee for personal
+or classroom use provided that the copies are not made or distributed for proﬁt or commercial
+advantage, the ACM copyright/server notice, the title of the publication, and its date appear, and
+notice is given that copying is by permission of the ACM, Inc. To copy otherwise, to republish,
+to post on servers, or to redistribute to lists requires prior speciﬁc permission and/or a fee.
+c⃝20YY ACM 0098-3500/20YY/1200-0001 $5.00
+ACM Transactions on Mathematical Software, Vol. V, No. N, Month 20YY, Pages 1–25.
+
+
+=== PDF page 2 ===
+2
+·
+Kazushige Goto and Robert A. van de Geijn
+at least two ways:
+—It assumes that this inner-kernel computes with a matrix ˜A that resides in the
+level-1 (L1) cache.
+—It ignores issues related to the Translation Look-aside Buﬀer (TLB).
+The current paper expands upon a related technical report [Goto and van de Geijn
+2002] which makes the observations that
+—The ratio between the rate at which ﬂoating point operations (ﬂops) can be
+performed by the ﬂoating point unit(s) and the rate at which ﬂoating point
+numbers can be streamed from the level-2 (L2) cache to registers is typically
+relatively small. This means that matrix ˜A can be streamed from the L2 cache.
+—It is often the amount of data that can be addressed by the TLB that is the
+limiting factor for the size of ˜A. (Similar TLB issues were discussed in [Strazdins
+1998].)
+In addition, we now observe that
+—There are in fact six inner-kernels that should be considered for building blocks for
+high-performance matrix multiplication. One of these is argued to be inherently
+superior over the others. (In [Gunnels et al. 2001; Gunnels et al. 2005] three of
+these six kernels were identiﬁed.)
+Careful consideration of all these observations underlie the implementation of the
+dgemm Basic Linear Algebra Subprograms (BLAS) routine that is part of the
+widely used GotoBLAS library [Goto 2005].
+In Fig. 1 we preview the eﬀectiveness of the techniques. In those graphs we report
+performance of our implementation as well as vendor implementations (Intel’s MKL
+(8.1.1) and IBM’s ESSL (4.2.0) libraries) and ATLAS [Whaley and Dongarra 1998]
+(3.7.11) on the Intel Pentium4 Prescott processor, the IBM Power 5 processor, and
+the Intel Itanium2 processor1 It should be noted that the vendor implementations
+have adopted techniques very similar to those described in this paper. It is impor-
+tant not to judge the performance of matrix-matrix multiplication in isolation. It is
+typically a building block for other operations like the level-3 BLAS (matrix-matrix
+operations) [Dongarra et al. 1990; K˚agstr¨om et al. 1998] and LAPACK [Anderson
+et al. 1999]. How the techniques described in this paper impact the implementation
+of level-3 BLAS is discussed in [Goto and van de Geijn 2006].
+This paper attempts to describe the issues at a high level so as to make it ac-
+cessible to a broad audience. Low level issues are introduced only as needed. In
+Section 2 we introduce notation that is used throughout the remainder of the pa-
+per.
+In Section 3 a layered approach to implementing matrix multiplication is
+introduced. High-performance implementation of the inner-kernels is discussed in
+Section 4. Practical algorithms for the most commonly encountered cases of matrix
+multiplication are given in Section 5. In Section 6 we give further details that are
+used in practice to determine parameters that must be tuned in order to optimize
+performance. Performance results attained with highly tuned implementations on
+1All libraries that were timed use assembly-coded inner-kernels (including ATLAS). Compiler
+options -fomit-frame-pointer -O3 -funroll-all-loops were used.
+ACM Transactions on Mathematical Software, Vol. V, No. N, Month 20YY.
+
+
+=== PDF page 3 ===
+Anatomy of High-Performance Matrix Multiplication
+·
+3
+0
+200
+400
+600
+800
+1000
+1200
+1400
+1600
+1800
+2000
+0
+1
+2
+3
+4
+5
+6
+7
+m=n
+GFLOPS/sec
+Pentium4 (3.6 GHz)
+dgemm (GOTO)
+dgemm (MKL)
+dgemm (ATLAS)
+0
+200
+400
+600
+800
+1000
+1200
+1400
+1600
+1800
+2000
+0
+1
+2
+3
+4
+5
+6
+7
+m=n
+GFLOPS/sec
+Power 5 (1.9 GHz)
+dgemm (GOTO)
+dgemm (ESSL)
+dgemm (ATLAS)
+0
+200
+400
+600
+800
+1000
+1200
+1400
+1600
+1800
+2000
+0
+1
+2
+3
+4
+5
+6
+m=n
+GFLOPS/sec
+Itanium2 (1.5 GHz)
+dgemm (GOTO)
+dgemm (MKL)
+dgemm (ATLAS)
+Fig. 1. Comparison of the matrix-matrix multiplication described in this paper with various other
+implementations. See Section 7 for details regarding the diﬀerent architectures.
+various architectures are given in Section 7. Concluding comments can be found in
+the ﬁnal section.
+2.
+NOTATION
+The partitioning of matrices is fundamental to the description of matrix multipli-
+cation algorithms. Given an m × n matrix X, we will only consider partitionings
+of X into blocks of columns and blocks of rows:
+X =
+¡
+X0 X1 · · · XN−1
+¢
+=
+
+
+
+
+
+ˇX0
+ˇX1
+...
+ˇXM−1
+
+
+
+
+,
+where Xj has nb columns and ˇXi has mb rows (except for XN−1 and ˇXM−1, which
+may have fewer columns and rows, respectively).
+The implementations of matrix multiplication will be composed from multipli-
+cations with submatrices.
+We have given these computations special names, as
+tabulated in Figs. 2 and 3. We note that these special shapes are very frequently
+ACM Transactions on Mathematical Software, Vol. V, No. N, Month 20YY.
+
+
+=== PDF page 4 ===
+4
+·
+Kazushige Goto and Robert A. van de Geijn
+m
+n
+k
+Illustration
+Label
+large
+large
+large
+:=
++
+gemm
+large
+large
+small
+:=
++
+gepp
+large
+small
+large
+:=
++
+gemp
+small
+large
+large
+:=
++
+gepm
+small
+large
+small
+:=
++
+gebp
+large
+small
+small
+:=
++
+gepb
+small
+small
+large
+:=
++
+gepdot
+small
+small
+small
+:=
++
+gebb
+Fig. 2. Special shapes of gemm C := AB + C. Here C, A, and B are m × n, m × k, and k × n
+matrices, respectively.
+Letter
+Shape
+Description
+m
+Matrix
+Both dimensions are large or unknown.
+p
+Panel
+One of the dimensions is small.
+b
+Block
+Both dimensions are small.
+Fig. 3. The labels in Fig. 2 have the form gexy where the letters chosen for x and y indicate
+the shapes of matrices A and B, respectively, according to the above table. The exception to this
+convention is the gepdot operation, which is a generalization of the dot product.
+encountered as part of algorithms for other linear algebra operations. For example,
+computation of various operations supported by LAPACK is cast mostly in terms
+of gepp, gemp, and gepm. Even given a single dense linear algebra operation,
+multiple algorithms often exist where each of the algorithms casts the computation
+in terms of these diﬀerent cases of gemm multiplication [Bientinesi et al. ].
+3.
+A LAYERED APPROACH TO GEMM
+In Fig. 4 we show how gemm can be decomposed systematically into the special
+cases that were tabulated in Fig. 2. The general gemm can be decomposed into
+multiple calls to gepp, gemp, or gepm. These themselves can be decomposed into
+multiple calls to gebp, gepb, or gepdot kernels. The idea now is that if these
+three lowest level kernels attain high performance, then so will the other cases of
+gemm. In Fig. 5 we relate the path through Fig. 4 that always take the top branch
+ACM Transactions on Mathematical Software, Vol. V, No. N, Month 20YY.
+
+
+=== PDF page 5 ===
+Anatomy of High-Performance Matrix Multiplication
+·
+5
++:=
+¤
+¤
+¤
+¤
+¤
+¤
+¤
+¤
+¤
+¤¤
+-
+C
+C
+C
+C
+C
+C
+C
+C
+C
+CCW
+gemm var1
++:=
+¡¡
+
+@@
+R
+gepp var1
++:=
+-
+gebp
++:=
+gepp var2
++:=
+-
+gepb
++:=
+gemm var2
++:=
+¡¡
+
+@@
+R
+gemp var1
++:=
+-
+gepb
++:=
+gemp var2
++:=
+-
+gepdot
++:=
+gemm var3
++:=
+¡¡
+
+@@
+R
+gepm var2
++:=
+-
+gepdot
++:=
+gepm var1
++:=
+-
+gebp
++:=
+Fig. 9
+Fig. 11
+Fig. 10
+Fig. 8
+Fig. 4.
+Layered approach to implementing gemm.
+ACM Transactions on Mathematical Software, Vol. V, No. N, Month 20YY.
+
+
+=== PDF page 6 ===
+6
+·
+Kazushige Goto and Robert A. van de Geijn
+for p = 1 : K
+for i = 1 : M
+for j = 1 : N
+Cij+ = AipBpj
+endfor
+9
+=
+;
+gebp
++:=
+endfor
+9
+>
+>
+>
+>
+>
+>
+>
+=
+>
+>
+>
+>
+>
+>
+>
+;
+gepp var1
++:=
+endfor
+9
+>
+>
+>
+>
+>
+>
+>
+>
+>
+>
+>
+>
+>
+>
+>
+=
+>
+>
+>
+>
+>
+>
+>
+>
+>
+>
+>
+>
+>
+>
+>
+;
+gemm var1
++:=
+Fig. 5. The algorithm that corresponds to the path through Fig. 4 that always takes the top
+branch expressed as a triple-nested loop.
+to a triple-nested loop. In that ﬁgure C, A, and B are partitioned into submatrices
+as
+C =
+0
+B
+B
+@
+C11
+· · ·
+C1N
+...
+...
+CM1 · · · CMN
+1
+C
+C
+A , A =
+0
+B
+B
+@
+A11
+· · ·
+A1K
+...
+...
+AM1 · · · AMK
+1
+C
+C
+A , and C =
+0
+B
+B
+@
+C11
+· · ·
+C1N
+...
+...
+CM1 · · · CMN
+1
+C
+C
+A ,
+where Cij ∈Rmc×nr, Aip ∈Rmc×kc, and Bpj ∈Rkc×nr. The block sizes mc, nr,
+and kc will be discussed in detail later in the paper.
+A theory that supports an optimality claim regarding the general approach men-
+tioned in this section can be found in [Gunnels et al. 2001]. In particular, that
+paper supports the observation that computation should be cast in terms of the
+decision tree given in Fig. 4 if data movement between memory layers is to be op-
+timally amortized. However, the present paper is self-contained since we show that
+the approach amortizes such overhead well and thus optimality is not crucial to our
+discussion.
+4.
+HIGH-PERFORMANCE GEBP, GEPB, AND GEPDOT
+We now discuss techniques for the high-performance implementation of gebp,
+gepb, and gepdot.
+We do so by ﬁrst analyzing the cost of moving data be-
+tween memory layers with an admittedly naive model of the memory hierarchy. In
+Section 4.2 we add more practical details to the model. This then sets the stage
+for algorithms for gepp, gemp, and gepm in Section 5.
+4.1
+Basics
+In Fig. 6(left) we depict a very simple model of a multi-level memory. One layer
+of cache memory is inserted between the Random-Access Memory (RAM) and the
+registers. The top-level issues related to the high-performance implementation of
+gebp, gepb, and gepdot can be described using this simpliﬁed architecture.
+Let us ﬁrst concentrate on gebp with A ∈Rmc×kc, B ∈Rkc×n, and C ∈Rmc×n.
+Partition
+B =
+¡
+B0 B1 · · · BN−1
+¢
+and
+C =
+¡
+C0 C1 · · · CN−1
+¢
+and assume that
+ACM Transactions on Mathematical Software, Vol. V, No. N, Month 20YY.
+
+
+=== PDF page 7 ===
+Anatomy of High-Performance Matrix Multiplication
+·
+7
+fast
+slow
+?
+6
+¢
+¢
+¢
+¢
+¢
+¢
+¢
+¢
+¢¢
+A
+A
+A
+A
+A
+A
+A
+A
+A
+A
+registers
+Cache
+RAM
+expensive
+cheap
+?
+6
+¢
+¢
+¢
+¢
+¢
+¢
+¢
+¢
+¢¢
+A
+A
+A
+A
+A
+A
+A
+A
+A
+A
+registers
+L1 cache
+TLB addr.
+L2 cache
+...
+RAM
+disk
+Simple Model
+Reﬁned Model
+Fig. 6.
+The hierarchical memories viewed as a pyramid.
+Algorithm: C := gebp(A, B, C)
++:=
+nr
+kc
+mc
+Load A into cache
+(mckc memops)
+for j = 0, . . . , N −1
+Load Bj into cache
+(kcnr memops)
+Load Cj into cache
+(mcnr memops)
++:=
+(Cj := ABj + Cj)
+Store Cj into memory
+(mcnr memops)
+endfor
+Fig. 7.
+Basic implementation of gebp.
+Assumption (a). The dimensions mc, kc are small enough so that A and nr
+columns from each of B and C (Bj and Cj, respectively) together ﬁt in the cache.
+Assumption (b). If A, Cj, and Bj are in the cache then Cj := ABj + Cj can be
+computed at the peak rate of the CPU.
+Assumption (c). If A is in the cache it remains there until no longer needed.
+Under these assumptions, the approach to gebp in Figure 7 amortizes the cost
+of moving data between the main memory and the cache as follows. The total cost
+of updating C is mckc + (2mc + kc)n memops for 2mckcn ﬂops. Then the ratio
+between computation and data movement is
+2mckcn
+mckc + (2mc + kc)n
+ﬂops
+memops ≈
+2mckcn
+(2mc + kc)n
+ﬂops
+memops
+when kc ≪n.
+(1)
+Thus
+2mckc
+(2mc + kc)
+(2)
+should be maximized under the constraint that mckc ﬂoating point numbers ﬁll
+most of the cache, and the constraints in Assumptions (a)–(c). In practice there
+are other issues that inﬂuence the choice of kc, as we will see in Section 6.3. However,
+the bottom line is that under the simpliﬁed assumptions A should occupy as much
+ACM Transactions on Mathematical Software, Vol. V, No. N, Month 20YY.
+
+
+=== PDF page 8 ===
+8
+·
+Kazushige Goto and Robert A. van de Geijn
+of the cache as possible and should be roughly square2, while leaving room in the
+cache for at least Bj and Cj. If mc = kc ≈n/100 then even if memops are 10 times
+slower than ﬂops, the memops add only about 10% overhead to the computation.
+The related operations gepb and gepdot can be analyzed similarly by keeping
+in mind the following pictures:
+gepb
++:=
+gepdot
++:=
+.
+4.2
+Reﬁnements
+In discussing practical considerations we will again focus on the high-performance
+implementation of gebp. Throughout the remainder of the paper, we will assume
+that matrices are stored in column-major order.
+4.2.1
+Choosing the cache layer. A more accurate depiction of the memory hier-
+archy can be found in Fig. 6(right). This picture recognizes that there are typically
+multiple levels of cache memory.
+The ﬁrst question is in which layer of cache the mc × kc matrix A should reside.
+Equation (2) tells us that (under Assumptions (a)–(c)) the larger mc×nc, the better
+the cost of moving data between RAM and the cache is amortized over computation.
+This suggests loading matrix A in the cache layer that is farthest from the registers
+(can hold the most data) subject to the constraint that Assumptions (a)–(c) are
+(roughly) met.
+The L1 cache inherently has the property that if it were used for storing A, Bj
+and Cj, then Assumptions (a)–(c) are met. However, the L1 cache tends to be very
+small. Can A be stored in the L2 cache instead, allowing mc and kc to be much
+larger? Let Rcomp and Rload equal the rate at which the CPU can perform ﬂoating
+point operations and the rate at which ﬂoating point number can be streamed from
+the L2 cache to the registers, respectively. Assume A resides in the L2 cache and Bj
+and Cj reside in the L1 cache. Assume further that there is “suﬃcient bandwidth”
+between the L1 cache and the registers, so that loading elements of Bj and Cj into
+the registers is not an issue. Computing ABj +Cj requires 2mckcnr ﬂops and mckc
+elements of A to be loaded from the L2 cache to registers. To overlap the loading
+of elements of A into the registers with computation 2nr/Rcomp ≥1/Rload must
+hold, or
+nr ≥Rcomp
+2Rload
+.
+(3)
+4.2.2
+TLB considerations. A second architectural consideration relates to the
+page management system. For our discussion it suﬃces to consider that a typical
+modern architecture uses virtual memory so that the size of usable memory is not
+constrained by the size of the physical memory: Memory is partitioned into pages
+2Note that optimizing the similar problem mckc/(2mc +2kc) under the constraint that mckc ≤K
+is the problem of maximizing the area of a rectangle while minimizing the perimeter, the solution
+of which is mc = kc.
+We don’t give an exact solution to the stated problem since there are
+practical issues that also inﬂuence mc and kc.
+ACM Transactions on Mathematical Software, Vol. V, No. N, Month 20YY.
+
+
+=== PDF page 9 ===
+Anatomy of High-Performance Matrix Multiplication
+·
+9
+of some (often ﬁxed) prescribed size. A table, referred to as the page table maps
+virtual addresses to physical addresses and keeps track of whether a page is in
+memory or on disk. The problem is that this table itself is stored in memory, which
+adds additional memory access costs to perform virtual to physical translations.
+To overcome this, a smaller table, the Translation Look-aside Buﬀer (TLB), that
+stores information about the most recently used pages, is kept. Whenever a virtual
+address is found in the TLB, the translation is fast. Whenever it is not found (a
+TLB miss occurs), the page table is consulted and the resulting entry is moved
+from the page table to the TLB. In other words, the TLB is a cache for the page
+table. More recently, a level 2 TLB has been introduced into some architectures
+for reasons similar to those that motivated the introduction of an L2 cache.
+The most signiﬁcant diﬀerence between a cache miss and a TLB miss is that a
+cache miss does not necessarily stall the CPU. A small number of cache misses can
+be tolerated by using algorithmic prefetching techniques as long as the data can be
+read fast enough from the memory where it does exist and arrives at the CPU by
+the time it is needed for computation. A TLB miss, by contrast, causes the CPU
+to stall until the TLB has been updated with the new address. In other words,
+prefetching can mask a cache miss but not a TLB miss.
+The existence of the TLB means that additional assumptions must be met:
+Assumption (d). The dimensions mc, kc are small enough so that A, nr columns
+from B (Bj) and nr column from C (Cj) are simultaneously addressable by the
+TLB so that during the computation Cj := ABj + Cj no TLB misses occur.
+Assumption (e). If A is addressed by the TLB, it remains so until no longer
+needed.
+4.2.3
+Packing. The fundamental problem now is that A is typically a submatrix
+of a larger matrix, and therefore is not contiguous in memory. This in turn means
+that addressing it requires many more than the minimal number of TLB entries.
+The solution is to pack A in a contiguous work array, ˜A. Parameters mc and kc
+are then chosen so that ˜A, Bj, and Cj all ﬁt in the L2 cache and are addressable
+by the TLB.
+Case 1: The TLB is the limiting factor. Let us assume that there are T TLB
+entries available, and let T ˜
+A, TBj, and TCj equal the number of TLB entries devoted
+to ˜A, Bj, and Cj, respectively. Then
+T ˜
+A + 2(TBj + TCj) ≤T.
+The reason for the factor two is that when the next blocks of columns Bj+1 and
+Cj+1 are ﬁrst addressed, the TLB entries that address them should replace those
+that were used for Bj and Cj. However, upon completion of Cj := ˜ABj + Cj some
+TLB entries related to ˜A will be the least recently used, and will likely be replaced
+by those that address Bj+1 and Cj+1. The factor two allows entries related to Bj
+and Cj to coexist with those for ˜A, Bj+1 and Cj+1 and by the time Bj+2 and Cj+2
+are ﬁrst addressed, it will be the entries related to Bj and Cj that will be least
+recently used and therefore replaced.
+The packing of A into ˜A, if done carefully, needs not to create a substantial
+overhead beyond what is already exposed from the loading of A into the L2 cache
+ACM Transactions on Mathematical Software, Vol. V, No. N, Month 20YY.
+
+
+=== PDF page 10 ===
+10
+·
+Kazushige Goto and Robert A. van de Geijn
+and TLB. The reason is as follows: The packing can be arranged so that upon
+completion ˜A resides in the L2 cache and is addressed by the TLB, ready for
+subsequent computation. The cost of accessing A to make this happen need not be
+substantially greater than the cost of moving A into the L2 cache, which is what
+would have been necessary even if A were not packed.
+Operation gebp is executed in the context of gepp or gepm. In the former case,
+the matrix B is reused for many separate gebp calls. This means it is typically
+worthwhile to copy B into a contiguous work array, ˜B, as well so that T ˜
+Bj is reduced
+when C := ˜A ˜B + C is computed.
+Case 2: The size of the L2 cache is the limiting factor. A similar argument can
+be made for this case. Since the limiting factor is more typically the amount of
+memory that the TLB can address (e.g., the TLB on a current generation Pentium4
+can address about 256Kbytes while the L2 cache can hold 2Mbytes), we do not
+elaborate on the details.
+4.2.4
+Accessing data contiguously. In order to move data most eﬃciently to the
+registers, it is important to organize the computation so that, as much as practical,
+data that is consecutive in memory is used in consecutive operations. One way to
+accomplish this is to not just pack A into work array ˜A, but to arrange it carefully.
+We comment on this in Section 6.
+From here on in this paper, “Pack A into ˜A” and “C := ˜AB + C” will denote
+any packing that makes it possible to compute C := AB + C while accessing the
+data consecutively, as much as needed. Similarly, “Pack B into ˜B” will denote a
+copying of B into a contiguous format.
+4.2.5
+Implementation of gepb and gepdot. Analyses of implementations of
+gepb and gepdot can be similarly reﬁned.
+5.
+PRACTICAL ALGORITHMS
+Having analyzed the approaches at a relatively coarse level of detail, we now dis-
+cuss practical algorithms for all six options in Fig. 4 while exposing additional
+architectural considerations.
+5.1
+Implementing gepp with gebp
+The observations in Sections 4.2.1–4.2.4 are now summarized for the implemen-
+tations of gepp in terms of gebp in Fig. 8. The packing and computation are
+arranged to maximize the size of ˜A: by packing B into ˜B in gepp var1, Bj typi-
+cally requires only one TLB entry. A second TLB entry is needed to bring in Bj+1.
+The use of Caux means that only one TLB entry is needed for that buﬀer, as well
+as up to nr TLB entries for Cj (nr if the leading dimension of Cj is large). Thus,
+T ˜
+A is bounded by T −(nr + 3). The fact that Cj is not contiguous in memory is
+not much of a concern, since that data is not reused as part of the computation of
+the gepp operation.
+Once B and A have been copied into ˜B and ˜A, respectively, the loop in gebp opt1
+can execute at almost the peak of the ﬂoating point unit.
+—The packing of B is a memory-to-memory copy. Its cost is proportional to kc ×n
+and is amortized over 2m × n × kc so that O(m) computations will be performed
+ACM Transactions on Mathematical Software, Vol. V, No. N, Month 20YY.
+
+
+=== PDF page 11 ===
+Anatomy of High-Performance Matrix Multiplication
+·
+11
+Algorithm: C := gepp blk var1(A, B, C)
+Algorithm: C := gebp opt1(A, B, C)
+ˇC0
+ˇC1
+.
+..
++:=
+ˇ
+A0
+ˇ
+A1
+.
+..
+B
++:=
+Assumption: B “packed” in memory.
+Pack B into ˜B
+for i = 0, . . . , M −1
+ˇCi
++:= ˇ
+Ai
+˜B
+(gebp opt1)
+endfor
+Pack A into ˜
+A
+for j = 0, . . . , N −1
+:=
+(Caux := ˜
+ABj)
+Unpack Cj := Cj + Caux
+endfor
+Fig. 8.
+Optimized implementation of gepp (left) via calls to gebp opt1 (right).
+Algorithm: C := gepm blk var1(A, B, C)
+Algorithm: C := gebp opt2(A, B, C)
+C
++:= A0A1 · · ·
+ˇB0
+ˇB1
+..
+.
++:=
+Assumption: C “packed” in memory.
+Set packed ˜C := 0
+for p = 0, . . . , K −1
+˜C
++:= Ap
+ˇBp
+(gebp opt2)
+endfor
+Unpack C := ˜C + C
+Pack A into ˜
+A
+for j = 0, . . . , N −1
+Pack Bj into Baux
++:=
+(Cj := ˜
+ABaux + Cj)
+endfor
+Fig. 9.
+Optimized implementation of gepm (left) via calls to gebp opt2 (right).
+for every copied item. This packing operation disrupts the previous contents of
+the TLB.
+—The packing of A to ˜A rearranges this data from memory to a buﬀer that will
+likely remain in the L2 cache and leaves the TLB loaded with useful entries, if
+carefully orchestrated. Its cost is proportional to mc × kc and is amortized over
+2mc ×kc ×n computation so that O(n) computations will be performed for every
+copied item. In practice, this copy is typically less expensive.
+This approach is appropriate for gemm if m and n are both large, and k is not too
+small.
+5.2
+Implementing gepm with gebp
+In Fig. 9 a similar strategy is proposed for implementing gepm in terms of gebp.
+This time C is repeatedly updated so that it is worthwhile to accumulate ˜C = AB
+before adding the result to C. There is no reuse of ˇBp and therefore it is not packed.
+Now at most nr TLB entries are needed for Bj, and one each for Btemp, Cj and
+Cj+1 so that again T ˜
+A is bounded by T −(nr + 3).
+ACM Transactions on Mathematical Software, Vol. V, No. N, Month 20YY.
+
+
+=== PDF page 12 ===
+12
+·
+Kazushige Goto and Robert A. van de Geijn
+Algorithm: C := gepp blk var2(A, B, C)
+Algorithm: C := gepb opt1(A, B, C)
+C0C1 · · · +:= A
+B0B1 · · ·
++:=
+T
+Assumption: A “packed” in memory.
+Pack A into ˜
+A
+for j = 0, . . . , N −1
+Cj +:=
+˜
+A
+T Bj
+(gepb opt1)
+endfor
+Pack B into ˜B
+for i = 0, . . . , M −1
++:= T
+(Caux := AT
+i ˜B)
+Unpack ˇCi = ˇCi + Caux
+endfor
+Fig. 10.
+Optimized implementation of gepp (left) via calls to gepb opt1 (right).
+Algorithm: C := gemp blk var1(A, B, C)
+Algorithm: C := gepb opt2(A, B, C)
+C
++:= A0A1 · · ·
+ˇB0
+ˇB1
+..
+.
++:=
+0
+B
+B
+@
+1
+C
+C
+A
+T
+Assumption: C “packed” in memory.
+for p = 0, . . . , K −1
+Set packed ˜C := 0
+˜C
++:=
+0
+B
+B
+@Ap ˇBp
+1
+C
+C
+A
+T
+(gepb opt2)
+endfor
+Unpack C := ˜CT + C
+Pack B into ˜B
+for i = 0, . . . , m −1 in steps of mr
+Pack ˇ
+Ai into Aaux
++:=
+ţ
+űT
+(Ci := (Aaux ˜B)T + Ci)
+endfor
+Fig. 11.
+Optimized implementation of gemp (left) via calls to gepb opt2 (right).
+5.3
+Implementing gepp with gepb
+Fig. 10 shows how gepp can be implemented in terms of gepb. Now A is packed
+and transposed by gepp to improve contiguous access to its elements. In gepb B is
+packed and kept in the L2 cache, so that it is T ˜
+B that we wish to maximize. While
+Ai, Ai+1, and Caux each typically only require one TLB entry, ˇCi requires nc if the
+leading dimension of C is large. Thus, T ˜
+B is bounded by T −(nc + 3).
+5.4
+Implementing gemp with gepb
+In Fig. 11 shows how gemp can be implemented in terms of gepb. This time a
+temporary ˜C is used to accumulate ˜C = (AB)T and the L2 cache is mostly ﬁlled
+with a packed copy of ˜B. Again, it is T ˜
+B that we wish to maximize. While Ci,
+Ci+1, and Atemp each take up one TLB entry, ˇAi requires up to mc entries. Thus,
+T ˜
+B is bounded by T −(mc + 3).
+ACM Transactions on Mathematical Software, Vol. V, No. N, Month 20YY.
+
+
+=== PDF page 13 ===
+Anatomy of High-Performance Matrix Multiplication
+·
+13
+5.5
+Implementing gepm and gemp with gepdot
+Similarly, gepm and gemp can be implemented in terms of the gepdot operation.
+This places a block of C in the L2 cache and updates it by multiplying a few
+columns of A times a few rows of B. Since we will argue below that this approach
+is likely inferior, we do not give details here.
+5.6
+Discussion
+Fig. 4 suggests six diﬀerent strategies for implementing a gemm operation. Details
+for four of these options are given in Figs. 8–11. We now argue that if matrices are
+stored in column-major order, then the approach in Fig. 8, which corresponds to
+the path in Fig. 4 that always takes the top branch in the decision tree and is also
+given in Fig. 5, can in practice likely attain the best performance.
+Our ﬁrst concern is to attain the best possible bandwidth use from the L2 cache.
+Note that a gepdot-based implementation places a block of C in the L2 cache
+and reads and writes each of its elements as a few columns and rows of A and B
+are streamed from memory. This requires twice the bandwidth between the L2
+cache and registers as do the gebp and gepbbased algorithms. Thus, we expect
+gepdot-based implementations to achieve worse performance than the other four
+options.
+Comparing the pair of algorithms in Figs. 8 and 9 the primary diﬀerence is that
+the former packs B and streams elements of C from and to main memory, while
+the latter streams B from main memory, computes C in a temporary buﬀer, and
+ﬁnally unpacks by adding this temporary result to C. In practice, the algorithm
+in Fig. 8 can hide the cost of bringing elements of C from and to memory with
+computation while it exposes the packing of B as sheer overhead. The algorithm
+in Fig. 9 can hide the cost of bringing elements of B from memory, but exposes
+the cost of unpacking C as sheer overhead. The unpacking of C is a more complex
+operation and can therefore be expected to be more expensive than the packing
+of B, making the algorithm in Fig. 8 preferable over the one in Fig. 9. A similar
+argument can be used to rank the algorithm in Fig. 10 over the one in Fig. 11.
+This leaves us with having to choose between the algorithms in Figs. 8 and 10,
+which on the surface appear to be symmetric in the sense that the roles of A and B
+are reversed. Note that the algorithms access C a few columns and rows at a time,
+respectively. If the matrices are stored in column-major order, then it is preferable
+to access a block of those matrices by columns. Thus the algorithm in Fig. 8 can
+be expected to be superior to all the other presented options.
+Due to the level of eﬀort that is required to implement kernels like gebp, gepb,
+and gepdot, we focus on the algorithm in Fig. 8 throughout the remainder of this
+paper.
+We stress that the conclusions in this subsection are continguent on the observa-
+tion that on essentially all current processors there is an advantage to blocking for
+the L2 cache. It is entirely possible that the insights will change if, for example,
+blocking for the L1 cache is preferred.
+ACM Transactions on Mathematical Software, Vol. V, No. N, Month 20YY.
+
+
+=== PDF page 14 ===
+14
+·
+Kazushige Goto and Robert A. van de Geijn
+6.
+MORE DETAILS YET
+We now give some ﬁnal insights into how registers are used by kernels like gebp opt1,
+after which we comment on how parameters are chosen in practice.
+Since it has been argued that the algorithm in Fig. 8 will likely attain the best
+performance, we focus on that algorithm:
++:=
+nr
+kc
+mc
+6.1
+Register blocking
+Consider Caux := ˜ABj in Fig. 8 where ˜A and Bj are in the L2 and L1 caches,
+respectively. This operation is implemented by computing mr × nr submatrices of
+Caux in the registers.
+:=
+nr
+kc
+mr
+Notice that this means that during the computation of Cj it is not necessary that
+elements of that submatrix remain in the L1 or even the L2 cache: 2mrnrkc ﬂops
+are performed for the mrnr memops that are needed to store the results from the
+registers to whatever memory layer. We will see that kc is chosen to be relatively
+large.
+The above ﬁgure allows us to discuss the packing of A into ˜A in more detail. In our
+implementation, ˜A is stored so that each mr × kc submatrix is stored contiguously
+in memory. Each such submatrix is itself stored in column-major order. This allows
+Caux := ˜ABj to be computed while accessing the elements of ˜A by striding strictly
+contiguously through memory. Implementations by others will often store ˜A as the
+transpose of A, which requires a slightly more complex pattern when accessing ˜A.
+6.2
+Choosing mr × nr
+The following considerations aﬀect the choice of mr × nr :
+—Typically half the available registers are used for the storing mr × nr submatrix
+of C. This leaves the remaining registers for prefetching elements of ˜A and ˜B.
+—It can be shown that amortizing the cost of loading the registers is optimal when
+mr ≈nr.
+—As mentioned in Section 4.2.1, the fetching of an element of ˜A from the L2 cache
+into registers must take no longer than the computation with a previous element
+so that ideally nr ≥Rcomp/(2Rload) must hold. Rcomp and Rload can be found
+under “ﬂops/cycle” and “Sustained Bandwidth”, respectively, in Fig. 12.
+A shortage of registers will limit the performance that can be attained by gebp opt1,
+since it will impair the ability to hide constraints related to the bandwidth to the
+L2 cache.
+6.3
+Choosing kc
+To amortize the cost of updating mr × nr elements of Cj the parameter kc should
+be picked to be as large as possible.
+The choice of kc is limited by the following considerations:
+ACM Transactions on Mathematical Software, Vol. V, No. N, Month 20YY.
+
+
+=== PDF page 15 ===
+Anatomy of High-Performance Matrix Multiplication
+·
+15
+—Elements from Bj are reused many times, and therefore must remain in the L1
+cache. In addition, the set associativity and cache replacement policy further
+limit how much of the L1 cache can be occupied by Bj. In practice, kcnr ﬂoating
+point numbers should occupy less than half of the L1 cache so that elements of
+˜A and Caux do not evict elements of Bj.
+—The footprint of ˜A (mc×kc ﬂoating point numbers) should occupy a considerable
+fraction of the L2 cache.
+In our experience the optimal choice is such that kc double precision ﬂoating point
+numbers occupy half of a page. This choice typically satisﬁes the other constraints
+as well as other architectural constraints that go beyond the scope of this paper.
+6.4
+Choosing mc
+It was already argued that mc × kc matrix ˜A should ﬁll a considerable part of the
+smaller of (1) the memory addressable by the TLB and (2) the L2 cache. In fact,
+this is further constrained by the set-associativity and replacement policy of the L2
+cache. In practice, mc is typically chosen so that ˜A only occupies about half of the
+smaller of (1) and (2).
+7.
+EXPERIMENTS
+In this section we report performance attained by implementations of the dgemm
+BLAS routine using the techniques described in the earlier sections. It is not the
+purpose of this section to show that our implementations attain better performance
+than those provided by vendors and other projects. (We do note, however, that they
+are highly competitive.) Rather, we attempt to demonstrate that the theoretical
+insights translate to practical implementations.
+7.1
+Algorithm chosen
+Implementing all algorithms discussed in Section 5 on a cross-section of architec-
+tures would be a formidable task. Since it was argued that the approach in Fig. 8
+is likely to yield the best overall performance, it is that variant which was imple-
+mented. The gebp opt1 algorithm was carefully assembly-coded for each of the
+architectures that were considered. The routines for packing A and B into ˜A and
+˜B, respectively, were coded in C, since compilers appear to be capable of optimizing
+these operations.
+7.2
+Parameters
+In Fig. 12 we report the physical and algorithmic parameters for a cross-section of
+architectures. Not all the parameters are taken into account in the analysis in this
+paper. These are given for completeness.
+The following parameters require extra comments:
+Duplicate This parameter indicates whether elements of matrix B are duplicated
+as part of the packing of B. This is necessary in order to take advantage of SSE2
+instructions on the Pentium4 (Northwood) and Opteron processors. Although
+the Core 2 Woodcrest has an SSE3 instruction set, instructions for duplication
+are issued by the multiply unit and the same techniques as for the Northwood
+architecture must be employed.
+ACM Transactions on Mathematical Software, Vol. V, No. N, Month 20YY.
+
+
+=== PDF page 16 ===
+16
+·
+Kazushige Goto and Robert A. van de Geijn
+Architecture
+L1 cache
+L2 cache
+L3 cache
+TLB
+Block sizes
+Sub
+Architecture
+Core
+# of registers
+ﬂops/cycle
+Duplicate
+Size
+(Kbytes)
+Line Size
+Associativity
+Sustained
+Bandwidth
+Size
+(Kbytes)
+Line Size
+Associativity
+Sustained
+Bandwidth
+Size
+(Kbytes)
+Line Size
+Associativity
+Sustained
+Bandwidth
+Page Size
+(Kbytes)
+L1 TLB
+L2 TLB
+Covered Area
+(Kbytes)
+˜
+A (Kbytes)
+mc × kc
+mr × nr
+x86
+Pentium3 Katmai
+8
+1
+N
+16
+32
+4
+0.95
+512
+32
+4
+0.40
+4
+64
+-
+256
+64 × 256
+2 × 2
+Coppermine
+8
+1
+N
+16
+32
+4
+0.95
+256
+32
+4
+0.53
+4
+64
+-
+256
+64 × 256
+2 × 2
+Pentium4 Northwood
+81
+2
+Y
+8
+64
+4
+1.88
+512
+64
+8
+1.06
+4
+64
+-
+256
+224
+224 × 128 4 × 2
+Prescott
+81
+2
+N
+16
+64
+4
+1.92
+2K
+64
+8
+1.03
+4
+64
+-
+256
+768
+768 × 128 2 × 4
+Opteron
+81
+2
+Y
+64
+64
+2
+2.00
+1K
+64
+16 0.71
+4
+32
+512
+2K2
+768
+384 × 256 2 × 4
+x86 64 (EM64T)
+Pentium4 Prescott
+161
+2
+N
+16
+64
+4
+1.92
+2K
+64
+8
+1.03
+4
+64
+-
+256
+≈1K 696 × 192 4 × 4
+Core 2
+Woodcrest
+161
+4
+Y
+32
+64
+8
+2.00
+4K
+64
+8
+1.00
+4
+256
+-
+1K
+1K
+512 × 256 4 × 4
+Opteron
+161
+2
+Y
+64
+64
+2
+2.00
+1K
+64
+16 0.71
+4
+32
+512
+2K2
+608
+384 × 256 4 × 4
+IA64
+Itanium2
+128 4
+N
+16
+64
+4
+-
+256
+128
+8
+4.00
+6K
+128 24 2.00
+16
+-
+128
+2K2
+1K
+128 × 1K 8 × 8
+POWER
+POWER3
+32
+4
+N
+64
+128
+4
+2.00
+1K
+128
+1
+0.75
+4
+256
+-
+1K
+512
+256 × 256 4 × 4
+POWER4
+32
+4
+N
+32
+128
+2
+1.95
+1.4K
+128
+4
+0.93 128K 512
+8
+-
+4
+1284 1K4 4K2
+288
+144 × 256 4 × 4
+PPC970
+32
+4
+N
+32
+128
+2
+2.00
+512
+128
+8
+0.92
+4
+1284 1K4 4K2
+320
+160 × 256 4 × 4
+POWER5
+32
+4
+N
+32
+128
+2
+2.00 1.92K 128 10 0.93
+128
+4
+1284 1K4 4K2
+512
+256 × 256 4 × 4
+PPC440 FP2
+321
+4
+N
+32
+32
+64 2.00
+2
+128
+Full 0.75
+4K
+128
+8
+0.75
+-3
+-3
+-3
+-3
+3K
+128 × 3K 8 × 4
+Alpha
+EV4
+32
+1
+N
+16
+32
+1
+0.79
+2K
+32
+1
+0.15
+8
+32
+-
+256
+14
+32 × 56
+4 × 4
+EV5
+32
+2
+N
+8
+32
+1
+1.58
+96
+64
+3
+1.58
+2K
+64
+1
+0.22
+8
+64
+-
+512
+63
+56 × 144
+4 × 4
+EV6
+32
+2
+N
+64
+64
+2
+1.87
+4K
+64
+1
+0.62
+8
+128
+-
+1K
+512
+128 × 512 4 × 4
+SPARC
+IV
+32
+4
+N
+64
+32
+4
+0.99
+8K
+128
+2
+0.12
+8K
+128
+2
+0.12
+8
+16
+512
+4K2
+2K
+512 × 512 4 × 4
+1 Registers hold 2 ﬂoating point numbers each. 2 indicates that the Covered Area is determined from the L2 TLB. 3 IBM has not not
+disclosed this information. 4 On these machines there is a D-ERAT (Data cache Eﬀective Real to Address Translation [table]) that takes
+the place of the L1 TLB and a TLB that acts like an L2 TLB.
+Fig. 12.
+Parameters for a sampling of current architectures.
+ACM Transactions on Mathematical Software, Vol. V, No. N, Month 20YY.
+
+
+=== PDF page 17 ===
+Anatomy of High-Performance Matrix Multiplication
+·
+17
+0
+0.5
+1
+1.5
+2
+2.5
+3
+3.5
+4
+0
+1
+2
+3
+4
+5
+6
+7
+Footprint of A in Mbytes
+Performance in GFlops
+696 x 192
+Fig. 13. Performance on the Pentium4 Prescott (3.6 GHz) of dgemm for diﬀerent choices of mc
+and kc, where mc and kc are varied from 8 to 2000 in steps of 8. This architecture has a 2Mbyte
+L2 cache, which explains the performance degradation when the footprint of ˇ
+A is about that size.
+The best performance is attained for mc × kc = 696 × 196, when the footprint is around 1 Mbyte.
+Sustained Bandwidth This is the observed sustained bandwidth, in doubles/cycle,
+from the indicated memory layer to the registers.
+Covered Area This is the size of the memory that can be addressed by the TLB.
+Some architectures have a (much slower) level 2 TLB that serves the same func-
+tion relative to an L1 TLB as does an L2 cache relative to an L1 cache. Whether
+to limit the size of ˜A by the number of entries in L1 TLB or L2 TLB depends on
+the cost of packing into ˜A and ˜B.
+˜A (Kbytes) This indicates how much memory is set aside for matrix ˜A.
+7.3
+Focus on the Intel Pentium 4 Prescott processor (3.6 GHz, 64bit)
+We discuss the implementation for the Intel Pentium 4 Prescott processor in greater
+detail.
+In Section 7.4 we more brieﬂy discuss implementations on a few other
+architectures.
+Equation (3) indicates that in order to hide the prefetching of elements of ˜A with
+computation parameter nr must be chosen so that nr ≥Rcomp/(2Rload). Thus, for
+this architecture, nr ≥2/(2 × 1.03) ≈0.97. Also, EM64T architectures, of which
+this Pentium4 is a member, have 16 registers that can store two double precision
+ﬂoating point numbers each. Eight of these registers are used for storing entries of
+C: mr × nr = 4 × 4.
+The choice of parameter kc is complicated by the fact that updating the indexing
+in the loop that computes inner products of columns of ˜A and ˜B is best avoided on
+this architecture. As a result, that loop is completely unrolled, which means that
+storing the resulting code in the instruction cache becomes an issue, limiting kc
+to 192. This is slightly smaller than the kc = 256 that results from the limitation
+discussed in Section 6.3.
+ACM Transactions on Mathematical Software, Vol. V, No. N, Month 20YY.
+
+
+=== PDF page 18 ===
+18
+·
+Kazushige Goto and Robert A. van de Geijn
+In Figure 13 we show the performance of dgemm for diﬀerent choices of mc and
+kc3. This architecture is the one exception to the rule that ˜A should be addressable
+by the TLB, since a TLB miss is less costly than on other architectures. When ˜A
+is chosen to ﬁll half of the L2 cache the performance is slightly better than when it
+is chosen to ﬁll half of the memory addressable by the TLB.
+The Northwood version of the Pentium4 relies on SSE2 instructions to compute
+two ﬂops per cycle. This instruction requires entries in B to be duplicated, a data
+movement that is incorporated into the packing into buﬀer ˜B. The SSE3 instruction
+supported by the Prescott subarchitecture does not require this duplication when
+copying to ˜B.
+In Fig. 14 we show the performance attained by the approach on this Pentium
+4 architecture. In this ﬁgure the top graph shows the case where all matrices are
+square while the bottom graph reports the case where m = n = 2000 and k is
+varied. We note that gepp with k relatively small is perhaps the most commonly
+encountered special case of gemm.
+—The top curve, labeled “Kernel”, corresponds to the performance of the kernel
+routine (gebp opt1).
+—The next lower curve, labeled “dgemm”, corresponds to the performance of the
+dgemm routine implemented as a sequence of gepp operations. The gepp oper-
+ation was implemented via the algorithms in Fig. 8.
+—The bottom two curves correspond the percent of time incurred by routines that
+pack A and B into ˜A and ˜B, respectively. (For these curves only the labeling
+along the right axis is relevant.)
+The overhead caused by the packing operations accounts almost exactly for the
+degradation in performance from the kernel curve to the dgemm curve.
+The graphs in Fig. 15 investigate the performance of the implementation when
+m and n are varied. In the top graph m is varied while n = k = 2000. When
+m is small, as it would be for a gepm operation, the packing of B into ˜B is not
+amortized over suﬃcient computation, yielding relatively poor performance. One
+solution would be to skip the packing of B. Another would be to implement the
+algorithm in Fig. 9. Similarly, in the bottom graph n is varied while m = k = 2000.
+When n is small, as it would be for a gemp operation, the packing of A into ˜A is not
+amortized over suﬃcient computation, again yielding relatively poor performance.
+Again, one could contemplate skipping the packing of A (which would require the
+gebp operation to be cast in terms of axpy operations instead of inner-products).
+An alternative would be to implement the algorithm in Fig. 11.
+7.4
+Other architectures
+For the remaining architectures we discuss brieﬂy how parameters are selected and
+show performance graphs, in Figs. 16–20, that correspond to those for the Pentium
+4 in Fig. 14.
+3Ordinarily examining the performance for all possible combinations of mc and kc is not part of
+our optimization process. Rather, the issues discussed in this paper are used to identify a few
+possible combinations of parameters, and only combinations of mc and kc near these candidate
+parameters are tried. The graph is included to illustrate the eﬀect of picking diﬀerent parameters.
+ACM Transactions on Mathematical Software, Vol. V, No. N, Month 20YY.
+
+
+=== PDF page 19 ===
+Anatomy of High-Performance Matrix Multiplication
+·
+19
+ m = n = k
+GFlops
+0
+500
+1000
+1500
+2000
+0
+1
+2
+3
+4
+5
+6
+7
+0
+20
+40
+60
+80
+100
+Percentage
+dgemm
+Kernel
+Pack A
+Pack B
+k (m = n = 2000)
+GFlops
+0
+500
+1000
+1500
+2000
+0
+1
+2
+3
+4
+5
+6
+7
+0
+20
+40
+60
+80
+100
+Percentage
+dgemm
+Kernel
+Pack A
+Pack B
+Fig. 14.
+Pentium4 Prescott (3.6 GHz).
+AMD Opteron processor (2.2 GHz, 64bit)
+For the Opteron architecture nr ≥Rcomp/(2Rload) = 2/(2 × 0.71) ≈1.4. The
+observed optimal choice for storing entries of C in registers is mr × nr = 4 × 4.
+Unrolling of the inner loop that computes the inner-product of columns of ˜A and
+˜B is not necessary like it was for the Pentium4, nor is the size of the L1 cache an
+issue. Thus, kc is taken so that a column of ˜B ﬁlls half a page: kc = 256. By taking
+mc × kc = 384 × 256 matrix ˜A ﬁlls roughly one third of the space addressable by
+the TLB.
+The latest Opteron architectures support SSE3 instructions, we have noticed that
+duplicating elements of ˜B is still beneﬁcial. This increases the cost of packing into
+˜B, decreasing performance by about 3%.
+ACM Transactions on Mathematical Software, Vol. V, No. N, Month 20YY.
+
+
+=== PDF page 20 ===
+20
+·
+Kazushige Goto and Robert A. van de Geijn
+m (n = k = 2000)
+GFlops
+0
+500
+1000
+1500
+2000
+0
+1
+2
+3
+4
+5
+6
+7
+0
+20
+40
+60
+80
+100
+Percentage
+dgemm
+Kernel
+Pack A
+Pack B
+Fig. 15.
+Pentium4 Prescott(3.6 GHz).
+ m = n = k
+GFlops
+0
+500
+1000
+1500
+2000
+0
+1
+2
+3
+4
+0
+20
+40
+60
+80
+100
+Percentage
+dgemm
+Kernel
+Pack A
+Pack B
+Fig. 16.
+Opteron (2.2 GHz).
+Performance for this architecture is reported in Fig. 16.
+Intel Itanium2 processor (1.5 GHz)
+The L1 data cache and L1 TLB are inherently ignored by this architecture for
+ﬂoating point numbers.
+As a result, the Itanium2’s L2 and L3 caches perform
+the role of the L1 and L2 caches of other architectures and only the L2 TLB is
+relevant. Thus nr ≥4/(2 × 2.0) = 1.0. Since there are ample registers available,
+mr × nr = 8 × 8. While the optimal kc = 1K (1K doubles ﬁll half of a page), in
+ACM Transactions on Mathematical Software, Vol. V, No. N, Month 20YY.
+
+
+=== PDF page 21 ===
+Anatomy of High-Performance Matrix Multiplication
+·
+21
+ m = n = k
+GFlops
+0
+500
+1000
+1500
+2000
+0.0
+0.5
+1.0
+1.5
+2.0
+2.5
+3.0
+3.5
+0
+20
+40
+60
+80
+100
+Percentage
+dgemm
+Kernel
+Pack A
+Pack B
+Fig. 17.
+Itanium2 (1.5 GHz).
+ m = n = k
+GFlops
+0
+500
+1000
+1500
+2000
+0
+2
+4
+6
+0
+20
+40
+60
+80
+100
+Percentage
+dgemm
+Kernel
+Pack A
+Pack B
+Fig. 18.
+POWER5 (1.9 GHz).
+practice performance is almost as good when kc = 128.
+This architecture has many features that makes optimization easy: A very large
+number of registers , very good bandwidth between the caches and the registers,
+and an absence of out-of-order execution.
+Performance for this architecture is reported in Fig. 17.
+IBM POWER5 processor (1.9 GHz)
+For this architecture, nr ≥4/(2 × 0.93) ≈2.15 and mr × nr = 4 × 4. This
+ACM Transactions on Mathematical Software, Vol. V, No. N, Month 20YY.
+
+
+=== PDF page 22 ===
+22
+·
+Kazushige Goto and Robert A. van de Geijn
+ m = n = k
+GFlops
+0
+500
+1000
+1500
+2000
+0.0
+0.5
+1.0
+1.5
+2.0
+2.5
+0
+20
+40
+60
+80
+100
+Percentage
+dgemm
+Kernel
+Pack A
+Pack B
+Fig. 19.
+PPC440 FP2 (700 MHz).
+architectures has a D-ERAT (Data cache Eﬀective Real to Address Translation
+[table]) that acts like an L1 TLB and a TLB that acts like an L2 TLB. Parameter
+kc = 256 ﬁlls half of a page with a column of ˜B. By choosing mc × kc = 256 × 256
+matrix ˜A ﬁlls about a quarter of the memory addressable by the TLB. This is a
+compromise: The TLB is relatively slow. By keeping the footprint of ˜A at the size
+that is addressable by the D-ERAT, better performance has been observed.
+Performance for this architecture is reported in Fig. 18.
+PowerPC440 FP2 processor (700 MHz)
+For this architecture, nr ≥4/(2×0.75) ≈2.7 and mr×nr = 8×4. An added com-
+plication for this architecture is that the combined bandwidth required for moving
+elements of ˜B and ˜A from the L1 and L2 caches to the registers saturates the total
+bandwidth. This means that the loading of elements of C into the registers cannot
+be overlapped with computation, which in turn means that kc should be taken to
+be very large in order to amortize this exposed cost over as much computation as
+possible. The choice mc × nc = 128 × 3K ﬁlls 3/4 of the L2 cache.
+Optimizing for this architecture is made diﬃcult by lack of bandwidth to the
+caches, an L1 cache that is FIFO (First-In-First-Out) and out-of-order execution of
+instructions. The addressable space of the TLB is large due to the large page size.
+It should be noted that techniques similar to those discussed in this paper were
+used by IBM to implement their matrix multiply [Bachega et al. 2004] for this
+architecture.
+Performance for this architecture is reported in Fig. 19.
+Core 2 Woodcrest (2.66 GHz) processsor
+At the time of the ﬁnal revision of this paper, the Core 2 Woodcrest was re-
+cently released and thus performance numbers for this architecture are particularly
+interesting.
+ACM Transactions on Mathematical Software, Vol. V, No. N, Month 20YY.
+
+
+=== PDF page 23 ===
+Anatomy of High-Performance Matrix Multiplication
+·
+23
+ m = n = k
+GFlops
+0
+500
+1000
+1500
+2000
+0
+2
+4
+6
+8
+10
+0
+20
+40
+60
+80
+100
+Percentage
+dgemm
+Kernel
+Pack A
+Pack B
+Fig. 20.
+Core 2 Woodcrest (2.66 GHz)
+For this architecture, nr ≥4/(2 × 1.0) = 2 and mr × nr = 4 × 4. As for the
+Prescott architecture, sixteen registers that can hold two double precision numbers
+each are available, half of which are used to store the mr × nr entries of C. The
+footprint of matrix ˜A equals that of the memory covered by the TLB.
+Performance for this architecture is reported in Fig. 20.
+8.
+CONCLUSION
+We have given a systematic analysis of the high-level issues that aﬀect the design
+of high-performance matrix multiplication. The insights were incorporated in an
+implementation that attains extremely high performance on a variety of architec-
+tures.
+Almost all routines that are currently part of LAPACK [Anderson et al. 1999]
+perform the bulk of computation in gepp, gemp, or gepm operations. Similarly,
+the important Basic Linear Algebra Subprograms (BLAS) kernels can be cast in
+terms of these three special cases of gemm [K˚agstr¨om et al. 1998].
+Our recent
+research related to the FLAME project shows how for almost all of these rou-
+tines there are algorithmic variants that cast the bulk of computation in terms of
+gepp [Gunnels et al. 2001; Bientinesi et al. 005a; Bientinesi et al. 005b; Low et al.
+2005; Quintana et al. 2001]. These alternative algorithmic variants will then attain
+very good performance when interfaced with matrix multiplication routines that
+are implemented based on the insights in this paper.
+One operation that cannot be recast in terms of mostly gepp is the QR factor-
+ization. For this factorization, about half the computation can be cast in terms of
+gepp while the other half inherently requires either the gemp or the gepm oper-
+ation. Moreover, the panel must inherently be narrow since the wider the panel,
+the more extra computation must be performed. This suggests that further re-
+search into the high-performance implementation of these special cases of gemm is
+ACM Transactions on Mathematical Software, Vol. V, No. N, Month 20YY.
+
+
+=== PDF page 24 ===
+24
+·
+Kazushige Goto and Robert A. van de Geijn
+warranted.
+Availability
+The source code for the discussed implementations is available from
+http://www.tacc.utexas.edu/resources/software
+.
+Acknowledgments
+We would like to thank Victor Eijkhout, John Gunnels, Gregorio Quintana, and
+Field Van Zee for comments on drafts of this paper, as well as the anonymous
+referees.
+This research was sponsored in part by NSF grants ACI-0305163, CCF-0342369,
+and CCF-0540926, and by Lawrence Livermore National Laboratory project grant
+B546489. We gratefully acknowledge equipment donations by Dell, Linux Networx,
+Virginia Tech, and Hewlett-Packard. Access to additional equipment was arranged
+by the Texas Advanced Computing Center and Lawrence Livermore National Lab-
+oratory.
+REFERENCES
+Agarwal, R., Gustavson, F., and Zubair, M. 1994.
+Exploiting functional parallelism of
+POWER2 to design high-performance numerical algorithms.
+IBM Journal of Research and
+Development 38, 5 (Sept.).
+Anderson, E., Bai, Z., Bischof, C., Blackford, S., Demmel, J., Dongarra, J., Croz, J. D.,
+Greenbaum, A., Hammarling, S., McKenney, A., and Sorensen, D. 1999. LAPACK Users’
+Guide, Third Edition ed. SIAM Press.
+Bachega, L., Chatterjee, S., Dockser, K. A., Gunnels, J. A., Gupta, M., Gustavson, F. G.,
+Lapkowski, C. A., Liu, G. K., Mendell, M. P., Wait, C. D., and Ward, T. J. C. 2004.
+A high-performance simd ﬂoating point unit for bluegene/l: Architecture, compilation, and
+algorithm design. In PACT ’04: Proceedings of the 13th International Conference on Parallel
+Architectures and Compilation Techniques. IEEE Computer Society, Washington, DC, USA,
+85–96.
+Bientinesi, P., Gunnels, J. A., Myers, M. E., Quintana-Ort´ı, E. S., and van de Geijn, R. A.
+2005a. The science of deriving dense linear algebra algorithms. ACM Trans. Math. Soft. 31, 1
+(March), 1–26.
+Bientinesi, P., Gunter, B., and van de Geijn, R. Families of algorithms related to the inversion
+of a symmetric positive deﬁnite matrix. ACM Trans. Math. Soft.. submitted.
+Bientinesi, P., Quintana-Ort´ı, E. S., and van de Geijn, R. A. 2005b. Representing linear
+algebra algorithms in code: The FLAME APIs. ACM Trans. Math. Soft. 31, 1 (March), 27–59.
+Dongarra, J. J., Du Croz, J., Hammarling, S., and Duff, I. 1990. A set of level 3 basic linear
+algebra subprograms. ACM Trans. Math. Soft. 16, 1 (March), 1–17.
+Goto, K. 2005. www.tacc.utexas.edu/resources/software/.
+Goto, K. and van de Geijn, R. 2006. High-performance implementation of the level-3 BLAS.
+FLAME Working Note #20 TR-2006-23, The University of Texas at Austin, Department of
+Computer Sciences.
+Goto, K. and van de Geijn, R. A. 2002. On reducing TLB misses in matrix multiplication. Tech.
+Rep. CS-TR-02-55, Department of Computer Sciences, The University of Texas at Austin.
+Gunnels, J., Gustavson, F., Henry, G., and van de Geijn, R. A. 2005. A Family of High-
+Performance Matrix Multiplication Algrorithms. LNCS 3732. Springer-Verlag, 256–265.
+Gunnels, J. A., Gustavson, F. G., Henry, G. M., and van de Geijn, R. A. 2001. FLAME: For-
+mal linear algebra methods environment. ACM Transactions on Mathematical Software 27, 4
+(December), 422–455.
+ACM Transactions on Mathematical Software, Vol. V, No. N, Month 20YY.
+
+
+=== PDF page 25 ===
+Anatomy of High-Performance Matrix Multiplication
+·
+25
+Gunnels, J. A., Henry, G. M., and van de Geijn, R. A. 2001. A family of high-performance
+matrix multiplication algorithms. In Computational Science - ICCS 2001, Part I, V. N. Alexan-
+drov, J. J. Dongarra, B. A. Juliano, R. S. Renner, and C. K. Tan, Eds. Lecture Notes in
+Computer Science 2073. Springer-Verlag, 51–60.
+K˚agstr¨om, B., Ling, P., and Loan, C. V. 1998. GEMM-based level 3 BLAS: High performance
+model implementations and performance evaluation benchmark. ACM Trans. Math. Soft. 24, 3,
+268–302.
+Low, T. M., van de Geijn, R., and Zee, F. V. 2005. Extracting SMP parallelism for dense
+linear algebra algorithms from high-level speciﬁcations. In Proceedings of PPoPP’05.
+Quintana, E. S., Quintana, G., Sun, X., and van de Geijn, R. 2001. A note on parallel matrix
+inversion. SIAM J. Sci. Comput. 22, 5, 1762–1771.
+Strazdins, P. E. 1998. Transporting distributed BLAS to the Fujitsu AP3000 and VPP-300. In
+Proceedings of the Eighth Parallel Computing Workshop (PCW’98). 69–76.
+Whaley, R. C. and Dongarra, J. J. 1998. Automatically tuned linear algebra software. In
+Proceedings of SC’98.
+Whaley, R. C., Petitet, A., and Dongarra, J. J. 2001. Automated empirical optimization of
+software and the ATLAS project. Parallel Computing 27, 1–2, 3–35.
+Received Month Year; revised Month Year; accepted Month Year
+ACM Transactions on Mathematical Software, Vol. V, No. N, Month 20YY.

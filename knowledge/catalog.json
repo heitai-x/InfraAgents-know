@@ -2630,6 +2630,341 @@
       "evidence": [],
       "updated_at": "2026-10-22",
       "sha256": "2f69ed4bdcb428f0da4a524e5ba63adc4e9c37860f619e6c22cf9910c00e6c86"
+    },
+    {
+      "id": "K-FW-011",
+      "path": "frameworks/checkpoint-loading.md",
+      "category": "frameworks",
+      "title": "权重加载：从制品身份到可执行布局",
+      "summary": "加载必须同时建立张量语义、执行布局、完整参数与就绪边界；流式流水的价值由启动关键路径和峰值副本决定。",
+      "revision": 1,
+      "status": "seed",
+      "tags": [
+        "checkpoint",
+        "权重加载",
+        "冷启动",
+        "mmap",
+        "tied weights",
+        "流式加载"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-SERVERLESSLLM",
+        "S-TORCH-INFERENCE",
+        "S-TORCH-CUDA"
+      ],
+      "related": [
+        "K-MODEL-001",
+        "K-FW-001",
+        "K-FW-012",
+        "K-SYS-012",
+        "K-HW-003"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-22",
+      "sha256": "871e49626f320d579993063db039ab0a4b8e98394a54ffa2073daa9ed8bb2cb5"
+    },
+    {
+      "id": "K-ALG-016",
+      "path": "algorithms/operator-primitives.md",
+      "category": "algorithms",
+      "title": "基础算子：从张量契约到合法融合",
+      "summary": "算子契约包含轴、布局、数值和别名；合法融合需要保持函数与状态关系，再比较字节、启动和资源占用。",
+      "revision": 1,
+      "status": "seed",
+      "tags": [
+        "GEMM",
+        "GEMV",
+        "embedding",
+        "RMSNorm",
+        "LayerNorm",
+        "RoPE",
+        "softmax",
+        "gather",
+        "scatter",
+        "融合"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-TRANSFORMER",
+        "S-RMSNORM",
+        "S-ROPE",
+        "S-TORCH-NUMERIC",
+        "S-FLASH",
+        "S-CPU-TUNING"
+      ],
+      "related": [
+        "K-MODEL-001",
+        "K-ALG-004",
+        "K-FW-002",
+        "K-HW-010",
+        "K-FW-011"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-22",
+      "sha256": "5027223d65833590aedfb49acdaf2b8545cc1b974f28b03d2d2cd20ba25e7158"
+    },
+    {
+      "id": "K-HW-010",
+      "path": "hardware/cpu-linear-kernels.md",
+      "category": "hardware",
+      "title": "CPU GEMM/GEMV：寄存器、缓存与线程划分",
+      "summary": "CPU 线性层需把 shape 的重用机会落实到寄存器、cache/TLB、打包和线程分区；同一配置不适用于全部 GEMV/GEMM。",
+      "revision": 1,
+      "status": "seed",
+      "tags": [
+        "CPU",
+        "GEMM",
+        "GEMV",
+        "SIMD",
+        "cache",
+        "TLB",
+        "预打包",
+        "NUMA",
+        "线程"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [
+          "cpu"
+        ],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-GOTO",
+        "S-CPU-TUNING",
+        "S-TORCH-NUMERIC",
+        "S-PERF"
+      ],
+      "related": [
+        "K-HW-009",
+        "K-HW-001",
+        "K-ALG-016",
+        "K-FW-012",
+        "K-SYS-015"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-22",
+      "sha256": "1a1ead0ce506a162967647fbbfa66de7f13da743f47071b17e9ab3642d07b7c9"
+    },
+    {
+      "id": "K-FW-012",
+      "path": "frameworks/cpu-quantized-kernels.md",
+      "category": "frameworks",
+      "title": "CPU 低位执行：解包、补偿与累加路径",
+      "summary": "低位存储、解包和实际乘加是不同执行路径；补偿、组尺度、累加宽度和舍入共同决定正确性与收益。",
+      "revision": 1,
+      "status": "seed",
+      "tags": [
+        "CPU",
+        "INT4",
+        "INT8",
+        "zero point",
+        "解包",
+        "量化",
+        "累加",
+        "requantization"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [
+          "cpu"
+        ],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-INT8",
+        "S-GPTQ",
+        "S-CPU-TUNING",
+        "S-TORCH-NUMERIC"
+      ],
+      "related": [
+        "K-ALG-005",
+        "K-HW-010",
+        "K-HW-004",
+        "K-FW-002",
+        "K-FW-011"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-22",
+      "sha256": "8a02565f2a303b5d70825d1db0c08c9a6b9b2ac053b18cd18e4f0cf2d55376a2"
+    },
+    {
+      "id": "K-SYS-012",
+      "path": "system-semantics/memory-allocators.md",
+      "category": "system-semantics",
+      "title": "内存分配：地址、容量与在途所有权",
+      "summary": "分配器同时管理地址、物理容量与异步所有权；比较连续池、块表和虚拟映射时必须计入碎片、工作区和在途页。",
+      "revision": 1,
+      "status": "seed",
+      "tags": [
+        "allocator",
+        "内存分配",
+        "虚拟内存",
+        "KV cache",
+        "碎片",
+        "workspace",
+        "生命周期"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-VATTENTION",
+        "S-PAGED",
+        "S-CUDA-ALLOC",
+        "S-TORCH-CUDA"
+      ],
+      "related": [
+        "K-ALG-002",
+        "K-ALG-003",
+        "K-SYS-004",
+        "K-FW-003",
+        "K-FW-005"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-22",
+      "sha256": "8cfcf5b54fff448070d05207ad57958296c1613ac12acae1d1b0ec18a4d4d0e1"
+    },
+    {
+      "id": "K-SYS-015",
+      "path": "system-semantics/host-runtime.md",
+      "category": "system-semantics",
+      "title": "服务主机运行时：执行域、队列与缓冲所有权",
+      "summary": "主机执行域、队列和缓冲所有权共同限制推理服务；背压与取消必须连接模型调度和在途资源完成。",
+      "revision": 1,
+      "status": "seed",
+      "tags": [
+        "host runtime",
+        "事件循环",
+        "线程池",
+        "进程",
+        "IPC",
+        "背压",
+        "tokenizer",
+        "有界队列"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-ASGI",
+        "S-CPU-TUNING",
+        "S-OTEL",
+        "S-PY-SUBPROCESS"
+      ],
+      "related": [
+        "K-HW-009",
+        "K-SYS-008",
+        "K-SYS-004",
+        "K-SYS-002",
+        "K-TOOLS-001"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-22",
+      "sha256": "f8cf049cc597aa891b88075ac712e0f0f4be0f4c465cd6e9b0aa901e7dde39ed"
+    },
+    {
+      "id": "K-WORK-010",
+      "path": "workloads/session-workloads.md",
+      "category": "workloads",
+      "title": "多轮与分支负载：依赖、状态驻留和到达过程",
+      "summary": "会话依赖、思考时间和分支决定真实到达与状态驻留；前缀复用收益需要和会话成功、容量及重用距离一起衡量。",
+      "revision": 1,
+      "status": "seed",
+      "tags": [
+        "multi-turn",
+        "多轮",
+        "会话",
+        "Agent workload",
+        "fork",
+        "join",
+        "思考时间",
+        "前缀复用"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [],
+        "runtimes": [],
+        "workloads": [
+          "text-generation"
+        ]
+      },
+      "source_ids": [
+        "S-SGLANG",
+        "S-ORCA",
+        "S-VLLM-PREFIX",
+        "S-MLPERF-SCENARIOS"
+      ],
+      "related": [
+        "K-WORK-002",
+        "K-WORK-003",
+        "K-ALG-003",
+        "K-SYS-007",
+        "K-SYS-004"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-22",
+      "sha256": "ff99ad008815b635a36b4176ffd5fb1e8752c69cf7e12c60d38221ab41142f66"
+    },
+    {
+      "id": "K-TOOLS-007",
+      "path": "tools/statistical-experiments.md",
+      "category": "tools",
+      "title": "性能实验：独立重复、效应量与尾部证据",
+      "summary": "性能结论需要与独立重复层级相匹配的效应量和不确定性；尾部失败、搜索偏差和保留验证不能由样本数量替代。",
+      "revision": 1,
+      "status": "seed",
+      "tags": [
+        "统计",
+        "confidence interval",
+        "bootstrap",
+        "p99",
+        "配对实验",
+        "尾延迟",
+        "选择偏差",
+        "保留验证"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-STATS",
+        "S-MLPERF-SCENARIOS",
+        "S-GENAI-PERF",
+        "S-TORCH-REPRO"
+      ],
+      "related": [
+        "K-WORK-004",
+        "K-WORK-005",
+        "K-TOOLS-006",
+        "K-SYS-006",
+        "K-TOOLS-002"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-22",
+      "sha256": "cafeb92ae753a362d3ab1eaad0387d3b5964fd0908c8d6195a60cb78429cb105"
     }
   ]
 }

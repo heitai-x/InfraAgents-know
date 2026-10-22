@@ -4,6 +4,12 @@
 
 | 实际行为 | 应还原的关系 | 专家正文 |
 |---|---|---|
+| 权重大小能容纳但加载时 OOM | 源/目标副本、转换区、预热与新旧版本共存的峰值 | [加载](frameworks/checkpoint-loading.md)、[分配](system-semantics/memory-allocators.md) |
+| CPU 小 batch 快而 prefill 退化 | 形状重用、打包摊销、cache/TLB 与线程划分 | [CPU 线性层](hardware/cpu-linear-kernels.md)、[低位执行](frameworks/cpu-quantized-kernels.md) |
+| 低位内核结果有系统偏差 | 组尺度、零点补偿、窄累加和负数舍入 | [低位执行](frameworks/cpu-quantized-kernels.md)、[算子](algorithms/operator-primitives.md) |
+| 模型空闲但请求仍堆积 | 输入处理、单执行域饱和、队列与背压 | [主机运行时](system-semantics/host-runtime.md) |
+| 多轮压测越慢到达越少 | 会话依赖和闭环用户反馈 | [会话负载](workloads/session-workloads.md)、[到达](workloads/arrival-and-concurrency.md) |
+| 多次试验挑出提升但复测消失 | 独立重复层级、环境漂移和选择偏差 | [实验统计](tools/statistical-experiments.md) |
 | 单请求正确，混合批错误 | batch 视图与持久请求状态的逆映射 | [身份](system-semantics/request-batch-identity.md)、[采样](algorithms/batched-sampling.md) |
 | 前缀命中后结果不同 | 状态的计算等价类、共同恢复位置 | [前缀](algorithms/prefix-cache-identity.md)、[异构状态](algorithms/heterogeneous-state-cache.md) |
 | 分块后 logits 分歧 | query 的绝对位置与历史可见集合 | [位置/mask](system-semantics/position-mask-cache.md)、[分块](algorithms/chunked-prefill.md) |

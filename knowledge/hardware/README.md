@@ -13,3 +13,4 @@
 | [K-HW-007：Apple Silicon：统一内存、带宽与交互式推理](metal-unified-memory.md) | v1 · seed | 统一内存减少显式设备间搬运，但 CPU/GPU 仍共享容量、带宽并通过依赖控制可见性。 |
 | [K-HW-008：Trainium：HBM、SBUF、PSUM 与编译执行](trainium-dataflow.md) | v1 · seed | Trainium 的高效执行来自把张量分块映射到片上存储和专用引擎，同时让静态可执行程序承接动态服务状态。 |
 | [K-HW-009：CPU 推理：线程、缓存层级与 NUMA 分区](cpu-serving.md) | v1 · seed | CPU 服务优化需要同时管理向量算术、内存带宽、线程调度与请求级并发，更多线程不等于更多有效工作。 |
+| [K-HW-010：CPU GEMM/GEMV：寄存器、缓存与线程划分](cpu-linear-kernels.md) | v1 · seed | CPU 线性层需把 shape 的重用机会落实到寄存器、cache/TLB、打包和线程分区；同一配置不适用于全部 GEMV/GEMM。 |

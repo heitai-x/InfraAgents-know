@@ -14,3 +14,5 @@
 | [K-FW-008：MLX 服务：惰性求值、编译与请求状态](mlx-serving.md) | v1 · seed | MLX 的数组表达式可以延迟执行，服务循环必须明确计算何时提交、何时完成和何时释放状态。 |
 | [K-FW-009：Neuron/NxD：静态程序承接动态生成](neuron-serving.md) | v1 · seed | Neuron 服务通过形状桶、设备驻留状态和分布式执行组，把可变请求映射到编译后的程序族。 |
 | [K-FW-010：NKI：Partition 轴、片上生存期与 Attention 数据流](nki-tiling.md) | v1 · seed | NKI 的 tile 是带硬件轴语义的片上对象；布局与生存期共同决定 DMA、矩阵和归约引擎的供给。 |
+| [K-FW-011：权重加载：从制品身份到可执行布局](checkpoint-loading.md) | v1 · seed | 加载必须同时建立张量语义、执行布局、完整参数与就绪边界；流式流水的价值由启动关键路径和峰值副本决定。 |
+| [K-FW-012：CPU 低位执行：解包、补偿与累加路径](cpu-quantized-kernels.md) | v1 · seed | 低位存储、解包和实际乘加是不同执行路径；补偿、组尺度、累加宽度和舍入共同决定正确性与收益。 |
