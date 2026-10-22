@@ -85,3 +85,7 @@
 | [S-VATTENTION](sources/S-VATTENTION.md) | 2405.04437v1 | 2024-05-07 |
 | [S-GOTO](sources/S-GOTO.md) | Author manuscript archived at tpn/pdfs commit 67ceef2b223ca15bdf6e257303df4fea63970aaa | 2016-11-30 |
 | [S-STATS](sources/S-STATS.md) | 2007.10899v1 | 2020-07-21 |
+| [S-FLEXGEN](sources/S-FLEXGEN.md) | 2303.06865v1 | 2023-03-13 |
+| [S-POWERINFER](sources/S-POWERINFER.md) | 2312.12456v1 | 2023-12-16 |
+| [S-FLASHATTENTION3](sources/S-FLASHATTENTION3.md) | 2407.08608v1 | 2024-07-11 |
+| [S-LINUX-IO](sources/S-LINUX-IO.md) | Linux v6.12 commit adc218676eef25575469234709c2d87185ca223a | 2024-11-17 |

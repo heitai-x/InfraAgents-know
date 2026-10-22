@@ -132,7 +132,7 @@
       "category": "algorithms",
       "title": "Attention 的 IO、在线 softmax 与分块归约",
       "summary": "精确 attention 可以通过改变数据流避免存储完整分数矩阵；算法复杂度、HBM 流量与数值归约顺序分别决定成本。",
-      "revision": 1,
+      "revision": 2,
       "status": "seed",
       "tags": [
         "FlashAttention",
@@ -151,16 +151,20 @@
       "source_ids": [
         "S-FLASH",
         "S-TRITON",
-        "S-TORCH-NUMERIC"
+        "S-TORCH-NUMERIC",
+        "S-FLASHATTENTION3"
       ],
       "related": [
         "K-HW-001",
         "K-FW-006",
-        "K-MODEL-006"
+        "K-MODEL-006",
+        "K-HW-011",
+        "K-ALG-018",
+        "K-HW-013"
       ],
       "evidence": [],
       "updated_at": "2026-10-22",
-      "sha256": "ae5017b8a85e97589159e8b3b535ae4926780ee48463bc1dfafc55d32f312647"
+      "sha256": "a5e851ffddc0af450d425f6e29f3fbe667d245da61d65eefc81e12b563f35978"
     },
     {
       "id": "K-ALG-005",
@@ -280,7 +284,7 @@
       "category": "algorithms",
       "title": "异步调度：依赖图、代次与双缓冲",
       "summary": "异步调度只重叠彼此独立的工作；自回归 token、缓存映射和资源回收仍由明确依赖连接。",
-      "revision": 1,
+      "revision": 2,
       "status": "seed",
       "tags": [
         "async scheduling",
@@ -297,17 +301,23 @@
       "source_ids": [
         "S-CUDA-ASYNC",
         "S-CUDA-ALLOC",
-        "S-VLLM-SCHED"
+        "S-VLLM-SCHED",
+        "S-FLASHATTENTION3",
+        "S-POWERINFER"
       ],
       "related": [
         "K-FW-003",
         "K-FW-005",
         "K-SYS-002",
-        "K-SYS-004"
+        "K-SYS-004",
+        "K-HW-011",
+        "K-ALG-017",
+        "K-ALG-020",
+        "K-SYS-015"
       ],
       "evidence": [],
       "updated_at": "2026-10-22",
-      "sha256": "c0438b3226f045acf4a11059e0ad90b046cd1ee72f501f06f4071661059ebac7"
+      "sha256": "9f3e037e2725193a3aefda22db0d7461c91ee737b40018a51e8e2f5afbe9fa5d"
     },
     {
       "id": "K-ALG-009",
@@ -830,7 +840,7 @@
       "category": "frameworks",
       "title": "Stream 与分配器：依赖顺序和对象生存期",
       "summary": "stream 解决执行顺序，内存生存期解决地址何时可重用；正确的异步程序需要同时满足两种关系。",
-      "revision": 1,
+      "revision": 2,
       "status": "seed",
       "tags": [
         "stream",
@@ -858,11 +868,15 @@
       "related": [
         "K-ALG-008",
         "K-FW-005",
-        "K-SYS-004"
+        "K-SYS-004",
+        "K-HW-011",
+        "K-HW-013",
+        "K-ALG-018",
+        "K-SYS-012"
       ],
       "evidence": [],
       "updated_at": "2026-10-22",
-      "sha256": "bab014f750897edd6944b9d279547217bea961b166091ea3c6b9480e24dcdd08"
+      "sha256": "64427e69f6eb991d4029242e24e4edf56a331d233fdeab3c50f53f0f84a4df7b"
     },
     {
       "id": "K-FW-004",
@@ -1205,7 +1219,7 @@
       "category": "hardware",
       "title": "主机准备、DMA 与流水缓冲",
       "summary": "输入流水的吞吐取决于准备、传输和计算三个阶段的平衡；数据可见性和缓冲所有权决定能否正确重叠。",
-      "revision": 1,
+      "revision": 2,
       "status": "seed",
       "tags": [
         "DMA",
@@ -1225,16 +1239,21 @@
       "source_ids": [
         "S-CUDA-ASYNC",
         "S-CUDA-BEST",
-        "S-CUDA-ALLOC"
+        "S-CUDA-ALLOC",
+        "S-LINUX-IO"
       ],
       "related": [
         "K-ALG-008",
         "K-FW-003",
-        "K-MODEL-008"
+        "K-MODEL-008",
+        "K-HW-012",
+        "K-HW-013",
+        "K-ALG-020",
+        "K-ALG-017"
       ],
       "evidence": [],
       "updated_at": "2026-10-22",
-      "sha256": "8f1e291821ad5be6cfbb7eccd769406bd7e17cfa6883a3791fc25a6e167dfe05"
+      "sha256": "5bfc321d4349e141d1787a360ab72106bc70af99af17d9e53bdd1b75e2a0980a"
     },
     {
       "id": "K-HW-004",
@@ -1279,7 +1298,7 @@
       "category": "hardware",
       "title": "CUDA 平台：SM 数据流、占用率与执行粒度",
       "summary": "CUDA 优化应把算法的数据复用映射到 SM 的寄存器、共享存储和 warp 执行，再判断主机提交是否成为瓶颈。",
-      "revision": 1,
+      "revision": 2,
       "status": "seed",
       "tags": [
         "CUDA",
@@ -1298,16 +1317,21 @@
       "source_ids": [
         "S-CUDA-BEST",
         "S-CUDA-CAPABILITY",
-        "S-CUDA-ASYNC"
+        "S-CUDA-ASYNC",
+        "S-FLASHATTENTION3"
       ],
       "related": [
         "K-ALG-004",
         "K-FW-005",
-        "K-FW-007"
+        "K-FW-007",
+        "K-HW-011",
+        "K-SYS-012",
+        "K-ALG-017",
+        "K-TOOLS-007"
       ],
       "evidence": [],
       "updated_at": "2026-10-22",
-      "sha256": "8cc6cabcb5afb819646ef21e6af475f87f6eeae1906e148fad35e615119f9ca2"
+      "sha256": "aef68ee4706e1ca36c7d2655ef8edf3535e9893a29d54947407beddc8465f2ed"
     },
     {
       "id": "K-HW-006",
@@ -1315,7 +1339,7 @@
       "category": "hardware",
       "title": "ROCm 平台：CU、Wave 与 AMD 算子路径",
       "summary": "ROCm 移植应保持模型语义，同时按 AMD 的执行资源、矩阵指令和库 dispatch 重新推导数据布局与粒度。",
-      "revision": 1,
+      "revision": 2,
       "status": "seed",
       "tags": [
         "ROCm",
@@ -1340,11 +1364,14 @@
       "related": [
         "K-FW-006",
         "K-FW-007",
-        "K-HW-004"
+        "K-HW-004",
+        "K-HW-011",
+        "K-HW-013",
+        "K-ALG-020"
       ],
       "evidence": [],
       "updated_at": "2026-10-22",
-      "sha256": "d889e1be65975fa025b7767449f62dcaeea21d90c0f6bbcf7cb4480900d4c7af"
+      "sha256": "08c875daee94b818579b1f63e07543c3d8628177d61f3141a6f39727cc0fbf8a"
     },
     {
       "id": "K-HW-007",
@@ -1352,7 +1379,7 @@
       "category": "hardware",
       "title": "Apple Silicon：统一内存、带宽与交互式推理",
       "summary": "统一内存减少显式设备间搬运，但 CPU/GPU 仍共享容量、带宽并通过依赖控制可见性。",
-      "revision": 1,
+      "revision": 2,
       "status": "seed",
       "tags": [
         "metal",
@@ -1374,11 +1401,14 @@
       "related": [
         "K-FW-008",
         "K-HW-001",
-        "K-WORK-001"
+        "K-WORK-001",
+        "K-HW-013",
+        "K-ALG-020",
+        "K-SYS-012"
       ],
       "evidence": [],
       "updated_at": "2026-10-22",
-      "sha256": "440a8d2dd343bab07254971a4b397f6e145ca348e80505983268ae04799fc9f9"
+      "sha256": "b4a1f38557eecf13e85f3a962f617c95ec86ef7c800a664471d6b1d2c3d31fd4"
     },
     {
       "id": "K-HW-008",
@@ -3068,6 +3098,306 @@
       "evidence": [],
       "updated_at": "2026-10-22",
       "sha256": "cafeb92ae753a362d3ab1eaad0387d3b5964fd0908c8d6195a60cb78429cb105"
+    },
+    {
+      "id": "K-HW-011",
+      "path": "hardware/gpu-kernel-pipelines.md",
+      "category": "hardware",
+      "title": "GPU 矩阵与归约流水：布局、资源和完成依赖",
+      "summary": "GPU tile、片上布局和异步流水共同受寄存器、共享存储及完成依赖约束；GEMM 与 attention 的最优组织随形状和架构改变。",
+      "revision": 1,
+      "status": "seed",
+      "tags": [
+        "GPU",
+        "Tensor Core",
+        "MFMA",
+        "TMA",
+        "WGMMA",
+        "tile",
+        "warp specialization",
+        "寄存器",
+        "LDS",
+        "spill"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [
+          "cuda",
+          "rocm"
+        ],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-FLASHATTENTION3",
+        "S-FLASH",
+        "S-CUDA-BEST",
+        "S-CUDA-ASYNC",
+        "S-ROCM",
+        "S-TORCH-NUMERIC"
+      ],
+      "related": [
+        "K-HW-005",
+        "K-HW-006",
+        "K-ALG-004",
+        "K-FW-007",
+        "K-FW-003",
+        "K-HW-001"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-22",
+      "sha256": "c7c7048ac643ee4446d005fd0ff1b12c7cc211f6c7564e33faf4b5d7072aa61f"
+    },
+    {
+      "id": "K-ALG-017",
+      "path": "algorithms/tiered-residency.md",
+      "category": "algorithms",
+      "title": "多级驻留：有效副本、预取、淘汰与重算",
+      "summary": "多级驻留维护有效版本与在途副本，并联合比较保留、预取、淘汰和重算；三级容量可行不等于在线延迟可行。",
+      "revision": 1,
+      "status": "seed",
+      "tags": [
+        "HBM",
+        "DRAM",
+        "SSD",
+        "分层存储",
+        "驻留",
+        "卸载",
+        "预取",
+        "淘汰",
+        "重算"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-FLEXGEN",
+        "S-SERVERLESSLLM",
+        "S-PAGED",
+        "S-CUDA-ASYNC"
+      ],
+      "related": [
+        "K-SYS-012",
+        "K-HW-012",
+        "K-ALG-018",
+        "K-ALG-019",
+        "K-ALG-020",
+        "K-SYS-004",
+        "K-WORK-006"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-22",
+      "sha256": "eb3ebc6320d5a32481cf645605d159860dc6d1edb97f1e98afd89ddb24ee82af"
+    },
+    {
+      "id": "K-HW-012",
+      "path": "hardware/storage-io.md",
+      "category": "hardware",
+      "title": "存储 I/O：请求粒度、队列和加载流水",
+      "summary": "实际存储供给由布局、pagecache/直接 I/O、请求粒度、队列和 staging 共同决定；提交、可读、持久化和可回收分开建模。",
+      "revision": 1,
+      "status": "seed",
+      "tags": [
+        "SSD",
+        "NVMe",
+        "storage I/O",
+        "直接 I/O",
+        "pagecache",
+        "mmap",
+        "IOPS",
+        "队列深度",
+        "DMA"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-LINUX-IO",
+        "S-SERVERLESSLLM",
+        "S-CUDA-ASYNC"
+      ],
+      "related": [
+        "K-FW-011",
+        "K-ALG-017",
+        "K-ALG-018",
+        "K-HW-003",
+        "K-SYS-015"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-22",
+      "sha256": "417f087e6e2591e58ce3957b4947d3c2718f1373da31bd7f3e4947eb77e58352"
+    },
+    {
+      "id": "K-ALG-018",
+      "path": "algorithms/kv-offload-prefetch.md",
+      "category": "algorithms",
+      "title": "KV 卸载与预取：读集合、恢复点与迁移预算",
+      "summary": "KV 卸载按实际可见集合与共同恢复点组织；暂停恢复、前缀命中和活跃 decode 的持续传输需要不同预算。",
+      "revision": 1,
+      "status": "seed",
+      "tags": [
+        "KV offload",
+        "KV 卸载",
+        "预取",
+        "重算",
+        "恢复点",
+        "HBM",
+        "DRAM",
+        "SSD"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-FLEXGEN",
+        "S-PAGED",
+        "S-HF-CACHE",
+        "S-CUDA-ASYNC"
+      ],
+      "related": [
+        "K-ALG-017",
+        "K-ALG-002",
+        "K-ALG-003",
+        "K-ALG-009",
+        "K-SYS-009",
+        "K-ALG-020",
+        "K-SYS-012"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-22",
+      "sha256": "a02821cd67e2d6d3c90ee5720cf2d2804d7a9562508f83a2ae0955132904e5cc"
+    },
+    {
+      "id": "K-ALG-019",
+      "path": "algorithms/weight-expert-offload.md",
+      "category": "algorithms",
+      "title": "权重与专家卸载：重用、路由与在途版本",
+      "summary": "权重与专家卸载同时依赖批次重用、专家并集、热点和版本；按 token 稀疏不能直接推断 batch 读取稀疏。",
+      "revision": 1,
+      "status": "seed",
+      "tags": [
+        "weight offload",
+        "专家卸载",
+        "MoE",
+        "热点",
+        "预取",
+        "权重",
+        "激活稀疏"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-FLEXGEN",
+        "S-POWERINFER",
+        "S-MIXTRAL",
+        "S-CUDA-ASYNC"
+      ],
+      "related": [
+        "K-ALG-017",
+        "K-ALG-020",
+        "K-MODEL-003",
+        "K-FW-011",
+        "K-ALG-015",
+        "K-FW-012"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-22",
+      "sha256": "cb230fafeec2d39fa40228ad44dbb41d34c62673fbac2325b6e797f206bc0fde"
+    },
+    {
+      "id": "K-ALG-020",
+      "path": "algorithms/heterogeneous-execution.md",
+      "category": "algorithms",
+      "title": "CPU–GPU 计算放置：传数据、传结果与共同提交",
+      "summary": "CPU–GPU 分工比较冷权重搬运、CPU 计算与分片合并的完整关键路径；激活稀疏预测须有独立质量契约。",
+      "revision": 1,
+      "status": "seed",
+      "tags": [
+        "CPU GPU",
+        "异构计算",
+        "协同",
+        "计算放置",
+        "激活稀疏",
+        "PowerInfer",
+        "结果合并"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-POWERINFER",
+        "S-FLEXGEN",
+        "S-CPU-TUNING",
+        "S-TORCH-NUMERIC"
+      ],
+      "related": [
+        "K-HW-010",
+        "K-HW-003",
+        "K-HW-013",
+        "K-ALG-018",
+        "K-ALG-019",
+        "K-ALG-008",
+        "K-SYS-004"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-22",
+      "sha256": "735f4115d4071b04bd0b628f6feed47479149c24dcf1aceb42bcdcc8b219cba9"
+    },
+    {
+      "id": "K-HW-013",
+      "path": "hardware/shared-memory-paths.md",
+      "category": "hardware",
+      "title": "共享内存路径：统一地址、物理驻留与显式迁移",
+      "summary": "统一地址、可迁移驻留和物理共享内存是不同访问关系；重用、页放大、可见性和带宽竞争共同决定复制选择。",
+      "revision": 1,
+      "status": "seed",
+      "tags": [
+        "统一内存",
+        "Unified Memory",
+        "zero copy",
+        "共享内存",
+        "mapped memory",
+        "页迁移",
+        "MLX"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-MLX-MEM",
+        "S-CUDA-ASYNC",
+        "S-TORCH-CUDA"
+      ],
+      "related": [
+        "K-HW-003",
+        "K-HW-007",
+        "K-ALG-020",
+        "K-SYS-012",
+        "K-FW-003",
+        "K-FW-008"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-22",
+      "sha256": "9471f29d33a5821b00e11b6d08fb69fe31288087d558f05c5f9234350efe8b0d"
     }
   ]
 }

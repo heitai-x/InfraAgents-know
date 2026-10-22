@@ -20,6 +20,24 @@ GPU、CPU 和 copy engine 能否重叠受依赖与硬件资源约束。event 建
 
 平台基线由场景推导：小请求关注 launch 与状态管理；长 prefill 关注 attention IO 与矩阵利用率；大 batch decode 关注 KV 流量；多卡关注集合通信。不存在一个对所有场景都最优的固定功能清单。
 
+## 场景：单 GPU 交互服务的完整选择
+
+以下全部为设计设定。一个固定 GQA decoder 在 GPU 上驻留权重 14 GiB；设备可用容量 24 GiB，工作区 2 GiB、graph/固定缓冲 1 GiB、预留余量 1 GiB。模型状态设为 32 层、8 个 KV head、128 维、每元素 2 字节；8 个活跃请求各有 2048 个已计算历史位置，目标 ITL 为 30 ms，主机与响应预算暂设 3 ms。有效设备读取带宽假设为 1 TiB/s，具体 kernel 能力仍需测量。
+
+每 token 全层 KV 为 128 KiB，每请求 256 MiB，8 个请求共 2 GiB；所列容量合计 20 GiB。若仅用平均长度推导 24 个请求可占用 6 GiB KV，就会恰好用完剩余空间，没有留下本轮增长或额外工作区，不能直接作为硬准入上限。长 prompt、写时复制和图桶必须重新进入峰值账。
+
+比较 A：全驻留、已验证 backend、eager 连续批；B：加入受时间预算约束的分块 prefill、合法前缀共享及固定缓冲的图执行；C：在任务允许且质量验证通过时使用更低精度 kernel。A 是语义与成本对照，B 改变状态/执行组织，C 还改变数值路径，应先逐项区分，再评估最终组合。
+
+在“每轮读取全部权重和每请求完整 KV”的设定下，8 个 decode 的读取量为 16 GiB，下界为 15.625 ms。30−3−15.625=11.375 ms 是其他开销的剩余预算上限，不是已经可供 prefill 使用的时间；实际矩阵、同步、额外流量与排队仍会消耗它。混合批的可行块长需从对应形状的服务曲面得到。
+
+若 8 个请求都共享同一合法 1024 token 前缀，唯一 KV 可以由 2 GiB 降到 128 MiB 公共部分加 8×128 MiB 私有部分，即 1.125 GiB。decode 的逻辑可见历史仍未减少；实际 HBM 流量是否因 cache 重用下降要另测。适配器、模型或 processor 身份不同，则不能使用这个共享算例。
+
+B 的图缓冲需要稳定地址与代次保护；更多桶和流水缓冲可能挤占 KV。C 的低位路径要核对布局、尺度与质量，FA3 的某个形状实验不能直接填入该服务的性能估计。GPU 已受 HBM 流量限制时，减少主机提交未必改变主项；短请求和大量小 kernel 的情况则可能相反。
+
+验证从固定前缀的独立 forward、冷/热前缀、非整除页与 batch 重排开始，再覆盖取消后复用、长 prefill 与 decode 交错、图桶切换和低位异常值。性能固定到达轨迹，记录 TTFT/ITL、有效完成、主机空洞、实际字节与工作区峰值，使用独立重复确认选择。
+
+低负载下 A 的简单路径可能足够；高前缀复用使 B 更有价值；超长历史会把重心移向 attention 和容量；质量门槛收紧可能排除 C。需求或硬件改变后重新计算容量与关键路径，而不是保留一份固定“GPU 优化清单”。
+
 <!-- infraagents:provenance -->
 
 ## 来源与推导
@@ -34,6 +52,13 @@ GPU、CPU 和 copy engine 能否重叠受依赖与硬件资源约束。event 建
   [完整原文](../../references/S-CUDA-ASYNC/reader.html) · [全文文本](../../references/S-CUDA-ASYNC/fulltext.txt)
 
 正文中的公式展开、容量算例与组合设计是基于这些来源的推导；设定算例不冒充实测。来源版本受 2026-04-30 上限约束，编辑日期 2026-10-22 不作为事实发布日期。此独立 base 版本内的章节修订号从 1 开始，原章节身份与版本映射保存在版本清单。
+
+
+
+### 本次扩写补充来源
+
+- [S-FLASHATTENTION3：FlashAttention-3](../sources/S-FLASHATTENTION3.md)：§2–3 以 Hopper 的 TMA、异步 WGMMA、warp specialization 和多级缓冲组织 attention；讨论寄存器、布局和 FP8 数值限制。
+  [完整原文](../../references/S-FLASHATTENTION3/reader.html) · [全文文本](../../references/S-FLASHATTENTION3/fulltext.txt)
 
 ## 延伸阅读
 

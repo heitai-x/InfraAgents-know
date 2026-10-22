@@ -28,6 +28,14 @@
 
 CPU 进一步进入 [GEMM/GEMV](hardware/cpu-linear-kernels.md) 的寄存器、cache/TLB 与线程划分，以及 [低位执行](frameworks/cpu-quantized-kernels.md) 的解包、零点补偿和累加路径。[主机运行时](system-semantics/host-runtime.md) 将算子线程与分词、队列、IPC 和响应处理的资源预算连接起来。
 
+GPU 则通过 [矩阵与归约流水](hardware/gpu-kernel-pipelines.md) 把片上布局、矩阵指令、归约和缓冲完成关系连接起来；[CUDA 平台](hardware/cuda-execution.md) 中的交互服务算例将这些选择接回容量与 ITL。
+
+## 在容量与传输约束下组织驻留
+
+[HBM–DRAM–SSD 驻留](algorithms/tiered-residency.md) 先定义对象版本、有效副本和迁移提交，再由 [存储 I/O](hardware/storage-io.md) 还原真实读取路径。[KV 卸载](algorithms/kv-offload-prefetch.md) 比较恢复、持续读取与重算，[权重和专家卸载](algorithms/weight-expert-offload.md) 则比较层间重用、路由并集与热点变化。
+
+在 [CPU–GPU 计算放置](algorithms/heterogeneous-execution.md) 中比较搬数据到 GPU 与把计算留在 CPU 的完整路径；[共享内存](hardware/shared-memory-paths.md) 进一步区分统一地址、可迁移驻留和物理共享。三级存储与异构计算各有可复算场景，容量可行、质量合格和 SLO 可达分别判断。
+
 ## 组合额外能力
 
 [量化](algorithms/quantization-contract.md) 改变表示和误差，[投机](algorithms/speculation-budget.md) 改变确认 token 的计算过程，[LoRA](algorithms/lora-serving.md) 改变权重依赖，[结构化生成](algorithms/structured-output.md) 改变合法输出分布。加入它们时，重新推导缓存身份、状态回滚、形状和成本。

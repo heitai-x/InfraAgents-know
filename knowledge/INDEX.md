@@ -6,18 +6,18 @@
 
 ## 算法
 
-[分类入口](algorithms/README.md)，共 16 条。
+[分类入口](algorithms/README.md)，共 20 条。
 
 | 条目 | 版本与状态 | 核心认识 |
 |---|---|---|
 | [K-ALG-001：连续批处理：从自回归依赖到迭代调度](algorithms/iteration-batching.md) | v2 · seed | 连续批处理将资源分配单位从整条请求改成一次可执行的 token 推进；批次是请求状态的临时视图。 |
 | [K-ALG-002：分页 KV：逻辑位置、物理布局与共享所有权](algorithms/paged-kv-capacity.md) | v1 · seed | 分页把序列长度的动态增长转换为块映射变化；attention 语义仍由逻辑位置与有效长度决定。 |
 | [K-ALG-003：前缀缓存：计算等价类、Radix 与淘汰收益](algorithms/prefix-cache-identity.md) | v1 · seed | 可复用前缀是能产生等价中间状态的一组输入和执行条件；字符串相同只是其中一个投影。 |
-| [K-ALG-004：Attention 的 IO、在线 softmax 与分块归约](algorithms/attention-io.md) | v1 · seed | 精确 attention 可以通过改变数据流避免存储完整分数矩阵；算法复杂度、HBM 流量与数值归约顺序分别决定成本。 |
+| [K-ALG-004：Attention 的 IO、在线 softmax 与分块归约](algorithms/attention-io.md) | v2 · seed | 精确 attention 可以通过改变数据流避免存储完整分数矩阵；算法复杂度、HBM 流量与数值归约顺序分别决定成本。 |
 | [K-ALG-005：量化：误差传播、分组尺度与执行格式](algorithms/quantization-contract.md) | v1 · seed | 量化把数值表示、数据布局和执行内核一起改变；收益由减少的字节与新增的变换成本共同决定。 |
 | [K-ALG-006：投机解码：分布保持、状态提交与收益模型](algorithms/speculation-budget.md) | v1 · seed | 投机用便宜候选换取目标模型的并行验证；真正推进系统的是被确认的前缀，而非写入过缓存的全部 token。 |
 | [K-ALG-007：分块 Prefill：服务时间切片与历史可见性](algorithms/chunked-prefill.md) | v2 · seed | 分块 prefill 将长输入的执行切成可调度时间片；每块仍读取其之前完整且有效的上下文。 |
-| [K-ALG-008：异步调度：依赖图、代次与双缓冲](algorithms/async-scheduling.md) | v1 · seed | 异步调度只重叠彼此独立的工作；自回归 token、缓存映射和资源回收仍由明确依赖连接。 |
+| [K-ALG-008：异步调度：依赖图、代次与双缓冲](algorithms/async-scheduling.md) | v2 · seed | 异步调度只重叠彼此独立的工作；自回归 token、缓存映射和资源回收仍由明确依赖连接。 |
 | [K-ALG-009：异构状态缓存：层组、恢复位置与联合分配](algorithms/heterogeneous-state-cache.md) | v1 · seed | 混合模型的缓存是多类状态的联合系统，统一的是逻辑恢复位置，物理块形状可以不同。 |
 | [K-ALG-010：交叉注意力缓存：固定源、独立几何与可见性](algorithms/cross-attention-cache.md) | v1 · seed | 当 encoder 输出和投影权重固定时，cross-attention 的 K/V 与 decoder 步数无关，可以一次生成、多次读取。 |
 | [K-ALG-011：批量采样：概率变换、请求随机性与行映射](algorithms/batched-sampling.md) | v1 · seed | 采样器消费每个请求自己的条件分布；向量化改变执行形态，不能改变参数、随机状态或输出归属。 |
@@ -26,6 +26,10 @@
 | [K-ALG-014：多 LoRA 服务：低秩计算、驻留与缓存身份](algorithms/lora-serving.md) | v1 · seed | LoRA 为共享基座增加低秩映射；多适配器服务将模型复用问题转换成按请求选择增量权重的问题。 |
 | [K-ALG-015：推理并行：张量分解、流水、专家与上下文](algorithms/parallelism.md) | v1 · seed | 并行策略改变张量归属和同步边界；选择依据是每阶段的计算、状态与通信分解。 |
 | [K-ALG-016：基础算子：从张量契约到合法融合](algorithms/operator-primitives.md) | v1 · seed | 算子契约包含轴、布局、数值和别名；合法融合需要保持函数与状态关系，再比较字节、启动和资源占用。 |
+| [K-ALG-017：多级驻留：有效副本、预取、淘汰与重算](algorithms/tiered-residency.md) | v1 · seed | 多级驻留维护有效版本与在途副本，并联合比较保留、预取、淘汰和重算；三级容量可行不等于在线延迟可行。 |
+| [K-ALG-018：KV 卸载与预取：读集合、恢复点与迁移预算](algorithms/kv-offload-prefetch.md) | v1 · seed | KV 卸载按实际可见集合与共同恢复点组织；暂停恢复、前缀命中和活跃 decode 的持续传输需要不同预算。 |
+| [K-ALG-019：权重与专家卸载：重用、路由与在途版本](algorithms/weight-expert-offload.md) | v1 · seed | 权重与专家卸载同时依赖批次重用、专家并集、热点和版本；按 token 稀疏不能直接推断 batch 读取稀疏。 |
+| [K-ALG-020：CPU–GPU 计算放置：传数据、传结果与共同提交](algorithms/heterogeneous-execution.md) | v1 · seed | CPU–GPU 分工比较冷权重搬运、CPU 计算与分片合并的完整关键路径；激活稀疏预测须有独立质量契约。 |
 
 ## 模型
 
@@ -48,20 +52,23 @@
 
 ## 硬件平台
 
-[分类入口](hardware/README.md)，共 10 条。
+[分类入口](hardware/README.md)，共 13 条。
 
 | 条目 | 版本与状态 | 核心认识 |
 |---|---|---|
 | [K-HW-001：容量、算术强度与服务 Roofline](hardware/memory-and-roofline.md) | v2 · seed | 容量决定系统能容纳哪些状态，带宽与计算能力决定搬运和处理这些状态的下界，关键路径决定哪些下界实际显现。 |
 | [K-HW-002：通信拓扑：从 Rank 组到瓶颈链路](hardware/topology-parallelism.md) | v1 · seed | 多卡性能由数据经过的实际路径决定；rank 数只是拓扑模型的一部分。 |
-| [K-HW-003：主机准备、DMA 与流水缓冲](hardware/host-device-transfer.md) | v1 · seed | 输入流水的吞吐取决于准备、传输和计算三个阶段的平衡；数据可见性和缓冲所有权决定能否正确重叠。 |
+| [K-HW-003：主机准备、DMA 与流水缓冲](hardware/host-device-transfer.md) | v2 · seed | 输入流水的吞吐取决于准备、传输和计算三个阶段的平衡；数据可见性和缓冲所有权决定能否正确重叠。 |
 | [K-HW-004：数值格式、打包布局与矩阵指令](hardware/precision-and-kernel-support.md) | v1 · seed | 硬件支持某种 dtype、库能接受该 dtype、目标形状有高效 kernel，是三个不同层次的能力。 |
-| [K-HW-005：CUDA 平台：SM 数据流、占用率与执行粒度](hardware/cuda-execution.md) | v1 · seed | CUDA 优化应把算法的数据复用映射到 SM 的寄存器、共享存储和 warp 执行，再判断主机提交是否成为瓶颈。 |
-| [K-HW-006：ROCm 平台：CU、Wave 与 AMD 算子路径](hardware/rocm-execution.md) | v1 · seed | ROCm 移植应保持模型语义，同时按 AMD 的执行资源、矩阵指令和库 dispatch 重新推导数据布局与粒度。 |
-| [K-HW-007：Apple Silicon：统一内存、带宽与交互式推理](hardware/metal-unified-memory.md) | v1 · seed | 统一内存减少显式设备间搬运，但 CPU/GPU 仍共享容量、带宽并通过依赖控制可见性。 |
+| [K-HW-005：CUDA 平台：SM 数据流、占用率与执行粒度](hardware/cuda-execution.md) | v2 · seed | CUDA 优化应把算法的数据复用映射到 SM 的寄存器、共享存储和 warp 执行，再判断主机提交是否成为瓶颈。 |
+| [K-HW-006：ROCm 平台：CU、Wave 与 AMD 算子路径](hardware/rocm-execution.md) | v2 · seed | ROCm 移植应保持模型语义，同时按 AMD 的执行资源、矩阵指令和库 dispatch 重新推导数据布局与粒度。 |
+| [K-HW-007：Apple Silicon：统一内存、带宽与交互式推理](hardware/metal-unified-memory.md) | v2 · seed | 统一内存减少显式设备间搬运，但 CPU/GPU 仍共享容量、带宽并通过依赖控制可见性。 |
 | [K-HW-008：Trainium：HBM、SBUF、PSUM 与编译执行](hardware/trainium-dataflow.md) | v1 · seed | Trainium 的高效执行来自把张量分块映射到片上存储和专用引擎，同时让静态可执行程序承接动态服务状态。 |
 | [K-HW-009：CPU 推理：线程、缓存层级与 NUMA 分区](hardware/cpu-serving.md) | v2 · seed | CPU 服务优化需要同时管理向量算术、内存带宽、线程调度与请求级并发，更多线程不等于更多有效工作。 |
 | [K-HW-010：CPU GEMM/GEMV：寄存器、缓存与线程划分](hardware/cpu-linear-kernels.md) | v1 · seed | CPU 线性层需把 shape 的重用机会落实到寄存器、cache/TLB、打包和线程分区；同一配置不适用于全部 GEMV/GEMM。 |
+| [K-HW-011：GPU 矩阵与归约流水：布局、资源和完成依赖](hardware/gpu-kernel-pipelines.md) | v1 · seed | GPU tile、片上布局和异步流水共同受寄存器、共享存储及完成依赖约束；GEMM 与 attention 的最优组织随形状和架构改变。 |
+| [K-HW-012：存储 I/O：请求粒度、队列和加载流水](hardware/storage-io.md) | v1 · seed | 实际存储供给由布局、pagecache/直接 I/O、请求粒度、队列和 staging 共同决定；提交、可读、持久化和可回收分开建模。 |
+| [K-HW-013：共享内存路径：统一地址、物理驻留与显式迁移](hardware/shared-memory-paths.md) | v1 · seed | 统一地址、可迁移驻留和物理共享内存是不同访问关系；重用、页放大、可见性和带宽竞争共同决定复制选择。 |
 
 ## 框架
 
@@ -71,7 +78,7 @@
 |---|---|---|
 | [K-FW-001：PyTorch 推理：模块模式、Autograd 与状态突变](frameworks/inference-eval.md) | v2 · seed | 推理行为由模型模式、梯度记录、dtype/device、模块状态与执行路径共同决定。 |
 | [K-FW-002：数值参考：误差尺度、条件数与首次分歧](frameworks/numerical-reference.md) | v2 · seed | 一个有解释力的数值参考保持任务函数和输入一致，再分层衡量实现重排与近似产生的差异。 |
-| [K-FW-003：Stream 与分配器：依赖顺序和对象生存期](frameworks/streams-allocator.md) | v1 · seed | stream 解决执行顺序，内存生存期解决地址何时可重用；正确的异步程序需要同时满足两种关系。 |
+| [K-FW-003：Stream 与分配器：依赖顺序和对象生存期](frameworks/streams-allocator.md) | v2 · seed | stream 解决执行顺序，内存生存期解决地址何时可重用；正确的异步程序需要同时满足两种关系。 |
 | [K-FW-004：编译与动态形状：Guard、分桶和变体成本](frameworks/compile-dynamic-shapes.md) | v1 · seed | 编译把一组可证明成立的执行假设变成专门程序；动态服务需要管理这些假设覆盖的形状与状态空间。 |
 | [K-FW-005：CUDA Graph：捕获边界、计划状态与变长服务](frameworks/cuda-graph-buffers.md) | v1 · seed | CUDA Graph 重放一组已捕获的设备工作；服务动态性通过稳定缓冲中的值、分桶和捕获外控制面承接。 |
 | [K-FW-006：Attention Backend：语义、布局与执行契约的交集](frameworks/attention-backends.md) | v1 · seed | 选择 attention backend 是匹配可见性、张量几何、状态布局和执行模式，性能排名只对确定的运行点成立。 |

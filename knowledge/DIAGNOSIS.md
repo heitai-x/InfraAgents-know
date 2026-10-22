@@ -4,6 +4,12 @@
 
 | 实际行为 | 应还原的关系 | 专家正文 |
 |---|---|---|
+| GPU 增加流水级数反而变慢 | 寄存器/共享存储、spill、同步与实际重叠 | [GPU 流水](hardware/gpu-kernel-pipelines.md) |
+| 显存释放成功但 decode 间隔很长 | 每步实际读取的 KV/权重及链路下界 | [多级驻留](algorithms/tiered-residency.md)、[KV 卸载](algorithms/kv-offload-prefetch.md) |
+| SSD 标称很快但模型供给不足 | 请求大小、IOPS、排队、冷热页缓存与 staging | [存储 I/O](hardware/storage-io.md) |
+| MoE 每 token 稀疏但仍频繁加载 | batch 的专家并集、热点漂移与无效预取 | [专家卸载](algorithms/weight-expert-offload.md) |
+| CPU–GPU 都在忙但总延迟没有降低 | 分片合并、共享带宽、同步与冷部分工作量 | [异构执行](algorithms/heterogeneous-execution.md) |
+| 没有显式复制仍出现传输或等待 | 统一地址与物理位置、缺页迁移、远端读取和求值完成 | [共享内存路径](hardware/shared-memory-paths.md) |
 | 权重大小能容纳但加载时 OOM | 源/目标副本、转换区、预热与新旧版本共存的峰值 | [加载](frameworks/checkpoint-loading.md)、[分配](system-semantics/memory-allocators.md) |
 | CPU 小 batch 快而 prefill 退化 | 形状重用、打包摊销、cache/TLB 与线程划分 | [CPU 线性层](hardware/cpu-linear-kernels.md)、[低位执行](frameworks/cpu-quantized-kernels.md) |
 | 低位内核结果有系统偏差 | 组尺度、零点补偿、窄累加和负数舍入 | [低位执行](frameworks/cpu-quantized-kernels.md)、[算子](algorithms/operator-primitives.md) |
