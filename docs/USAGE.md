@@ -42,3 +42,9 @@ PYTHONPATH=src python3 -m infraagents knowledge --repository /path/to/InfraAgent
 ```
 
 仓库没有复制另一套 Controller、角色实现或运行时。正文更新沿用现有章节增量和版本历史；正式发布前仍需独立复核。Git 属性保留知识与原文的精确字节，防止换行转换破坏已有归档校验。
+
+## v2 的读取入口与已验证运行时
+
+v2 保留全部 108 篇机制正文与 114 项固定来源。完整选择/读取验收见 [Linux 记录](evidence/final-linux-validation.json)。选定视图的导航修复位于 [运行时分支](https://github.com/heitai-x/InfraAgents/tree/codex/knowledge-navigation-20261023)，提交 `aedff22c0885c4fc56db6058b9904e23d5e189b9`；使用修复后的框架可取得按冻结目录生成的设计与诊断入口。其 src/tests 基线与实际验证版本一致，详见 [发布身份](evidence/runtime-navigation-published.json)。
+
+更换知识版本应创建新任务或新的受控运行；既有冻结运行继续使用原内容和模型身份。知识库更新没有修改正在运行的实验，也没有将当前运行学习伪装成截止日前 seed。

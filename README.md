@@ -2,12 +2,12 @@
 
 InfraAgents 的独立知识仓库。不同分支承载不同内容版本，保持相同的目录、章节 ID 和现有读取接口。
 
-当前分支：**gpt-6-astra-2026-04-30**。正在扩充推理知识库，当前已接入 108 个 seed 专题、114 项固定来源。资料版本上限仍为 2026-04-30；整库建设尚未完成，具体进度见 [构建记录](docs/BUILD-STATUS.md)。
+当前分支：**gpt-6-astra-2026-04-30**。已完成本轮推理知识库 v2：108 个 seed 专题、114 项固定来源和 12 类完整设计场景。资料版本上限为 2026-04-30；范围、交叉复核与完整读取验证见 [交付记录](docs/BUILD-STATUS.md) 和 [覆盖说明](docs/inference-coverage.md)。
 
 | 分支 | 内容 |
 |---|---|
 | [main](https://github.com/heitai-x/InfraAgents-know/tree/main) | 原始未限时 base，保留初始来源和章节历史；不作模型训练时间声明。 |
-| [gpt-6-astra-2026-04-30](https://github.com/heitai-x/InfraAgents-know/tree/gpt-6-astra-2026-04-30) | 来源版本上限为 2026-04-30，在原 73 篇基础上扩充完整推理系统知识；当前工作树的建设状态另见构建记录。 |
+| [gpt-6-astra-2026-04-30](https://github.com/heitai-x/InfraAgents-know/tree/gpt-6-astra-2026-04-30) | 来源版本上限为 2026-04-30，在原 73 篇基础上完成 35 篇新增及原文修订，覆盖已声明的推理系统与依赖平台范围。 |
 
 从 [设计入口](knowledge/DESIGN.md)、[完整专题索引](knowledge/INDEX.md) 和 [诊断入口](knowledge/DIAGNOSIS.md) 阅读；[来源登记](knowledge/SOURCES.md) 与 [完整原文](references/index.html) 提供本地依据。
 
