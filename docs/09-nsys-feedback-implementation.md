@@ -23,7 +23,7 @@ PYTHONPATH=src python3 -m infraagents analyze-nsys runs/example/capture.sqlite \
 
 第二条命令的时间值只是本次已保存 fixture 的具体窗口，新的采集应从自己的事件中选取。窗口按相交关系选取事件，聚合时长裁剪到窗口，返回的事件保留原始起止时间。主机 API 的关联查找不受窗口限制，避免丢掉窗口之前的提交。
 
-上下文示例见 [profile-context.json](https://github.com/heitai-x/InfraAgents/blob/a102858e3bae595a4af88be6c3a1cd2d7a0f37f1/examples/profile-context.json)。填写模型、硬件、workload、运行点、代码版本、采集工具版本、实际命令、信号、覆盖范围、原始执行记录和采集扰动。这些是调用者提供的描述；分析器保留为 declared_not_verified，不把提供了字段视为事实已验证。未提供时明确标记 not_provided。
+上下文示例见 [profile-context.json](https://github.com/heitai-x/InfraAgents/blob/e72bb5c08daf7a07e4f62bd2a9740646e057b485/examples/profile-context.json)。填写模型、硬件、workload、运行点、代码版本、采集工具版本、实际命令、信号、覆盖范围、原始执行记录和采集扰动。这些是调用者提供的描述；分析器保留为 declared_not_verified，不把提供了字段视为事实已验证。未提供时明确标记 not_provided。
 
 ## 采集复用原生工具
 
@@ -80,7 +80,7 @@ CLI 返回 0 只表示分析完成，包括无事件的导出。SQLite 损坏或
 - 缩小到首个 kernel 内部：窗口得到 1400 ns，并保留原始 kernel 和对应主机 API。
 - Windows 与远端 Linux 的 23 项测试通过。覆盖重叠区间、窗口裁剪、跨进程及跨 VM 编号冲突、歧义关联、负时间差、缺失 schema、原始库只读、长输出及失败保存等行为。
 
-这些数值是采集与分析校验值，没有作为性能成绩。无插桩运行只检查正确性，没有测量 profiling overhead。真实多进程、多卡、模型推理、TTFT/TPOT 和 SLO 仍未验证。知识提炼已落入条目和提案；本次采集没有使用自动角色调度或自动知识更新。后续代码入口见 [五个逻辑职责 MVP](https://github.com/heitai-x/InfraAgents/blob/a102858e3bae595a4af88be6c3a1cd2d7a0f37f1/docs/10-mvp-runtime.md)。历史清单中的实现哈希对应当时版本，可从 Git 提交 `1d828cb` 回查，不要求后续 CLI 版本保持相同哈希。
+这些数值是采集与分析校验值，没有作为性能成绩。无插桩运行只检查正确性，没有测量 profiling overhead。真实多进程、多卡、模型推理、TTFT/TPOT 和 SLO 仍未验证。知识提炼已落入条目和提案；本次采集没有使用自动角色调度或自动知识更新。后续代码入口见 [五个逻辑职责 MVP](https://github.com/heitai-x/InfraAgents/blob/e72bb5c08daf7a07e4f62bd2a9740646e057b485/docs/10-mvp-runtime.md)。历史清单中的实现哈希对应当时版本，可从 Git 提交 `1d828cb` 回查，不要求后续 CLI 版本保持相同哈希。
 
 ## VibeSys 对照与资料
 

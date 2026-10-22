@@ -1,77 +1,47 @@
-# 知识库与 RSI 使用
+# 专家知识与 RSI
 
-本页说明已经实现的接口。研究取舍及主循环见 [RSI 设计](https://github.com/heitai-x/InfraAgents/blob/a102858e3bae595a4af88be6c3a1cd2d7a0f37f1/docs/11-rsi-design.md)；知识内容覆盖见 [矩阵](../knowledge/COVERAGE.md)。所有下列检查均可使用 CPU，不启动 GPU workload 或模型调用。
+## 知识内容
 
-## 检索与查看
+知识正文解释：计算和状态机制、数据/资源关系、成本推导、设计分支、机制组合、适用条件、验证计划、反例、来源和未覆盖范围。它不是注意事项清单、提示词技巧或固定施工配方。
 
-离线运行默认使用仓库中的时间 profile；严格 profile 的共同上限是模型 cutoff 与知识上限的较早者。当前 profile、逐来源判定和被阻断章节见 [时间边界与离线知识库](23-time-bounded-knowledge.md)。完整目录可审计不代表所有内容都能进入角色快照。
+来源材料和正文在本地可读；外部链接是出处元数据。Agent 不依赖运行时 WebSearch 获取必要定义。
 
-从仓库根目录使用：
+## 使用
 
-```bash
-PYTHONPATH=src python3 -m infraagents knowledge search "前缀命中后输出错误" --mode diagnosis --limit 3
-PYTHONPATH=src python3 -m infraagents knowledge search "动态形状 重编译" --runtime pytorch
-PYTHONPATH=src python3 -m infraagents knowledge show K-SYS-004
-PYTHONPATH=src python3 -m infraagents knowledge show K-SYS-004 --revision 1
-PYTHONPATH=src python3 -m infraagents knowledge audit
-PYTHONPATH=src python3 -m infraagents knowledge temporal-audit --write
-PYTHONPATH=src python3 -m infraagents rsi-report
-```
+Planner、Executor 和 Diagnostician 根据当前任务和边界检索并阅读相关完整章节。检索不等于采用；`knowledge_used` 只记录实际影响设计、实现或诊断的条目、版本、用途和实验。
 
-在其他位置操作时，将 `--repository /path/to/InfraAgents` 放在 `knowledge` 与子命令之间；`rsi-report` 直接接受该参数。输出为 JSON。检索支持 design/diagnosis、类别、model-family、platform、runtime、workload 和结果数量限制。条件过滤使用目录中的精确名称，返回已检查字段；未提供的维度不假定已验证。
+## 更新
 
-默认查询 seed/supported，`--include-inactive` 可以显式查看候选、冲突与弃用条目。结果给出版本、状态、来源、范围、匹配项与相关性分数。分数是本地词项导航分数，不是可信度或适用性概率。中文双字词项与英文术语都参与匹配，诊断入口额外关注诊断线索。
+Evolution 从经过审查的实际结果提出章节增量或反馈，说明：
 
-存在 temporal profile 时，`search` 和 `show` 默认也过滤 blocked 专题；只有明确使用 `--include-blocked` 做审计时才读取保留材料。
+- 对象和状态/数据关系；
+- 机制和成立条件；
+- 干预和结果；
+- 反例、竞争解释和未覆盖范围；
+- 实验、原始定位和来源；
+- 后续可区分的验证预测。
 
-## 运行中的主循环
+Diagnostician 独立核对，Runner 串行发布。工程任务成功不会自动证明所有被读取条目有效；一次失败也不会自动否定知识。新的知识候选可以服务当前任务后续工作，跨任务支持需要实际范围匹配和验证。
 
-`run`/`resume` 直接接入 RSI。RSI 运行目录位于仓库内，使证据引用可追溯；知识库、运行记录和发布器使用同一套当前协议。
+## 预置知识与运行学习
 
-每轮先保存目录版本与正文哈希，并生成简短的知识入口。规划选择相关知识；每轮最多另推荐一条候选供考虑，上一轮新经验可立即进入下一轮修复。候选不会因为被推荐或在原任务重复使用就晋升，规划也可以跳过它。已声明的 CPU/CUDA accelerator 会用于基本平台过滤，其他条件仍需角色检查。
+时间 profile 的截止日期限制预置知识引用的外部资料版本。运行中新产生的实验保留实际
+`observed_at`，经过独立复核后可以形成学习条目；它们不受预置知识截止日期限制，也不被
+改写成截止日期之前的事实。发布器记录 run、WorkItem、实验、源码 revision 和观察日期，
+新认识先进入 candidate 状态。知识目录向角色明确区分 seed 与 learned 两层。
 
-代码执行与诊断通过 knowledge_used 声明使用的 ID、版本和具体用途；运行器将正文冻结到本轮目录。进化看到实际验证结果后提出逐条反馈和局部增量。诊断对每项反馈与更新作 approve、reject 或 needs_evidence 判断。
+两层共用现有章节、版本历史和发布事务。学习修订更新当前章节，原版本保存在 history；
+纯历史视图选择原来的预置版本，新建学习条目不出现在历史视图。运行视图使用经过复核的
+学习版本，下一 WorkItem 和后续 Task 可以按条件检索；已经创建的 WorkItem 快照保持原样。
+学习条目引用的外部来源仍须通过原时间资格检查，不能借运行学习引入被排除的外部资料。
 
-新认识与修订均为 candidate。后续不同模型/workload 身份的任务中，确切版本被声明使用、反馈支持且位于适用范围、实际检查合格并通过独立核对时，生成新的 supported 版本。原任务重复、只改变预算、未真正采用、检查失败或反馈未通过，都不能促成晋升。
+这一区分由来源和版本身份实现。Controller 不判断一段机制是否值得写入知识库；Evolution
+提出增量，Diagnostician 解释证据与适用范围，发布器校验身份并保存结果。
 
-严格时间 profile 还要求引用的运行结果带 `observed_at`，且不晚于有效 cutoff；当前运行产生的较新观测继续保留，但不能借此发布模型时代的可迁移知识。
+## 历史与简单组织
 
-经过核对的范围内反例会把相同当前版本标为 contested；范围外失败不改变原结论状态。已有候选可以继续修订、明确弃用或恢复历史正文，恢复操作生成新候选版本。当前规则不自动优化模型权重、Agent 运行器或权限。
+章节增量保留受影响部分和必要历史；未受影响的推导、公式、布局和来源不被覆盖。运行号、章节路径、代码/测试版本、实验引用和原始定位足够组织结果，不新增每次实验的文件认证链。
 
+## 独立仓库与版本选择
 
-## 专家正文与章节修订
-
-mechanism 容纳完整非代码 Markdown 正文，允许公式、表格、算例和主题自选章节。add 提供完整论证；revise 提供需要替换或新增的完整二级章节，以“## ”后的原标题精确匹配。原正文未出现的新标题会追加章节，重复标题或只有一段摘要的 revise 会被拒绝。未受影响的章节原样保留。
-
-claim 继续用于目录摘要，conditions 表达范围，diagnostic_clues 和 validation_plan 表达由机制推出的预测与检验。来源与证据由发布器合并保留。contest/retire 不再重写主体，完整原文保留并附状态依据。写作标准见 [专家知识约定](../knowledge/templates/entry.md)。
-
-## 主要产物
-
-| 位置 | 内容 |
-|---|---|
-| knowledge/catalog.json | 条目身份、状态、范围、版本、正文和证据哈希 |
-| knowledge/sources.json | 来源种类、版本、核对范围与限制 |
-| knowledge/history/ | 旧版本正文与元数据，追加保留 |
-| knowledge/events/ | 每轮暴露、候选、声明使用、核对反馈和状态变化 |
-| runs/…/rounds/…/knowledge/ | 本轮快照、简短入口、冻结正文、选择与使用声明 |
-| runs/…/rounds/…/evolution/ | 原提案与审查前冻结的证据清单 |
-| runs/…/rounds/…/publish/ | 带前后哈希的可重放发布清单 |
-| runs/…/rsi-report.json | 本次运行的知识反馈汇总 |
-
-证据在提案后冻结，核对与发布期间发生变化时停止采用。正式正文、目录、历史、事件与索引按同一写入清单更新，恢复时继续已完成部分；发生外部编辑冲突时保留原内容并报告。没有引入数据库或向量服务。
-
-每次知识使用都必须有明确声明和对应 revision；没有声明的运行不会自动补记。运行恢复使用保存的任务、工作项、知识快照和发布清单。
-
-## 怎样解读效果
-
-报告分别统计检索轮次、候选试用轮次、声明使用轮次、经核对的支持与反例、范围外反馈及未采纳反馈。保持原始任务和证据引用，成功、失败和不确定结果都可形成经验。
-
-可比较运行点的指标变化只报告为观察。causal_improvement 保持 not_estimated；没有受控对照，不能从计数或分数变化宣称知识造成能力提升。目录审计检查结构、哈希与可访问性，也不代替语义审查。
-
-## 验证入口
-
-```bash
-PYTHONPATH=src python3 -m unittest discover -s tests -v
-```
-
-集成测试使用脚本化角色决策和真实 CPU 子进程/Git/文件操作，覆盖候选生成、不同任务试用、晋升、反例隔离、历史恢复，以及错误证据和重复发布。它们验证控制逻辑，不冒充模型自主学习效果实验。
+本仓库保存知识及来源，运行接口由 InfraAgents 提供。main 使用完整 base；Astra 分支使用其明确的来源截止规则。选择、原文限制、独立实验输入和发布状态继续由 Task 的知识配置定义，详见 [使用说明](USAGE.md)。
