@@ -1,0 +1,136 @@
+{
+  "schema_version": 1,
+  "created_at": "2026-09-19T15:51:03.859033+00:00",
+  "scope": "nsys_completed_intervals",
+  "source": {
+    "path": "/mnt/InfraAgents/runs/nsys-feedback-20260919T154328Z/no-trace/capture.sqlite",
+    "bytes": 167936,
+    "sha256": "300a2cb8271233e2a9425c07dd1f176b86c5469bc95b8b16439ef51c49e1e5d7"
+  },
+  "context": {
+    "status": "declared_not_verified",
+    "value": {
+      "schema_version": 1,
+      "model": "not applicable: integer CUDA fixture",
+      "hardware": "0, NVIDIA GeForce RTX 3090, 580.95.05, 0 MiB, 0 %",
+      "workload": "4096 uint32 values; three add-one kernel launches; one HtoD and one DtoH transfer",
+      "operating_point": "single process, device 0, default stream, 16 KiB allocation",
+      "code_revision": "fixture-sha256:c97bfa1301ef84fe1eb702c709aea303976bf52cfdcfc94ea64a81c766b1f94c",
+      "capture": {
+        "tool_version": "NVIDIA Nsight Systems version 2025.3.2.474-253236389321v0",
+        "command": [
+          "timeout",
+          "--signal=TERM",
+          "--kill-after=5",
+          "45",
+          "nsys",
+          "profile",
+          "--trace=none",
+          "--sample=none",
+          "--cpuctxsw=none",
+          "--cuda-graph-trace=node",
+          "--duration=15",
+          "--kill=sigterm",
+          "--force-overwrite=false",
+          "--output=/mnt/InfraAgents/runs/nsys-feedback-20260919T154328Z/no-trace/capture",
+          "/usr/bin/python3",
+          "/mnt/InfraAgents/runs/nsys-feedback-20260919T154328Z/cuda_feedback_smoke.py"
+        ],
+        "signals_requested": [
+          "none"
+        ],
+        "scope": "new fixture process; full process lifetime within a 15-second cap",
+        "evidence": "/mnt/InfraAgents/runs/nsys-feedback-20260919T154328Z/no-trace/capture-command/result.json",
+        "exit_status": "ok",
+        "exit_code": 0,
+        "perturbation": "unmeasured; unprofiled run checked correctness only"
+      },
+      "unverified": [
+        "model_execution",
+        "SLO_feasibility",
+        "profiling_overhead"
+      ]
+    },
+    "source": {
+      "path": "/mnt/InfraAgents/runs/nsys-feedback-20260919T154328Z/no-trace/context.json",
+      "bytes": 1493,
+      "sha256": "dd0349eea7d27d64a30b3ada24d95d535a2785ccb5c660f774808b6a59ae9a21"
+    }
+  },
+  "selection": {
+    "start_ns": null,
+    "end_ns": null,
+    "limit_per_signal": 20,
+    "rule": "positive-duration intervals intersecting [start_ns, end_ns); aggregate durations clipped to bounds"
+  },
+  "evidence": {
+    "schema": "schema.json",
+    "queries": "queries.jsonl"
+  },
+  "unverified": [
+    "capture_completeness",
+    "context_fidelity",
+    "profiling_overhead",
+    "model_correctness",
+    "request_SLOs",
+    "bottleneck_causality"
+  ],
+  "notes": [
+    "原生采集与导出仍由 Coding Agent 使用 nsys 完成；本工具只读已结束的 SQLite 导出。",
+    "表缺失可能来自未采集、无事件或过滤导出；空表也不能证明目标没有执行。",
+    "只分析已完成的正时长区间；NVTX 点事件、未闭合范围、异常时间戳保留在原始库并计入排除行数。",
+    "热点累计时长可能重叠；CPU、GPU、不同线程或设备的累计时长不能相加解释端到端延迟。",
+    "事件保留原始时间戳，聚合时长按选择窗口裁剪。关联时间差可为负，不直接表示排队或提交开销。",
+    "返回数量有限；根据时间窗口再次查询或使用 schema、SQL 与 source_rowid 回查原始库。",
+    "只有 kernel/copy/memset 进入设备区间并集；整图活动、其他进程及其他引擎可能未被覆盖。"
+  ],
+  "signals": {
+    "kernel": {
+      "table": "CUPTI_ACTIVITY_KIND_KERNEL",
+      "status": "table_absent",
+      "reason": "未在导出中观察到该表；不能据此判定信号未启用或工作未发生。"
+    },
+    "memcpy": {
+      "table": "CUPTI_ACTIVITY_KIND_MEMCPY",
+      "status": "table_absent",
+      "reason": "未在导出中观察到该表；不能据此判定信号未启用或工作未发生。"
+    },
+    "memset": {
+      "table": "CUPTI_ACTIVITY_KIND_MEMSET",
+      "status": "table_absent",
+      "reason": "未在导出中观察到该表；不能据此判定信号未启用或工作未发生。"
+    },
+    "cuda_api": {
+      "table": "CUPTI_ACTIVITY_KIND_RUNTIME",
+      "status": "table_absent",
+      "reason": "未在导出中观察到该表；不能据此判定信号未启用或工作未发生。"
+    },
+    "cuda_driver": {
+      "table": "CUPTI_ACTIVITY_KIND_DRIVER",
+      "status": "table_absent",
+      "reason": "未在导出中观察到该表；不能据此判定信号未启用或工作未发生。"
+    },
+    "synchronization": {
+      "table": "CUPTI_ACTIVITY_KIND_SYNCHRONIZATION",
+      "status": "table_absent",
+      "reason": "未在导出中观察到该表；不能据此判定信号未启用或工作未发生。"
+    },
+    "nvtx": {
+      "table": "NVTX_EVENTS",
+      "status": "table_absent",
+      "reason": "未在导出中观察到该表；不能据此判定信号未启用或工作未发生。"
+    }
+  },
+  "device_intervals": {
+    "included_tables": [],
+    "omitted_tables": [
+      "CUPTI_ACTIVITY_KIND_KERNEL",
+      "CUPTI_ACTIVITY_KIND_MEMCPY",
+      "CUPTI_ACTIVITY_KIND_MEMSET"
+    ],
+    "unidentified_rows_excluded": {},
+    "groups": [],
+    "meaning": "按进程与设备合并已观察到的 kernel/copy/memset 区间；仅覆盖首尾事件之间。未覆盖区间不是设备全局空闲时间，区间并集不是 SM 利用率。"
+  },
+  "status": "ok"
+}

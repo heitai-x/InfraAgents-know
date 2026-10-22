@@ -1,0 +1,117 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; frame-src 'self'; object-src 'self'; media-src 'self'; base-uri 'none'; form-action 'none'"><title>Lazy Evaluation — MLX 0.32.2 documentation</title><style>body{font:16px/1.75 system-ui,sans-serif;color:#202631;background:#fff;margin:0 auto;padding:40px;max-width:1100px}h1,h2,h3{line-height:1.3}pre,code{font-family:Consolas,monospace}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#f4f6f8;padding:18px}table{border-collapse:collapse;display:block;overflow-x:auto}td,th{border:1px solid #ccd3dc;padding:8px}img,svg{max-width:100%;height:auto}figure{margin:24px 0}.archive-note{border-left:4px solid #2563eb;padding:12px 20px;background:#eef4ff}math{font-size:1.1em}iframe{width:100%;height:85vh;border:1px solid #ccd3dc}a{color:#1658a5}</style></head><body><p class="archive-note">本地原文阅读副本。正文与资料文件已归档；原始响应、版本和校验信息见同目录 manifest.json。网页导航与在线脚本不执行。</p><article class="bd-article">
+<section id="lazy-evaluation">
+<span id="lazy-eval"></span><h1>Lazy Evaluation<a class="headerlink" href="#lazy-evaluation" title="Link to this heading">#</a></h1>
+<section id="why-lazy-evaluation">
+<h2>Why Lazy Evaluation<a class="headerlink" href="#why-lazy-evaluation" title="Link to this heading">#</a></h2>
+<p>When you perform operations in MLX, no computation actually happens. Instead a
+compute graph is recorded. The actual computation only happens if an
+<a class="reference internal" data-original-href="https://ml-explore.github.io/mlx/build/html/python/_autosummary/mlx.core.eval.html#mlx.core.eval" title="mlx.core.eval"><code class="xref py py-func docutils literal notranslate"><span class="pre">eval()</span></code></a> is performed.</p>
+<p>MLX uses lazy evaluation because it has some nice features, some of which we
+describe below.</p>
+<section id="transforming-compute-graphs">
+<h3>Transforming Compute Graphs<a class="headerlink" href="#transforming-compute-graphs" title="Link to this heading">#</a></h3>
+<p>Lazy evaluation lets us record a compute graph without actually doing any
+computations. This is useful for function transformations like <a class="reference internal" data-original-href="https://ml-explore.github.io/mlx/build/html/python/_autosummary/mlx.core.grad.html#mlx.core.grad" title="mlx.core.grad"><code class="xref py py-func docutils literal notranslate"><span class="pre">grad()</span></code></a> and
+<a class="reference internal" data-original-href="https://ml-explore.github.io/mlx/build/html/python/_autosummary/mlx.core.vmap.html#mlx.core.vmap" title="mlx.core.vmap"><code class="xref py py-func docutils literal notranslate"><span class="pre">vmap()</span></code></a> and graph optimizations.</p>
+<p>Currently, MLX does not compile and rerun compute graphs. They are all
+generated dynamically. However, lazy evaluation makes it much easier to
+integrate compilation for future performance enhancements.</p>
+</section>
+<section id="only-compute-what-you-use">
+<h3>Only Compute What You Use<a class="headerlink" href="#only-compute-what-you-use" title="Link to this heading">#</a></h3>
+<p>In MLX you do not need to worry as much about computing outputs that are never
+used. For example:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">fun</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+    <span class="n">a</span> <span class="o">=</span> <span class="n">fun1</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+    <span class="n">b</span> <span class="o">=</span> <span class="n">expensive_fun</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span>
+
+<span class="n">y</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">fun</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Here, we never actually compute the output of <code class="docutils literal notranslate"><span class="pre">expensive_fun</span></code>. Use this
+pattern with care though, as the graph of <code class="docutils literal notranslate"><span class="pre">expensive_fun</span></code> is still built, and
+that has some cost associated to it.</p>
+<p>Similarly, lazy evaluation can be beneficial for saving memory while keeping
+code simple. Say you have a very large model <code class="docutils literal notranslate"><span class="pre">Model</span></code> derived from
+<a class="reference internal" data-original-href="https://ml-explore.github.io/mlx/build/html/python/nn/module.html#mlx.nn.Module" title="mlx.nn.Module"><code class="xref py py-obj docutils literal notranslate"><span class="pre">mlx.nn.Module</span></code></a>. You can instantiate this model with <code class="docutils literal notranslate"><span class="pre">model</span> <span class="pre">=</span> <span class="pre">Model()</span></code>.
+Typically, this will initialize all of the weights as <code class="docutils literal notranslate"><span class="pre">float32</span></code>, but the
+initialization does not actually compute anything until you perform an
+<a class="reference internal" data-original-href="https://ml-explore.github.io/mlx/build/html/python/_autosummary/mlx.core.eval.html#mlx.core.eval" title="mlx.core.eval"><code class="xref py py-func docutils literal notranslate"><span class="pre">eval()</span></code></a>. If you update the model with <code class="docutils literal notranslate"><span class="pre">float16</span></code> weights, your maximum
+consumed memory will be half that required if eager computation was used
+instead.</p>
+<p>This pattern is simple to do in MLX thanks to lazy computation:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">model</span> <span class="o">=</span> <span class="n">Model</span><span class="p">()</span> <span class="c1"># no memory used yet</span>
+<span class="n">model</span><span class="o">.</span><span class="n">load_weights</span><span class="p">(</span><span class="s2">"weights_fp16.safetensors"</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="when-to-evaluate">
+<h2>When to Evaluate<a class="headerlink" href="#when-to-evaluate" title="Link to this heading">#</a></h2>
+<p>A common question is when to use <a class="reference internal" data-original-href="https://ml-explore.github.io/mlx/build/html/python/_autosummary/mlx.core.eval.html#mlx.core.eval" title="mlx.core.eval"><code class="xref py py-func docutils literal notranslate"><span class="pre">eval()</span></code></a>. The trade-off is between
+letting graphs get too large and not batching enough useful work.</p>
+<p>For example:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">100</span><span class="p">):</span>
+     <span class="n">a</span> <span class="o">=</span> <span class="n">a</span> <span class="o">+</span> <span class="n">b</span>
+     <span class="n">mx</span><span class="o">.</span><span class="n">eval</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+     <span class="n">b</span> <span class="o">=</span> <span class="n">b</span> <span class="o">*</span> <span class="mi">2</span>
+     <span class="n">mx</span><span class="o">.</span><span class="n">eval</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>This is a bad idea because there is some fixed overhead with each graph
+evaluation. On the other hand, there is some slight overhead which grows with
+the compute graph size, so extremely large graphs (while computationally
+correct) can be costly.</p>
+<p>Luckily, a wide range of compute graph sizes work pretty well with MLX:
+anything from a few tens of operations to many thousands of operations per
+evaluation should be okay.</p>
+<p>Most numerical computations have an iterative outer loop (e.g. the iteration in
+stochastic gradient descent). A natural and usually efficient place to use
+<a class="reference internal" data-original-href="https://ml-explore.github.io/mlx/build/html/python/_autosummary/mlx.core.eval.html#mlx.core.eval" title="mlx.core.eval"><code class="xref py py-func docutils literal notranslate"><span class="pre">eval()</span></code></a> is at each iteration of this outer loop.</p>
+<p>Here is a concrete example:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">batch</span> <span class="ow">in</span> <span class="n">dataset</span><span class="p">:</span>
+
+    <span class="c1"># Nothing has been evaluated yet</span>
+    <span class="n">loss</span><span class="p">,</span> <span class="n">grad</span> <span class="o">=</span> <span class="n">value_and_grad_fn</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">batch</span><span class="p">)</span>
+
+    <span class="c1"># Still nothing has been evaluated</span>
+    <span class="n">optimizer</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">grad</span><span class="p">)</span>
+
+    <span class="c1"># Evaluate the loss and the new parameters which will</span>
+    <span class="c1"># run the full gradient computation and optimizer update</span>
+    <span class="n">mx</span><span class="o">.</span><span class="n">eval</span><span class="p">(</span><span class="n">loss</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">parameters</span><span class="p">())</span>
+</pre></div>
+</div>
+<p>An important behavior to be aware of is when the graph will be implicitly
+evaluated. Anytime you <code class="docutils literal notranslate"><span class="pre">print</span></code> an array, convert it to an
+<a class="reference external" data-original-href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">numpy.ndarray</span></code></a>, or otherwise access its memory via <a class="reference external" data-original-href="https://docs.python.org/3/library/stdtypes.html#memoryview" title="(in Python v3.14)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">memoryview</span></code></a>,
+the graph will be evaluated. Saving arrays via <a class="reference internal" data-original-href="https://ml-explore.github.io/mlx/build/html/python/_autosummary/mlx.core.save.html#mlx.core.save" title="mlx.core.save"><code class="xref py py-func docutils literal notranslate"><span class="pre">save()</span></code></a> (or any other MLX
+saving functions) will also evaluate the array.</p>
+<p>Calling <a class="reference internal" data-original-href="https://ml-explore.github.io/mlx/build/html/python/_autosummary/mlx.core.array.item.html#mlx.core.array.item" title="mlx.core.array.item"><code class="xref py py-func docutils literal notranslate"><span class="pre">array.item()</span></code></a> on a scalar array will also evaluate it. In the
+example above, printing the loss (<code class="docutils literal notranslate"><span class="pre">print(loss)</span></code>) or adding the loss scalar to
+a list (<code class="docutils literal notranslate"><span class="pre">losses.append(loss.item())</span></code>) would cause a graph evaluation. If
+these lines are before <code class="docutils literal notranslate"><span class="pre">mx.eval(loss,</span> <span class="pre">model.parameters())</span></code> then this
+will be a partial evaluation, computing only the forward pass.</p>
+<p>Also, calling <a class="reference internal" data-original-href="https://ml-explore.github.io/mlx/build/html/python/_autosummary/mlx.core.eval.html#mlx.core.eval" title="mlx.core.eval"><code class="xref py py-func docutils literal notranslate"><span class="pre">eval()</span></code></a> on an array or set of arrays multiple times is
+perfectly fine. This is effectively a no-op.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Using scalar arrays for control-flow will cause an evaluation.</p>
+</div>
+<p>Here is an example:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">fun</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+    <span class="n">h</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">first_layer</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">y</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>  <span class="c1"># An evaluation is done here!</span>
+        <span class="n">z</span>  <span class="o">=</span> <span class="n">second_layer_a</span><span class="p">(</span><span class="n">h</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">z</span>  <span class="o">=</span> <span class="n">second_layer_b</span><span class="p">(</span><span class="n">h</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">z</span>
+</pre></div>
+</div>
+<p>Using arrays for control flow should be done with care. The above example works
+and can even be used with gradient transformations. However, this can be very
+inefficient if evaluations are done too frequently.</p>
+</section>
+</section>
+</article></body></html>

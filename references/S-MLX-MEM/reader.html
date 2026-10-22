@@ -1,0 +1,60 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; frame-src 'self'; object-src 'self'; media-src 'self'; base-uri 'none'; form-action 'none'"><title>Unified Memory — MLX 0.32.2 documentation</title><style>body{font:16px/1.75 system-ui,sans-serif;color:#202631;background:#fff;margin:0 auto;padding:40px;max-width:1100px}h1,h2,h3{line-height:1.3}pre,code{font-family:Consolas,monospace}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#f4f6f8;padding:18px}table{border-collapse:collapse;display:block;overflow-x:auto}td,th{border:1px solid #ccd3dc;padding:8px}img,svg{max-width:100%;height:auto}figure{margin:24px 0}.archive-note{border-left:4px solid #2563eb;padding:12px 20px;background:#eef4ff}math{font-size:1.1em}iframe{width:100%;height:85vh;border:1px solid #ccd3dc}a{color:#1658a5}</style></head><body><p class="archive-note">本地原文阅读副本。正文与资料文件已归档；原始响应、版本和校验信息见同目录 manifest.json。网页导航与在线脚本不执行。</p><article class="bd-article">
+<section id="unified-memory">
+<span id="id1"></span><h1>Unified Memory<a class="headerlink" href="#unified-memory" title="Link to this heading">#</a></h1>
+<p>Apple silicon has a unified memory architecture. The CPU and GPU have direct
+access to the same memory pool. MLX is designed to take advantage of that.</p>
+<p>Concretely, when you make an array in MLX you don’t have to specify its location:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">a</span> <span class="o">=</span> <span class="n">mx</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">((</span><span class="mi">100</span><span class="p">,))</span>
+<span class="n">b</span> <span class="o">=</span> <span class="n">mx</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">((</span><span class="mi">100</span><span class="p">,))</span>
+</pre></div>
+</div>
+<p>Both <code class="docutils literal notranslate"><span class="pre">a</span></code> and <code class="docutils literal notranslate"><span class="pre">b</span></code> live in unified memory.</p>
+<p>In MLX, rather than moving arrays to devices, you specify the device when you
+run the operation. Any device can perform any operation on <code class="docutils literal notranslate"><span class="pre">a</span></code> and <code class="docutils literal notranslate"><span class="pre">b</span></code>
+without needing to move them from one memory location to another. For example:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">mx</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">stream</span><span class="o">=</span><span class="n">mx</span><span class="o">.</span><span class="n">cpu</span><span class="p">)</span>
+<span class="n">mx</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">stream</span><span class="o">=</span><span class="n">mx</span><span class="o">.</span><span class="n">gpu</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>In the above, both the CPU and the GPU will perform the same add
+operation. The operations can (and likely will) be run in parallel since
+there are no dependencies between them. See <a class="reference internal" data-original-href="https://ml-explore.github.io/mlx/build/html/usage/using_streams.html#using-streams"><span class="std std-ref">Using Streams</span></a> for more
+information the semantics of streams in MLX.</p>
+<p>In the above <code class="docutils literal notranslate"><span class="pre">add</span></code> example, there are no dependencies between operations, so
+there is no possibility for race conditions. If there are dependencies, the
+MLX scheduler will automatically manage them. For example:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">c</span> <span class="o">=</span> <span class="n">mx</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">stream</span><span class="o">=</span><span class="n">mx</span><span class="o">.</span><span class="n">cpu</span><span class="p">)</span>
+<span class="n">d</span> <span class="o">=</span> <span class="n">mx</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="n">stream</span><span class="o">=</span><span class="n">mx</span><span class="o">.</span><span class="n">gpu</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>In the above case, the second <code class="docutils literal notranslate"><span class="pre">add</span></code> runs on the GPU but it depends on the
+output of the first <code class="docutils literal notranslate"><span class="pre">add</span></code> which is running on the CPU. MLX will
+automatically insert a dependency between the two streams so that the second
+<code class="docutils literal notranslate"><span class="pre">add</span></code> only starts executing after the first is complete and <code class="docutils literal notranslate"><span class="pre">c</span></code> is
+available.</p>
+<section id="a-simple-example">
+<h2>A Simple Example<a class="headerlink" href="#a-simple-example" title="Link to this heading">#</a></h2>
+<p>Here is a more interesting (albeit slightly contrived example) of how unified
+memory can be helpful. Suppose we have the following computation:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">fun</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">d1</span><span class="p">,</span> <span class="n">d2</span><span class="p">):</span>
+  <span class="n">x</span> <span class="o">=</span> <span class="n">mx</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">stream</span><span class="o">=</span><span class="n">d1</span><span class="p">)</span>
+  <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">500</span><span class="p">):</span>
+      <span class="n">b</span> <span class="o">=</span> <span class="n">mx</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="n">stream</span><span class="o">=</span><span class="n">d2</span><span class="p">)</span>
+  <span class="k">return</span> <span class="n">x</span><span class="p">,</span> <span class="n">b</span>
+</pre></div>
+</div>
+<p>which we want to run with the following arguments:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">a</span> <span class="o">=</span> <span class="n">mx</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="mi">4096</span><span class="p">,</span> <span class="mi">512</span><span class="p">))</span>
+<span class="n">b</span> <span class="o">=</span> <span class="n">mx</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="mi">512</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>The first <code class="docutils literal notranslate"><span class="pre">matmul</span></code> operation is a good fit for the GPU since it’s more
+compute dense. The second sequence of operations are a better fit for the CPU,
+since they are very small and would probably be overhead bound on the GPU.</p>
+<p>If we time the computation fully on the GPU, we get 2.8 milliseconds. But if we
+run the computation with <code class="docutils literal notranslate"><span class="pre">d1=mx.gpu</span></code> and <code class="docutils literal notranslate"><span class="pre">d2=mx.cpu</span></code>, then the time is only
+about 1.4 milliseconds, about twice as fast. These times were measured on an M1
+Max.</p>
+</section>
+</section>
+</article></body></html>

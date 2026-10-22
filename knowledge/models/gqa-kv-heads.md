@@ -1,0 +1,46 @@
+# K-MODEL-002：MHA、GQA 与 MQA：头映射和带宽复用
+
+GQA 让多个 query heads 读取同一组 K/V；逻辑共享可以减少状态，但是否减少实际访存取决于 kernel。
+
+## 三个 head 数的关系
+
+设 query heads 为 Hq，KV heads 为 Hkv，每 query head 通道 d。MHA 通常 Hq＝Hkv，MQA 的 Hkv＝1，GQA 位于二者之间。常见均匀分组要求 Hq 是 Hkv 的整数倍，每组 Hq/Hkv 个 query heads 读取同一 KV head。输出仍有 Hq 个 head，不能因为 KV 变少就缩小输出投影输入。
+
+批量 query 的逻辑形状为总 query tokens×Hq×d；KV 为总历史 tokens×Hkv×d。若 backend 要求显式重复 KV，数值上可以等价，但重复后的持久存储和流量可能抵消 GQA 的系统收益。支持原生分组的 kernel 可以在片上复用同一 KV，实际效率还受布局与 tile 限制。
+
+## 容量和访存的独立推导
+
+普通同构模型的缓存字节为 2LN Hkv d b。Hq 从 32 保持不变，Hkv 从 32 改为 8，缓存理论降到四分之一；模型 QK/PV 仍针对 32 个 query heads，不能把 attention FLOPs 同样除以 4。读取共享 KV 能否被合并，是数据流和缓存层级问题。
+
+32 层、32 query heads、8 KV heads、d＝128、b＝2 时，每 token KV 为 128 KiB；4096 token 是 512 MiB。MQA 同尺寸变为 16 KiB/token。这里是结构算例，不表示可将已有 MHA checkpoint 无损改成 GQA/MQA；权重训练方式决定模型本身的质量。
+
+## TP 下的头归属
+
+当 Hkv 能被 TP 数整除时，KV heads 可分片。TP 大于 Hkv 或不能整除时，实现可能复制部分头、改变映射或拒绝配置。以 Hkv＝2、TP＝4 为例，若每个 rank 至少持有一个 KV head，则每头复制两份，全系统状态不会按 4 倍减少。通信与本地 query 分组也要对应这张映射。
+
+## 从错误形态回到映射
+
+单 head 正确、多个 head 错误，常说明分组索引或布局轴不一致；单卡正确、多卡错误，则应比较每 rank 的 query/KV head 归属和输出拼接。展开后能通过只说明数学路径可行，并不能证明原生 GQA 优化已经实现。由 head 映射推导独立的小矩阵参考，比只比较最终生成文本更容易定位差异。
+
+<!-- infraagents:provenance -->
+
+## 来源与推导
+
+- S-GQA：[完整原文](../../references/S-GQA/reader.html) · [全文文本](../../references/S-GQA/fulltext.txt)
+- S-HF-CACHE：[完整原文](../../references/S-HF-CACHE/reader.html) · [全文文本](../../references/S-HF-CACHE/fulltext.txt)
+- S-FI：[完整原文](../../references/S-FI/reader.html) · [全文文本](../../references/S-FI/fulltext.txt)
+
+- [S-GQA：GQA: Training Generalized Multi-Query Transformer Models from Multi-Head Checkpoints](../sources/S-GQA.md)：GQA 让一组 query heads 共享 K/V heads；MQA 是只保留一组 K/V 的特殊形态。输出 query head 数与 KV head 数需要分别描述。
+
+- [S-HF-CACHE：Transformers — Caching](../sources/S-HF-CACHE.md)：Transformers 的缓存说明区分已存历史 K/V、新输入、attention mask 和 cache position。增量前向需要让新 token 的位置与已有缓存长度一致。
+
+- [S-FI：FlashInfer：Attention kernels](../sources/S-FI.md)：已读 FlashInfer 0.6.18 接口说明区分 query 分段、KV 页表及末页长度。一些 wrapper 的 plan 安排计算/工作区，run 执行 attention；相关 plan 不能直接捕获入图。
+
+上文的公式展开、容量算例与组合设计是 InfraAgents 在这些机制基础上的推导，具体推导已写在本条正文中。来源入口均为本地释义，可继续读取其定义与使用关系。版本 4，2026-09-20。
+
+## 延伸阅读
+
+- [分页 KV：逻辑位置、物理布局与共享所有权](../algorithms/paged-kv-capacity.md)。
+- [Attention 的 IO、在线 softmax 与分块归约](../algorithms/attention-io.md)。
+- [MLA：压缩状态、矩阵吸收与解耦 RoPE](../models/mla.md)。
+- [容量、算术强度与服务 Roofline](../hardware/memory-and-roofline.md)。

@@ -1,0 +1,386 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; frame-src 'self'; object-src 'self'; media-src 'self'; base-uri 'none'; form-action 'none'"><title>Get started with Neuron Explorer — AWS Neuron Documentation</title><style>body{font:16px/1.75 system-ui,sans-serif;color:#202631;background:#fff;margin:0 auto;padding:40px;max-width:1100px}h1,h2,h3{line-height:1.3}pre,code{font-family:Consolas,monospace}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#f4f6f8;padding:18px}table{border-collapse:collapse;display:block;overflow-x:auto}td,th{border:1px solid #ccd3dc;padding:8px}img,svg{max-width:100%;height:auto}figure{margin:24px 0}.archive-note{border-left:4px solid #2563eb;padding:12px 20px;background:#eef4ff}math{font-size:1.1em}iframe{width:100%;height:85vh;border:1px solid #ccd3dc}a{color:#1658a5}</style></head><body><p class="archive-note">本地原文阅读副本。正文与资料文件已归档；原始响应、版本和校验信息见同目录 manifest.json。网页导航与在线脚本不执行。</p><article class="bd-article" role="main">
+<p><strong>This document is relevant for</strong>: <code class="docutils literal notranslate"><span class="pre">Inf2</span></code>, <code class="docutils literal notranslate"><span class="pre">Trn1</span></code>, <code class="docutils literal notranslate"><span class="pre">Trn2</span></code>, <code class="docutils literal notranslate"><span class="pre">Trn3</span></code></p>
+<section id="get-started-with-neuron-explorer">
+<span id="new-neuron-profiler-setup"></span><h1>Get started with Neuron Explorer<a class="headerlink" href="#get-started-with-neuron-explorer" title="Permalink to this heading">#</a></h1>
+<section id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Permalink to this heading">#</a></h2>
+<p>In this guide, you’ll capture a profile of your Neuron workload, launch Neuron Explorer, and upload the profile for interactive analysis.</p>
+<p>By the end you will have:</p>
+<ul class="simple">
+<li><p>Captured a system or device profile</p></li>
+<li><p>Launched Neuron Explorer (browser or VS Code)</p></li>
+<li><p>Uploaded and viewed your profile in the interactive timeline</p></li>
+</ul>
+</section>
+<section id="prerequisites">
+<h2>Prerequisites<a class="headerlink" href="#prerequisites" title="Permalink to this heading">#</a></h2>
+<ul class="simple">
+<li><p>A Trainium or Inferentia EC2 instance (e.g., trn2.48xlarge, inf2.xlarge) with the <a class="reference internal" data-original-href="https://awsdocs-neuron.readthedocs-hosted.com/en/latest/setup/index.html#setup-guide-index"><span class="std std-ref">AWS Neuron DLAMI</span></a></p></li>
+<li><p>SSH key pair (<code class="docutils literal notranslate"><span class="pre">.pem</span></code> file) for connecting to your instance</p></li>
+<li><p>Local machine with SSH client and a web browser (or VS Code)</p></li>
+</ul>
+</section>
+<section id="step-1-connect-and-verify-installation">
+<h2>Step 1: Connect and verify installation<a class="headerlink" href="#step-1-connect-and-verify-installation" title="Permalink to this heading">#</a></h2>
+<p>Launch an EC2 instance with a Neuron DLAMI. See the <a class="reference internal" data-original-href="https://awsdocs-neuron.readthedocs-hosted.com/en/latest/setup/index.html"><span class="doc">setup guide</span></a> for details. Then, SSH into your EC2 instance and verify Neuron Explorer is installed:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>neuron-explorer<span class="w"> </span>--version
+</pre></div>
+</div>
+<p>If not installed:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo<span class="w"> </span>apt<span class="w"> </span>install<span class="w"> </span>aws-neuronx-tools
+</pre></div>
+</div>
+</section>
+<section id="step-2-set-up-ssh-tunneling">
+<span id="neuron-explorer-step2-ssh-tunneling"></span><h2>Step 2: Set up SSH tunneling<a class="headerlink" href="#step-2-set-up-ssh-tunneling" title="Permalink to this heading">#</a></h2>
+<p>Neuron Explorer serves a web UI on port 3001 and an API backend on port 3002. You access both from your local machine through SSH tunnels.</p>
+<p>From your <strong>local machine</strong>, open the tunnels:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>ssh<span class="w"> </span>-i<span class="w"> </span>~/path/to/your-key.pem<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-L<span class="w"> </span><span class="m">3001</span>:localhost:3001<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-L<span class="w"> </span><span class="m">3002</span>:localhost:3002<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>ubuntu@&lt;instance-ip&gt;<span class="w"> </span>-fN
+</pre></div>
+</div>
+<table class="table">
+<colgroup>
+<col style="width: 40.0%"/>
+<col style="width: 60.0%"/>
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">-i</span> <span class="pre">~/path/to/your-key.pem</span></code></p></td>
+<td><p>Path to your EC2 key pair</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">-L</span> <span class="pre">3001:localhost:3001</span></code></p></td>
+<td><p>Forwards the UI port</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">-L</span> <span class="pre">3002:localhost:3002</span></code></p></td>
+<td><p>Forwards the API port</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">ubuntu@&lt;instance-ip&gt;</span></code></p></td>
+<td><p>Instance login (use <code class="docutils literal notranslate"><span class="pre">ec2-user</span></code> for Amazon Linux)</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">-fN</span></code></p></td>
+<td><p>Runs tunnel in background (no shell)</p></td>
+</tr>
+</tbody>
+</table>
+<div class="admonition important">
+<p class="admonition-title">Important</p>
+<p>You must forward <strong>both</strong> ports. The UI on 3001 calls the API on 3002. If you only forward one, the page loads but shows no data. See <a class="reference internal" data-original-href="https://awsdocs-neuron.readthedocs-hosted.com/en/latest/tools/neuron-explorer/troubleshooting.html"><span class="doc">Troubleshooting</span></a> if you run into issues.</p>
+</div>
+</section>
+<section id="step-3-capture-your-profile">
+<h2>Step 3: Capture your profile<a class="headerlink" href="#step-3-capture-your-profile" title="Permalink to this heading">#</a></h2>
+<section id="profile-types-at-a-glance">
+<h3>Profile types at a glance<a class="headerlink" href="#profile-types-at-a-glance" title="Permalink to this heading">#</a></h3>
+<table class="table">
+<colgroup>
+<col style="width: 15.0%"/>
+<col style="width: 40.0%"/>
+<col style="width: 25.0%"/>
+<col style="width: 20.0%"/>
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Type</p></th>
+<th class="head"><p>What it captures</p></th>
+<th class="head"><p>When to use</p></th>
+<th class="head"><p>Output files</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><strong>System</strong></p></td>
+<td><p>Runtime events, API calls, model loads, CPU/memory</p></td>
+<td><p>End-to-end execution flow</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">ntrace.pb</span></code>, <code class="docutils literal notranslate"><span class="pre">trace_info.pb</span></code>, <code class="docutils literal notranslate"><span class="pre">cpu_util.pb</span></code>, <code class="docutils literal notranslate"><span class="pre">host_mem.pb</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Device</strong></p></td>
+<td><p>Hardware-level NeuronCore instruction traces</p></td>
+<td><p>On-device compute bottlenecks</p></td>
+<td><p>Matched <code class="docutils literal notranslate"><span class="pre">.neff</span></code> + <code class="docutils literal notranslate"><span class="pre">.ntff</span></code> pair</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>Both</strong></p></td>
+<td><p>Combined system + device view</p></td>
+<td><p>Full optimization picture</p></td>
+<td><p>All of the above</p></td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Device profiles require a matched pair: the <code class="docutils literal notranslate"><span class="pre">.neff</span></code> and <code class="docutils literal notranslate"><span class="pre">.ntff</span></code> share a numeric hash in their filename (e.g., <code class="docutils literal notranslate"><span class="pre">neff_395760075800974.neff</span></code> pairs with <code class="docutils literal notranslate"><span class="pre">395760075800974_instid_0_vnc_0.ntff</span></code>).</p>
+</div>
+<p>For instructions on how to capture a profile, see <a class="reference internal" data-original-href="https://awsdocs-neuron.readthedocs-hosted.com/en/latest/tools/neuron-explorer/how-to-profile-workload.html"><span class="doc">Capture Profiles in Neuron Explorer</span></a> or <a class="reference internal" data-original-href="https://awsdocs-neuron.readthedocs-hosted.com/en/latest/nki/guides/use-neuron-profile.html"><span class="doc">Profile a NKI Kernel</span></a>.</p>
+<p>After profiling, <code class="docutils literal notranslate"><span class="pre">./profile_output</span></code> will contain trace artifacts organized per process. Verify the output matches the <a class="reference internal" data-original-href="https://awsdocs-neuron.readthedocs-hosted.com/en/latest/tools/neuron-explorer/how-to-profile-workload.html#neuron-explorer-profile-expected-output"><span class="std std-ref">Expected Output</span></a> section.</p>
+</section>
+</section>
+<section id="step-4-launch-neuron-explorer">
+<h2>Step 4: Launch Neuron Explorer<a class="headerlink" href="#step-4-launch-neuron-explorer" title="Permalink to this heading">#</a></h2>
+<p>On the EC2 instance, run:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>neuron-explorer<span class="w"> </span>view
+
+<span class="c1"># Expected Output:</span>
+View<span class="w"> </span>a<span class="w"> </span>list<span class="w"> </span>of<span class="w"> </span>profiles<span class="w"> </span>at<span class="w"> </span>http://localhost:3001/
+ctrl-c<span class="w"> </span>to<span class="w"> </span><span class="nb">exit</span>
+</pre></div>
+</div>
+<p>This starts the <strong>UI server</strong> on port 3001 (web interface) and the <strong>API server</strong> on port 3002 (data backend).</p>
+<p>In your local browser, navigate to <code class="docutils literal notranslate"><span class="pre">http://localhost:3001</span></code>:</p>
+<img alt="../../_images/neuron-explorer-browser-landing.png" src="assets/3a8670c2865d7e9be442eafa.png"/>
+<section id="using-vs-code-instead-of-the-browser">
+<span id="get-started-vscode"></span><h3>Using VS Code instead of the browser<a class="headerlink" href="#using-vs-code-instead-of-the-browser" title="Permalink to this heading">#</a></h3>
+<ol class="arabic simple">
+<li><p>Install: Search for <strong>AWS Neuron Explorer</strong> (publisher: Amazon Web Services) in VS Code Extensions (Ctrl+Shift+X), or install from the <a class="reference external" data-original-href="https://marketplace.visualstudio.com/items?itemName=AmazonWebServices.neuron-explorer">VS Code Marketplace</a>.</p></li>
+</ol>
+<blockquote>
+<div><img alt="../../_images/VSCode_marketplace.png" src="assets/6d81e4c3e47ce2d205ba729b.png"/>
+</div></blockquote>
+<p><strong>Option A — Local Binary (no tunnel needed)</strong></p>
+<blockquote>
+<div><p>From the Neuron Explorer view in VS Code, and after you have connected to the Neuron EC2 instance with Remote-SSH:</p>
+<ol class="arabic simple">
+<li><p>Configure the endpoint: click the extension in the left activity bar, select <strong>Local Binary</strong> on the bottom bar.</p></li>
+</ol>
+<blockquote>
+<div><img alt="../../_images/VSCode_marketplace2.png" src="assets/d84709a2158815cce3dbd289.png"/>
+</div></blockquote>
+<ol class="arabic simple" start="2">
+<li><p>Access Profile Manager from the extension sidebar.</p></li>
+</ol>
+<img alt="../../_images/neuron-explorer-profile-manager-page.png" src="assets/c66dbb970dffe806cabb3490.png"/>
+<ol class="arabic simple" start="3">
+<li><p>Click <strong>Upload Profile</strong> and paste the path to the profile directory on the instance.</p></li>
+</ol>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>No SSH tunnel is required when running Neuron Explorer on the remote device. The extension starts the <code class="docutils literal notranslate"><span class="pre">neuron-explorer</span></code> server for you automatically when you select <strong>Local Binary</strong>.</p>
+</div>
+</div></blockquote>
+<p><strong>Option B — Custom endpoint (SSH tunnel)</strong></p>
+<ol class="arabic simple">
+<li><p>Ensure SSH tunnels are active (see <a class="reference internal" href="#neuron-explorer-step2-ssh-tunneling"><span class="std std-ref">Step 2: Set up SSH tunneling</span></a>).</p></li>
+<li><p>Configure the endpoint: click the extension in the left activity bar, select <strong>Endpoint</strong> on the bottom bar, choose <strong>Custom endpoint</strong>, and enter <code class="docutils literal notranslate"><span class="pre">localhost:3002</span></code>.</p></li>
+</ol>
+<blockquote>
+<div><img alt="../../_images/VSCode_marketplace2.png" src="assets/d84709a2158815cce3dbd289.png"/>
+<img alt="../../_images/VSCode_marketplace3.png" src="assets/618fb75c3e0fc80b3004000d.png"/>
+</div></blockquote>
+<ol class="arabic simple" start="3">
+<li><p>Access the <strong>Profile Manager</strong> from the Neuron Explorer extension sidebar.</p></li>
+</ol>
+<blockquote>
+<div><img alt="../../_images/neuron-explorer-profile-manager-page.png" src="assets/c66dbb970dffe806cabb3490.png"/>
+</div></blockquote>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The VS Code extension uses the same API server. All upload methods (CLI, web UI) work interchangeably — once a profile is uploaded, it’s visible in both interfaces.</p>
+</div>
+</section>
+</section>
+<section id="step-5-upload-your-profile">
+<span id="neuron-explorer-step5-upload-profile"></span><h2>Step 5: Upload your profile<a class="headerlink" href="#step-5-upload-your-profile" title="Permalink to this heading">#</a></h2>
+<p>Choose the method that fits your workflow:</p>
+<section id="option-a-cli-upload">
+<h3>Option A: CLI upload<a class="headerlink" href="#option-a-cli-upload" title="Permalink to this heading">#</a></h3>
+<p>If you’re already SSH’d into the instance, this is the quickest path:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>neuron-explorer<span class="w"> </span>view<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-d<span class="w"> </span>./profile_output<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--ingest-only<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--display-name<span class="w"> </span><span class="s2">"my-profile-run"</span>
+</pre></div>
+</div>
+<p><strong>Expected outcome:</strong> After processing, the CLI outputs a direct link to your profile. Open it in your browser (via the tunnel) to view.</p>
+<img alt="../../_images/neuron-explorer-cli-upload-output.png" src="assets/c771dcb1a6e98a0b8d382244.png"/>
+<p><strong>Useful flags:</strong></p>
+<table class="table">
+<colgroup>
+<col style="width: 30.0%"/>
+<col style="width: 70.0%"/>
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Flag</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--ignore-device-profile</span></code></p></td>
+<td><p>Skip device-level traces (faster processing)</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--system-trace-secondary-group</span> <span class="pre">worker_gid,lnc_idx</span></code></p></td>
+<td><p>Reduce tracks for a cleaner view</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="option-b-web-ui-upload">
+<h3>Option B: Web UI upload<a class="headerlink" href="#option-b-web-ui-upload" title="Permalink to this heading">#</a></h3>
+<ol class="arabic simple">
+<li><p>If your profile output is on the EC2 instance and you want to use the browser uploader locally, transfer the files first:</p></li>
+</ol>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Compress for faster transfer (recommended for large profiles)</span>
+<span class="c1"># Run on EC2:</span>
+tar<span class="w"> </span>-czf<span class="w"> </span>profile_output.tar.gz<span class="w"> </span>./profile_output
+
+<span class="c1"># Transfer to local machine:</span>
+scp<span class="w"> </span>-i<span class="w"> </span>~/your-key.pem<span class="w"> </span>ubuntu@&lt;instance-ip&gt;:./profile_output.tar.gz<span class="w"> </span>.
+tar<span class="w"> </span>-xzf<span class="w"> </span>profile_output.tar.gz
+</pre></div>
+</div>
+<ol class="arabic" start="2">
+<li><p>Use your local browser or VSCode to open <code class="docutils literal notranslate"><span class="pre">http://localhost:3001</span></code>. The <strong>Profile Manager</strong> page is displayed.</p>
+<img alt="../../_images/profile-workload.png" src="assets/c66dbb970dffe806cabb3490.png"/>
+<p>Click the <strong>Upload Profile</strong> button on the top right to open the upload dialog:</p>
+<a class="reference internal image-reference" data-original-href="https://awsdocs-neuron.readthedocs-hosted.com/en/latest/_images/upload-profile.png"><img alt="../../_images/upload-profile.png" src="assets/12240b6c707c5652937421a8.png" style="width: 65%;"/></a>
+</li>
+<li><p>Enter a <strong>Profile Name</strong> (required).</p></li>
+<li><p>Choose your upload method based on profile type:</p>
+<ul class="simple">
+<li><p><strong>For system profiles (or system + device):</strong> click <strong>Upload Profile</strong> and select <strong>Directory Upload For System Profile</strong>. Then select the directory containing your <code class="docutils literal notranslate"><span class="pre">.pb</span></code> files (must include <code class="docutils literal notranslate"><span class="pre">trace_info.pb</span></code>).</p></li>
+</ul>
+<a class="reference internal image-reference" data-original-href="https://awsdocs-neuron.readthedocs-hosted.com/en/latest/_images/system-only-profile.png"><img alt="../../_images/system-only-profile.png" src="assets/a2e91d1921d0377f49ffcce1.png" style="width: 65%;"/></a>
+<ul class="simple">
+<li><p><strong>For device-only profiles:</strong> click <strong>Upload Profile</strong> and select <strong>Individual Files</strong>. Upload your <code class="docutils literal notranslate"><span class="pre">.neff</span></code> and <code class="docutils literal notranslate"><span class="pre">.ntff</span></code> files in the designated boxes.</p></li>
+</ul>
+<a class="reference internal image-reference" data-original-href="https://awsdocs-neuron.readthedocs-hosted.com/en/latest/_images/device-only-profile.png"><img alt="../../_images/device-only-profile.png" src="assets/75e4e5a206177a025b14a91d.png" style="width: 65%;"/></a>
+</li>
+</ol>
+<p><strong>Expected outcome:</strong> The profile appears on the <strong>My Uploads</strong> tab. Click <strong>Refresh</strong> to check processing status. Once complete, click the profile name to open the interactive timeline.</p>
+<blockquote>
+<div><img alt="../../_images/profile-expected-outcome.png" src="assets/c206868f3f5cfe490310cd8d.png"/>
+</div></blockquote>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><strong>Why two upload methods?</strong> Directory Upload requires a system profile (<code class="docutils literal notranslate"><span class="pre">ntrace.pb</span></code> + <code class="docutils literal notranslate"><span class="pre">trace_info.pb</span></code>). It does not work with device-only profiles. For device-only profiles (just <code class="docutils literal notranslate"><span class="pre">.neff</span></code> + <code class="docutils literal notranslate"><span class="pre">.ntff</span></code>), use <strong>Individual Files</strong>. If you have both system + device files, use <strong>Directory Upload</strong> as it picks up everything.</p>
+</div>
+</section>
+<section id="option-c-export-to-json">
+<h3>Option C: Export to JSON<a class="headerlink" href="#option-c-export-to-json" title="Permalink to this heading">#</a></h3>
+<p>For programmatic analysis (custom scripts, coding agents), export to JSON. This generates <code class="docutils literal notranslate"><span class="pre">system_profile.json</span></code> and <code class="docutils literal notranslate"><span class="pre">device_profile_model_&lt;model_id&gt;.json</span></code> per compiled model.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>neuron-explorer<span class="w"> </span>view<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--session-dir<span class="w"> </span>./profile_output<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--output-format<span class="w"> </span>json<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--output-file<span class="w"> </span>./integrated_trace.json
+</pre></div>
+</div>
+<p><strong>Quick text summary (no UI needed):</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>neuron-explorer<span class="w"> </span>view<span class="w"> </span>-d<span class="w"> </span>./profile_output<span class="w"> </span>--output-format<span class="w"> </span>summary-text
+</pre></div>
+</div>
+<p><strong>JSON schema (system_profile.json):</strong></p>
+<p>The file contains event objects. It also includes <code class="docutils literal notranslate"><span class="pre">mem_usage</span></code> (sampled host memory) and <code class="docutils literal notranslate"><span class="pre">cpu_util</span></code> (CPU utilization per core).</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">    </span><span class="nt">"Neuron_Runtime_API_Event"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">"duration"</span><span class="p">:</span><span class="w"> </span><span class="mi">27094</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"group"</span><span class="p">:</span><span class="w"> </span><span class="s2">"nrt-nc-000"</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"id"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"instance_id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"i-0f207fb2a99bd2d08"</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"nrt_tensor_write"</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"timestamp"</span><span class="p">:</span><span class="w"> </span><span class="mi">1729888371056597613</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="mi">11</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">"Framework_Event"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">"duration"</span><span class="p">:</span><span class="w"> </span><span class="mi">3758079</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"group"</span><span class="p">:</span><span class="w"> </span><span class="s2">"framework-80375131"</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"instance_id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"i-0f207fb2a99bd2d08"</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"PjitFunction(matmul_allgather)"</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"timestamp"</span><span class="p">:</span><span class="w"> </span><span class="mi">1729888382798557372</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><strong>Share your view with teammates.</strong> After you open a profile, Neuron Explorer encodes your current time range, selected event, and active annotation in the page URL. Copy the URL and share it to give others the same view with no additional setup. The shared URL only works for users connected to the same Neuron Explorer instance.</p>
+</div>
+</section>
+</section>
+<section id="organize-profiles-into-folders">
+<h2>Organize profiles into folders<a class="headerlink" href="#organize-profiles-into-folders" title="Permalink to this heading">#</a></h2>
+<p>Folders group related profiles — for example, every run from one experiment. Folders are private to
+you. A profile can belong to more than one folder. Folders support only one level, so you cannot
+nest one folder inside another.</p>
+<p>To create a folder, open the <strong>Profile Manager</strong> page, select the <strong>My Folders</strong> tab, and choose
+<strong>Create Folder</strong> — or <strong>Create your first folder</strong> if you have none yet. Names are limited to 100
+characters and cannot contain spaces; use underscores, hyphens, or dots instead.</p>
+<p>To file profiles, go to the <strong>My Uploads</strong> tab and either choose the folder icon in a profile’s
+<strong>Actions</strong> column, or select one or more profiles and choose <strong>Actions</strong> &gt; <strong>Add to folder</strong>. In
+the <strong>Add to Folder</strong> dialog, select an existing folder — or choose <strong>Create new folder…</strong> — and
+then choose <strong>Add</strong>. The upload form also has a <strong>Folder</strong> field, which defaults to
+<strong>None (no folder)</strong>, so you can file a profile as you upload it.</p>
+<img alt="A selected profile in the My Uploaded Profiles table with the Actions menu open on Add to folder, and the folder icon visible in the Actions column of the row." src="assets/4a5ee9af1f5f56174c7cff27.png"/>
+<p>The <strong>My Folders</strong> tab lists each folder with the number of profiles it holds. Choose a folder name
+to open it and see those profiles in the same table the <strong>My Uploads</strong> tab uses, then use the
+<strong>My Folders</strong> breadcrumb to go back. From the <strong>My Folders</strong> tab you can also rename a folder with
+the edit icon beside its name, or delete folders by selecting them, choosing <strong>Delete</strong>, and
+confirming. To take a profile out of a folder, open the folder and choose the remove icon in the
+profile’s row, or select profiles and choose <strong>Actions</strong> &gt; <strong>Remove from folder</strong>.</p>
+<img alt="The My Folders tab listing two folders with the number of profiles in each, an edit icon beside each folder name, and the Delete and Create Folder buttons." src="assets/ecc804a410504360917aeb16.png"/>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Removing a profile from a folder, or deleting the folder itself, leaves the profile in place on
+the <strong>My Uploads</strong> tab. Deleting a folder takes its profiles out of that folder only; they remain
+in any other folders that contain them. Deleting a profile is a separate, permanent action, and
+it removes that profile from every folder that contains it. See
+<a class="reference internal" href="#neuron-explorer-get-started-delete-profile"><span class="std std-ref">Delete a profile</span></a>.</p>
+</div>
+</section>
+<section id="delete-a-profile">
+<span id="neuron-explorer-get-started-delete-profile"></span><h2>Delete a profile<a class="headerlink" href="#delete-a-profile" title="Permalink to this heading">#</a></h2>
+<p>When you no longer need a profile, delete it from the <strong>Profile Manager</strong> page to free up storage.</p>
+<p><strong>Before you start:</strong> The delete action is available only on the <strong>My Uploads</strong> tab. You can delete
+only the profiles that you uploaded. If you try to delete a profile that someone else uploaded,
+Neuron Explorer reports an error and leaves the profile in place.</p>
+<p>To delete one or more profiles:</p>
+<ol class="arabic">
+<li><p>Open the <strong>Profile Manager</strong> page and select the <strong>My Uploads</strong> tab.</p></li>
+<li><p>Start the deletion in one of two ways:</p>
+<ul class="simple">
+<li><p>Choose the delete icon in the <strong>Actions</strong> column of a profile’s row to delete only that
+profile.</p></li>
+<li><p>Select the checkbox for one or more profiles, choose <strong>Actions</strong>, and then choose
+<strong>Delete profile</strong>.</p></li>
+</ul>
+<img alt="The My Uploaded Profiles table with a profile selected, the delete icon in the Actions column, and the Actions menu open on Delete profile." src="assets/28295fda2b9f4f842af5a4c5.png"/>
+</li>
+<li><p>In the confirmation dialog, review the profiles to be deleted, type <code class="docutils literal notranslate"><span class="pre">delete</span></code> in the
+confirmation field, and then choose <strong>Delete</strong>. The <strong>Delete</strong> button stays disabled until you
+type the confirmation text exactly.</p>
+<img alt="The Delete profile confirmation dialog, showing the permanence warning and the field for typing the word delete." src="assets/6f4d545c9dfd178f7a9b6cf9.png"/>
+</li>
+</ol>
+<p><strong>Expected outcome:</strong> A success notification confirms the deletion, and the profiles no longer
+appear on the <strong>My Uploads</strong> tab.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Deleting a profile is permanent and cannot be undone. Neuron Explorer removes the profile’s
+stored files and metadata, along with its tags, annotations, and folder membership, and makes
+any persistent link to the profile inaccessible, including the view links described earlier in
+this guide. To recover a deleted profile, upload it again as described in
+<a class="reference internal" href="#neuron-explorer-step5-upload-profile"><span class="std std-ref">Step 5</span></a>, and then recreate any tags and
+annotations.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>When you delete several profiles at once, each profile is deleted independently. If some
+deletions fail, Neuron Explorer deletes the rest and reports the names of the profiles it could
+not delete. Select those profiles and retry.</p>
+</div>
+</section>
+<section id="troubleshooting">
+<span id="neuron-explorer-get-started-troubleshooting"></span><h2>Troubleshooting<a class="headerlink" href="#troubleshooting" title="Permalink to this heading">#</a></h2>
+<p>For troubleshooting connection issues, upload errors, profiling results problems,
+and frequently asked questions, see the full
+<a class="reference internal" data-original-href="https://awsdocs-neuron.readthedocs-hosted.com/en/latest/tools/neuron-explorer/troubleshooting.html"><span class="doc">Troubleshooting &amp; FAQs</span></a> guide.</p>
+</section>
+<section id="next-steps">
+<h2>Next steps<a class="headerlink" href="#next-steps" title="Permalink to this heading">#</a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" data-original-href="https://awsdocs-neuron.readthedocs-hosted.com/en/latest/tools/neuron-explorer/how-to-profile-workload.html"><span class="doc">Capture Profiles in Neuron Explorer</span></a> — Full capturing and profiling reference (PyTorch, JAX, environment variables, CLI, filtering)</p></li>
+<li><p><a class="reference internal" data-original-href="https://awsdocs-neuron.readthedocs-hosted.com/en/latest/tools/neuron-explorer/index.html"><span class="doc">Neuron Explorer Full Documentation</span></a> — Complete viewer and feature reference</p></li>
+<li><p><a class="reference internal" data-original-href="https://awsdocs-neuron.readthedocs-hosted.com/en/latest/tools/neuron-explorer/profile-schema-reference.html"><span class="doc">Profile Parquet Schema Reference</span></a> — Complete profile data reference, matching <code class="docutils literal notranslate"><span class="pre">neuron-explorer</span> <span class="pre">--show-profile-schema</span></code></p></li>
+</ul>
+<p><strong>This document is relevant for</strong>: <code class="docutils literal notranslate"><span class="pre">Inf2</span></code>, <code class="docutils literal notranslate"><span class="pre">Trn1</span></code>, <code class="docutils literal notranslate"><span class="pre">Trn2</span></code>, <code class="docutils literal notranslate"><span class="pre">Trn3</span></code></p>
+</section>
+</section>
+<div class="section ablog__blog_comments">
+</div>
+</article></body></html>

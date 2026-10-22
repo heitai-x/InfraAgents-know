@@ -1,0 +1,48 @@
+# K-ALG-013：Prefill/Decode 分离：状态传输与队列耦合
+
+分离式服务把两个阶段的资源策略解耦，同时引入 KV 传输、布局转换和跨节点状态提交。
+
+## 分离为什么可能有效
+
+prefill 的较多 query 行适合矩阵计算，decode 则反复读取权重与历史状态。共置时，长 prefill 可能打断 decode 的稳定节奏，两个阶段也被迫共享相同并行度和容量分配。独立池允许分别选择 batch、并行策略和扩容比例，但每条请求必须把足够的中间状态交给 decode 池。
+
+端到端首 token 路径变为排队 P＋prefill＋传输/转换＋排队 D＋必要的首步工作。若在 prefill 侧已生成首 token，其网络交付与 decode 接管可以重叠，但第二 token 的时间仍受接管约束。不能只缩短 prefill kernel 就假设 TTFT 和 ITL 同时改善。
+
+## 传输字节从模型状态得出
+
+普通 GQA 的原始 KV 约为 2LNHd b，具体分片后每节点发送多少取决于 TP/PP 布局。沿用 32 层、8 KV heads、128 通道、2 字节和 N＝4096 的算例，总状态约 512 MiB。理想有效链路 25 GiB/s 下，仅传输下界约 20 ms，尚未计排队、转换、握手和其他流量竞争。
+
+若目标方使用不同 TP 数，源分片到目标分片需要重排；若 dtype 或量化尺度不同，则可能还要转换。传输格式必须包含状态几何、有效长度、位置规则、模型/adapter 身份和源执行代次。只发送裸页地址没有跨进程含义。
+
+## 资源预留与提交
+
+目标先预留完整状态容量，源才能有确定的接收目的地。分块传输可以与后续层计算重叠，但目标只有在其下一步所需的全部状态到齐且完成可见后才能消费。中断时，部分到达的页属于未提交传输，应可回滚；源不能因为发起发送就释放最后一份状态。
+
+前缀复用让这个过程更有趣：目标已有部分有效前缀时可以只传缺失部分，但双方必须对同一逻辑身份和恢复位置达成一致。窗口、SSM 和多源 context 让“缺失部分”不再是一个简单连续 token 区间。
+
+## 何时值得分离
+
+采用分离需要节省的干扰与资源配置成本超过传输和新增排队。短 prompt、低到达率、弱互联下，共置可能更好；长 prompt、严格 decode SLO、强互联可能更有空间。P/D 实例配比由到达率、输入输出长度分布和阶段服务率决定，不能简单按相同 GPU 数各分一半。瓶颈转移后应重新优化整体 goodput。
+
+<!-- infraagents:provenance -->
+
+## 来源与推导
+
+- S-DISTSERVE：[完整原文](../../references/S-DISTSERVE/reader.html) · [全文文本](../../references/S-DISTSERVE/fulltext.txt)
+- S-CUDA-TOPOLOGY：[完整原文](../../references/S-CUDA-TOPOLOGY/reader.html) · [全文文本](../../references/S-CUDA-TOPOLOGY/fulltext.txt)
+- S-PAGED：[完整原文](../../references/S-PAGED/reader.html) · [全文文本](../../references/S-PAGED/fulltext.txt)
+
+- [S-DISTSERVE：DistServe](../sources/S-DISTSERVE.md)：DistServe 将 prefill 与 decode 的资源分配和并行选择解耦，并把阶段间状态通信与链路条件纳入服务目标。
+
+- [S-CUDA-TOPOLOGY：CUDA Programming Guide — Programming Systems with Multiple GPUs](../sources/S-CUDA-TOPOLOGY.md)：多 GPU 系统涉及设备上下文、peer access、主机与设备连接路径。可通信和具有相同有效带宽不是同一性质。
+
+- [S-PAGED：Efficient Memory Management for Large Language Model Serving with PagedAttention](../sources/S-PAGED.md)：PagedAttention 把每条序列的逻辑 KV 划分为固定 token 数的块，用映射表访问不连续物理存储。多个序列可以共享相同前缀的物理块，分叉写入需要保持各序列状态独立。
+
+上文的公式展开、容量算例与组合设计是 InfraAgents 在这些机制基础上的推导，具体推导已写在本条正文中。来源入口均为本地释义，可继续读取其定义与使用关系。版本 3，2026-09-20。
+
+## 延伸阅读
+
+- [通信拓扑：从 Rank 组到瓶颈链路](../hardware/topology-parallelism.md)。
+- [分布式状态迁移：身份、传输与提交点](../system-semantics/distributed-state-transfer.md)。
+- [Goodput：联合 SLO、拒绝和容量前沿](../workloads/slo-goodput.md)。
+- [分块 Prefill：服务时间切片与历史可见性](../algorithms/chunked-prefill.md)。

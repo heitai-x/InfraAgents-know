@@ -1,0 +1,1302 @@
+
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>5.1. Compute Capabilities &#8212; CUDA Programming Guide</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/nvidia-sphinx-theme.css?v=933278ad" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=767de534" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../_static/tables.css?v=0bf25c72" />
+  
+  <!-- So that users can add custom icons -->
+  <script src="../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+
+
+<script src="https://cdn.cookielaw.org/scripttemplates/otSDKStub.js" type="text/javascript"
+  data-document-language="true" charset="UTF-8" data-domain-script="3e2b62ff-7ae7-4ac5-87c8-d5949ecafff5">
+</script>
+<script type="text/javascript">
+  function OptanonWrapper() {
+    var event = new Event('bannerLoaded');
+    window.dispatchEvent(event);
+  }
+</script>
+<script src="https://images.nvidia.com/aem-dam/Solutions/ot-js/ot-custom.js" type="text/javascript">
+</script>
+
+
+    <script rel="preload" src="../_static/modal-table.js"></script>
+    <script src="../_static/documentation_options.js?v=d6c44f78"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/scrollspy-patch.js?v=edc4054a"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=65e89d2a"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '05-appendices/compute-capabilities';</script>
+    <script src="../_static/version-patch.js?v=3e13fdd2"></script>
+
+<script type="text/javascript" src="https://assets.adobedtm.com/5d4962a43b79/c1061d2c5e7b/launch-191c2462b890.min.js"></script>
+
+    <link rel="icon" href="../_static/favicon.ico"/>
+
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="5.2. CUDA Environment Variables" href="environment-variables.html" />
+    <link rel="prev" title="5. Technical Appendices" href="../part5.html" />
+
+<link rel="preload" as="image" href="https://www.nvidia.com/content/dam/1x1-00000000.png">
+
+
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="" />
+    <meta name="docbuild:last-update" content="Sep 10, 2026"/>
+
+
+  </head>
+
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+<img src="https://www.nvidia.com/content/dam/1x1-00000000.png" width="1" height="1" style="display:none;" alt="country_code">
+
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../contents.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="CUDA Programming Guide - Home"/>
+    <img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark pst-js-only" alt="CUDA Programming Guide - Home"/>
+  
+  
+    <p class="title logo__title">CUDA Programming Guide</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+
+
+<div>
+  <ul class="bd-navbar-elements navbar-nav">
+  
+    <li class="nav-item pst-header-nav-item">
+      
+      <span>v13.4.2 |</span>
+      
+    </li>
+  
+    <li class="nav-item pst-header-nav-item">
+      
+      <a class="nav-link nav-external" href="https://docs.nvidia.com/cuda/cuda-programming-guide/pdf/cuda-programming-guide.pdf">PDF</a>
+      
+    </li>
+  
+    <li class="nav-item pst-header-nav-item">
+      
+      <span>|</span>
+      
+    </li>
+  
+    <li class="nav-item pst-header-nav-item">
+      
+      <a class="nav-link nav-external" href="https://developer.nvidia.com/cuda-toolkit-archive">Archive</a>
+      
+    </li>
+  
+  </ul>
+</div>
+</div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../contents.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="CUDA Programming Guide - Home"/>
+    <img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark pst-js-only" alt="CUDA Programming Guide - Home"/>
+  
+  
+    <p class="title logo__title">CUDA Programming Guide</p>
+  
+</a>
+
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+
+
+<div>
+  <ul class="bd-navbar-elements navbar-nav">
+  
+    <li class="nav-item pst-header-nav-item">
+      
+      <span>v13.4.2 |</span>
+      
+    </li>
+  
+    <li class="nav-item pst-header-nav-item">
+      
+      <a class="nav-link nav-external" href="https://docs.nvidia.com/cuda/cuda-programming-guide/pdf/cuda-programming-guide.pdf">PDF</a>
+      
+    </li>
+  
+    <li class="nav-item pst-header-nav-item">
+      
+      <span>|</span>
+      
+    </li>
+  
+    <li class="nav-item pst-header-nav-item">
+      
+      <a class="nav-link nav-external" href="https://developer.nvidia.com/cuda-toolkit-archive">Archive</a>
+      
+    </li>
+  
+  </ul>
+</div>
+</div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Table of Contents">
+  <p class="bd-links__title" role="heading" aria-level="1">Table of Contents</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1 current active has-children"><a class="reference internal" href="../index.html">CUDA Programming Guide</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
+<li class="toctree-l2 has-children"><a class="reference internal" href="../part1.html">1. Introduction to CUDA</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../01-introduction/introduction.html">1.1. Introduction</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../01-introduction/programming-model.html">1.2. Programming Model</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../01-introduction/cuda-platform.html">1.3. The CUDA platform</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../part2.html">2. Programming GPUs in CUDA</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../02-basics/intro-to-cuda-cpp.html">2.1. Intro to CUDA C++</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../02-basics/intro-to-cuda-python.html">2.2. Intro to CUDA Python</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../02-basics/writing-cuda-kernels.html">2.3. Writing SIMT Kernels</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../02-basics/writing-tile-kernels.html">2.4. Writing Tile Kernels</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../02-basics/asynchronous-execution.html">2.5. Asynchronous Execution</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../02-basics/understanding-memory.html">2.6. Unified and System Memory</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../02-basics/nvcc.html">2.7. NVCC: The NVIDIA CUDA Compiler</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../part3.html">3. Advanced CUDA</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../03-advanced/advanced-host-programming.html">3.1. Advanced CUDA APIs and Features</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../03-advanced/advanced-kernel-programming.html">3.2. Advanced Kernel Programming</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../03-advanced/driver-api.html">3.3. The CUDA Driver API</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../03-advanced/multi-gpu-systems.html">3.4. Programming Systems with Multiple GPUs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../03-advanced/feature-survey.html">3.5. A Tour of CUDA Features</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../part4.html">4. CUDA Features</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../04-special-topics/unified-memory.html">4.1. Unified Memory</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../04-special-topics/cuda-graphs.html">4.2. CUDA Graphs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../04-special-topics/stream-ordered-memory-allocation.html">4.3. Stream-Ordered Memory Allocator</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../04-special-topics/cooperative-groups.html">4.4. Cooperative Groups</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../04-special-topics/programmatic-dependent-launch.html">4.5. Programmatic Dependent Launch and Synchronization</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../04-special-topics/green-contexts.html">4.6. Green Contexts</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../04-special-topics/locality-domains.html">4.7. Locality Domains</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../04-special-topics/lazy-loading.html">4.8. Lazy Loading</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../04-special-topics/error-log-management.html">4.9. Error Log Management</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../04-special-topics/async-barriers.html">4.10. Asynchronous Barriers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../04-special-topics/pipelines.html">4.11. Pipelines</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../04-special-topics/async-copies.html">4.12. Asynchronous Data Copies</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../04-special-topics/cluster-launch-control.html">4.13. Work Stealing with Cluster Launch Control</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../04-special-topics/l2-cache-control.html">4.14. L2 Cache Control</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../04-special-topics/memory-sync-domains.html">4.15. Memory Synchronization Domains</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../04-special-topics/inter-process-communication.html">4.16. Interprocess Communication</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../04-special-topics/virtual-memory-management.html">4.17. Virtual Memory Management</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../04-special-topics/compute-fabric-transport.html">4.18. Compute Fabric Transport</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../04-special-topics/extended-gpu-memory.html">4.19. Extended GPU Memory</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../04-special-topics/dynamic-parallelism.html">4.20. CUDA Dynamic Parallelism</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../04-special-topics/graphics-interop.html">4.21. CUDA Interoperability with APIs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../04-special-topics/driver-entry-point-access.html">4.22. Driver Entry Point Access</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 current active has-children"><a class="reference internal" href="../part5.html">5. Technical Appendices</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
+<li class="toctree-l3 current active"><a class="current reference internal" href="#">5.1. Compute Capabilities</a></li>
+<li class="toctree-l3"><a class="reference internal" href="environment-variables.html">5.2. CUDA Environment Variables</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cpp-language-support.html">5.3. C++ Language Support</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cpp-language-extensions.html">5.4. C/C++ Language Extensions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="mathematical-functions.html">5.5. Floating-Point Computation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="device-callable-apis.html">5.6. Device-Callable APIs and Intrinsics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cuda-cpp-memory-model.html">5.7. CUDA C++ Memory Model</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cuda-cpp-execution-model.html">5.8. CUDA C++ Execution model</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2"><a class="reference internal" href="../notices.html">6. Notices</a></li>
+</ul>
+</details></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../contents.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../index.html" class="nav-link">CUDA Programming Guide</a></li>
+    
+    
+    <li class="breadcrumb-item"><a href="../part5.html" class="nav-link"><span class="section-number">5. </span>Technical Appendices</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis"><span class="section-number">5.1. </span>Compute Capabilities</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+<div class="header-article-item">
+  <div class="d-flex justify-content-end w-100">
+    <a href="https://surveys.hotjar.com/4904bf71-6484-47a7-83ff-4715cceabdb5" id="openPopupButton">Is this page helpful?</a>
+  </div>
+</div></div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="compute-capabilities">
+<span id="id1"></span><h1><span class="section-number">5.1. </span>Compute Capabilities<a class="headerlink" href="#compute-capabilities" title="Link to this heading">#</a></h1>
+<p>The general specifications and features of a compute device depend on its compute capability (see <a class="reference internal" href="../01-introduction/cuda-platform.html#cuda-platform-compute-capability-sm-version"><span class="std std-ref">Compute Capability and Streaming Multiprocessor Versions</span></a>).</p>
+<p><a class="reference internal" href="#compute-capabilities-table-features-and-technical-specifications-feature-support-per-compute-capability"><span class="std std-numref">Table 29</span></a>, <a class="reference internal" href="#compute-capabilities-table-device-and-streaming-multiprocessor-sm-information-per-compute-capability"><span class="std std-numref">Table 30</span></a>, and
+<a class="reference internal" href="#compute-capabilities-table-memory-information-per-compute-capability"><span class="std std-numref">Table 31</span></a> show the features and technical specifications associated with each compute capability that is currently supported.</p>
+<p>All NVIDIA GPU architectures use a little-endian representation.</p>
+<section id="obtain-the-gpu-compute-capability">
+<span id="compute-capabilities-querying"></span><h2><span class="section-number">5.1.1. </span>Obtain the GPU Compute Capability<a class="headerlink" href="#obtain-the-gpu-compute-capability" title="Link to this heading">#</a></h2>
+<p>The <a class="reference external" href="https://developer.nvidia.com/cuda-gpus">CUDA GPU Compute Capability</a> page provides a comprehensive mapping from NVIDIA GPU models to their compute capability.</p>
+<p>Alternatively, the <a class="reference external" href="https://docs.nvidia.com/deploy/nvidia-smi/index.html">nvidia-smi</a> tool, provided with the <a class="reference external" href="https://www.nvidia.com/en-us/drivers/">NVIDIA Driver</a>, can be used to get the compute capability of a GPU. For example, the following command will output the GPU names and compute capabilities available on the system:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>nvidia-smi<span class="w"> </span>--query-gpu<span class="o">=</span>name,compute_cap
+</pre></div>
+</div>
+<p>At runtime, the compute capability can be obtained using the CUDA Runtime API <a class="reference external" href="https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__DEVICE.html#group__CUDART__DEVICE_1gb22e8256592b836df9a9cc36c9db7151">cudaDeviceGetAttribute()</a> , CUDA Driver API <a class="reference external" href="https://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__DEVICE.html#group__CUDA__DEVICE_1g9c3e1414f0ad901d3278a4d6645fc266">cuDeviceGetAttribute()</a>, or  NVML API <a class="reference external" href="https://docs.nvidia.com/deploy/nvml-api/group__nvmlDeviceQueries.html#group__nvmlDeviceQueries_1g1f803a2fb4b7dfc0a8183b46b46ab03a">nvmlDeviceGetCudaComputeCapability()</a>:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;cuda_runtime_api.h&gt;</span>
+
+<span class="kt">int</span><span class="w"> </span><span class="n">computeCapabilityMajor</span><span class="p">,</span><span class="w"> </span><span class="n">computeCapabilityMinor</span><span class="p">;</span>
+<span class="n">cudaDeviceGetAttribute</span><span class="p">(</span><span class="o">&amp;</span><span class="n">computeCapabilityMajor</span><span class="p">,</span><span class="w"> </span><span class="n">cudaDevAttrComputeCapabilityMajor</span><span class="p">,</span><span class="w"> </span><span class="n">device_id</span><span class="p">);</span>
+<span class="n">cudaDeviceGetAttribute</span><span class="p">(</span><span class="o">&amp;</span><span class="n">computeCapabilityMinor</span><span class="p">,</span><span class="w"> </span><span class="n">cudaDevAttrComputeCapabilityMinor</span><span class="p">,</span><span class="w"> </span><span class="n">device_id</span><span class="p">);</span>
+</pre></div>
+</div>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;cuda.h&gt;</span>
+
+<span class="kt">int</span><span class="w"> </span><span class="n">computeCapabilityMajor</span><span class="p">,</span><span class="w"> </span><span class="n">computeCapabilityMinor</span><span class="p">;</span>
+<span class="n">cuDeviceGetAttribute</span><span class="p">(</span><span class="o">&amp;</span><span class="n">computeCapabilityMajor</span><span class="p">,</span><span class="w"> </span><span class="n">CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MAJOR</span><span class="p">,</span><span class="w"> </span><span class="n">device_id</span><span class="p">);</span>
+<span class="n">cuDeviceGetAttribute</span><span class="p">(</span><span class="o">&amp;</span><span class="n">computeCapabilityMinor</span><span class="p">,</span><span class="w"> </span><span class="n">CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MINOR</span><span class="p">,</span><span class="w"> </span><span class="n">device_id</span><span class="p">);</span>
+</pre></div>
+</div>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;nvml.h&gt;</span><span class="c1"> // required linking with -lnvidia-ml</span>
+
+<span class="kt">int</span><span class="w"> </span><span class="n">computeCapabilityMajor</span><span class="p">,</span><span class="w"> </span><span class="n">computeCapabilityMinor</span><span class="p">;</span>
+<span class="n">nvmlDeviceGetCudaComputeCapability</span><span class="p">(</span><span class="n">nvmlDevice</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">computeCapabilityMajor</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">computeCapabilityMinor</span><span class="p">);</span>
+</pre></div>
+</div>
+</section>
+<section id="feature-availability">
+<span id="compute-capabilities-feature-availability"></span><h2><span class="section-number">5.1.2. </span>Feature Availability<a class="headerlink" href="#feature-availability" title="Link to this heading">#</a></h2>
+<p>Most compute features introduced with a compute architecture are intended to be available on all subsequent architectures. This is shown in <a class="reference internal" href="#compute-capabilities-table-features-and-technical-specifications-feature-support-per-compute-capability"><span class="std std-numref">Table 29</span></a> by the “yes” for availability of a feature on compute capabilities subsequent to its introduction.</p>
+<section id="architecture-specific-features">
+<span id="compute-capabilities-architecture-specific-features"></span><h3><span class="section-number">5.1.2.1. </span>Architecture-Specific Features<a class="headerlink" href="#architecture-specific-features" title="Link to this heading">#</a></h3>
+<p>Beginning with devices of Compute Capability 9.0, specialized compute features that are introduced with an architecture may not be guaranteed to be available on all subsequent compute capabilities. These features are called <em>architecture-specific</em> features and target acceleration of specialized operations, such as Tensor Core operations, which are not intended for all classes of compute capabilities or may significantly change in future generations.  Code must be compiled with an architecture-specific compiler target (see <a class="reference internal" href="#compute-capabilities-feature-set-compiler-targets"><span class="std std-ref">Feature Set Compiler Targets</span></a>) to enable architecture-specific features. Code compiled with an architecture-specific compiler target can only be run on the exact compute capability it was compiled for.</p>
+</section>
+<section id="family-specific-features">
+<span id="compute-capabilities-family-specific-features"></span><h3><span class="section-number">5.1.2.2. </span>Family-Specific Features<a class="headerlink" href="#family-specific-features" title="Link to this heading">#</a></h3>
+<p>Beginning with devices of Compute Capability 10.0, some architecture-specific features are common to devices of more than one compute capability.  The devices that contain these features are part of the same family and these features can also be called <em>family-specific</em> features.  Family-specific features are guaranteed to be available on all devices in the same family. A family-specific compiler target is required to enable family-specific features. See <a class="reference internal" href="#compute-capabilities-feature-set-compiler-targets"><span class="std std-numref">Section 5.1.2.3</span></a>. Code compiled for a family-specific target can only be run on GPUs which are members of that family.</p>
+</section>
+<section id="feature-set-compiler-targets">
+<span id="compute-capabilities-feature-set-compiler-targets"></span><h3><span class="section-number">5.1.2.3. </span>Feature Set Compiler Targets<a class="headerlink" href="#feature-set-compiler-targets" title="Link to this heading">#</a></h3>
+<p>There are three sets of compute features which the compiler can target:</p>
+<p><strong>Baseline Feature Set</strong>: The predominant set of compute features that are introduced with the intent to be available for subsequent compute architectures.  These features and their availability are summarized in <a class="reference internal" href="#compute-capabilities-table-features-and-technical-specifications-feature-support-per-compute-capability"><span class="std std-numref">Table 29</span></a>.</p>
+<p><strong>Architecture-Specific Feature Set</strong>: A small and highly specialized set of features called architecture-specific, that are introduced to accelerate specialized operations, which are not guaranteed to be available or might change significantly on subsequent compute architectures.  These features are summarized in the respective “Compute Capability #.#” subsections.  The architecture-specific feature set is a superset of the family-specific feature set.  Architecture-specific compiler targets were introduced with Compute Capability 9.0 devices and are selected by using an <strong>a</strong> suffix in the compilation target, for example by specifying <code class="docutils literal notranslate"><span class="pre">compute_100a</span></code> or <code class="docutils literal notranslate"><span class="pre">compute_120a</span></code> as the compute target.</p>
+<p><strong>Family-Specific Feature Set</strong>: Some architecture-specific features are common to GPUs of more than one compute capability. These features are summarized in the respective “Compute Capability #.#” subsections. With a few exceptions, later-generation devices with the same major compute capability are in the same family. <a class="reference internal" href="#compute-capabilities-family-specific-compatibility"><span class="std std-numref">Table 28</span></a> indicates the compatibility of family-specific targets with device compute capability, including exceptions. The family-specific feature set is a superset of the baseline feature set.  Family-specific compiler targets were introduced with Compute Capability 10.0 devices and are selected by using an <strong>f</strong> suffix in the compilation target, for example by specifying <code class="docutils literal notranslate"><span class="pre">compute_100f</span></code> or <code class="docutils literal notranslate"><span class="pre">compute_120f</span></code> as the compute target.</p>
+<p>All devices starting from compute capability 9.0 have a set of features that are architecture-specific. To utilize the complete set of these features on a specific GPU, the architecture-specific compiler target with the suffix <strong>a</strong> must be used. Additionally, starting from compute capability 10.0, there are sets of features that appear in multiple devices with different minor compute capabilities. These sets of instructions are called family-specific features, and the devices which share these features are said to be part of the same family. The family-specific features are a subset of the architecture-specific features that are shared by all members of that GPU family. The family-specific compiler target with the suffix <strong>f</strong> allows the compiler to generate code that uses this common subset of architecture-specific features.</p>
+<p>For example:</p>
+<ul class="simple">
+<li><p>The <code class="docutils literal notranslate"><span class="pre">compute_100</span></code> compilation target does not allow the use of architecture-specific features.  This target will be compatible with all devices of compute capability 10.0 and later.</p></li>
+<li><p>The <code class="docutils literal notranslate"><span class="pre">compute_100f</span></code> <em>family-specific</em> compilation target allows the use of the subset of architecture-specific features that are common across the GPU family. This target will only be compatible with devices that are part of the GPU family. In this example, it is compatible with devices of Compute Capability 10.0, 10.3, and 10.7. The features available in the family-specific <code class="docutils literal notranslate"><span class="pre">compute_100f</span></code> target are a superset of the features available in the baseline <code class="docutils literal notranslate"><span class="pre">compute_100</span></code> target.</p></li>
+<li><p>The <code class="docutils literal notranslate"><span class="pre">compute_100a</span></code> <em>architecture-specific</em> compilation target allows the use of the complete set of architecture-specific features in Compute Capability 10.0 devices. This target will only be compatible with devices of Compute Capability 10.0 and no others. The features available in the <code class="docutils literal notranslate"><span class="pre">compute_100a</span></code> target form a superset of the features available in the <code class="docutils literal notranslate"><span class="pre">compute_100f</span></code> target.</p></li>
+</ul>
+<div class="pst-scrollable-table-container"><table class="table-no-stripes table" id="compute-capabilities-family-specific-compatibility">
+<caption><span class="caption-number">Table 28 </span><span class="caption-text">Family-Specific Compatibility</span><a class="headerlink" href="#compute-capabilities-family-specific-compatibility" title="Link to this table">#</a></caption>
+<thead>
+<tr class="row-odd"><th class="head"><p>Compilation Target</p></th>
+<th class="head" colspan="3"><p>Compatible with Compute Capability</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">compute_100f</span></code></p></td>
+<td><p>10.0</p></td>
+<td><p>10.3</p></td>
+<td><p>10.7</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">compute_103f</span></code></p></td>
+<td><p>10.3</p></td>
+<td colspan="2"><p>10.7</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">compute_107f</span></code></p></td>
+<td colspan="3"><p>10.7 <a class="footnote-reference brackets" href="#family2" id="id2" role="doc-noteref"><span class="fn-bracket">[</span>1<span class="fn-bracket">]</span></a></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">compute_110f</span></code></p></td>
+<td colspan="3"><p>11.0 <a class="footnote-reference brackets" href="#family2" id="id3" role="doc-noteref"><span class="fn-bracket">[</span>1<span class="fn-bracket">]</span></a></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">compute_120f</span></code></p></td>
+<td><p>12.0</p></td>
+<td colspan="2"><p>12.1</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">compute_121f</span></code></p></td>
+<td colspan="3"><p>12.1 <a class="footnote-reference brackets" href="#family2" id="id4" role="doc-noteref"><span class="fn-bracket">[</span>1<span class="fn-bracket">]</span></a></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<aside class="footnote-list brackets">
+<aside class="footnote brackets" id="family2" role="doc-footnote">
+<span class="label"><span class="fn-bracket">[</span>1<span class="fn-bracket">]</span></span>
+<span class="backrefs">(<a role="doc-backlink" href="#id2">1</a>,<a role="doc-backlink" href="#id3">2</a>,<a role="doc-backlink" href="#id4">3</a>)</span>
+<p>Some families only contain a single member when they are created. They may be expanded in the future to include more devices.</p>
+</aside>
+</aside>
+</section>
+</section>
+<section id="features-and-technical-specifications">
+<span id="compute-capabilities-features-and-technical-specifications"></span><h2><span class="section-number">5.1.3. </span>Features and Technical Specifications<a class="headerlink" href="#features-and-technical-specifications" title="Link to this heading">#</a></h2>
+<div class="pst-scrollable-table-container"><table class="small table-no-stripes longtable table" id="compute-capabilities-table-features-and-technical-specifications-feature-support-per-compute-capability">
+<caption><span class="caption-number">Table 29 </span><span class="caption-text">Feature Support per Compute Capability</span><a class="headerlink" href="#compute-capabilities-table-features-and-technical-specifications-feature-support-per-compute-capability" title="Link to this table">#</a></caption>
+<thead>
+<tr class="row-odd"><th class="head"><p class="centered">
+<strong>Feature Support</strong></p></th>
+<th class="head" colspan="6"><p class="centered">
+<strong>Compute Capability</strong></p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>(Unlisted features are supported for all compute capabilities)</p></td>
+<td><p>7.x</p></td>
+<td><p>8.x</p></td>
+<td><p>9.0</p></td>
+<td><p>10.x</p></td>
+<td><p>11.0</p></td>
+<td><p>12.x</p></td>
+</tr>
+<tr class="row-odd"><td><p>Atomic functions operating on 128-bit integer values in shared and global memory (<a class="reference internal" href="cpp-language-extensions.html#atomic-functions"><span class="std std-ref">Atomic Functions</span></a>)</p></td>
+<td colspan="2"><p>No</p></td>
+<td colspan="4"><p>Yes</p></td>
+</tr>
+<tr class="row-even"><td><p>Atomic addition operating on <code class="docutils literal notranslate"><span class="pre">float2</span></code> and <code class="docutils literal notranslate"><span class="pre">float4</span></code> floating point vectors in global memory (<a class="reference internal" href="cpp-language-extensions.html#atomicadd"><span class="std std-ref">atomicAdd()</span></a>)</p></td>
+<td colspan="2"><p>No</p></td>
+<td colspan="4"><p>Yes</p></td>
+</tr>
+<tr class="row-odd"><td><p>Warp reduce functions (<a class="reference internal" href="cpp-language-extensions.html#warp-reduce-functions"><span class="std std-ref">Warp Reduce Functions</span></a>)</p></td>
+<td><p>No</p></td>
+<td colspan="5"><p>Yes</p></td>
+</tr>
+<tr class="row-even"><td><p>Bfloat16-precision floating-point operations</p></td>
+<td><p>No</p></td>
+<td colspan="5"><p>Yes</p></td>
+</tr>
+<tr class="row-odd"><td><p>128-bit-precision floating-point operations</p></td>
+<td colspan="3"><p>No</p></td>
+<td colspan="3"><p>Yes</p></td>
+</tr>
+<tr class="row-even"><td><p>Hardware-accelerated <code class="docutils literal notranslate"><span class="pre">memcpy_async</span></code> (<a class="reference internal" href="../04-special-topics/pipelines.html#pipelines"><span class="std std-ref">Pipelines</span></a>)</p></td>
+<td><p>No</p></td>
+<td colspan="5"><p>Yes</p></td>
+</tr>
+<tr class="row-odd"><td><p>Hardware-accelerated Split Arrive/Wait Barrier (<a class="reference internal" href="../04-special-topics/async-barriers.html#asynchronous-barriers"><span class="std std-ref">Asynchronous Barriers</span></a>)</p></td>
+<td><p>No</p></td>
+<td colspan="5"><p>Yes</p></td>
+</tr>
+<tr class="row-even"><td><p>L2 Cache Residency Management (<a class="reference internal" href="../04-special-topics/l2-cache-control.html#advanced-kernels-l2-control"><span class="std std-ref">L2 Cache Control</span></a>)</p></td>
+<td><p>No</p></td>
+<td colspan="5"><p>Yes</p></td>
+</tr>
+<tr class="row-odd"><td><p>DPX Instructions for Accelerated Dynamic Programming (<a class="reference internal" href="cpp-language-extensions.html#dpx-instructions"><span class="std std-ref">Dynamic Programming eXtension (DPX) Instructions</span></a>)</p></td>
+<td colspan="2"><p>Multiple Instr.</p></td>
+<td colspan="2"><p>Native</p></td>
+<td colspan="2"><p>Multiple Instr.</p></td>
+</tr>
+<tr class="row-even"><td><p>Distributed Shared Memory</p></td>
+<td colspan="2"><p>No</p></td>
+<td colspan="4"><p>Yes</p></td>
+</tr>
+<tr class="row-odd"><td><p>Thread Block Cluster (<a class="reference internal" href="../02-basics/intro-to-cuda-cpp.html#thread-block-clusters"><span class="std std-ref">Thread Block Clusters</span></a>)</p></td>
+<td colspan="2"><p>No</p></td>
+<td colspan="4"><p>Yes</p></td>
+</tr>
+<tr class="row-even"><td><p>Tensor Memory Accelerator (TMA) unit
+(<a class="reference internal" href="../04-special-topics/async-copies.html#async-copies-tma"><span class="std std-ref">Using the Tensor Memory Accelerator (TMA)</span></a>)</p></td>
+<td colspan="2"><p>No</p></td>
+<td colspan="4"><p>Yes</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>Note that the KB and K units used in the following tables correspond to 1024 bytes (i.e., a KiB) and 1024 respectively.</p>
+<div class="pst-scrollable-table-container"><table class="small table-no-stripes longtable table" id="compute-capabilities-table-device-and-streaming-multiprocessor-sm-information-per-compute-capability">
+<caption><span class="caption-number">Table 30 </span><span class="caption-text">Device and Streaming Multiprocessor (SM) Information per Compute Capability</span><a class="headerlink" href="#compute-capabilities-table-device-and-streaming-multiprocessor-sm-information-per-compute-capability" title="Link to this table">#</a></caption>
+<colgroup>
+<col style="width: 40.0%" />
+<col style="width: 5.5%" />
+<col style="width: 5.5%" />
+<col style="width: 5.5%" />
+<col style="width: 5.5%" />
+<col style="width: 5.5%" />
+<col style="width: 5.5%" />
+<col style="width: 5.5%" />
+<col style="width: 5.5%" />
+<col style="width: 5.5%" />
+<col style="width: 5.5%" />
+<col style="width: 5.5%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"></th>
+<th class="head" colspan="11"><p class="centered">
+<strong>Compute Capability</strong></p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td></td>
+<td><p>7.5</p></td>
+<td><p>8.0</p></td>
+<td><p>8.6</p></td>
+<td><p>8.7</p></td>
+<td><p>8.9</p></td>
+<td><p>9.0</p></td>
+<td><p>10.0</p></td>
+<td><p>10.3</p></td>
+<td><p>10.7</p></td>
+<td><p>11.0</p></td>
+<td><p>12.x</p></td>
+</tr>
+<tr class="row-odd"><td><p>Ratio of FP32 to FP64
+Throughput
+<a class="footnote-reference brackets" href="#fn-cc-throughput" id="id5" role="doc-noteref"><span class="fn-bracket">[</span>2<span class="fn-bracket">]</span></a></p></td>
+<td><p>32:1</p></td>
+<td><p>2:1</p></td>
+<td colspan="3"><p>64:1</p></td>
+<td colspan="2"><p>2:1</p></td>
+<td><p>64:1</p></td>
+<td><p>4:1</p></td>
+<td colspan="2"><p>64:1</p></td>
+</tr>
+<tr class="row-even"><td><p>Maximum number of
+resident grids per device
+(Concurrent Kernel
+Execution)</p></td>
+<td colspan="11"><p>128</p></td>
+</tr>
+<tr class="row-odd"><td><p>Maximum dimensionality of
+a grid</p></td>
+<td colspan="11"><p>3</p></td>
+</tr>
+<tr class="row-even"><td><p>Maximum x-dimension of a
+grid</p></td>
+<td colspan="11"><p>2<sup>31</sup>-1</p></td>
+</tr>
+<tr class="row-odd"><td><p>Maximum y- or z-dimension
+of a grid</p></td>
+<td colspan="11"><p>65535</p></td>
+</tr>
+<tr class="row-even"><td><p>Maximum dimensionality of
+a thread block</p></td>
+<td colspan="11"><p>3</p></td>
+</tr>
+<tr class="row-odd"><td><p>Maximum x- or
+y-dimensionality of a
+thread block</p></td>
+<td colspan="11"><p>1024</p></td>
+</tr>
+<tr class="row-even"><td><p>Maximum z-dimension
+of a thread block</p></td>
+<td colspan="11"><p>64</p></td>
+</tr>
+<tr class="row-odd"><td><p>Maximum number of
+threads per block</p></td>
+<td colspan="11"><p>1024</p></td>
+</tr>
+<tr class="row-even"><td><p>Warp size</p></td>
+<td colspan="11"><p>32</p></td>
+</tr>
+<tr class="row-odd"><td><p>Maximum number of
+resident blocks per SM</p></td>
+<td><p>16</p></td>
+<td><p>32</p></td>
+<td colspan="2"><p>16</p></td>
+<td><p>24</p></td>
+<td colspan="3"><p>32</p></td>
+<td><p>16</p></td>
+<td colspan="2"><p>24</p></td>
+</tr>
+<tr class="row-even"><td><p>Maximum number of
+resident warps per SM</p></td>
+<td><p>32</p></td>
+<td><p>64</p></td>
+<td colspan="3"><p>48</p></td>
+<td colspan="3"><p>64</p></td>
+<td><p>32</p></td>
+<td colspan="2"><p>48</p></td>
+</tr>
+<tr class="row-odd"><td><p>Maximum number of
+resident threads per SM</p></td>
+<td><p>1024</p></td>
+<td><p>2048</p></td>
+<td colspan="3"><p>1536</p></td>
+<td colspan="3"><p>2048</p></td>
+<td><p>1024</p></td>
+<td colspan="2"><p>1536</p></td>
+</tr>
+<tr class="row-even"><td><p>Green contexts:
+minimum SM partition size
+for useFlags 0</p></td>
+<td><p>2</p></td>
+<td colspan="4"><p>4</p></td>
+<td colspan="6"><p>8</p></td>
+</tr>
+<tr class="row-odd"><td><p>Green contexts:
+SM co-scheduled alignment
+per partition
+for useFlags 0</p></td>
+<td colspan="5"><p>2</p></td>
+<td colspan="6"><p>8</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<aside class="footnote-list brackets">
+<aside class="footnote brackets" id="fn-cc-throughput" role="doc-footnote">
+<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id5">2</a><span class="fn-bracket">]</span></span>
+<p>Non-Tensor Core throughputs.  For more information on throughput see the <a class="reference external" href="https://docs.nvidia.com/cuda/cuda-c-best-practices-guide/index.html#arithmetic-instructions-throughput-native-arithmetic-instructions">CUDA Best Practices Guide</a></p>
+</aside>
+</aside>
+<div class="pst-scrollable-table-container"><table class="small table-no-stripes longtable table" id="compute-capabilities-table-memory-information-per-compute-capability">
+<caption><span class="caption-number">Table 31 </span><span class="caption-text">Memory Information per Compute Capability</span><a class="headerlink" href="#compute-capabilities-table-memory-information-per-compute-capability" title="Link to this table">#</a></caption>
+<colgroup>
+<col style="width: 40.0%" />
+<col style="width: 5.5%" />
+<col style="width: 5.5%" />
+<col style="width: 5.5%" />
+<col style="width: 5.5%" />
+<col style="width: 5.5%" />
+<col style="width: 5.5%" />
+<col style="width: 5.5%" />
+<col style="width: 5.5%" />
+<col style="width: 5.5%" />
+<col style="width: 5.5%" />
+<col style="width: 5.5%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"></th>
+<th class="head" colspan="11"><p class="centered">
+<strong>Compute Capability</strong></p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td></td>
+<td><p>7.5</p></td>
+<td><p>8.0</p></td>
+<td><p>8.6</p></td>
+<td><p>8.7</p></td>
+<td><p>8.9</p></td>
+<td><p>9.0</p></td>
+<td><p>10.0</p></td>
+<td><p>10.3</p></td>
+<td><p>10.7</p></td>
+<td><p>11.0</p></td>
+<td><p>12.x</p></td>
+</tr>
+<tr class="row-odd"><td><p>Number of 32-bit
+registers per SM</p></td>
+<td colspan="11"><p>64 K</p></td>
+</tr>
+<tr class="row-even"><td><p>Maximum number of 32-bit
+registers per thread
+block</p></td>
+<td colspan="11"><p>64 K</p></td>
+</tr>
+<tr class="row-odd"><td><p>Maximum number of 32-bit
+registers per thread</p></td>
+<td colspan="11"><p>255</p></td>
+</tr>
+<tr class="row-even"><td><p>Maximum amount of shared
+memory per SM</p></td>
+<td><p>64 KB</p></td>
+<td><p>164
+KB</p></td>
+<td><p>100
+KB</p></td>
+<td><p>164
+KB</p></td>
+<td><p>100
+KB</p></td>
+<td colspan="3"><p>228
+KB</p></td>
+<td><p>328
+KB</p></td>
+<td><p>228
+KB</p></td>
+<td><p>100
+KB</p></td>
+</tr>
+<tr class="row-odd"><td><p>Maximum amount of shared
+memory per thread block
+<a class="footnote-reference brackets" href="#fn33" id="id6" role="doc-noteref"><span class="fn-bracket">[</span>3<span class="fn-bracket">]</span></a></p></td>
+<td><p>64 KB</p></td>
+<td><p>163
+KB</p></td>
+<td><p>99 KB</p></td>
+<td><p>163
+KB</p></td>
+<td><p>99 KB</p></td>
+<td colspan="3"><p>227
+KB</p></td>
+<td><p>327
+KB</p></td>
+<td><p>227
+KB</p></td>
+<td><p>99 KB</p></td>
+</tr>
+<tr class="row-even"><td><p>Number of shared
+memory banks</p></td>
+<td colspan="11"><p>32</p></td>
+</tr>
+<tr class="row-odd"><td><p>Maximum amount of local
+memory per thread</p></td>
+<td colspan="11"><p>512 KB</p></td>
+</tr>
+<tr class="row-even"><td><p>Constant memory size</p></td>
+<td colspan="11"><p>64 KB</p></td>
+</tr>
+<tr class="row-odd"><td><p>Cache working set per SM
+for constant memory</p></td>
+<td colspan="11"><p>8 KB</p></td>
+</tr>
+<tr class="row-even"><td><p>Cache  working set per SM
+for texture memory</p></td>
+<td><p>32 or
+64 KB</p></td>
+<td><p>28 KB
+~ 192
+KB</p></td>
+<td><p>28 KB
+~ 128
+KB</p></td>
+<td><p>28 KB
+~ 192
+KB</p></td>
+<td><p>28 KB
+~ 128
+KB</p></td>
+<td colspan="3"><p>28 KB
+~ 256
+KB</p></td>
+<td><p>8 KB
+~ 256
+KB</p></td>
+<td><p>28 KB
+~ 256
+KB</p></td>
+<td><p>28 KB
+~ 128
+KB</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<aside class="footnote-list brackets">
+<aside class="footnote brackets" id="fn33" role="doc-footnote">
+<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id6">3</a><span class="fn-bracket">]</span></span>
+<p>Kernels relying on shared memory allocations over 48 KB per block must use dynamic shared memory and require an explicit opt-in, see <a class="reference internal" href="../03-advanced/advanced-kernel-programming.html#advanced-kernel-l1-shared-config"><span class="std std-ref">Configuring L1/Shared Memory Balance</span></a>.</p>
+</aside>
+</aside>
+<div class="pst-scrollable-table-container"><table class="table-no-stripes table" id="compute-capabilities-table-shared-memory-capacity-per-compute-capability">
+<caption><span class="caption-number">Table 32 </span><span class="caption-text">Shared Memory Capacity per Compute Capability</span><a class="headerlink" href="#compute-capabilities-table-shared-memory-capacity-per-compute-capability" title="Link to this table">#</a></caption>
+<thead>
+<tr class="row-odd"><th class="head"><p>Compute Capability</p></th>
+<th class="head"><p>Unified Data Cache Size (KB)</p></th>
+<th class="head"><p>SMEM Capacity Sizes (KB)</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>7.5</p></td>
+<td><p>96</p></td>
+<td><p>32, 64</p></td>
+</tr>
+<tr class="row-odd"><td><p>8.0</p></td>
+<td><p>192</p></td>
+<td><p>0, 8, 16, 32, 64, 100, 132, 164</p></td>
+</tr>
+<tr class="row-even"><td><p>8.6</p></td>
+<td><p>128</p></td>
+<td><p>0, 8, 16, 32, 64, 100</p></td>
+</tr>
+<tr class="row-odd"><td><p>8.7</p></td>
+<td><p>192</p></td>
+<td><p>0, 8, 16, 32, 64, 100, 132, 164</p></td>
+</tr>
+<tr class="row-even"><td><p>8.9</p></td>
+<td><p>128</p></td>
+<td><p>0, 8, 16, 32, 64, 100</p></td>
+</tr>
+<tr class="row-odd"><td><p>9.0</p></td>
+<td><p>256</p></td>
+<td><p>0, 8, 16, 32, 64, 100, 132, 164, 196, 228</p></td>
+</tr>
+<tr class="row-even"><td><p>10.0</p></td>
+<td><p>256</p></td>
+<td><p>0, 8, 16, 32, 64, 100, 132, 164, 196, 228</p></td>
+</tr>
+<tr class="row-odd"><td><p>10.3</p></td>
+<td><p>256</p></td>
+<td><p>0, 8, 16, 32, 64, 100, 132, 164, 196, 228</p></td>
+</tr>
+<tr class="row-even"><td><p>10.7 <a class="footnote-reference brackets" href="#fn107" id="id7" role="doc-noteref"><span class="fn-bracket">[</span>4<span class="fn-bracket">]</span></a></p></td>
+<td><p>336</p></td>
+<td><p>0, 8, 16, 32, 64, 100, 132, 164, 196, 228, 328</p></td>
+</tr>
+<tr class="row-odd"><td><p>11.0</p></td>
+<td><p>256</p></td>
+<td><p>0, 8, 16, 32, 64, 100, 132, 164, 196, 228</p></td>
+</tr>
+<tr class="row-even"><td><p>12.x</p></td>
+<td><p>128</p></td>
+<td><p>0, 8, 16, 32, 64, 100</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<aside class="footnote-list brackets">
+<aside class="footnote brackets" id="fn107" role="doc-footnote">
+<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id7">4</a><span class="fn-bracket">]</span></span>
+<p>For devices of compute capability 10.7, kernels that use the 328 KB shared-memory configuration must explicitly enable <code class="docutils literal notranslate"><span class="pre">cudaSharedMemoryModeAllowOversizedSharedMemory</span></code> by setting either the <code class="docutils literal notranslate"><span class="pre">cudaFuncAttributeSharedMemoryMode</span></code> function attribute or the <code class="docutils literal notranslate"><span class="pre">cudaLaunchAttributeSharedMemoryMode</span></code> launch attribute.</p>
+</aside>
+</aside>
+<p><a class="reference internal" href="#compute-capabilities-table-tensor-core-data-types-per-compute-capability"><span class="std std-numref">Table 33</span></a> shows the input data types supported by Tensor Core acceleration.  The Tensor Core feature set is available within the CUDA compilation toolchain through inline PTX.  It is strongly recommended that applications use this feature set through CUDA-X libraries such as cuDNN, cuBLAS, and cuFFT, for example, or through <a class="reference external" href="https://docs.nvidia.com/cutlass/index.html">CUTLASS</a>, a collection of CUDA C++ template abstractions and Python domain-specific languages (DSLs) designed to enable high-performance matrix-matrix multiplication (GEMM) and related computations across all levels within CUDA.</p>
+<div class="pst-scrollable-table-container"><table class="small table-no-stripes table" id="compute-capabilities-table-tensor-core-data-types-per-compute-capability">
+<caption><span class="caption-number">Table 33 </span><span class="caption-text">Input Data Types Supported by Tensor Core Acceleration per Compute Capability</span><a class="headerlink" href="#compute-capabilities-table-tensor-core-data-types-per-compute-capability" title="Link to this table">#</a></caption>
+<thead>
+<tr class="row-odd"><th class="head"><p>Compute Capability</p></th>
+<th class="head" colspan="9"><p>Tensor Core Input Data Types</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td></td>
+<td><p>FP64</p></td>
+<td><p>TF32</p></td>
+<td><p>BF16</p></td>
+<td><p>FP16</p></td>
+<td><p>FP8</p></td>
+<td><p>FP6</p></td>
+<td><p>FP4</p></td>
+<td><p>INT8</p></td>
+<td><p>INT4</p></td>
+</tr>
+<tr class="row-odd"><td><p>7.5</p></td>
+<td colspan="3"></td>
+<td><p>Yes</p></td>
+<td colspan="3"></td>
+<td><p>Yes</p></td>
+<td><p>Yes</p></td>
+</tr>
+<tr class="row-even"><td><p>8.0</p></td>
+<td><p>Yes</p></td>
+<td><p>Yes</p></td>
+<td><p>Yes</p></td>
+<td><p>Yes</p></td>
+<td colspan="3"></td>
+<td><p>Yes</p></td>
+<td><p>Yes</p></td>
+</tr>
+<tr class="row-odd"><td><p>8.6</p></td>
+<td></td>
+<td><p>Yes</p></td>
+<td><p>Yes</p></td>
+<td><p>Yes</p></td>
+<td colspan="3"></td>
+<td><p>Yes</p></td>
+<td><p>Yes</p></td>
+</tr>
+<tr class="row-even"><td><p>8.7</p></td>
+<td></td>
+<td><p>Yes</p></td>
+<td><p>Yes</p></td>
+<td><p>Yes</p></td>
+<td colspan="3"></td>
+<td><p>Yes</p></td>
+<td><p>Yes</p></td>
+</tr>
+<tr class="row-odd"><td><p>8.9</p></td>
+<td></td>
+<td><p>Yes</p></td>
+<td><p>Yes</p></td>
+<td><p>Yes</p></td>
+<td><p>Yes</p></td>
+<td colspan="2"></td>
+<td><p>Yes</p></td>
+<td><p>Yes</p></td>
+</tr>
+<tr class="row-even"><td><p>9.0</p></td>
+<td><p>Yes</p></td>
+<td><p>Yes</p></td>
+<td><p>Yes</p></td>
+<td><p>Yes</p></td>
+<td><p>Yes</p></td>
+<td colspan="2"></td>
+<td><p>Yes</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>10.0</p></td>
+<td><p>Yes</p></td>
+<td><p>Yes</p></td>
+<td><p>Yes</p></td>
+<td><p>Yes</p></td>
+<td><p>Yes</p></td>
+<td><p>Yes</p></td>
+<td><p>Yes</p></td>
+<td><p>Yes</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>10.3</p></td>
+<td></td>
+<td><p>Yes</p></td>
+<td><p>Yes</p></td>
+<td><p>Yes</p></td>
+<td><p>Yes</p></td>
+<td><p>Yes</p></td>
+<td><p>Yes</p></td>
+<td><p>Yes</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>10.7</p></td>
+<td><p>Yes</p></td>
+<td><p>Yes</p></td>
+<td><p>Yes</p></td>
+<td><p>Yes</p></td>
+<td><p>Yes</p></td>
+<td><p>Yes</p></td>
+<td><p>Yes</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>11.0</p></td>
+<td></td>
+<td><p>Yes</p></td>
+<td><p>Yes</p></td>
+<td><p>Yes</p></td>
+<td><p>Yes</p></td>
+<td><p>Yes</p></td>
+<td><p>Yes</p></td>
+<td><p>Yes</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>12.x</p></td>
+<td></td>
+<td><p>Yes</p></td>
+<td><p>Yes</p></td>
+<td><p>Yes</p></td>
+<td><p>Yes</p></td>
+<td><p>Yes</p></td>
+<td><p>Yes</p></td>
+<td><p>Yes</p></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="../part5.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title"><span class="section-number">5. </span>Technical Appendices</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="environment-variables.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title"><span class="section-number">5.2. </span>CUDA Environment Variables</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+
+
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#obtain-the-gpu-compute-capability">5.1.1. Obtain the GPU Compute Capability</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#feature-availability">5.1.2. Feature Availability</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#architecture-specific-features">5.1.2.1. Architecture-Specific Features</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#family-specific-features">5.1.2.2. Family-Specific Features</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#feature-set-compiler-targets">5.1.2.3. Feature Set Compiler Targets</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#features-and-technical-specifications">5.1.3. Features and Technical Specifications</a></li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+
+
+<script type="text/javascript">if (typeof _satellite !== "undefined") {_satellite.pageBottom();}</script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+<a class="footer-brand logo" href="https://www.nvidia.com">
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-blk-for-screen.svg" class="logo__image only-light" alt="NVIDIA"/>
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-wht-for-screen.svg" class="logo__image only-dark" alt="NVIDIA"/>
+</a></div>
+      
+        <div class="footer-item">
+
+<div class="footer-links">
+  
+  
+  <a class="external" href="https://www.nvidia.com/en-us/about-nvidia/privacy-policy/">Privacy Policy</a>
+   | 
+  
+  
+  
+  <a class="external" href="https://www.nvidia.com/en-us/about-nvidia/privacy-center/">Your Privacy Choices</a>
+   | 
+  
+  
+  
+  <a class="external" href="https://www.nvidia.com/en-us/about-nvidia/terms-of-service/">Terms of Service</a>
+   | 
+  
+  
+  
+  <a class="external" href="https://www.nvidia.com/en-us/about-nvidia/accessibility/">Accessibility</a>
+   | 
+  
+  
+  
+  <a class="external" href="https://www.nvidia.com/en-us/about-nvidia/company-policies/">Corporate Policies</a>
+   | 
+  
+  
+  
+  <a class="external" href="https://www.nvidia.com/en-us/product-security/">Product Security</a>
+   | 
+  
+  
+  
+  <a class="external" href="https://www.nvidia.com/en-us/contact/">Contact</a>
+  
+  
+  
+</div>
+</div>
+      
+        <div class="footer-item">
+
+
+
+
+  <p class="copyright">
+    
+      Copyright © 2007-2026, NVIDIA Corporation &amp; affiliates. All rights reserved.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item"><p class="last-updated">
+  Last updated on Sep 10, 2026.
+  <br/>
+</p></div>
+      
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+  </body>
+</html>

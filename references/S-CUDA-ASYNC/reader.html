@@ -1,0 +1,550 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; frame-src 'self'; object-src 'self'; media-src 'self'; base-uri 'none'; form-action 'none'"><title>2.5. Asynchronous Execution — CUDA Programming Guide</title><style>body{font:16px/1.75 system-ui,sans-serif;color:#202631;background:#fff;margin:0 auto;padding:40px;max-width:1100px}h1,h2,h3{line-height:1.3}pre,code{font-family:Consolas,monospace}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#f4f6f8;padding:18px}table{border-collapse:collapse;display:block;overflow-x:auto}td,th{border:1px solid #ccd3dc;padding:8px}img,svg{max-width:100%;height:auto}figure{margin:24px 0}.archive-note{border-left:4px solid #2563eb;padding:12px 20px;background:#eef4ff}math{font-size:1.1em}iframe{width:100%;height:85vh;border:1px solid #ccd3dc}a{color:#1658a5}</style></head><body><p class="archive-note">本地原文阅读副本。正文与资料文件已归档；原始响应、版本和校验信息见同目录 manifest.json。网页导航与在线脚本不执行。</p><article class="bd-article">
+<section id="asynchronous-execution">
+<span id="id1"></span><h1><span class="section-number">2.5. </span>Asynchronous Execution<a class="headerlink" href="#asynchronous-execution" title="Link to this heading">#</a></h1>
+<section id="what-is-asynchronous-concurrent-execution">
+<h2><span class="section-number">2.5.1. </span>What is Asynchronous Concurrent Execution?<a class="headerlink" href="#what-is-asynchronous-concurrent-execution" title="Link to this heading">#</a></h2>
+<p>CUDA allows concurrent, or overlapping, execution of multiple tasks, specifically:</p>
+<ul class="simple">
+<li><p>computation on the host</p></li>
+<li><p>computation on the device</p></li>
+<li><p>memory transfers from the host to the device</p></li>
+<li><p>memory transfers from the device to the host</p></li>
+<li><p>memory transfers within the memory of a given device</p></li>
+<li><p>memory transfers among devices</p></li>
+</ul>
+<p>The concurrency is expressed via an asynchronous interface, where a dispatching function call or kernel launch returns immediately. Asynchronous calls usually return before the dispatched operation has completed and may return before the asynchronous operation has started. The application is then free to perform other tasks at the same time as the originally dispatched operation. When the final results of the initially dispatched operation are needed, the application must perform some form of synchronization to ensure that the operation in question has completed.  A typical example of a concurrent execution pattern is the overlapping of host and device memory transfers with computation and thus reducing or eliminating their overhead.</p>
+<figure class="align-center" id="asynchronous-concurrent-execution-with-cuda-streams">
+<a class="reference internal image-reference" data-original-href="https://docs.nvidia.com/cuda/cuda-programming-guide/_images/cuda_streams.png"><img alt="Asynchronous Concurrent Execution with CUDA streams" src="assets/d07a94ede51643d672c0d774.png" style="width: 1000px;"/>
+</a>
+<figcaption>
+<p><span class="caption-number">Figure 20 </span><span class="caption-text">Asynchronous COncurrent Execution with CUDA streams</span><a class="headerlink" href="#asynchronous-concurrent-execution-with-cuda-streams" title="Link to this image">#</a></p>
+</figcaption>
+</figure>
+<p>In general, asynchronous interfaces typically provide three main ways to synchronize with the dispatched operation</p>
+<ul class="simple">
+<li><p>a <strong>blocking approach</strong>, where the application calls a function that blocks, or waits until the operation has completed</p></li>
+<li><p>a <strong>non-blocking approach</strong>, or polling approach where the application calls a function that returns immediately and supplies information about the status of the operation</p></li>
+<li><p>a <strong>callback approach</strong>, where a pre-registered function is executed when the operation has completed.</p></li>
+</ul>
+<p>While the programming interfaces are asynchronous, the actual ability to carry out various  operations concurrently will depend on the version of CUDA and the compute capability of the hardware being used – these details will be left to a later section of this guide (see <a class="reference internal" data-original-href="https://docs.nvidia.com/cuda/cuda-programming-guide/05-appendices/compute-capabilities.html#compute-capabilities"><span class="std std-ref">Compute Capabilities</span></a>).</p>
+<p>In <a class="reference internal" data-original-href="https://docs.nvidia.com/cuda/cuda-programming-guide/02-basics/intro-to-cuda-cpp.html#intro-synchronizing-the-gpu"><span class="std std-ref">Synchronizing CPU and GPU</span></a>, the CUDA runtime function <code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">cudaDeviceSynchronize()</span></code> was introduced, which is a blocking call which waits for all previously issued work to complete. The reason the <code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">cudaDeviceSynchronize()</span></code> call was needed is because the kernel launch is asynchronous and returns immediately. CUDA provides an API for both blocking and non-blocking approaches to synchronization and even supports the use of host-side callback functions.</p>
+<p>The core API components for asynchronous execution in CUDA are <strong>CUDA Streams</strong> and <strong>CUDA Events</strong>.
+In the rest of this section we will explain how these elements can be used to express asynchronous execution
+in CUDA.</p>
+<p>A related topic is that of <strong>CUDA Graphs</strong>, which allow a graph of asynchronous operations to be defined up front, which
+can then be executed repeatedly with minimal overhead. We cover CUDA Graphs in a very introductory level in section
+<a class="reference internal" href="#async-execution-cuda-graphs"><span class="std std-ref">2.4.9.2 Introduction to CUDA Graphs with Stream Capture</span></a>, and a
+more comprehensive discussion is provided in section <a class="reference internal" data-original-href="https://docs.nvidia.com/cuda/cuda-programming-guide/04-special-topics/cuda-graphs.html#cuda-graphs"><span class="std std-ref">4.1 CUDA Graphs</span></a>.</p>
+</section>
+<section id="cuda-streams">
+<span id="id2"></span><h2><span class="section-number">2.5.2. </span>CUDA Streams<a class="headerlink" href="#cuda-streams" title="Link to this heading">#</a></h2>
+<p>At the most basic level, a CUDA stream is an abstraction which allows the programmer to express a sequence of operations. A stream operates like a work-queue into which programs can add operations, such as memory copies or kernel launches, to be executed in order. Operations at the front of the queue for a given stream are executed and then dequeued allowing the next queued operation to come to the front and to be considered for execution. The order of execution of operations in a stream is sequential and the operations are executed in the order they are enqueued into the stream.</p>
+<p>An application may use multiple streams simultaneously. In such cases, the runtime will select a task to execute from the streams that have work available depending on the state of the GPU resources. Streams may be assigned a priority which acts as a hint to the runtime to influence the scheduling, but does not guarantee a specific order of execution.</p>
+<p>The API function calls and kernel-launches operating in a stream are asynchronous with respect to the host thread. Applications can synchronize with a stream by waiting for it to be empty of tasks, or they can also synchronize at the device level.</p>
+<p>CUDA has a default stream, and operations and kernel launches without a specific stream are queued into this default stream. Code examples which do not specify a stream are using this default stream implicitly. The default stream has some specific semantics which are discussed in subsection <a class="reference internal" href="#async-execution-blocking-non-blocking-default-stream"><span class="std std-ref">Blocking and non-blocking streams and the default stream</span></a>.</p>
+<section id="creating-and-destroying-cuda-streams">
+<h3><span class="section-number">2.5.2.1. </span>Creating and Destroying CUDA Streams<a class="headerlink" href="#creating-and-destroying-cuda-streams" title="Link to this heading">#</a></h3>
+<p>CUDA streams can be created using the <code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">cudaStreamCreate()</span></code> function. The function call initializes the stream handle which can be used to identify the stream in subsequent function calls.</p>
+<div class="highlight-c notranslate" id="stream-creation-example"><div class="highlight"><pre><span></span><span class="n">cudaStream_t</span><span class="w"> </span><span class="n">stream</span><span class="p">;</span><span class="w">        </span><span class="c1">// Stream handle</span>
+<span class="n">cudaStreamCreate</span><span class="p">(</span><span class="o">&amp;</span><span class="n">stream</span><span class="p">);</span><span class="w">  </span><span class="c1">// Create a new stream</span>
+
+<span class="c1">// stream based operations ...</span>
+
+<span class="n">cudaStreamDestroy</span><span class="p">(</span><span class="n">stream</span><span class="p">);</span><span class="w">  </span><span class="c1">// Destroy the stream</span>
+</pre></div>
+</div>
+<p>If the device is still doing work in stream <code class="docutils literal notranslate"><span class="pre">stream</span></code> when the application calls <code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">cudaStreamDestroy()</span></code>, the stream will complete all the work in the stream before being destroyed.</p>
+</section>
+<section id="launching-kernels-in-cuda-streams">
+<h3><span class="section-number">2.5.2.2. </span>Launching Kernels in CUDA Streams<a class="headerlink" href="#launching-kernels-in-cuda-streams" title="Link to this heading">#</a></h3>
+<p>The usual triple-chevron syntax for launching a kernel can also be used to launch a kernel into a specific stream. The stream is specified as an extra parameter to the kernel launch. In the following example the kernel named <code class="docutils literal notranslate"><span class="pre">kernel</span></code> is launched into the stream with handle <code class="docutils literal notranslate"><span class="pre">stream</span></code>, which is of type <code class="docutils literal notranslate"><span class="pre">cudaStream_t</span></code> and has been assumed to have been created previously:</p>
+<div class="highlight-c notranslate" id="kernel-launch-stream"><div class="highlight"><pre><span></span><span class="n">kernel</span><span class="o">&lt;&lt;&lt;</span><span class="n">grid</span><span class="p">,</span><span class="w"> </span><span class="n">block</span><span class="p">,</span><span class="w"> </span><span class="n">shared_mem_size</span><span class="p">,</span><span class="w"> </span><span class="n">stream</span><span class="o">&gt;&gt;&gt;</span><span class="p">(...);</span>
+</pre></div>
+</div>
+<p>The kernel launch is asynchronous and the function call returns immediately. Assuming that the kernel launch is successful, the kernel will execute in the stream <code class="docutils literal notranslate"><span class="pre">stream</span></code> and the application is free to perform other tasks on the CPU or in other streams on the GPU while the kernel is executing.</p>
+</section>
+<section id="launching-memory-transfers-in-cuda-streams">
+<span id="async-execution-memory-transfers"></span><h3><span class="section-number">2.5.2.3. </span>Launching Memory Transfers in CUDA Streams<a class="headerlink" href="#launching-memory-transfers-in-cuda-streams" title="Link to this heading">#</a></h3>
+<p>To launch a memory transfer into a stream, we can use the function <code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">cudaMemcpyAsync()</span></code>. This function is similar to the  <code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">cudaMemcpy()</span></code> function, but it takes an additional parameter specifying the stream to use for the memory transfer. The function call in the code block below copies <code class="docutils literal notranslate"><span class="pre">size</span></code> bytes from the host memory pointed to by <code class="docutils literal notranslate"><span class="pre">src</span></code> to the device memory pointed to by <code class="docutils literal notranslate"><span class="pre">dst</span></code> in the stream <code class="docutils literal notranslate"><span class="pre">stream</span></code>.</p>
+<div class="highlight-c notranslate" id="async-memory-transfer"><div class="highlight"><pre><span></span><span class="c1">// Copy `size` bytes from `src` to `dst` in stream `stream`</span>
+<span class="n">cudaMemcpyAsync</span><span class="p">(</span><span class="n">dst</span><span class="p">,</span><span class="w"> </span><span class="n">src</span><span class="p">,</span><span class="w"> </span><span class="n">size</span><span class="p">,</span><span class="w"> </span><span class="n">cudaMemcpyHostToDevice</span><span class="p">,</span><span class="w"> </span><span class="n">stream</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>Like other asynchronous function calls, this function call returns immediately, whereas the <code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">cudaMemcpy()</span></code> function blocks until the memory transfer is complete. In order to access the results of the transfer safely, the application must determine that the operation has completed using some form of synchronization.</p>
+<p>Other CUDA memory transfer functions such as <code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">cudaMemcpy2D()</span></code> also have asynchronous variants.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>In order for memory copies involving CPU memory to be carried out asynchronously, the host buffers must be pinned and page-locked. <code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">cudaMemcpyAsync()</span></code> will function correctly if host memory which is not pinned and page-locked is used, but it will revert to a synchronous behavior which will not overlap with other work. This can inhibit the performance benefits of using asynchronous memory transfers. It is recommended programs use <code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">cudaMallocHost()</span></code> to allocate buffers which will be used to send or receive data from GPUs.</p>
+</div>
+</section>
+<section id="stream-synchronization">
+<span id="async-execution-stream-synchronization"></span><h3><span class="section-number">2.5.2.4. </span>Stream Synchronization<a class="headerlink" href="#stream-synchronization" title="Link to this heading">#</a></h3>
+<p>The simplest way to synchronize with a stream is to wait for the stream to be empty of tasks. This can be done in two ways, using the <code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">cudaStreamSynchronize()</span></code> function or the <code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">cudaStreamQuery()</span></code> function.</p>
+<p>The <code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">cudaStreamSynchronize()</span></code> function will block until all the work in the stream has completed.</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="c1">// Wait for the stream to be empty of tasks</span>
+<span class="n">cudaStreamSynchronize</span><span class="p">(</span><span class="n">stream</span><span class="p">);</span>
+
+<span class="c1">// At this point the stream is done</span>
+<span class="c1">// and we can access the results of stream operations safely</span>
+</pre></div>
+</div>
+<p>If we prefer not to block, but just need a quick check to see if the stream is empty we can use the <code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">cudaStreamQuery()</span></code> function.</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="c1">// Have a peek at the stream</span>
+<span class="c1">// returns cudaSuccess if the stream is empty</span>
+<span class="c1">// returns cudaErrorNotReady if the stream is not empty</span>
+<span class="n">cudaError_t</span><span class="w"> </span><span class="n">status</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">cudaStreamQuery</span><span class="p">(</span><span class="n">stream</span><span class="p">);</span>
+
+<span class="k">switch</span><span class="w"> </span><span class="p">(</span><span class="n">status</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">case</span><span class="w"> </span><span class="no">cudaSuccess</span><span class="p">:</span>
+<span class="w">        </span><span class="c1">// The stream is empty</span>
+<span class="w">        </span><span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">"The stream is empty"</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span>
+<span class="w">        </span><span class="k">break</span><span class="p">;</span>
+<span class="w">    </span><span class="k">case</span><span class="w"> </span><span class="no">cudaErrorNotReady</span><span class="p">:</span>
+<span class="w">        </span><span class="c1">// The stream is not empty</span>
+<span class="w">        </span><span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">"The stream is not empty"</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span>
+<span class="w">        </span><span class="k">break</span><span class="p">;</span>
+<span class="w">    </span><span class="k">default</span><span class="o">:</span>
+<span class="w">        </span><span class="c1">// An error occurred - we should handle this</span>
+<span class="w">        </span><span class="k">break</span><span class="p">;</span>
+<span class="p">};</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="cuda-events">
+<span id="id3"></span><h2><span class="section-number">2.5.3. </span>CUDA Events<a class="headerlink" href="#cuda-events" title="Link to this heading">#</a></h2>
+<p>CUDA events are a mechanism for inserting markers into a CUDA stream. They are essentially like tracer particles that can be used to track the progress of tasks in a stream. Imagine launching two kernels into a stream. Without such tracking events, we would only be able to determine whether the stream is empty or not. If a third operation, either on CPU or in a different stream, depends on the output of the first kernel, we could not safely start that operation until we knew the stream was empty. When the stream is empty, both kernels would have completed.</p>
+<p>Using CUDA events we can do better. By enqueuing an event into a stream directly after the first kernel, but before the second kernel, we can have either a CPU thread or another stream wait for this event to come to the front of the stream. Then, we can safely start our dependent operation knowing that the first kernel has completed, but before the second kernel has started. Using CUDA events in this way can build up a graph of dependencies between operations and streams. This graph analogy translates directly into the later discussion of <a class="reference internal" href="#async-execution-cuda-graphs"><span class="std std-ref">CUDA graphs</span></a>.</p>
+<p>CUDA events also keep time information which can be used to time kernel launches and memory transfers.</p>
+<section id="creating-and-destroying-cuda-events">
+<h3><span class="section-number">2.5.3.1. </span>Creating and Destroying CUDA Events<a class="headerlink" href="#creating-and-destroying-cuda-events" title="Link to this heading">#</a></h3>
+<p>CUDA Events can be created and destroyed using the <code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">cudaEventCreate()</span></code> and <code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">cudaEventDestroy()</span></code> functions.</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="n">cudaEvent_t</span><span class="w"> </span><span class="n">event</span><span class="p">;</span>
+
+<span class="c1">// Create the event</span>
+<span class="n">cudaEventCreate</span><span class="p">(</span><span class="o">&amp;</span><span class="n">event</span><span class="p">);</span>
+
+<span class="c1">// do some work involving the event</span>
+
+<span class="c1">// Once the work is done and the event is no longer needed</span>
+<span class="c1">// we can destroy the event</span>
+<span class="n">cudaEventDestroy</span><span class="p">(</span><span class="n">event</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>The application is responsible for destroying events when they are no longer needed.</p>
+</section>
+<section id="inserting-events-into-cuda-streams">
+<h3><span class="section-number">2.5.3.2. </span>Inserting Events into CUDA Streams<a class="headerlink" href="#inserting-events-into-cuda-streams" title="Link to this heading">#</a></h3>
+<p>CUDA Events can be inserted into a stream using the <code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">cudaEventRecord()</span></code> function.</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="n">cudaEvent_t</span><span class="w"> </span><span class="n">event</span><span class="p">;</span>
+<span class="n">cudaStream_t</span><span class="w"> </span><span class="n">stream</span><span class="p">;</span>
+
+<span class="c1">// Create the event</span>
+<span class="n">cudaEventCreate</span><span class="p">(</span><span class="o">&amp;</span><span class="n">event</span><span class="p">);</span>
+
+<span class="c1">// Insert the event into the stream</span>
+<span class="n">cudaEventRecord</span><span class="p">(</span><span class="n">event</span><span class="p">,</span><span class="w"> </span><span class="n">stream</span><span class="p">);</span>
+</pre></div>
+</div>
+</section>
+<section id="timing-operations-in-cuda-streams">
+<h3><span class="section-number">2.5.3.3. </span>Timing Operations in CUDA Streams<a class="headerlink" href="#timing-operations-in-cuda-streams" title="Link to this heading">#</a></h3>
+<p>CUDA events can be used to time the execution of various stream operations including kernels. When an event reaches the front of a stream it records a timestamp. By surrounding a kernel in a stream with two events we can get an accurate timing of the duration of the kernel execution as is shown in the code snippet below:</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="n">cudaStream_t</span><span class="w"> </span><span class="n">stream</span><span class="p">;</span>
+<span class="n">cudaStreamCreate</span><span class="p">(</span><span class="o">&amp;</span><span class="n">stream</span><span class="p">);</span>
+
+<span class="n">cudaEvent_t</span><span class="w"> </span><span class="n">start</span><span class="p">;</span>
+<span class="n">cudaEvent_t</span><span class="w"> </span><span class="n">stop</span><span class="p">;</span>
+
+<span class="c1">// create the events</span>
+<span class="n">cudaEventCreate</span><span class="p">(</span><span class="o">&amp;</span><span class="n">start</span><span class="p">);</span>
+<span class="n">cudaEventCreate</span><span class="p">(</span><span class="o">&amp;</span><span class="n">stop</span><span class="p">);</span>
+
+<span class="w"> </span><span class="c1">// record the start event</span>
+<span class="n">cudaEventRecord</span><span class="p">(</span><span class="n">start</span><span class="p">,</span><span class="w"> </span><span class="n">stream</span><span class="p">);</span>
+
+<span class="c1">// launch the kernel</span>
+<span class="n">kernel</span><span class="o">&lt;&lt;&lt;</span><span class="n">grid</span><span class="p">,</span><span class="w"> </span><span class="n">block</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="n">stream</span><span class="o">&gt;&gt;&gt;</span><span class="p">(...);</span>
+
+<span class="c1">// record the stop event</span>
+<span class="n">cudaEventRecord</span><span class="p">(</span><span class="n">stop</span><span class="p">,</span><span class="w"> </span><span class="n">stream</span><span class="p">);</span>
+
+<span class="c1">// wait for the stream to complete</span>
+<span class="c1">// both events will have been triggered</span>
+<span class="n">cudaStreamSynchronize</span><span class="p">(</span><span class="n">stream</span><span class="p">);</span>
+
+<span class="c1">// get the timing</span>
+<span class="kt">float</span><span class="w"> </span><span class="n">elapsedTime</span><span class="p">;</span>
+<span class="n">cudaEventElapsedTime</span><span class="p">(</span><span class="o">&amp;</span><span class="n">elapsedTime</span><span class="p">,</span><span class="w"> </span><span class="n">start</span><span class="p">,</span><span class="w"> </span><span class="n">stop</span><span class="p">);</span>
+<span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">"Kernel execution time: "</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">elapsedTime</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">" ms"</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span>
+
+<span class="c1">// clean up</span>
+<span class="n">cudaEventDestroy</span><span class="p">(</span><span class="n">start</span><span class="p">);</span>
+<span class="n">cudaEventDestroy</span><span class="p">(</span><span class="n">stop</span><span class="p">);</span>
+<span class="n">cudaStreamDestroy</span><span class="p">(</span><span class="n">stream</span><span class="p">);</span>
+</pre></div>
+</div>
+</section>
+<section id="checking-the-status-of-cuda-events">
+<h3><span class="section-number">2.5.3.4. </span>Checking the Status of CUDA Events<a class="headerlink" href="#checking-the-status-of-cuda-events" title="Link to this heading">#</a></h3>
+<p>Like in the case of checking the status of streams, we can check the status of events in either a blocking or a non-blocking way.</p>
+<p>The <code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">cudaEventSynchronize()</span></code> function will block until the event has completed. In the code snippet below we launch a kernel into a stream, followed by an event and then by a second kernel. We can use the <code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">cudaEventSynchronize()</span></code> function to wait for the event after the first kernel to complete and in principle launch a dependent task immediately, potentially before <cite>kernel2</cite> finishes.</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="n">cudaEvent_t</span><span class="w"> </span><span class="n">event</span><span class="p">;</span>
+<span class="n">cudaStream_t</span><span class="w"> </span><span class="n">stream</span><span class="p">;</span>
+
+<span class="c1">// create the stream</span>
+<span class="n">cudaStreamCreate</span><span class="p">(</span><span class="o">&amp;</span><span class="n">stream</span><span class="p">);</span>
+
+<span class="c1">// create the event</span>
+<span class="n">cudaEventCreate</span><span class="p">(</span><span class="o">&amp;</span><span class="n">event</span><span class="p">);</span>
+
+<span class="c1">// launch a kernel into the stream</span>
+<span class="n">kernel</span><span class="o">&lt;&lt;&lt;</span><span class="n">grid</span><span class="p">,</span><span class="w"> </span><span class="n">block</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="n">stream</span><span class="o">&gt;&gt;&gt;</span><span class="p">(...);</span>
+
+<span class="c1">// Record the event</span>
+<span class="n">cudaEventRecord</span><span class="p">(</span><span class="n">event</span><span class="p">,</span><span class="w"> </span><span class="n">stream</span><span class="p">);</span>
+
+<span class="c1">// launch a kernel into the stream</span>
+<span class="n">kernel2</span><span class="o">&lt;&lt;&lt;</span><span class="n">grid</span><span class="p">,</span><span class="w"> </span><span class="n">block</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="n">stream</span><span class="o">&gt;&gt;&gt;</span><span class="p">(...);</span>
+
+<span class="c1">// Wait for the event to complete</span>
+<span class="c1">// Kernel 1 will be  guaranteed to have completed</span>
+<span class="c1">// and we can launch the dependent task.</span>
+<span class="n">cudaEventSynchronize</span><span class="p">(</span><span class="n">event</span><span class="p">);</span>
+<span class="n">dependentCPUtask</span><span class="p">();</span>
+
+<span class="c1">// Wait for the stream to be empty</span>
+<span class="c1">// Kernel 2 is guaranteed to have completed</span>
+<span class="n">cudaStreamSynchronize</span><span class="p">(</span><span class="n">stream</span><span class="p">);</span>
+
+<span class="c1">// destroy the event</span>
+<span class="n">cudaEventDestroy</span><span class="p">(</span><span class="n">event</span><span class="p">);</span>
+
+<span class="c1">// destroy the stream</span>
+<span class="n">cudaStreamDestroy</span><span class="p">(</span><span class="n">stream</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>CUDA Events can be checked for completion in a non-blocking way using the <code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">cudaEventQuery()</span></code> function. In the example below we launch 2 kernels into a stream. The first kernel, <cite>kernel1</cite> generates some data which we would like to copy to the host, however we also have some CPU side work to do. In the code below, we enqueue <cite>kernel1</cite> followed by an event (<cite>event</cite>) and then <cite>kernel2</cite> into stream <cite>stream1</cite>. We then go into a CPU work loop, but occasionally take a peek to see if the event has completed indicating that <cite>kernel1</cite> is done. If so, we launch a device to host copy into stream <cite>stream2</cite>. This approach allows the overlap of the CPU work with the GPU kernel execution and the device to host copy.</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="n">cudaEvent_t</span><span class="w"> </span><span class="n">event</span><span class="p">;</span>
+<span class="n">cudaStream_t</span><span class="w"> </span><span class="n">stream1</span><span class="p">;</span>
+<span class="n">cudaStream_t</span><span class="w"> </span><span class="n">stream2</span><span class="p">;</span>
+
+<span class="kt">size_t</span><span class="w"> </span><span class="n">size</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">LARGE_NUMBER</span><span class="p">;</span>
+<span class="kt">float</span><span class="o">*</span><span class="w"> </span><span class="n">d_data</span><span class="p">;</span>
+<span class="kt">float</span><span class="o">*</span><span class="w"> </span><span class="n">h_data</span><span class="p">;</span>
+
+<span class="c1">// Create some data</span>
+<span class="n">cudaMalloc</span><span class="p">(</span><span class="o">&amp;</span><span class="n">d_data</span><span class="p">,</span><span class="w"> </span><span class="n">size</span><span class="p">);</span>
+<span class="n">cudaMallocHost</span><span class="p">(</span><span class="o">&amp;</span><span class="n">h_data</span><span class="p">,</span><span class="w"> </span><span class="n">size</span><span class="p">);</span>
+
+<span class="c1">// create the streams</span>
+<span class="n">cudaStreamCreate</span><span class="p">(</span><span class="o">&amp;</span><span class="n">stream1</span><span class="p">);</span><span class="w">   </span><span class="c1">// Processing stream</span>
+<span class="n">cudaStreamCreate</span><span class="p">(</span><span class="o">&amp;</span><span class="n">stream2</span><span class="p">);</span><span class="w">   </span><span class="c1">// Copying stream</span>
+<span class="kt">bool</span><span class="w"> </span><span class="n">copyStarted</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">false</span><span class="p">;</span>
+
+<span class="c1">//  create the event</span>
+<span class="n">cudaEventCreate</span><span class="p">(</span><span class="o">&amp;</span><span class="n">event</span><span class="p">);</span>
+
+<span class="c1">// launch kernel1 into the stream</span>
+<span class="n">kernel1</span><span class="o">&lt;&lt;&lt;</span><span class="n">grid</span><span class="p">,</span><span class="w"> </span><span class="n">block</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="n">stream1</span><span class="o">&gt;&gt;&gt;</span><span class="p">(</span><span class="n">d_data</span><span class="p">,</span><span class="w"> </span><span class="n">size</span><span class="p">);</span>
+<span class="c1">// enqueue an event following kernel1</span>
+<span class="n">cudaEventRecord</span><span class="p">(</span><span class="n">event</span><span class="p">,</span><span class="w"> </span><span class="n">stream1</span><span class="p">);</span>
+
+<span class="c1">// launch kernel2 into the stream</span>
+<span class="n">kernel2</span><span class="o">&lt;&lt;&lt;</span><span class="n">grid</span><span class="p">,</span><span class="w"> </span><span class="n">block</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="n">stream1</span><span class="o">&gt;&gt;&gt;</span><span class="p">();</span>
+
+<span class="c1">// while the kernels are running do some work on the CPU</span>
+<span class="c1">// but check if kernel1 has completed because then we will start</span>
+<span class="c1">// a device to host copy in stream2</span>
+<span class="k">while</span><span class="w"> </span><span class="p">(</span><span class="w"> </span><span class="n">not</span><span class="w"> </span><span class="n">allCPUWorkDone</span><span class="p">()</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="n">not</span><span class="w"> </span><span class="n">copyStarted</span><span class="w"> </span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">doNextChunkOfCPUWork</span><span class="p">();</span>
+
+<span class="w">    </span><span class="c1">// peek to see if kernel 1 has completed</span>
+<span class="w">    </span><span class="c1">// if so enqueue a non-blocking copy into stream2</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="w"> </span><span class="n">not</span><span class="w"> </span><span class="n">copyStarted</span><span class="w"> </span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">if</span><span class="p">(</span><span class="w"> </span><span class="n">cudaEventQuery</span><span class="p">(</span><span class="n">event</span><span class="p">)</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">cudaSuccess</span><span class="w"> </span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="n">cudaMemcpyAsync</span><span class="p">(</span><span class="n">h_data</span><span class="p">,</span><span class="w"> </span><span class="n">d_data</span><span class="p">,</span><span class="w"> </span><span class="n">size</span><span class="p">,</span><span class="w"> </span><span class="n">cudaMemcpyDeviceToHost</span><span class="p">,</span><span class="w"> </span><span class="n">stream2</span><span class="p">);</span>
+<span class="w">            </span><span class="n">copyStarted</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">true</span><span class="p">;</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+
+<span class="c1">// wait for both streams to be done</span>
+<span class="n">cudaStreamSynchronize</span><span class="p">(</span><span class="n">stream1</span><span class="p">);</span>
+<span class="n">cudaStreamSynchronize</span><span class="p">(</span><span class="n">stream2</span><span class="p">);</span>
+
+<span class="c1">// destroy the event</span>
+<span class="n">cudaEventDestroy</span><span class="p">(</span><span class="n">event</span><span class="p">);</span>
+
+<span class="c1">// destroy the streams and free the data</span>
+<span class="n">cudaStreamDestroy</span><span class="p">(</span><span class="n">stream1</span><span class="p">);</span>
+<span class="n">cudaStreamDestroy</span><span class="p">(</span><span class="n">stream2</span><span class="p">);</span>
+<span class="n">cudaFree</span><span class="p">(</span><span class="n">d_data</span><span class="p">);</span>
+<span class="n">free</span><span class="p">(</span><span class="n">h_data</span><span class="p">);</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="callback-functions-from-streams">
+<h2><span class="section-number">2.5.4. </span>Callback Functions from Streams<a class="headerlink" href="#callback-functions-from-streams" title="Link to this heading">#</a></h2>
+<p>CUDA provides a mechanism for launching functions on the host from within a stream. There are currently two functions available for this purpose: <code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">cudaLaunchHostFunc()</span></code> and <code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">cudaAddCallback()</span></code>. However, <code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">cudaAddCallback()</span></code> is slated for deprecation, so applications should use <code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">cudaLaunchHostFunc()</span></code>.</p>
+<p>Using <code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">cudaLaunchHostFunc()</span></code></p>
+<p>The signature of the <code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">cudaLaunchHostFunc()</span></code> function is as follows:</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="n">cudaError_t</span><span class="w"> </span><span class="nf">cudaLaunchHostFunc</span><span class="p">(</span><span class="n">cudaStream_t</span><span class="w"> </span><span class="n">stream</span><span class="p">,</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">func</span><span class="p">)(</span><span class="kt">void</span><span class="w"> </span><span class="o">*</span><span class="p">),</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="o">*</span><span class="n">data</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>where</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">stream</span></code>: The stream to launch the callback function into.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">func</span></code>: The callback function to launch.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">data</span></code>: A pointer to the data to pass to the callback function.</p></li>
+</ul>
+<p>The host function itself is a simple C function with the signature:</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">hostFunction</span><span class="p">(</span><span class="kt">void</span><span class="w"> </span><span class="o">*</span><span class="n">data</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>with the <code class="docutils literal notranslate"><span class="pre">data</span></code> parameter pointing to a user defined data structure which the function can interpret. There are some caveats to keep in mind when using callback functions like this. In particular, the host
+function may not call any CUDA APIs.</p>
+<p>For the purposes of being used with unified memory, the following execution guarantees are provided:</p>
+<ul class="simple">
+<li><p>The stream is considered idle for the duration of the function’s execution. Thus, for example, the function may always use memory attached to the stream it was enqueued in.</p></li>
+<li><p>The start of execution of the function has the same effect as synchronizing an event recorded in the same stream immediately prior to the function. It thus synchronizes streams which have been “joined” prior to the function.</p></li>
+<li><p>Adding device work to any stream does not have the effect of making the stream active until all preceding host functions and stream callbacks have executed. Thus, for example, a function might use global attached memory even if work has been added to another stream, if the work has been ordered behind the function call with an event.</p></li>
+<li><p>Completion of the function does not cause a stream to become active except as described above. The stream will remain idle if no device work follows the function, and will remain idle across consecutive host functions or stream callbacks without device work in between. Thus, for example, stream synchronization can be done by signaling from a host function at the end of the stream.</p></li>
+</ul>
+<section id="using-cudastreamaddcallback">
+<h3><span class="section-number">2.5.4.1. </span>Using <code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">cudaStreamAddCallback()</span></code><a class="headerlink" href="#using-cudastreamaddcallback" title="Link to this heading">#</a></h3>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The <code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">cudaStreamAddCallback()</span></code> function is slated for deprecation and removal and is discussed here for completeness and because it may still appear in existing code. Applications should use or switch to using <code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">cudaLaunchHostFunc()</span></code>.</p>
+</div>
+<p>The signature of the <code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">cudaStreamAddCallback()</span></code> function is as follows:</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="n">cudaError_t</span><span class="w"> </span><span class="nf">cudaStreamAddCallback</span><span class="p">(</span><span class="n">cudaStream_t</span><span class="w"> </span><span class="n">stream</span><span class="p">,</span><span class="w"> </span><span class="n">cudaStreamCallback_t</span><span class="w"> </span><span class="n">callback</span><span class="p">,</span><span class="w"> </span><span class="kt">void</span><span class="o">*</span><span class="w"> </span><span class="n">userData</span><span class="p">,</span><span class="w"> </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">flags</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>where</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">stream</span></code>: The stream to launch the callback function into.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">callback</span></code>: The callback function to launch.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">userData</span></code>: A pointer to the data to pass to the callback function.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">flags</span></code>: Currently, this parameter must be 0 for future compatibility.</p></li>
+</ul>
+<p>The signature of the  <code class="docutils literal notranslate"><span class="pre">callback</span></code> function is a little different from the case when we used the <code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">cudaLaunchHostFunc()</span></code> function.
+In this case the callback function is a C function with the signature:</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">callbackFunction</span><span class="p">(</span><span class="n">cudaStream_t</span><span class="w"> </span><span class="n">stream</span><span class="p">,</span><span class="w"> </span><span class="n">cudaError_t</span><span class="w"> </span><span class="n">status</span><span class="p">,</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="o">*</span><span class="n">userData</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>where the function is now passed</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">stream</span></code>: The stream handle from which the callback function was launched.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">status</span></code>: The status of the stream operation that triggered the callback.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">userData</span></code>: A pointer to the data that was passed to the callback function.</p></li>
+</ul>
+<p>In particular the <code class="docutils literal notranslate"><span class="pre">status</span></code> parameter will contain the current error status of the stream, which may have been set by previous operations.
+Similarly to the <code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">cudaLaunchHostFunc()</span></code> func case, the stream will not be active and advance to tasks until the host-function has completed, and no CUDA functions may be called from within the callback function.</p>
+</section>
+<section id="asynchronous-error-handling">
+<span id="asynchronous-execution-error-handling"></span><h3><span class="section-number">2.5.4.2. </span>Asynchronous Error Handling<a class="headerlink" href="#asynchronous-error-handling" title="Link to this heading">#</a></h3>
+<p>In a cuda stream, errors may originate from any operation in the stream, including for kernel launches and memory transfers. These errors may not be propagated back to the user at run-time until the stream is synchronized, for example, by waiting for an event or calling <code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">cudaStreamSynchronize()</span></code>. There are two ways to find out about errors which may have occurred in a stream.</p>
+<ul class="simple">
+<li><p>Using the function <code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">cudaGetLastError()</span></code>  - this function returns and clears the last error encountered in any stream in the current context. An immediate second call to cudaGetLastError() would return <code class="docutils literal notranslate"><span class="pre">cudaSuccess</span></code> if no other error occurred between the two calls.</p></li>
+<li><p>Using the function <code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">cudaPeekAtLastError()</span></code> - this function returns the last error in the current context, but does not clear it.</p></li>
+</ul>
+<p>Both of these functions return the error as a value of type <code class="docutils literal notranslate"><span class="pre">cudaError_t</span></code>. Printable names names of the errors can be generated using the functions <cite>cudaGetErrorName()</cite> and <cite>cudaGetErrorString()</cite>.</p>
+<p>An example of using these functions is shown below:</p>
+<div class="literal-block-wrapper docutils container" id="id6">
+<div class="code-block-caption"><span class="caption-number">Listing 1 </span><span class="caption-text">Example of using cudaGetLastError() and cudaPeekAtLastError()</span><a class="headerlink" href="#id6" title="Link to this code">#</a></div>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="c1">// Some work occurs in streams.</span>
+<span class="n">cudaStreamSynchronize</span><span class="p">(</span><span class="n">stream</span><span class="p">);</span>
+
+<span class="c1">// Look at the last error but do not clear it</span>
+<span class="n">cudaError_t</span><span class="w"> </span><span class="n">err</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">cudaPeekAtLastError</span><span class="p">();</span>
+<span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">err</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">cudaSuccess</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">"Error with name: %s</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span><span class="w"> </span><span class="n">cudaGetErrorName</span><span class="p">(</span><span class="n">err</span><span class="p">));</span>
+<span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">"Error description: %s</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span><span class="w"> </span><span class="n">cudaGetErrorString</span><span class="p">(</span><span class="n">err</span><span class="p">));</span>
+<span class="p">}</span>
+
+<span class="c1">// Look at the last error and clear it</span>
+<span class="n">cudaError_t</span><span class="w"> </span><span class="n">err2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">cudaGetLastError</span><span class="p">();</span>
+<span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">err2</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">cudaSuccess</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">"Error with name: %s</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span><span class="w"> </span><span class="n">cudaGetErrorName</span><span class="p">(</span><span class="n">err2</span><span class="p">));</span>
+<span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">"Error description: %s</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span><span class="w"> </span><span class="n">cudaGetErrorString</span><span class="p">(</span><span class="n">err2</span><span class="p">));</span>
+<span class="p">}</span>
+
+<span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">err2</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">err</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">"As expected, cudaPeekAtLastError() did not clear the error</span><span class="se">\n</span><span class="s">"</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="c1">// Check again</span>
+<span class="n">cudaError_t</span><span class="w"> </span><span class="n">err3</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">cudaGetLastError</span><span class="p">();</span>
+<span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">err3</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">cudaSuccess</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">"As expected, cudaGetLastError() cleared the error</span><span class="se">\n</span><span class="s">"</span><span class="p">);</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</div>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>When an error appears at a synchronization, especially in a stream with many operations, it is often difficult to pinpoint exactly where in the stream the error may have occurred. To debug such a situation a useful trick may be to set the environment variable  <code class="docutils literal notranslate"><span class="pre">CUDA_LAUNCH_BLOCKING=1</span></code> and then run the application. The effect of this environment variable is to synchronize after every single kernel launch. This can aid in tracking down which kernel, or transfer caused the error.
+Synchronization can be expensive; applications may run substantially slower when this environment variable is set.</p>
+</div>
+</section>
+</section>
+<section id="cuda-stream-ordering">
+<h2><span class="section-number">2.5.5. </span>CUDA Stream Ordering<a class="headerlink" href="#cuda-stream-ordering" title="Link to this heading">#</a></h2>
+<p>Now that we have discussed the basic mechanisms of streams, events and callback functions it is important to consider the ordering semantics of asynchronous operations in a stream. These semantics are to allow application programmers to think about the ordering of operations in a stream in a safe way. There are some special cases where these semantics may be relaxed for purposes of performance optimization such as in the case of a <a class="reference internal" data-original-href="https://docs.nvidia.com/cuda/cuda-programming-guide/04-special-topics/programmatic-dependent-launch.html#programmatic-dependent-launch-and-synchronization"><span class="std std-ref">programmatic dependent kernel launch</span></a>, which allows the overlap of two kernels through the use of special attributes and kernel launch mechanisms, or in the case of batching memory transfers using the <a class="reference internal" data-original-href="https://docs.nvidia.com/cuda/cuda-programming-guide/03-advanced/advanced-host-programming.html#advanced-host-batched-memory-transfers"><span class="std std-ref">asynchronous batched memory copy functions</span></a>, when the runtime can perform non-overlapping batch copies concurrently.</p>
+<p>Most importantly CUDA streams are what are known as in-order streams. This means that the order of execution of the operations in a stream is the same as the order in which those operations were enqueued. An operation in a stream cannot leap-frog other operations. Memory operations (such as copies) are tracked by the runtime and will always complete before the next operation in order to allow dependent kernels safe access to the data being transferred.</p>
+</section>
+<section id="blocking-and-non-blocking-streams-and-the-default-stream">
+<span id="async-execution-blocking-non-blocking-default-stream"></span><h2><span class="section-number">2.5.6. </span>Blocking and non-blocking streams and the default stream<a class="headerlink" href="#blocking-and-non-blocking-streams-and-the-default-stream" title="Link to this heading">#</a></h2>
+<p>In CUDA there are two types of streams: blocking and non-blocking. The name can be a little misleading as the blocking and non-blocking semantics refer only to how the streams synchronize with the default stream. By default, streams created with <code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">cudaStreamCreate()</span></code> are blocking streams. In order to create a non-blocking stream, the <code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">cudaStreamCreateWithFlags()</span></code> function must be used with the <code class="docutils literal notranslate"><span class="pre">cudaStreamNonBlocking</span></code> flag:</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="n">cudaStream_t</span><span class="w"> </span><span class="n">stream</span><span class="p">;</span>
+<span class="n">cudaStreamCreateWithFlags</span><span class="p">(</span><span class="o">&amp;</span><span class="n">stream</span><span class="p">,</span><span class="w"> </span><span class="n">cudaStreamNonBlocking</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>and non-blocking streams can be destroyed in the usual way with <code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">cudaStreamDestroy()</span></code>.</p>
+<section id="legacy-default-stream">
+<span id="async-execution-default-stream"></span><h3><span class="section-number">2.5.6.1. </span>Legacy Default Stream<a class="headerlink" href="#legacy-default-stream" title="Link to this heading">#</a></h3>
+<p>The key difference between the blocking and non-blocking streams is how they synchronize with the <strong>default stream</strong>. CUDA provides a legacy default stream ( also known as the NULL stream or the stream with stream ID 0) which is used when no stream is specified in kernel launches or in blocking <code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">cudaMemcpy()</span></code> calls. This default stream, which was shared amongst all host threads, is a blocking stream. When an operation is launched into this default stream, it will synchronize with all other blocking streams, in other words it will wait for all other blocking streams to complete before it can execute.</p>
+<div class="highlight-c notranslate" id="legacy-default-stream-example"><div class="highlight"><pre><span></span><span class="n">cudaStream_t</span><span class="w"> </span><span class="n">stream1</span><span class="p">,</span><span class="w"> </span><span class="n">stream2</span><span class="p">;</span>
+<span class="n">cudaStreamCreate</span><span class="p">(</span><span class="o">&amp;</span><span class="n">stream1</span><span class="p">);</span>
+<span class="n">cudaStreamCreate</span><span class="p">(</span><span class="o">&amp;</span><span class="n">stream2</span><span class="p">);</span>
+
+<span class="n">kernel1</span><span class="o">&lt;&lt;&lt;</span><span class="n">grid</span><span class="p">,</span><span class="w"> </span><span class="n">block</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="n">stream1</span><span class="o">&gt;&gt;&gt;</span><span class="p">(...);</span>
+<span class="n">kernel2</span><span class="o">&lt;&lt;&lt;</span><span class="n">grid</span><span class="p">,</span><span class="w"> </span><span class="n">block</span><span class="o">&gt;&gt;&gt;</span><span class="p">(...);</span>
+<span class="n">kernel3</span><span class="o">&lt;&lt;&lt;</span><span class="n">grid</span><span class="p">,</span><span class="w"> </span><span class="n">block</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="n">stream2</span><span class="o">&gt;&gt;&gt;</span><span class="p">(...);</span>
+
+<span class="n">cudaDeviceSynchronize</span><span class="p">();</span>
+</pre></div>
+</div>
+<p>The default stream behavior means that in the above code snippet above, <cite>kernel2</cite> will wait for <cite>kernel1</cite> to complete, and <cite>kernel3</cite> will wait for <cite>kernel2</cite> to complete, even if in principle all three kernels could execute concurrently. By creating a non-blocking stream we can avoid this synchronization behavior. In the code snippet below we create two non-blocking streams. The default stream will no longer synchronize with these streams and in principle all three kernels could execute concurrently. As such we cannot assume any ordering of execution of the kernels and should perform explicit synchronization ( such as with the rather heavy handed <code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">cudaDeviceSynchronize()</span></code> call) in order to ensure that the kernels have completed.</p>
+<div class="highlight-c notranslate" id="non-blocking-stream-example"><div class="highlight"><pre><span></span><span class="n">cudaStream_t</span><span class="w"> </span><span class="n">stream1</span><span class="p">,</span><span class="w"> </span><span class="n">stream2</span><span class="p">;</span>
+<span class="n">cudaStreamCreateWithFlags</span><span class="p">(</span><span class="o">&amp;</span><span class="n">stream1</span><span class="p">,</span><span class="w"> </span><span class="n">cudaStreamNonBlocking</span><span class="p">);</span>
+<span class="n">cudaStreamCreateWithFlags</span><span class="p">(</span><span class="o">&amp;</span><span class="n">stream2</span><span class="p">,</span><span class="w"> </span><span class="n">cudaStreamNonBlocking</span><span class="p">);</span>
+
+<span class="n">kernel1</span><span class="o">&lt;&lt;&lt;</span><span class="n">grid</span><span class="p">,</span><span class="w"> </span><span class="n">block</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="n">stream1</span><span class="o">&gt;&gt;&gt;</span><span class="p">(...);</span>
+<span class="n">kernel2</span><span class="o">&lt;&lt;&lt;</span><span class="n">grid</span><span class="p">,</span><span class="w"> </span><span class="n">block</span><span class="o">&gt;&gt;&gt;</span><span class="p">(...);</span>
+<span class="n">kernel3</span><span class="o">&lt;&lt;&lt;</span><span class="n">grid</span><span class="p">,</span><span class="w"> </span><span class="n">block</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="n">stream2</span><span class="o">&gt;&gt;&gt;</span><span class="p">(...);</span>
+
+<span class="n">cudaDeviceSynchronize</span><span class="p">();</span>
+</pre></div>
+</div>
+</section>
+<section id="per-thread-default-stream">
+<h3><span class="section-number">2.5.6.2. </span>Per-thread Default Stream<a class="headerlink" href="#per-thread-default-stream" title="Link to this heading">#</a></h3>
+<p>Starting in CUDA-7, CUDA allows for each host thread to have its own independent default stream, rather than the shared legacy default stream. In order to enable this behavior one must either use the <cite>nvcc</cite> compiler option <code class="docutils literal notranslate"><span class="pre">--default-stream</span> <span class="pre">per-thread</span></code> or define the <code class="docutils literal notranslate"><span class="pre">CUDA_API_PER_THREAD_DEFAULT_STREAM</span></code> preprocessor macro. When this behavior is enabled, each host thread will have its own independent default stream which will not synchronize with other streams in the same way the legacy default stream does. In such a situation the <a class="reference internal" href="#legacy-default-stream-example"><span class="std std-ref">legacy default stream example</span></a> will now exhibit the same synchronization behavior as the <a class="reference internal" href="#non-blocking-stream-example"><span class="std std-ref">non-blocking stream example</span></a>.</p>
+</section>
+</section>
+<section id="explicit-synchronization">
+<span id="id4"></span><h2><span class="section-number">2.5.7. </span>Explicit Synchronization<a class="headerlink" href="#explicit-synchronization" title="Link to this heading">#</a></h2>
+<p>There are various ways to explicitly synchronize streams with each other.</p>
+<p><code class="docutils literal notranslate"><span class="pre">cudaDeviceSynchronize()</span></code> waits until all preceding commands in all streams of all host threads have completed.</p>
+<p><code class="docutils literal notranslate"><span class="pre">cudaStreamSynchronize()</span></code>takes a stream as a parameter and waits until all preceding commands in the given stream have completed. It can be used to synchronize the host with a specific stream, allowing other streams to continue executing on the device.</p>
+<p><code class="docutils literal notranslate"><span class="pre">cudaStreamWaitEvent()</span></code>takes a stream and an event as parameters (see <a class="reference internal" href="#cuda-events"><span class="std std-ref">CUDA Events</span></a> for a description of events)and makes all the commands added to the given stream after the call to <code class="docutils literal notranslate"><span class="pre">cudaStreamWaitEvent()</span></code>delay their execution until the given event has completed.</p>
+<p><code class="docutils literal notranslate"><span class="pre">cudaStreamQuery()</span></code>provides applications with a way to know if all preceding commands in a stream have completed.</p>
+</section>
+<section id="implicit-synchronization">
+<span id="id5"></span><h2><span class="section-number">2.5.8. </span>Implicit Synchronization<a class="headerlink" href="#implicit-synchronization" title="Link to this heading">#</a></h2>
+<p>Two operations from different streams cannot run concurrently if any CUDA operation on the NULL stream is submitted
+in-between them, unless the streams are non-blocking streams (created with the <code class="docutils literal notranslate"><span class="pre">cudaStreamNonBlocking</span></code> flag).</p>
+<p>Applications should follow these guidelines to improve their potential for concurrent kernel execution:</p>
+<ul class="simple">
+<li><p>All independent operations should be issued before dependent operations,</p></li>
+<li><p>Synchronization of any kind should be delayed as long as possible.</p></li>
+</ul>
+</section>
+<section id="miscellaneous-and-advanced-topics">
+<h2><span class="section-number">2.5.9. </span>Miscellaneous and Advanced topics<a class="headerlink" href="#miscellaneous-and-advanced-topics" title="Link to this heading">#</a></h2>
+<section id="stream-prioritization">
+<span id="async-execution-stream-priorities"></span><h3><span class="section-number">2.5.9.1. </span>Stream Prioritization<a class="headerlink" href="#stream-prioritization" title="Link to this heading">#</a></h3>
+<p>As mentioned previously, developers can assign priorities to CUDA streams. Prioritized streams need to be created using the <code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">cudaStreamCreateWithPriority()</span></code> function. The function takes two parameters: the stream handle and the priority level.
+The general scheme is that lower numbers correspond to higher priorities. The given priority range for a given device and context
+can be queried using the <code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">cudaDeviceGetStreamPriorityRange()</span></code> function. The default priority of a stream is 0.</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="kt">int</span><span class="w"> </span><span class="n">minPriority</span><span class="p">,</span><span class="w"> </span><span class="n">maxPriority</span><span class="p">;</span>
+
+<span class="c1">// Query the priority range for the device</span>
+<span class="n">cudaDeviceGetStreamPriorityRange</span><span class="p">(</span><span class="o">&amp;</span><span class="n">minPriority</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">maxPriority</span><span class="p">);</span>
+
+<span class="c1">// Create two streams with different priorities</span>
+<span class="c1">// cudaStreamDefault indicates the stream should be created with default flags</span>
+<span class="c1">// in other words they will be blocking streams with respect to the legacy default stream</span>
+<span class="c1">// One could also use the option `cudaStreamNonBlocking` here to create a non-blocking streams</span>
+<span class="n">cudaStream_t</span><span class="w"> </span><span class="n">stream1</span><span class="p">,</span><span class="w"> </span><span class="n">stream2</span><span class="p">;</span>
+<span class="n">cudaStreamCreateWithPriority</span><span class="p">(</span><span class="o">&amp;</span><span class="n">stream1</span><span class="p">,</span><span class="w"> </span><span class="n">cudaStreamDefault</span><span class="p">,</span><span class="w"> </span><span class="n">minPriority</span><span class="p">);</span><span class="w">  </span><span class="c1">// Lowest priority</span>
+<span class="n">cudaStreamCreateWithPriority</span><span class="p">(</span><span class="o">&amp;</span><span class="n">stream2</span><span class="p">,</span><span class="w"> </span><span class="n">cudaStreamDefault</span><span class="p">,</span><span class="w"> </span><span class="n">maxPriority</span><span class="p">);</span><span class="w">  </span><span class="c1">// Highest priority</span>
+</pre></div>
+</div>
+<p>We should note that a priority of a stream is only a hint to the runtime and generally applies primarily to kernel launches, and may not be respected for memory transfers. Stream priorities will not preempt already executing work, or guarantee any specific execution order.</p>
+</section>
+<section id="introduction-to-cuda-graphs-with-stream-capture">
+<span id="async-execution-cuda-graphs"></span><h3><span class="section-number">2.5.9.2. </span>Introduction to CUDA Graphs with Stream Capture<a class="headerlink" href="#introduction-to-cuda-graphs-with-stream-capture" title="Link to this heading">#</a></h3>
+<p>CUDA streams allow programs to specify a sequence of operations, kernels or memory copies, in order. Using multiple streams and cross-stream dependencies with <code class="docutils literal notranslate"><span class="pre">cudaStreamWaitEvent</span></code>, an application can specify a full directed acyclic graph (DAG) of operations. Some applications may have a sequence or DAG of operations that needs to be run many times throughout execution.</p>
+<p>For this situation, CUDA provides a feature known as CUDA graphs. This section introduces CUDA graphs and one mechanism of creating them called <em>stream capture</em>. A more detailed discussion of CUDA graphs is presented in <a class="reference internal" data-original-href="https://docs.nvidia.com/cuda/cuda-programming-guide/04-special-topics/cuda-graphs.html#cuda-graphs"><span class="std std-ref">CUDA Graphs</span></a>. Capturing or creating a graph can help reduce latency and CPU overhead of repeatedly invoking the same chain of API calls from the host thread. Instead, the APIs to specify the graph operations can be called once, and then the resulting graph executed many times.</p>
+<p>CUDA Graphs work in the following way:</p>
+<ol class="lowerroman simple">
+<li><p>The graph is <em>captured</em> by the application. This step is done once the first time the graph is executed. The graph can also be manually composed using the CUDA graph API.</p></li>
+<li><p>The graph is <em>instantiated</em>. This step is done one time, after the graph is captured. This step can set up all the various runtime structures needed to execute the graph, in order to make launching its components as fast as possible.</p></li>
+<li><p>In the remaining steps, the pre-instantiated graph is executed as many times as required. Since all the runtime structures needed to execute the graph operations are already in place, the CPU overheads of the graph execution are minimized.</p></li>
+</ol>
+<div class="literal-block-wrapper docutils container" id="id7">
+<div class="code-block-caption"><span class="caption-number">Listing 2 </span><span class="caption-text">The stages of capturing, instantiating and executing a simple linear graph using CUDA Graphs (from <a class="reference external" data-original-href="https://developer.nvidia.com/blog/cuda-graphs/">CUDA Developer Technical Blog</a>, A. Gray, 2019)</span><a class="headerlink" href="#id7" title="Link to this code">#</a></div>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="cp">#define N 500000 </span><span class="c1">// tuned such that kernel takes a few microseconds</span>
+
+<span class="c1">// A very lightweight kernel</span>
+<span class="n">__global__</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">shortKernel</span><span class="p">(</span><span class="kt">float</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">out_d</span><span class="p">,</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">in_d</span><span class="p">){</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">idx</span><span class="o">=</span><span class="n">blockIdx</span><span class="p">.</span><span class="n">x</span><span class="o">*</span><span class="n">blockDim</span><span class="p">.</span><span class="n">x</span><span class="o">+</span><span class="n">threadIdx</span><span class="p">.</span><span class="n">x</span><span class="p">;</span>
+<span class="w">    </span><span class="k">if</span><span class="p">(</span><span class="n">idx</span><span class="o">&lt;</span><span class="n">N</span><span class="p">)</span><span class="w"> </span><span class="n">out_d</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span><span class="o">=</span><span class="mf">1.23</span><span class="o">*</span><span class="n">in_d</span><span class="p">[</span><span class="n">idx</span><span class="p">];</span>
+<span class="p">}</span>
+
+<span class="kt">bool</span><span class="w"> </span><span class="n">graphCreated</span><span class="o">=</span><span class="nb">false</span><span class="p">;</span>
+<span class="n">cudaGraph_t</span><span class="w"> </span><span class="n">graph</span><span class="p">;</span>
+<span class="n">cudaGraphExec_t</span><span class="w"> </span><span class="n">instance</span><span class="p">;</span>
+
+<span class="c1">// The graph will be executed NSTEP times</span>
+<span class="k">for</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">istep</span><span class="o">=</span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">istep</span><span class="o">&lt;</span><span class="n">NSTEP</span><span class="p">;</span><span class="w"> </span><span class="n">istep</span><span class="o">++</span><span class="p">){</span>
+<span class="w">    </span><span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="n">graphCreated</span><span class="p">){</span>
+<span class="w">        </span><span class="c1">// Capture the graph</span>
+<span class="w">        </span><span class="n">cudaStreamBeginCapture</span><span class="p">(</span><span class="n">stream</span><span class="p">,</span><span class="w"> </span><span class="n">cudaStreamCaptureModeGlobal</span><span class="p">);</span>
+
+<span class="w">        </span><span class="c1">// Launch NKERNEL kernels</span>
+<span class="w">        </span><span class="k">for</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">ikrnl</span><span class="o">=</span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">ikrnl</span><span class="o">&lt;</span><span class="n">NKERNEL</span><span class="p">;</span><span class="w"> </span><span class="n">ikrnl</span><span class="o">++</span><span class="p">){</span>
+<span class="w">            </span><span class="n">shortKernel</span><span class="o">&lt;&lt;&lt;</span><span class="n">blocks</span><span class="p">,</span><span class="w"> </span><span class="n">threads</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="n">stream</span><span class="o">&gt;&gt;&gt;</span><span class="p">(</span><span class="n">out_d</span><span class="p">,</span><span class="w"> </span><span class="n">in_d</span><span class="p">);</span>
+<span class="w">        </span><span class="p">}</span>
+
+<span class="w">        </span><span class="c1">// End the capture</span>
+<span class="w">        </span><span class="n">cudaStreamEndCapture</span><span class="p">(</span><span class="n">stream</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">graph</span><span class="p">);</span>
+
+<span class="w">        </span><span class="c1">// Instantiate the graph</span>
+<span class="w">        </span><span class="n">cudaGraphInstantiate</span><span class="p">(</span><span class="o">&amp;</span><span class="n">instance</span><span class="p">,</span><span class="w"> </span><span class="n">graph</span><span class="p">,</span><span class="w"> </span><span class="nb">NULL</span><span class="p">,</span><span class="w"> </span><span class="nb">NULL</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">);</span>
+<span class="w">        </span><span class="n">graphCreated</span><span class="o">=</span><span class="nb">true</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="c1">// Launch the graph</span>
+<span class="w">    </span><span class="n">cudaGraphLaunch</span><span class="p">(</span><span class="n">instance</span><span class="p">,</span><span class="w"> </span><span class="n">stream</span><span class="p">);</span>
+
+<span class="w">    </span><span class="c1">// Synchronize the stream</span>
+<span class="w">    </span><span class="n">cudaStreamSynchronize</span><span class="p">(</span><span class="n">stream</span><span class="p">);</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</div>
+<p>Much more detail on CUDA graph is provided in <a class="reference internal" data-original-href="https://docs.nvidia.com/cuda/cuda-programming-guide/04-special-topics/cuda-graphs.html#cuda-graphs"><span class="std std-ref">CUDA Graphs</span></a>.</p>
+</section>
+</section>
+<section id="summary-of-asynchronous-execution">
+<h2><span class="section-number">2.5.10. </span>Summary of Asynchronous Execution<a class="headerlink" href="#summary-of-asynchronous-execution" title="Link to this heading">#</a></h2>
+<p>The key points of this section are:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>Asynchronous APIs allow us to express concurrent execution of tasks providing the way to express overlapping of various operations. The actual concurrency achieved is dependent on available hardware resources and compute-capabilities.</p></li>
+<li><p>The key abstractions in CUDA for asynchronous execution are streams, events and callback functions.</p></li>
+<li><p>Synchronization is possible at the event, stream and device level</p></li>
+<li><p>The default stream is a blocking stream which synchronizes with all other blocking streams, but does not synchronize with non-blocking streams</p></li>
+<li><p>The default stream behavior can be avoided using per-thread default streams via the <code class="docutils literal notranslate"><span class="pre">--default-stream</span> <span class="pre">per-thread</span></code> compiler option or the CUDA_API_PER_THREAD_DEFAULT_STREAM preprocessor macro.</p></li>
+<li><p>Streams can be created with different priorities, which are hints to the runtime and may not be respected for memory transfers.</p></li>
+<li><p>CUDA provides API functions to reduce, or overlap overheads of kernel launches and memory transfers such as CUDA Graphs, Batched Memory Transfers and Programmatic Dependent Kernel Launch.</p></li>
+</ul>
+</div></blockquote>
+</section>
+</section>
+</article></body></html>

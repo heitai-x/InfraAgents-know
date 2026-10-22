@@ -1,0 +1,75 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; frame-src 'self'; object-src 'self'; media-src 'self'; base-uri 'none'; form-action 'none'"><title>Context propagation | OpenTelemetry</title><style>body{font:16px/1.75 system-ui,sans-serif;color:#202631;background:#fff;margin:0 auto;padding:40px;max-width:1100px}h1,h2,h3{line-height:1.3}pre,code{font-family:Consolas,monospace}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#f4f6f8;padding:18px}table{border-collapse:collapse;display:block;overflow-x:auto}td,th{border:1px solid #ccd3dc;padding:8px}img,svg{max-width:100%;height:auto}figure{margin:24px 0}.archive-note{border-left:4px solid #2563eb;padding:12px 20px;background:#eef4ff}math{font-size:1.1em}iframe{width:100%;height:85vh;border:1px solid #ccd3dc}a{color:#1658a5}</style></head><body><p class="archive-note">本地原文阅读副本。正文与资料文件已归档；原始响应、版本和校验信息见同目录 manifest.json。网页导航与在线脚本不执行。</p><main class="col-12 col-md-9 col-xl-8 ps-md-5" role="main"><div class="td-content"><h1>Context propagation</h1><div class="lead">Learn about the concept that enables Distributed Tracing.</div><header class="article-meta"></header><p>With context propagation, <a data-original-href="https://opentelemetry.io/docs/concepts/signals/">signals</a> (<a data-original-href="https://opentelemetry.io/docs/concepts/signals/traces/">traces</a>,
+<a data-original-href="https://opentelemetry.io/docs/concepts/signals/metrics/">metrics</a>, and <a data-original-href="https://opentelemetry.io/docs/concepts/signals/logs/">logs</a>) can be correlated
+with each other, regardless of where they are generated. Although not limited to
+tracing, context propagation allows <a data-original-href="https://opentelemetry.io/docs/concepts/signals/traces/">traces</a> to build causal
+information about a system across services that are arbitrarily distributed
+across process and network boundaries.</p><p>To understand context propagation, you need to understand two separate concepts:
+context and propagation.</p><h2 id="context">Context<a aria-label="Heading self-link" class="td-heading-self-link" href="#context"></a></h2><p>Context is an object that contains the information for the sending and receiving
+service, or <a data-original-href="https://opentelemetry.io/docs/specs/otel/glossary/#execution-unit">execution unit</a>, to
+correlate one signal with another.</p><p>When Service A calls Service B, Service A includes a trace ID and a span ID as
+part of the context. Service B uses these values to create a new span that
+belongs to the same trace, setting the span from Service A as its parent. This
+makes it possible to track the full flow of a request across service boundaries.</p><h2 id="propagation">Propagation<a aria-label="Heading self-link" class="td-heading-self-link" href="#propagation"></a></h2><p>Propagation is the mechanism that moves context between services and processes.
+It serializes or deserializes the context object and provides the relevant
+information to be propagated from one service to another.</p><p>Propagation is usually handled by instrumentation libraries and is transparent
+to the user. In the event that you need to manually propagate context, you can
+use the <a data-original-href="https://opentelemetry.io/docs/specs/otel/context/api-propagators/">Propagators API</a>.</p><p>OpenTelemetry maintains several official propagators. The default propagator
+uses the headers specified by the
+<a class="external-link" data-original-href="https://www.w3.org/TR/trace-context/" rel="noopener" target="_blank">W3C TraceContext</a> specification.</p><h2 id="example">Example<a aria-label="Heading self-link" class="td-heading-self-link" href="#example"></a></h2><p>A service called <code>Frontend</code> that provides different HTTP endpoints such as
+<code>POST /cart/add</code> and <code>GET /checkout/</code> reaches out to a downstream service
+<code>Product Catalog</code> via an HTTP endpoint <code>GET /product</code> to receive details on
+products that a user wants to add to the cart or that are part of the checkout.
+To understand activities in the <code>Product Catalog</code> service within the context of
+requests coming from <code>Frontend</code>, the context (here: Trace ID and Span ID as
+“Parent ID”) is propagated using the <code>traceparent</code> header as it is defined in
+the W3C TraceContext specification. This means the IDs are embedded in the
+fields of the header:</p><div class="highlight"><pre class="chroma" tabindex="0"><code class="language-text" data-lang="text"><span class="line"><span class="cl">&lt;version&gt;-&lt;trace-id&gt;-&lt;parent-id&gt;-&lt;trace-flags&gt;
+</span></span></code></pre></div><p>For example:</p><div class="highlight"><pre class="chroma" tabindex="0"><code class="language-text" data-lang="text"><span class="line"><span class="cl">00-a0892f3577b34da6a3ce929d0e0e4736-f03067aa0ba902b7-01
+</span></span></code></pre></div><h3 id="traces">Traces<a aria-label="Heading self-link" class="td-heading-self-link" href="#traces"></a></h3><p>As mentioned, context propagation allows traces to build causal information
+across services. In this example, the two calls to the HTTP endpoint
+<code>GET /product</code> of service <code>Product Catalog</code> can be correlated with their
+upstream calls in service <code>Frontend</code> by extracting the remote context from the
+<code>traceparent</code> header and injecting it into the local context to set the Trace ID
+and Parent ID. With that, it is possible in a <a data-original-href="https://opentelemetry.io/ecosystem/vendors/">backend</a> like
+<a class="external-link" data-original-href="https://jaegertracing.io" rel="noopener" target="_blank">Jaeger</a> to see two requests as spans of one trace.</p><img alt="Context propagation example showing trace correlation across services" src="assets/bbfe3a957584f1e89c8a9cb5.svg"/><h3 id="logs">Logs<a aria-label="Heading self-link" class="td-heading-self-link" href="#logs"></a></h3><p>OpenTelemetry SDKs are able to automatically correlate logs with traces. This
+means they can inject context (Trace ID, Span ID) into a log record. This not
+only enables you to see logs in the context of the trace and span they belong
+to, but it also enables you to see logs that belong together across service or
+execution unit boundaries.</p><h3 id="metrics">Metrics<a aria-label="Heading self-link" class="td-heading-self-link" href="#metrics"></a></h3><p>In the case of metrics, context propagation enables you to aggregate
+measurements in that context. For example, instead of only looking at the
+response time of all the <code>GET /product</code> requests, you can also get metrics for
+combinations of <code>POST /cart/add &gt; GET /product</code> and
+<code>GET /checkout &gt; GET /product</code>.</p><table><thead><tr><th>Name</th><th>Calls Per Second</th><th>Average Response Time</th></tr></thead><tbody><tr><td><code>* &gt; GET /product</code></td><td>370</td><td>300ms</td></tr><tr><td><code>POST /cart/add &gt; GET /product</code></td><td>330</td><td>130ms</td></tr><tr><td><code>GET /checkout &gt; GET /product</code></td><td>40</td><td>1703ms</td></tr></tbody></table><h2 id="custom-context-propagation">Custom Context Propagation<a aria-label="Heading self-link" class="td-heading-self-link" href="#custom-context-propagation"></a></h2><p>For most use cases, you will find
+<a data-original-href="https://opentelemetry.io/docs/concepts/instrumentation/libraries/">instrumentation libraries or native library instrumentation</a>
+that handle the context propagation for you. In some cases no such support is
+available and you want to create that support for yourself. To do so you need to
+leverage the previously mentioned Propagators API:</p><ul><li>On the side of the sender, the context is
+<a data-original-href="https://opentelemetry.io/docs/specs/otel/context/api-propagators/#inject">injected</a> into the carrier,
+for example, into the headers of an HTTP request. In other cases, you need to
+find a place that can store metadata for your request.</li><li>On the receiving side, the context is
+<a data-original-href="https://opentelemetry.io/docs/specs/otel/context/api-propagators/#extract">extracted</a> from the
+carrier. Again, in the case of HTTP, this is retrieved from the headers. In
+other cases, you pick the place you chose on the sending side to store the
+context.</li></ul><p>Note that it is possible to propagate context in protocols that do not have a
+dedicated field for metadata, but you have to make sure that on the receiving
+side they are extracted and removed before the data is processed, otherwise you
+may create undefined behavior.</p><p>For the following languages a step-by-step tutorial exists for custom context
+propagation:</p><ul><li><a data-original-href="https://opentelemetry.io/docs/languages/erlang/propagation/#manual-context-propagation">Erlang</a></li><li><a data-original-href="https://opentelemetry.io/docs/languages/js/propagation/#manual-context-propagation">JavaScript</a></li><li><a data-original-href="https://opentelemetry.io/docs/languages/php/propagation/#manual-context-propagation">PHP</a></li><li><a data-original-href="https://opentelemetry.io/docs/languages/python/propagation/#manual-context-propagation">Python</a></li></ul><h2 id="security-best-practices">Security best practices<a aria-label="Heading self-link" class="td-heading-self-link" href="#security-best-practices"></a></h2><p>Propagation involves sending and receiving data across service boundaries, which
+can have security implications.</p><h3 id="external-services">External services<a aria-label="Heading self-link" class="td-heading-self-link" href="#external-services"></a></h3><p>When your service interacts with external services (services you do not own or
+trust), consider the following:</p><ul><li><strong>Incoming context</strong>: Be cautious when accepting context from external
+sources. Malicious actors could send forged trace headers to manipulate your
+tracing data or potentially exploit vulnerabilities in context parsing. You
+might want to ignore or sanitize incoming context from untrusted sources.</li><li><strong>Outgoing context</strong>: Be mindful of what you propagate to external services.
+Internal trace IDs, span IDs, or baggage items might reveal sensitive
+information about your internal architecture or business logic. You may want
+to configure your propagators to not send context to external or public-facing
+endpoints.</li></ul><h3 id="baggage">Baggage<a aria-label="Heading self-link" class="td-heading-self-link" href="#baggage"></a></h3><p><a data-original-href="https://opentelemetry.io/docs/concepts/signals/baggage/">Baggage</a> allows you to propagate arbitrary key-value
+pairs. Since this data is propagated across service boundaries, avoid putting
+sensitive information (like user credentials, API keys, or PII) in baggage, as
+it might be logged or sent to untrusted downstream services.</p><h2 id="support-in-language-sdks">Support in Language SDKs<a aria-label="Heading self-link" class="td-heading-self-link" href="#support-in-language-sdks"></a></h2><p>For the individual language-specific implementations of the OpenTelemetry API &amp;
+SDK, you will find details on the support of context propagation in the
+respective documentation pages:</p><ul><li><a data-original-href="https://opentelemetry.io/docs/languages/cpp/instrumentation/#context-propagation">C++</a></li><li>.NET</li><li><a data-original-href="https://opentelemetry.io/docs/languages/erlang/propagation/">Erlang</a></li><li><a data-original-href="https://opentelemetry.io/docs/languages/go/instrumentation/#propagators-and-context">Go</a></li><li><a data-original-href="https://opentelemetry.io/docs/languages/java/api/#context-api">Java</a></li><li><a data-original-href="https://opentelemetry.io/docs/languages/js/propagation/">JavaScript</a></li><li><a data-original-href="https://opentelemetry.io/docs/languages/php/propagation/">PHP</a></li><li><a data-original-href="https://opentelemetry.io/docs/languages/python/propagation/">Python</a></li><li><a data-original-href="https://opentelemetry.io/docs/languages/ruby/instrumentation/#context-propagation">Ruby</a></li><li>Rust</li><li>Swift</li></ul><div class="td-alert td-alert--md alert alert-important" role="alert"><div class="td-alert-heading alert-heading" role="heading">Help wanted</div><div class="td-alert-body"><p>For languages .NET, Rust, and Swift, the language-specific documentation for
+context propagation is missing. If you know any of those languages and are
+interested to help, <a data-original-href="https://opentelemetry.io/docs/contributing/">learn how you can contribute</a>!</p></div></div><h2 id="specification">Specification<a aria-label="Heading self-link" class="td-heading-self-link" href="#specification"></a></h2><p>To learn more about context propagation, see the
+<a data-original-href="https://opentelemetry.io/docs/specs/otel/context/">Context specification</a>.</p><div class="d-print-none"><h2 class="feedback--title">Feedback</h2><p class="feedback--question">Was this page helpful?</p>
+<p class="feedback--response feedback--response-yes">Thank you. Your feedback is appreciated!</p><p class="feedback--response feedback--response-no">Please let us know <a class="external-link" data-original-href="https://github.com/open-telemetry/opentelemetry.io/issues/new?template=PAGE_FEEDBACK.yml&amp;title=[Page+feedback]%3A+ADD+A+SUMMARY+OF+YOUR+FEEDBACK+HERE" rel="noopener" target="_blank">how we can improve this page</a>. Your feedback is appreciated!</p></div><br/><div class="td-page-meta__lastmod">Last modified August 10, 2026: <a data-original-href="https://github.com/open-telemetry/opentelemetry.io/commit/89a269b12093690dd47ccc32d7f8b22ff7f946d8" data-proofer-ignore="">Fix context propagation example direction (#11254) (89a269b1)</a></div></div></main></body></html>

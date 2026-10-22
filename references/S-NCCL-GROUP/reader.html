@@ -1,0 +1,190 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; frame-src 'self'; object-src 'self'; media-src 'self'; base-uri 'none'; form-action 'none'"><title>Group Calls — NCCL 2.31.2 documentation</title><style>body{font:16px/1.75 system-ui,sans-serif;color:#202631;background:#fff;margin:0 auto;padding:40px;max-width:1100px}h1,h2,h3{line-height:1.3}pre,code{font-family:Consolas,monospace}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#f4f6f8;padding:18px}table{border-collapse:collapse;display:block;overflow-x:auto}td,th{border:1px solid #ccd3dc;padding:8px}img,svg{max-width:100%;height:auto}figure{margin:24px 0}.archive-note{border-left:4px solid #2563eb;padding:12px 20px;background:#eef4ff}math{font-size:1.1em}iframe{width:100%;height:85vh;border:1px solid #ccd3dc}a{color:#1658a5}</style></head><body><p class="archive-note">本地原文阅读副本。正文与资料文件已归档；原始响应、版本和校验信息见同目录 manifest.json。网页导航与在线脚本不执行。</p><div class="document" itemscope="itemscope" itemtype="http://schema.org/Article" role="main">
+<div itemprop="articleBody">
+<section id="group-calls">
+<span id="id1"></span><h1>Group Calls<a class="headerlink" href="#group-calls" title="Permalink to this heading"></a></h1>
+<p>Group functions (ncclGroupStart/ncclGroupEnd) can be used to merge multiple calls into one. This is needed for
+three purposes: managing multiple GPUs from one thread (to avoid deadlocks), aggregating communication operations
+to improve performance, or merging multiple send/receive point-to-point operations (see <a class="reference internal" data-original-href="https://docs.nvidia.com/deeplearning/nccl/user-guide/docs/usage/p2p.html#point-to-point"><span class="std std-ref">Point-to-point communication</span></a>
+section). All three usages can be combined together, with one exception: calls to <a class="reference internal" data-original-href="https://docs.nvidia.com/deeplearning/nccl/user-guide/docs/api/comms.html#c.ncclCommInitRank" title="ncclCommInitRank"><code class="xref c c-func docutils literal notranslate"><span class="pre">ncclCommInitRank()</span></code></a>
+cannot be merged with others.</p>
+<section id="management-of-multiple-gpus-from-one-thread">
+<h2>Management Of Multiple GPUs From One Thread<a class="headerlink" href="#management-of-multiple-gpus-from-one-thread" title="Permalink to this heading"></a></h2>
+<p>When a single thread is managing multiple devices, group semantics must be used.
+This is because every NCCL call may have to block, waiting for other threads/ranks to arrive, before effectively posting the NCCL operation on the given stream. Hence, a simple loop on multiple devices like shown below could block on the first call waiting for the other ones:</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>We do not recommed using CUDA graph capture when managing multiple GPUs from one thread. In some cases <code class="docutils literal notranslate"><span class="pre">cudaGraphLaunch</span></code> may block, preventing the launch across all GPUs. See <a class="reference internal" data-original-href="https://docs.nvidia.com/deeplearning/nccl/user-guide/docs/usage/cudagraph.html#using-nccl-with-cuda-graphs"><span class="std std-ref">Using NCCL with CUDA Graphs</span></a> for details.</p>
+</div>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">i</span><span class="o">=</span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="o">&lt;</span><span class="n">nLocalDevs</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="o">++</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="n">ncclAllReduce</span><span class="p">(...,</span><span class="w"> </span><span class="n">comm</span><span class="p">[</span><span class="n">i</span><span class="p">],</span><span class="w"> </span><span class="n">stream</span><span class="p">[</span><span class="n">i</span><span class="p">]);</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>To define that these calls are part of the same collective operation, ncclGroupStart and ncclGroupEnd should be used:</p>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="n">ncclGroupStart</span><span class="p">();</span>
+<span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">i</span><span class="o">=</span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="o">&lt;</span><span class="n">nLocalDevs</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="o">++</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="n">ncclAllReduce</span><span class="p">(...,</span><span class="w"> </span><span class="n">comm</span><span class="p">[</span><span class="n">i</span><span class="p">],</span><span class="w"> </span><span class="n">stream</span><span class="p">[</span><span class="n">i</span><span class="p">]);</span>
+<span class="p">}</span>
+<span class="n">ncclGroupEnd</span><span class="p">();</span>
+</pre></div>
+</div>
+<p>This will tell NCCL to treat all calls between ncclGroupStart and ncclGroupEnd as a single call to many devices.</p>
+<p>Caution: When called inside a group, stream operations (like ncclAllReduce) can return without having enqueued the
+operation on the stream. Stream operations like cudaStreamSynchronize can therefore be called only after ncclGroupEnd
+returns.</p>
+<p>Group calls must also be used to create a communicator when one thread manages more than one device:</p>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="n">ncclGroupStart</span><span class="p">();</span>
+<span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">i</span><span class="o">=</span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="o">&lt;</span><span class="n">nLocalDevs</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="o">++</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="n">cudaSetDevice</span><span class="p">(</span><span class="n">device</span><span class="p">[</span><span class="n">i</span><span class="p">]);</span>
+<span class="w">  </span><span class="n">ncclCommInitRank</span><span class="p">(</span><span class="n">comms</span><span class="o">+</span><span class="n">i</span><span class="p">,</span><span class="w"> </span><span class="n">nranks</span><span class="p">,</span><span class="w"> </span><span class="n">commId</span><span class="p">,</span><span class="w"> </span><span class="n">rank</span><span class="p">[</span><span class="n">i</span><span class="p">]);</span>
+<span class="p">}</span>
+<span class="n">ncclGroupEnd</span><span class="p">();</span>
+</pre></div>
+</div>
+<p>Note: Contrary to NCCL 1.x, there is no need to set the CUDA device before every NCCL communication call within a group,
+but it is still needed when calling ncclCommInitRank within a group.</p>
+<p>Related links:</p>
+<ul class="simple">
+<li><p><a class="reference internal" data-original-href="https://docs.nvidia.com/deeplearning/nccl/user-guide/docs/api/group.html#c.ncclGroupStart" title="ncclGroupStart"><code class="xref c c-func docutils literal notranslate"><span class="pre">ncclGroupStart()</span></code></a></p></li>
+<li><p><a class="reference internal" data-original-href="https://docs.nvidia.com/deeplearning/nccl/user-guide/docs/api/group.html#c.ncclGroupEnd" title="ncclGroupEnd"><code class="xref c c-func docutils literal notranslate"><span class="pre">ncclGroupEnd()</span></code></a></p></li>
+</ul>
+</section>
+<section id="aggregated-operations-2-2-and-later">
+<h2>Aggregated Operations (2.2 and later)<a class="headerlink" href="#aggregated-operations-2-2-and-later" title="Permalink to this heading"></a></h2>
+<p>The group semantics can also be used to have multiple collective operations performed within a single NCCL launch. This
+is useful for reducing the launch overhead, in other words, latency, as it only occurs once for multiple operations.
+Init functions cannot be aggregated with other init functions, nor with communication functions.</p>
+<p>Aggregation of collective operations can be done simply by having multiple calls to NCCL within a ncclGroupStart /
+ncclGroupEnd section.</p>
+<p>In the following example, we launch one broadcast and two allReduce operations together as a single NCCL launch.</p>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="n">ncclGroupStart</span><span class="p">();</span>
+<span class="n">ncclBroadcast</span><span class="p">(</span><span class="n">sendbuff1</span><span class="p">,</span><span class="w"> </span><span class="n">recvbuff1</span><span class="p">,</span><span class="w"> </span><span class="n">count1</span><span class="p">,</span><span class="w"> </span><span class="n">datatype</span><span class="p">,</span><span class="w"> </span><span class="n">root</span><span class="p">,</span><span class="w"> </span><span class="n">comm</span><span class="p">,</span><span class="w"> </span><span class="n">stream</span><span class="p">);</span>
+<span class="n">ncclAllReduce</span><span class="p">(</span><span class="n">sendbuff2</span><span class="p">,</span><span class="w"> </span><span class="n">recvbuff2</span><span class="p">,</span><span class="w"> </span><span class="n">count2</span><span class="p">,</span><span class="w"> </span><span class="n">datatype</span><span class="p">,</span><span class="w"> </span><span class="n">comm</span><span class="p">,</span><span class="w"> </span><span class="n">stream</span><span class="p">);</span>
+<span class="n">ncclAllReduce</span><span class="p">(</span><span class="n">sendbuff3</span><span class="p">,</span><span class="w"> </span><span class="n">recvbuff3</span><span class="p">,</span><span class="w"> </span><span class="n">count3</span><span class="p">,</span><span class="w"> </span><span class="n">datatype</span><span class="p">,</span><span class="w"> </span><span class="n">comm</span><span class="p">,</span><span class="w"> </span><span class="n">stream</span><span class="p">);</span>
+<span class="n">ncclGroupEnd</span><span class="p">();</span>
+</pre></div>
+</div>
+<p>It is permitted to combine aggregation with multi-GPU launch and use different communicators in a group launch
+as shown in the Management Of Multiple GPUs From One Thread topic. When combining multi-GPU launch and aggregation,
+ncclGroupStart and ncclGroupEnd can be either used once or at each level. The following example groups the allReduce
+operations from different layers and on multiple CUDA devices:</p>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="n">ncclGroupStart</span><span class="p">();</span>
+<span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">i</span><span class="o">=</span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="o">&lt;</span><span class="n">nlayers</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="o">++</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="n">ncclGroupStart</span><span class="p">();</span>
+<span class="w">  </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">g</span><span class="o">=</span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">g</span><span class="o">&lt;</span><span class="n">ngpus</span><span class="p">;</span><span class="w"> </span><span class="n">g</span><span class="o">++</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">ncclAllReduce</span><span class="p">(</span><span class="n">sendbuffs</span><span class="p">[</span><span class="n">g</span><span class="p">]</span><span class="o">+</span><span class="n">offsets</span><span class="p">[</span><span class="n">i</span><span class="p">],</span><span class="w"> </span><span class="n">recvbuffs</span><span class="p">[</span><span class="n">g</span><span class="p">]</span><span class="o">+</span><span class="n">offsets</span><span class="p">[</span><span class="n">i</span><span class="p">],</span><span class="w"> </span><span class="n">counts</span><span class="p">[</span><span class="n">i</span><span class="p">],</span><span class="w"> </span><span class="n">datatype</span><span class="p">[</span><span class="n">i</span><span class="p">],</span><span class="w"> </span><span class="n">comms</span><span class="p">[</span><span class="n">g</span><span class="p">],</span><span class="w"> </span><span class="n">streams</span><span class="p">[</span><span class="n">g</span><span class="p">]);</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="w">  </span><span class="n">ncclGroupEnd</span><span class="p">();</span>
+<span class="p">}</span>
+<span class="n">ncclGroupEnd</span><span class="p">();</span>
+</pre></div>
+</div>
+<p>Note: The NCCL operation will only be started as a whole during the last call to ncclGroupEnd. The ncclGroupStart and
+ncclGroupEnd calls within the for loop are not necessary and do nothing.</p>
+<p>Related links:</p>
+<ul class="simple">
+<li><p><a class="reference internal" data-original-href="https://docs.nvidia.com/deeplearning/nccl/user-guide/docs/api/group.html#c.ncclGroupStart" title="ncclGroupStart"><code class="xref c c-func docutils literal notranslate"><span class="pre">ncclGroupStart()</span></code></a></p></li>
+<li><p><a class="reference internal" data-original-href="https://docs.nvidia.com/deeplearning/nccl/user-guide/docs/api/group.html#c.ncclGroupEnd" title="ncclGroupEnd"><code class="xref c c-func docutils literal notranslate"><span class="pre">ncclGroupEnd()</span></code></a></p></li>
+</ul>
+</section>
+<section id="group-operation-ordering-semantics">
+<h2>Group Operation Ordering Semantics<a class="headerlink" href="#group-operation-ordering-semantics" title="Permalink to this heading"></a></h2>
+<p>Although NCCL group allows different operations to be issued in one shot, users still need to guarantee the same
+issuing order of the operations among different GPUs no matter whether the operations are issued to the same or
+different communicators.</p>
+<p>For example, the following code provides the correct order of the operations. In this example, <em>comm0</em> and <em>comm1</em>
+are duplicated independent communicators that include rank 0 and 1.</p>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="n">RANK0</span><span class="o">/</span><span class="n">GPU0</span><span class="o">/</span><span class="n">Process0</span><span class="o">:</span>
+<span class="n">ncclGroupStart</span><span class="p">();</span>
+<span class="n">ncclBroadcast</span><span class="p">(</span><span class="n">sendbuff1</span><span class="p">,</span><span class="w"> </span><span class="n">recvbuff1</span><span class="p">,</span><span class="w"> </span><span class="n">count1</span><span class="p">,</span><span class="w"> </span><span class="n">datatype</span><span class="p">,</span><span class="w"> </span><span class="n">root</span><span class="p">,</span><span class="w"> </span><span class="n">comm0</span><span class="p">,</span><span class="w"> </span><span class="n">stream</span><span class="p">);</span>
+<span class="n">ncclAllReduce</span><span class="p">(</span><span class="n">sendbuff2</span><span class="p">,</span><span class="w"> </span><span class="n">recvbuff2</span><span class="p">,</span><span class="w"> </span><span class="n">count2</span><span class="p">,</span><span class="w"> </span><span class="n">datatype</span><span class="p">,</span><span class="w"> </span><span class="n">comm0</span><span class="p">,</span><span class="w"> </span><span class="n">stream</span><span class="p">);</span>
+<span class="n">ncclAllReduce</span><span class="p">(</span><span class="n">sendbuff3</span><span class="p">,</span><span class="w"> </span><span class="n">recvbuff3</span><span class="p">,</span><span class="w"> </span><span class="n">count3</span><span class="p">,</span><span class="w"> </span><span class="n">datatype</span><span class="p">,</span><span class="w"> </span><span class="n">comm0</span><span class="p">,</span><span class="w"> </span><span class="n">stream</span><span class="p">);</span>
+<span class="n">ncclAllReduce</span><span class="p">(</span><span class="n">sendbuff4</span><span class="p">,</span><span class="w"> </span><span class="n">recvbuff4</span><span class="p">,</span><span class="w"> </span><span class="n">count4</span><span class="p">,</span><span class="w"> </span><span class="n">datatype</span><span class="p">,</span><span class="w"> </span><span class="n">comm1</span><span class="p">,</span><span class="w"> </span><span class="n">stream</span><span class="p">);</span>
+<span class="n">ncclGroupEnd</span><span class="p">();</span>
+
+<span class="n">RANK1</span><span class="o">/</span><span class="n">GPU1</span><span class="o">/</span><span class="n">Process1</span><span class="o">:</span>
+<span class="n">ncclGroupStart</span><span class="p">();</span>
+<span class="n">ncclBroadcast</span><span class="p">(</span><span class="n">sendbuff1</span><span class="p">,</span><span class="w"> </span><span class="n">recvbuff1</span><span class="p">,</span><span class="w"> </span><span class="n">count1</span><span class="p">,</span><span class="w"> </span><span class="n">datatype</span><span class="p">,</span><span class="w"> </span><span class="n">root</span><span class="p">,</span><span class="w"> </span><span class="n">comm0</span><span class="p">,</span><span class="w"> </span><span class="n">stream</span><span class="p">);</span>
+<span class="n">ncclAllReduce</span><span class="p">(</span><span class="n">sendbuff2</span><span class="p">,</span><span class="w"> </span><span class="n">recvbuff2</span><span class="p">,</span><span class="w"> </span><span class="n">count2</span><span class="p">,</span><span class="w"> </span><span class="n">datatype</span><span class="p">,</span><span class="w"> </span><span class="n">comm0</span><span class="p">,</span><span class="w"> </span><span class="n">stream</span><span class="p">);</span>
+<span class="n">ncclAllReduce</span><span class="p">(</span><span class="n">sendbuff3</span><span class="p">,</span><span class="w"> </span><span class="n">recvbuff3</span><span class="p">,</span><span class="w"> </span><span class="n">count3</span><span class="p">,</span><span class="w"> </span><span class="n">datatype</span><span class="p">,</span><span class="w"> </span><span class="n">comm0</span><span class="p">,</span><span class="w"> </span><span class="n">stream</span><span class="p">);</span>
+<span class="n">ncclAllReduce</span><span class="p">(</span><span class="n">sendbuff4</span><span class="p">,</span><span class="w"> </span><span class="n">recvbuff4</span><span class="p">,</span><span class="w"> </span><span class="n">count4</span><span class="p">,</span><span class="w"> </span><span class="n">datatype</span><span class="p">,</span><span class="w"> </span><span class="n">comm1</span><span class="p">,</span><span class="w"> </span><span class="n">stream</span><span class="p">);</span>
+<span class="n">ncclGroupEnd</span><span class="p">();</span>
+</pre></div>
+</div>
+<p>However, changing the order of any operations will lead to incorrect results or hang as shown in the following 2 examples:</p>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="n">RANK0</span><span class="o">/</span><span class="n">GPU0</span><span class="o">/</span><span class="n">Process0</span><span class="o">:</span>
+<span class="n">ncclGroupStart</span><span class="p">();</span>
+<span class="n">ncclBroadcast</span><span class="p">(</span><span class="n">sendbuff1</span><span class="p">,</span><span class="w"> </span><span class="n">recvbuff1</span><span class="p">,</span><span class="w"> </span><span class="n">count1</span><span class="p">,</span><span class="w"> </span><span class="n">datatype</span><span class="p">,</span><span class="w"> </span><span class="n">root</span><span class="p">,</span><span class="w"> </span><span class="n">comm0</span><span class="p">,</span><span class="w"> </span><span class="n">stream</span><span class="p">);</span>
+<span class="n">ncclAllReduce</span><span class="p">(</span><span class="n">sendbuff3</span><span class="p">,</span><span class="w"> </span><span class="n">recvbuff3</span><span class="p">,</span><span class="w"> </span><span class="n">count3</span><span class="p">,</span><span class="w"> </span><span class="n">datatype</span><span class="p">,</span><span class="w"> </span><span class="n">comm0</span><span class="p">,</span><span class="w"> </span><span class="n">stream</span><span class="p">);</span><span class="w"> </span><span class="c1">// WRONG: reversed order</span>
+<span class="n">ncclAllReduce</span><span class="p">(</span><span class="n">sendbuff2</span><span class="p">,</span><span class="w"> </span><span class="n">recvbuff2</span><span class="p">,</span><span class="w"> </span><span class="n">count2</span><span class="p">,</span><span class="w"> </span><span class="n">datatype</span><span class="p">,</span><span class="w"> </span><span class="n">comm0</span><span class="p">,</span><span class="w"> </span><span class="n">stream</span><span class="p">);</span><span class="w"> </span><span class="c1">// WRONG: reversed order</span>
+<span class="n">ncclAllReduce</span><span class="p">(</span><span class="n">sendbuff4</span><span class="p">,</span><span class="w"> </span><span class="n">recvbuff4</span><span class="p">,</span><span class="w"> </span><span class="n">count4</span><span class="p">,</span><span class="w"> </span><span class="n">datatype</span><span class="p">,</span><span class="w"> </span><span class="n">comm1</span><span class="p">,</span><span class="w"> </span><span class="n">stream</span><span class="p">);</span>
+<span class="n">ncclGroupEnd</span><span class="p">();</span>
+
+<span class="n">RANK1</span><span class="o">/</span><span class="n">GPU1</span><span class="o">/</span><span class="n">Process1</span><span class="o">:</span>
+<span class="n">ncclGroupStart</span><span class="p">();</span>
+<span class="n">ncclBroadcast</span><span class="p">(</span><span class="n">sendbuff1</span><span class="p">,</span><span class="w"> </span><span class="n">recvbuff1</span><span class="p">,</span><span class="w"> </span><span class="n">count1</span><span class="p">,</span><span class="w"> </span><span class="n">datatype</span><span class="p">,</span><span class="w"> </span><span class="n">root</span><span class="p">,</span><span class="w"> </span><span class="n">comm0</span><span class="p">,</span><span class="w"> </span><span class="n">stream</span><span class="p">);</span>
+<span class="n">ncclAllReduce</span><span class="p">(</span><span class="n">sendbuff2</span><span class="p">,</span><span class="w"> </span><span class="n">recvbuff2</span><span class="p">,</span><span class="w"> </span><span class="n">count2</span><span class="p">,</span><span class="w"> </span><span class="n">datatype</span><span class="p">,</span><span class="w"> </span><span class="n">comm0</span><span class="p">,</span><span class="w"> </span><span class="n">stream</span><span class="p">);</span><span class="w"> </span><span class="c1">// WRONG: reversed order</span>
+<span class="n">ncclAllReduce</span><span class="p">(</span><span class="n">sendbuff3</span><span class="p">,</span><span class="w"> </span><span class="n">recvbuff3</span><span class="p">,</span><span class="w"> </span><span class="n">count3</span><span class="p">,</span><span class="w"> </span><span class="n">datatype</span><span class="p">,</span><span class="w"> </span><span class="n">comm0</span><span class="p">,</span><span class="w"> </span><span class="n">stream</span><span class="p">);</span><span class="w"> </span><span class="c1">// WRONG: reversed order</span>
+<span class="n">ncclAllReduce</span><span class="p">(</span><span class="n">sendbuff4</span><span class="p">,</span><span class="w"> </span><span class="n">recvbuff4</span><span class="p">,</span><span class="w"> </span><span class="n">count4</span><span class="p">,</span><span class="w"> </span><span class="n">datatype</span><span class="p">,</span><span class="w"> </span><span class="n">comm1</span><span class="p">,</span><span class="w"> </span><span class="n">stream</span><span class="p">);</span>
+<span class="n">ncclGroupEnd</span><span class="p">();</span>
+</pre></div>
+</div>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="n">RANK0</span><span class="o">/</span><span class="n">GPU0</span><span class="o">/</span><span class="n">Process0</span><span class="o">:</span>
+<span class="n">ncclGroupStart</span><span class="p">();</span>
+<span class="n">ncclAllReduce</span><span class="p">(</span><span class="n">sendbuff4</span><span class="p">,</span><span class="w"> </span><span class="n">recvbuff4</span><span class="p">,</span><span class="w"> </span><span class="n">count4</span><span class="p">,</span><span class="w"> </span><span class="n">datatype</span><span class="p">,</span><span class="w"> </span><span class="n">comm1</span><span class="p">,</span><span class="w"> </span><span class="n">stream</span><span class="p">);</span><span class="w"> </span><span class="c1">// WRONG: reversed order</span>
+<span class="n">ncclBroadcast</span><span class="p">(</span><span class="n">sendbuff1</span><span class="p">,</span><span class="w"> </span><span class="n">recvbuff1</span><span class="p">,</span><span class="w"> </span><span class="n">count1</span><span class="p">,</span><span class="w"> </span><span class="n">datatype</span><span class="p">,</span><span class="w"> </span><span class="n">root</span><span class="p">,</span><span class="w"> </span><span class="n">comm0</span><span class="p">,</span><span class="w"> </span><span class="n">stream</span><span class="p">);</span>
+<span class="n">ncclAllReduce</span><span class="p">(</span><span class="n">sendbuff2</span><span class="p">,</span><span class="w"> </span><span class="n">recvbuff2</span><span class="p">,</span><span class="w"> </span><span class="n">count2</span><span class="p">,</span><span class="w"> </span><span class="n">datatype</span><span class="p">,</span><span class="w"> </span><span class="n">comm0</span><span class="p">,</span><span class="w"> </span><span class="n">stream</span><span class="p">);</span>
+<span class="n">ncclAllReduce</span><span class="p">(</span><span class="n">sendbuff3</span><span class="p">,</span><span class="w"> </span><span class="n">recvbuff3</span><span class="p">,</span><span class="w"> </span><span class="n">count3</span><span class="p">,</span><span class="w"> </span><span class="n">datatype</span><span class="p">,</span><span class="w"> </span><span class="n">comm0</span><span class="p">,</span><span class="w"> </span><span class="n">stream</span><span class="p">);</span>
+<span class="n">ncclGroupEnd</span><span class="p">();</span>
+
+<span class="n">RANK1</span><span class="o">/</span><span class="n">GPU1</span><span class="o">/</span><span class="n">Process1</span><span class="o">:</span>
+<span class="n">ncclGroupStart</span><span class="p">();</span>
+<span class="n">ncclBroadcast</span><span class="p">(</span><span class="n">sendbuff1</span><span class="p">,</span><span class="w"> </span><span class="n">recvbuff1</span><span class="p">,</span><span class="w"> </span><span class="n">count1</span><span class="p">,</span><span class="w"> </span><span class="n">datatype</span><span class="p">,</span><span class="w"> </span><span class="n">root</span><span class="p">,</span><span class="w"> </span><span class="n">comm0</span><span class="p">,</span><span class="w"> </span><span class="n">stream</span><span class="p">);</span>
+<span class="n">ncclAllReduce</span><span class="p">(</span><span class="n">sendbuff2</span><span class="p">,</span><span class="w"> </span><span class="n">recvbuff2</span><span class="p">,</span><span class="w"> </span><span class="n">count2</span><span class="p">,</span><span class="w"> </span><span class="n">datatype</span><span class="p">,</span><span class="w"> </span><span class="n">comm0</span><span class="p">,</span><span class="w"> </span><span class="n">stream</span><span class="p">);</span>
+<span class="n">ncclAllReduce</span><span class="p">(</span><span class="n">sendbuff3</span><span class="p">,</span><span class="w"> </span><span class="n">recvbuff3</span><span class="p">,</span><span class="w"> </span><span class="n">count3</span><span class="p">,</span><span class="w"> </span><span class="n">datatype</span><span class="p">,</span><span class="w"> </span><span class="n">comm0</span><span class="p">,</span><span class="w"> </span><span class="n">stream</span><span class="p">);</span>
+<span class="n">ncclAllReduce</span><span class="p">(</span><span class="n">sendbuff4</span><span class="p">,</span><span class="w"> </span><span class="n">recvbuff4</span><span class="p">,</span><span class="w"> </span><span class="n">count4</span><span class="p">,</span><span class="w"> </span><span class="n">datatype</span><span class="p">,</span><span class="w"> </span><span class="n">comm1</span><span class="p">,</span><span class="w"> </span><span class="n">stream</span><span class="p">);</span><span class="w"> </span><span class="c1">// WRONG: reversed order</span>
+<span class="n">ncclGroupEnd</span><span class="p">();</span>
+</pre></div>
+</div>
+</section>
+<section id="nonblocking-group-operation">
+<h2>Nonblocking Group Operation<a class="headerlink" href="#nonblocking-group-operation" title="Permalink to this heading"></a></h2>
+<p>If a communicator is marked as nonblocking through ncclCommInitRankConfig, the group functions become asynchronous
+correspondingly. In this case, if users issue multiple NCCL operations in one group, returning from ncclGroupEnd() might
+not mean the NCCL communication kernels have been issued to CUDA streams. If ncclGroupEnd() returns ncclSuccess, it means
+NCCL kernels have been issued to streams; if it returns ncclInProgress, it means NCCL kernels are being issued to streams
+in the background. It is users’ responsibility to make sure the state of the communicator changes into ncclSuccess
+before calling related CUDA calls (e.g. cudaStreamSynchronize):</p>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="n">ncclGroupStart</span><span class="p">();</span>
+<span class="w">  </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">g</span><span class="o">=</span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">g</span><span class="o">&lt;</span><span class="n">ngpus</span><span class="p">;</span><span class="w"> </span><span class="n">g</span><span class="o">++</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">ncclAllReduce</span><span class="p">(</span><span class="n">sendbuffs</span><span class="p">[</span><span class="n">g</span><span class="p">]</span><span class="o">+</span><span class="n">offsets</span><span class="p">[</span><span class="n">i</span><span class="p">],</span><span class="w"> </span><span class="n">recvbuffs</span><span class="p">[</span><span class="n">g</span><span class="p">]</span><span class="o">+</span><span class="n">offsets</span><span class="p">[</span><span class="n">i</span><span class="p">],</span><span class="w"> </span><span class="n">counts</span><span class="p">[</span><span class="n">i</span><span class="p">],</span><span class="w"> </span><span class="n">datatype</span><span class="p">[</span><span class="n">i</span><span class="p">],</span><span class="w"> </span><span class="n">comms</span><span class="p">[</span><span class="n">g</span><span class="p">],</span><span class="w"> </span><span class="n">streams</span><span class="p">[</span><span class="n">g</span><span class="p">]);</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="n">ret</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ncclGroupEnd</span><span class="p">();</span>
+<span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">ret</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">ncclInProgress</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">   </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">g</span><span class="o">=</span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">g</span><span class="o">&lt;</span><span class="n">ngpus</span><span class="p">;</span><span class="w"> </span><span class="n">g</span><span class="o">++</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">     </span><span class="k">do</span><span class="w"> </span><span class="p">{</span>
+<span class="w">       </span><span class="n">ncclCommGetAsyncError</span><span class="p">(</span><span class="n">comms</span><span class="p">[</span><span class="n">g</span><span class="p">],</span><span class="w"> </span><span class="o">&amp;</span><span class="n">state</span><span class="p">);</span>
+<span class="w">     </span><span class="p">}</span><span class="w"> </span><span class="k">while</span><span class="w"> </span><span class="p">(</span><span class="n">state</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">ncclInProgress</span><span class="p">);</span>
+<span class="w">   </span><span class="p">}</span>
+<span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">ret</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">ncclSuccess</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">   </span><span class="cm">/* Successfully issued */</span>
+<span class="w">   </span><span class="n">printf</span><span class="p">(</span><span class="s">"NCCL kernel issue succeeded</span><span class="se">\n</span><span class="s">"</span><span class="p">);</span>
+<span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="p">{</span>
+<span class="w">   </span><span class="cm">/* Errors happen */</span>
+<span class="w">   </span><span class="n">reportErrorAndRestart</span><span class="p">();</span>
+<span class="p">}</span>
+
+<span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">g</span><span class="o">=</span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">g</span><span class="o">&lt;</span><span class="n">ngpus</span><span class="p">;</span><span class="w"> </span><span class="n">g</span><span class="o">++</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="n">cudaStreamSynchronize</span><span class="p">(</span><span class="n">streams</span><span class="p">[</span><span class="n">g</span><span class="p">]);</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Related links:</p>
+<ul class="simple">
+<li><p><a class="reference internal" data-original-href="https://docs.nvidia.com/deeplearning/nccl/user-guide/docs/api/comms.html#c.ncclCommInitRankConfig" title="ncclCommInitRankConfig"><code class="xref c c-func docutils literal notranslate"><span class="pre">ncclCommInitRankConfig()</span></code></a></p></li>
+<li><p><a class="reference internal" data-original-href="https://docs.nvidia.com/deeplearning/nccl/user-guide/docs/api/comms.html#c.ncclCommGetAsyncError" title="ncclCommGetAsyncError"><code class="xref c c-func docutils literal notranslate"><span class="pre">ncclCommGetAsyncError()</span></code></a></p></li>
+</ul>
+</section>
+</section>
+</div>
+</div></body></html>

@@ -1,0 +1,58 @@
+# K-FW-006：Attention Backend：语义、布局与执行契约的交集
+
+选择 attention backend 是匹配可见性、张量几何、状态布局和执行模式，性能排名只对确定的运行点成立。
+
+## 先写出共同函数
+
+backend 接口必须表达 Q/K/V 的 head 数与通道、query 和 KV 各自长度、逻辑位置、mask/偏置、scale、dtype 和输出形状。分页、ragged 和稠密只改变存储表示；如果接口不能表达所需可见性，则速度再高也不是等价替换。
+
+SDPA 是框架级算子，会按条件选择实现；FlashAttention 提供特定融合 attention 路径；FlashInfer 提供面向推理的分页、变长和计划接口；ROCm 上还可能选择 AITER 等目标平台实现。库名不等于模型和平台的完整支持矩阵，具体函数比库总览更有决定性。
+
+## 非等长 causal 是一个具体反例
+
+设 Q 长 2，K 长 5，Q 对应历史尾部位置 3、4。期望第一行可见前 4 个 K、第二行可见 5 个。FlashAttention 文档说明相关版本 causal 对齐改为右下；PyTorch SDPA 的非方形 is_causal 有其上左对齐定义。两者若直接互换同一个布尔参数，可能给第一行只看 1 个、第二行只看 2 个。应以绝对位置关系构造等价 mask，或选择明确支持相应对齐的接口。
+
+另一个常见差别是布尔 mask 的 true 含义：不同算子可能分别表示保留或屏蔽。dropout_p 也可能由算子参数直接控制，不能假定外部 eval 状态自动将它清零。模型语义优先于同名参数。
+
+## 用契约表组织选择
+
+| 场景 | 必须能表达的内容 | 决定额外成本的项 |
+|---|---|---|
+| 稠密 prefill | 因果/非因果、变长 query | padding、tile、是否物化 mask |
+| 分页 decode | 页表、tail、Hq/Hkv | plan、间接读取、split-K |
+| Cross-attention | 独立 Q/KV 分段与源可见性 | 投影缓存、独立几何 |
+| MLA | latent 与位置分量 | 是否展开历史、专用归约 |
+| 图执行 | 稳定地址及允许更新的 metadata | 捕获外 plan、workspace |
+| 窗口/稀疏 | 每 query 合法历史集合 | 索引和无效 tile |
+
+## 适配器应承接什么
+
+一个清晰的适配层可把引擎逻辑状态转换成 backend 输入，说明是否发生 gather、transpose、dtype conversion 或额外 copy。这样的转换可能比 kernel 本身更贵，benchmark 应覆盖它们。fallback 也应保持同一数学契约，不能在不支持窗口时静默改为全 attention。
+
+不同 prefill/decode backend 可共享持久缓存，但布局、量化 scales 和写入约定必须一致。跨 backend 比较使用固定张量与可见关系，再评价端到端成本，才能区分数学接入错误和资源效率差异。
+
+<!-- infraagents:provenance -->
+
+## 来源与推导
+
+- S-SDPA：[完整原文](../../references/S-SDPA/reader.html) · [全文文本](../../references/S-SDPA/fulltext.txt)
+- S-FA-IMPL：[完整原文](../../references/S-FA-IMPL/reader.html) · [全文文本](../../references/S-FA-IMPL/fulltext.txt)
+- S-FI：[完整原文](../../references/S-FI/reader.html) · [全文文本](../../references/S-FI/fulltext.txt)
+- S-AITER：[完整原文](../../references/S-AITER/reader.html) · [全文文本](../../references/S-AITER/fulltext.txt)
+
+- [S-SDPA：PyTorch：scaled_dot_product_attention](../sources/S-SDPA.md)：已核对 SDPA 文档：布尔 mask 的 true 表示参与 attention；dropout_p 大于零时执行 dropout；非方形 is_causal 采用文档定义的左上对齐。Q、K/V heads 与通道形状有明确关系。
+
+- [S-FA-IMPL：FlashAttention 官方实现说明](../sources/S-FA-IMPL.md)：FlashAttention 的版本说明记录：2.1 将非等长 Q/K 的 causal 对齐由左上改成右下。示例 Q 长 2、K 长 5 时，右下对齐使两行分别可见前 4、5 个位置。
+
+- [S-FI：FlashInfer：Attention kernels](../sources/S-FI.md)：已读 FlashInfer 0.6.18 接口说明区分 query 分段、KV 页表及末页长度。一些 wrapper 的 plan 安排计算/工作区，run 执行 attention；相关 plan 不能直接捕获入图。
+
+- [S-AITER：ROCm AITER 官方仓库](../sources/S-AITER.md)：AITER 是 AMD ROCm 的算子实现项目，提供面向相应硬件的 attention、矩阵或相关算子路径。项目覆盖不代表每种形状和设备都有相同实现。
+
+上文的公式展开、容量算例与组合设计是 InfraAgents 在这些机制基础上的推导，具体推导已写在本条正文中。来源入口均为本地释义，可继续读取其定义与使用关系。版本 3，2026-09-20。
+
+## 延伸阅读
+
+- [Attention 的 IO、在线 softmax 与分块归约](../algorithms/attention-io.md)。
+- [交叉注意力缓存：固定源、独立几何与可见性](../algorithms/cross-attention-cache.md)。
+- [CUDA Graph：捕获边界、计划状态与变长服务](../frameworks/cuda-graph-buffers.md)。
+- [MLA：压缩状态、矩阵吸收与解耦 RoPE](../models/mla.md)。

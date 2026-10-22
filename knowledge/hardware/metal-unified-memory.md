@@ -1,0 +1,38 @@
+# K-HW-007：Apple Silicon：统一内存、带宽与交互式推理
+
+统一内存减少显式设备间搬运，但 CPU/GPU 仍共享容量、带宽并通过依赖控制可见性。
+
+## 共享地址空间带来什么
+
+Apple Silicon 的 CPU/GPU 可以访问同一内存池，MLX 可在操作执行时选择设备。省掉显式 H2D 副本不意味着读取没有成本：GPU 仍需从内存层级取数，CPU 媒体处理、操作系统和 GPU 会竞争容量及带宽。大权重和长 KV 可能挤压应用其他部分。
+
+统一物理内存也不意味着可以忽略同步。CPU 读取由 GPU 生产的数据仍需完成关系；CPU 修改尚被 GPU 消费的 buffer 仍会产生竞争。将标量读回用于控制流可能迫使求值并等待，延迟模型与其他异步平台有共同之处。
+
+## 小设备上的容量转化为可用性
+
+量化权重能让更多模型驻留，并减少带宽需求；KV 的 dtype 和长度独立影响增长。长会话多并发时，即使模型文件能加载，也可能在临时激活或生成阶段达到内存压力。OS 内存压缩或交换会把容量问题转成剧烈的延迟变化。
+
+prefill、decode 和多模态 encoder 的工作形态不同，Metal/MLX 的 kernel 和编译能力应按实际版本核对。CUDA Graph 的对象与 allocator 规则不能直接搬来；应使用当前框架的惰性求值、编译和 stream 语义推导稳定执行区间。
+
+## 服务策略如何落地
+
+在资源有限的交互式设备，限制同时驻留状态、缩短无效输出缓存、控制预取深度，往往比扩大无界队列更符合延迟目标。连续批处理仍可摊薄权重读取，但应同时计算系统可用内存和用户前台负载。平台测量需要包含实际求值完成与输出可见时间，单测数组表达式构造会漏掉计算。
+
+<!-- infraagents:provenance -->
+
+## 来源与推导
+
+- S-MLX-MEM：[完整原文](../../references/S-MLX-MEM/reader.html) · [全文文本](../../references/S-MLX-MEM/fulltext.txt)
+- S-MLX：[完整原文](../../references/S-MLX/reader.html) · [全文文本](../../references/S-MLX/fulltext.txt)
+
+- [S-MLX-MEM：MLX：Unified Memory](../sources/S-MLX-MEM.md)：MLX 利用 Apple Silicon 的统一内存，CPU/GPU 可以对共享内存中的数组执行操作，设备选择发生在操作执行层。
+
+- [S-MLX：MLX：Lazy Evaluation](../sources/S-MLX.md)：MLX 的惰性求值先建立计算图；显式求值或主机访问结果等操作触发执行。过密求值和过大的未求值图会产生不同开销。
+
+上文的公式展开、容量算例与组合设计是 InfraAgents 在这些机制基础上的推导，具体推导已写在本条正文中。来源入口均为本地释义，可继续读取其定义与使用关系。版本 3，2026-09-20。
+
+## 延伸阅读
+
+- [MLX 服务：惰性求值、编译与请求状态](../frameworks/mlx-serving.md)。
+- [容量、算术强度与服务 Roofline](../hardware/memory-and-roofline.md)。
+- [服务指标：事件边界、Token 间隔与用户时间](../workloads/metric-events.md)。

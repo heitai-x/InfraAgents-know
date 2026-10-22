@@ -1,0 +1,43 @@
+# K-FW-002：数值参考：误差尺度、条件数与首次分歧
+
+一个有解释力的数值参考保持任务函数和输入一致，再分层衡量实现重排与近似产生的差异。
+
+## 等价的层次
+
+实数代数等价、有限精度容差一致、greedy token 一致、随机分布一致和任务质量达标是不同目标。矩阵融合和归约重排可能满足数值容差但不逐位一致；量化本身改变表示；投机随机解码可能保持分布但不保持相同 seed 的轨迹。测试应先明确需要哪一种关系。
+
+逐元素容差常写为 |x−y|≤atol＋rtol|y|。接近零时相对误差不稳定，极大值时只用绝对容差又不合理。最大误差、平均误差和分位数揭示不同问题；NaN、Inf 与 shape/位置错误应单独分类，不能被平均值淹没。
+
+## 从 logits margin 推导输出敏感性
+
+若参考 logits 最大与次大间隔为 Δ，每项误差绝对值均小于 Δ/2，则 argmax 保持。Δ 很小时，极小数值差异也可换一个 token，随后自回归前缀改变并放大整段文本差异。因此“第 100 个 token 不同”可能源于第 1 个微小分歧，也可能是缓存错误，需要固定前缀逐步对照。
+
+softmax 对输入平移不变，但对尺度敏感；归一化层在方差很小时对 epsilon 和累加精度敏感。长点积的误差取决于值分布、消去和归约顺序，不只取决于长度。用更高精度参考时还应确认它执行同样的位置、mask 和参数化。
+
+## 首次分歧是一条因果线索
+
+比较链可从 processor 输出、embedding、每层 hidden、Q/K/V、attention、FFN、最终 logits 到采样。最早产生差异的边界缩小了候选原因；后层的大差异往往是传播结果。对于缓存路径，可比较一次全前缀前向与同一前缀的分块/逐步执行，它们共享语义但经过不同状态管理路径。
+
+输入的极短、跨页、跨窗口、长历史和异构 batch 揭示不同结构边界。它们应来自实现中的状态转换，而非只随机抽几个常见长度。数值参考越独立于被测调度和索引逻辑，越能发现共同错误。
+
+<!-- infraagents:provenance -->
+
+## 来源与推导
+
+- S-TORCH-NUMERIC：[完整原文](../../references/S-TORCH-NUMERIC/reader.html) · [全文文本](../../references/S-TORCH-NUMERIC/fulltext.txt)
+- S-TORCH-REPRO：[完整原文](../../references/S-TORCH-REPRO/reader.html) · [全文文本](../../references/S-TORCH-REPRO/fulltext.txt)
+- S-GPTQ：[完整原文](../../references/S-GPTQ/reader.html) · [全文文本](../../references/S-GPTQ/fulltext.txt)
+
+- [S-TORCH-NUMERIC：PyTorch — Numerical accuracy](../sources/S-TORCH-NUMERIC.md)：浮点运算不满足实数运算的全部结合性质，批量方式、归约顺序和平台路径可以产生数值差异。数值格式、累加精度和极端输入影响误差。
+
+- [S-TORCH-REPRO：PyTorch — Reproducibility](../sources/S-TORCH-REPRO.md)：随机种子与确定性配置可以控制特定执行路径中的随机性，但不保证跨版本、平台和全部算法路径逐位一致。
+
+- [S-GPTQ：GPTQ: Accurate Post-Training Quantization for Generative Pre-trained Transformers](../sources/S-GPTQ.md)：GPTQ 是训练后权重量化方法，使用校准输入所反映的层输入结构，近似考虑量化误差对层输出的影响。它关注的目标不只是孤立权重元素的舍入误差。
+
+上文的公式展开、容量算例与组合设计是 InfraAgents 在这些机制基础上的推导，具体推导已写在本条正文中。来源入口均为本地释义，可继续读取其定义与使用关系。版本 4，2026-09-20。
+
+## 延伸阅读
+
+- [Attention 的 IO、在线 softmax 与分块归约](../algorithms/attention-io.md)。
+- [量化：误差传播、分组尺度与执行格式](../algorithms/quantization-contract.md)。
+- [正确性 Oracle：函数参考、状态变形与服务契约](../tools/correctness-oracles.md)。

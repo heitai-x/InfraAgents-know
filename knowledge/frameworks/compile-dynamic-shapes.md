@@ -1,0 +1,47 @@
+# K-FW-004：编译与动态形状：Guard、分桶和变体成本
+
+编译把一组可证明成立的执行假设变成专门程序；动态服务需要管理这些假设覆盖的形状与状态空间。
+
+## 特化得到什么
+
+编译器可以融合算子、消除中间张量、选择 tile 和简化控制流，这些改进依赖 shape、stride、dtype、常量或其他 guard。guard 失效可能触发重编译或回退。动态 shape 支持让部分维度符号化，但数据相关控制流、固定 workspace 和特定 kernel 仍可能要求静态边界。
+
+batch size 相同但 stride 不同、长度分布不同或不同 LoRA rank，都可能走不同变体。只记录一个“batch=8”不足以解释编译缓存。形状签名应描述实际引发特化的条件。
+
+## 分桶的优化目标
+
+将长度 n 映射到桶 b≥n，以 padding 换稳定形状。线性工作浪费近似随 b−n，密集 attention 的浪费则与 b²−n² 有关。bucket 越密，运行浪费越小，但编译时间、可执行程序数量、图和 workspace 驻留越多。
+
+可把总成本写为请求分布下的期望执行成本＋摊销编译成本＋驻留资源代价。某个很少出现的长度值得直接 eager，未必值得专门编译。batch、context、query 数、模态网格是联合维度，对每轴独立细分可能产生组合爆炸。
+
+## 一个分桶推导
+
+假设输入多集中在 100–128 和 900–1024，少量到 2048。只用 2048 桶给短输入造成巨大无效工作；按 128、1024、2048 三桶可能大幅减少它。是否增加 256/512 桶取决于真实分布质量，而非照搬二次幂。前缀命中后待算 query 长度还可能与总历史长完全不同，需要分别考虑。
+
+## 与 CUDA Graph 的关系
+
+编译程序处理算子计算，CUDA Graph 处理一段设备命令的重放。动态编译并不自动使图能改变全部地址和拓扑；固定图也可以调用未编译的 kernel。两者组合时，应先明确编译变体和图桶各自的 key，再说明持久缓冲与有效长度如何输入。
+
+冷启动包括模型加载、编译、autotune、图捕获和内存池建立。稳定态测量可以排除这些成本，部署可用性和首次请求目标则必须包含。重新编译频繁会把所谓稳定服务变成持续冷路径，需从 guard 失效原因推导应符号化还是分桶。
+
+<!-- infraagents:provenance -->
+
+## 来源与推导
+
+- S-TORCH-DYNAMIC：[完整原文](../../references/S-TORCH-DYNAMIC/reader.html) · [全文文本](../../references/S-TORCH-DYNAMIC/fulltext.txt)
+- S-NXDI：[完整原文](../../references/S-NXDI/reader.html) · [全文文本](../../references/S-NXDI/fulltext.txt)
+- S-TRITON：[完整原文](../../references/S-TRITON/reader.html) · [全文文本](../../references/S-TRITON/fulltext.txt)
+
+- [S-TORCH-DYNAMIC：PyTorch — Dynamic Shapes](../sources/S-TORCH-DYNAMIC.md)：编译会基于 shape、stride、dtype、常量等条件特化，并用 guard 确定专门程序是否可继续使用；部分维度可以符号化，变化也可能触发重编译。
+
+- [S-NXDI：NxD Inference Features Configuration Guide](../sources/S-NXDI.md)：NxD Inference 说明静态形状可执行程序通过分桶和 padding 承接不同长度，context encoding 与 token generation 可配置不同桶；持久状态与模型执行共同受配置约束。
+
+- [S-TRITON：Triton：Fused Attention](../sources/S-TRITON.md)：Triton 的 fused attention 示例展示块级张量程序、在线 softmax 归约、tile 划分与相应配置选择。逻辑 tile 和实际线程/寄存器布局有映射关系。
+
+上文的公式展开、容量算例与组合设计是 InfraAgents 在这些机制基础上的推导，具体推导已写在本条正文中。来源入口均为本地释义，可继续读取其定义与使用关系。版本 4，2026-09-20。
+
+## 延伸阅读
+
+- [CUDA Graph：捕获边界、计划状态与变长服务](../frameworks/cuda-graph-buffers.md)。
+- [分块 Prefill：服务时间切片与历史可见性](../algorithms/chunked-prefill.md)。
+- [工作负载分布：长度、复用、模态与相关性](../workloads/input-distribution.md)。

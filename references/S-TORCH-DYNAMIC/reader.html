@@ -1,0 +1,288 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; frame-src 'self'; object-src 'self'; media-src 'self'; base-uri 'none'; form-action 'none'"><title>Dynamic Shapes — PyTorch 2.14 documentation</title><style>body{font:16px/1.75 system-ui,sans-serif;color:#202631;background:#fff;margin:0 auto;padding:40px;max-width:1100px}h1,h2,h3{line-height:1.3}pre,code{font-family:Consolas,monospace}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#f4f6f8;padding:18px}table{border-collapse:collapse;display:block;overflow-x:auto}td,th{border:1px solid #ccd3dc;padding:8px}img,svg{max-width:100%;height:auto}figure{margin:24px 0}.archive-note{border-left:4px solid #2563eb;padding:12px 20px;background:#eef4ff}math{font-size:1.1em}iframe{width:100%;height:85vh;border:1px solid #ccd3dc}a{color:#1658a5}</style></head><body><p class="archive-note">本地原文阅读副本。正文与资料文件已归档；原始响应、版本和校验信息见同目录 manifest.json。网页导航与在线脚本不执行。</p><article class="bd-article">
+<section id="dynamic-shapes">
+<span id="id1"></span><h1>Dynamic Shapes<a class="headerlink" href="#dynamic-shapes" title="Link to this heading">#</a></h1>
+<p class="date-info-last-verified" style="color: #6c6c6d; font-size: small;">Created On: May 19, 2023 | Last Updated On: Jan 09, 2026</p>
+<p>This section explains how to work with dynamic shapes in PyTorch, including how
+to debug and fix common errors, implement support for dynamic shapes in
+operators, and understand the underlying mechanisms.</p>
+<p>Dynamic shapes allow PyTorch models to handle inputs with varying dimensions
+without recompilation. This enables more flexible models that can process
+different batch sizes, sequence lengths, or image dimensions in a single
+compiled artifact. Dynamic shapes work by symbolically tracing tensor
+dimensions rather than using concrete values, creating a computation
+graph that adapts to different input shapes at runtime. By default,
+PyTorch assumes all input shapes to be static.</p>
+<p>Typically, deep learning compilers only support static shapes, requiring
+recompilation for input shape changes. While this approach covers many use cases,
+there are situations where this is insufficient:</p>
+<ul class="simple">
+<li><p><strong>Variable Dimensions</strong> - Batch sizes or sequence lengths vary, such as in
+adaptive batching.</p></li>
+<li><p><strong>Data-Dependent Outputs</strong> - Models produce outputs based on input data,
+like variable bounding boxes in detection models.</p></li>
+<li><p><strong>Sparse Representations</strong> - Processing depends on data-varying sparse structures,
+such as in sparse tensors, jagged tensors, and graph neural networks.</p></li>
+</ul>
+<p>Dynamic shapes do not support dynamic rank programs, programs which input tensors
+change in dimensionality, as this is uncommon and unnecessarily complex.</p>
+<section id="what-does-it-mean-for-a-size-integer-to-be-dynamic">
+<h2>What does it mean for a size/integer to be dynamic?<a class="headerlink" href="#what-does-it-mean-for-a-size-integer-to-be-dynamic" title="Link to this heading">#</a></h2>
+<p>Dynamic shapes allow avoiding recompilations by making certain dimensions or integers
+dynamic. For example, if a function <code class="docutils literal notranslate"><span class="pre">f(x)</span></code> is compiled with a static size, it will need
+recompilation for different sizes:</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>For simplicity, this example uses <code class="docutils literal notranslate"><span class="pre">@torch.compile(dynamic=True)</span></code>. Note, that
+this option is not recommended due to it being error prone.
+For a recommended way of enabling dynamic shapes, see <a class="reference internal" href="#enable-dynamic-behavior"><span class="std std-ref">Enabling Dynamic Behavior</span></a>.</p>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>import torch
+@torch.compile(dynamic=False)
+def f(x):
+     return x* x.size()[0]
+
+f(torch.rand(10))
+f(torch.rand(20))
+f(torch.rand(30))
+f(torch.rand(40))
+</pre></div>
+</div>
+</div>
+</div>
+<p>In the produced output, you can see that four graphs were generated.
+See the corresponding <a data-original-href="https://docs.pytorch.org/docs/2.14/_static/img/dynamic_shapes/tlparse1_dynamic_shapes_false.png" target="_blank">tlparse output</a></p>
+<p>By making the size dynamic, the function can handle various sizes without recompilation:</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>import torch
+@torch.compile(dynamic=True)
+def f(x):
+     return x* x.size()[0]
+
+f(torch.rand(10))
+f(torch.rand(20))
+f(torch.rand(30))
+f(torch.rand(40))
+</pre></div>
+</div>
+</div>
+</div>
+<p>With dynamic shapes enabled, only one graph is created. See the
+corresponding <a data-original-href="https://docs.pytorch.org/docs/2.14/_static/img/dynamic_shapes/tlparse2_dynamic_shapes_true.png" target="_blank">tlparse output</a>.</p>
+<p>While compilation time differences
+are minimal for this small example, more complex use cases would show significant
+performance improvements.</p>
+</section>
+<section id="what-is-a-specialization">
+<span id="id2"></span><h2>What is a specialization?<a class="headerlink" href="#what-is-a-specialization" title="Link to this heading">#</a></h2>
+<p><strong>Specialization</strong> refers to optimizing a computational graph for specific input shapes
+by examining shape conditions during control flow. If a branch is taken based on a
+shape condition, the graph is tailored for that condition. If a new input doesn’t meet
+this condition, the system will recompile the graph.</p>
+<p>Specialization allows you to create optimized computational graphs for specific input
+shapes, which can significantly improve execution speed.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>import torch
+@torch.compile(dynamic=True)
+def f(x):
+    if x.size()[0] == 10:
+        return x * 10
+
+    if x.size()[0] &lt;= 30:
+        return x*200
+
+    return x*x.size()[0]
+
+f(torch.rand(10))
+f(torch.rand(20))
+f(torch.rand(30))
+f(torch.rand(40))
+f(torch.rand(50))
+</pre></div>
+</div>
+</div>
+</div>
+<p>In the code above, we specialize that the graph requires an input size of 10, in which
+case it will return <code class="docutils literal notranslate"><span class="pre">x</span> <span class="pre">*</span> <span class="pre">10</span></code>. If the input size is less than 30, it will return <code class="docutils literal notranslate"><span class="pre">x</span> <span class="pre">*</span> <span class="pre">200</span></code>.
+In the output, you can see that this creates three graphs.</p>
+<p>See the corresponding <a data-original-href="https://docs.pytorch.org/docs/2.14/_static/img/dynamic_shapes/tlparse3_specialization.png" target="_blank">tlparse output</a></p>
+<p>This is how graphs created for the above function:</p>
+<img alt="../../_images/dynamic_shapes_example_specialization.png" src="assets/8a5258b5c578f2db5bc8d779.png"/>
+</section>
+<section id="enabling-dynamic-behavior">
+<span id="enable-dynamic-behavior"></span><h2>Enabling Dynamic Behavior<a class="headerlink" href="#enabling-dynamic-behavior" title="Link to this heading">#</a></h2>
+<p>There are the following ways to make things dynamic:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#automatic-dynamic"><span class="std std-ref">Automatic dynamic</span></a></p></li>
+<li><p><a class="reference internal" href="#user-annotations"><span class="std std-ref">User Annotations</span></a> (preferred)</p></li>
+<li><p><a class="reference internal" href="#torch-compile-dynamic-true"><span class="std std-ref">torch.compile (dynamic=true) (Not recommended)</span></a> (for testing only)</p></li>
+<li><p><a class="reference internal" data-original-href="https://docs.pytorch.org/docs/2.14/user_guide/torch_compiler/compile/dynamic_shapes_advanced_control_options.html#dynamic-shapes-advanced-control-options"><span class="std std-ref">Advanced Options to Control Dynamic Behavior</span></a> (for advanced use cases)</p></li>
+</ul>
+<p>Read below about each of this options.</p>
+<section id="automatic-dynamic">
+<span id="id3"></span><h3>Automatic dynamic<a class="headerlink" href="#automatic-dynamic" title="Link to this heading">#</a></h3>
+<p><strong>Automatic dynamic</strong> is the default behavior where <a class="reference internal" data-original-href="https://docs.pytorch.org/docs/2.14/generated/torch.compile.html#torch.compile" title="torch.compile"><code class="xref py py-func docutils literal notranslate"><span class="pre">torch.compile()</span></code></a> performs
+the initial compilation assuming static shapes are used, while tracking the
+input sizes from that first compilation. When a recompile is triggered, it
+uses this information to identify which dimensions have changed and marks
+those as dynamic for the second compilation.</p>
+</section>
+<section id="user-annotations">
+<span id="id4"></span><h3>User Annotations<a class="headerlink" href="#user-annotations" title="Link to this heading">#</a></h3>
+<p>Several APIs allow users to explicitly mark specific inputs
+by name or code as dynamic. This is useful for avoiding initial compilations that
+would eventually become dynamic with the previous tools. It is also used to mark
+elements that do not automatically get marked as dynamic, such as neural network
+module parameters, and so on. User annotations are the preferred way to enable
+dynamic shapes.</p>
+<section id="mark-dynamic-tensor-dim-min-min-max-max">
+<h4><code class="docutils literal notranslate"><span class="pre">mark_dynamic(tensor,</span> <span class="pre">dim,</span> <span class="pre">min=min,</span> <span class="pre">max=max)</span></code><a class="headerlink" href="#mark-dynamic-tensor-dim-min-min-max-max" title="Link to this heading">#</a></h4>
+<blockquote>
+<div><p>⚠️ <strong>Warning</strong></p>
+<p><code class="docutils literal notranslate"><span class="pre">torch._dynamo.mark_dynamic()</span></code> must not be called inside any function
+that is being compiled by <code class="docutils literal notranslate"><span class="pre">torch.compile()</span></code> (for example, a model’s
+<code class="docutils literal notranslate"><span class="pre">forward()</span></code> method or any function it calls).</p>
+<p>This function is a <em>tracing-time API</em>. If it is invoked from within
+compiled code, Dynamo will raise an error such as:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="ne">AssertionError</span><span class="p">:</span> <span class="n">Attempt</span> <span class="n">to</span> <span class="n">trace</span> <span class="n">forbidden</span> <span class="nb">callable</span>
+</pre></div>
+</div>
+<p><strong>Correct usage</strong> is to call <code class="docutils literal notranslate"><span class="pre">mark_dynamic</span></code> on input tensors <em>before</em>
+invoking <code class="docutils literal notranslate"><span class="pre">torch.compile</span></code>, for example:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">torch</span><span class="o">.</span><span class="n">_dynamo</span><span class="o">.</span><span class="n">mark_dynamic</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+<span class="n">compiled_model</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+</pre></div>
+</div>
+</div></blockquote>
+<p>The <code class="xref py py-func docutils literal notranslate"><span class="pre">torch._dynamo.mark_dynamic()</span></code> function marks a tensor dimension as dynamic and will fail if it
+gets specialized. It does not work for integers. Use this function only if you know
+all graphs in the frame using this input converge to a single dynamic graph.
+Otherwise, you may encounter a misleading constraint violation error.
+In such cases, consider using <code class="xref py py-func docutils literal notranslate"><span class="pre">torch._dynamo.maybe_mark_dynamic()</span></code>. Currently,
+<code class="xref py py-func docutils literal notranslate"><span class="pre">torch._dynamo.mark_dynamic()</span></code>
+does not have precedence over <code class="docutils literal notranslate"><span class="pre">force_parameter_static_shapes</span> <span class="pre">=</span> <span class="pre">True</span></code> or <code class="docutils literal notranslate"><span class="pre">force_nn_module_property_static_shapes</span> <span class="pre">=</span> <span class="pre">True</span></code>.</p>
+<p>If you know in advance that a particular dimension will be dynamic, you
+can avoid the initial recompilation by using <code class="xref py py-func docutils literal notranslate"><span class="pre">torch._dynamo.mark_dynamic(tensor,</span> <span class="pre">dim)()</span></code>.
+Additionally, if you already know the minimum and maximum possible
+values for this dimension, you can specify them with
+<code class="xref py py-func docutils literal notranslate"><span class="pre">torch._dynamo.mark_dynamic(tensor,</span> <span class="pre">dim,</span> <span class="pre">min=min,</span> <span class="pre">max=max)()</span></code>.</p>
+<p>Here is a quick example:</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>import torch
+
+@torch.compile
+def f(x):
+    return x * x.size()[0]
+
+x = torch.randn(10)
+torch._dynamo.mark_dynamic(x, 0)
+
+# first invocation we give it is a tensor marked as dynamic
+f(x)
+# rest of these invocations will use dynamically compiled code
+f(torch.randn(20))
+f(torch.randn(30))
+f(torch.randn(40))
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="maybe-mark-dynamic-tensor-dim">
+<h4><code class="docutils literal notranslate"><span class="pre">maybe_mark_dynamic(tensor,</span> <span class="pre">dim)</span></code><a class="headerlink" href="#maybe-mark-dynamic-tensor-dim" title="Link to this heading">#</a></h4>
+<p>The <code class="xref py py-func docutils literal notranslate"><span class="pre">torch._dynamo.maybe_mark_dynamic()</span></code> function shares all properties
+with  <code class="xref py py-func docutils literal notranslate"><span class="pre">torch._dynamo.mark_dynamic()</span></code>
+but does not fail if the size gets specialized. Use it for inputs shared by
+multiple graphs or if the number of graphs does not converge to one for a specific
+frame. For instance, in the example above, use <code class="xref py py-func docutils literal notranslate"><span class="pre">torch._dynamo.maybe_mark_dynamic()</span></code> because graphs
+with sizes 0 and 1 will specialize. However, you can use <code class="xref py py-func docutils literal notranslate"><span class="pre">torch._dynamo.mark_dynamic()</span></code> to ensure
+you never specialize.</p>
+</section>
+<section id="mark-unbacked-tensor-dim">
+<h4><code class="docutils literal notranslate"><span class="pre">mark_unbacked(tensor,</span> <span class="pre">dim)</span></code><a class="headerlink" href="#mark-unbacked-tensor-dim" title="Link to this heading">#</a></h4>
+<p>The <code class="xref py py-func docutils literal notranslate"><span class="pre">torch._dynamo.decorators.mark_unbacked()</span></code> function marks a tensor dimension as unbacked. It is unlikely
+to be the tool you need, but it could be useful if the specialization occurs inside
+a condition <code class="docutils literal notranslate"><span class="pre">guard_size_oblivious(x)</span></code>, and if using it removes the specialization.
+Ensure it fixes the specialization and does not introduce a data-dependent error
+that converts to a graph break at or before the specialization location
+you are trying to  avoid. It might be better to use the next option.</p>
+</section>
+<section id="dynamic-allow-list-dynamic-sources">
+<span id="dynamic-sources-allow-list"></span><h4>Dynamic Allow List (<code class="docutils literal notranslate"><span class="pre">DYNAMIC_SOURCES</span></code>)<a class="headerlink" href="#dynamic-allow-list-dynamic-sources" title="Link to this heading">#</a></h4>
+<p>Use the evnironmental variable <code class="docutils literal notranslate"><span class="pre">TORCH_COMPILE_DYNAMIC_SOURCES</span></code> to pass a configuration
+list of source names to be marked as dynamic. For example:
+<code class="docutils literal notranslate"><span class="pre">TORCH_COMPILE_DYNAMIC_SOURCES=L[‘x’],L[‘y’]</span></code>
+It’s easiest to find these dynamic source names using the PGO artifact in <code class="docutils literal notranslate"><span class="pre">tlparse</span></code>.
+You can copy and paste the dynamic source names from the PGO artifact. This method works
+for integers and tensor sizes and has the highest precedence over all other flags
+that force static shapes. It will not throw an error if what is marked dynamic
+gets specialized or if the provided input does not exist.</p>
+<p>Here is an example:</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>import torch
+
+@torch.compile()
+def f(x):
+     return x * x.size()[0]
+
+with torch.compiler.config.patch(dynamic_sources="L['x']"):
+    f(torch.rand(10))
+f(torch.rand(20))
+f(torch.rand(30))
+f(torch.rand(40))
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="torch-compiler-set-stance-eager-then-compile">
+<span id="id5"></span><h4><code class="docutils literal notranslate"><span class="pre">torch.compiler.set_stance</span> <span class="pre">("eager_then_compile")</span></code><a class="headerlink" href="#torch-compiler-set-stance-eager-then-compile" title="Link to this heading">#</a></h4>
+<p>At times, identifying the appropriate inputs to mark as dynamic can
+be challenging. If you are willing to accept a performance cost for
+the first batch, another convenient option is to use the
+<code class="docutils literal notranslate"><span class="pre">eager_then_compile</span></code> stances, which automatically determine dynamic
+inputs for you. For more information, see <a class="reference internal" data-original-href="https://docs.pytorch.org/docs/2.14/generated/torch.compiler.set_stance.html#torch.compiler.set_stance" title="torch.compiler.set_stance"><code class="xref py py-func docutils literal notranslate"><span class="pre">torch.compiler.set_stance()</span></code></a> and <a class="reference external" data-original-href="https://docs.pytorch.org/tutorials/recipes/torch_compiler_set_stance_tutorial.html">Dynamic Compilation Control with torch.compiler.set_stance</a>.</p>
+</section>
+</section>
+<section id="torch-compile-dynamic-true-not-recommended">
+<span id="torch-compile-dynamic-true"></span><h3><code class="docutils literal notranslate"><span class="pre">torch.compile</span> <span class="pre">(dynamic=true)</span></code> (Not recommended)<a class="headerlink" href="#torch-compile-dynamic-true-not-recommended" title="Link to this heading">#</a></h3>
+<p>This setting forces all sizes and integers to be dynamic, increasing the
+chance of encountering dynamic shape bugs. Setting this option is not
+recommended due to it  being error prone.
+It would make every input size dynamic which may result it performance
+regressions and ultimately increase compilation time.</p>
+<p>PyTorch also provides advanced control options for dynamic shapes, see:
+<a class="reference internal" data-original-href="https://docs.pytorch.org/docs/2.14/user_guide/torch_compiler/compile/dynamic_shapes_advanced_control_options.html#dynamic-shapes-advanced-control-options"><span class="std std-ref">Advanced Options to Control Dynamic Behavior</span></a>.</p>
+</section>
+</section>
+<section id="where-do-i-go-from-here">
+<h2>Where Do I Go From Here?<a class="headerlink" href="#where-do-i-go-from-here" title="Link to this heading">#</a></h2>
+<p>If you encounter a framework code bug or an issue with specialization,
+file an issue so it can be reviewed and potentially improved. If the issue
+is within your user code, consider whether you are willing to rewrite your
+code to avoid it. Determine if it affects correctness or if it’s a redundant
+check. If the issue involves a Triton custom kernel with a <code class="docutils literal notranslate"><span class="pre">constexpr</span></code>
+argument, evaluate whether you can rewrite it to address the problem.</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" data-original-href="https://docs.pytorch.org/docs/2.14/user_guide/torch_compiler/compile/dynamic_shapes_core_concepts.html">Dynamic Shapes Core Concepts</a></li>
+<li class="toctree-l1"><a class="reference internal" data-original-href="https://docs.pytorch.org/docs/2.14/user_guide/torch_compiler/compile/dynamic_shapes_troubleshooting.html">Troubleshooting Dynamic Shapes</a></li>
+<li class="toctree-l1"><a class="reference internal" data-original-href="https://docs.pytorch.org/docs/2.14/user_guide/torch_compiler/compile/dynamic_shapes_advanced_control_options.html">Advanced Options to Control Dynamic Behavior</a></li>
+<li class="toctree-l1"><a class="reference internal" data-original-href="https://docs.pytorch.org/docs/2.14/user_guide/torch_compiler/compile/dynamic_shapes_beyond_the_basics.html">Beyond the Basics</a></li>
+</ul>
+</div>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<ul class="simple">
+<li><p><a class="reference external" data-original-href="https://github.com/pytorch/tlparse">tlparse documentation</a></p></li>
+<li><p><a class="reference external" data-original-href="https://docs.google.com/document/d/1GgvOe7C8_NVOMLOCwDaYV1mXXyHMXY7ExoewHqooxrs/edit?tab=t.0#heading=h.fh8zzonyw8ng">The dynamic shapes manual</a></p></li>
+</ul>
+</div>
+</section>
+</section>
+</article></body></html>
