@@ -4,6 +4,11 @@
 
 | 实际行为 | 应还原的关系 | 专家正文 |
 |---|---|---|
+| KV 文件明显变小但显存或速度未改善 | 元数据、残余区、完整解码副本与实际消费路径 | [KV 压缩](algorithms/kv-compression.md) |
+| 远端缓存命中却比重算慢 | 目录、源队列、传输、转换和目标容量 | [分布式 KV](system-semantics/distributed-kv-store.md)、[路由](algorithms/routing-and-migration.md) |
+| NIC 完成后 GPU 偶发读到旧数据 | 注册代次、GPU 可见性与消费者提交顺序 | [传输与 RDMA](hardware/transport-and-rdma.md) |
+| 断线重试后重复或遗漏输出 | 计算、确认、外部提交边界与尝试身份 | [恢复](system-semantics/serving-recovery.md) |
+| 树验证结果不同于独立路径 | 祖先可见性、logits 行、RNG/grammar 与回滚 | [分支生成](algorithms/branch-generation.md) |
 | GPU 增加流水级数反而变慢 | 寄存器/共享存储、spill、同步与实际重叠 | [GPU 流水](hardware/gpu-kernel-pipelines.md) |
 | 显存释放成功但 decode 间隔很长 | 每步实际读取的 KV/权重及链路下界 | [多级驻留](algorithms/tiered-residency.md)、[KV 卸载](algorithms/kv-offload-prefetch.md) |
 | SSD 标称很快但模型供给不足 | 请求大小、IOPS、排队、冷热页缓存与 staging | [存储 I/O](hardware/storage-io.md) |

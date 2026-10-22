@@ -89,3 +89,11 @@
 | [S-POWERINFER](sources/S-POWERINFER.md) | 2312.12456v1 | 2023-12-16 |
 | [S-FLASHATTENTION3](sources/S-FLASHATTENTION3.md) | 2407.08608v1 | 2024-07-11 |
 | [S-LINUX-IO](sources/S-LINUX-IO.md) | Linux v6.12 commit adc218676eef25575469234709c2d87185ca223a | 2024-11-17 |
+| [S-KIVI](sources/S-KIVI.md) | 2402.02750v1 | 2024-02-05 |
+| [S-H2O](sources/S-H2O.md) | 2306.14048v1 | 2023-06-24 |
+| [S-CACHEGEN](sources/S-CACHEGEN.md) | 2310.07240v1 | 2023-10-11 |
+| [S-MOONCAKE](sources/S-MOONCAKE.md) | 2407.00079v1 | 2024-06-24 |
+| [S-LLUMNIX](sources/S-LLUMNIX.md) | 2406.03243v1 | 2024-06-05 |
+| [S-EAGLE](sources/S-EAGLE.md) | 2401.15077v1 | 2024-01-26 |
+| [S-RDMA](sources/S-RDMA.md) | rdma-core v54.0 commit 77128e6b6d32a1aad7c1bec9d6eb1f061b63cf39 | 2024-10-06 |
+| [S-GPUDIRECT](sources/S-GPUDIRECT.md) | CUDA 12.8.0 | 2025-01-21 |

@@ -20,6 +20,18 @@ TP 每层常有同步，小 batch 更容易暴露 α；EP 的 all-to-all 受路�
 
 通信与计算重叠需要数据先就绪、接收方及时发起、硬件资源允许并行。独立 stream 只是提交关系，若两者争同一内存带宽，重叠也可能使各自更慢。判断收益看关键路径缩短，而非时间线上颜色相交。
 
+## 每条共享边的流量要有明确方向
+
+每 rank 发送、接收以及端点内存读写是不同计量边界。理想 ring 的常用字节公式不能在没有说明时既算发送又重复算接收；全双工链路与共享上行也有不同容量约束。按实际经过的边统计 TP、EP、P/D、缓存副本与制品加载，可以找到单个操作微基准看不到的竞争。
+
+GPU 直接路径的可达性还受注册方式、驱动、PCIe 根/交换结构和平台支持影响。对某个设备对测得的带宽不能替代其他 GPU/NIC 配对；主机中转和直接路径分别测量，记录 CPU、NUMA 与接收端处理是否进入关键路径。
+
+## 以真实消息形态校准
+
+小而频繁的控制/集合消息更容易暴露启动与同步，大 KV 或权重流更容易暴露带宽与拥塞。扫描消息大小、并发流、双向传输和计算同时运行的情况，观察实际 bytes、队列与用户时延，而非只看总网络利用率。
+
+热点缓存节点可以成为所有计算实例共同的瓶颈；将请求分散到更多 GPU 反而可能增加对它的读取。副本与迁移的拓扑选择，应与 [全局缓存](../system-semantics/distributed-kv-store.md) 和 [路由](../algorithms/routing-and-migration.md) 联合推导。
+
 <!-- infraagents:provenance -->
 
 ## 来源与推导
@@ -34,6 +46,16 @@ TP 每层常有同步，小 batch 更容易暴露 α；EP 的 all-to-all 受路�
   [完整原文](../../references/S-NCCL-GROUP/reader.html) · [全文文本](../../references/S-NCCL-GROUP/fulltext.txt)
 
 正文中的公式展开、容量算例与组合设计是基于这些来源的推导；设定算例不冒充实测。来源版本受 2026-04-30 上限约束，编辑日期 2026-10-22 不作为事实发布日期。此独立 base 版本内的章节修订号从 1 开始，原章节身份与版本映射保存在版本清单。
+
+
+
+### 本次扩写补充来源
+
+- [S-RDMA：rdma-core v54.0 — registration, work requests, completion queues and events](../sources/S-RDMA.md)：固定 verbs 文档给出 MR 注册、WR 提交、CQE、事件通知及本地缓冲复用规则；包含 inline 例外、错误字段与一次性通知。
+  [完整原文](../../references/S-RDMA/reader.html) · [全文文本](../../references/S-RDMA/fulltext.txt)
+
+- [S-GPUDIRECT：NVIDIA GPUDirect RDMA — CUDA 12.8.0](../sources/S-GPUDIRECT.md)：CUDA 12.8 固定页面描述 GPUDirect 注册、缓存、映射撤销、平台路径和 GPU 内存排序；§2.7 区分外部 DMA 与 GPU 消费依赖。
+  [完整原文](../../references/S-GPUDIRECT/reader.html) · [全文文本](../../references/S-GPUDIRECT/fulltext.txt)
 
 ## 延伸阅读
 

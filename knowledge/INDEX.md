@@ -6,23 +6,23 @@
 
 ## 算法
 
-[分类入口](algorithms/README.md)，共 20 条。
+[分类入口](algorithms/README.md)，共 23 条。
 
 | 条目 | 版本与状态 | 核心认识 |
 |---|---|---|
 | [K-ALG-001：连续批处理：从自回归依赖到迭代调度](algorithms/iteration-batching.md) | v2 · seed | 连续批处理将资源分配单位从整条请求改成一次可执行的 token 推进；批次是请求状态的临时视图。 |
-| [K-ALG-002：分页 KV：逻辑位置、物理布局与共享所有权](algorithms/paged-kv-capacity.md) | v1 · seed | 分页把序列长度的动态增长转换为块映射变化；attention 语义仍由逻辑位置与有效长度决定。 |
-| [K-ALG-003：前缀缓存：计算等价类、Radix 与淘汰收益](algorithms/prefix-cache-identity.md) | v1 · seed | 可复用前缀是能产生等价中间状态的一组输入和执行条件；字符串相同只是其中一个投影。 |
+| [K-ALG-002：分页 KV：逻辑位置、物理布局与共享所有权](algorithms/paged-kv-capacity.md) | v2 · seed | 分页把序列长度的动态增长转换为块映射变化；attention 语义仍由逻辑位置与有效长度决定。 |
+| [K-ALG-003：前缀缓存：计算等价类、Radix 与淘汰收益](algorithms/prefix-cache-identity.md) | v2 · seed | 可复用前缀是能产生等价中间状态的一组输入和执行条件；字符串相同只是其中一个投影。 |
 | [K-ALG-004：Attention 的 IO、在线 softmax 与分块归约](algorithms/attention-io.md) | v2 · seed | 精确 attention 可以通过改变数据流避免存储完整分数矩阵；算法复杂度、HBM 流量与数值归约顺序分别决定成本。 |
 | [K-ALG-005：量化：误差传播、分组尺度与执行格式](algorithms/quantization-contract.md) | v1 · seed | 量化把数值表示、数据布局和执行内核一起改变；收益由减少的字节与新增的变换成本共同决定。 |
-| [K-ALG-006：投机解码：分布保持、状态提交与收益模型](algorithms/speculation-budget.md) | v1 · seed | 投机用便宜候选换取目标模型的并行验证；真正推进系统的是被确认的前缀，而非写入过缓存的全部 token。 |
+| [K-ALG-006：投机解码：分布保持、状态提交与收益模型](algorithms/speculation-budget.md) | v2 · seed | 投机用便宜候选换取目标模型的并行验证；真正推进系统的是被确认的前缀，而非写入过缓存的全部 token。 |
 | [K-ALG-007：分块 Prefill：服务时间切片与历史可见性](algorithms/chunked-prefill.md) | v2 · seed | 分块 prefill 将长输入的执行切成可调度时间片；每块仍读取其之前完整且有效的上下文。 |
 | [K-ALG-008：异步调度：依赖图、代次与双缓冲](algorithms/async-scheduling.md) | v2 · seed | 异步调度只重叠彼此独立的工作；自回归 token、缓存映射和资源回收仍由明确依赖连接。 |
 | [K-ALG-009：异构状态缓存：层组、恢复位置与联合分配](algorithms/heterogeneous-state-cache.md) | v1 · seed | 混合模型的缓存是多类状态的联合系统，统一的是逻辑恢复位置，物理块形状可以不同。 |
 | [K-ALG-010：交叉注意力缓存：固定源、独立几何与可见性](algorithms/cross-attention-cache.md) | v1 · seed | 当 encoder 输出和投影权重固定时，cross-attention 的 K/V 与 decoder 步数无关，可以一次生成、多次读取。 |
-| [K-ALG-011：批量采样：概率变换、请求随机性与行映射](algorithms/batched-sampling.md) | v1 · seed | 采样器消费每个请求自己的条件分布；向量化改变执行形态，不能改变参数、随机状态或输出归属。 |
-| [K-ALG-012：结构化生成：语言状态、token 边界与约束采样](algorithms/structured-output.md) | v1 · seed | 结构化生成将语法状态与语言模型状态同步推进，合法 token 是从当前语法状态仍可完成目标语言的延伸。 |
-| [K-ALG-013：Prefill/Decode 分离：状态传输与队列耦合](algorithms/disaggregated-serving.md) | v1 · seed | 分离式服务把两个阶段的资源策略解耦，同时引入 KV 传输、布局转换和跨节点状态提交。 |
+| [K-ALG-011：批量采样：概率变换、请求随机性与行映射](algorithms/batched-sampling.md) | v2 · seed | 采样器消费每个请求自己的条件分布；向量化改变执行形态，不能改变参数、随机状态或输出归属。 |
+| [K-ALG-012：结构化生成：语言状态、token 边界与约束采样](algorithms/structured-output.md) | v2 · seed | 结构化生成将语法状态与语言模型状态同步推进，合法 token 是从当前语法状态仍可完成目标语言的延伸。 |
+| [K-ALG-013：Prefill/Decode 分离：状态传输与队列耦合](algorithms/disaggregated-serving.md) | v2 · seed | 分离式服务把两个阶段的资源策略解耦，同时引入 KV 传输、布局转换和跨节点状态提交。 |
 | [K-ALG-014：多 LoRA 服务：低秩计算、驻留与缓存身份](algorithms/lora-serving.md) | v1 · seed | LoRA 为共享基座增加低秩映射；多适配器服务将模型复用问题转换成按请求选择增量权重的问题。 |
 | [K-ALG-015：推理并行：张量分解、流水、专家与上下文](algorithms/parallelism.md) | v1 · seed | 并行策略改变张量归属和同步边界；选择依据是每阶段的计算、状态与通信分解。 |
 | [K-ALG-016：基础算子：从张量契约到合法融合](algorithms/operator-primitives.md) | v1 · seed | 算子契约包含轴、布局、数值和别名；合法融合需要保持函数与状态关系，再比较字节、启动和资源占用。 |
@@ -30,6 +30,9 @@
 | [K-ALG-018：KV 卸载与预取：读集合、恢复点与迁移预算](algorithms/kv-offload-prefetch.md) | v1 · seed | KV 卸载按实际可见集合与共同恢复点组织；暂停恢复、前缀命中和活跃 decode 的持续传输需要不同预算。 |
 | [K-ALG-019：权重与专家卸载：重用、路由与在途版本](algorithms/weight-expert-offload.md) | v1 · seed | 权重与专家卸载同时依赖批次重用、专家并集、热点和版本；按 token 稀疏不能直接推断 batch 读取稀疏。 |
 | [K-ALG-020：CPU–GPU 计算放置：传数据、传结果与共同提交](algorithms/heterogeneous-execution.md) | v1 · seed | CPU–GPU 分工比较冷权重搬运、CPU 计算与分片合并的完整关键路径；激活稀疏预测须有独立质量契约。 |
+| [K-ALG-021：KV 压缩：表示、近似保留与传输格式](algorithms/kv-compression.md) | v1 · seed | KV 量化、历史裁剪与传输编码改变不同成本与语义；分组轴、残余区、元数据和质量必须分别计入。 |
+| [K-ALG-023：请求路由与迁移：命中收益、排队和追赶条件](algorithms/routing-and-migration.md) | v1 · seed | 缓存亲和与动态迁移需要同时比较排队、状态增长、网络和提交责任；局部命中与低迁移停顿不保证整体收益。 |
+| [K-ALG-024：多样本与搜索分支：父子状态、评分与共同提交](algorithms/branch-generation.md) | v1 · seed | beam、多样本与投机树共享存储机制但优化目标不同；父子路径、logits 行、随机/语法状态与提交边界必须一致。 |
 
 ## 模型
 
@@ -52,12 +55,12 @@
 
 ## 硬件平台
 
-[分类入口](hardware/README.md)，共 13 条。
+[分类入口](hardware/README.md)，共 14 条。
 
 | 条目 | 版本与状态 | 核心认识 |
 |---|---|---|
 | [K-HW-001：容量、算术强度与服务 Roofline](hardware/memory-and-roofline.md) | v2 · seed | 容量决定系统能容纳哪些状态，带宽与计算能力决定搬运和处理这些状态的下界，关键路径决定哪些下界实际显现。 |
-| [K-HW-002：通信拓扑：从 Rank 组到瓶颈链路](hardware/topology-parallelism.md) | v1 · seed | 多卡性能由数据经过的实际路径决定；rank 数只是拓扑模型的一部分。 |
+| [K-HW-002：通信拓扑：从 Rank 组到瓶颈链路](hardware/topology-parallelism.md) | v2 · seed | 多卡性能由数据经过的实际路径决定；rank 数只是拓扑模型的一部分。 |
 | [K-HW-003：主机准备、DMA 与流水缓冲](hardware/host-device-transfer.md) | v2 · seed | 输入流水的吞吐取决于准备、传输和计算三个阶段的平衡；数据可见性和缓冲所有权决定能否正确重叠。 |
 | [K-HW-004：数值格式、打包布局与矩阵指令](hardware/precision-and-kernel-support.md) | v1 · seed | 硬件支持某种 dtype、库能接受该 dtype、目标形状有高效 kernel，是三个不同层次的能力。 |
 | [K-HW-005：CUDA 平台：SM 数据流、占用率与执行粒度](hardware/cuda-execution.md) | v2 · seed | CUDA 优化应把算法的数据复用映射到 SM 的寄存器、共享存储和 warp 执行，再判断主机提交是否成为瓶颈。 |
@@ -69,6 +72,7 @@
 | [K-HW-011：GPU 矩阵与归约流水：布局、资源和完成依赖](hardware/gpu-kernel-pipelines.md) | v1 · seed | GPU tile、片上布局和异步流水共同受寄存器、共享存储及完成依赖约束；GEMM 与 attention 的最优组织随形状和架构改变。 |
 | [K-HW-012：存储 I/O：请求粒度、队列和加载流水](hardware/storage-io.md) | v1 · seed | 实际存储供给由布局、pagecache/直接 I/O、请求粒度、队列和 staging 共同决定；提交、可读、持久化和可回收分开建模。 |
 | [K-HW-013：共享内存路径：统一地址、物理驻留与显式迁移](hardware/shared-memory-paths.md) | v1 · seed | 统一地址、可迁移驻留和物理共享内存是不同访问关系；重用、页放大、可见性和带宽竞争共同决定复制选择。 |
+| [K-HW-014：通信传输：注册、完成、可见与回收](hardware/transport-and-rdma.md) | v1 · seed | 网络提交、CQE、消费者可见与应用接管是不同事件；注册、代次和完成协议共同决定缓冲何时可回收。 |
 
 ## 框架
 
@@ -131,7 +135,7 @@
 
 ## 系统语义与一致性
 
-[分类入口](system-semantics/README.md)，共 12 条。
+[分类入口](system-semantics/README.md)，共 14 条。
 
 | 条目 | 版本与状态 | 核心认识 |
 |---|---|---|
@@ -139,13 +143,15 @@
 | [K-SYS-002：请求身份：逻辑序列、批次视图与结果归属](system-semantics/request-batch-identity.md) | v1 · seed | 请求是长期语义对象，batch 行与物理槽是临时执行位置；正确性依赖它们之间可追溯的映射。 |
 | [K-SYS-003：位置、Mask 与缓存：同一可见性关系的三种表示](system-semantics/position-mask-cache.md) | v1 · seed | 缓存中的内容必须对应模型定义的逻辑位置；mask 决定读取集合，物理布局只决定这些内容放在哪里。 |
 | [K-SYS-004：取消与完成：业务终止、设备排空和资源回收](system-semantics/cancellation-resource-completion.md) | v1 · seed | 取消撤销未来服务意图，完成证明既有工作已结束；物理资源重用必须等待最后一个使用者。 |
-| [K-SYS-005：集合通信：参与集合、操作顺序与失败传播](system-semantics/collective-ordering.md) | v1 · seed | 分布式前向是一组共同执行协议；每个 rank 的局部控制流必须形成匹配的通信序列。 |
+| [K-SYS-005：集合通信：参与集合、操作顺序与失败传播](system-semantics/collective-ordering.md) | v2 · seed | 分布式前向是一组共同执行协议；每个 rank 的局部控制流必须形成匹配的通信序列。 |
 | [K-SYS-006：工程认识如何成为可迁移的专家知识](system-semantics/evidence-and-independent-checks.md) | v1 · seed | 知识的增量是对系统机制与设计关系的新增解释；运行结果为这些解释提供事实、区分和修正。 |
 | [K-SYS-007：输入输出语义：Tokenizer、Chat Template 与流式文本](system-semantics/tokenization-io.md) | v2 · seed | 模型处理的是规范化后的 token/特征序列，服务协议必须精确保存从用户输入到模型输入再到输出文本的映射。 |
 | [K-SYS-008：服务协议：接收、流式背压与终止语义](system-semantics/service-protocol.md) | v1 · seed | 推理服务将内部生成状态映射为可观察的网络事件；接收、执行完成和客户端收到结果是不同的完成点。 |
-| [K-SYS-009：分布式状态迁移：身份、传输与提交点](system-semantics/distributed-state-transfer.md) | v1 · seed | 状态迁移是一项所有权和可见性协议；字节到达只有在布局和版本被共同解释后才成为可用模型状态。 |
+| [K-SYS-009：分布式状态迁移：身份、传输与提交点](system-semantics/distributed-state-transfer.md) | v2 · seed | 状态迁移是一项所有权和可见性协议；字节到达只有在布局和版本被共同解释后才成为可用模型状态。 |
 | [K-SYS-010：系统设计推导：把模型、缓存、执行与目标组合起来](system-semantics/design-synthesis.md) | v2 · seed | 专家指导的产物是一条从任务条件到系统结构的推导链：状态模型、资源模型、候选设计及其可区分的结果。 |
 | [K-SYS-012：内存分配：地址、容量与在途所有权](system-semantics/memory-allocators.md) | v1 · seed | 分配器同时管理地址、物理容量与异步所有权；比较连续池、块表和虚拟映射时必须计入碎片、工作区和在途页。 |
+| [K-SYS-013：分布式 KV 存储：目录、有效副本与可恢复状态](system-semantics/distributed-kv-store.md) | v1 · seed | 分布式 KV 目录只定位候选状态；有效副本、共同恢复点、目标可见性与排队/传输成本决定真实可复用性。 |
+| [K-SYS-014：推理服务恢复：提交边界、执行组与重试身份](system-semantics/serving-recovery.md) | v1 · seed | 恢复需要明确计算、确认与外部提交边界，以及唯一提交权；可重算 KV 不等于可恢复整个请求或恰好一次交付。 |
 | [K-SYS-015：服务主机运行时：执行域、队列与缓冲所有权](system-semantics/host-runtime.md) | v1 · seed | 主机执行域、队列和缓冲所有权共同限制推理服务；背压与取消必须连接模型调度和在途资源完成。 |
 
 ## 运行与演进

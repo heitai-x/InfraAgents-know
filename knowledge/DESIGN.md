@@ -36,9 +36,13 @@ GPU 则通过 [矩阵与归约流水](hardware/gpu-kernel-pipelines.md) 把片�
 
 在 [CPU–GPU 计算放置](algorithms/heterogeneous-execution.md) 中比较搬数据到 GPU 与把计算留在 CPU 的完整路径；[共享内存](hardware/shared-memory-paths.md) 进一步区分统一地址、可迁移驻留和物理共享。三级存储与异构计算各有可复算场景，容量可行、质量合格和 SLO 可达分别判断。
 
+[KV 压缩](algorithms/kv-compression.md) 区分计算表示、历史裁剪与网络字节流。[分布式 KV 存储](system-semantics/distributed-kv-store.md) 建立目录、副本与恢复点，[传输与 RDMA](hardware/transport-and-rdma.md) 将注册、完成和 GPU 可见性连接到应用提交。[路由与迁移](algorithms/routing-and-migration.md) 比较命中与排队，[服务恢复](system-semantics/serving-recovery.md) 处理失败、重试与唯一提交权。
+
 ## 组合额外能力
 
 [量化](algorithms/quantization-contract.md) 改变表示和误差，[投机](algorithms/speculation-budget.md) 改变确认 token 的计算过程，[LoRA](algorithms/lora-serving.md) 改变权重依赖，[结构化生成](algorithms/structured-output.md) 改变合法输出分布。加入它们时，重新推导缓存身份、状态回滚、形状和成本。
+
+[多样本与搜索分支](algorithms/branch-generation.md) 统一梳理父子状态、树形可见性和共同提交，同时保持 beam、多样本采样与投机的不同目标。完整长前缀与 P/D 场景分别见 [前缀缓存](algorithms/prefix-cache-identity.md) 和 [P/D 分离](algorithms/disaggregated-serving.md)。
 
 [并行](algorithms/parallelism.md) 与 [P/D 分离](algorithms/disaggregated-serving.md) 改变资源归属；[分布式状态](system-semantics/distributed-state-transfer.md) 和 [集合顺序](system-semantics/collective-ordering.md) 说明组合协议。
 

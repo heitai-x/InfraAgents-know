@@ -1,0 +1,2211 @@
+=== PDF page 1 ===
+CacheGen: Fast Context Loading for Language Model Applications
+Yuhan Liu, Hanchen Li, Kuntai Du, Jiayi Yao, Yihua Cheng, Yuyang Huang, Shan Lu†,
+Michael Maire, Henry Hoffmann, Ari Holtzman, Ganesh Ananthanarayanan†, Junchen Jiang
+The University of Chicago
+†Microsoft
+Abstract
+As large language models (LLMs) take on more complex
+tasks, their inputs incorporate longer contexts to respond to
+questions that require domain knowledge or user-specific con-
+versational histories. Yet, using long contexts poses a chal-
+lenge for responsive LLM systems, as nothing can be gener-
+ated until all the contexts are fetched to and processed by the
+LLM. Existing systems optimize only the computation delay
+in context processing (e.g., by caching intermediate key-value
+features of the text context) but often cause longer network
+delays in context fetching (e.g., key-value features consume
+orders of magnitude larger bandwidth than the text context).
+This paper presents CacheGen to minimize the delays in
+fetching and processing contexts for LLMs. CacheGen re-
+duces the bandwidth needed for transmitting long contexts’
+key-value (KV) features through a novel encoder that com-
+presses KV features into more compact bitstream represen-
+tations. The encoder combines adaptive quantization with a
+tailored arithmetic coder, taking advantage of the KV features’
+distributional properties, such as locality across tokens. Fur-
+thermore, CacheGen minimizes the total delay in fetching
+and processing a context by using a controller that determines
+when to load the context as compressed KV features or raw
+text and picks the appropriate compression level if loaded as
+KV features. We test CacheGen on three models of various
+sizes and three datasets of different context lengths. Com-
+pared to recent methods that handle long contexts, CacheGen
+reduces bandwidth usage by 3.7-4.3× and the total delay in
+fetching and processing contexts by 2.7-3× while maintain-
+ing similar LLM performance on various tasks as loading the
+text contexts.
+1
+Introduction
+With their impressive generative capabilities, large language
+models (LLMs) are widely used [1,5,7,11] in personal assis-
+tance and recommendation, AI healthcare, and marketing, to
+mention a few. The widespread use of public LLM APIs (e.g.,
+GPT-4 [9]) and application frameworks (e.g., Langchain [10]),
+combined with the open-source of industry-quality LLMs
+(e.g., Llama [3]), further boosts LLMs’ popularity.
+With LLMs increasingly used in complex tasks, many ap-
+plications augment their user inputs (i.e., prompts) to LLMs
+with long contexts containing at least thousands of tokens.
+For example, some context supplements user prompts with
+domain-knowledge texts so that LLMs can generate responses
+2019
+2021
+2023
+Year
+0.1
+1
+10
+100
+Acceptable Input Length (k)
+GPT
+GPT-2
+GPT-3
+GPT-3.5
+GPT-4
+Llama-2
+LongChat
+Claude-2
+Claude-1
+PaLM
+PaLM-2
+Figure 1: The input length accepted by LLMs has increased
+significantly in the last year. y-axis is plotted in log-scale.
+using domain knowledge beyond information embedded in
+LLMs themselves. As another example, some context supple-
+ments user prompts with the conversation histories accumu-
+lated during the interaction between a user and the LLM.
+This trend of long contexts is well reflected by the recent
+race to train LLMs that accept ever longer inputs, from 2K
+tokens in ChatGPT to 100K in Claude [6] (Figure 1). While
+short LLM inputs can still be useful [65, 92], many studies
+have shown that longer inputs often help improve response
+quality and coherence [25,26,28,38,48,87,97,106].
+Although improving response-generation quality, using
+long context poses challenges to response-generation latency,
+as no response can be generated until all the contexts are
+loaded and processed.
+To tackle this latency challenge, previous work reduces
+the computational delays of context processing by caching
+the intermediate processing results: key-value (KV) features.
+This way, instead of repeating the self-attention computation
+on text context, whose complexity is super-linear to the text
+length [25,39,87,98,113], LLM systems can directly use the
+KV features and skip the redundant computation.
+Unfortunately, previous work reduces the computational
+delay at the cost of increased communication delay, as KV
+features are multi-dimensional tensors of floating-point num-
+bers and can be orders of magnitude larger than their corre-
+sponding text contexts. The cost of loading KV features is
+particularly concerning, as in practice, they often need to be
+fetched remotely from another machine(s). For instance, a
+database of background documents might reside in a sepa-
+rate server and the supplementary documents assisting LLM
+inference are only to be selected and fetched to the LLM
+1
+arXiv:2310.07240v1  [cs.NI]  11 Oct 2023
+
+
+=== PDF page 2 ===
+when a relevant query is received [2,4,12,13,25]. Similarly,
+as the prompts from a user may spread in space (e.g., from
+different locations) and time (e.g., two queries can be days
+apart), they can be processed by different machines, so the
+conversation history (i.e., context) must be loaded on-the-fly
+to the GPUs serving the current request [2,13]. Some emer-
+gent work shortens context, like dropping tensors, after KV
+features are loaded into GPU memory [45,67,76]. However,
+the dropped tensor information inevitably hurts LLM’s re-
+sponse quality, and the resulting KV features, in the shape of
+large tensors, still require high bandwidth to transmit.
+Therefore, solely optimizing computational delay is not
+enough for long-context response generation and may even
+degrade the end-to-end performance, as loading the KV fea-
+tures increases the network delay. Instead, LLM systems must
+optimize not only the computational delay but also the com-
+munication (network) delay in handling long contexts.
+This paper presents CacheGen, a fast context-loading mod-
+ule for LLM systems, designed for (1) reducing the bandwidth
+needed to transmit a context’s KV features and (2) minimiz-
+ing the total delay in fetching and processing contexts, rather
+than each separately.
+CacheGen reduces the bandwidth needed for transmitting
+long contexts’ KV features by compressing, instead of drop-
+ping or rewriting, these feature tensors into more compact
+bitstreams using a new KV encoder. The design of our KV
+encoder leverages unique properties of KV features across
+tokens and layers to achieve high size reduction and little
+information loss. It uses a tailored arithmetic coder that takes
+advantage of KV features’ distributional properties, such as
+locality across tokens; it varies compression strategies across
+layers of KV features, leveraging the fact that LLM’s gen-
+eration performance has different sensitivities towards the
+compression losses at different layers of KV features.
+With its KV encoder, CacheGen has the flexibility of trans-
+mitting a context in different forms, including KV features in
+multiple bitstream representations each with a different com-
+pression rate1 and the original raw text, which incurs more
+LLM processing cost but no decompression cost or informa-
+tion loss. Right before transmitting a context, CacheGen uses
+a controller to decide which form to use, flexibly navigating
+the tradeoffs among LLM generation quality, the transmission
+bandwidth, and the decompression cost. It picks the context
+form that optimizes the combined cost of transmission and
+decompression, or the form that fits in a given time budget
+with the least information loss.
+Figure 2 illustrates CacheGen’s benefits. By compressing
+KV features to more compact bitstreams, CacheGen signifi-
+cantly cuts the bandwidth usage for KV-feature transfers for
+long contexts, thus outperforming the baselines that fetch
+the KV features directly as well as the baseline that loads
+the text context without the KV cache. For shorter contexts,
+1The compression is done before a user query arrives.
+# of tokens in context
+Network + computation delay
+This work: 
+Compress KV features 
++ adaptive loading
+Loading KV features
+(Mostly network delay)
+Loading context directly
+(Mostly computation delay)
+Figure 2: CacheGen with the two common practices: loading
+text contexts directly or loading the cached KV features.
+CacheGen automatically opts to load the text context directly,
+rather than its KV features.
+To put CacheGen’s design into perspective, each of its com-
+ponents (adaptive compression and KV cache) may have been
+studied before. Nonetheless, the exact designs of these com-
+ponents in CacheGen embrace domain-specific insights about
+KV features and are integrated into an end-to-end system that
+explicitly minimizes LLMs’ network and computation delays
+regarding context for the first time.
+We evaluate CacheGen on three models of different capaci-
+ties and three datasets of different tasks that use contexts of
+different lengths. Compared to a baseline quantization and
+arithmetic coding scheme that does not consider the distribu-
+tional properties of KV, CacheGen can save the bandwidth
+usage for transferring KV features by 3.7-4.3× and the delays
+in transferring and processing KV features by 2.7-3×, while
+maintaining higher LLM performance on various tasks, mea-
+sured by task-specific metrics such as perplexity and accuracy.
+Compared to the baseline of loading text contexts, CacheGen
+cuts the latency of processing KV features by 2.8-4.5× with
+less than 1% drop in F1 score or a perplexity score increase
+of 0.5. Moreover, at similar task performance, CacheGen also
+has lower total fetching, processing delays and higher LLM
+performance than more sophisticated baselines that modify
+contexts or retrain models to shorten the contexts.
+2
+Background and Motivation
+2.1
+Transformer basics
+Transformer models have revolutionized the field of natural
+language processing (NLP), becoming the de-facto architec-
+ture for most NLP tasks [28, 30, 35, 54, 78, 98, 114]. Today,
+most generative NLP services are based on transformer mod-
+els, including T5 [84], Llama [96], PaLM [35], OPT [116],
+and BLOOM.
+A transformer model takes as input a sequence of tokenized
+words and generates an output response, which is another
+2
+
+
+=== PDF page 3 ===
+Prompt
+LLM
+Input
+Prompt
+LLM
+Background 
+documents
+Input
+Context
+(a) Traditional LLMs: 
+Short standalone prompt
+(b) Retrieval-based apps: LLM input 
+augmented with additional documents
+Prompt
+LLM
+Conversation 
+history
+Input
+Context
+(c) Chat apps: LLM input also includes 
+the conversation history
+Network
+Network
+Figure 3: LLMs used to take short inputs but increasingly take longer inputs augmented with long contexts, e.g., background texts
+and conversation histories.
+sequence of tokens (usually in the format of integers) 2. This
+generation process includes two high-level steps. First, the
+attention module processes the input tokens to obtain encoded
+features. Then, the encoded features of the input are utilized to
+generate new tokens in an autoregressive manner. Specifically,
+the input tokens and previously generated tokens are fed into
+the transformer model to generate the next token.
+The key of the transformer architecture is the attention mod-
+ule. Each layer of the attention module produces an attention
+matrix, which models the connections between each pair of
+tokens. The attention matrix at every layer is obtained by ap-
+plying a non-linear neural network operation on the attention
+matrix of its previous layer. Intuitively, the attention matrices
+of deeper layers might embed a more complex understanding
+of the tokens under consideration.
+While the attention module is crucial, it is known to be
+compute-intensive. Given an input of N tokens, the compu-
+tation overhead of computing the attention matrices grows
+quadratically, O(N2). Though the complexity could be re-
+duced to O(NlogN) (e.g., [57,69]), such reduction often de-
+grades the generation quality. Once the attention matrices are
+obtained, the time to generate (decode) each token is quite
+marginal and can be reduced to almost constant on GPUs.
+2.2
+Long contexts in LLM applications
+Traditionally, the input of an LLM is a relatively short prompt,
+as illustrated in Figure 3(a). Since the prompt contains limited
+information, the LLM generates the response based solely on
+the knowledge already embedded in the LLM itself.
+However, as LLMs are used in more real-world applica-
+tions, it is no longer sufficient to rely on the knowledge em-
+bedded in the LLM. Instead, LLM applications often append
+additional texts, referred to as the context, to supplement the
+prompt input to an LLM3. To make our discussion more con-
+crete, we highlight two types of applications, retrieval-based
+apps and chat apps.
+2“Tokens” in NLP stands for the input unit that is used for DNN inference,
+which includes punctuations or splitting words into characters. Tokenizing
+input is typically fast. We will use “tokens” in the rest of the paper.
+3Since these contexts are often automatically added, users do not notice
+or need to manually type them.
+Retrieval-based apps (Figure 3b) use LLMs to answer
+queries that require domain-specific knowledge. Examples
+include question-answering systems [28,48,88], code under-
+standing systems [61,88] or fact verification systems [48,61].
+They use a background database that contains a large num-
+ber of background documents. On retrieving a question, they
+use embedding-based search algorithms (e.g., DPR [48,50],
+BM25 [48, 85]) to quickly identify a subset of background
+documents from the database, prepend these documents to
+the prompt, and feed them together as input to the LLM. Note
+that the search procedure is done by a seperate DNN or a
+vector similarity search algorithm, which is not part of the
+LLM.
+Chat apps (Figure 3c) become popular with the rise of
+OpenAI’s ChatGPT and have many similar products [8,37].
+To produce high-quality and coherent responses, a user’s con-
+versation history with the LLM, or at least part of it, is often
+included in the input to the LLM as the context. For instance,
+some applications supply a series of prompts to the LLM
+(ChatGPT) to create a character in a video game and then
+interact with the character by asking questions [56]. Chat app
+users themselves are also intentionally using long prompts to
+offer more background information (i.e., context) to the LLM.
+For example, in few-shot learning, users provide several long
+examples and their desired responses to the LLM before ask
+the real questions [20,30].
+Importantly, LLM applications use increasingly long con-
+texts to raise the probability of including the right informa-
+tion needed to generate high-quality, coherent responses. For
+example, the user may ask “Which of the following coun-
+tries generated the most total energy from solar sources in
+2019?” [90]. It is hard for the LLM to answer the question
+correctly without retrieving enough background documents
+for the relevant countries the user is asking for. Though it is a
+hypothetical example, many studies have shown that the accu-
+racy of the generated answers increases with more retrieved
+documents [48–50]. For instance, FiD [48] found that the
+accuracy score increased from 40% to 48% when increasing
+the number of context tokens from 1K to 10K. Retro [28]
+shows that the perplexity (a proxy score of generation quality)
+improves significantly when increasing the number of context
+tokens from 6K to 24K.
+3
+
+
+=== PDF page 4 ===
+To take in such long contexts, the LLM industry has been
+training LLMs with the capability to accept ever longer in-
+put sequences. For instance, Vicuna models [120], GPT-4-
+32K [78], and MPT models [94] can take up to 32K tokens
+as input. Latest models like LongNet [42] can even take up to
+1 billion tokens as input.
+In essence, long contexts play an increasingly important
+role in LLM applications for two reasons. First, modern LLMs
+have a superb ability to reason about new texts and potentially
+learn new knowledge from them. To exploit this ability, many
+works on in-context learning aim at optimizing what should
+the LLM input encompass to induce better responses from
+LLMs. Second, while LLMs are sometimes fine-tuned in
+specific domains, it is not always feasible. For instance, it is
+unrealistic to fine-tune an LLM for each user in chat apps.
+The background database may be managed separately from
+the LLM provider in retrieval-based apps. Due to their huge
+number of parameters, fine-tuning LLMs is also slow and can
+be very tricky to do right (e.g., catastrophic forgetting, loss of
+reasoning ability, etc [43,64] ).
+2.3 Saving computation by caching KV features
+Recall that the computation overhead of the transformer (at-
+tention module) on a context grows superlinearly (quadrat-
+ically) with longer contexts (§2.1), so longer contexts will
+dramatically increase the computation delay (Figure 4a).
+Many recent works have tackled the long contexts’ com-
+putation overheads. A common optimization, illustrated in
+Figure 4b, is to cache the intermediate outcomes of contexts,
+namely the key and value (KV) features, in GPU memory.
+For a given text with N tokens, the KV features are two ten-
+sors, each with the shape [N,c,l], where c is the number of
+channels and l is the number of layers. For instance, with the
+LLaMa-7B model, there are 4096 channels and 32 layers.
+When the context is used again as part of another LLM in-
+put, one can save the computation delay of processing the con-
+text by using its KV features to reconstruct the self-attention
+matrices of the context. To put it more concretely, the compu-
+tation delay can be reduced by about 15-30× for the Llama-
+7B model on contexts with more than 5K tokens, assuming
+the KV features are already in GPU.
+Caching KV features of a context, called a KV cache,4 can
+be used in both chat apps and retrieval-based apps. In chat
+apps, the context is the past prompts and responses, whose
+KV features can be cached when the past prompts were first
+processed and responses were first generated [38]. Retrieval-
+based apps often preprocess each background document by
+the LLM to compute the self-attention matrices and cache
+their KV features [29,40,74,75].
+4We use a context’s KV features and its KV cache interchangeably.
+Compute (process context 
+& prompt)
+time
+Network (transfer context)
+Network
+time
+Network
+KV cache
+Network
+Context
+(a) Fetching the text of context : 
+Less data to send but higher computation delay
+(b) Fetching KV cache of the context: 
+Low computation delay but much more data to send
+(c) Our work: Load compressed KV (or text) to save 
+both network delay and computation delay
+Compute (process prompt)
+Network (transfer KV)
+Compute (decompress KV & 
+process prompt)
+Network (transfer compressed KV)
+LLM
+Context
+Prompt
+Compressed KV
+time
+Decoding 
+the 1st token
+Decoding 
+the 1st token
+Decoding 
+the 1st token
+Figure 4: How different ways of loading context affect the
+network delay (to transfer context or KV cache) and the com-
+putation delay (to run the attention module on the context).
+3
+Hidden network delays of loading contexts
+Current LLM systems assume that the KV cache is already in
+the GPU memory (or on the same machine), so they focus on
+reducing computation delays. In practice, however, the KV
+cache is not always in the memory of the GPUs that run the
+LLM inference. Rather, the context of an LLM input often
+needs to be fetched remotely from another machine(s).
+In retrieval-based apps, the background documents can be
+hosted on different servers than the LLMs [28,63]. One reason
+is that background documents can be too big (even in raw
+texts) to be stored locally on the GPU servers running the
+LLM. For example, a recent work [63] uses a background
+database that contains 364 Million documents [83], requiring
+750 GB to store their texts. In another recent work [28], the
+documents contain up to 2 trillion tokens and require 1 TB of
+storage. Moreover, the background database may be managed
+by a different service than the LLM service for proprietary
+considerations [15,63].
+In chat apps, a user may resume her conversation with the
+LLM a few days after the last interaction. In these cases, the
+KV cache of her conversation history may need to be swapped
+out of GPU memory to save space for other active conver-
+sation sessions [46, 112, 115]. Moreover, a user may issue
+her prompts to the LLM from different locations at differ-
+4
+
+
+=== PDF page 5 ===
+16
+64
+256
+1024
+4096
+# input tokens 
+1
+16
+256
+Size of KV 
+Cache (MB)
+GPT-2 (124 M)
+T5-large (770 M)
+LLaMA (7B)
+LLaMA (13B)
+GPT-NeoX (20B)
+Figure 5: The size of the KV features produced by different
+LLMs grow with input length. We measure the serialized file
+size returned by torch.save.
+ent points. As these prompts can be processed by different
+machines, the contexts must be remotely fetched.
+As KV features need to be fetched on-demand to the GPUs
+running the LLM, the latency to transmit them must be added
+to the end-to-end delay of loading and processing a context.
+However, the size of a context’s KV cache can be orders of
+magnitudes bigger than the context itself, making network
+bandwidth a potential bottleneck. To put it in perspective,
+for a context of 5K tokens, storing each token in int-8 repre-
+sentation needs 5KB. In contrast, its KV features produced
+by the Llama-7B model are two tensors, each with a size of
+5K (tokens)×4096 (channels)×32 (layers), and the size of
+KV features serialized by torch.save is 1.3 GB. Given a
+network bandwidth of 1Gbps, for example, the transmission
+delay of KV feature over the network bandwidth takes more
+than 10 seconds. By contrast, processing the text context by
+the transformer takes only 5 seconds on an A40 GPU.
+In short, the need to fetch large KV features remotely
+negates the benefit of KV cache in saving the computation de-
+lays. This network bottleneck does not only affect one model.
+As shown in Figure 5, the size of KV features of popular
+LLMs all grows with the input token lengths.
+4
+CacheGen Design
+This section presents CacheGen, a fast context-loading mod-
+ule for LLM inference systems. CacheGen minimizes the
+overall delay for loading and processing a given context while
+preserving the performance of the LLM.
+Specifically, we define the overall delay as the time be-
+tween obtaining the input (the prompt and context) and the
+generation (decoding) of the first token. We refer to it as the
+time-to-first-token (TTFT), since it measures when the first
+token is available for the user. As shown by previous studies,
+users’ experience can be heavily affected by the TTFT since it
+demonstrates the responsiveness of the application [14,16,60]
+Importantly, TTFT includes both the network delay to re-
+motely fetch the context or its KV features and the computa-
+tion delay to process the context/KV features and the prompt
+before decoding the first token. To focus on the impact of
+long contexts, TTFT excludes two delays. First, TTFT ex-
+cludes the time to decode generated tokens one by one, which
+grows with the response length, so we exclude it to better
+focus on speeding up the loading and processing of contexts
+in the input.5 Second, TTFT excludes the delay of selecting
+relevant documents based on prompt because of two reasons:
+(1) this procedure is handled by another separate DNN or
+algorithm than the LLM itself, which is not the focus of this
+paper; (2) this delay has been optimized by recent retrieval-
+based pipelines [34,48,49,52] and it is relatively marginally
+compared to TTFT [63,117].
+4.1
+Overview
+To balance the overall delay and LLM’s performance on a
+given context, CacheGen employs a KV encoder/decoder and
+a loading controller, depicted in Figure 6.
+Given the cached KV features of a context, CacheGen’s
+KV encoder first compresses the KV features into bitstream
+representations. While some recent schemes [45, 76] have
+proposed to shorten the context or its KV features, they do so
+by dropping tokens, with inevitable information loss. More-
+over, with the shortened KV features still in the shape of large
+tensors in GPU memory and directly consumed by LLMs,
+they still require a high bandwidth to be loaded in the first
+place. In contrast, our encoder aims to compress KV features,
+with the compressed features being a bitstream and will be
+decompressed before being consumed by LLMs. No longer
+in the shape of KV tensors, this bitstream can take on a more
+compact representation with minimum information losses.
+To flexibly navigate the tradeoffs between TTFT and gen-
+eration performance, CacheGen compresses the KV cache of
+a context in multiple bitstream representations with different
+compression levels in advance before user query arrives. With
+a new prompt and selected context, CacheGen’s loading con-
+troller picks the compression level of the context based on the
+TTFT budget, fetches it through the network, decompresses it,
+and feeds it to the LLM. Notably, depending on the context’s
+length, the controller may choose to load the original text of
+the context when the estimated time of loading and decom-
+pressing the KV features is longer than the time of loading
+and processing the text directly. This often happens when the
+context is relatively short or the available bandwidth to fetch
+the context is relatively low, as will be shown in §5.3.
+4.2
+Context KV encoding
+Recall from §2.3 that the KV cache of a context consists
+of two tensors of the shape: [N,l,c], where N,l,c repre-
+sent the number of tokens, layers, and channels, respectively.
+CacheGen compresses a KV cache in three steps:
+1. calculate the delta tensors between nearby tokens;
+2. pick the quantization level for each layer of the delta tensors
+and apply quantization; and
+5TTFT does include the decoding of the first token, though it is a negligi-
+ble part of TTFT.
+5
+
+
+=== PDF page 6 ===
+Storage of KV 
+representations and text
+Context-loading 
+controller
+Doc n
+Text
+.txt
+KV 
+Features
+Selected docs as the 
+context for a prompt
+TTFT 
+budget
+…
+Chosen 
+bitstreams
+Doc 1
+Text
+.txt
+KV 
+Features
+KV encoder
+GPU server
+KV decoder
+Offline
+Online (TTFT)
+Network
+LLM
+LLM
+Encoded KV 
+bitstreams
+Figure 6: Overview of CacheGen’s main components.
+3. run an arithmetic coder on the quantized delta tensors.
+These steps of compressing KV features to a bitstream are
+conceptually similar to video coding (from pixel tensors to a
+.mp4 file), with each token’s KV features being a frame. How-
+ever, our designs of these steps in CacheGen are inspired by
+domain-specific insights on KV features produced by LLMs.
+Change-based encoding: Our first insight is that if two
+tokens’ positions are near each other in the context, their KV
+feature values at the same channel and same layer are similar.
+Figure 7 visualizes how the feature value varies across tokens,
+at a specific layer and channel. We can see that the values do
+change across different tokens in a context but in most cases,
+they are similar among tokens of close proximity. We can
+summarize this insight as follows:
+Insight 1 At the same layer and channel, tokens in closer
+proximity have more similar KV feature values compared to
+tokens that are further apart.
+Why do KV features have such token-wise locality? It does
+not necessarily mean nearby tokens themselves are similar
+or more correlated (and they are not). Rather, it stems from
+how the transformer (the self-attention) computes the KV
+features. In essence, the KV features for a given token index
+are calculated based on the KV features of previous tokens.
+This dependency inherently leads to numerical similarity in
+their KV features across nearby tokens in a context.
+To utilize this token-wise locality of feature values, we
+employ two ideas:
+First, instead of compressing the KV feature separately for
+each token, we compress the delta between nearby tokens.
+Specifically, assume that the KV features at a token i, Fi, have
+been compressed with its decompressed tensor being F′
+i . (F′
+i
+may slightly differ from Fi due to lossy compression.) For the
+features at token j, Fj, the delta tensor of token j with token
+i is Fj −F′
+i , and we compress this delta tensor (explained
+shortly) instead of Fj.6
+6We define delta as the difference with the reconstructed F′
+i , rather than
+0
+50
+100
+150
+Token positions in a context
+−10
+−5
+0
+5
+10
+Feature value
+Layer 12, channel 700
+Figure 7: An example of KV values at the same layer and
+same channel across tokens. We use LongChat-7b model and
+one example context in the LongChat dataset (Table 1).
+…
+Tokens
+…
+A chunk of tokens
+Per-token 
+KV features
+Delta tensors
+Anchor
+…
+…
+…
+Delta tensors
+Anchor
+A chunk of tokens
+Figure 8: Within a chunk of tokens, CacheGen computes the
+delta tensors between the KV features of the first token and
+that of each remaining token.
+Second, we partition the tokens of a context into chunks of
+ten contiguous tokens. In each chunk, we compress the KV
+features of the first token, called the anchor token, indepen-
+dently (i.e., without comparing it with other tokens), and then
+compress the delta tensor between each remaining token and
+the anchor token’s decompressed features. We do not com-
+press the delta between each pair of consecutive tokens, like
+in video frame encoding, for two reasons. First, by comparing
+all tokens with the same anchor token, we can parallelize the
+compression and decompression of multiple tokens. Second,
+the tokens within a chunk may not change as smoothly (Fig-
+ure 8) as between two consecutive video frames, so the benefit
+of compressing the difference with the immediate last tokens
+vs. with the anchor token is marginal.
+Due to the token-wise locality, the resulting delta tensors
+are easier to compress than the KV features themselves. This
+corroborates with our component-wise results in §5.4, high-
+lighting delta-based compression’s benefits.
+Arithmetic coding: Next, CacheGen uses arithmetic cod-
+ing [103] (AC) to losslessly compress the delta tensors and
+anchor tensors of a context to bitstreams. Like other entropy
+coding schemes, AC assigns fewer bits to encode more fre-
+quent symbols and more bits to encode less frequent symbols.
+For it to be efficient, AC needs accurate, low-entropy prob-
+ability distributions of the elements in the KV cache. To
+motivate our design, we first consider two strawmen:
+• Global symbol distribution: By default, AC uses a global
+the original Fi, so the compression and decompression will use the same
+reference to decode Fj.
+6
+
+
+=== PDF page 7 ===
+Global
+Channel400
+Channel2000
+Global
+Layer4
+Layer10
+Global
+Token pos.50
+Token pos.3000
+0.7
+0.8
+Entropy
+Figure 9: Entropy of all elements vs. entropy of the elements
+at specific channels, layers, or token positions.
+probability distribution for all elements of a tensor. How-
+ever, elements of different layers, channels, or tokens do
+not necessarily share the same probability distribution.
+• Fine-grained symbol distributions: Alternatively, a separate
+probability distribution can be used for elements at each
+combination of channel, layer, and token position.7 These
+probability distributions are more accurate but also incur
+prohibitive storage overheads (N ×l ×c distributions) on
+both the context storage servers (KV encoder) and the GPU
+servers (KV decoder).
+To strike a better balance between AC’s compression ef-
+ficiency and the storage overhead of the symbol probability
+distributions, we should group the elements in the tensors
+into as few groups as possible while minimizing the entropy
+of the distribution at each group. In other words, we should
+maximize the information gain of such grouping We consider
+three dimensions for grouping elements in KV features: the
+channel, the layer, and the position of the token in the con-
+text. To examine the impact of each grouping, we pick the
+contexts in the Wikitext dataset [73] and use the Llama-7B
+model to produce 3.8K KV feature tensors. Figure 9 compares
+the entropy across all elements vs. the entropy at individual
+groups of certain layers, channels, or token indices, and their
+difference indicates the information of a grouping. We can
+summarize the observation in the following insight:
+Insight 2 In a KV cache, each element is distinguished by
+its channel, layer, and token index. The information gain of
+grouping by channel and layer is significantly higher than
+that of grouping by token position.
+Inspired by the insight, our KV encoder offline profiles a
+separate probability distribution for each channel-layer com-
+bination of delta tensors and another for anchor tensors pro-
+duced by an LLM, and uses the same distributions for all KV
+features produced by the same LLM. In §5.4, we empirically
+show that our method reduces the bitstream size by up to 53%
+compared to the strawman of using one global symbol distri-
+bution. Compared to the strawman of finest-grained symbol
+distributions, our method stores N times fewer distributions
+7This is called contextual arithmetic coding in coding literature and is
+used in modern video codecs.
+(l ×c), where N can be several thousand. §5.4 will quantify
+the size overhead of storing these probability distributions.
+Layer-wise quantization: So far, the compression (running
+AC on delta tensors) has been lossless. To further reduce the
+bandwidth usage of transferring the KV cache, CacheGen also
+drops some information from the tokens while minimizing
+the impact on LLM’s performance. Recent methods propose
+to drop some tokens from the context [68,76,118], but they
+must know the query (the prompt) to obtain the self-attention
+scores. In contrast, we want to compress the KV feature before
+the query arrives.
+Instead of dropping tokens from the context, CacheGen
+uses quantization to reduce the precision of the elements in
+a KV cache so that they can be represented by fewer bits.
+For instance, applying 4-bit quantization on a floating-point
+tensor linearly rescales the original tensor to fit within the in-
+teger range of [−23,23]. Quantization has been used recently
+to reduce attention matrices to pack longer contexts in GPU
+memory [89], but all elements are uniformly quantized with
+the same number of bits without leveraging any distributional
+properties of KV features. It remains unclear what a better
+quantization strategy is to compress KV features while mini-
+mizing the impact on LLM’s performance.
+Our insight is that the impact of quantizing KV elements on
+LLM’s output varies with the layers of the elements. Specifi-
+cally, our insight can be summarized as follows:
+Insight 3 The output from the LLM is more sensitive to losses
+in the KV feature values of the shallower layers than to those
+in the deeper layers.
+Intuitively, KV features at the deeper layers of an LLM
+extract higher-level structures and knowledge by applying NN
+operations on the KV features of the shallower layers, which
+embed more primitive information [100]. As a result, the loss
+of information by removing precision on the shallow-layer
+features can propagate and affect the deeper-layer features
+and thus hinder the model’s ability to grasp the higher-level
+structures necessary to produce high-quality responses.
+Driven by this insight, we apply less aggressive quantiza-
+tion (more bits) on the features of shallower layers of delta
+tensors. Specifically, we split the transformer layers into three
+layer groups, the first (shallowest) 1/3 of layers, the middle
+1/3 of layers, the deepest 1/3 of layers, and apply x-bit, y-bit,
+and z-bit quantization on the features at each layer group,
+respectively. Each combination of (x,y,z), where x ≥y ≥z,
+represents a tradeoff between compression size and loss of
+the LLM performance and §4.3 will explain the exact settings
+of quantization levels used in CacheGen.
+Note that we still use 8-bit quantization, a relatively high
+precision, on the KV features of the anchor token (the first
+token of a token chunk). This is because these anchor tokens
+account for a small fraction of all tokens, but their precision
+affects the distribution of all delta tensors of the remaining
+7
+
+
+=== PDF page 8 ===
+tokens in a chunk. Thus, it makes sense to preserve higher
+precision just on these anchor tokens.
+4.3
+Context-Loading Controller
+Like any lossy compression, each compressed result of the KV
+encoder represents a single tradeoff point between the com-
+pressed size and the LLM’s performance. In practice, however,
+the best tradeoff depends on the maximum TTFT the applica-
+tion can tolerate. To flexibly navigate the size-performance
+tradeoffs, CacheGen uses a context-loading controller.
+First, CacheGen offline compresses the KV cache of each
+context document at multiple compression levels to cover
+a range of size-performance tradeoffs. By default, we pick
+three quantization settings of (x,y,z): (8,6,4), (6,4,3), and
+(5,4,3), where x, y and z are the number of quantized bits of
+delta tensor elements at the shallowest 1/3, the middle 1/3, and
+the deepest 1/3 of transformer layers (defined in §4.2). The
+quantized tensors are then compressed by AC and stored on
+the storage server, together with the probability distributions.
+Though these quantization settings empirically work well
+across a range of LLM models and datasets (§5.3), we believe
+future work can further refine the quantization scheme to
+make it more adaptive to LLMs or context distributions.
+We should stress that the compression of each KV cache
+is offline, so its delay is not part of the TTFT of loading and
+processing a context, though decompression of KV features
+is still part of TTFT. We will evaluate both compression and
+decompression delays in §5.4.
+In runtime, the application provides CacheGen with a
+prompt (with length Lprompt) and the selected documents as
+the context (with length Lcontext), the controller then estimates
+the TTFT of each compression level k using Equation 1,
+TKV(k) = Sk
+B +Cdecompress(Lcontext)+Cprocess(Lprompt)
+(1)
+The first term represents the network delay in transferring the
+compressed KV features: Sk is the size of the compressed bi-
+trate of the context at level k and B is the estimated bandwidth.
+The second term estimates the decompression of KV features,
+which is modeled by a linear function of Lcontext. The third
+term is the computation delay of calculating the attention be-
+tween context and the prompt, which is empirically modeled
+as a quadratic function of the prompt length, Lprompt.
+In addition, the controller also estimates the TTFT if the
+context is loaded as raw text as follows:
+Ttext = RTT +Cprocess(Lcontext +Lprompt)
+(2)
+The first term is the round-trip-time (RTT) between the stor-
+age server and the GPU server. We use it to estimate the net-
+work delay because the context test is usually small enough
+to fit in one congestion window size. The second term is the
+GPU computation to compute the attention from scratch
+With these delay estimates, the controller can then decide
+whether it is faster to load the text context or some compressed
+KV features (and which compression level). If the application
+also specifies a TTFT budget, then the controller can pick the
+minimum compression level k that fits the budget.
+The exact parameters in function Cprocess and Cdecompress
+depend on the speed of the inference server, and in our ex-
+periments, we record the past compute delays from the same
+server and interpolate these parameters. In this work, we as-
+sume the estimated bandwidth B and the estimate of RTT
+are known beforehand. In practice, they can be obtained by
+probing or controlled bandwidth in data center [24, 51, 81].
+And this is beyond the focus of this paper.
+4.4
+Implementation
+We implement CacheGen with about 2K lines of code in
+Python, based on PyTorch v2.0 and CUDA 12.0.
+Quantization, arithmetic coding (AC): Following previ-
+ous work [41], we use the vectorwise quantization method,
+which has been usually used for quantizing model weights.
+We use torchac [72], a CPU-based AC library designed for
+Pytorch tensors. Particularly, we use its encoding and decod-
+ing functions to perform AC. The probability distributions are
+obtained by counting the frequencies of quantized symbols in
+the KV feature for the corresponding context.
+Interface with LLM: CacheGen interacts with LLM in-
+ference via two simple interfaces: (1) CacheGen extracts
+the KV features of a given context from an LLM inference,
+and (2) CacheGen feeds the KV features (which can be the
+decompressed ones) to resume the LLM inference while skip-
+ping the attention computation on the context. Many Pytorch-
+based LLMs support these APIs. For instance, Huggingface
+provides these APIs as part of each LLM model’s forward
+method [104].
+Speed optimization for CacheGen: To speed up the decom-
+pression of KV features, we parallelize the decompression of
+delta tensors (explained in §4.2), running multiple instances
+of torchac simultaneously. Optionally, we further speed up
+the loading of decompressed KV features to GPU by pipelin-
+ing the loading of layer i with the DNN inference computation
+of layer i+1.
+5
+Evaluation
+Our evaluation answers the following key questions:
+• Given a context, how much can CacheGen’s KV encoder
+reduce the bandwidth needed to transfer its KV cache?
+• Given a network bandwidth, how much can CacheGen re-
+duce TTFT (including both network and compute delays)?
+• How sensitive is CacheGen’s performance gain across dif-
+ferent models, context lengths, and network bandwidths?
+• Does CacheGen have a better tradeoff between LLM per-
+formance and TTFT than baselines that reduce TTFT by
+pruning the contexts or using smaller models?
+8
+
+
+=== PDF page 9 ===
+Pipeline
+Model
+Dataset
+Quality metric
+Name
+Size
+Name
+Task
+Context (#, length)
+A
+NTK_scaled_Llama-13B [32]
+NTK_scaled_Llama-7B [32]
+13B
+7B
+Wikitext [73]
+Predict probability of
+the next token
+73, 1.8-24K
+Perplexity
+B
+LongChat-7B-16k [62]
+7B
+LongChat [62]
+Long range retrieval
+200, 9-9.6K
+Accuracy
+C
+T5-large [84]
+770M
+Natural Questions [58]
+Question Answering
+7.8K, 8-12K
+F1 score
+Table 1: Summary of evaluation setup.
+0
+500
+1000
+Size of KV Cache(MB)
+Pipeline A (7B)
+0
+100
+200
+Perplexity
+Better
+0
+1000
+2000
+Size of KV Cache (MB)
+Pipeline A (13B)
+0
+100
+200
+Perplexity
+Better
+0
+1000
+2000
+Size of KV Cache (MB)
+Pipeline B
+0.6
+0.8
+1.0
+Accuracy
+Better
+0
+500
+1000
+Size of KV Cache (MB)
+Pipeline C
+40
+50
+60
+F1 score (%)
+Better
+Original KV
+Default quantization & AC
+Text context
+CacheGen
+(a) KV cache size reduction by dataset.
+0.0
+2.5
+5.0
+7.5
+TTFT (s)
+Pipeline A (7B)
+0
+100
+200
+Perplexity
+Better
+0
+5
+10
+15
+TTFT (s)
+Pipeline A (13B)
+0
+100
+200
+Perplexity
+Better
+0
+5
+10
+TTFT (s)
+Pipeline B
+0.6
+0.8
+1.0
+Accuracy
+Better
+0
+2
+4
+TTFT(s)
+Pipeline C
+40
+50
+60
+F1 score (%)
+Better
+(b) TTFT reduction vs. LLM performance by dataset.
+Figure 10: End-to-end test result (KV cache size and TTFT reduction) of the three pipelines.
+5.1
+Setup
+Models and testing datasets: We evaluate CacheGen on
+three pipelines, summarized in Table 1, that span models with
+different sizes and datasets for different tasks.
+• Pipeline A tests the Llama-13b model and Llama-7b
+model [3], both scaled with Neural Tangent Kernel (NTK),
+on the Wikitext [73] dataset. The task is to predict the prob-
+ability of the next token in a sequence based on the context
+consisting of relevant documents that belong to a specific
+Wiki page. The Wikitext dataset covers a wide range of top-
+ics, with the context length ranging from 1.8K-24K tokens.
+• Pipeline B tests the LongChat-7b-16k model [62] on the
+LongChat [62] dataset, recently released to test LLMs on
+queries like “What was the first topic we discussed? ” based
+on all the previous conversations as the context. Most con-
+texts are around 9K-9.6K tokens. We chose LongChat-7b-
+16k since it is one of the best models on this dataset.
+• Pipeline C tests the T5-large model [84] on Natural Ques-
+tion dataset [58], a question-answering dataset developed
+by Google. Following previous work (e.g., [49]), it tests the
+model to answer user queries from a Q & A dataset with the
+context from Wikipedia documents relevant to the queries.
+Most contexts are around 8K-12K tokens.
+It is worth noting that these pipelines represent the two typical
+apps with long contexts (§2.2): chat apps (Pipeline B) and
+retrieval-based apps (Pipeline A and C).
+LLM task performance: We measure generation quality
+using the standard metric of each dataset.
+• Perplexity is used to evaluate the model’s performance on
+the Wikitext dataset. The perplexity is defined as the ex-
+ponentiated average negative log-likelihood of the next
+token [23, 33]. A low perplexity means the model likely
+generates the right next token. While perplexity does not
+equate to text-generation quality, it is widely used as a
+decent proxy [17]. This metric has been commonly used
+by prior works to test the impact of pruning or quantizing
+LLMs on generation performance [41,68,87,107].
+• Accuracy is used to evaluate the model’s output on the
+LongChat dataset. The task predicts the first topic in the
+conversational history between the user and the LLM. The
+accuracy is defined as the percentage of generated answers
+that exactly includes the ground-truth topic.
+• F1 score is used to evaluate the model’s response in the
+Natural Questions dataset. It measures the probability that
+the generated answer matches the ground truth answer of
+the question-answering task.
+Baselines: We compare CacheGen with baselines that do not
+change the contexts or model (§5.4 evaluates more baselines).
+•“Original KV” uses torch.save to serialize the KV fea-
+tures in GPU memory to a file. This serves as a reference
+for the most straightforward implementation.
+•“Default quantization & AC” combines the uniform quanti-
+zation of KV features [89] with the default arithmetic cod-
+ing (AC) that uses a global probability distribution for all
+9
+
+
+=== PDF page 10 ===
+0.1 1
+2
+3
+4
+5
+6
+7
+8
+9 10
+Token length (K)
+0
+5
+10
+TTFT(s)
+Llama-7B
+Llama-13B
+longchat-7B
+T5-large
+0
+5
+10
+15
+TTFT (s)
+25
+50
+75
+0.2
+0.5
+1
+2
+4
+6
+10
+Network bandwidth (Gbps)
+0
+10
+TTFT (s)
+Text context
+Default quantization & AC
+CacheGen
+Figure 11: Sensitivity of CacheGen’s gains over the baseline across different token lengths, network bandwidths, and models.
+elements. Like CacheGen, this baseline also uses quantiza-
+tion and AC but with a simpler design on each component.
+•“Text context” fetches the text of the context and feeds it
+to LLM to compute self-attention. It represents the design
+of minimizing data transmission but at the expense of high
+computation overhead, especially under long contexts.
+Hardware settings: We use an NVIDIA A40 GPU server to
+benchmark our results. The server is equipped with 384GB
+of memory and two Intel(R) Xeon(R) Gold 6130 CPUs with
+Hyper-threading and Turbo Boost enabled by default.
+5.2
+Overall improvement
+KV cache size reduction: Figure 10a shows the size and
+task performance trade-offs of CacheGen’s KV encoder and
+the baselines. Across the three datasets, CacheGen’s KV en-
+coder reduces the KV cache size by 3.7−4.3× compared to
+the best baseline when achieving similar task performance.
+In particular, the degradation in task performance is very
+marginal—the increase of perplexity is within 0.5 (which is
+negligible [41,107]), the drop in F1 score is less than 1%, and
+the drop in accuracy is below 4%.
+While our results only show task performance in numbers,
+§10 will present concrete examples that compare the gener-
+ated texts of CacheGen vs. without KV compression.
+TTFT reduction: Figure 10b shows CacheGen’s reduction
+in TTFT when the bandwidth to transfer the context is set to
+2 Gbps (§5.3 will vary bandwidth). It shows that CacheGen
+reduces TTFT by 2.7-3× compared to the most competitive
+baseline. CacheGen’s gains result from reduced KV cache
+as well as the ability to choose to load text context when the
+context is short enough (e.g., 20% of contexts in Pipeline A).
+These reductions in KV cache sizes and TTFT confirm
+CacheGen’s effectiveness on different models and datasets.
+5.3
+Sensitivity analysis
+Impact of context length: Figure 11a varies the input token
+length from 0.1K to 10K and shows the TTFT reduction of
+CacheGen compared to the baselines under a fixed network
+bandwidth of 2 Gbps. The result mirrors the illustration of
+Figure 2. Specifically, when the context is long, the gain of
+CacheGen is mostly from reducing the KV cache sizes. And
+when the context is short (below 1K), CacheGen automatically
+0
+1000 2000 3000 4000 5000 6000
+Size of KV Cache(MB)
+0.00
+0.25
+0.50
+0.75
+1.00
+CDF
+Original KV
+Default quantization & AC
+CacheGen
+Figure 12: The distribution of compressed KV size of each
+token in the Wikitext dataset.
+0
+10
+TTFT (s)
+CacheGen
+Original KV
+Text 
+context
+Compute
+Decompress
+CPU to GPU
+Transmit
+0
+10
+Offline delay (s)
+KV compute
+Compress
+0
+1
+Storage cost (GB)
+Lv. 1
+Lv. 2
+Lv. 3
+Figure 13: The breakdowns of the average online TTFT (left)
+to load and process a context in Wikitext, offline delays (mid-
+dle) to compress a context in Wikitext, and the storage over-
+head (right) to store the KV cache a context Wikitext.
+reverts to loading the text context, if it is faster than loading
+any KV cache.
+Impact of network bandwidth:
+Figure 11b varies the
+network bandwidth (0.2 - 10Gbps) and shows CacheGen’s
+TTFT reduction compared to the baselines. We can see that
+CacheGen consistently outperforms the baselines on different
+bandwidths. Under a high network bandwidth, CacheGen’s
+reduction of KV cache size results in lower TTFT as less
+data is transferred. Under a low bandwidth, CacheGen again
+reverts to loading the text context as the delay of sending KV
+cache always outweighs the saving in computation dalays.
+Impact of different models: Figure 11c tests CacheGen
+with different LLMs but on the same dataset (Wikitext). It
+shows that across different models, CacheGen consistently
+reduces TTFT, while achieving negligible degradation to gen-
+eration quality compared with the default quantization with
+AC baseline. This shows CacheGen’s gain is not sensitive to
+the corresponding dataset with the model.
+Size reduction by context: Figure 12 shows the distribution
+of KV cache sizes under CacheGen and the baselines. It shows
+that across all the contexts in the Wikitext dataset, CacheGen
+10
+
+
+=== PDF page 11 ===
+0
+200
+400
+600
+800
+Size of KV Cache(MB)
+20
+30
+40
+Perplexity
+Better
+Scissorhands*
+Smaller model
+CacheGen
+0
+200
+400
+600
+800
+Size of KV Cache (MB)
+40
+50
+60
+70
+F1 score (%)
+Better
+Context selection
+CacheGen
+0
+5
+10
+15
+20
+Size of KV Cache (MB)
+0.6
+0.8
+1.0
+Accuracy
+Better
+Gisting
+CacheGen
+Figure 14: Comparing CacheGen and more intrusive methods, including smaller models, token dropping (left), context selection
+(middle), and gisting (right).
+reduces the size of KV Cache by 3.6 to 4× compared to the
+original KV, and 4.2 to 4.6 comparing with default quantiza-
+tion & AC. This shows CacheGen’s gain over that baselines
+is not sensitive to specific contexts.
+5.4
+Microbenchmarks
+Breakdown of online delays: While having better com-
+pression efficiency on KV features, CacheGen does incur
+(marginally) more overhead than the baselines. To examine
+the overheads in delays, Figure 13a breaks down the TTFTs of
+CacheGen and the baselines on a context of 8.5K tokens into
+data transfer, decompression (or torch.load), CPU-GPU
+data movement, and computation by LLM in GPU. We can
+see that while CacheGen has slightly more non-transmission
+delays, particularly decompression, it is overwhelmingly com-
+pensated by its reduction in transmission. This figure confirms
+our illustration in Figure 4.
+Offline delays and storage overheads: Unlike prior methods
+that compress each context only once, CacheGen compresses
+multiple versions (§4.3), and Figure 13b and 13c evaluate
+the overheads in delays and storage. We can see that despite
+needing to encode and store multiple bitstream representa-
+tions, the total, CacheGen still requires less storage than the
+baselines since each version requires much less space than the
+baselines. CacheGen compresses each context almost as fast
+as the baselines because the additional compression delays
+are much smaller than computing KV features.
+CacheGen vs. more intrusive methods: So far, all methods
+we have evaluated, including CacheGen, do not modify the
+LLM or context. As a complement, Figure 14 tests CacheGen
+against recent methods that change the context or LLM.
+• Smaller models: Replacing the LLM with smaller mod-
+els may speed up the computation. Figure 14a replaces
+the Llama-7B model with a smaller Llama-3B and applies
+different quantization levels.
+• Token selection: Figure 14b uses Scissorhands as an ex-
+ample of removing tokens with low self-attention scores
+from the LLM input [68]. Since the self-attention scores
+are only available during the actual generation, it cannot
+reduce TTFT, but we make an effort to create an idealized
+version of Scissorhands (Scissorhands*) by running the
+self-attention offline to determine which tokens to drop and
+provide this information to Scissorhands* online.
+• Context selection: Another trick used by some retrieval-
+based apps is to select fewer documents as the context. We
+test this idea on Pipeline C because the dataset already has
+this optimization. By default, it picks the top 20 documents
+as context, and Figure 14b tries top-10 and top-4.
+• Gisting Finally, we test Gisting as an example of a more
+advanced method that shortens contexts into gist tokens
+and changes the LLM to accept the gist tokens [76]. In
+Figure 14c, we test the pre-trained gisting model, which is
+based on Llama-7B. The gisting model retrains the LLM’s
+attention model in order to run inference on a compressed
+version of the input prompts. Since the gisting model can
+compress arbitrary long contexts into one token, we vary the
+compression ratio of the gisting model to obtain a trade-off
+in size and accuracy. This is done by adapting the frac-
+tion of input tokens that are compressed into one token.
+We apply CacheGen on the original Llama-7B model on
+the PIQA [27] dataset, which is one of the most popular
+question-answering datasets. We did not apply CacheGen
+on other datasets in our evaluation because the public pre-
+trained gisting model can only take up to 512 tokens, and
+truncating the dataset into smaller chunks will not be able
+to preserve the information in the context.
+We can see that CacheGen outperforms these baselines, re-
+ducing TTFT or KV cache size while achieving similar or
+better LLM’s performance on the respective tasks. In par-
+ticular, CacheGen is faster than smaller models (which are
+slowed down by transformer operations), and can reduce KV
+cache better than context selection or gisting because it com-
+presses the KV features to more compact bitstream repre-
+sentations. We want to stress that even though CacheGen is
+compared head-to-head with these methods, it makes no as-
+sumption about the context and the model, so one can combine
+CacheGen with these methods to potentially further improve
+the performance.
+Component-wise analysis: To study the impact of individual
+components in CacheGen’s KV encoder, Figure 15 progres-
+sively adds each idea into the baseline of uniform quantization
+and default AC, starting with the use of delta tensors, and then
+our AC that uses probability distribution for each channel-
+layer combination, and finally layer-wise quantization. This
+result underscores the substantial contribution from each idea
+to the overall reduction of KV cache size.
+Controller prediction error:
+Finally, we zoom in on
+11
+
+
+=== PDF page 12 ===
+0
+250
+500
+750
+1000
+1250
+1500
+1750
+Size of KV Cache(MB)
+50
+100
+150
+200
+250
+Perplexity
+Better
+Default quant. & AC
+Default quant. & change
+Layer-wise quant. & change
+CacheGen
+Figure 15: Contributions of individual ideas behind KV en-
+coder: change-based encoding, layer-wise quantization, and
+AC based on channel-layer grouping.
+0
+1
+2
+3
+4
+5
+6
+Seconds
+0.00
+0.25
+0.50
+0.75
+1.00
+CDF
+Actual TTFT
+Prediction error
+Figure 16: The prediction errors of CacheGen’s controller.
+Measured with Llama-7B on the Wikitext dataset.
+CacheGen’s controller and test whether the controller can pre-
+dict the TTFT of a compression level with low errors based
+on history measurements. Figure 16 shows the distribution
+of CacheGen’s prediction error, defined by the difference be-
+tween the predicted TTFT and the real TTFT, on the contexts
+in the Wikitext dataset. Since the TTFT does not depend on
+the content of the context, the prediction error mostly reflects
+the statistical noise of loading and processing contexts of the
+same length. Empirically, as prediction errors are dominantly
+smaller than the actual TTFT, CacheGen can almost always
+pick the right compression level to meet a given TTFT target.
+6
+Related work
+Faster LLM serving: The landscape of LLM systems re-
+search is fast evolving. Besides speeding up LLM training
+(e.g., [86,91]), many recent efforts, including ours, focus on
+the LLM serving systems. Some try to parallelize the gen-
+eration of multiple tokens with smaller approximating mod-
+els [59, 74] and accelerate the inference of Mix-of-Expert
+LLMs on edge devices [111]. Others quantize LLM model
+weights (e.g., [22]), reduce memory I/O of GPU on-chip
+SRAM [39], and reduce self-attention computation complex-
+ity by k-means [87]. New scheduling strategies are also pro-
+posed for LLM services [105,112]. Nonetheless, a common
+approach to speeding up without modifying the LLMs is by
+caching KV features of repeatedly used input sequences, such
+as contexts [38, 63, 67, 74, 80, 82, 89, 104, 105, 118]. How-
+ever, caching KV features results in a dramatically increased
+amount of cached data, which requires a bandwidth-efficient
+KV/context-loading system like CacheGen.
+Longer LLM input (context): Though the benefits of longer
+contexts are still under scrutiny [66,87,93], many recent ef-
+forts aim at enabling LLMs to accept ever longer contexts.
+The main challenge is to hold the attention matrices of more
+tokens without needing a bigger GPU memory. They enable
+longer input sequences by dynamically offloading less used
+parts of the attention matrices [89], using external knowledge
+via KNN [106], retraining the self-attention module to only
+attend to top-k keys to approximate the full attention [21,26],
+mapping long inputs into smaller latent space [47], using local
+windowed self-attention [25], or using dilated attention [42]
+or sparse attention [113] to scale the input length to even 1
+billion tokens. However, the longer inputs (contexts) also in-
+flate the KV cache, and this work complements these efforts
+by focusing on fast remote loading of KV cache.
+Context shortening/pruning: More relevant to our work
+is the emerging literature on shortening and pruning long
+contexts. These efforts select the most important text seg-
+ments and prune out the others to reduce context length, based
+on the similarity between the user query and the potentially
+relevant documents (e.g., [28]), or drop tokens that are less
+attended to by the current prompt [67,118]. Different from
+them, CacheGen compresses the KV cache into bitstreams,
+rather than shortening the context in its original form (i.e.,
+text or tensor). Furthermore, unlike [28,67,118], CacheGen’s
+KV compression does not need to know the query (prompt).
+Recently, some work retrains LLM models to directly
+take in contexts that are rewritten by gisting [76] or auto-
+encoding [45]. Different from them, CacheGen does not need
+to train a new LLM model and also achieves better compres-
+sion rate with less information loss by leveraging unique
+distributional properties of KV features. Finally, we show
+CacheGen achieves better delay-quality tradeoffs than exist-
+ing context compressors (§5.4). and can potentially be com-
+bined with them to further improve the delay-quality tradeoffs.
+Tensor compression: CacheGen’s KV encoder can be seen
+as a special tensor compression technique tailored for KV
+features produced by LLMs. General tensor compression has
+been intensively studied, e.g., relaxing rank and ordering con-
+straint [119] or decomposing large tensors into products of
+smaller ones [79]. In model training systems, tensor compres-
+sion has been used to compress gradient updates of DNN
+weights (e.g., [18, 19, 102]). Nonetheless, KV features and
+gradients have very different properties. For instance, these
+training systems often leverage the sparsity of gradient up-
+dates but KV features are typically not as sparse.
+Retrieval-augmented generation:
+A wide range of
+works [28,48,49,53,61,63,88,90,101,108–110] focus on
+optimizing retrieval-augmented generation. The workflow of
+retrieval-augmented generation includes retrieving relevant
+documents to the user’s question, and feeding the retrieved
+documents as the context to the LLMs to generate the answers
+to the question. Upon receiving a question submitted by the
+user, the application decides the relevant documents by com-
+12
+
+
+=== PDF page 13 ===
+paring the question with documents in the database via simi-
+larity search algorithms, such as dense or sparse vector meth-
+ods [31,77,109] and DNN-based schemes [53,61,108,110].
+For example, FiD [48] represents the prompt text and the doc-
+uments’ text in the form of “bag of words” and ranks the rele-
+vance of the documents with the term frequency-inverse doc-
+ument frequence (TF-IDF). As another example, Atlas [49]
+pre-trains a BERT-based retriever, which encodes the prompt
+text and documents’ text into vectors, and searches for top-k
+documents whose embeddings are most relevant to the prompt.
+The application then concatenates the retrieved documents
+with the user query as the context to the LLMs.
+Another line of research develops applications that cache
+query results from LLMs to reduce repetitive query costs [71,
+95]. These applications convert user queries previously sub-
+mitted by a user into semantic embeddings, which are DNN
+features8 that represent the semantic meaning. The applica-
+tions then store them in vector databases [36,44,70,99], which
+are designed to store high-dimensional vectors and enable
+vector-based queries. When queries with similar semantic
+embeddings come, cached answers are retrieved to reduce
+latency. These works are complementary to us, as they focus
+on enabling the efficient storage and retrieval of the cached
+vectors, usually the semantic embeddings of the queries, not
+the KV features, while CacheGen focuses on reducing the
+bandwidth usage needed to transfer the KV features.
+7
+Limitations
+Due to GPU memory limitations, we have not yet evalu-
+ated our ideas on extra-large models, such as OPT-175B. We
+also did not extensively evaluate CacheGen’s performance on
+“free-text generation”, which we leave as a future work. Our
+evaluation uses a simple network model of transmission delay
+that will not work under high bandwidth variations. Finally,
+not all applications can naturally cache KV features. Search-
+based apps, like Google and Bing, use real-time search results
+as context, and their volatile contexts will unlikely be reused
+unless for very popular search results. We expect future works
+can address these issues.
+8
+Conclusion
+We present CacheGen, a context-loading module to minimize
+the overall delays in fetching and processing contexts for
+LLMs. CacheGen reduces the bandwidth needed for transmit-
+ting long contexts’ KV cache through an encoder tailored to
+compress KV features into compact bitstreams. Experiments
+across three models of various capacities and three datasets
+with different context lengths show that CacheGen can reduce
+the overall delays while maintaining high task performance.
+8The semantic embeddings are either extracted via open-source LLMs or
+OpenAI embedding API.
+9
+Acknowledgement
+The project is funded by NSF CNS 2146496, 2131826,
+2313190, 1901466, 1956180, and UChicago CERES Cen-
+ter. The project is also supported by Chameleon Projects [55].
+References
+[1] 12 Practical Large Language Model (LLM) Applica-
+tions - Techopedia. https://www.techopedia.com/1
+2-practical-large-language-model-llm-applications.
+(Accessed on 09/21/2023).
+[2] 2112.04426.pdf. https://arxiv.org/pdf/2112.04426.pdf.
+(Accessed on 09/21/2023).
+[3] [2302.13971] llama: Open and efficient foundation
+language models. https://arxiv.org/abs/2302.13971.
+(Accessed on 09/21/2023).
+[4] [2304.03442] generative agents: Interactive simulacra
+of human behavior. https://arxiv.org/abs/2304.03442.
+(Accessed on 09/21/2023).
+[5] 7 top large language model use cases and applications.
+https://www.projectpro.io/article/large-language-m
+odel-use-cases-and-applications/887. (Accessed on
+09/21/2023).
+[6] Anthropic \ introducing 100k context windows. https:
+//www.anthropic.com/index/100k-context-windows.
+(Accessed on 09/21/2023).
+[7] Applications of large language models - indata labs.
+https://indatalabs.com/blog/large-language-model-a
+pps. (Accessed on 09/21/2023).
+[8] Bard - chat based ai tool from google, powered by palm
+2. https://bard.google.com/. Accessed: September
+21st, 2023.
+[9] Gpt-4 api general availability and deprecation of older
+models in the completions api. https://openai.com
+/blog/gpt-4-api-general-availability. (Accessed on
+09/21/2023).
+[10] langchain-ai/langchain:building applications with llms
+through composability. https://github.com/langchain-a
+i/langchain. (Accessed on 09/21/2023).
+[11] Real-world use cases for large language models (llms)
+| by cellstrat | medium. https://cellstrat.medium.com/r
+eal-world-use-cases-for-large-language-models-llm
+s-d71c3a577bf2. (Accessed on 09/21/2023).
+13
+
+
+=== PDF page 14 ===
+[12] Significant-gravitas/auto-gpt: An experimental open-
+source attempt to make gpt-4 fully autonomous. ht
+tps://github.com/Significant-Gravitas/Auto-GPT.
+(Accessed on 09/21/2023).
+[13] Store and reference chat history | langchain. https:
+//python.langchain.com/docs/use_cases/question
+_answering/how_to/chat_vector_db. (Accessed on
+09/21/2023).
+[14] How latency affects user engagement. https://pusher.c
+om/blog/how-latency-affects-user-engagement/, 2021.
+(Accessed on 09/21/2023).
+[15] How to train generative ai using your company’s data.
+https://hbr.org/2023/07/how-to-train-generative-a
+i-using-your-companys-data, 2021. (Accessed on
+09/21/2023).
+[16] Best practices for deploying large language models
+(llms) in production. https://medium.com/@_aigeek/
+best-practices-for-deploying-large-language-model
+s-llms-in-production-fdc5bf240d6a, 2023. (Accessed
+on 09/21/2023).
+[17] Daniel Adiwardana, Minh-Thang Luong, David R. So,
+Jamie Hall, Noah Fiedel, Romal Thoppilan, Zi Yang,
+Apoorv Kulshreshtha, Gaurav Nemade, Yifeng Lu, and
+Quoc V. Le. Towards a Human-like Open-Domain
+Chatbot, 2020.
+[18] Saurabh Agarwal, Hongyi Wang, Kangwook Lee, Shiv-
+aram Venkataraman, and Dimitris Papailiopoulos. Ac-
+cordion: Adaptive gradient communication via crit-
+ical learning regime identification.
+arXiv preprint
+arXiv:2010.16248, 2020.
+[19] Saurabh Agarwal, Hongyi Wang, Shivaram Venkatara-
+man, and Dimitris Papailiopoulos. On the utility of
+gradient compression in distributed training systems.
+In D. Marculescu, Y. Chi, and C. Wu, editors, Pro-
+ceedings of Machine Learning and Systems, volume 4,
+pages 652–672, 2022.
+[20] Toufique Ahmed and Premkumar Devanbu. Few-shot
+training llms for project-specific code-summarization.
+In Proceedings of the 37th IEEE/ACM International
+Conference on Automated Software Engineering, ASE
+’22, New York, NY, USA, 2023. Association for Com-
+puting Machinery.
+[21] Joshua Ainslie, Santiago Ontanon, Chris Alberti, Va-
+clav Cvicek, Zachary Fisher, Philip Pham, Anirudh
+Ravula, Sumit Sanghai, Qifan Wang, and Li Yang.
+ETC: Encoding Long and Structured Inputs in Trans-
+formers, 2020.
+[22] Reza Yazdani Aminabadi, Samyam Rajbhandari, Am-
+mar Ahmad Awan, Cheng Li, Du Li, Elton Zheng,
+Olatunji Ruwase, Shaden Smith, Minjia Zhang, Jeff
+Rasley, et al. DeepSpeed-inference: enabling efficient
+inference of transformer models at unprecedented scale.
+In SC22: International Conference for High Perfor-
+mance Computing, Networking, Storage and Analysis,
+pages 1–15. IEEE, 2022.
+[23] Leif Azzopardi, Mark Girolami, and Keith van Risjber-
+gen. Investigating the relationship between language
+model perplexity and ir precision-recall measures. In
+Proceedings of the 26th Annual International ACM
+SIGIR Conference on Research and Development in
+Informaion Retrieval, SIGIR ’03, page 369–370, New
+York, NY, USA, 2003. Association for Computing Ma-
+chinery.
+[24] Hitesh Ballani, Paolo Costa, Thomas Karagiannis, and
+Ant Rowstron. Towards predictable datacenter net-
+works. In Proceedings of the ACM SIGCOMM 2011
+Conference, SIGCOMM ’11, page 242–253, New York,
+NY, USA, 2011. Association for Computing Machin-
+ery.
+[25] Iz Beltagy, Matthew E. Peters, and Arman Cohan.
+Longformer: The Long-Document Transformer, 2020.
+[26] Amanda Bertsch, Uri Alon, Graham Neubig, and
+Matthew R Gormley. Unlimiformer: Long-range trans-
+formers with unlimited length input. arXiv preprint
+arXiv:2305.01625, 2023.
+[27] Yonatan Bisk, Rowan Zellers, Ronan Le Bras, Jianfeng
+Gao, and Yejin Choi. PIQA: Reasoning about Physical
+Commonsense in Natural Language, 2019.
+[28] Sebastian Borgeaud, Arthur Mensch, Jordan Hoffmann,
+Trevor Cai, Eliza Rutherford, Katie Millican, George
+van den Driessche, Jean-Baptiste Lespiau, Bogdan
+Damoc, Aidan Clark, Diego de Las Casas, Aurelia Guy,
+Jacob Menick, Roman Ring, Tom Hennigan, Saffron
+Huang, Loren Maggiore, Chris Jones, Albin Cassirer,
+Andy Brock, Michela Paganini, Geoffrey Irving, Oriol
+Vinyals, Simon Osindero, Karen Simonyan, Jack W.
+Rae, Erich Elsen, and Laurent Sifre. Improving lan-
+guage models by retrieving from trillions of tokens,
+2022.
+[29] Alexander
+Borzunov, Dmitry
+Baranchuk, Tim
+Dettmers, Max Ryabinin, Younes Belkada, Artem
+Chumachenko, Pavel Samygin, and Colin Raffel.
+Distributed Inference and Fine-tuning of Large
+Language Models Over The Internet, 2023.
+[30] Tom B. Brown, Benjamin Mann, Nick Ryder, Melanie
+Subbiah, Jared Kaplan, Prafulla Dhariwal, Arvind Nee-
+lakantan, Pranav Shyam, Girish Sastry, Amanda Askell,
+14
+
+
+=== PDF page 15 ===
+Sandhini
+Agarwal, Ariel Herbert-Voss, Gretchen
+Krueger, Tom Henighan, Rewon Child, Aditya Ramesh,
+Daniel M. Ziegler, Jeffrey Wu, Clemens Winter,
+Christopher Hesse, Mark Chen, Eric Sigler, Mateusz
+Litwin, Scott Gray, Benjamin Chess, Jack Clark,
+Christopher Berner, Sam McCandlish, Alec Radford,
+Ilya Sutskever, and Dario Amodei. Language Models
+are Few-Shot Learners, 2020.
+[31] Danqi Chen, Adam Fisch, Jason Weston, and Antoine
+Bordes. Reading wikipedia to answer open-domain
+questions, 2017.
+[32] Shouyuan Chen, Sherman Wong, Liangjian Chen, and
+Yuandong Tian. Extending Context Window of Large
+Language Models via Positional Interpolation, 2023.
+[33] Stanley F Chen, Douglas Beeferman, and Roni Rosen-
+feld. Evaluation Metrics For Language Models. 1
+2008.
+[34] Wenhu
+Chen, Ming-Wei
+Chang, Eva Schlinger,
+William Wang, and William W. Cohen. Open question
+answering over tables and text, 2021.
+[35] Aakanksha Chowdhery, Sharan Narang, Jacob Devlin,
+Maarten Bosma, Gaurav Mishra, Adam Roberts, Paul
+Barham, Hyung Won Chung, Charles Sutton, Sebas-
+tian Gehrmann, et al. Palm: Scaling language model-
+ing with pathways. arXiv preprint arXiv:2204.02311,
+2022.
+[36] Pgvector Contributors.
+pgvector: Vector similarity
+search for postgresql. https://github.com/pgvecto
+r/pgvector, 2023.
+[37] Microsoft Corporation. Bing. https://www.bing.com/,
+2009.
+[38] Zihang Dai*, Zhilin Yang*, Yiming Yang, William W.
+Cohen, Jaime Carbonell, Quoc V. Le, and Ruslan
+Salakhutdinov. Transformer-XL: Language modeling
+with longer-term dependency, 2019.
+[39] Tri Dao, Daniel Y. Fu, Stefano Ermon, Atri Rudra, and
+Christopher Ré. FlashAttention: Fast and Memory-
+Efficient Exact Attention with IO-Awareness, 2022.
+[40] Michiel de Jong, Yury Zemlyanskiy, Joshua Ainslie,
+Nicholas FitzGerald, Sumit Sanghai, Fei Sha, and
+William Cohen. FiDO: Fusion-in-Decoder optimized
+for stronger performance and faster inference, 2023.
+[41] Tim Dettmers, Mike Lewis, Younes Belkada, and
+Luke Zettlemoyer.
+Llm. int8 (): 8-bit matrix mul-
+tiplication for transformers at scale. arXiv preprint
+arXiv:2208.07339, 2022.
+[42] Jiayu Ding, Shuming Ma, Li Dong, Xingxing Zhang,
+Shaohan Huang, Wenhui Wang, Nanning Zheng, and
+Furu Wei.
+LongNet: Scaling Transformers to
+1,000,000,000 Tokens, 2023.
+[43] Shiyao Ding and Takayuki Ito. Self-Agreement: A
+Framework for Fine-tuning Language Models to Find
+Agreement among Diverse Opinions, 2023.
+[44] Facebook Engineering. Faiss: A library for efficient
+similarity search, 2017. Accessed: 2023-09-29.
+[45] Tao Ge, Jing Hu, Xun Wang, Si-Qing Chen, and Furu
+Wei. In-context Autoencoder for Context Compres-
+sion in a Large Language Model.
+arXiv preprint
+arXiv:2307.06945, 2023.
+[46] Arpan Gujarati, Reza Karimi, Safya Alzayat, Wei Hao,
+Antoine Kaufmann, Ymir Vigfusson, and Jonathan
+Mace. Serving {DNNs} like clockwork: Performance
+predictability from the bottom up. In 14th USENIX
+Symposium on Operating Systems Design and Imple-
+mentation (OSDI 20), pages 443–462, 2020.
+[47] Curtis Hawthorne, Andrew Jaegle, C˘at˘alina Cangea,
+Sebastian Borgeaud, Charlie Nash, Mateusz Mali-
+nowski, Sander Dieleman, Oriol Vinyals, Matthew
+Botvinick, Ian Simon, Hannah Sheahan, Neil Zeghi-
+dour, Jean-Baptiste Alayrac, Joao Carreira, and Jesse
+Engel. General-purpose, long-context autoregressive
+modeling with perceiver AR. In Kamalika Chaudhuri,
+Stefanie Jegelka, Le Song, Csaba Szepesvari, Gang
+Niu, and Sivan Sabato, editors, Proceedings of the
+39th International Conference on Machine Learning,
+volume 162 of Proceedings of Machine Learning Re-
+search, pages 8535–8558. PMLR, 17–23 Jul 2022.
+[48] Gautier Izacard and Edouard Grave. Leveraging Pas-
+sage Retrieval with Generative Models for Open Do-
+main Question Answering, 2021.
+[49] Gautier Izacard, Patrick Lewis, Maria Lomeli, Lucas
+Hosseini, Fabio Petroni, Timo Schick, Jane Dwivedi-
+Yu, Armand Joulin, Sebastian Riedel, and Edouard
+Grave. Few-shot learning with retrieval augmented
+language models. arXiv preprint arXiv:2208.03299,
+2022.
+[50] Gautier Izacard, Fabio
+Petroni, Lucas
+Hosseini,
+Nicola De Cao, Sebastian Riedel, and Edouard Grave.
+A Memory Efficient Baseline for Open Domain Ques-
+tion Answering, 2020.
+[51] Vimalkumar Jeyakumar, Mohammad Alizadeh, David
+Mazières, Balaji Prabhakar, Albert Greenberg, and
+15
+
+
+=== PDF page 16 ===
+Changhoon Kim.
+EyeQ: Practical network perfor-
+mance isolation at the edge. In 10th USENIX Sym-
+posium on Networked Systems Design and Implemen-
+tation (NSDI 13), pages 297–311, Lombard, IL, April
+2013. USENIX Association.
+[52] Jeff Johnson, Matthijs Douze, and Hervé Jégou.
+Billion-scale similarity search with GPUs, 2017.
+[53] Vladimir Karpukhin, Barlas O˘guz, Sewon Min, Patrick
+Lewis, Ledell Wu, Sergey Edunov, Danqi Chen, and
+Wen tau Yih. Dense passage retrieval for open-domain
+question answering, 2020.
+[54] Enkelejda Kasneci, Kathrin Seßler, Stefan Küchemann,
+Maria Bannert, Daryna Dementieva, Frank Fischer,
+Urs Gasser, Georg Groh, Stephan Günnemann, Eyke
+Hüllermeier, et al. ChatGPT for good? On opportuni-
+ties and challenges of large language models for educa-
+tion. Learning and individual differences, 103:102274,
+2023.
+[55] Kate Keahey, Jason Anderson, Zhuo Zhen, Pierre
+Riteau, Paul Ruth, Dan Stanzione, Mert Cevik, Jacob
+Colleran, Haryadi S. Gunawi, Cody Hammock, Joe
+Mambretti, Alexander Barnes, François Halbah, Alex
+Rocha, and Joe Stubbs.
+Lessons learned from the
+chameleon testbed. In 2020 USENIX Annual Tech-
+nical Conference (USENIX ATC 20), pages 219–233.
+USENIX Association, July 2020.
+[56] KelSolaar. fvvt-kels-utilities. https://github.com/Kel
+Solaar/fvvt-kels-utilities.git, 2023. GitHub repository.
+[57] Nikita Kitaev, Łukasz Kaiser, and Anselm Levskaya.
+Reformer: The Efficient Transformer, 2020.
+[58] Tom Kwiatkowski, Jennimaria Palomaki, Olivia Red-
+field, Michael Collins, Ankur Parikh, Chris Alberti,
+Danielle Epstein, Illia Polosukhin, Matthew Kelcey, Ja-
+cob Devlin, Kenton Lee, Kristina N. Toutanova, Llion
+Jones, Ming-Wei Chang, Andrew Dai, Jakob Uszkoreit,
+Quoc Le, and Slav Petrov. Natural questions: a bench-
+mark for question answering research. Transactions of
+the Association of Computational Linguistics, 2019.
+[59] Yaniv Leviathan, Matan Kalman, and Y. Matias. Fast
+Inference from Transformers via Speculative Decod-
+ing. In International Conference on Machine Learning,
+2022.
+[60] Zijian Lew, Joseph B Walther, Augustine Pang, and
+Wonsun Shin.
+Interactivity in Online Chat: Con-
+versational Contingency and Response Latency in
+Computer-mediated Communication.
+Journal of
+Computer-Mediated Communication, 23(4):201–221,
+06 2018.
+[61] Patrick Lewis, Ethan Perez, Aleksandra Piktus, Fabio
+Petroni, Vladimir Karpukhin, Naman Goyal, Heinrich
+Küttler, Mike Lewis, Wen-tau Yih, Tim Rocktäschel,
+et al. Retrieval-augmented generation for knowledge-
+intensive nlp tasks. Advances in Neural Information
+Processing Systems, 33:9459–9474, 2020.
+[62] Dacheng Li*, Rulin Shao*, Anze Xie, Lianmin Zheng
+Ying Sheng, Joseph E. Gonzalez, Ion Stoica, Xuezhe
+Ma, and Hao Zhang. How long can open-source llms
+truly promise on context length?, June 2023.
+[63] Zonglin Li, Ruiqi Guo, and Sanjiv Kumar. Decoupled
+context processing for context augmented language
+modeling. arXiv preprint arXiv:2210.05758, 2022.
+[64] Yong Lin, Lu Tan, Hangyu Lin, Zeming Zheng, Renjie
+Pi, Jipeng Zhang, Shizhe Diao, Haoxiang Wang, Han
+Zhao, Yuan Yao, et al. Speciality vs Generality: An Em-
+pirical Study on Catastrophic Forgetting in Fine-tuning
+Foundation Models. arXiv preprint arXiv:2309.06256,
+2023.
+[65] Nelson F Liu, Kevin Lin, John Hewitt, Ashwin Paran-
+jape, Michele Bevilacqua, Fabio Petroni, and Percy
+Liang. Lost in the middle: How language models use
+long contexts. arXiv preprint arXiv:2307.03172, 2023.
+[66] Nelson F. Liu, Kevin Lin, John Hewitt, Ashwin Paran-
+jape, Michele Bevilacqua, Fabio Petroni, and Percy
+Liang. Lost in the Middle: How Language Models Use
+Long Contexts, 2023.
+[67] Zichang Liu, Aditya Desai, Fangshuo Liao, Weitao
+Wang, Victor Xie, Zhaozhuo Xu, Anastasios Kyrillidis,
+and Anshumali Shrivastava. Scissorhands: Exploiting
+the Persistence of Importance Hypothesis for LLM
+KV Cache Compression at Test Time. arXiv preprint
+arXiv:2305.17118, 2023.
+[68] Zichang Liu, Aditya Desai, Fangshuo Liao, Weitao
+Wang, Victor Xie, Zhaozhuo Xu, Anastasios Kyrillidis,
+and Anshumali Shrivastava. Scissorhands: Exploiting
+the Persistence of Importance Hypothesis for LLM
+KV Cache Compression at Test Time. arXiv preprint
+arXiv:2305.17118, 2023.
+[69] Shengjie Luo, Shanda Li, Tianle Cai, Di He, Dinglan
+Peng, Shuxin Zheng, Guolin Ke, Liwei Wang, and Tie-
+Yan Liu. Stable, Fast and Accurate: Kernelized Atten-
+tion with Relative Positional Encoding, 2021.
+[70] Yu A Malkov and Dmitry A Yashunin. Efficient and
+robust approximate nearest neighbor search using hi-
+erarchical navigable small world graphs. IEEE trans-
+actions on pattern analysis and machine intelligence,
+42(4):824–836, 2018.
+16
+
+
+=== PDF page 17 ===
+[71] Ignacio Martinez. privategpt. https://github.com/imart
+inez/privateGPT, 2023.
+[72] Fabian Mentzer, Eirikur Agustsson, Michael Tschan-
+nen, Radu Timofte, and Luc Van Gool. Practical full
+resolution learned lossless image compression. In Pro-
+ceedings of the IEEE Conference on Computer Vision
+and Pattern Recognition (CVPR), 2019.
+[73] Stephen Merity, Caiming Xiong, James Bradbury, and
+Richard Socher.
+Pointer Sentinel Mixture Models,
+2016.
+[74] Xupeng Miao, Gabriele Oliaro, Zhihao Zhang, Xinhao
+Cheng, Zeyu Wang, Rae Ying Yee Wong, Zhuoming
+Chen, Daiyaan Arfeen, Reyna Abhyankar, and Zhihao
+Jia. SpecInfer: Accelerating Generative LLM Serving
+with Speculative Inference and Token Tree Verification.
+arXiv preprint arXiv:2305.09781, 2023.
+[75] Amirkeivan Mohtashami and Martin Jaggi. Landmark
+Attention: Random-Access Infinite Context Length for
+Transformers, 2023.
+[76] Jesse Mu, Xiang Lisa Li, and Noah Goodman. Learn-
+ing to compress prompts with gist tokens.
+arXiv
+preprint arXiv:2304.08467, 2023.
+[77] Yixin Nie, Songhe Wang, and Mohit Bansal. Reveal-
+ing the importance of semantic retrieval for machine
+reading at scale, 2019.
+[78] OpenAI. GPT-4 Technical Report, 2023.
+[79] I. V. Oseledets. Tensor-train decomposition. SIAM
+Journal on Scientific Computing, 33(5):2295–2317,
+2011.
+[80] Myle Ott, Sergey Edunov, Alexei Baevski, Angela Fan,
+Sam Gross, Nathan Ng, David Grangier, and Michael
+Auli. fairseq: A fast, extensible toolkit for sequence
+modeling. arXiv preprint arXiv:1904.01038, 2019.
+[81] Lucian Popa, Praveen Yalagandula, Sujata Banerjee,
+Jeffrey C. Mogul, Yoshio Turner, and Jose Renato San-
+tos. Elasticswitch: Practical work-conserving band-
+width guarantees for cloud computing. In Proceed-
+ings of the ACM SIGCOMM 2013 Conference on SIG-
+COMM, SIGCOMM ’13, page 351–362, New York,
+NY, USA, 2013. Association for Computing Machin-
+ery.
+[82] Reiner Pope, Sholto Douglas, Aakanksha Chowdh-
+ery, Jacob Devlin, James Bradbury, Anselm Levskaya,
+Jonathan Heek, Kefan Xiao, Shivani Agrawal, and Jeff
+Dean. Efficiently Scaling Transformer Inference, 2022.
+[83] Colin Raffel, Noam Shazeer, Adam Roberts, Katherine
+Lee, Sharan Narang, Michael Matena, Yanqi Zhou, Wei
+Li, and Peter J. Liu. Exploring the limits of transfer
+learning with a unified text-to-text transformer. arXiv
+e-prints, 2019.
+[84] Colin Raffel, Noam Shazeer, Adam Roberts, Kather-
+ine Lee, Sharan Narang, Michael Matena, Yanqi Zhou,
+Wei Li, and Peter J. Liu. Exploring the Limits of Trans-
+fer Learning with a Unified Text-to-Text Transformer,
+2023.
+[85] Ori Ram, Yoav Levine, Itay Dalmedigos, Dor Muhl-
+gay, Amnon Shashua, Kevin Leyton-Brown, and Yoav
+Shoham. In-Context Retrieval-Augmented Language
+Models, 2023.
+[86] Jeff Rasley, Samyam Rajbhandari, Olatunji Ruwase,
+and Yuxiong He. Deepspeed: System optimizations
+enable training deep learning models with over 100
+billion parameters. In Proceedings of the 26th ACM
+SIGKDD International Conference on Knowledge Dis-
+covery & Data Mining, KDD ’20, page 3505–3506,
+New York, NY, USA, 2020. Association for Comput-
+ing Machinery.
+[87] Aurko Roy, Mohammad Saffar, Ashish Vaswani, and
+David Grangier. Efficient content-based sparse atten-
+tion with routing transformers. Transactions of the
+Association for Computational Linguistics, 9:53–68,
+2021.
+[88] Ohad Rubin and Jonathan Berant. Long-range Lan-
+guage Modeling with Self-retrieval. arXiv preprint
+arXiv:2306.13421, 2023.
+[89] Ying Sheng, Lianmin Zheng, Binhang Yuan, Zhuohan
+Li, Max Ryabinin, Daniel Y Fu, Zhiqiang Xie, Beidi
+Chen, Clark Barrett, Joseph E Gonzalez, et al. High-
+throughput generative inference of large language mod-
+els with a single gpu. arXiv preprint arXiv:2303.06865,
+2023.
+[90] Weijia Shi, Sewon Min, Michihiro Yasunaga, Minjoon
+Seo, Rich James, Mike Lewis, Luke Zettlemoyer, and
+Wen-tau Yih. Replug: Retrieval-augmented black-box
+language models. arXiv preprint arXiv:2301.12652,
+2023.
+[91] Mohammad Shoeybi, Mostofa Patwary, Raul Puri,
+Patrick LeGresley, Jared Casper, and Bryan Catanzaro.
+Megatron-lm: Training multi-billion parameter lan-
+guage models using model parallelism. arXiv preprint
+arXiv:1909.08053, 2019.
+17
+
+
+=== PDF page 18 ===
+[92] Simeng Sun, Kalpesh Krishna, Andrew Mattarella-
+Micke, and Mohit Iyyer. Do long-range language mod-
+els actually use long-range context? arXiv preprint
+arXiv:2109.09115, 2021.
+[93] Simeng Sun, Kalpesh Krishna, Andrew Mattarella-
+Micke, and Mohit Iyyer. Do Long-Range Language
+Models Actually Use Long-Range Context?, 2021.
+[94] MosaicML NLP Team. Introducing mpt-7b: A new
+standard for open-source, commercially usable llms,
+2023. Accessed: 2023-05-05.
+[95] Zilliz Technology. Gptcache. https://github.com/zilli
+ztech/GPTCache, 2023.
+[96] Hugo Touvron, Thibaut Lavril, Gautier Izacard, Xavier
+Martinet, Marie-Anne Lachaux, Timothée Lacroix,
+Baptiste Rozière, Naman Goyal, Eric Hambro, Faisal
+Azhar, Aurelien Rodriguez, Armand Joulin, Edouard
+Grave, and Guillaume Lample. LLaMA: Open and
+Efficient Foundation Language Models, 2023.
+[97] Szymon Tworkowski, Konrad Staniszewski, Mikołaj
+Pacek, Yuhuai Wu, Henryk Michalewski, and Piotr
+Miło´s. Focused transformer: Contrastive training for
+context scaling.
+arXiv preprint arXiv:2307.03170,
+2023.
+[98] Ashish Vaswani, Noam Shazeer, Niki Parmar, Jakob
+Uszkoreit, Llion Jones, Aidan N. Gomez, Lukasz
+Kaiser, and Illia Polosukhin.
+Attention Is All You
+Need, 2023.
+[99] Jianguo Wang, Xiaomeng Yi, Rentong Guo, Hai Jin,
+Peng Xu, Shengjun Li, Xiangyu Wang, Xiangzhou
+Guo, Chengming Li, Xiaohai Xu, Kun Yu, Yuxing
+Yuan, Yinghao Zou, Jiquan Long, Yudong Cai, Zhenxi-
+ang Li, Zhifeng Zhang, Yihua Mo, Jun Gu, Ruiyi Jiang,
+Yi Wei, and Charles Xie. Milvus: A purpose-built
+vector data management system. In Proceedings of
+the 2021 International Conference on Management of
+Data, SIGMOD ’21, page 2614–2627, New York, NY,
+USA, 2021. Association for Computing Machinery.
+[100] Yiding Wang, Decang Sun, Kai Chen, Fan Lai, and
+Mosharaf Chowdhury. Egeria: Efficient dnn training
+with knowledge-guided layer freezing. In Proceedings
+of the Eighteenth European Conference on Computer
+Systems, EuroSys ’23, page 851–866, New York, NY,
+USA, 2023. Association for Computing Machinery.
+[101] Zhenhailong Wang, Xiaoman Pan, Dian Yu, Dong Yu,
+Jianshu Chen, and Heng Ji. Zemi: Learning zero-shot
+semi-parametric language models from multiple tasks,
+2023.
+[102] Zhuang Wang, Haibin Lin, Yibo Zhu, and T. S. Eugene
+Ng. Hi-speed dnn training with espresso: Unleashing
+the full potential of gradient compression with near-
+optimal usage strategies. In Proceedings of the Eigh-
+teenth European Conference on Computer Systems, Eu-
+roSys ’23, page 867–882, New York, NY, USA, 2023.
+Association for Computing Machinery.
+[103] Ian H. Witten, Radford M. Neal, and John G. Cleary.
+Arithmetic coding for data compression. Commun.
+ACM, 30(6):520–540, jun 1987.
+[104] Thomas Wolf, Lysandre Debut, Victor Sanh, Julien
+Chaumond, Clement Delangue, Anthony Moi, Pierric
+Cistac, Tim Rault, Rémi Louf, Morgan Funtowicz, Joe
+Davison, Sam Shleifer, Patrick von Platen, Clara Ma,
+Yacine Jernite, Julien Plu, Canwen Xu, Teven Le Scao,
+Sylvain Gugger, Mariama Drame, Quentin Lhoest, and
+Alexander M. Rush. Transformers: State-of-the-art
+natural language processing. In Proceedings of the
+2020 Conference on Empirical Methods in Natural
+Language Processing: System Demonstrations, pages
+38–45, Online, October 2020. Association for Compu-
+tational Linguistics.
+[105] Bingyang Wu, Yinmin Zhong, Zili Zhang, Gang Huang,
+Xuanzhe Liu, and Xin Jin. Fast Distributed Inference
+Serving for Large Language Models, 2023.
+[106] Yuhuai Wu, Markus Norman Rabe, DeLesley Hutchins,
+and Christian Szegedy. Memorizing Transformers. In
+International Conference on Learning Representations,
+2022.
+[107] Guangxuan Xiao, Ji Lin, Mickael Seznec, Hao Wu,
+Julien Demouth, and Song Han. Smoothquant: Accu-
+rate and efficient post-training quantization for large
+language models. In International Conference on Ma-
+chine Learning, pages 38087–38099. PMLR, 2023.
+[108] Wenhan Xiong, Hong Wang, and William Yang Wang.
+Progressively pretrained dense corpus index for open-
+domain question answering. In Proceedings of the
+16th Conference of the European Chapter of the Asso-
+ciation for Computational Linguistics: Main Volume,
+pages 2803–2815, Online, April 2021. Association for
+Computational Linguistics.
+[109] Wei Yang, Yuqing Xie, Aileen Lin, Xingyu Li, Luchen
+Tan, Kun Xiong, Ming Li, and Jimmy Lin. End-to-end
+open-domain question answering with. In Proceedings
+of the 2019 Conference of the North. Association for
+Computational Linguistics, 2019.
+[110] Yingrui Yang, Yifan Qiao, Jinjin Shao, Xifeng Yan,
+and Tao Yang. Lightweight composite re-ranking for
+efficient keyword search with bert. In Proceedings of
+18
+
+
+=== PDF page 19 ===
+the Fifteenth ACM International Conference on Web
+Search and Data Mining, WSDM ’22, page 1234–1244,
+New York, NY, USA, 2022. Association for Computing
+Machinery.
+[111] Rongjie Yi, Liwei Guo, Shiyun Wei, Ao Zhou, Shang-
+guang Wang, and Mengwei Xu. EdgeMoE: Fast On-
+Device Inference of MoE-based Large Language Mod-
+els. arXiv preprint arXiv:2308.14352, 2023.
+[112] Gyeong-In Yu, Joo Seong Jeong, Geon-Woo Kim, Soo-
+jeong Kim, and Byung-Gon Chun. Orca: A distributed
+serving system for {Transformer-Based} generative
+models. In 16th USENIX Symposium on Operating
+Systems Design and Implementation (OSDI 22), pages
+521–538, 2022.
+[113] Manzil Zaheer, Guru Guruganesh, Avinava Dubey,
+Joshua Ainslie, Chris Alberti, Santiago Ontanon, Philip
+Pham, Anirudh Ravula, Qifan Wang, Li Yang, and Amr
+Ahmed. Big Bird: Transformers for Longer Sequences,
+2021.
+[114] Xiaohua Zhai, Alexander Kolesnikov, Neil Houlsby,
+and Lucas Beyer. Scaling vision transformers. In Pro-
+ceedings of the IEEE/CVF Conference on Computer
+Vision and Pattern Recognition, pages 12104–12113,
+2022.
+[115] Hong Zhang, Yupeng Tang, Anurag Khandelwal, and
+Ion Stoica. {SHEPHERD}: Serving {DNNs} in the
+wild. In 20th USENIX Symposium on Networked Sys-
+tems Design and Implementation (NSDI 23), pages
+787–808, 2023.
+[116] Susan Zhang, Stephen Roller, Naman Goyal, Mikel
+Artetxe, Moya Chen, Shuohui Chen, Christopher De-
+wan, Mona Diab, Xian Li, Xi Victoria Lin, Todor Mi-
+haylov, Myle Ott, Sam Shleifer, Kurt Shuster, Daniel
+Simig, Punit Singh Koura, Anjali Sridhar, Tianlu Wang,
+and Luke Zettlemoyer. OPT: Open Pre-trained Trans-
+former Language Models, 2022.
+[117] Xuchao Zhang, Menglin Xia, Camille Couturier, Guo-
+qing Zheng, Saravan Rajmohan, and Victor Ruhle. Hy-
+brid retrieval-augmented generation for real-time com-
+position assistance, 2023.
+[118] Zhenyu Zhang, Ying Sheng, Tianyi Zhou, Tianlong
+Chen, Lianmin Zheng, Ruisi Cai, Zhao Song, Yuan-
+dong Tian, Christopher Re, Clark Barrett, Zhangyang
+Wang, and Beidi Chen. H2O: Heavy-Hitter Oracle for
+Efficient Generative Inference of Large Language Mod-
+els. In Workshop on Efficient Systems for Foundation
+Models @ ICML2023, 2023.
+[119] Qibin Zhao, Guoxu Zhou, Shengli Xie, Liqing Zhang,
+and Andrzej Cichocki. Tensor Ring Decomposition,
+2016.
+[120] Lianmin Zheng, Wei-Lin Chiang, Ying Sheng, Siyuan
+Zhuang, Zhanghao Wu, Yonghao Zhuang, Zi Lin, Zhuo-
+han Li, Dacheng Li, Eric. P Xing, Hao Zhang, Joseph E.
+Gonzalez, and Ion Stoica. Judging LLM-as-a-judge
+with MT-Bench and Chatbot Arena, 2023.
+19
+
+
+=== PDF page 20 ===
+10
+Appendix
+Figure 17 visualizes an example from the LongChat
+dataset [62] used in §5.2. The context fed into the LLM is
+a long, multi-round conversation history between the LLM
+and the user. An abridged context is shown in the upper box,
+where the first topic is about the role of art in society. The
+prompt to the LLM asks “What is the first topic we discussed?
+” CacheGen correctly generates the answer, whereas the de-
+fault quantization baseline, which has a similar compressed
+KV cache size as CacheGen, generates the wrong answer.
+Response:
+USER: I would like to discuss the topic of the 
+role of art in society.
+...
+Question: What is the first topic we discussed?
+Input:
+The role of 
+art in society
+Ground truth
+The first topic 
+we discussed was 
+the impact of 
+social media on 
+mental health.
+Default quantization
+CacheGen
+The first topic 
+we discussed was 
+the role of art 
+in society.
+Wrong ❌
+Right ✅
+Figure 17: An example of CacheGen’s output on the
+LongChat dataset with LongChat-7b-16k model.
+20

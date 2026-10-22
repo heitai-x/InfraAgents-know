@@ -20,6 +20,20 @@
 
 迁移总收益为避免的重算或排队成本，减去序列化、转换、传输和接管成本。迁移可以改善资源均衡，也可能把网络变成新瓶颈。将资源归属和提交点先定义清楚，才能安全探索这些策略。
 
+## 把网络完成接到模型消费之前
+
+[传输协议](../hardware/transport-and-rdma.md) 区分提交、CQE、GPU 可见性和应用接管。目的空间存在、目录已登记或 NIC 报告完成，都不能独立证明下一次 forward 可以读取整个状态包。每个消费者依赖所需范围的完整性和相应执行平台的可见性。
+
+传输 ID 标识逻辑对象和目标范围，尝试代次区分重复或迟到的操作。重复到达同一区间不能重复增加引用；目标已回收并重新分配后，旧写入必须停止或失效。发送 staging 的最后使用与源端最后恢复副本的释放分开处理。
+
+## 活跃状态与失败窗口
+
+append-only KV 可以分阶段复制旧前缀并追赶增量；窗口覆盖、递归状态和投机回滚则需要其他快照条件。目标每阶段预留容量，源完成/取消或目的失败时撤销未提交工作。最后的停止、追赶、授权与恢复位置要形成同一条时序。
+
+对确认消息丢失、源端退出和目标重启，明确由哪个权威记录判断接管是否已生效；不能让新旧两端分别按超时同时提交。若没有足够证据恢复，选择重算或明确失败，比使用部分未知状态继续生成更符合既定语义。
+
+验证逐项覆盖状态几何不同、TP/PP 重分片、量化元数据、部分范围、旧模型版本和重试。性能同时报告完整迁移时间、可见停顿、转换及临时峰值，不能只给最小尾部复制时间。
+
 <!-- infraagents:provenance -->
 
 ## 来源与推导
@@ -34,6 +48,19 @@
   [完整原文](../../references/S-VLLM-PREFIX/reader.html) · [全文文本](../../references/S-VLLM-PREFIX/fulltext.txt)
 
 正文中的公式展开、容量算例与组合设计是基于这些来源的推导；设定算例不冒充实测。来源版本受 2026-04-30 上限约束，编辑日期 2026-10-22 不作为事实发布日期。此独立 base 版本内的章节修订号从 1 开始，原章节身份与版本映射保存在版本清单。
+
+
+
+### 本次扩写补充来源
+
+- [S-RDMA：rdma-core v54.0 — registration, work requests, completion queues and events](../sources/S-RDMA.md)：固定 verbs 文档给出 MR 注册、WR 提交、CQE、事件通知及本地缓冲复用规则；包含 inline 例外、错误字段与一次性通知。
+  [完整原文](../../references/S-RDMA/reader.html) · [全文文本](../../references/S-RDMA/fulltext.txt)
+
+- [S-GPUDIRECT：NVIDIA GPUDirect RDMA — CUDA 12.8.0](../sources/S-GPUDIRECT.md)：CUDA 12.8 固定页面描述 GPUDirect 注册、缓存、映射撤销、平台路径和 GPU 内存排序；§2.7 区分外部 DMA 与 GPU 消费依赖。
+  [完整原文](../../references/S-GPUDIRECT/reader.html) · [全文文本](../../references/S-GPUDIRECT/fulltext.txt)
+
+- [S-LLUMNIX：Llumnix](../sources/S-LLUMNIX.md)：§4 通过分阶段 append-only KV 复制和预留握手支持活跃迁移，采用全局实例级调度与本地请求选择、虚拟使用量。
+  [完整原文](../../references/S-LLUMNIX/reader.html) · [全文文本](../../references/S-LLUMNIX/fulltext.txt)
 
 ## 延伸阅读
 
