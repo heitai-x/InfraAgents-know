@@ -48,3 +48,11 @@ PYTHONPATH=src python3 -m infraagents knowledge --repository /path/to/InfraAgent
 v2 保留全部 108 篇机制正文与 114 项固定来源。完整选择/读取验收见 [Linux 记录](evidence/final-linux-validation.json)。选定视图的导航修复位于 [运行时分支](https://github.com/heitai-x/InfraAgents/tree/codex/knowledge-navigation-20261023)，提交 `aedff22c0885c4fc56db6058b9904e23d5e189b9`；使用修复后的框架可取得按冻结目录生成的设计与诊断入口。其 src/tests 基线与实际验证版本一致，详见 [发布身份](evidence/runtime-navigation-published.json)。
 
 更换知识版本应创建新任务或新的受控运行；既有冻结运行继续使用原内容和模型身份。知识库更新没有修改正在运行的实验，也没有将当前运行学习伪装成截止日前 seed。
+
+## v2.1 的运行期反馈与发布
+
+使用这份知识库执行 RSI 反馈或章节修订时，采用包含提交 `6d205853b6135adbc35b43525608ff919eb4dee6` 的运行时，见 [已验证的 GPU 兼容运行时分支](https://github.com/heitai-x/InfraAgents/tree/codex/knowledge-publication-bytes-20261023)。该版本同时包含选定视图导航修复，以及发布、历史保存和中断恢复中的字节保持读取。
+
+真实运行曾发现：旧发布器把 CRLF 正文读取成 LF 后再计算哈希，导致未修改章节也无法通过发布校验。知识正文与登记哈希本身一致。修复保留所有校验和原始换行，已通过 56 项相关回归、真实 108 篇知识库的批准反馈回放与幂等检查，以及状态修订和历史恢复检查，见 [独立审查](evidence/publication-runtime-fix-20261023/review.md)。此前读取验证没有覆盖这条发布路径。
+
+如使用同一份限时 seed 配合 Luna 等其他实际模型，可以按 Task 选择 `full` 与 `seed_and_learned`；这不声明这些模型具有 Astra 的训练或知识截止日期。为运行建立独立可写知识仓库并将 runs 放在其中，运行期反馈和 learned 保留真实观察日期；已发布的限时 seed 标签保持固定。此次实际接入使用的初始知识内容仍为 `astra-2026-04-30-v2.1`，没有为运行修复改写章节或原始资料。

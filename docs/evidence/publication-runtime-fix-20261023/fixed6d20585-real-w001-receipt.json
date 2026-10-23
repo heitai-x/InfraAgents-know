@@ -1,0 +1,73 @@
+{
+  "run_id": "20261023-084344-gpu-engine-qwen3-8b-rtx4090-continuous-f8d5a1",
+  "work_id": "w001",
+  "changes": [],
+  "knowledge_layer": "learned",
+  "update_decisions": [],
+  "feedback_decisions": [
+    {
+      "decision": "approve",
+      "entry_id": "K-SYS-002",
+      "reason": "K-SYS-002 已明确稳定逻辑请求/会话身份与临时执行位置及结果归属映射。e00003 在固定模型 revision、RTX 4090、bfloat16、两会话各两轮的 trace 中记录了会话/轮次/请求到 execution_id 的关联；交错和串行控制各轮 token 与 stop reason 一致，完整历史含对应工具结果且 prompt 摘要与后端输入相符。因此反馈支持该条目在本实验范围内的身份映射主张。两会话短 trace 不检验批次压紧、迁移或多租户，反馈明确不外推，范围匹配。",
+      "required_changes": [],
+      "revision": 2,
+      "scope_match": true,
+      "trial_outcome": "supported"
+    },
+    {
+      "decision": "approve",
+      "entry_id": "K-SYS-004",
+      "reason": "K-SYS-004 区分业务取消、在途执行完成和资源可回收条件。e00003 使用受控后端屏障覆盖排队取消及运行中取消：排队请求未获 execution_id、历史为空；运行中请求被标记 cancelled，不暴露晚到生成结果，future 等后端返回后结束，同会话幸存请求仍完成。报告明确这些是受控后端状态语义，不是 CUDA 中断或实际 GPU 资源回收证据，准确符合章节边界。",
+      "required_changes": [],
+      "revision": 2,
+      "scope_match": true,
+      "trial_outcome": "supported"
+    }
+  ],
+  "feedback": [
+    {
+      "entry_id": "K-SYS-002",
+      "experiment_ids": [
+        "e00003"
+      ],
+      "note": "在该固定阶段 trace 中，稳定会话/轮次/请求身份与临时 execution_id 分离，并能将请求、完整所属历史、prompt 摘要和输出终态关联；交错与串行控制的逐 token greedy 结果一致。仅支持本实验覆盖的身份映射，不外推到批处理压紧、跨设备迁移或多租户情形。",
+      "outcome": "supported",
+      "revision": 2,
+      "scope_match": true,
+      "review_decision": "approve",
+      "evidence": [
+        {
+          "path": "runs/20261023-084344-gpu-engine-qwen3-8b-rtx4090-continuous-f8d5a1/experiments/e00003/result.json",
+          "run_id": "20261023-084344-gpu-engine-qwen3-8b-rtx4090-continuous-f8d5a1",
+          "experiment_id": "e00003",
+          "revision": "0349e646b4e2a0ba0df99bdb9150678a878f8723",
+          "observed_at": "2026-10-23"
+        }
+      ],
+      "effect": "current_revision"
+    },
+    {
+      "entry_id": "K-SYS-004",
+      "experiment_ids": [
+        "e00003"
+      ],
+      "note": "受控后端用例支持排队取消不执行、运行中取消不提交晚到业务输出且等待后端返回后 future 才结束的区分；同会话幸存请求可继续完成。实验未观察 CUDA 中断或实际 GPU 资源回收，不能据此认定物理释放已发生。",
+      "outcome": "supported",
+      "revision": 2,
+      "scope_match": true,
+      "review_decision": "approve",
+      "evidence": [
+        {
+          "path": "runs/20261023-084344-gpu-engine-qwen3-8b-rtx4090-continuous-f8d5a1/experiments/e00003/result.json",
+          "run_id": "20261023-084344-gpu-engine-qwen3-8b-rtx4090-continuous-f8d5a1",
+          "experiment_id": "e00003",
+          "revision": "0349e646b4e2a0ba0df99bdb9150678a878f8723",
+          "observed_at": "2026-10-23"
+        }
+      ],
+      "effect": "current_revision"
+    }
+  ],
+  "meaning": "Reviewed conditional chapter updates; task success is a separate result",
+  "selection_sha256": "42650eb67d2565b8b9e0d622e0437ed46ce21fd137d1f6a308bcd5e55542011e"
+}
