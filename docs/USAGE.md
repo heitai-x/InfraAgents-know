@@ -56,3 +56,24 @@ v2 保留全部 108 篇机制正文与 114 项固定来源。完整选择/读取
 真实运行曾发现：旧发布器把 CRLF 正文读取成 LF 后再计算哈希，导致未修改章节也无法通过发布校验。知识正文与登记哈希本身一致。修复保留所有校验和原始换行，已通过 56 项相关回归、真实 108 篇知识库的批准反馈回放与幂等检查，以及状态修订和历史恢复检查，见 [独立审查](evidence/publication-runtime-fix-20261023/review.md)。此前读取验证没有覆盖这条发布路径。
 
 如使用同一份限时 seed 配合 Luna 等其他实际模型，可以按 Task 选择 `full` 与 `seed_and_learned`；这不声明这些模型具有 Astra 的训练或知识截止日期。为运行建立独立可写知识仓库并将 runs 放在其中，运行期反馈和 learned 保留真实观察日期；已发布的限时 seed 标签保持固定。此次实际接入使用的初始知识内容仍为 `astra-2026-04-30-v2.1`，没有为运行修复改写章节或原始资料。
+
+## 修订版的内容检查
+
+v2.2-r1仍通过原有knowledge search/read与knowledge_used版本绑定使用。七组问题只是无序、非穷尽的阅读示例，不是阶段状态机；它们不要求角色检索、提交统一产物或先完成某层验证才准许探索。详见 [使用问题与探索边界](knowledge-use-cases.md)。
+
+在知识仓库根目录执行结构与算例检查：
+
+```bash
+python3 tools/validate_knowledge.py --baseline f640148464929f803a53b55e27ee4cbb83dc8657 --report /tmp/knowledge-structure.json
+python3 tools/check_knowledge_examples.py --report /tmp/knowledge-examples.json
+```
+
+用已有运行时源码执行实际冻结读取与访问边界检查：
+
+```bash
+python3 tools/probe_knowledge_runtime.py --runtime /path/to/InfraAgents --repository . --report /tmp/knowledge-runtime.json
+```
+
+探针在独立副本上读取当前正文和历史，校验引用，并检查撤回ID与受限原文不进入当前视图。模型名是选择条件fixture，没有调用模型。查询命中仅观察可找到哪些入口，不要求实现按入口方案构建；新问题或未命中不构成引擎任务失败。
+
+本轮按源码模块SHA记录所用运行时；推荐分支获取时要求GitHub凭据，未重新验证其发布器。[本轮报告](evidence/knowledge-open-exploration-20261024/runtime-probe.json)只支持实际检查的接口。正文去除固定流程、目录去重和读取通过，都不能代替真实Agent行为实验。

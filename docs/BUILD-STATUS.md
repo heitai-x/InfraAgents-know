@@ -1,4 +1,33 @@
-# 推理知识库 v2.1 交付记录
+# 知识库 v2.2-r1：探索边界与专题归属修订
+
+## 修订决定
+
+原 v2.2 本地提案的六篇新增章节已撤回活动目录。来源与算例正确，不足以证明新建章节合理，也不证明它不会形成默认架构或构建顺序。当前保持原有108篇、114项固定来源；相对指定分支 f640148464929f803a53b55e27ee4cbb83dc8657 深化11篇。没有删除原分支的任何专题。
+
+| 撤回的本地新章 | 修订处理 |
+|---|---|
+| K-SYS-020 从空工程构建 | 撤回通用阶段与固定组件/接口规划；重复KV与关键路径例不再另存；已有模型、系统组合与容量专题保持各自作用 |
+| K-SYS-023 知识到设计决定 | 撤回统一产物与阶段式入口；布局转换成本留在SYS010，问题示例留在维护文档 |
+| K-HW-015 CPU–GPU重叠 | 四阶段、槽位与共享资源量化归HW003；异构放置、stream和NUMA继续由原专题解释 |
+| K-SYS-022 分布式执行 | count和标识反例归SYS005，ring时间归HW002；不重复TP/PP/EP/RDMA，不要求固定数量候选 |
+| K-FW-013 张量接口 | 地址/别名增量归ALG016，具体缓存API归FW006；已有数值、预打包和生命周期不重复 |
+| K-SYS-021 API契约 | ASGI语义归SYS008，推进/队列反例归SYS015；不要求固定三层架构 |
+
+详情见 [复审](evidence/knowledge-open-exploration-20261024/review.md)、[专题撤回登记](actionable-knowledge/withdrawn-chapters.json) 和 [使用问题](knowledge-use-cases.md)。实际正文增量按 [变更清单](actionable-knowledge/change-manifest.json) 归属。
+
+## 身份与验证
+
+前次交付的修订号与正文保留，新修订再次增加revision，避免同一ID/revision对应不同内容。当前活动专题有117份历史；六篇撤回稿另存原v1正文与metadata，ID保留不复用，不能通过当前冻结知识视图读取。前次内容身份见 [旧VERSION](evidence/knowledge-open-exploration-20261024/previous-v2.2-VERSION.json)。
+
+本轮分别提供 [结构检查](evidence/knowledge-open-exploration-20261024/structural.json)、[算例检查](evidence/knowledge-open-exploration-20261024/examples.json)、[真实读取探针](evidence/knowledge-open-exploration-20261024/runtime-probe.json) 和 [独立复审](evidence/knowledge-open-exploration-20261024/review.json)。复现入口见 [使用说明](USAGE.md#修订版的内容检查)。这些结果不证明Agent实际探索不受任何偏置，也不证明模型、GPU、服务性能或RSI收益。
+
+运行时仍使用此前提供的源码归档并按模块SHA绑定；推荐分支获取时要求GitHub凭据，本轮未据此冒认推荐提交。没有改Controller或知识发布器，也没有运行Agent构建实验。工作位于本地 codex/knowledge-open-exploration-20261024，尚未推送远端。
+
+## 既有正式基线记录
+
+以下保留v2.1及更早版本在其当时内容与环境中的记录；原v2.2提案的结构/算术通过记录保存在 [旧复审](evidence/knowledge-actionability-20261024/review.md)，其组织方式已被本轮取代。
+
+## v2.1交付记录（历史）
 
 v2.1 已完成本轮独立审查与修订闭环：第一轮发现两项 P2 和一项 P3，修订后第二轮对实际内容提交 `69408e3fc62c8d34e576c2f1ce6d247488d568b9` 给出 **KB PASS**。详见 [第一轮](evidence/knowledge-review-loop-20261023/round-1/review.md)、[第二轮](evidence/knowledge-review-loop-20261023/round-2/review.md) 和 [历史及来源核对](evidence/knowledge-review-loop-20261023/round-2/repair-checks.json)。
 

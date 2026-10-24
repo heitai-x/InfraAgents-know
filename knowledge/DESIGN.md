@@ -1,5 +1,7 @@
 # 从任务条件推导系统设计
 
+本页按技术主题提供可选入口，没有固定阅读或研发顺序。场景与示例不穷尽候选；Task 的要求和所选机制的语义决定实际检查，原型、整体编译、联合设计和其他未列方案均可按条件探索。
+
 先用 [组合设计](system-semantics/design-synthesis.md) 建立完整问题，再选与当前决策有关的机制。索引摘要用于导航，具体设计依据来自正文中的关系与推导。
 
 角色只从当前运行的时间 profile 读取正文和原始来源。`checked_at`、`updated_at` 和本地归档时间不是事实发生时间；需要先通过 [时间边界规则](../docs/23-time-bounded-knowledge.md) 的来源版本检查，再把专题用于设计。
@@ -90,3 +92,19 @@ GPU 则通过 [矩阵与归约流水](hardware/gpu-kernel-pipelines.md) 把片�
 | C12：非生成推理 | [Embedding/重排](models/embedding-reranking.md)、[检索/RAG](system-semantics/retrieval-pipeline.md)、[CNN/检测](models/vision-inference.md)、[推荐](models/recommendation-inference.md)、[GNN](models/graph-inference.md) | 五类独立输入/输出和质量契约，各自计量批量、状态、搬运及结果；不合并为一个通用 token 指标 |
 
 出现跨阶段的异常时，从 [诊断入口](DIAGNOSIS.md) 找到对应关系，再回到本表检查组合假设。章节和场景的编辑状态以 [构建记录](../docs/BUILD-STATUS.md) 与 [逐篇计划](../docs/expansion-plan.json) 为准。
+
+## 其他相关机制的直接入口
+
+以下是尚未在上文直接列出的专题，按既有类别补齐导航，不构成必读列表。完整问题仍可通过 [主题索引](INDEX.md) 检索。
+
+| 类别 | 相关专题 |
+|---|---|
+| algorithms | [批量采样：概率变换、请求随机性与行映射](algorithms/batched-sampling.md) |
+| engine-index | [vLLM V1：从 Token 进度到调度输出](engine-index/vllm-scheduler.md)、[vLLM KV 管理：命中、分配和延迟释放](engine-index/vllm-kv-manager.md)、[vLLM ModelRunner：调度视图到设备状态](engine-index/vllm-model-runner.md)、[SGLang：Radix 复用与调度状态的连接](engine-index/sglang-radix-scheduler.md)、[TensorRT-LLM：执行器、Overlap 与传输责任](engine-index/tensorrt-llm.md) |
+| frameworks | [PyTorch 推理：模块模式、Autograd 与状态突变](frameworks/inference-eval.md)、[Stream 与分配器：依赖顺序和对象生存期](frameworks/streams-allocator.md)、[Triton Kernel：块程序、布局与融合边界](frameworks/triton-kernels.md) |
+| hardware | [主机准备、DMA 与流水缓冲](hardware/host-device-transfer.md)、[数值格式、打包布局与矩阵指令](hardware/precision-and-kernel-support.md) |
+| system-semantics | [主机与设备时间：偏序、区间并集和关键路径](system-semantics/host-device-timing.md)、[位置、Mask 与缓存：同一可见性关系的三种表示](system-semantics/position-mask-cache.md)、[工程认识如何成为可迁移的专家知识](system-semantics/evidence-and-independent-checks.md) |
+| tools | [可观测性：执行事件与采集事件的映射](tools/trace-observability.md)、[框架 Profiler：算子归属、内存与图边界](tools/framework-profiler-scope.md)、[失败分析：最早偏离、最小复现与机制归因](tools/failure-evidence.md) |
+| workloads | [性能实验：稳定态、对照与不确定性](workloads/measurement-comparability.md) |
+
+[使用问题与探索边界](../docs/knowledge-use-cases.md) 说明场景索引、知识事实和任务要求的不同作用。

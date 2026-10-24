@@ -1,5 +1,7 @@
 # 从行为回到机制
 
+本页按技术主题提供可选入口，没有固定阅读或研发顺序。场景与示例不穷尽候选；Task 的要求和所选机制的语义决定实际检查，原型、整体编译、联合设计和其他未列方案均可按条件探索。
+
 诊断是对系统关系的反向推理。先把现象定位到输入、状态、执行、调度或输出阶段，再选择能区分解释的观测。
 
 本表覆盖模型与 kernel，也包含多模型、检索及推理平台依赖。[范围说明](../docs/inference-coverage.md) 保留能力域与组合验证的对应；具体运行仍按选定知识条件、来源时间和访问权限读取。
@@ -67,3 +69,20 @@
 - C06 [多卡 MLA/MoE](algorithms/parallelism.md)、C07 [P/D 接管](algorithms/disaggregated-serving.md) 与 C08 [多模型/LoRA](workloads/multi-model-placement.md)，检查张量归属、版本、慢端、资源共享和公平等待。
 - C09 [流式语音](models/speech-generation.md)、C10 [VLM/全模态](models/omni-multimodal.md) 与 C11 [图像/视频扩散](models/video-generation.md)，检查阶段依赖、实时提交与最终完整输出的质量。
 - C12 分别复查 [Embedding/重排](models/embedding-reranking.md)、[检索/RAG](system-semantics/retrieval-pipeline.md)、[CNN/检测](models/vision-inference.md)、[推荐](models/recommendation-inference.md) 和 [GNN](models/graph-inference.md)；每类都有自己的参考函数与质量指标。
+
+## 其他相关机制的直接入口
+
+以下是尚未在上文直接列出的专题，按既有类别补齐导航，不构成必读列表。完整问题仍可通过 [主题索引](INDEX.md) 检索。
+
+| 类别 | 相关专题 |
+|---|---|
+| algorithms | [分页 KV：逻辑位置、物理布局与共享所有权](algorithms/paged-kv-capacity.md)、[Attention 的 IO、在线 softmax 与分块归约](algorithms/attention-io.md)、[量化：误差传播、分组尺度与执行格式](algorithms/quantization-contract.md)、[投机解码：分布保持、状态提交与收益模型](algorithms/speculation-budget.md)、[结构化生成：语言状态、token 边界与约束采样](algorithms/structured-output.md) |
+| engine-index | [vLLM V1：从 Token 进度到调度输出](engine-index/vllm-scheduler.md)、[vLLM KV 管理：命中、分配和延迟释放](engine-index/vllm-kv-manager.md)、[vLLM ModelRunner：调度视图到设备状态](engine-index/vllm-model-runner.md)、[SGLang：Radix 复用与调度状态的连接](engine-index/sglang-radix-scheduler.md)、[TensorRT-LLM：执行器、Overlap 与传输责任](engine-index/tensorrt-llm.md) |
+| frameworks | [PyTorch 推理：模块模式、Autograd 与状态突变](frameworks/inference-eval.md)、[数值参考：误差尺度、条件数与首次分歧](frameworks/numerical-reference.md)、[Stream 与分配器：依赖顺序和对象生存期](frameworks/streams-allocator.md)、[Attention Backend：语义、布局与执行契约的交集](frameworks/attention-backends.md)、[Triton Kernel：块程序、布局与融合边界](frameworks/triton-kernels.md)、[MLX 服务：惰性求值、编译与请求状态](frameworks/mlx-serving.md)、[Neuron/NxD：静态程序承接动态生成](frameworks/neuron-serving.md)、[NKI：Partition 轴、片上生存期与 Attention 数据流](frameworks/nki-tiling.md) |
+| hardware | [容量、算术强度与服务 Roofline](hardware/memory-and-roofline.md)、[数值格式、打包布局与矩阵指令](hardware/precision-and-kernel-support.md)、[ROCm 平台：CU、Wave 与 AMD 算子路径](hardware/rocm-execution.md)、[Apple Silicon：统一内存、带宽与交互式推理](hardware/metal-unified-memory.md)、[Trainium：HBM、SBUF、PSUM 与编译执行](hardware/trainium-dataflow.md)、[CPU 推理：线程、缓存层级与 NUMA 分区](hardware/cpu-serving.md) |
+| models | [从模型计算图推导 Prefill、Decode 与持久状态](models/prefill-decode-state.md)、[MHA、GQA 与 MQA：头映射和带宽复用](models/gqa-kv-heads.md)、[SSM 与混合模型：递归状态、扫描与恢复](models/recurrent-hybrid-state.md)、[窗口与稀疏 Attention：可见性、位置和状态保留](models/sliding-window-attention.md) |
+| system-semantics | [工程认识如何成为可迁移的专家知识](system-semantics/evidence-and-independent-checks.md)、[输入输出语义：Tokenizer、Chat Template 与流式文本](system-semantics/tokenization-io.md)、[服务协议：接收、流式背压与终止语义](system-semantics/service-protocol.md)、[分布式状态迁移：身份、传输与提交点](system-semantics/distributed-state-transfer.md) |
+| tools | [时间线分析：从请求路径定位执行瓶颈](tools/timeline-attribution.md)、[Kernel 计数器：吞吐、访存与 Replay 语境](tools/kernel-counter-replay.md)、[框架 Profiler：算子归属、内存与图边界](tools/framework-profiler-scope.md)、[正确性 Oracle：函数参考、状态变形与服务契约](tools/correctness-oracles.md) |
+| workloads | [工作负载分布：长度、复用、模态与相关性](workloads/input-distribution.md)、[容量设计：驻留、服务率与阶段配比](workloads/capacity-planning.md) |
+
+[使用问题与探索边界](../docs/knowledge-use-cases.md) 说明场景索引、知识事实和任务要求的不同作用。

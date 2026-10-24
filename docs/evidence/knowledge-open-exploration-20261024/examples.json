@@ -1,0 +1,1299 @@
+{
+  "schema_version": 1,
+  "evidence_class": "synthetic_arithmetic_and_counterexamples",
+  "scope": "Recalculate explicit example fixtures and units. No GPU, NCCL, engine, model, Agent, or service experiment was executed.",
+  "source_cutoff": "2026-04-30",
+  "units": {
+    "KiB": 1024,
+    "MiB": 1048576,
+    "GiB": 1073741824,
+    "byte_unit": "B",
+    "seconds_to_ms": 1000,
+    "seconds_to_us": 1000000,
+    "rates": "Numerator and denominator boundaries are specified per example."
+  },
+  "comparison": {
+    "integer_and_discrete": "exact",
+    "real_rel_tol": 1e-12,
+    "real_abs_tol": 1e-12
+  },
+  "script": {
+    "path": "tools/check_knowledge_examples.py",
+    "sha256": "dc2f7497caf9e9d75a86961eecc0f5b842c6b28df83bd53f78d880edda374fbd"
+  },
+  "documents": [
+    {
+      "path": "knowledge/algorithms/operator-primitives.md",
+      "exists": true,
+      "sha256": "a90db43a51c419895d5180f492475ab9eb6da9f6b8331740a2d65fd52052e5e1"
+    },
+    {
+      "path": "knowledge/frameworks/attention-backends.md",
+      "exists": true,
+      "sha256": "df684dcdc1b0acfd92fe359dc2b129a5de747f49d33dee5800dda5adb3f3814a"
+    },
+    {
+      "path": "knowledge/frameworks/triton-kernels.md",
+      "exists": true,
+      "sha256": "3dc0605e78a384870bbf166dc2c976d7c02e5a54113afef0a400748b8923256c"
+    },
+    {
+      "path": "knowledge/hardware/host-device-transfer.md",
+      "exists": true,
+      "sha256": "e4921a0714af21f7ab1a336f40af662f716f2c64a42dd598eb2cede548c858d2"
+    },
+    {
+      "path": "knowledge/hardware/topology-parallelism.md",
+      "exists": true,
+      "sha256": "44b63f4291293b51e17b58d64bcfa9fe2bd384534a589c9b74fae0ad157ead29"
+    },
+    {
+      "path": "knowledge/system-semantics/collective-ordering.md",
+      "exists": true,
+      "sha256": "0007f921f7cac18dfc14baae23133812bd3c58a6f8fc0bddde1d6d0a3d017168"
+    },
+    {
+      "path": "knowledge/system-semantics/design-synthesis.md",
+      "exists": true,
+      "sha256": "0480a8e7697850656cc1d8fe0534e97288505a9b08565d038ba2bc51958d7651"
+    },
+    {
+      "path": "knowledge/system-semantics/host-runtime.md",
+      "exists": true,
+      "sha256": "3cde70faf8280311125eb65d6c2c9b0e162fbf20bb73684ca0b847afc06004bc"
+    },
+    {
+      "path": "knowledge/system-semantics/service-protocol.md",
+      "exists": true,
+      "sha256": "31ff0d8417366ee92c07c45f582b7e517336c76c0c1ddb60956548a70d5ac52e"
+    },
+    {
+      "path": "knowledge/tools/correctness-oracles.md",
+      "exists": true,
+      "sha256": "c2f88bc9746ac25586fc6700aaf0f5a8d043a1b1f4aee99dfdee02e1ef468aab"
+    },
+    {
+      "path": "knowledge/tools/statistical-experiments.md",
+      "exists": true,
+      "sha256": "ba32db33d1c75d61f1554689d8580dd9879707b4d00648cdd2e1aa8a202487b9"
+    }
+  ],
+  "examples": [
+    {
+      "family": "communication",
+      "example": "four_stage_pipeline",
+      "document": "knowledge/hardware/host-device-transfer.md",
+      "section": "设定算例：阶段、槽位与共享带宽",
+      "inputs": {
+        "stage_ms": [
+          3,
+          2,
+          8,
+          1
+        ],
+        "batches": 8,
+        "period_ms": 8,
+        "input_MiB": 16,
+        "output_MiB": 1
+      },
+      "assumptions": [
+        "Independent deterministic stage resources, no extra dependencies.",
+        "Each input lives from H2D start to GPU completion; each output from GPU start to D2H completion.",
+        "Half-open lifetimes permit immediate reuse at a completion boundary."
+      ],
+      "evidence_class": "synthetic_arithmetic_or_counterexample",
+      "checks": [
+        {
+          "check": "eight_batch_pipeline_completion_ms",
+          "actual": 70,
+          "expected": 70,
+          "unit": "ms",
+          "relation": "sum(stage_ms) + (8 - 1) * max(stage_ms)",
+          "passed": true
+        },
+        {
+          "check": "eight_batch_serial_completion_ms",
+          "actual": 112,
+          "expected": 112,
+          "unit": "ms",
+          "relation": "8 * sum(stage_ms)",
+          "passed": true
+        },
+        {
+          "check": "first_batch_completion_ms",
+          "actual": 14,
+          "expected": 14,
+          "unit": "ms",
+          "relation": "sum(stage_ms)",
+          "passed": true
+        },
+        {
+          "check": "stage_resource_non_overlap",
+          "actual": true,
+          "expected": true,
+          "unit": "predicate",
+          "relation": "No two batches occupy the same stage resource simultaneously.",
+          "passed": true
+        },
+        {
+          "check": "input_slots_from_timeline",
+          "actual": 2,
+          "expected": 2,
+          "unit": "slots",
+          "relation": "ceil(10 ms / 8 ms)",
+          "passed": true
+        },
+        {
+          "check": "output_slots_from_timeline",
+          "actual": 2,
+          "expected": 2,
+          "unit": "slots",
+          "relation": "ceil(9 ms / 8 ms)",
+          "passed": true
+        },
+        {
+          "check": "device_buffers_mib",
+          "actual": 34,
+          "expected": 34,
+          "unit": "MiB",
+          "relation": "input_slots * 16 MiB + output_slots * 1 MiB; other allocations excluded",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "family": "communication",
+      "example": "shared_dram_bound",
+      "document": "knowledge/hardware/host-device-transfer.md",
+      "section": "设定算例：阶段、槽位与共享带宽",
+      "inputs": {
+        "traffic_MiB_per_batch": 128,
+        "shared_bandwidth_GiB_per_s": 8
+      },
+      "assumptions": [
+        "Traffic is aggregated for the same shared DRAM resource.",
+        "Bandwidth is an assumed sustainable concurrent value, not a platform specification."
+      ],
+      "evidence_class": "synthetic_arithmetic_or_counterexample",
+      "checks": [
+        {
+          "check": "shared_dram_period_ms",
+          "actual": 15.625,
+          "expected": 15.625,
+          "unit": "ms/batch",
+          "relation": "128 MiB / (8 GiB/s), converted from seconds to milliseconds",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "family": "communication",
+      "example": "identifiable_collective_values",
+      "document": "knowledge/system-semantics/collective-ordering.md",
+      "section": "用可辨识反例检查所选通信边界",
+      "inputs": {
+        "ranks": 4,
+        "elements_per_rank": 8,
+        "input_value": "100 * rank + index"
+      },
+      "assumptions": [
+        "Exact small integers; this is not floating-point validation or an NCCL execution.",
+        "ReduceScatter uses 32 input elements per rank and 8 output elements per rank."
+      ],
+      "evidence_class": "synthetic_arithmetic_or_counterexample",
+      "checks": [
+        {
+          "check": "identifiable_allreduce",
+          "actual": [
+            600,
+            604,
+            608,
+            612,
+            616,
+            620,
+            624,
+            628
+          ],
+          "expected": [
+            600,
+            604,
+            608,
+            612,
+            616,
+            620,
+            624,
+            628
+          ],
+          "unit": "integer values",
+          "relation": "sum over ranks of (100 * rank + index)",
+          "passed": true
+        },
+        {
+          "check": "allgather_block_origin",
+          "actual": [
+            0,
+            100,
+            200,
+            300
+          ],
+          "expected": [
+            0,
+            100,
+            200,
+            300
+          ],
+          "unit": "integer values",
+          "relation": "rank-ordered blocks retain their distinct first element",
+          "passed": true
+        },
+        {
+          "check": "reduce_scatter_blocks",
+          "actual": [
+            [
+              600,
+              604,
+              608,
+              612,
+              616,
+              620,
+              624,
+              628
+            ],
+            [
+              632,
+              636,
+              640,
+              644,
+              648,
+              652,
+              656,
+              660
+            ],
+            [
+              664,
+              668,
+              672,
+              676,
+              680,
+              684,
+              688,
+              692
+            ],
+            [
+              696,
+              700,
+              704,
+              708,
+              712,
+              716,
+              720,
+              724
+            ]
+          ],
+          "expected": [
+            [
+              600,
+              604,
+              608,
+              612,
+              616,
+              620,
+              624,
+              628
+            ],
+            [
+              632,
+              636,
+              640,
+              644,
+              648,
+              652,
+              656,
+              660
+            ],
+            [
+              664,
+              668,
+              672,
+              676,
+              680,
+              684,
+              688,
+              692
+            ],
+            [
+              696,
+              700,
+              704,
+              708,
+              712,
+              716,
+              720,
+              724
+            ]
+          ],
+          "unit": "integer values",
+          "relation": "rank r receives the reduced global indices [8*r, 8*r+8)",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "family": "communication",
+      "example": "ideal_ring_cost",
+      "document": "knowledge/hardware/topology-parallelism.md",
+      "section": "集合操作怎样使用链路",
+      "inputs": {
+        "ranks": 4,
+        "startup_us_per_round": 5,
+        "one_way_bandwidth_GiB_per_s": 40,
+        "large_MiB": 16,
+        "small_KiB": 8
+      },
+      "assumptions": [
+        "A selected ideal ring; no claim about the algorithm chosen by NCCL.",
+        "Full-duplex send/receive overlap, uniform chunks, stable one-way bandwidth, no contention."
+      ],
+      "evidence_class": "synthetic_arithmetic_or_counterexample",
+      "checks": [
+        {
+          "check": "ring_large_message_ms",
+          "actual": 0.6159375,
+          "expected": 0.6159375,
+          "unit": "ms",
+          "relation": "2*(p-1)*alpha + 2*(p-1)*A/(p*B)",
+          "passed": true
+        },
+        {
+          "check": "ring_small_message_us",
+          "actual": 30.286102294921875,
+          "expected": 30.286102294921875,
+          "unit": "us",
+          "relation": "same model; seconds converted to microseconds",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "family": "systems",
+      "example": "slow_client_queue",
+      "document": "knowledge/system-semantics/service-protocol.md",
+      "section": "一个慢客户端的容量算例",
+      "inputs": {
+        "queue_enqueue_B_per_s": 8000,
+        "queue_dequeue_B_per_s": 2000,
+        "capacity_KiB": 64,
+        "initial_B": 0,
+        "requests": 128,
+        "private_state_MiB_each": 6
+      },
+      "assumptions": [
+        "Rates refer to the same bounded queue, remain constant before saturation, and exclude packet overhead.",
+        "Remote consumption alone does not determine local dequeue rate; downstream buffers are excluded."
+      ],
+      "evidence_class": "synthetic_arithmetic_or_counterexample",
+      "checks": [
+        {
+          "check": "queue_growth_and_residency",
+          "actual": {
+            "capacity_B": 65536,
+            "net_B_per_s": 6000,
+            "full_after_s": 10.922666666666666,
+            "output_buffers_MiB": 8.0,
+            "private_state_MiB": 768
+          },
+          "expected": {
+            "capacity_B": 65536,
+            "net_B_per_s": 6000,
+            "full_after_s": 10.922666666666666,
+            "output_buffers_MiB": 8,
+            "private_state_MiB": 768
+          },
+          "unit": "field suffixes",
+          "relation": "(capacity - initial)/(enqueue - dequeue); separate output and model-state allocations",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "family": "systems",
+      "example": "service_accounting",
+      "document": "knowledge/system-semantics/service-protocol.md",
+      "section": "验收必须包含未完成和被拒绝的请求",
+      "inputs": {
+        "window_s": 10,
+        "offered": 100,
+        "rejected": 10,
+        "completed": 80,
+        "qualified": 72
+      },
+      "assumptions": [
+        "Qualified means the task's quality and latency gates; not all completed requests qualify.",
+        "Pending outcomes must be followed after the window; they are not silently discarded."
+      ],
+      "evidence_class": "synthetic_arithmetic_or_counterexample",
+      "checks": [
+        {
+          "check": "population_and_qualified_rate",
+          "actual": {
+            "accepted": 90,
+            "pending": 10,
+            "qualified_per_s": 7.2,
+            "qualified_fraction_offered": 0.72,
+            "qualified_fraction_completed": 0.9
+          },
+          "expected": {
+            "accepted": 90,
+            "pending": 10,
+            "qualified_per_s": 7.2,
+            "qualified_fraction_offered": 0.72,
+            "qualified_fraction_completed": 0.9
+          },
+          "unit": "counts, requests/s, dimensionless fractions",
+          "relation": "offered=rejected+accepted; accepted=completed+pending; denominators stay distinct",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "family": "systems",
+      "example": "host_cpu_budget",
+      "document": "knowledge/system-semantics/host-runtime.md",
+      "section": "有效核数与线程组织的候选比较",
+      "inputs": {
+        "allowed_CPUs": 8,
+        "quota_cpu_ms": 400,
+        "period_wall_ms": 100,
+        "request_rate_per_s": 200,
+        "request_cpu_ms": [
+          10,
+          2,
+          3
+        ],
+        "background_cpu_s_per_s": 1.2
+      },
+      "assumptions": [
+        "No stricter ancestor limit; quota is a time ceiling, not guaranteed immediate execution."
+      ],
+      "evidence_class": "synthetic_arithmetic_or_counterexample",
+      "checks": [
+        {
+          "check": "cpu_time_units",
+          "actual": {
+            "core_equivalent_limit": 4.0,
+            "cpu_ms_per_request": 15,
+            "foreground_cpu_s_per_s": 3.0,
+            "total_cpu_s_per_s": 4.2,
+            "demand_exceeds_limit": true
+          },
+          "expected": {
+            "core_equivalent_limit": 4,
+            "cpu_ms_per_request": 15,
+            "foreground_cpu_s_per_s": 3,
+            "total_cpu_s_per_s": 4.2,
+            "demand_exceeds_limit": true
+          },
+          "unit": "CPU milliseconds/request and CPU seconds/wall-second",
+          "relation": "request rate * CPU ms / 1000 plus background CPU time",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "family": "systems",
+      "example": "host_buffer_capacity",
+      "document": "knowledge/system-semantics/host-runtime.md",
+      "section": "队列容量必须连接对象大小与同时存活范围",
+      "inputs": {
+        "input_requests": 512,
+        "input_KiB_each": 64,
+        "token_arrays": 512,
+        "tokens_each": 4096,
+        "token_id_B": 4,
+        "output_queues": 128,
+        "output_KiB_each": 64,
+        "tasks_ahead": 20,
+        "serial_service_ms": 5
+      },
+      "assumptions": [
+        "The three allocations may peak simultaneously and do not share physical storage.",
+        "Metadata, media, IPC, pinned buffers and model state are excluded; queue wait assumes serial fixed work."
+      ],
+      "evidence_class": "synthetic_arithmetic_or_counterexample",
+      "checks": [
+        {
+          "check": "independent_buffers_and_wait",
+          "actual": {
+            "input_MiB": 32.0,
+            "token_arrays_MiB": 8.0,
+            "output_MiB": 8.0,
+            "total_MiB": 48.0,
+            "serial_wait_ms": 100
+          },
+          "expected": {
+            "input_MiB": 32,
+            "token_arrays_MiB": 8,
+            "output_MiB": 8,
+            "total_MiB": 48,
+            "serial_wait_ms": 100
+          },
+          "unit": "MiB and ms",
+          "relation": "sum distinct simultaneous allocations; tasks ahead * service time",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "family": "operators",
+      "example": "layout_offsets",
+      "document": "knowledge/algorithms/operator-primitives.md",
+      "section": "线性、索引与布局",
+      "inputs": {
+        "BLHD_shape": [
+          2,
+          3,
+          2,
+          4
+        ],
+        "axis_order": [
+          0,
+          2,
+          1,
+          3
+        ],
+        "index_BHLD": [
+          0,
+          1,
+          0,
+          0
+        ]
+      },
+      "assumptions": [
+        "Offsets and strides count elements, not bytes; view and contiguous layout are separate representations."
+      ],
+      "evidence_class": "synthetic_arithmetic_or_counterexample",
+      "checks": [
+        {
+          "check": "stride_and_offset_relations",
+          "actual": {
+            "source_strides": [
+              24,
+              8,
+              4,
+              1
+            ],
+            "target_shape": [
+              2,
+              2,
+              3,
+              4
+            ],
+            "view_strides": [
+              24,
+              4,
+              8,
+              1
+            ],
+            "contiguous_strides": [
+              24,
+              12,
+              4,
+              1
+            ],
+            "offsets": [
+              4,
+              12
+            ]
+          },
+          "expected": {
+            "source_strides": [
+              24,
+              8,
+              4,
+              1
+            ],
+            "target_shape": [
+              2,
+              2,
+              3,
+              4
+            ],
+            "view_strides": [
+              24,
+              4,
+              8,
+              1
+            ],
+            "contiguous_strides": [
+              24,
+              12,
+              4,
+              1
+            ],
+            "offsets": [
+              4,
+              12
+            ]
+          },
+          "unit": "elements",
+          "relation": "contiguous stride is the product of later dimensions; offset is the index/stride dot product",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "family": "operators",
+      "example": "qkv_geometry",
+      "document": "knowledge/algorithms/operator-primitives.md",
+      "section": "把线性投影接到真实权重与后端",
+      "inputs": {
+        "hidden": 4096,
+        "query_heads": 32,
+        "kv_heads": 8,
+        "head_dim": 128,
+        "rows": 32,
+        "element_B": 2
+      },
+      "assumptions": [
+        "One packed QKV projection in the stated geometry; no padding, extra copies or workspace."
+      ],
+      "evidence_class": "synthetic_arithmetic_or_counterexample",
+      "checks": [
+        {
+          "check": "packed_qkv_sizes",
+          "actual": {
+            "Q_width": 4096,
+            "K_or_V_width": 1024,
+            "packed_width": 6144,
+            "output_KiB": 384.0,
+            "Q_KiB": 256.0,
+            "K_or_V_KiB": 64.0,
+            "weight_MiB": 48.0
+          },
+          "expected": {
+            "Q_width": 4096,
+            "K_or_V_width": 1024,
+            "packed_width": 6144,
+            "output_KiB": 384,
+            "Q_KiB": 256,
+            "K_or_V_KiB": 64,
+            "weight_MiB": 48
+          },
+          "unit": "elements, KiB, MiB",
+          "relation": "Q=Hq*d; K=V=Hkv*d; bytes=element_count*element_B",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "family": "operators",
+      "example": "rms_padding_limit",
+      "document": "knowledge/algorithms/operator-primitives.md",
+      "section": "归一化融合需要保留统计域和活跃 residual",
+      "inputs": {
+        "true_hidden": 3072,
+        "padded_slots": 4096
+      },
+      "assumptions": [
+        "Nonzero output; the true mean square dominates epsilon.",
+        "This is the limiting ratio, not an exact result for arbitrary finite epsilon."
+      ],
+      "evidence_class": "synthetic_arithmetic_or_counterexample",
+      "checks": [
+        {
+          "check": "padding_scale_limit",
+          "actual": 1.1547005383792515,
+          "expected": 1.1547005383792515,
+          "unit": "dimensionless output ratio",
+          "relation": "sqrt(P/H); finite-epsilon ratio is sqrt((q+epsilon)/(q*H/P+epsilon))",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "family": "operators",
+      "example": "residual_traffic",
+      "document": "knowledge/algorithms/operator-primitives.md",
+      "section": "归一化融合需要保留统计域和活跃 residual",
+      "inputs": {
+        "rows": 32,
+        "hidden": 4096,
+        "element_B": 2
+      },
+      "assumptions": [
+        "Common gamma reads excluded; independent norm reads u once.",
+        "4N preserves externally live u; 3N is legal only if u has no external consumer.",
+        "Effective read/write bytes, not measured HBM traffic; cache and spill may change physical traffic."
+      ],
+      "evidence_class": "synthetic_arithmetic_or_counterexample",
+      "checks": [
+        {
+          "check": "residual_effective_bytes",
+          "actual": {
+            "tensor_KiB": 256.0,
+            "separate_KiB": 1280.0,
+            "fused_live_u_KiB": 1024.0,
+            "fused_no_external_u_KiB": 768.0,
+            "saved_live_u_KiB": 256.0,
+            "saved_no_external_u_KiB": 512.0
+          },
+          "expected": {
+            "tensor_KiB": 256,
+            "separate_KiB": 1280,
+            "fused_live_u_KiB": 1024,
+            "fused_no_external_u_KiB": 768,
+            "saved_live_u_KiB": 256,
+            "saved_no_external_u_KiB": 512
+          },
+          "unit": "KiB",
+          "relation": "5N versus 4N or 3N element operations, times bytes per element",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "family": "operators",
+      "example": "kv_materialization",
+      "document": "knowledge/frameworks/attention-backends.md",
+      "section": "两个可复算的接入反例",
+      "inputs": {
+        "length": 8192,
+        "kv_heads": 8,
+        "query_heads": 32,
+        "head_dim": 128,
+        "element_B": 2
+      },
+      "assumptions": [
+        "One layer's K and V; 128 MiB occurs only if all heads are physically materialized.",
+        "A mathematical repeat expression is not evidence of actual backend allocation."
+      ],
+      "evidence_class": "synthetic_arithmetic_or_counterexample",
+      "checks": [
+        {
+          "check": "kv_copy_and_gqa_sizes",
+          "actual": {
+            "logical_kv_MiB": 32.0,
+            "gather_read_write_MiB": 64.0,
+            "materialized_gqa_MiB": 128.0
+          },
+          "expected": {
+            "logical_kv_MiB": 32,
+            "gather_read_write_MiB": 64,
+            "materialized_gqa_MiB": 128
+          },
+          "unit": "MiB",
+          "relation": "2*L*Hkv*d*b; a layout copy reads and writes; physical GQA expansion multiplies by Hq/Hkv",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "family": "operators",
+      "example": "partition_log_base",
+      "document": "knowledge/frameworks/triton-kernels.md",
+      "section": "在线归约的底数、近似与输出精度",
+      "inputs": {
+        "partition_mass": [
+          1,
+          4
+        ],
+        "normalized_output": [
+          0,
+          2
+        ]
+      },
+      "assumptions": [
+        "Disjoint partitions; masses and outputs are exact synthetic values.",
+        "Natural log and base-2 log statistics require explicit conversion."
+      ],
+      "evidence_class": "synthetic_arithmetic_or_counterexample",
+      "checks": [
+        {
+          "check": "partition_merge_and_wrong_base",
+          "actual": {
+            "correct": 1.6,
+            "wrong_base": 1.7615941559557649,
+            "converted": 1.6
+          },
+          "expected": {
+            "correct": 1.6,
+            "wrong_base": 1.7615941559557649,
+            "converted": 1.6
+          },
+          "unit": "normalized output values",
+          "relation": "mass-weighted output; exp(log2(mass)) is wrong, exp(ln(2)*log2(mass)) restores mass",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "family": "operators",
+      "example": "plan_frequency",
+      "document": "knowledge/frameworks/attention-backends.md",
+      "section": "两个可复算的接入反例",
+      "inputs": {
+        "A_kernel_us": 20,
+        "B_kernel_us": 12,
+        "one_time_plan_us": 160,
+        "reuse_calls": 32,
+        "extra_metadata_us": 6
+      },
+      "assumptions": [
+        "One legal plan serves 32 calls of compatible geometry.",
+        "23 us assumes 6 us per invocation. If 6 us occurs once per plan, the result is 17.1875 us.",
+        "The author corrected the prose from per-plan to per-invocation after review; arithmetic does not substitute for that wording correction."
+      ],
+      "evidence_class": "synthetic_arithmetic_or_counterexample",
+      "checks": [
+        {
+          "check": "amortized_plan_and_frequency_counterexample",
+          "actual": {
+            "once_us": 172,
+            "reused32_us_per_call": 17.0,
+            "metadata_each_call_us": 23.0,
+            "metadata_once_per_plan_us": 17.1875
+          },
+          "expected": {
+            "once_us": 172,
+            "reused32_us_per_call": 17,
+            "metadata_each_call_us": 23,
+            "metadata_once_per_plan_us": 17.1875
+          },
+          "unit": "us/call",
+          "relation": "plan/reuse + kernel + per-call work; once-per-plan work is divided by reuse",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "family": "operators",
+      "example": "amdahl_serial_fraction",
+      "document": "knowledge/algorithms/operator-primitives.md",
+      "section": "把局部内核收益连接到完整 forward",
+      "inputs": {
+        "fraction": 0.1,
+        "local_speedup": 2
+      },
+      "assumptions": [
+        "No overlap; other work unchanged; no added adaptation cost."
+      ],
+      "evidence_class": "synthetic_arithmetic_or_counterexample",
+      "checks": [
+        {
+          "check": "serial_fraction_speedup",
+          "actual": {
+            "new_normalized_cost": 0.95,
+            "speedup": 1.0526315789473684
+          },
+          "expected": {
+            "new_normalized_cost": 0.95,
+            "speedup": 1.0526315789473684
+          },
+          "unit": "dimensionless",
+          "relation": "(1-f)+f/s; speedup is its reciprocal",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "family": "operators",
+      "example": "tuning_break_even",
+      "document": "knowledge/frameworks/triton-kernels.md",
+      "section": "调优回报与引擎验收",
+      "inputs": {
+        "tuning_s": 1.2,
+        "saved_us_per_call": 2,
+        "calls_per_step": 32
+      },
+      "assumptions": [
+        "Every counted call is in the valid domain and has the same saving.",
+        "Maintenance, residency, misses and overlap are excluded."
+      ],
+      "evidence_class": "synthetic_arithmetic_or_counterexample",
+      "checks": [
+        {
+          "check": "strict_tuning_threshold",
+          "actual": {
+            "cost_us": 1200000.0,
+            "strict_threshold_calls": 600000.0,
+            "minimum_integer_calls": 600001,
+            "strict_threshold_steps": 18750.0,
+            "minimum_integer_steps": 18751,
+            "calls_at_minimum_steps": 600032
+          },
+          "expected": {
+            "cost_us": 1200000,
+            "strict_threshold_calls": 600000,
+            "minimum_integer_calls": 600001,
+            "strict_threshold_steps": 18750,
+            "minimum_integer_steps": 18751,
+            "calls_at_minimum_steps": 600032
+          },
+          "unit": "us, calls, steps",
+          "relation": "N*2 us > 1.2 s; strict inequality also applies after dividing by 32 calls/step",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "family": "operators",
+      "example": "index_units",
+      "document": "knowledge/frameworks/triton-kernels.md",
+      "section": "指针、对齐与整数索引也是内核输入",
+      "inputs": {
+        "element_offset": 2147483648,
+        "element_B": 2
+      },
+      "assumptions": [
+        "This is an integer representability boundary, not a universal library/device indexing limit."
+      ],
+      "evidence_class": "synthetic_arithmetic_or_counterexample",
+      "checks": [
+        {
+          "check": "signed_index_and_byte_units",
+          "actual": {
+            "offset_bytes_GiB": 4.0,
+            "positive_offset_fits_signed_int32": false
+          },
+          "expected": {
+            "offset_bytes_GiB": 4,
+            "positive_offset_fits_signed_int32": false
+          },
+          "unit": "GiB and predicate",
+          "relation": "element offset * element size gives byte position; max signed int32 is 2**31 - 1",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "family": "decisions",
+      "example": "layout_conversion_break_even",
+      "document": "knowledge/system-semantics/design-synthesis.md",
+      "section": "布局改变后的完整成本与反转条件",
+      "inputs": {
+        "baseline_ms": 1.0,
+        "kernel_ms": 0.6,
+        "conversion_ms": 0.5
+      },
+      "assumptions": [
+        "Dependent non-overlapped conversion and computation.",
+        "Reuse count is integer; the same immutable converted data remains valid.",
+        "Additional capacity, invalidation, contention and synchronization costs are excluded."
+      ],
+      "evidence_class": "synthetic_arithmetic_or_counterexample",
+      "checks": [
+        {
+          "check": "conversion_cost_and_strict_threshold",
+          "actual": {
+            "once_ms": 1.1,
+            "strict_threshold_reuses": 1.25,
+            "minimum_integer_reuses": 2,
+            "at_two_old_ms": 2.0,
+            "at_two_new_ms": 1.7,
+            "one_reuse_improves": false,
+            "two_reuses_improve": true
+          },
+          "expected": {
+            "once_ms": 1.1,
+            "strict_threshold_reuses": 1.25,
+            "minimum_integer_reuses": 2,
+            "at_two_old_ms": 2,
+            "at_two_new_ms": 1.7,
+            "one_reuse_improves": false,
+            "two_reuses_improve": true
+          },
+          "unit": "ms, counts, predicates",
+          "relation": "0.5+0.6*N < 1.0*N iff N>1.25",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "family": "oracles",
+      "example": "identity_population_counterexamples",
+      "document": "knowledge/tools/correctness-oracles.md",
+      "section": "验证器也要能拒绝已知错误",
+      "inputs": {
+        "expected": {
+          "A": 17,
+          "B": 99
+        },
+        "cases": {
+          "complete": [
+            [
+              [
+                "A",
+                17
+              ],
+              [
+                "B",
+                99
+              ]
+            ],
+            [
+              "A",
+              "B"
+            ]
+          ],
+          "wrong_value": [
+            [
+              [
+                "A",
+                17
+              ],
+              [
+                "B",
+                17
+              ]
+            ],
+            [
+              "A",
+              "B"
+            ]
+          ],
+          "missing_result": [
+            [
+              [
+                "A",
+                17
+              ]
+            ],
+            [
+              "A"
+            ]
+          ],
+          "duplicate_result": [
+            [
+              [
+                "A",
+                17
+              ],
+              [
+                "B",
+                99
+              ],
+              [
+                "B",
+                99
+              ]
+            ],
+            [
+              "A",
+              "B"
+            ]
+          ],
+          "missing_terminal": [
+            [
+              [
+                "A",
+                17
+              ],
+              [
+                "B",
+                99
+              ]
+            ],
+            [
+              "A"
+            ]
+          ],
+          "duplicate_terminal": [
+            [
+              [
+                "A",
+                17
+              ],
+              [
+                "B",
+                99
+              ]
+            ],
+            [
+              "A",
+              "B",
+              "B"
+            ]
+          ],
+          "extra_result": [
+            [
+              [
+                "A",
+                17
+              ],
+              [
+                "B",
+                99
+              ],
+              [
+                "C",
+                0
+              ]
+            ],
+            [
+              "A",
+              "B",
+              "C"
+            ]
+          ],
+          "empty": [
+            [],
+            []
+          ]
+        }
+      },
+      "assumptions": [
+        "This example requires exactly one complete result and terminal event per expected identity.",
+        "A different task's cancellation/partial-output rules require a different expected population.",
+        "List multiplicities are retained; converting observed results to a dict would hide duplicates."
+      ],
+      "evidence_class": "synthetic_arithmetic_or_counterexample",
+      "checks": [
+        {
+          "check": "complete_identity_and_value_predicate",
+          "actual": {
+            "complete": true,
+            "wrong_value": false,
+            "missing_result": false,
+            "duplicate_result": false,
+            "missing_terminal": false,
+            "duplicate_terminal": false,
+            "extra_result": false,
+            "empty": false
+          },
+          "expected": {
+            "complete": true,
+            "wrong_value": false,
+            "missing_result": false,
+            "duplicate_result": false,
+            "missing_terminal": false,
+            "duplicate_terminal": false,
+            "extra_result": false,
+            "empty": false
+          },
+          "unit": "acceptance predicates",
+          "relation": "expected multiplicities = observed multiplicities = terminal multiplicities, and values match",
+          "passed": true
+        },
+        {
+          "check": "subset_and_empty_vacuous_truth",
+          "actual": {
+            "missing_subset_naively_passes": true,
+            "empty_naively_passes": true
+          },
+          "expected": {
+            "missing_subset_naively_passes": true,
+            "empty_naively_passes": true
+          },
+          "unit": "predicates",
+          "relation": "all() on retained correct values or an empty set does not establish population completeness",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "family": "oracles",
+      "example": "experiment_count_cost_counterexample",
+      "document": "knowledge/tools/statistical-experiments.md",
+      "section": "针对知识库作用安排受控构建实验",
+      "inputs": {
+        "old_count": 10,
+        "old_cost_each": 1,
+        "new_count": 5,
+        "new_cost_each": 3
+      },
+      "assumptions": [
+        "Arbitrary consistent cost units; experiment count is a proxy, not measured total cost."
+      ],
+      "evidence_class": "synthetic_arithmetic_or_counterexample",
+      "checks": [
+        {
+          "check": "fewer_experiments_can_cost_more",
+          "actual": {
+            "old_total": 10,
+            "new_total": 15,
+            "fewer_experiments": true,
+            "lower_total_cost": false
+          },
+          "expected": {
+            "old_total": 10,
+            "new_total": 15,
+            "fewer_experiments": true,
+            "lower_total_cost": false
+          },
+          "unit": "cost units and predicates",
+          "relation": "total cost = count * cost each; 5<10 but 15>10",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "family": "statistics",
+      "example": "previously_reviewed_interval_arithmetic",
+      "document": "knowledge/tools/statistical-experiments.md",
+      "section": "配对、区组与区间",
+      "inputs": {
+        "n": 16,
+        "mean_difference_ms": 2,
+        "sample_sd_ms": 1,
+        "given_t_critical": 2.131,
+        "zero_exceedance_n": 100,
+        "one_sided_alpha": 0.05
+      },
+      "assumptions": [
+        "The t critical value is supplied, not estimated by this script.",
+        "Arithmetic does not establish independent sampling, t-model assumptions, or statistical power.",
+        "The zero-exceedance bound assumes independent Bernoulli observations with a common exceedance probability."
+      ],
+      "evidence_class": "synthetic_arithmetic_or_counterexample",
+      "checks": [
+        {
+          "check": "paired_t_interval_using_stated_critical",
+          "actual": [
+            1.46725,
+            2.53275
+          ],
+          "expected": [
+            1.46725,
+            2.53275
+          ],
+          "unit": "ms",
+          "relation": "mean +/- t_critical * sample_sd / sqrt(n)",
+          "passed": true
+        },
+        {
+          "check": "zero_exceedance_upper_bound",
+          "actual": 0.029513049607039932,
+          "expected": 0.029513049607039932,
+          "unit": "probability",
+          "relation": "solve (1-q)^100=alpha for the one-sided upper bound",
+          "passed": true
+        }
+      ],
+      "additional_sections": [
+        "尾延迟与失败不能被均值掩盖"
+      ]
+    }
+  ],
+  "summary": {
+    "example_groups": 22,
+    "checks": 33,
+    "passed_checks": 33,
+    "failed_checks": 0,
+    "checks_by_family": {
+      "communication": 13,
+      "decisions": 1,
+      "operators": 10,
+      "oracles": 3,
+      "statistics": 2,
+      "systems": 4
+    }
+  },
+  "limits": [
+    "All timings, capacities and workloads are synthetic declared inputs, not measurements.",
+    "Passing arithmetic or synthetic predicates does not establish freedom of exploration, appropriate topic ownership or coverage of unfamiliar architectures.",
+    "Chapter hashes bind the accompanying text; fixtures are explicit and are not automatically extracted from prose.",
+    "A later chapter edit needs semantic review and, where its example changed, a fixture update.",
+    "These calculations do not establish backend legality, concurrency correctness, model quality, engine completion, knowledge usefulness or scientific novelty."
+  ],
+  "passed": true
+}

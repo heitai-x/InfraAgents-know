@@ -1,0 +1,525 @@
+{
+  "author": "communication_content",
+  "baseline_commit": "f640148464929f803a53b55e27ee4cbb83dc8657",
+  "edited_at": "2026-10-24",
+  "source_cutoff_inclusive": "2026-04-30",
+  "entries": [
+    {
+      "operation": "new",
+      "id": "K-HW-015",
+      "path": "hardware/cpu-gpu-overlap.md",
+      "category": "hardware",
+      "title": "CPU–GPU 重叠执行：完成依赖、缓冲预算与关键路径",
+      "summary": "从对象生存期、阶段依赖和共享资源推导 CPU–GPU 重叠方案、缓冲数量与可区分实验，区分提交、可见、消费和回收。",
+      "revision": 1,
+      "status": "seed",
+      "tags": [
+        "CPU-GPU",
+        "overlap",
+        "H2D",
+        "D2H",
+        "pinned memory",
+        "NUMA",
+        "stream",
+        "缓冲代次",
+        "关键路径",
+        "流水",
+        "可执行设计"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [
+          "cuda"
+        ],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-CUDA-ASYNC",
+        "S-CUDA-ALLOC",
+        "S-CUDA-BEST",
+        "S-TORCH-CUDA",
+        "S-LINUX-RESOURCES"
+      ],
+      "related": [
+        "K-HW-003",
+        "K-ALG-020",
+        "K-FW-003",
+        "K-ALG-008",
+        "K-SYS-001",
+        "K-SYS-004",
+        "K-HW-013"
+      ],
+      "evidence": [],
+      "sha256": "afac9f0039393a5d9e6f01d3cafb68bce0f9fade03aa68deb4e339f7e46366b9",
+      "updated_at": "2026-10-24",
+      "file_path": "knowledge/hardware/cpu-gpu-overlap.md",
+      "bytes": 12020,
+      "lines": 101
+    },
+    {
+      "operation": "new",
+      "id": "K-SYS-022",
+      "path": "system-semantics/distributed-execution-contracts.md",
+      "category": "system-semantics",
+      "title": "分布式执行契约：张量解释、通信提交与共同完成",
+      "summary": "把 TP、PP、EP 的数学分解落实为 count、dtype、rank 布局、逻辑代次、stream 提交和共同完成的可检查契约，并给出容量、关键路径与验证推导。",
+      "revision": 1,
+      "status": "seed",
+      "tags": [
+        "NCCL",
+        "collective",
+        "AllReduce",
+        "AllGather",
+        "ReduceScatter",
+        "TP",
+        "PP",
+        "EP",
+        "API contract",
+        "nonblocking group",
+        "count",
+        "rank layout",
+        "通信验证"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [
+          "cuda"
+        ],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-NCCL-COLLECTIVE",
+        "S-NCCL-GROUP",
+        "S-CUDA-ASYNC",
+        "S-TORCH-NUMERIC",
+        "S-RDMA",
+        "S-GPUDIRECT"
+      ],
+      "related": [
+        "K-SYS-005",
+        "K-ALG-015",
+        "K-HW-002",
+        "K-HW-014",
+        "K-SYS-009",
+        "K-HW-015",
+        "K-MODEL-003"
+      ],
+      "evidence": [],
+      "sha256": "4eec2570cc702e6b82ccb193058922c5508da5fecc47f94d40bd7cc366145db8",
+      "updated_at": "2026-10-24",
+      "file_path": "knowledge/system-semantics/distributed-execution-contracts.md",
+      "bytes": 14311,
+      "lines": 106
+    },
+    {
+      "id": "K-HW-003",
+      "path": "hardware/host-device-transfer.md",
+      "category": "hardware",
+      "title": "主机准备、DMA 与流水缓冲",
+      "summary": "主机准备、锁页、传输与消费者组成同一流水；依据对象复用和完成关系选择传输路径，并用局部、集成与系统观测区分提交优化和真实收益。",
+      "revision": 3,
+      "status": "seed",
+      "tags": [
+        "DMA",
+        "pinned memory",
+        "H2D",
+        "D2H",
+        "流水",
+        "API contract",
+        "可执行设计",
+        "wait_stream",
+        "record_stream"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [
+          "cuda"
+        ],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-CUDA-ASYNC",
+        "S-CUDA-BEST",
+        "S-CUDA-ALLOC",
+        "S-LINUX-IO",
+        "S-TORCH-CUDA"
+      ],
+      "related": [
+        "K-ALG-008",
+        "K-FW-003",
+        "K-MODEL-008",
+        "K-HW-012",
+        "K-HW-013",
+        "K-ALG-020",
+        "K-ALG-017",
+        "K-HW-015"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-24",
+      "sha256": "8d8a8ccc4f67e89cbab3c4baf9896d549e115a7503bcaa61b6e05b58cc20c162",
+      "operation": "revise",
+      "previous_revision": 2,
+      "file_path": "knowledge/hardware/host-device-transfer.md",
+      "bytes": 10119,
+      "lines": 93
+    },
+    {
+      "id": "K-SYS-005",
+      "path": "system-semantics/collective-ordering.md",
+      "category": "system-semantics",
+      "title": "集合通信：参与集合、操作顺序与失败传播",
+      "summary": "分布式前向要求共同的张量解释、通信顺序与失败传播；group 形成、操作入队、设备完成和应用提交须分别验证。",
+      "revision": 3,
+      "status": "seed",
+      "tags": [
+        "NCCL",
+        "collective",
+        "rank",
+        "死锁",
+        "分布式",
+        "API contract",
+        "nonblocking communicator",
+        "ncclInProgress",
+        "rank layout",
+        "共同完成"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [
+          "cuda"
+        ],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-NCCL-GROUP",
+        "S-NCCL-COLLECTIVE",
+        "S-CUDA-TOPOLOGY",
+        "S-CUDA-ASYNC"
+      ],
+      "related": [
+        "K-ALG-015",
+        "K-HW-002",
+        "K-SYS-009",
+        "K-HW-014",
+        "K-SYS-014",
+        "K-ALG-023",
+        "K-SYS-022"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-24",
+      "sha256": "74e9e7c694171602d09518dc7639298c4fd07109304c9918fb580501a4c25ad2",
+      "operation": "revise",
+      "previous_revision": 2,
+      "file_path": "knowledge/system-semantics/collective-ordering.md",
+      "bytes": 9463,
+      "lines": 82
+    }
+  ],
+  "new_sources": [],
+  "source_read_ledger": [
+    {
+      "source_id": "S-NCCL-COLLECTIVE",
+      "path": "references/S-NCCL-COLLECTIVE/fulltext.txt",
+      "read_ranges": [
+        [
+          1,
+          51
+        ]
+      ],
+      "coverage": "full archived text",
+      "sections": [
+        "Collective Operations",
+        "AllReduce",
+        "Broadcast",
+        "Reduce",
+        "AllGather",
+        "ReduceScatter"
+      ],
+      "supports": "matching rank/count/dtype; root is communicator rank; rank-ordered gather/scatter",
+      "source_sha256": "03fee76f12d44b950f31ce903bf28d4268bab2e65f805d62523c6dff3ddc59eb"
+    },
+    {
+      "source_id": "S-NCCL-GROUP",
+      "path": "references/S-NCCL-GROUP/fulltext.txt",
+      "read_ranges": [
+        [
+          1,
+          416
+        ]
+      ],
+      "coverage": "full archived text",
+      "sections": [
+        "Management Of Multiple GPUs From One Thread",
+        "Aggregated Operations",
+        "Nonblocking Group Operation"
+      ],
+      "supports": "group calls may not enqueue until group end; nonblocking ncclInProgress requires successful issue before dependent CUDA operations",
+      "source_sha256": "75d2257017fc2e2409f7a672b9f2bc5fc01a54a4c098612f3abf8d83b5691ba5"
+    },
+    {
+      "source_id": "S-CUDA-ASYNC",
+      "path": "references/S-CUDA-ASYNC/fulltext.txt",
+      "read_ranges": [
+        [
+          3970,
+          4085
+        ],
+        [
+          4360,
+          4435
+        ],
+        [
+          4600,
+          4705
+        ]
+      ],
+      "coverage": "relevant complete subsections and surrounding context",
+      "sections": [
+        "3.2.6 Page-Locked Host Memory",
+        "3.2.6.2 Write-Combining Memory",
+        "3.2.6.3 Mapped Memory",
+        "3.2.8.1-4 Asynchronous Concurrent Execution",
+        "3.2.8.5.2-5 Default Stream, Explicit/Implicit Synchronization, Overlapping Behavior"
+      ],
+      "supports": "pinning/mapping conditions; async and concurrent distinct; default stream modes; device and stream completion boundaries",
+      "source_sha256": "1f45872f110694d59f7e9b55ea37150648376f92ba85b0c3922b712a73736a32"
+    },
+    {
+      "source_id": "S-CUDA-ALLOC",
+      "path": "references/S-CUDA-ALLOC/fulltext.txt",
+      "read_ranges": [
+        [
+          46538,
+          46585
+        ],
+        [
+          46625,
+          46755
+        ]
+      ],
+      "coverage": "relevant subsection ranges",
+      "sections": [
+        "11.1 Introduction",
+        "11.3 API Fundamentals"
+      ],
+      "supports": "pointer available before allocation operation; cross-stream use after allocation; free after all uses",
+      "source_sha256": "1f45872f110694d59f7e9b55ea37150648376f92ba85b0c3922b712a73736a32"
+    },
+    {
+      "source_id": "S-CUDA-BEST",
+      "path": "references/S-CUDA-BEST/fulltext.txt",
+      "read_ranges": [
+        [
+          390,
+          430
+        ],
+        [
+          560,
+          855
+        ],
+        [
+          2795,
+          2825
+        ]
+      ],
+      "coverage": "relevant subsection ranges",
+      "sections": [
+        "8.1.1 CPU Timers",
+        "9.1 Data Transfer Between Host and Device",
+        "9.1.1 Pinned Memory",
+        "9.1.2 Asynchronous and Overlapping Transfers",
+        "9.4 NUMA Best Practices"
+      ],
+      "supports": "minimizing transfers and batching; pinned cost; resource-dependent overlap; NUMA conditions",
+      "interpretation_limit": "Legacy default-stream simplifications constrained by same-version Programming Guide; historic GPU bandwidth examples not adopted as current facts.",
+      "source_sha256": "11b3bf6520b02e730c2ce3a875c198563a5f432b405bec29350cf8b2dd4cffe2"
+    },
+    {
+      "source_id": "S-TORCH-CUDA",
+      "path": "references/S-TORCH-CUDA/fulltext.txt",
+      "read_ranges": [
+        [
+          279,
+          379
+        ],
+        [
+          1260,
+          1296
+        ]
+      ],
+      "coverage": "complete relevant named sections",
+      "sections": [
+        "Asynchronous execution",
+        "CUDA streams",
+        "Use pinned memory buffers"
+      ],
+      "supports": "wait_stream orders execution; record_stream protects allocator lifetime; pinning expensive",
+      "source_sha256": "4756fc37be9c52d4128b5f4b46f996fddb8b136a9ef51183a6f0e1c7d49b18df"
+    },
+    {
+      "source_id": "S-LINUX-RESOURCES",
+      "path": "references/S-LINUX-RESOURCES/fulltext.txt",
+      "read_ranges": [
+        [
+          2280,
+          2405
+        ]
+      ],
+      "coverage": "Cpuset section through effective memory node semantics",
+      "sections": [
+        "Cpuset",
+        "Cpuset Interface Files"
+      ],
+      "supports": "requested vs effective CPU and memory node sets; migration cost and potentially incomplete migration",
+      "source_sha256": "458dd3fccfb13be3947b2a2f96f4f340f24c9ca39b7a2713be09a62e1b33d412"
+    },
+    {
+      "source_id": "S-RDMA",
+      "path": "references/S-RDMA/fulltext.txt",
+      "read_ranges": [
+        [
+          145,
+          175
+        ],
+        [
+          267,
+          352
+        ]
+      ],
+      "coverage": "post_send return/notes and poll_cq description/status/notes",
+      "sections": [
+        "ibv_post_send.3 NOTES",
+        "ibv_poll_cq.3 DESCRIPTION and NOTES"
+      ],
+      "supports": "send source lifetime; inline exception; completions do not all mean success; failed completion fields restricted",
+      "source_sha256": "9f4bea8bc130fc7dcdf0b53d20ce7269555cddd2a7c67e5d54c6dbd7a55b2720"
+    },
+    {
+      "source_id": "S-GPUDIRECT",
+      "path": "references/S-GPUDIRECT/fulltext.txt",
+      "read_ranges": [
+        [
+          350,
+          395
+        ]
+      ],
+      "coverage": "complete §2.7 plus neighboring context",
+      "sections": [
+        "2.7 Synchronization and Memory Ordering"
+      ],
+      "supports": "third-party DMA, BAR registration and dependent CUDA submission/ordering boundaries",
+      "source_sha256": "657c37b1e20c78292dddfc81c172f676ec5868c3f39884127f0f636082fced8e"
+    },
+    {
+      "source_id": "S-TORCH-NUMERIC",
+      "path": "references/S-TORCH-NUMERIC/fulltext.txt",
+      "read_ranges": [
+        [
+          1,
+          155
+        ]
+      ],
+      "coverage": "numeric introduction and relevant named accuracy sections, not entire archived text",
+      "sections": [
+        "Numerical accuracy",
+        "Batched computations or slice computations"
+      ],
+      "supports": "non-associativity and no universal bitwise identity for mathematical equivalence",
+      "interpretation_limit": "Only general numeric relation used; did not adopt all archived examples.",
+      "source_sha256": "bb6b2d8154a10f8f3b15e5ae4465cbc8d833067046964fc6b4d66dc036131b45"
+    },
+    {
+      "source_id": "S-CUDA-TOPOLOGY",
+      "path": "references/S-CUDA-TOPOLOGY/fulltext.txt",
+      "read_ranges": [
+        [
+          7445,
+          7540
+        ],
+        [
+          7600,
+          7650
+        ]
+      ],
+      "coverage": "selected device-system portions; existing provenance retained",
+      "sections": [
+        "3.2.9 Multi-Device System",
+        "Device Selection"
+      ],
+      "supports": "device/stream context; current chapter provenance inherited, not claiming a full guide reread",
+      "source_sha256": "1f45872f110694d59f7e9b55ea37150648376f92ba85b0c3922b712a73736a32"
+    }
+  ],
+  "preserved_section_checks": {
+    "K-HW-003": {
+      "unchanged_level_2_sections": [
+        "准备不是一次复制",
+        "三阶段流水的推导",
+        "何时减少传输次数更有效",
+        "多级输入与共享带宽",
+        "缓冲池的槽位与代次"
+      ],
+      "changed_level_2_sections": [
+        "共享路径的替代方案",
+        "来源与推导",
+        "延伸阅读"
+      ],
+      "removed_level_2_sections": [],
+      "new_level_2_sections": [
+        "从观测决定保留哪一种传输路径",
+        "从 API 语义到可检查的生产消费边界"
+      ],
+      "unchanged_text_ignoring_separator_boundary": [
+        "准备不是一次复制",
+        "三阶段流水的推导",
+        "何时减少传输次数更有效",
+        "多级输入与共享带宽",
+        "缓冲池的槽位与代次",
+        "共享路径的替代方案"
+      ],
+      "note": "Inserting sections before provenance moves the separator out of the previous section; its prior body text remains unchanged."
+    },
+    "K-SYS-005": {
+      "unchanged_level_2_sections": [
+        "集体操作的语义对象",
+        "动态请求如何保持共同视图",
+        "失败是什么状态转换",
+        "调度代次与通信代次共同推进"
+      ],
+      "changed_level_2_sections": [
+        "错误传播与恢复证据",
+        "来源与推导",
+        "延伸阅读"
+      ],
+      "removed_level_2_sections": [],
+      "new_level_2_sections": [
+        "让数学相同的操作也具有相同的张量解释",
+        "Group 的提交完成不同于通信完成",
+        "从可辨识反例到系统验收"
+      ],
+      "unchanged_text_ignoring_separator_boundary": [
+        "集体操作的语义对象",
+        "动态请求如何保持共同视图",
+        "失败是什么状态转换",
+        "调度代次与通信代次共同推进",
+        "错误传播与恢复证据"
+      ],
+      "note": "Inserting sections before provenance moves the separator out of the previous section; its prior body text remains unchanged."
+    }
+  },
+  "arithmetic_and_static_check_script": "/workspace/scratch/db4271884843/communication_content_checks.py",
+  "arithmetic_and_static_check_result": "/workspace/scratch/db4271884843/communication_content_checks.json",
+  "validation_scope": "13 independent arithmetic/timeline checks; local links, headings, no code fences, provenance marker and git diff whitespace. No GPU, NCCL, model calls or serving benchmark.",
+  "review_points": [
+    "Ideal pipeline formula assumes independent stage resources, fixed durations, sufficient bounded buffers and no extra cross-batch dependency. Slot bound assumes deterministic lifetime/period and does not permit reuse based on average lifetime.",
+    "NCCL nonblocking group issue success is distinct from stream device completion and application commit.",
+    "Collective N notation is explicitly mathematical; exact function count semantics must be checked per API. No unsupported concrete ncclSend/Recv signature claims.",
+    "Ring alpha-bandwidth model is explicitly a chosen ideal algorithm, not NCCL automatic algorithm or measured device performance.",
+    "CUDA default-stream rules qualified by legacy/PTDS/nonblocking, not blindly copying simplified Best Practices text.",
+    "All original source archives unchanged; existing body sections preserved except necessary provenance/read-more additions and new sections. Root owns catalog/history/index/version integration."
+  ]
+}

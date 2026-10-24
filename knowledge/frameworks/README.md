@@ -9,8 +9,8 @@
 | [K-FW-003：Stream 与分配器：依赖顺序和对象生存期](streams-allocator.md) | v2 · seed | stream 解决执行顺序，内存生存期解决地址何时可重用；正确的异步程序需要同时满足两种关系。 |
 | [K-FW-004：编译与动态形状：Guard、分桶和变体成本](compile-dynamic-shapes.md) | v2 · seed | 图获取、IR/lowering、布局和 guard 将函数映射到目标程序；编译缓存及在线变体必须保持副作用、容量与生命周期契约。 |
 | [K-FW-005：CUDA Graph：捕获边界、计划状态与变长服务](cuda-graph-buffers.md) | v2 · seed | CUDA Graph 的固定地址、动态计划和在途内容所有权需共同验证；卸载、adapter 切换和图池竞争改变合法性与收益。 |
-| [K-FW-006：Attention Backend：语义、布局与执行契约的交集](attention-backends.md) | v2 · seed | 具体版本接口的 mask、head、分页与计划条件决定 backend 可替换性；分区合并和转换开销需纳入完整验证。 |
-| [K-FW-007：Triton Kernel：块程序、布局与融合边界](triton-kernels.md) | v2 · seed | 由真实矩阵形状推导 program、线程与片上资源，再用合法性和端到端收益约束 tile、流水及调优预算。 |
+| [K-FW-006：Attention Backend：语义、布局与执行契约的交集](attention-backends.md) | v4 · seed | 固定Attention后端的mask、布局、KV写入、plan/run、workspace与fallback条件；比较准备、转换与执行的完整成本。 |
+| [K-FW-007：Triton Kernel：块程序、布局与融合边界](triton-kernels.md) | v4 · seed | 块程序、布局与融合边界连接固定Triton实现；解释descriptor、log2统计、索引范围与调优成本的适用条件。 |
 | [K-FW-008：MLX 服务：惰性求值、编译与请求状态](mlx-serving.md) | v2 · seed | MLX 的数组表达式可以延迟执行，服务循环必须明确计算何时提交、何时完成和何时释放状态。 |
 | [K-FW-009：Neuron/NxD：静态程序承接动态生成](neuron-serving.md) | v2 · seed | Neuron 服务通过形状桶、设备驻留状态和分布式执行组，把可变请求映射到编译后的程序族。 |
 | [K-FW-010：NKI：Partition 轴、片上生存期与 Attention 数据流](nki-tiling.md) | v2 · seed | NKI 的 tile 是带硬件轴语义的片上对象；布局与生存期共同决定 DMA、矩阵和归约引擎的供给。 |

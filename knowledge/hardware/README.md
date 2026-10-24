@@ -5,8 +5,8 @@
 | 条目 | 版本与状态 | 核心认识 |
 |---|---|---|
 | [K-HW-001：容量、算术强度与服务 Roofline](memory-and-roofline.md) | v2 · seed | 容量决定系统能容纳哪些状态，带宽与计算能力决定搬运和处理这些状态的下界，关键路径决定哪些下界实际显现。 |
-| [K-HW-002：通信拓扑：从 Rank 组到瓶颈链路](topology-parallelism.md) | v2 · seed | 多卡性能由数据经过的实际路径决定；rank 数只是拓扑模型的一部分。 |
-| [K-HW-003：主机准备、DMA 与流水缓冲](host-device-transfer.md) | v2 · seed | 输入流水的吞吐取决于准备、传输和计算三个阶段的平衡；数据可见性和缓冲所有权决定能否正确重叠。 |
+| [K-HW-002：通信拓扑：从 Rank 组到瓶颈链路](topology-parallelism.md) | v3 · seed | 拓扑、方向与共享链路决定通信成本；将理想ring启动项和发送流量放到具体带宽假设中解释。 |
+| [K-HW-003：主机准备、DMA 与流水缓冲](host-device-transfer.md) | v4 · seed | 主机准备、DMA、计算与消费按对象依赖连接；量化有限批、各池槽位与共享带宽，允许不同放置与传输方式。 |
 | [K-HW-004：数值格式、打包布局与矩阵指令](precision-and-kernel-support.md) | v2 · seed | 固定架构/指令能力、量化参数布局与实际 dispatch 分别核验，防止把存储格式、指令支持和目标内核性能混为一谈。 |
 | [K-HW-005：CUDA 平台：SM 数据流、占用率与执行粒度](cuda-execution.md) | v2 · seed | CUDA 优化应把算法的数据复用映射到 SM 的寄存器、共享存储和 warp 执行，再判断主机提交是否成为瓶颈。 |
 | [K-HW-006：ROCm 平台：CU、Wave 与 AMD 算子路径](rocm-execution.md) | v2 · seed | ROCm 移植应保持模型语义，同时按 AMD 的执行资源、矩阵指令和库 dispatch 重新推导数据布局与粒度。 |

@@ -1,8 +1,8 @@
 # Astra 截止日前的 InfraAgents base 知识库
 
-当前为 base-gpt-6-astra-2026-04-30-v2.1，已通过独立审查闭环，来源版本上限 2026-04-30（包含该日）。保留原有 73 篇与八类组织，已接入 35 个新专题，共 108 篇、114 项固定来源、96 份历史修订。建设与验收范围见 [构建记录](../docs/BUILD-STATUS.md)，本次独立审查、修订及实际读取验证见 [复审记录](../docs/evidence/knowledge-review-loop-20261023/round-2/review.md)。全部当前章节仍为 seed，不表示已有真实 Task 性能收益。
+当前修订版为 base-gpt-6-astra-2026-04-30-v2.2-r1，来源版本上限为 2026-04-30（包含该日）。当前108篇专题、114项固定来源全部保留原有知识对象；相对v2.1深化11篇，撤回上一轮未发布提案的6个新设章节。117份在用专题旧修订和6篇撤回稿分别保留准确身份。当前审查与验证见 [本轮记录](../docs/evidence/knowledge-open-exploration-20261024/review.md)，旧v2.2通过记录只属于其当时内容。
 
-[系统组合](system-semantics/design-synthesis.md) → [设计入口](DESIGN.md) → [主题索引](INDEX.md)；[诊断入口](DIAGNOSIS.md) 与 [覆盖矩阵](COVERAGE.md) 保留反向阅读路径。
+[主题索引](INDEX.md)、[设计入口](DESIGN.md)、[诊断入口](DIAGNOSIS.md) 和 [覆盖矩阵](COVERAGE.md) 提供可选阅读路径。[系统组合](system-semantics/design-synthesis.md) 展示条件化例子；它们不要求所有Agent采用同一组件划分、研发顺序或方案集合。
 
 模型决定计算与状态；制品与加载建立可执行参数；算法决定更新、复用和调度；硬件与框架决定执行；协议与负载决定用户目标；工具验证机制预测。基础机制、公式、容量算例与未受影响章节保持连续。具体实现事实以本版本原文为准。
 

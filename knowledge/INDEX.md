@@ -25,7 +25,7 @@
 | [K-ALG-013：Prefill/Decode 分离：状态传输与队列耦合](algorithms/disaggregated-serving.md) | v2 · seed | 分离式服务把两个阶段的资源策略解耦，同时引入 KV 传输、布局转换和跨节点状态提交。 |
 | [K-ALG-014：多 LoRA 服务：低秩计算、驻留与缓存身份](algorithms/lora-serving.md) | v2 · seed | LoRA 为共享基座增加低秩映射；多适配器服务将模型复用问题转换成按请求选择增量权重的问题。 |
 | [K-ALG-015：推理并行：张量分解、流水、专家与上下文](algorithms/parallelism.md) | v2 · seed | 并行策略改变张量归属和同步边界；选择依据是每阶段的计算、状态与通信分解。 |
-| [K-ALG-016：基础算子：从张量契约到合法融合](algorithms/operator-primitives.md) | v2 · seed | 算子契约包含轴、布局、数值和别名；合法融合需要保持函数与状态关系，再比较字节、启动和资源占用。 |
+| [K-ALG-016：基础算子：从张量契约到合法融合](algorithms/operator-primitives.md) | v4 · seed | 从函数、张量地址与别名推导合法执行；展开QKV、归一化、RoPE和融合成本，按所选机制检查数值与真实消费者。 |
 | [K-ALG-017：多级驻留：有效副本、预取、淘汰与重算](algorithms/tiered-residency.md) | v1 · seed | 多级驻留维护有效版本与在途副本，并联合比较保留、预取、淘汰和重算；三级容量可行不等于在线延迟可行。 |
 | [K-ALG-018：KV 卸载与预取：读集合、恢复点与迁移预算](algorithms/kv-offload-prefetch.md) | v2 · seed | KV 卸载按实际可见集合与共同恢复点组织；暂停恢复、前缀命中和活跃 decode 的持续传输需要不同预算。 |
 | [K-ALG-019：权重与专家卸载：重用、路由与在途版本](algorithms/weight-expert-offload.md) | v1 · seed | 权重与专家卸载同时依赖批次重用、专家并集、热点和版本；按 token 稀疏不能直接推断 batch 读取稀疏。 |
@@ -65,8 +65,8 @@
 | 条目 | 版本与状态 | 核心认识 |
 |---|---|---|
 | [K-HW-001：容量、算术强度与服务 Roofline](hardware/memory-and-roofline.md) | v2 · seed | 容量决定系统能容纳哪些状态，带宽与计算能力决定搬运和处理这些状态的下界，关键路径决定哪些下界实际显现。 |
-| [K-HW-002：通信拓扑：从 Rank 组到瓶颈链路](hardware/topology-parallelism.md) | v2 · seed | 多卡性能由数据经过的实际路径决定；rank 数只是拓扑模型的一部分。 |
-| [K-HW-003：主机准备、DMA 与流水缓冲](hardware/host-device-transfer.md) | v2 · seed | 输入流水的吞吐取决于准备、传输和计算三个阶段的平衡；数据可见性和缓冲所有权决定能否正确重叠。 |
+| [K-HW-002：通信拓扑：从 Rank 组到瓶颈链路](hardware/topology-parallelism.md) | v3 · seed | 拓扑、方向与共享链路决定通信成本；将理想ring启动项和发送流量放到具体带宽假设中解释。 |
+| [K-HW-003：主机准备、DMA 与流水缓冲](hardware/host-device-transfer.md) | v4 · seed | 主机准备、DMA、计算与消费按对象依赖连接；量化有限批、各池槽位与共享带宽，允许不同放置与传输方式。 |
 | [K-HW-004：数值格式、打包布局与矩阵指令](hardware/precision-and-kernel-support.md) | v2 · seed | 固定架构/指令能力、量化参数布局与实际 dispatch 分别核验，防止把存储格式、指令支持和目标内核性能混为一谈。 |
 | [K-HW-005：CUDA 平台：SM 数据流、占用率与执行粒度](hardware/cuda-execution.md) | v2 · seed | CUDA 优化应把算法的数据复用映射到 SM 的寄存器、共享存储和 warp 执行，再判断主机提交是否成为瓶颈。 |
 | [K-HW-006：ROCm 平台：CU、Wave 与 AMD 算子路径](hardware/rocm-execution.md) | v2 · seed | ROCm 移植应保持模型语义，同时按 AMD 的执行资源、矩阵指令和库 dispatch 重新推导数据布局与粒度。 |
@@ -90,8 +90,8 @@
 | [K-FW-003：Stream 与分配器：依赖顺序和对象生存期](frameworks/streams-allocator.md) | v2 · seed | stream 解决执行顺序，内存生存期解决地址何时可重用；正确的异步程序需要同时满足两种关系。 |
 | [K-FW-004：编译与动态形状：Guard、分桶和变体成本](frameworks/compile-dynamic-shapes.md) | v2 · seed | 图获取、IR/lowering、布局和 guard 将函数映射到目标程序；编译缓存及在线变体必须保持副作用、容量与生命周期契约。 |
 | [K-FW-005：CUDA Graph：捕获边界、计划状态与变长服务](frameworks/cuda-graph-buffers.md) | v2 · seed | CUDA Graph 的固定地址、动态计划和在途内容所有权需共同验证；卸载、adapter 切换和图池竞争改变合法性与收益。 |
-| [K-FW-006：Attention Backend：语义、布局与执行契约的交集](frameworks/attention-backends.md) | v2 · seed | 具体版本接口的 mask、head、分页与计划条件决定 backend 可替换性；分区合并和转换开销需纳入完整验证。 |
-| [K-FW-007：Triton Kernel：块程序、布局与融合边界](frameworks/triton-kernels.md) | v2 · seed | 由真实矩阵形状推导 program、线程与片上资源，再用合法性和端到端收益约束 tile、流水及调优预算。 |
+| [K-FW-006：Attention Backend：语义、布局与执行契约的交集](frameworks/attention-backends.md) | v4 · seed | 固定Attention后端的mask、布局、KV写入、plan/run、workspace与fallback条件；比较准备、转换与执行的完整成本。 |
+| [K-FW-007：Triton Kernel：块程序、布局与融合边界](frameworks/triton-kernels.md) | v4 · seed | 块程序、布局与融合边界连接固定Triton实现；解释descriptor、log2统计、索引范围与调优成本的适用条件。 |
 | [K-FW-008：MLX 服务：惰性求值、编译与请求状态](frameworks/mlx-serving.md) | v2 · seed | MLX 的数组表达式可以延迟执行，服务循环必须明确计算何时提交、何时完成和何时释放状态。 |
 | [K-FW-009：Neuron/NxD：静态程序承接动态生成](frameworks/neuron-serving.md) | v2 · seed | Neuron 服务通过形状桶、设备驻留状态和分布式执行组，把可变请求映射到编译后的程序族。 |
 | [K-FW-010：NKI：Partition 轴、片上生存期与 Attention 数据流](frameworks/nki-tiling.md) | v2 · seed | NKI 的 tile 是带硬件轴语义的片上对象；布局与生存期共同决定 DMA、矩阵和归约引擎的供给。 |
@@ -121,8 +121,8 @@
 | [K-TOOLS-003：Kernel 计数器：吞吐、访存与 Replay 语境](tools/kernel-counter-replay.md) | v2 · seed | 硬件计数器帮助识别单 kernel 的资源限制，但它测到的执行可能与正常并发服务具有不同环境。 |
 | [K-TOOLS-004：框架 Profiler：算子归属、内存与图边界](tools/framework-profiler-scope.md) | v2 · seed | 框架 profiler 解释模型操作怎样落到设备工作，并通过 shape、调用栈与内存事件连接两层视图。 |
 | [K-TOOLS-005：失败分析：最早偏离、最小复现与机制归因](tools/failure-evidence.md) | v2 · seed | 失败记录的价值在于还原系统从哪一个状态开始偏离预期，并区分输入、实现、资源和外部环境。 |
-| [K-TOOLS-006：正确性 Oracle：函数参考、状态变形与服务契约](tools/correctness-oracles.md) | v3 · seed | 正确性验证需要一组互补的 oracle：数值函数、状态转换、采样分布和外部协议分别有可检查的关系。 |
-| [K-TOOLS-007：性能实验：独立重复、效应量与尾部证据](tools/statistical-experiments.md) | v1 · seed | 性能结论需要与独立重复层级相匹配的效应量和不确定性；尾部失败、搜索偏差和保留验证不能由样本数量替代。 |
+| [K-TOOLS-006：正确性 Oracle：函数参考、状态变形与服务契约](tools/correctness-oracles.md) | v5 · seed | 独立数值、身份与协议参考及负对照按Task和所选机制检查；缺失、重复或空集不能冒充完整结果。 |
+| [K-TOOLS-007：性能实验：独立重复、效应量与尾部证据](tools/statistical-experiments.md) | v3 · seed | 重复层级、效应量和结论范围；可选知识条件实验区分交付失败、成本与删失，不向Agent规定构建流程。 |
 
 ## 工作负载
 
@@ -152,17 +152,17 @@
 | [K-SYS-002：请求身份：逻辑序列、批次视图与结果归属](system-semantics/request-batch-identity.md) | v2 · seed | 请求是长期语义对象，batch 行与物理槽是临时执行位置；正确性依赖它们之间可追溯的映射。 |
 | [K-SYS-003：位置、Mask 与缓存：同一可见性关系的三种表示](system-semantics/position-mask-cache.md) | v3 · seed | 缓存中的内容必须对应模型定义的逻辑位置；mask 决定读取集合，物理布局只决定这些内容放在哪里。 |
 | [K-SYS-004：取消与完成：业务终止、设备排空和资源回收](system-semantics/cancellation-resource-completion.md) | v2 · seed | 取消撤销未来服务意图，完成证明既有工作已结束；物理资源重用必须等待最后一个使用者。 |
-| [K-SYS-005：集合通信：参与集合、操作顺序与失败传播](system-semantics/collective-ordering.md) | v2 · seed | 分布式前向是一组共同执行协议；每个 rank 的局部控制流必须形成匹配的通信序列。 |
+| [K-SYS-005：集合通信：参与集合、操作顺序与失败传播](system-semantics/collective-ordering.md) | v4 · seed | 集合通信连接参与者、张量解释、count和完成关系；固定NCCL组提交语义及可辨识反例支持所选边界的验证。 |
 | [K-SYS-006：工程认识如何成为可迁移的专家知识](system-semantics/evidence-and-independent-checks.md) | v2 · seed | 知识的增量是对系统机制与设计关系的新增解释；运行结果为这些解释提供事实、区分和修正。 |
 | [K-SYS-007：输入输出语义：Tokenizer、Chat Template 与流式文本](system-semantics/tokenization-io.md) | v3 · seed | 模型处理的是规范化后的 token/特征序列，服务协议必须精确保存从用户输入到模型输入再到输出文本的映射。 |
-| [K-SYS-008：服务协议：接收、流式背压与终止语义](system-semantics/service-protocol.md) | v2 · seed | 推理服务将内部生成状态映射为可观察的网络事件；接收、执行完成和客户端收到结果是不同的完成点。 |
+| [K-SYS-008：服务协议：接收、流式背压与终止语义](system-semantics/service-protocol.md) | v4 · seed | 对外协议、发送缓冲、背压与终止语义依Task和具体接口解释；结果交付与资源完成分别核对。 |
 | [K-SYS-009：分布式状态迁移：身份、传输与提交点](system-semantics/distributed-state-transfer.md) | v2 · seed | 状态迁移是一项所有权和可见性协议；字节到达只有在布局和版本被共同解释后才成为可用模型状态。 |
-| [K-SYS-010：系统设计推导：把模型、缓存、执行与目标组合起来](system-semantics/design-synthesis.md) | v3 · seed | 把任务、模型状态、资源账、候选、组合约束和验证连成设计链；CPU算例与十二类系统场景提供贯通阅读入口。 |
+| [K-SYS-010：系统设计推导：把模型、缓存、执行与目标组合起来](system-semantics/design-synthesis.md) | v5 · seed | 在声明条件下推导模型、状态、资源与执行关系；场景不穷尽候选，不规定组件划分、研发顺序或任务外功能。 |
 | [K-SYS-011：模型生命周期：加载、就绪、排空与版本切换](system-semantics/model-lifecycle.md) | v1 · seed | 模型就绪需要完整制品、执行路径和容量；请求绑定版本，新旧并存、排空和卸载由共同生命周期约束。 |
 | [K-SYS-012：内存分配：地址、容量与在途所有权](system-semantics/memory-allocators.md) | v1 · seed | 分配器同时管理地址、物理容量与异步所有权；比较连续池、块表和虚拟映射时必须计入碎片、工作区和在途页。 |
 | [K-SYS-013：分布式 KV 存储：目录、有效副本与可恢复状态](system-semantics/distributed-kv-store.md) | v1 · seed | 分布式 KV 目录只定位候选状态；有效副本、共同恢复点、目标可见性与排队/传输成本决定真实可复用性。 |
 | [K-SYS-014：推理服务恢复：提交边界、执行组与重试身份](system-semantics/serving-recovery.md) | v1 · seed | 恢复需要明确计算、确认与外部提交边界，以及唯一提交权；可重算 KV 不等于可恢复整个请求或恰好一次交付。 |
-| [K-SYS-015：服务主机运行时：执行域、队列与缓冲所有权](system-semantics/host-runtime.md) | v1 · seed | 主机执行域、队列和缓冲所有权共同限制推理服务；背压与取消必须连接模型调度和在途资源完成。 |
+| [K-SYS-015：服务主机运行时：执行域、队列与缓冲所有权](system-semantics/host-runtime.md) | v3 · seed | 执行域、队列与缓冲的成本和完成关系；资源有界要求可由准入、额度或队列等不同机制实现。 |
 | [K-SYS-016：租户隔离：资源份额、缓存命名空间与故障边界](system-semantics/tenant-isolation.md) | v1 · seed | 租户身份、缓存权限、资源限额和故障域需要分别约束；固定文档区分 cgroup、time-slicing、MPS 与 MIG 资源契约。 |
 | [K-SYS-017：向量检索与 RAG：索引、版本与端到端质量](system-semantics/retrieval-pipeline.md) | v1 · seed | 检索的距离契约、候选过滤和索引版本共同决定合法结果；Flat/IVF/图搜索与压缩需连接材料相关性和完整 RAG 时间预算。 |
 | [K-SYS-018：推理存储服务：制品、缓存、索引与提交记录](system-semantics/storage-services.md) | v1 · seed | 权重、KV、索引和提交记录具有不同持久性；版本清单、对象可见性、分发与恢复竞争共同决定推理存储契约。 |

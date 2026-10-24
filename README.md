@@ -2,12 +2,14 @@
 
 InfraAgents 的独立知识仓库。不同分支承载不同内容版本，保持相同的目录、章节 ID 和现有读取接口。
 
-当前分支：**gpt-6-astra-2026-04-30**。当前内容版本 v2.1 已通过独立审查闭环：108 个 seed 专题、114 项固定来源和 12 类完整设计场景。本次修正 MoE 算例和 HF 缓存来源归因，保留旧修订与原始归档；来源版本上限仍为 2026-04-30。两轮发现、修订及实际运行时验证见 [独立复审](docs/evidence/knowledge-review-loop-20261023/round-2/review.md)，交付范围见 [交付记录](docs/BUILD-STATUS.md) 和 [覆盖说明](docs/inference-coverage.md)。知识库审查通过不代表真实 Task 的模型质量或服务性能已验证。
+目标内容分支为 **gpt-6-astra-2026-04-30**。当前本地修订版 **v2.2-r1** 保持 **108 篇专题、114 项固定来源**，相对 v2.1 深化 11 篇原专题。上一版六个新设章节已从活动目录撤回：有用的地址、API、缓冲和通信增量归回原章，重复机制与通用构建流程不再另立知识对象。来源上限仍为 2026-04-30。
+
+研究目标保持为 Agent 从空工程构建并优化完整推理引擎。这个目标不预设组件划分、研发阶段或候选集合；[使用问题与探索边界](docs/knowledge-use-cases.md) 提供无序、非穷尽的问题示例。[本轮复审](docs/evidence/knowledge-open-exploration-20261024/review.md) 解释撤回与归并决定，[变更清单](docs/actionable-knowledge/change-manifest.json) 保存当前身份。旧v2.2的通过记录仅属于其当时的内容，不能证明新组织合理或Agent探索行为未受影响。
 
 | 分支 | 内容 |
 |---|---|
 | [main](https://github.com/heitai-x/InfraAgents-know/tree/main) | 原始未限时 base，保留初始来源和章节历史；不作模型训练时间声明。 |
-| [gpt-6-astra-2026-04-30](https://github.com/heitai-x/InfraAgents-know/tree/gpt-6-astra-2026-04-30) | 来源版本上限为 2026-04-30，在原 73 篇基础上完成 35 篇新增及原文修订，覆盖已声明的推理系统与依赖平台范围。 |
+| [gpt-6-astra-2026-04-30](https://github.com/heitai-x/InfraAgents-know/tree/gpt-6-astra-2026-04-30) | 来源版本上限为 2026-04-30，当前修订保持108个原专题，深化11篇；问题入口不规定构建路线。内容身份以检出的VERSION.json为准。 |
 
 从 [设计入口](knowledge/DESIGN.md)、[完整专题索引](knowledge/INDEX.md) 和 [诊断入口](knowledge/DIAGNOSIS.md) 阅读；[来源登记](knowledge/SOURCES.md) 与 [完整原文](references/index.html) 提供本地依据。
 

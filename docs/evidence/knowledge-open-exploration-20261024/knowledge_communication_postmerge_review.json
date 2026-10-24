@@ -1,0 +1,150 @@
+{
+  "kind": "independent_post_merge_review",
+  "reviewer": "/root/knowledge_scenarios",
+  "base_commit": "f640148464929f803a53b55e27ee4cbb83dc8657",
+  "source_cutoff": "2026-04-30",
+  "result": "通过本次限定范围的独立归并后复核；两处发现已修并复读，无未关闭发现。",
+  "files": [
+    {
+      "id": "K-HW-003",
+      "path": "knowledge/hardware/host-device-transfer.md",
+      "sha256": "e4921a0714af21f7ab1a336f40af662f716f2c64a42dd598eb2cede548c858d2",
+      "current_read_range": [
+        1,
+        123
+      ],
+      "baseline_sha256": "5bfc321d4349e141d1787a360ab72106bc70af99af17d9e53bdd1b75e2a0980a",
+      "previous_index_sha256": "8d8a8ccc4f67e89cbab3c4baf9896d549e115a7503bcaa61b6e05b58cc20c162"
+    },
+    {
+      "id": "K-HW-002",
+      "path": "knowledge/hardware/topology-parallelism.md",
+      "sha256": "44b63f4291293b51e17b58d64bcfa9fe2bd384534a589c9b74fae0ad157ead29",
+      "current_read_range": [
+        1,
+        72
+      ],
+      "baseline_sha256": "40d7b15c7a9b4148b95f44c2bdba861884112b59bb8c6fab44b96cf8e119c7ed",
+      "previous_index_sha256": "40d7b15c7a9b4148b95f44c2bdba861884112b59bb8c6fab44b96cf8e119c7ed"
+    },
+    {
+      "id": "K-SYS-005",
+      "path": "knowledge/system-semantics/collective-ordering.md",
+      "sha256": "0007f921f7cac18dfc14baae23133812bd3c58a6f8fc0bddde1d6d0a3d017168",
+      "current_read_range": [
+        1,
+        93
+      ],
+      "baseline_sha256": "c24f552f27a912784d04e2a05bc3ee6849147ddf8655af5a7e67600f04c5145c",
+      "previous_index_sha256": "74e9e7c694171602d09518dc7639298c4fd07109304c9918fb580501a4c25ad2"
+    }
+  ],
+  "actual_reading": {
+    "current": "三篇当前全文；HW003 初读 SHA d42c474cee7aebb4c95e037059065c59490133e19106e6d84765f5033e4106ef，修后复读49–69、75–91行。两处修文逆替换精确还原初读SHA，确认其余字节未变。",
+    "baseline": "本轮读HW003 f640全文1–67；此前独立重复性审计读过HW002全文1–64和SYS005全文1–54，本轮又读两者相对f640完整diff。",
+    "previous": "本轮读归并前index版HW003全文1–93、SYS005全文1–82；其SHA与作者归并前审计吻合。HW002 index与f640字节相同。SYS005 index到当前的完整diff另读；HW003一次合并diff输出截断，已改为分别完整阅读旧/新文本，不声称读完该截断输出。",
+    "sources": [
+      {
+        "path": "references/S-NCCL-COLLECTIVE/fulltext.txt",
+        "read_ranges": [
+          [
+            1,
+            51
+          ]
+        ],
+        "sha256": "03fee76f12d44b950f31ce903bf28d4268bab2e65f805d62523c6dff3ddc59eb"
+      },
+      {
+        "path": "references/S-NCCL-GROUP/fulltext.txt",
+        "read_ranges": [
+          [
+            69,
+            82
+          ],
+          [
+            257,
+            274
+          ],
+          [
+            414,
+            416
+          ]
+        ],
+        "sha256": "75d2257017fc2e2409f7a672b9f2bc5fc01a54a4c098612f3abf8d83b5691ba5"
+      }
+    ],
+    "source_metadata": "S-NCCL-GROUP.md与S-NCCL-COLLECTIVE.md全文；固定NCCL2.25.1。CUDA/PyTorch原文没有在本轮扩大重读。",
+    "peer_material": "读communication_topic_overlap_audit.json与communication_topic_merge_receipt.json，用于定位和SHA对照，不代替独立读正文。未在本轮重读已撤销HW015整篇。"
+  },
+  "mechanism_checks": [
+    {
+      "id": "K-HW-003",
+      "result": "四阶段、有限N批、共享带宽和每池槽位关系完整。",
+      "conditions": "固定形状和确定时间；独立资源、足够缓冲、无额外跨批依赖；ceil(L/P)要求固定占用期与周期、完成边界可立即复用，且仅为必要容量条件。共享资源按同一实际路径累计字节，以相应并发下可持续带宽计算。",
+      "independent_recomputation": {
+        "period_ms": 8,
+        "first_ms": 14,
+        "eight_serial_ms": 112,
+        "eight_pipelined_ms": 70,
+        "input_slots": 2,
+        "output_slots": 2,
+        "separate_device_pool_MiB": 34,
+        "shared_dram_lower_bound_ms": 15.625
+      }
+    },
+    {
+      "id": "K-HW-002",
+      "result": "ring发送量及启动/带宽时间保留，方向条件清楚。",
+      "conditions": "P均匀ranks，2(P−1)轮，每轮alpha；beta为单向有效带宽，全双工收发可并发，不能重复加接收量；模型不是NCCL选型或测量保证。",
+      "independent_recomputation": {
+        "P": 4,
+        "alpha_us": 5,
+        "beta_GiB_s": 40,
+        "startup_us": 30,
+        "16MiB_ms": 0.6159375,
+        "8KiB_us": 30.286102294921875
+      }
+    },
+    {
+      "id": "K-SYS-005",
+      "result": "count/容量表、rank解释、可辨识输入及非阻塞组入队边界与所读固定原文一致。",
+      "conditions": "N为语义块长，不通用等于API count；容量以输入/输出分别分配且不含内部暂存为前提；成功入队不等于设备完成。",
+      "independent_recomputation": {
+        "allreduce": "r=0..3,i=0..7，sum(100r+i)=600+4i",
+        "allgather": "按rank顺序拼接四个8元素块",
+        "reduce_scatter": "各rank输入32元素，输出rank r的第i项=600+4(8r+i)，i=0..7"
+      }
+    }
+  ],
+  "dedup_and_exploration": [
+    "HW003以td=0保留旧三阶段特例，不再并列一份3/2/8算例；阶段/槽位/共享资源算例集中一处。stream/分配器、共享内存和计算放置继续链接既有主章。",
+    "HW002原ring段原位扩展；SYS005的count表在原张量解释小节深化，Group精确入队说明仅保留一份，没有复制TP/PP/EP或RDMA教程。",
+    "固定候选数量、统一计划文件、先完整正确引擎后微基准及先局部后完整的研发顺序均未保留为门槛；运行时的生产消费先后关系仍是技术条件。",
+    "SYS005 L69的TTFT/ITL明确为生成服务例子，诊断计数是否记录由问题决定；完整任务验收仍由原Task确定。"
+  ],
+  "findings": [
+    {
+      "id": "POSTMERGE-1",
+      "file": "knowledge/hardware/host-device-transfer.md",
+      "line": 86,
+      "origin": "本轮新增",
+      "finding": "将offered workload、完成吞吐与用户时延等服务指标泛化为所有完整引擎收益结论的必要项。",
+      "status": "closed",
+      "repair": "改为Task原定质量、性能、资源边界；服务比较口径只适用于相应服务Task。"
+    },
+    {
+      "id": "POSTMERGE-2",
+      "file": "knowledge/hardware/host-device-transfer.md",
+      "line": 57,
+      "origin": "继承f640，非本轮新引入",
+      "finding": "无条件限制最大在途字节的措辞与当前任务条件化口径不一致。",
+      "status": "closed",
+      "repair": "仅任务要求过载资源有界时约束总在途，允许缓冲池、上游准入、端到端额度或其他机制。"
+    }
+  ],
+  "limits": [
+    "只读三篇合并内容及必要来源范围，未修改repo正文。",
+    "设定算例在CPU上独立算术复算；未运行GPU、NCCL、多卡引擎、模型或服务。",
+    "本结论不构成性能、全库去重、catalog/nav结构或runtime能力验收，也不声称所有固定来源已在本轮全文重读。"
+  ]
+}

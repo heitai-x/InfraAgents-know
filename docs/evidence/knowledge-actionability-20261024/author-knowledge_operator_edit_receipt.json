@@ -1,0 +1,511 @@
+{
+  "schema_version": 1,
+  "agent": "knowledge_scenarios",
+  "task": "operator_backend_tensor_interfaces",
+  "repository": "/workspace/scratch/db4271884843/InfraAgents-know",
+  "base_commit": "f640148464929f803a53b55e27ee4cbb83dc8657",
+  "branch": "gpt-6-astra-2026-04-30",
+  "date": "2026-10-24",
+  "edited_repo_files": [
+    "knowledge/frameworks/tensor-abi-dispatch.md",
+    "knowledge/algorithms/operator-primitives.md",
+    "knowledge/frameworks/attention-backends.md",
+    "knowledge/frameworks/triton-kernels.md"
+  ],
+  "catalog_index_version_history_source_files_modified_by_this_agent": false,
+  "catalog_metadata_proposals": [
+    {
+      "change": "new",
+      "metadata": {
+        "id": "K-FW-013",
+        "path": "frameworks/tensor-abi-dispatch.md",
+        "category": "frameworks",
+        "title": "张量执行接口：布局、别名与后端分派",
+        "summary": "从数学函数推导逻辑轴、stride、数值路径、alias、workspace与stream边界，并按真实dispatch、fallback与摊销成本组合可执行部件。",
+        "revision": 1,
+        "status": "seed",
+        "tags": [
+          "tensor ABI",
+          "stride",
+          "layout",
+          "alias",
+          "workspace",
+          "stream",
+          "dispatch",
+          "fallback",
+          "precision policy",
+          "预打包",
+          "算子接入"
+        ],
+        "scope": {
+          "model_families": [],
+          "platforms": [],
+          "runtimes": [],
+          "workloads": []
+        },
+        "source_ids": [
+          "S-SDPA",
+          "S-FI",
+          "S-FA-IMPL",
+          "S-TORCH-CUDA",
+          "S-TORCH-NUMERIC",
+          "S-CUDA-BEST"
+        ],
+        "related": [
+          "K-ALG-016",
+          "K-FW-006",
+          "K-FW-007",
+          "K-FW-002",
+          "K-FW-003",
+          "K-FW-005",
+          "K-FW-011",
+          "K-SYS-004"
+        ],
+        "evidence": [],
+        "updated_at": "2026-10-24",
+        "sha256": "b8f779aa0d3c2ca46631fff2db07596371e89252a3e226c4bc3b47387135be81"
+      }
+    },
+    {
+      "change": "revised",
+      "previous_revision": 2,
+      "metadata": {
+        "id": "K-ALG-016",
+        "path": "algorithms/operator-primitives.md",
+        "category": "algorithms",
+        "title": "基础算子：从张量契约到合法融合",
+        "summary": "把GEMM、QKV、norm、RoPE与softmax落实为真实权重布局、统计域、活跃状态和数值路径，并以可复算流量账与完整forward比较约束融合。",
+        "revision": 3,
+        "status": "seed",
+        "tags": [
+          "GEMM",
+          "GEMV",
+          "embedding",
+          "RMSNorm",
+          "LayerNorm",
+          "RoPE",
+          "softmax",
+          "gather",
+          "scatter",
+          "融合",
+          "QKV布局",
+          "统计域",
+          "residual lifetime",
+          "算子适配",
+          "端到端成本"
+        ],
+        "scope": {
+          "model_families": [],
+          "platforms": [],
+          "runtimes": [],
+          "workloads": []
+        },
+        "source_ids": [
+          "S-TRANSFORMER",
+          "S-RMSNORM",
+          "S-ROPE",
+          "S-TORCH-NUMERIC",
+          "S-FLASH",
+          "S-CPU-TUNING",
+          "S-SDPA",
+          "S-FA-IMPL",
+          "S-CUDA-BEST",
+          "S-TRITON"
+        ],
+        "related": [
+          "K-MODEL-001",
+          "K-ALG-004",
+          "K-FW-002",
+          "K-HW-010",
+          "K-FW-011",
+          "K-FW-013",
+          "K-FW-006",
+          "K-FW-007"
+        ],
+        "evidence": [],
+        "updated_at": "2026-10-24",
+        "sha256": "175edec17a0f57d6079e64d34d521f84f5d9abbdff5307bee7fa1e3043097ded"
+      }
+    },
+    {
+      "change": "revised",
+      "previous_revision": 2,
+      "metadata": {
+        "id": "K-FW-006",
+        "path": "frameworks/attention-backends.md",
+        "category": "frameworks",
+        "title": "Attention Backend：语义、布局与执行契约的交集",
+        "summary": "把attention函数与固定版本plan/run、metadata单位、实际backend、cache转换和workspace责任对应，按完整执行成本判断可替换性与收益。",
+        "revision": 3,
+        "status": "seed",
+        "tags": [
+          "attention backend",
+          "SDPA",
+          "FlashInfer",
+          "FlashAttention",
+          "mask alignment",
+          "能力表",
+          "LSE",
+          "attention composition",
+          "布局转换",
+          "接口版本",
+          "plan run",
+          "metadata units",
+          "dispatch",
+          "workspace",
+          "NVFP4 layout",
+          "GQA materialization",
+          "摊销"
+        ],
+        "scope": {
+          "model_families": [],
+          "platforms": [],
+          "runtimes": [],
+          "workloads": []
+        },
+        "source_ids": [
+          "S-SDPA",
+          "S-FA-IMPL",
+          "S-FI",
+          "S-AITER",
+          "S-FLASHINFERPAPER",
+          "S-TORCH-CUDA"
+        ],
+        "related": [
+          "K-ALG-004",
+          "K-ALG-010",
+          "K-FW-005",
+          "K-MODEL-006",
+          "K-ALG-022",
+          "K-ALG-021",
+          "K-HW-011",
+          "K-ALG-003",
+          "K-TOOLS-006",
+          "K-FW-013",
+          "K-FW-003",
+          "K-ALG-016"
+        ],
+        "evidence": [],
+        "updated_at": "2026-10-24",
+        "sha256": "1cd73ca92eaa622a61c48c1f3b7d7da507afe9388b91dcdc36b1ac4031ebdb36"
+      }
+    },
+    {
+      "change": "revised",
+      "previous_revision": 2,
+      "metadata": {
+        "id": "K-FW-007",
+        "path": "frameworks/triton-kernels.md",
+        "category": "frameworks",
+        "title": "Triton Kernel：块程序、布局与融合边界",
+        "summary": "由算子执行域推导Triton的地址、tile、归约与精度契约，区分编译、合法域和调优缓存，并用资源证据与收益摊销评价完整引擎接入。",
+        "revision": 3,
+        "status": "seed",
+        "tags": [
+          "Triton",
+          "tile",
+          "autotune",
+          "fusion",
+          "register spill",
+          "线程布局",
+          "pipeline stages",
+          "调优预算",
+          "split-K",
+          "tensor descriptor",
+          "log2 LSE",
+          "合法域",
+          "index width",
+          "调优摊销",
+          "side effects"
+        ],
+        "scope": {
+          "model_families": [],
+          "platforms": [
+            "cuda",
+            "rocm"
+          ],
+          "runtimes": [],
+          "workloads": []
+        },
+        "source_ids": [
+          "S-TRITON",
+          "S-CUDA-BEST",
+          "S-ROCM",
+          "S-TVM",
+          "S-ANSOR",
+          "S-TORCH-NUMERIC",
+          "S-TORCH-CUDA"
+        ],
+        "related": [
+          "K-ALG-004",
+          "K-HW-005",
+          "K-HW-006",
+          "K-HW-011",
+          "K-HW-010",
+          "K-HW-004",
+          "K-FW-004",
+          "K-TOOLS-003",
+          "K-TOOLS-007",
+          "K-FW-013",
+          "K-ALG-016",
+          "K-FW-006"
+        ],
+        "evidence": [],
+        "updated_at": "2026-10-24",
+        "sha256": "1093869ffdff2210880df05142cbb11bc6d4b9657e541888fa93131440bc5ff0"
+      }
+    }
+  ],
+  "original_source_reads": [
+    {
+      "source_id": "S-SDPA",
+      "path": "references/S-SDPA/upstream/torch/nn/functional.py",
+      "read_line_ranges": [
+        [
+          2128,
+          2170
+        ],
+        [
+          2334,
+          2373
+        ],
+        [
+          2924,
+          2978
+        ],
+        [
+          6138,
+          6395
+        ]
+      ],
+      "purpose": "softmax, linear, norm entry definitions and complete scaled_dot_product_attention contract",
+      "sha256": "fc02c1392aec7b0817fe214b833b08c0492d3320e34d0d6f210ba76ea96c3ea4",
+      "version": "647b6a2ff9a83a886464932dfad78781ceb61cb6",
+      "available_at": "2026-04-30",
+      "source_archive_unchanged_by_this_agent": true
+    },
+    {
+      "source_id": "S-FI",
+      "path": "references/S-FI/upstream/flashinfer/prefill.py",
+      "read_line_ranges": [
+        [
+          1538,
+          2148
+        ],
+        [
+          2204,
+          2568
+        ]
+      ],
+      "purpose": "Complete relevant constructor, plan, and run of BatchPrefillWithPagedKVCacheWrapper; explicit read of dispatch, host metadata, outputs, layout copies, post-scale",
+      "sha256": "5b6eca119718384054cb32052408a81b6b72b9f5da8e89017ef46654c4ec0af6",
+      "version": "070fabf082b509419f878c853e5b0114c2496594",
+      "available_at": "2026-04-30",
+      "source_archive_unchanged_by_this_agent": true
+    },
+    {
+      "source_id": "S-FA-IMPL",
+      "path": "references/S-FA-IMPL/upstream/README.md",
+      "read_line_ranges": [
+        [
+          185,
+          405
+        ]
+      ],
+      "purpose": "How to use FlashAttention: flash_attn_func and flash_attn_with_kvcache contracts",
+      "sha256": "f13cb6920492fd5e8ce5f7ee6c3c2ffdd41004a922443ecdde1b7071f388fe38",
+      "version": "c5f6ff4905b924d20b5fc2fe74551638cd1421f4",
+      "available_at": "2026-04-30",
+      "source_archive_unchanged_by_this_agent": true
+    },
+    {
+      "source_id": "S-TRITON",
+      "path": "references/S-TRITON/upstream/python/tutorials/06-fused-attention.py",
+      "read_line_ranges": [
+        [
+          48,
+          249
+        ],
+        [
+          505,
+          695
+        ]
+      ],
+      "purpose": "forward inner/kernel, descriptor hook, config/pruning, wrapper forward/backward and test_op",
+      "sha256": "5b16be48b7b781ef018931c789b191f3390886ac479bb5df8a3418e5612ab317",
+      "version": "042b2cdcb41bb15821682cb6ba4bb15b1f15abb3",
+      "available_at": "2026-04-30",
+      "source_archive_unchanged_by_this_agent": true
+    },
+    {
+      "source_id": "S-TORCH-CUDA",
+      "path": "references/S-TORCH-CUDA/upstream/docs/source/notes/cuda.rst",
+      "read_line_ranges": [
+        [
+          277,
+          381
+        ],
+        [
+          1327,
+          1478
+        ]
+      ],
+      "purpose": "Asynchronous execution, CUDA streams, CUDA Graphs, capture constraints",
+      "sha256": "a292f6da55ca6d91d0f45444e449e669152422e12f644a7e617b0c16f12aa725",
+      "version": "647b6a2ff9a83a886464932dfad78781ceb61cb6",
+      "available_at": "2026-04-30",
+      "source_archive_unchanged_by_this_agent": true
+    },
+    {
+      "source_id": "S-TORCH-NUMERIC",
+      "path": "references/S-TORCH-NUMERIC/upstream/docs/source/notes/numerical_accuracy.rst",
+      "read_line_ranges": "full",
+      "purpose": "Full original; source slice row/column typo identified and deliberately not used",
+      "sha256": "061656553a7f8ff52dea30cd57e13f4463dfb7597fb2385e838ed9da96dc34c4",
+      "version": "647b6a2ff9a83a886464932dfad78781ceb61cb6",
+      "available_at": "2026-04-30",
+      "source_archive_unchanged_by_this_agent": true
+    },
+    {
+      "source_id": "S-CUDA-BEST",
+      "path": "references/S-CUDA-BEST/fulltext.txt",
+      "read_line_ranges": [
+        [
+          497,
+          565
+        ],
+        [
+          2684,
+          2795
+        ],
+        [
+          2824,
+          2912
+        ]
+      ],
+      "purpose": "8.2 bandwidth, 9.2.4 local memory, 9.2.7 register pressure, 10.1-10.3 occupancy and configuration; supplemental surrounding paragraphs read",
+      "sha256": "11b3bf6520b02e730c2ce3a875c198563a5f432b405bec29350cf8b2dd4cffe2",
+      "version": "CUDA 12.8.0",
+      "available_at": "2025-01-27",
+      "source_archive_unchanged_by_this_agent": true
+    },
+    {
+      "source_id": "S-RMSNORM",
+      "path": "references/S-RMSNORM/fulltext.txt",
+      "read_line_ranges": [
+        [
+          140,
+          330
+        ]
+      ],
+      "purpose": "Sections 3, 4 and 4.1; norm definitions and invariance boundary",
+      "sha256": "4a3cb1be97c9f888dc737a6715f7002c1185d077fc761cb539830c9fb7e078c6",
+      "version": "1910.07467v1",
+      "available_at": "2019-10-16",
+      "source_archive_unchanged_by_this_agent": true
+    },
+    {
+      "source_id": "S-ROPE",
+      "path": "references/S-ROPE/fulltext.txt",
+      "read_line_ranges": [
+        [
+          231,
+          405
+        ]
+      ],
+      "purpose": "Complete 3.2 rotary construction; null bytes removed only from display, source file unchanged",
+      "sha256": "0f7582a0829c2b689e18b8c7f95f03d12135d5de46e526f4f321c13948bd806c",
+      "version": "2104.09864v1",
+      "available_at": "2021-04-20",
+      "source_archive_unchanged_by_this_agent": true
+    }
+  ],
+  "new_source_required": false,
+  "source_cutoff": "2026-04-30",
+  "checks": [
+    {
+      "path": "knowledge/frameworks/tensor-abi-dispatch.md",
+      "missing_relative_links": [],
+      "duplicate_h2": [],
+      "code_fences": false,
+      "original_preexisting_mechanism_text_preserved": null,
+      "sha256": "b8f779aa0d3c2ca46631fff2db07596371e89252a3e226c4bc3b47387135be81"
+    },
+    {
+      "path": "knowledge/algorithms/operator-primitives.md",
+      "missing_relative_links": [],
+      "duplicate_h2": [],
+      "code_fences": false,
+      "original_preexisting_mechanism_text_preserved": true,
+      "sha256": "175edec17a0f57d6079e64d34d521f84f5d9abbdff5307bee7fa1e3043097ded"
+    },
+    {
+      "path": "knowledge/frameworks/attention-backends.md",
+      "missing_relative_links": [],
+      "duplicate_h2": [],
+      "code_fences": false,
+      "original_preexisting_mechanism_text_preserved": true,
+      "sha256": "1cd73ca92eaa622a61c48c1f3b7d7da507afe9388b91dcdc36b1ac4031ebdb36"
+    },
+    {
+      "path": "knowledge/frameworks/triton-kernels.md",
+      "missing_relative_links": [],
+      "duplicate_h2": [],
+      "code_fences": false,
+      "original_preexisting_mechanism_text_preserved": true,
+      "sha256": "1093869ffdff2210880df05142cbb11bc6d4b9657e541888fa93131440bc5ff0"
+    }
+  ],
+  "independently_recomputed_examples": {
+    "layout_B_L_H_D": [
+      2,
+      3,
+      2,
+      4
+    ],
+    "permuted_B_H_L_D_stride": [
+      24,
+      4,
+      8,
+      1
+    ],
+    "contiguous_B_H_L_D_stride": [
+      24,
+      12,
+      4,
+      1
+    ],
+    "logical_0_1_0_0_offsets": [
+      4,
+      12
+    ],
+    "qkv_width": 6144,
+    "qkv_output_kib": 384.0,
+    "qkv_weight_mib": 48.0,
+    "rmsnorm_padding_scale_when_mean_square_dominates_epsilon": 1.1547005383792515,
+    "residual_tensor_kib": 256.0,
+    "kv_mib": 32.0,
+    "materialized_gqa_kv_mib": 128.0,
+    "correct_partition_merge": 1.6,
+    "wrong_log_base_merge": 1.7615941559557649,
+    "prepacking_strict_break_even_calls": 30.0,
+    "plan_reused32_us": 17.0,
+    "plus_each_call_metadata_us": 23.0,
+    "amdahl_no_overlap_speedup": 1.0526315789473684,
+    "tuning_strict_break_even_calls": 600000.0,
+    "steps_at32calls": 18750.0
+  },
+  "limits": [
+    "No GPU execution or performance measurements were run. All added timings and capacities are explicitly assumed examples.",
+    "Backend behavior is bound to exact archived functions and commits, not all library versions.",
+    "FlashInfer cuDNN qo_indptr unit is an observed branch-specific source check; complete runtime usability is not asserted.",
+    "PyTorch source slice example compares non-corresponding row/column reductions; omitted rather than reproduced.",
+    "Static links and arithmetic checks do not establish engine correctness, backend legality on a device, or scientific novelty."
+  ],
+  "review_risks": [
+    "Confirm index metadata includes all added source and related IDs.",
+    "Confirm CUDA Graph and state lifetime statements remain scoped to the archived source version.",
+    "Review example invariants: residual u remains externally live in the 4N path; norm padding factor assumes true mean square dominates epsilon; LSE example distinguishes natural and base-2 logs."
+  ],
+  "handoff": "Body edits complete; parent owns catalog/history/version integration and independent review."
+}

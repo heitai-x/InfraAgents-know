@@ -1,0 +1,405 @@
+{
+  "reviewer": "/root/knowledge_use_audit",
+  "reviewed_author": "communication_content",
+  "reviewed_at": "2026-10-24",
+  "baseline_commit": "f640148464929f803a53b55e27ee4cbb83dc8657",
+  "source_cutoff_inclusive": "2026-04-30",
+  "status": "pass_after_revision",
+  "conclusion": "两个发现均经根代理修订并独立复读关闭；最终快照未发现未解决的公式、接口语义、来源范围或任务边界问题。",
+  "reviewed_files": [
+    {
+      "id": "K-HW-015",
+      "path": "knowledge/hardware/cpu-gpu-overlap.md",
+      "sha256": "1a4eb23a214d12081e475035460f98082f3855739e2312ae1a1a41b2be8c76a0",
+      "lines": 101,
+      "read_scope": "全文；对于现有章节另核对相对 baseline 的全部 diff",
+      "missing_local_links": [],
+      "code_fences": 0,
+      "initial_review_sha256": "1a4eb23a214d12081e475035460f98082f3855739e2312ae1a1a41b2be8c76a0"
+    },
+    {
+      "id": "K-SYS-022",
+      "path": "knowledge/system-semantics/distributed-execution-contracts.md",
+      "sha256": "ae97eb296bb0528ed2100677e6d50d066a9dedb8245a9f9e3034a7149488e5c2",
+      "lines": 106,
+      "read_scope": "全文；对于现有章节另核对相对 baseline 的全部 diff",
+      "missing_local_links": [],
+      "code_fences": 0,
+      "initial_review_sha256": "ae97eb296bb0528ed2100677e6d50d066a9dedb8245a9f9e3034a7149488e5c2"
+    },
+    {
+      "id": "K-HW-003",
+      "path": "knowledge/hardware/host-device-transfer.md",
+      "sha256": "8d8a8ccc4f67e89cbab3c4baf9896d549e115a7503bcaa61b6e05b58cc20c162",
+      "lines": 93,
+      "read_scope": "全文；对于现有章节另核对相对 baseline 的全部 diff",
+      "missing_local_links": [],
+      "code_fences": 0,
+      "initial_review_sha256": "8d8a8ccc4f67e89cbab3c4baf9896d549e115a7503bcaa61b6e05b58cc20c162"
+    },
+    {
+      "id": "K-SYS-005",
+      "path": "knowledge/system-semantics/collective-ordering.md",
+      "sha256": "74e9e7c694171602d09518dc7639298c4fd07109304c9918fb580501a4c25ad2",
+      "lines": 82,
+      "read_scope": "全文；对于现有章节另核对相对 baseline 的全部 diff",
+      "missing_local_links": [],
+      "code_fences": 0,
+      "initial_review_sha256": "74e9e7c694171602d09518dc7639298c4fd07109304c9918fb580501a4c25ad2"
+    }
+  ],
+  "findings": [
+    {
+      "id": "R1",
+      "severity": "medium",
+      "status": "resolved",
+      "required": true,
+      "path": "knowledge/hardware/cpu-gpu-overlap.md",
+      "line": 78,
+      "heading": "用可区分实验选择同步、重叠或减少搬运",
+      "current_text": "测量窗口须包含管线排空",
+      "issue": "将有限批完成时间和稳态吞吐窗口合并为一个强制口径。有限批计时必须直到最后批完成；持续服务的稳态窗口可以与停止接入后的排空分开，但须定义窗口和在途请求的归属、追踪结局。当前绝对表述容易把稳态与有限 workload 的指标混用，也与 service-protocol 对稳态窗/排空的区分不一致。",
+      "suggested_fix": "改为：有限批完成时间应计至最后一批完成；稳态吞吐应单列稳态测量窗口，并报告窗口边界的在途请求及窗口后结局。主机提交结束不能代替完成，排空时间另行报告。",
+      "basis": "由章节自身 T_N 与 P_0 的不同指标定义及请求结局记账推导，不依赖 GPU 测量。",
+      "resolved_in_sha256": "1a4eb23a214d12081e475035460f98082f3855739e2312ae1a1a41b2be8c76a0",
+      "resolution": "已分别定义有限任务完成时间包含排空、明确稳态窗口及窗口两端在途工作/计数口径/窗口后结局；不再强制将稳态窗与排空混为一个口径。"
+    },
+    {
+      "id": "R2",
+      "severity": "low",
+      "status": "resolved",
+      "required": false,
+      "path": "knowledge/system-semantics/distributed-execution-contracts.md",
+      "line": 64,
+      "heading": "成本模型要从实际不能隐藏的路径计算",
+      "current_text": "单向有效链路带宽为 B；接收流量不能再乘入时间项。",
+      "issue": "理想 ring 公式和数值正确；建议显式说明发送与接收方向可同时工作，B 是单向可持续带宽而不是双向共享总带宽。若方向竞争同一资源，需要重新合计该共享资源流量。",
+      "suggested_fix": "在公式假设中加入“收发方向可并发，B 不是双向流量合计带宽”；在解释接收流量处补共享链路或半双工要单独建模。",
+      "basis": "带宽单位及资源服务时间模型的适用范围；属于假设精化，不是当前理想模型下的计算错误。",
+      "resolved_in_sha256": "ae97eb296bb0528ed2100677e6d50d066a9dedb8245a9f9e3034a7149488e5c2",
+      "resolution": "已显式限定全双工、发送与接收可并发、B 是单向有效带宽；原公式与计算在此假设下成立。"
+    }
+  ],
+  "checks": [
+    {
+      "name": "four_stage_pipeline",
+      "result": "pass",
+      "formula": "P0=max(tp,th,tg,td); T_N=sum(t)+(N-1)P0",
+      "assumptions": "固定阶段时长、独立资源、足够有界缓冲、跨批无额外依赖；不是自回归单请求承诺",
+      "recalculation": {
+        "serial_8_ms": 112,
+        "pipeline_8_ms": 70,
+        "first_batch_ms": 14
+      }
+    },
+    {
+      "name": "slot_lifetime_bound",
+      "result": "pass",
+      "formula": "n_j >= ceil(L_j/P)",
+      "assumptions": "固定生存期、启动周期、完成边界即刻复用；正文明确不能用平均值保证安全",
+      "recalculation": {
+        "input_slots": 2,
+        "output_slots": 2,
+        "input_output_pool_MiB": 34
+      }
+    },
+    {
+      "name": "shared_bandwidth_bound",
+      "result": "pass",
+      "formula": "P >= Q/B",
+      "recalculation": {
+        "Q_MiB": 128,
+        "B_GiB_per_s": 8,
+        "period_ms": 15.625
+      }
+    },
+    {
+      "name": "ring_cost",
+      "result": "pass",
+      "formula": "2(p-1)alpha+2(p-1)A/(pB)",
+      "recalculation": {
+        "p": 4,
+        "alpha_us": 5,
+        "B_GiB_per_s": 40,
+        "A16MiB_ms": 0.6159374999999999,
+        "A8KiB_us": 30.28610229492188
+      },
+      "assumptions": "根代理已补足全双工、收发并发与单向 B 的适用条件。"
+    },
+    {
+      "name": "collective_buffer_sizes",
+      "result": "pass",
+      "details": "AllReduce N->N，AllGather N->pN，ReduceScatter pN->N；表中明确分离主缓冲，库暂存另计；元素数乘 dtype 字节得到容量。"
+    },
+    {
+      "name": "rank_distinct_values",
+      "result": "pass",
+      "details": "四 rank 的第 i 项 100r+i，sum_r=600+4i；ReduceScatter 对 32 项输入取 rank r 的 8r..8r+7 块。"
+    },
+    {
+      "name": "nonblocking_nccl_group",
+      "result": "pass",
+      "details": "ncclGroupEnd 的 ncclInProgress 是后台提交进行中；各相关 communicator 成功才可依赖其 CUDA 提交；成功 issue 不等于通信设备完成。与固定 NCCL 2.25.1 Group Calls 原文一致。"
+    },
+    {
+      "name": "stream_and_allocator",
+      "result": "pass",
+      "details": "wait_stream 处理生产消费依赖；record_stream 处理 allocator 存活期。CUDA allocator 的跨流分配/使用/释放条件、legacy/PTDS 默认 stream 区分有原文支持。"
+    },
+    {
+      "name": "rdma_visibility",
+      "result": "pass",
+      "details": "一般 WR 缓冲完成后复用、inline 例外，以及本地 completion 与 GPU 可见性分开；与固定 verbs/GPUDirect 原文一致。"
+    },
+    {
+      "name": "engineering_actionability",
+      "result": "pass",
+      "details": "四篇均给出触发场景、输入上下文、候选选择、工程产物、反例及局部—集成—系统验证。异步故障和取消验证是建议，未宣称已在目标环境运行。"
+    },
+    {
+      "name": "source_and_noncode_boundary",
+      "result": "pass",
+      "details": "固定来源日期全部不晚于 2026-04-30；CUDA/NCCL 版本和非通用化限制明确；未增加来源；正文无实现代码、命令、伪代码或 code fence，本地链接存在。"
+    },
+    {
+      "name": "finite_vs_steady_measurement",
+      "result": "pass_after_revision",
+      "details": "已分别定义有限任务完成时间包含排空、明确稳态窗口及窗口两端在途工作/计数口径/窗口后结局；不再强制将稳态窗与排空混为一个口径。"
+    }
+  ],
+  "source_read_ledger": [
+    {
+      "source_id": "S-NCCL-COLLECTIVE",
+      "path": "references/S-NCCL-COLLECTIVE/fulltext.txt",
+      "sha256": "03fee76f12d44b950f31ce903bf28d4268bab2e65f805d62523c6dff3ddc59eb",
+      "source_total_lines": 51,
+      "read_line_ranges": [
+        [
+          1,
+          51
+        ]
+      ],
+      "read_scope": "全文；collective 匹配条件、各操作 count/rank 语义。",
+      "version": "NCCL 2.25.1",
+      "available_at": "2025-01-27",
+      "cutoff_pass": true,
+      "provenance_path": "references/S-NCCL-COLLECTIVE/provenance.json"
+    },
+    {
+      "source_id": "S-NCCL-GROUP",
+      "path": "references/S-NCCL-GROUP/fulltext.txt",
+      "sha256": "75d2257017fc2e2409f7a672b9f2bc5fc01a54a4c098612f3abf8d83b5691ba5",
+      "source_total_lines": 416,
+      "read_line_ranges": [
+        [
+          1,
+          416
+        ]
+      ],
+      "read_scope": "全文；组内调用与提交、嵌套组、多 stream、nonblocking group 的 ncclSuccess/ncclInProgress。",
+      "version": "NCCL 2.25.1",
+      "available_at": "2025-01-27",
+      "cutoff_pass": true,
+      "provenance_path": "references/S-NCCL-GROUP/provenance.json"
+    },
+    {
+      "source_id": "S-CUDA-ASYNC",
+      "path": "references/S-CUDA-ASYNC/fulltext.txt",
+      "sha256": "1f45872f110694d59f7e9b55ea37150648376f92ba85b0c3922b712a73736a32",
+      "source_total_lines": 67850,
+      "read_line_ranges": [
+        [
+          3980,
+          4085
+        ],
+        [
+          4359,
+          4430
+        ],
+        [
+          4608,
+          4705
+        ]
+      ],
+      "read_scope": "完整相关段落：锁页/映射主存、异步执行/复制能力、stream、legacy 与每线程默认流及显式隐式同步；未阅读全文 Programming Guide。",
+      "version": "CUDA 12.8.0",
+      "available_at": "2025-01-27",
+      "cutoff_pass": true,
+      "provenance_path": "references/S-CUDA-ASYNC/provenance.json"
+    },
+    {
+      "source_id": "S-CUDA-ALLOC",
+      "path": "references/S-CUDA-ALLOC/fulltext.txt",
+      "sha256": "1f45872f110694d59f7e9b55ea37150648376f92ba85b0c3922b712a73736a32",
+      "source_total_lines": 67850,
+      "read_line_ranges": [
+        [
+          46639,
+          46755
+        ]
+      ],
+      "read_scope": "§11.3 相关 API Fundamentals 段落：分配返回指针、跨 stream 使用与释放；未阅读全文 guide。",
+      "version": "CUDA 12.8.0",
+      "available_at": "2025-01-27",
+      "cutoff_pass": true,
+      "provenance_path": "references/S-CUDA-ALLOC/provenance.json"
+    },
+    {
+      "source_id": "S-CUDA-BEST",
+      "path": "references/S-CUDA-BEST/fulltext.txt",
+      "sha256": "11b3bf6520b02e730c2ce3a875c198563a5f432b405bec29350cf8b2dd4cffe2",
+      "source_total_lines": 5281,
+      "read_line_ranges": [
+        [
+          560,
+          680
+        ],
+        [
+          2795,
+          2825
+        ]
+      ],
+      "read_scope": "§9.1 主机设备传输、锁页、复制计算重叠的相关完整说明；§9.4 NUMA 相关完整说明。",
+      "version": "CUDA 12.8.0",
+      "available_at": "2025-01-27",
+      "cutoff_pass": true,
+      "provenance_path": "references/S-CUDA-BEST/provenance.json"
+    },
+    {
+      "source_id": "S-TORCH-CUDA",
+      "path": "references/S-TORCH-CUDA/upstream/docs/source/notes/cuda.rst",
+      "sha256": "a292f6da55ca6d91d0f45444e449e669152422e12f644a7e617b0c16f12aa725",
+      "source_total_lines": 1829,
+      "read_line_ranges": [
+        [
+          280,
+          376
+        ],
+        [
+          1260,
+          1298
+        ]
+      ],
+      "read_scope": "Asynchronous execution、CUDA streams 中 wait_stream 与 record_stream 的完整相关说明；Use pinned memory buffers。",
+      "version": "647b6a2ff9a83a886464932dfad78781ceb61cb6",
+      "available_at": "2026-04-30",
+      "cutoff_pass": true,
+      "provenance_path": "references/S-TORCH-CUDA/provenance.json"
+    },
+    {
+      "source_id": "S-LINUX-RESOURCES",
+      "path": "references/S-LINUX-RESOURCES/upstream/Documentation/admin-guide/cgroup-v2.rst",
+      "sha256": "ad3bd37498a57cc249326fd5c2d609669b32611fe69d126df3c3abec1539f572",
+      "source_total_lines": 3238,
+      "read_line_ranges": [
+        [
+          2297,
+          2353
+        ],
+        [
+          2350,
+          2410
+        ]
+      ],
+      "read_scope": "cpuset.cpus.effective、cpuset.mems/effective、内存迁移代价与不完整性。CPU 资格相关范围在本轮作者任务已读，内存节点范围在独立审查补读。",
+      "version": "Linux v6.12 commit adc218676eef25575469234709c2d87185ca223a",
+      "available_at": "2024-11-17",
+      "cutoff_pass": true,
+      "provenance_path": "references/S-LINUX-RESOURCES/provenance.json"
+    },
+    {
+      "source_id": "S-TORCH-NUMERIC",
+      "path": "references/S-TORCH-NUMERIC/upstream/docs/source/notes/numerical_accuracy.rst",
+      "sha256": "061656553a7f8ff52dea30cd57e13f4463dfb7597fb2385e838ed9da96dc34c4",
+      "source_total_lines": 165,
+      "read_line_ranges": [
+        [
+          1,
+          90
+        ]
+      ],
+      "read_scope": "浮点非结合性、逐位结果限制和批处理差异的相关说明；只核对章节实际使用的数值边界。",
+      "version": "647b6a2ff9a83a886464932dfad78781ceb61cb6",
+      "available_at": "2026-04-30",
+      "cutoff_pass": true,
+      "provenance_path": "references/S-TORCH-NUMERIC/provenance.json"
+    },
+    {
+      "source_id": "S-RDMA",
+      "path": "references/S-RDMA/upstream/libibverbs/man/ibv_post_send.3",
+      "sha256": "7492a3d1a7438bf6922b59a70dc6e1bde8c1b74c69c86d6aff13913a4b5a0ec2",
+      "source_total_lines": 183,
+      "read_line_ranges": [
+        [
+          125,
+          190
+        ]
+      ],
+      "read_scope": "支持操作、flags、返回与 NOTES；发送源复用与 inline 例外。",
+      "version": "rdma-core v54.0 commit 77128e6b6d32a1aad7c1bec9d6eb1f061b63cf39",
+      "available_at": "2024-10-06",
+      "cutoff_pass": true,
+      "provenance_path": "references/S-RDMA/provenance.json"
+    },
+    {
+      "source_id": "S-RDMA",
+      "path": "references/S-RDMA/upstream/libibverbs/man/ibv_poll_cq.3",
+      "sha256": "1c11bde1b5fb8e6eb11927ea3094eeeecd8122aab724f4d7437fdb26267a36c7",
+      "source_total_lines": 93,
+      "read_line_ranges": [
+        [
+          1,
+          93
+        ]
+      ],
+      "read_scope": "完整 man page；CQE 状态、有效字段、消费与 CQ overrun。",
+      "version": "rdma-core v54.0 commit 77128e6b6d32a1aad7c1bec9d6eb1f061b63cf39",
+      "available_at": "2024-10-06",
+      "cutoff_pass": true,
+      "provenance_path": "references/S-RDMA/provenance.json"
+    },
+    {
+      "source_id": "S-GPUDIRECT",
+      "path": "references/S-GPUDIRECT/fulltext.txt",
+      "sha256": "657c37b1e20c78292dddfc81c172f676ec5868c3f39884127f0f636082fced8e",
+      "source_total_lines": 1480,
+      "read_line_ranges": [
+        [
+          350,
+          395
+        ]
+      ],
+      "read_scope": "完整 §2.7 Synchronization and Memory Ordering：第三方 DMA、CPU initiated CUDA 排序与并发 kernel 可见性。",
+      "version": "CUDA 12.8.0",
+      "available_at": "2025-01-21",
+      "cutoff_pass": true,
+      "provenance_path": "references/S-GPUDIRECT/provenance.json"
+    }
+  ],
+  "source_scope_limitations": [
+    "审查固定本地原文和 provenance，没有把此次阅读说成整个 CUDA/PyTorch/Linux 仓库全文。",
+    "host-device-transfer 与 collective-ordering 的既有来源映射只核对本次新增或修改的内容；未重新审查所有未修改旧来源。",
+    "没有新增网络来源、GPU/NCCL 执行、真实请求或服务 benchmark；算例是独立算术复算。",
+    "审查者未修改被审查四篇正文；根代理两处修订已经独立复读。结论绑定本报告的最终 SHA，后续内容变更应另行核对。"
+  ],
+  "recheck_scope": {
+    "date": "2026-10-24",
+    "mode": "初稿全文阅读后，对根代理修订的两个段落再次逐句核对；四篇最终 SHA 重新计算。",
+    "ranges": [
+      {
+        "path": "knowledge/hardware/cpu-gpu-overlap.md",
+        "lines": [
+          72,
+          83
+        ]
+      },
+      {
+        "path": "knowledge/system-semantics/distributed-execution-contracts.md",
+        "lines": [
+          60,
+          78
+        ]
+      }
+    ]
+  }
+}

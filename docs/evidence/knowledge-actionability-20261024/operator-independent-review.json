@@ -1,0 +1,277 @@
+{
+  "schema_version": 1,
+  "reviewer": "root",
+  "author": "knowledge_scenarios",
+  "reviewed_at": "2026-10-24",
+  "baseline_commit": "f640148464929f803a53b55e27ee4cbb83dc8657",
+  "status": "PASS_AFTER_REPAIR",
+  "review_scope": "Full four chapter bodies and changed sections read; selected source passages independently checked. Remaining fixed-source claims also covered by author source receipts, not an assertion of complete rereading of all originals.",
+  "reviewed_files": [
+    {
+      "path": "knowledge/frameworks/tensor-abi-dispatch.md",
+      "sha256": "b8f779aa0d3c2ca46631fff2db07596371e89252a3e226c4bc3b47387135be81",
+      "read_scope": "full current body; exact changed sections considered for existing chapters"
+    },
+    {
+      "path": "knowledge/algorithms/operator-primitives.md",
+      "sha256": "175edec17a0f57d6079e64d34d521f84f5d9abbdff5307bee7fa1e3043097ded",
+      "read_scope": "full current body; exact changed sections considered for existing chapters"
+    },
+    {
+      "path": "knowledge/frameworks/attention-backends.md",
+      "sha256": "90632b762f788312697d127af2a5630d57c20f2b257b3b6c0b864a565a416134",
+      "read_scope": "full current body; exact changed sections considered for existing chapters"
+    },
+    {
+      "path": "knowledge/frameworks/triton-kernels.md",
+      "sha256": "1093869ffdff2210880df05142cbb11bc6d4b9657e541888fa93131440bc5ff0",
+      "read_scope": "full current body; exact changed sections considered for existing chapters"
+    }
+  ],
+  "source_reads": [
+    {
+      "source_id": "S-TORCH-NUMERIC",
+      "path": "references/S-TORCH-NUMERIC/fulltext.txt",
+      "sha256": "bb6b2d8154a10f8f3b15e5ae4465cbc8d833067046964fc6b4d66dc036131b45",
+      "read_line_ranges": [
+        [
+          1,
+          167
+        ]
+      ],
+      "scope": "Complete archived numerical accuracy text; identified row/column example error and verified it was not propagated."
+    },
+    {
+      "source_id": "S-FI",
+      "path": "references/S-FI/fulltext.txt",
+      "sha256": "873535a42c7796502cbf5f878e3141b87a0633c08247a7e7045a0fca10396b39",
+      "read_line_ranges": [
+        [
+          1915,
+          2100
+        ],
+        [
+          2290,
+          2425
+        ]
+      ],
+      "scope": "plan host metadata, masks, cached auto dispatch; run output allocation, cuDNN element counts, NVFP4 layout and scale copies."
+    },
+    {
+      "source_id": "S-TRITON",
+      "path": "references/S-TRITON/fulltext.txt",
+      "sha256": "cd40d2b8a8e682d4fd75f3f750f2bee4992f036a8910a666441ed4465279cd1b",
+      "read_line_ranges": [
+        [
+          50,
+          105
+        ],
+        [
+          145,
+          250
+        ],
+        [
+          510,
+          580
+        ]
+      ],
+      "scope": "Online exp2 reduction; descriptor strides, config predicates, log2 normalization; wrapper and supported head dimensions."
+    },
+    {
+      "source_id": "S-FA-IMPL",
+      "path": "references/S-FA-IMPL/fulltext.txt",
+      "sha256": "64ac6b9a0dd03fcf4c75426b81f879f53dadf066e12277691d9764f8b58a8dbc",
+      "read_line_ranges": [
+        [
+          270,
+          365
+        ]
+      ],
+      "scope": "In-place KV append, rotary positions, GQA, causal alignment and duplicate cache_batch_idx writes."
+    }
+  ],
+  "findings": [
+    {
+      "id": "OP-01",
+      "severity": "P2",
+      "status": "resolved",
+      "path": "knowledge/frameworks/attention-backends.md",
+      "issue": "The 23 microsecond example described the extra 6 microseconds as per plan even though its arithmetic requires a per-call cost.",
+      "discovered_by": "Author secondary review during combined example verification; independently recomputed and corrected by root.",
+      "repair": "Changed frequency to per invocation; preserved distinction between one plan and repeated calls.",
+      "counterexample": "If 6 microseconds occurs per plan, the average over 32 calls is 17.1875, not 23 microseconds.",
+      "verified_sha256": "90632b762f788312697d127af2a5630d57c20f2b257b3b6c0b864a565a416134"
+    }
+  ],
+  "source_cautions": [
+    {
+      "source_id": "S-TORCH-NUMERIC",
+      "issue": "Archived example compares a row sum to a column sum while illustrating batching/slicing numerical variation.",
+      "handling": "Original archive preserved exactly; the new chapter uses a correct mathematical relation and does not repeat the erroneous index example."
+    }
+  ],
+  "assessments": [
+    "Tensor ABI is defined as execution contract, not C++ binary compatibility.",
+    "Logical tensor shape is separated from stride, storage offset, aliasing, ownership, accumulation precision and workspace concurrency.",
+    "Fixed FlashInfer implementation claims are scoped to its archived commit; auto dispatch is not assumed to be selected anew on every invocation.",
+    "Performance comparisons include plan frequency, layout conversions, materialized GQA expansion, masks and output allocation.",
+    "Triton example retains descriptor-layout assumptions and base-2 LSE convention; tiling, int32 offsets and tuning amortization remain conditional.",
+    "QKV widths, RMSNorm padded denominator and residual fusion traffic explain semantics and actual consumer requirements."
+  ],
+  "arithmetic_checks": [
+    {
+      "name": "qkv_width",
+      "actual": 6144,
+      "expected": 6144,
+      "pass": true
+    },
+    {
+      "name": "qkv_output_KiB",
+      "actual": 384.0,
+      "expected": 384,
+      "pass": true
+    },
+    {
+      "name": "qkv_weight_MiB",
+      "actual": 48.0,
+      "expected": 48,
+      "pass": true
+    },
+    {
+      "name": "rms_padded_over_true",
+      "actual": 1.1547005383792515,
+      "expected": 1.1547005383792515,
+      "pass": true
+    },
+    {
+      "name": "residual_tensor_KiB",
+      "actual": 256.0,
+      "expected": 256,
+      "pass": true
+    },
+    {
+      "name": "amdahl_ten_percent_halved",
+      "actual": 1.0526315789473684,
+      "expected": 1.0526315789473684,
+      "pass": true
+    },
+    {
+      "name": "concurrent_workspace_MiB",
+      "actual": 128,
+      "expected": 128,
+      "pass": true
+    },
+    {
+      "name": "packing_equal_at_calls",
+      "actual": 30.0,
+      "expected": 30,
+      "pass": true
+    },
+    {
+      "name": "gqa_kv_MiB",
+      "actual": 32.0,
+      "expected": 32,
+      "pass": true
+    },
+    {
+      "name": "expanded_kv_MiB",
+      "actual": 128.0,
+      "expected": 128,
+      "pass": true
+    },
+    {
+      "name": "gather_read_write_MiB",
+      "actual": 64,
+      "expected": 64,
+      "pass": true
+    },
+    {
+      "name": "plan_one_call_us",
+      "actual": 172,
+      "expected": 172,
+      "pass": true
+    },
+    {
+      "name": "plan_amortized_32_us",
+      "actual": 17.0,
+      "expected": 17,
+      "pass": true
+    },
+    {
+      "name": "plan_plus_per_call_us",
+      "actual": 23.0,
+      "expected": 23,
+      "pass": true
+    },
+    {
+      "name": "plan_plus_per_plan_us",
+      "actual": 17.1875,
+      "expected": 17.1875,
+      "pass": true
+    },
+    {
+      "name": "base2_softmax_merge",
+      "actual": 1.6,
+      "expected": 1.6,
+      "pass": true
+    },
+    {
+      "name": "natural_base_mismatch",
+      "actual": 1.7615941559557649,
+      "expected": 1.7615941559557649,
+      "pass": true
+    },
+    {
+      "name": "int32_half_offset_GiB",
+      "actual": 4.0,
+      "expected": 4,
+      "pass": true
+    },
+    {
+      "name": "autotune_equal_at_calls",
+      "actual": 600000.0,
+      "expected": 600000,
+      "pass": true
+    },
+    {
+      "name": "autotune_equal_at_32_layer_steps",
+      "actual": 18750.0,
+      "expected": 18750,
+      "pass": true
+    },
+    {
+      "name": "small_tile_operands_KiB",
+      "actual": 6.0,
+      "expected": 6,
+      "pass": true
+    },
+    {
+      "name": "large_tile_operands_KiB",
+      "actual": 12.0,
+      "expected": 12,
+      "pass": true
+    },
+    {
+      "name": "small_accumulator_KiB",
+      "actual": 8.0,
+      "expected": 8,
+      "pass": true
+    },
+    {
+      "name": "large_accumulator_KiB",
+      "actual": 32.0,
+      "expected": 32,
+      "pass": true
+    }
+  ],
+  "additional_reasoning_checks": [
+    "A transposed [2,3,2,4] contiguous tensor has shape [2,2,3,4] and strides [24,4,8,1]; index [0,1,0,0] maps to 4 rather than packed-layout 12.",
+    "If every logit error is at most delta, a top-two reference gap greater than 2 delta preserves unique argmax; equality does not guarantee it.",
+    "Packing and autotune break-even counts are equality points; strict speedup requires exceeding them."
+  ],
+  "limitations": [
+    "CPU arithmetic and source/content review only.",
+    "No target framework/kernel installation, GPU execution, model inference or engine-performance experiment.",
+    "No assertion that finite local checks prove all input-domain correctness."
+  ]
+}
