@@ -68,7 +68,9 @@ python3 tools/validate_knowledge.py --baseline f640148464929f803a53b55e27ee4cbb8
 python3 tools/check_knowledge_examples.py --report /tmp/knowledge-examples.json
 ```
 
-用已有运行时源码执行实际冻结读取与访问边界检查：
+本节探针通过章节 ID、`ID@revision` 和正文路径核对同一冻结版本，需要包含读取地址修复提交 [`07d114a451e42d382381bee4cd215f1ebd8630a5`](https://github.com/heitai-x/InfraAgents/commit/07d114a451e42d382381bee4cd215f1ebd8630a5) 的运行时。本次发布前补验直接使用该提交，其历史包含前述 `6d20585` 的字节保持发布修复。仅使用旧 `6d20585` 时，探针的 `ID@revision` 请求会因未解析为正文路径而被后缀检查拒绝；它在 v2.1 的发布验证不代表支持这项读取形式。四视图补验结果与内容身份见 [发布前验证回执](evidence/knowledge-publication-check-20261024.json)。
+
+用包含上述修复的运行时源码执行实际冻结读取与访问边界检查：
 
 ```bash
 python3 tools/probe_knowledge_runtime.py --runtime /path/to/InfraAgents --repository . --report /tmp/knowledge-runtime.json
@@ -76,4 +78,4 @@ python3 tools/probe_knowledge_runtime.py --runtime /path/to/InfraAgents --reposi
 
 探针在独立副本上读取当前正文和历史，校验引用，并检查撤回ID与受限原文不进入当前视图。模型名是选择条件fixture，没有调用模型。查询命中仅观察可找到哪些入口，不要求实现按入口方案构建；新问题或未命中不构成引擎任务失败。
 
-本轮按源码模块SHA记录所用运行时；推荐分支获取时要求GitHub凭据，未重新验证其发布器。[本轮报告](evidence/knowledge-open-exploration-20261024/runtime-probe.json)只支持实际检查的接口。正文去除固定流程、目录去重和读取通过，都不能代替真实Agent行为实验。
+随包原复审按源码模块SHA记录当时所用运行时；当时推荐分支获取要求GitHub凭据，未重新验证其发布器。[原复审报告](evidence/knowledge-open-exploration-20261024/runtime-probe.json)只支持其实际检查的接口。本次发布前补验另以精确的 `07d114a` 源码验证读取，仍未重跑知识发布或真实Agent构建实验。正文去除固定流程、目录去重和读取通过，都不能代替真实Agent行为实验。

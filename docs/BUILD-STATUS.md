@@ -21,7 +21,15 @@
 
 本轮分别提供 [结构检查](evidence/knowledge-open-exploration-20261024/structural.json)、[算例检查](evidence/knowledge-open-exploration-20261024/examples.json)、[真实读取探针](evidence/knowledge-open-exploration-20261024/runtime-probe.json) 和 [独立复审](evidence/knowledge-open-exploration-20261024/review.json)。复现入口见 [使用说明](USAGE.md#修订版的内容检查)。这些结果不证明Agent实际探索不受任何偏置，也不证明模型、GPU、服务性能或RSI收益。
 
-运行时仍使用此前提供的源码归档并按模块SHA绑定；推荐分支获取时要求GitHub凭据，本轮未据此冒认推荐提交。没有改Controller或知识发布器，也没有运行Agent构建实验。工作位于本地 codex/knowledge-open-exploration-20261024，尚未推送远端。
+内容准备阶段使用此前提供的源码归档并按模块SHA绑定；当时推荐分支获取要求GitHub凭据，未据此冒认推荐提交。该阶段没有改Controller或知识发布器，也没有运行Agent构建实验；当时的工作位于本地 codex/knowledge-open-exploration-20261024，尚未推送远端。
+
+## 2026-10-24 发布前补验
+
+发布前重新核对相对 `f640148` 的全部11篇正文改动及相关固定来源，确认技术细节、适用边界、成本反例和专题归属存在增量提升。交付包1821个文件、结构/历史/来源与22组33项算例检查通过。这个结论不包含Agent交付率、性能或探索多样性收益。
+
+补验发现旧推荐运行时 `6d20585` 不支持新探针使用的 `ID@revision` 读取形式。改用包含该能力及原字节保持发布修复的精确提交 `07d114a451e42d382381bee4cd215f1ebd8630a5` 后，四个视图通过，完整读取324次正文、绑定324项使用声明并核对117个活动历史版本；撤回章节与受限原文的所测访问边界通过。源码从该提交的Git对象归档取得，97个源码文件与43个实际导入模块按字节核对，详见 [验证回执](evidence/knowledge-publication-check-20261024.json) 与 [使用要求](USAGE.md#修订版的内容检查)。
+
+本次补充只修正接入说明并保存验证回执，不改变知识正文、catalog、来源、历史或其revision。旧运行时的失败与支持版本的通过分别保留；没有修改Controller，也没有执行Agent、GPU、性能或运行期知识发布实验。原交付提交身份保留在后续文档修正提交的历史中。
 
 ## 既有正式基线记录
 
