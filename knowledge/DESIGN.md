@@ -2,21 +2,21 @@
 
 本页按技术主题提供可选入口，没有固定阅读或研发顺序。场景与示例不穷尽候选；Task 的要求和所选机制的语义决定实际检查，原型、整体编译、联合设计和其他未列方案均可按条件探索。
 
-先用 [组合设计](system-semantics/design-synthesis.md) 建立完整问题，再选与当前决策有关的机制。索引摘要用于导航，具体设计依据来自正文中的关系与推导。
+可按当前问题直接选择专题；[组合设计](system-semantics/design-synthesis.md) 提供连接多个机制的条件化例子。索引摘要用于导航，具体设计依据来自正文中的关系与推导。
 
 角色只从当前运行的时间 profile 读取正文和原始来源。`checked_at`、`updated_at` 和本地归档时间不是事实发生时间；需要先通过 [时间边界规则](../docs/23-time-bounded-knowledge.md) 的来源版本检查，再把专题用于设计。
 
-本入口按完整推理系统组织阅读顺序；[推理范围与组合验证](../docs/inference-coverage.md) 列出 24 个能力域和集群、存储、部署三项平台依赖。运行实际可读范围还由知识条件、来源资格及原始资料访问限制决定。
+本入口按完整推理系统的技术主题组织导航；[推理范围与组合验证](../docs/inference-coverage.md) 列出 24 个能力域和集群、存储、部署三项平台依赖。运行实际可读范围还由知识条件、来源资格及原始资料访问限制决定。
 
 ## 确定模型函数与状态
 
 从 [模型计算图](models/prefill-decode-state.md) 出发，识别 [GQA](models/gqa-kv-heads.md)、[MLA](models/mla.md)、[MoE](models/moe-routing.md)、[SSM/混合](models/recurrent-hybrid-state.md) 或 [窗口层](models/sliding-window-attention.md)。对于 [encoder-decoder](models/encoder-decoder-streaming.md)、[VLM](models/vision-language.md)、[扩散](models/image-diffusion.md)、[视频](models/video-generation.md)、[语音生成](models/speech-generation.md) 和 [全模态](models/omni-multimodal.md)，还需还原阶段与模态之间的依赖。
 
-这一步的产物是输入输出、逻辑位置、可见集合和持久状态的明确描述。[Tokenizer 与 I/O](system-semantics/tokenization-io.md) 将用户输入连接到这份描述。
+这些专题解释输入输出、逻辑位置、可见集合和持久状态之间的关系。[Tokenizer 与 I/O](system-semantics/tokenization-io.md) 将用户输入连接到这份描述。
 
 非生成负载分别进入 [Embedding 与重排](models/embedding-reranking.md)、[视觉识别与检测](models/vision-inference.md)、[推荐](models/recommendation-inference.md) 和 [图模型](models/graph-inference.md)。它们各有 pooling/评分、图像几何、稀疏特征或邻居依赖；[检索与 RAG](system-semantics/retrieval-pipeline.md) 再将编码、索引、材料版本和下游生成连接起来。
 
-再通过 [权重加载](frameworks/checkpoint-loading.md) 还原制品、张量别名与执行布局，以 [基础算子](algorithms/operator-primitives.md) 明确线性、归一化、位置旋转和索引的函数契约。加载完成与实例就绪分开判断，冷启动和预热的峰值都进入容量账。
+通过 [权重加载](frameworks/checkpoint-loading.md) 还原制品、张量别名与执行布局，以 [基础算子](algorithms/operator-primitives.md) 明确线性、归一化、位置旋转和索引的函数契约。加载完成与实例就绪分开判断，冷启动和预热的峰值都进入容量账。
 
 [模型生命周期](system-semantics/model-lifecycle.md) 将加载、编译/预热、准入、排空和版本切换连成状态链，明确旧请求何时结束、新模型何时可以接收请求，以及对应资源何时回收。
 
@@ -30,7 +30,7 @@
 
 ## 映射到平台和执行路径
 
-先建立 [容量/roofline](hardware/memory-and-roofline.md) 与 [通信拓扑](hardware/topology-parallelism.md)，再阅读目标 [CUDA](hardware/cuda-execution.md)、[ROCm](hardware/rocm-execution.md)、[Metal](hardware/metal-unified-memory.md)、[Trainium](hardware/trainium-dataflow.md) 或 [CPU](hardware/cpu-serving.md)。
+[容量/roofline](hardware/memory-and-roofline.md) 与 [通信拓扑](hardware/topology-parallelism.md) 可与目标平台交叉阅读： [CUDA](hardware/cuda-execution.md)、[ROCm](hardware/rocm-execution.md)、[Metal](hardware/metal-unified-memory.md)、[Trainium](hardware/trainium-dataflow.md) 或 [CPU](hardware/cpu-serving.md)。
 
 [Attention IO](algorithms/attention-io.md) 解释 kernel 数据流，[backend 契约](frameworks/attention-backends.md) 连接语义与布局，[编译分桶](frameworks/compile-dynamic-shapes.md)、[CUDA Graph](frameworks/cuda-graph-buffers.md)、[MLX](frameworks/mlx-serving.md)、[Neuron](frameworks/neuron-serving.md) 与 [NKI](frameworks/nki-tiling.md) 承接具体执行模型。
 
@@ -40,7 +40,7 @@ GPU 则通过 [矩阵与归约流水](hardware/gpu-kernel-pipelines.md) 把片�
 
 ## 在容量与传输约束下组织驻留
 
-[HBM–DRAM–SSD 驻留](algorithms/tiered-residency.md) 先定义对象版本、有效副本和迁移提交，再由 [存储 I/O](hardware/storage-io.md) 还原真实读取路径。[KV 卸载](algorithms/kv-offload-prefetch.md) 比较恢复、持续读取与重算，[权重和专家卸载](algorithms/weight-expert-offload.md) 则比较层间重用、路由并集与热点变化。
+[HBM–DRAM–SSD 驻留](algorithms/tiered-residency.md) 解释对象版本、有效副本和迁移提交；[存储 I/O](hardware/storage-io.md) 解释真实读取路径。[KV 卸载](algorithms/kv-offload-prefetch.md) 比较恢复、持续读取与重算，[权重和专家卸载](algorithms/weight-expert-offload.md) 则比较层间重用、路由并集与热点变化。
 
 在 [CPU–GPU 计算放置](algorithms/heterogeneous-execution.md) 中比较搬数据到 GPU 与把计算留在 CPU 的完整路径；[共享内存](hardware/shared-memory-paths.md) 进一步区分统一地址、可迁移驻留和物理共享。三级存储与异构计算各有可复算场景，容量可行、质量合格和 SLO 可达分别判断。
 
@@ -58,7 +58,7 @@ GPU 则通过 [矩阵与归约流水](hardware/gpu-kernel-pipelines.md) 把片�
 
 ## 组织多模型与平台依赖
 
-[多模型放置](workloads/multi-model-placement.md) 先确认可共享的基座、adapter、执行缓冲和缓存，再比较驻留、分组与副本。[租户隔离](system-semantics/tenant-isolation.md) 将身份、缓存命名空间、配额、资源干扰和故障边界分别约束。[弹性服务](workloads/elastic-serving.md) 根据真实就绪容量与冷启动/排空时间响应突发，不能把已申请实例数直接当作服务能力。
+[多模型放置](workloads/multi-model-placement.md) 将基座、adapter、执行缓冲与缓存的共享条件连接到驻留、分组和副本选择。[租户隔离](system-semantics/tenant-isolation.md) 将身份、缓存命名空间、配额、资源干扰和故障边界分别约束。[弹性服务](workloads/elastic-serving.md) 根据真实就绪容量与冷启动/排空时间响应突发，不能把已申请实例数直接当作服务能力。
 
 [集群放置](workloads/cluster-resource-placement.md) 检查每个 rank 的资源向量、通信拓扑、共同启动和故障域；[推理存储服务](system-semantics/storage-services.md) 区分权重、KV、索引与提交记录的可见性和持久性；[部署环境](system-semantics/deployment-environment.md) 核对镜像、宿主驱动、设备身份、quota 和 NUMA。这三项决定推理方案是否真正可部署，并与加载、迁移和恢复共用容量及带宽预算。
 

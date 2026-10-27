@@ -4,7 +4,7 @@
 
 | 条目 | 版本与状态 | 核心认识 |
 |---|---|---|
-| [K-FW-001：PyTorch 推理：模块模式、Autograd 与状态突变](inference-eval.md) | v2 · seed | 推理行为由模型模式、梯度记录、dtype/device、模块状态与执行路径共同决定。 |
+| [K-FW-001：PyTorch 推理：模块模式、Autograd 与状态突变](inference-eval.md) | v3 · seed | 推理行为由模型模式、梯度记录、dtype/device、模块状态与执行路径共同决定。 |
 | [K-FW-002：数值参考：误差尺度、条件数与首次分歧](numerical-reference.md) | v2 · seed | 一个有解释力的数值参考保持任务函数和输入一致，再分层衡量实现重排与近似产生的差异。 |
 | [K-FW-003：Stream 与分配器：依赖顺序和对象生存期](streams-allocator.md) | v2 · seed | stream 解决执行顺序，内存生存期解决地址何时可重用；正确的异步程序需要同时满足两种关系。 |
 | [K-FW-004：编译与动态形状：Guard、分桶和变体成本](compile-dynamic-shapes.md) | v2 · seed | 图获取、IR/lowering、布局和 guard 将函数映射到目标程序；编译缓存及在线变体必须保持副作用、容量与生命周期契约。 |

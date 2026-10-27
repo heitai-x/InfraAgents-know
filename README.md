@@ -2,14 +2,14 @@
 
 InfraAgents 的独立知识仓库。不同分支承载不同内容版本，保持相同的目录、章节 ID 和现有读取接口。
 
-目标内容分支为 **gpt-6-astra-2026-04-30**。当前本地修订版 **v2.2-r1** 保持 **108 篇专题、114 项固定来源**，相对 v2.1 深化 11 篇原专题。上一版六个新设章节已从活动目录撤回：有用的地址、API、缓冲和通信增量归回原章，重复机制与通用构建流程不再另立知识对象。来源上限仍为 2026-04-30。
+目标内容分支为 **gpt-6-astra-2026-04-30**。当前内容修订版 **v2.2-r2** 保持 **108 篇专题、114 项固定来源**，相对 v2.2-r1 修正 4 篇的流程化表达，并更新读取探针、时间审计和来源定位。v2.2-r1 相对 v2.1 深化的 11 篇仍保留。上一版六个新设章节已从活动目录撤回：有用的地址、API、缓冲和通信增量归回原章，重复机制与通用构建流程不再另立知识对象。来源上限仍为 2026-04-30。
 
-研究目标保持为 Agent 从空工程构建并优化完整推理引擎。这个目标不预设组件划分、研发阶段或候选集合；[使用问题与探索边界](docs/knowledge-use-cases.md) 提供无序、非穷尽的问题示例。[本轮复审](docs/evidence/knowledge-open-exploration-20261024/review.md) 解释撤回与归并决定，[变更清单](docs/actionable-knowledge/change-manifest.json) 保存当前身份。旧v2.2的通过记录仅属于其当时的内容，不能证明新组织合理或Agent探索行为未受影响。
+研究目标保持为 Agent 从空工程构建并优化完整推理引擎。这个目标不预设组件划分、研发阶段或候选集合；[使用问题与探索边界](docs/knowledge-use-cases.md) 提供无序、非穷尽的问题示例。[本轮修改与验证](docs/evidence/knowledge-cleanup-20261027/review.md) 记录清理范围；[v2.2-r1 复审](docs/evidence/knowledge-open-exploration-20261024/review.md) 保留六篇撤回与归并依据，[变更清单](docs/actionable-knowledge/change-manifest.json) 保存当前身份。旧v2.2的通过记录仅属于其当时的内容，不能证明新组织合理或Agent探索行为未受影响。
 
 | 分支 | 内容 |
 |---|---|
 | [main](https://github.com/heitai-x/InfraAgents-know/tree/main) | 原始未限时 base，保留初始来源和章节历史；不作模型训练时间声明。 |
-| [gpt-6-astra-2026-04-30](https://github.com/heitai-x/InfraAgents-know/tree/gpt-6-astra-2026-04-30) | 来源版本上限为 2026-04-30，当前修订保持108个原专题，深化11篇；问题入口不规定构建路线。内容身份以检出的VERSION.json为准。 |
+| [gpt-6-astra-2026-04-30](https://github.com/heitai-x/InfraAgents-know/tree/gpt-6-astra-2026-04-30) | 来源版本上限为 2026-04-30，当前内容修订保持108个原专题；问题入口和参考方法不规定构建路线。内容身份以检出的VERSION.json为准。 |
 
 从 [设计入口](knowledge/DESIGN.md)、[完整专题索引](knowledge/INDEX.md) 和 [诊断入口](knowledge/DIAGNOSIS.md) 阅读；[来源登记](knowledge/SOURCES.md) 与 [完整原文](references/index.html) 提供本地依据。
 

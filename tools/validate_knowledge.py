@@ -119,6 +119,8 @@ def validate(root: Path, baseline: str | None = None) -> dict:
                                    ("archive_manifest", "archive_sha256")):
             if sha(local(source[path_key]).read_bytes()) != source[hash_key]:
                 issue("source_identity", id=sid, field=path_key)
+        note = local(source["local_path"])
+        inspect_links(note, note.read_text(encoding="utf-8-sig"))
         manifest_path = local(source["archive_manifest"])
         manifest = read_json(manifest_path)
         for member in manifest["files"]:
@@ -139,6 +141,23 @@ def validate(root: Path, baseline: str | None = None) -> dict:
                 issue("temporal_boundary", id=sid)
         except (KeyError, ValueError):
             issue("missing_source_date", id=sid)
+
+    # The checked-in report is an audit of this catalog/profile, not a spare
+    # historical report. Old reports remain under docs/evidence/.
+    audit = read_json(root / "knowledge/temporal-audit.json")
+    if audit.get("profile_id") != policy.get("profile_id") or policy.get("profile_id") != version["version_id"]:
+        issue("temporal_audit_profile")
+    audit_entries = {entry["id"]: entry for entry in audit.get("entries", [])}
+    if len(audit_entries) != len(audit.get("entries", [])) or set(audit_entries) != set(by_id):
+        issue("temporal_audit_entry_set")
+    for entry in entries:
+        record = audit_entries.get(entry["id"], {})
+        if any(record.get(key) != entry[key] for key in ("revision", "path", "category", "source_ids")):
+            issue("temporal_audit_entry_binding", id=entry["id"])
+    if {source["id"] for source in audit.get("sources", [])} != source_ids:
+        issue("temporal_audit_source_set")
+    if audit.get("effective_cutoff") != str(cutoff):
+        issue("temporal_audit_cutoff")
 
     navigation = {}
     for relative in ["knowledge/INDEX.md", "knowledge/DESIGN.md", "knowledge/DIAGNOSIS.md"]:
@@ -195,6 +214,11 @@ def validate(root: Path, baseline: str | None = None) -> dict:
     # A delivered local proposal may already have been frozen by its consumer.
     # Keep its identities even when its topics are subsequently withdrawn.
     retired = read_json(local(version["withdrawn_chapters"]))
+    withdrawal_catalog = read_json(local(version["withdrawal_catalog"]))
+    withdrawal_entries = {entry["id"]: entry for entry in withdrawal_catalog["entries"]}
+    for key in ("withdrawal_catalog", "withdrawal_version"):
+        if sha(local(version[key]).read_bytes()) != version[key + "_sha256"]:
+            issue("withdrawal_origin_snapshot_hash", file=version[key])
     retired_by_id = {entry["id"]: entry for entry in retired["chapters"]}
     if len(retired_by_id) != len(retired["chapters"]):
         issue("duplicate_withdrawn_id")
@@ -220,6 +244,8 @@ def validate(root: Path, baseline: str | None = None) -> dict:
             issue("withdrawn_archive_missing", id=identifier)
             continue
         meta = read_json(meta_path)
+        if meta != withdrawal_entries.get(identifier):
+            issue("withdrawn_origin_metadata_not_exact", id=identifier)
         if (meta.get("id") != identifier or meta.get("revision") != record["revision"]
                 or meta.get("path") != record["path"]
                 or meta.get("sha256") != record["sha256"]
@@ -263,8 +289,28 @@ def validate(root: Path, baseline: str | None = None) -> dict:
         previous_delta["new_ids"].append(identifier)
         if by_id[identifier]["revision"] != 1:
             issue("new_since_previous_revision", id=identifier)
-    if set(previous_delta["withdrawn_ids"]) != set(retired_by_id):
-        issue("withdrawal_set_disagrees_with_previous_catalog")
+    if not set(previous_delta["withdrawn_ids"]) <= set(retired_by_id):
+        issue("removal_missing_withdrawal_record")
+    if set(withdrawal_entries) - set(by_id) != set(retired_by_id):
+        issue("withdrawal_set_disagrees_with_origin_catalog")
+
+    # Source-note maintenance does not change the fixed upstream source.
+    # Retain the previous note bytes and reject changes to source identity.
+    previous_sources_path = local(version["previous_sources"])
+    if sha(previous_sources_path.read_bytes()) != version["previous_sources_sha256"]:
+        issue("previous_source_registry_hash")
+    previous_sources = {source["id"]: source for source in read_json(previous_sources_path)["sources"]}
+    if set(previous_sources) != source_ids:
+        issue("source_set_changed")
+    for source in sources:
+        prior = previous_sources.get(source["id"], {})
+        if {k: v for k, v in source.items() if k != "local_sha256"} != {
+                k: v for k, v in prior.items() if k != "local_sha256"}:
+            issue("fixed_source_changed", id=source["id"])
+        if source["local_sha256"] != prior.get("local_sha256"):
+            note = local(source["local_path"], previous_sources_path.parent.parent)
+            if not note.is_file() or sha(note.read_bytes()) != prior.get("local_sha256"):
+                issue("previous_source_note_not_preserved", id=source["id"])
 
     delta = {"baseline": baseline, "new_ids": [], "revised_ids": [], "unchanged_ids": []}
     previous_tree_check = "not_requested; portable snapshot and archive hashes checked"
@@ -303,8 +349,8 @@ def validate(root: Path, baseline: str | None = None) -> dict:
             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode == 0
         if tree_available:
             previous_tree_check = "available; exact snapshot and withdrawn body bytes checked"
-            for archived, old_path in ((version["previous_catalog"], "knowledge/catalog.json"),
-                                       (version["previous_version"], "VERSION.json")):
+            for archived, old_path in ((version["withdrawal_catalog"], "knowledge/catalog.json"),
+                                       (version["withdrawal_version"], "VERSION.json")):
                 exact = subprocess.check_output(["git", "show", f"{prior_tree}:{old_path}"], cwd=root)
                 if local(archived).read_bytes() != exact:
                     issue("previous_delivery_snapshot_not_exact", file=archived)
@@ -321,6 +367,11 @@ def validate(root: Path, baseline: str | None = None) -> dict:
             if relative.endswith("temporal-policy.json"):
                 old = {k: v for k, v in old.items() if k != "profile_id"}
                 current = {k: v for k, v in current.items() if k != "profile_id"}
+            else:
+                old = {**old, "sources": [{k: v for k, v in item.items() if k != "local_sha256"}
+                                          for item in old["sources"]]}
+                current = {**current, "sources": [{k: v for k, v in item.items() if k != "local_sha256"}
+                                                  for item in current["sources"]]}
             if old != current:
                 issue("source_or_policy_changed", file=relative)
 

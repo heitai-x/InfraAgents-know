@@ -1,6 +1,6 @@
 # 推理知识库的范围与组合验证
 
-当前修订保持既有108篇，深化11篇原专题，继续沿用模型、算法、硬件、框架、引擎索引、系统语义、工作负载和工具八类。这里按初始审计的 24 个能力域说明当前阅读入口、需要连接的机制和验证边界；集群放置、推理存储与部署环境作为三项跨域平台依赖单独展开。
+当前修订保持既有108篇；v2.2-r1深化11篇原专题，本轮再修正4篇的流程化表达，继续沿用模型、算法、硬件、框架、引擎索引、系统语义、工作负载和工具八类。这里按初始审计的 24 个能力域说明当前阅读入口、需要连接的机制和验证边界；集群放置、推理存储与部署环境作为三项跨域平台依赖单独展开。
 
 知识库面向一个完整推理任务：从固定模型与输入，经过制品加载、算子/执行器、状态管理、调度和平台资源，直到对外输出、质量判断、故障恢复与成本评估。范围包含生成式和非生成式推理，以及支持这些推理服务的集群、存储和部署契约。训练数据构建、优化器/反向传播、完整训练平台生命周期不在本轮范围；硬件章节提供固定来源支持的机制与接口边界，不宣称穷尽全部设备、指令和产品版本。
 
@@ -12,11 +12,11 @@
 
 CPU–GPU知识此前已经由异构计算、主机设备流水、异步调度、stream/分配器与共享路径覆盖；本轮把有限批、缓冲槽位和共享带宽量化放回 [主机设备流水](../knowledge/hardware/host-device-transfer.md)。通信count/标识反例归 [collective](../knowledge/system-semantics/collective-ordering.md)，启动与带宽成本归 [拓扑](../knowledge/hardware/topology-parallelism.md)。算子地址和具体API增量分别归原算子、Attention、服务与主机专题。
 
-使用场景是可选的问题入口，见 [使用问题与探索边界](knowledge-use-cases.md)。能力域和部署例子不穷尽合法方案，不产生固定组件、施工顺序或任务以外的验收要求。当前11篇修订与六篇撤回稿的去向见 [变更清单](actionable-knowledge/change-manifest.json)。
+使用场景是可选的问题入口，见 [使用问题与探索边界](knowledge-use-cases.md)。能力域和部署例子不穷尽合法方案，不产生固定组件、施工顺序或任务以外的验收要求。当前修订见 [变更清单](actionable-knowledge/change-manifest.json)，六篇历史撤回稿的归属见 [撤回登记](actionable-knowledge/withdrawn-chapters.json)。
 
 ## 24 个能力域的阅读与验证
 
-表中的“组合验证”是应用知识时需要完成的检查，不是本页宣称已经执行的实验。先从与任务最相关的域开始，再沿链接补齐依赖；[完整索引](../knowledge/INDEX.md) 提供所有章节，[设计入口](../knowledge/DESIGN.md) 给出阅读顺序，[诊断入口](../knowledge/DIAGNOSIS.md) 从实际行为反推机制。
+表中的“组合验证”列出各机制的可检查关系；哪些关系适用取决于实际任务、所选机制和当前问题。它们不构成统一检查清单，也未在本页被声明为已完成实验。[完整索引](../knowledge/INDEX.md) 提供所有章节，[设计入口](../knowledge/DESIGN.md) 按主题导航，[诊断入口](../knowledge/DIAGNOSIS.md) 从实际行为反推机制。
 
 | 能力域 | 主要入口 | 组合验证应回答的问题 |
 |---|---|---|
@@ -24,7 +24,7 @@ CPU–GPU知识此前已经由异构计算、主机设备流水、异步调度�
 | D02：模型结构与输入输出语义 | [模型计算图](../knowledge/models/prefill-decode-state.md)、[Tokenizer/I/O](../knowledge/system-semantics/tokenization-io.md)、[位置与 mask](../knowledge/system-semantics/position-mask-cache.md)、[Embedding/重排](../knowledge/models/embedding-reranking.md) | 固定配置、权重、前处理与任务头能否还原完整函数；padding、位置、可见性及持久状态是否一致；生成和非生成输出是否各有参考。 |
 | D03：模型制品、权重加载与冷启动 | [制品加载](../knowledge/frameworks/checkpoint-loading.md)、[模型生命周期](../knowledge/system-semantics/model-lifecycle.md)、[推理存储](../knowledge/system-semantics/storage-services.md) | 分片、别名、转换格式、编译/预热与就绪是否属于同一版本；源/目标副本和新旧实例并存峰值是否可容纳；缺片、取消或回退时谁回收资源。 |
 | D04：基础算子与数值计算 | [算子原语](../knowledge/algorithms/operator-primitives.md)、[Attention IO](../knowledge/algorithms/attention-io.md)、[数值参考](../knowledge/frameworks/numerical-reference.md) | GEMM/GEMV、embedding、norm、RoPE、softmax 与索引是否遵守真实形状/布局；尾块、归约和融合能否对照独立函数定位首次分歧。 |
-| D05：GPU 架构与内核实现 | [GPU 流水](../knowledge/hardware/gpu-kernel-pipelines.md)、[CUDA](../knowledge/hardware/cuda-execution.md)、[ROCm](../knowledge/hardware/rocm-execution.md)、[块程序与调优](../knowledge/frameworks/triton-kernels.md) | 两个合法 tile/流水候选的寄存器、shared/LDS、spill、并行度和搬运成本是什么；局部改善是否保留真实 batch 与服务路径收益。 |
+| D05：GPU 架构与内核实现 | [GPU 流水](../knowledge/hardware/gpu-kernel-pipelines.md)、[CUDA](../knowledge/hardware/cuda-execution.md)、[ROCm](../knowledge/hardware/rocm-execution.md)、[块程序与调优](../knowledge/frameworks/triton-kernels.md) | 所选 tile/流水的寄存器、shared/LDS、spill、并行度和搬运成本是什么；局部改善是否保留真实 batch 与服务路径收益。 |
 | D06：CPU 架构、内核与线程运行时 | [CPU 服务](../knowledge/hardware/cpu-serving.md)、[CPU 线性层](../knowledge/hardware/cpu-linear-kernels.md)、[CPU 低位执行](../knowledge/frameworks/cpu-quantized-kernels.md)、[主机运行时](../knowledge/system-semantics/host-runtime.md) | 小 batch decode 与 prefill 的重用差异能否落实到打包、cache/TLB、NUMA 和线程；算子线程与分词/协议处理是否争用同一预算。 |
 | D07：量化、压缩与近似计算 | [量化契约](../knowledge/algorithms/quantization-contract.md)、[数值格式与 kernel](../knowledge/hardware/precision-and-kernel-support.md)、[KV 压缩](../knowledge/algorithms/kv-compression.md) | 校准集、scale/zero point、实际 dispatch 与误差是否分别验证；节省的码字节、元数据、副本和转换是否一起计账；组合近似是否仍满足任务质量。 |
 | D08：KV 与其他状态的分配、共享和回收 | [分页 KV](../knowledge/algorithms/paged-kv-capacity.md)、[异构状态](../knowledge/algorithms/heterogeneous-state-cache.md)、[分配器](../knowledge/system-semantics/memory-allocators.md)、[取消与完成](../knowledge/system-semantics/cancellation-resource-completion.md) | 跨页、共享分叉、递归状态、抢占和取消的恢复点是否共同合法；逻辑所有权、物理槽与在途引用是否守恒，何时允许复用。 |
@@ -43,7 +43,7 @@ CPU–GPU知识此前已经由异构计算、主机设备流水、异步调度�
 | D21：多模态、语音和扩散服务 | [流式 encoder-decoder](../knowledge/models/encoder-decoder-streaming.md)、[语音](../knowledge/models/speech-generation.md)、[VLM](../knowledge/models/vision-language.md)、[全模态](../knowledge/models/omni-multimodal.md)、[图像](../knowledge/models/image-diffusion.md)、[视频](../knowledge/models/video-generation.md) | 输入处理、专用模型阶段和交付时钟如何连接；chunk、lookahead、CFG、scheduler 与 VAE 状态是否正确；首包与完整输出质量是否联合约束。 |
 | D22：Embedding、检索和其他推理负载 | [Embedding/重排](../knowledge/models/embedding-reranking.md)、[检索/RAG](../knowledge/system-semantics/retrieval-pipeline.md)、[CNN/检测](../knowledge/models/vision-inference.md)、[推荐](../knowledge/models/recommendation-inference.md)、[GNN](../knowledge/models/graph-inference.md) | 分别验证编码/排序、合法近邻与材料质量、图像几何、bag/交互和采样邻域；每类使用自己的计算链、状态、资源与质量指标。 |
 | D23：观测、验证与实验统计 | [可观测性](../knowledge/tools/trace-observability.md)、[时间线](../knowledge/tools/timeline-attribution.md)、[计数器](../knowledge/tools/kernel-counter-replay.md)、[独立 oracle](../knowledge/tools/correctness-oracles.md)、[统计实验](../knowledge/tools/statistical-experiments.md) | 材料能否区分竞争解释；区组/配对、重复层级、自相关、尾部样本和搜索选择偏差是否处理；局部正确、机制解释、端到端收益与迁移性是否分开。 |
-| D24：完整系统推导与设计探索 | [组合设计](../knowledge/system-semantics/design-synthesis.md)、[独立检查](../knowledge/system-semantics/evidence-and-independent-checks.md)、[容量规划](../knowledge/workloads/capacity-planning.md)、[场景入口](../knowledge/DESIGN.md) | 能否从 workload/约束导出多个合法候选、成本预测和失败条件，再通过区分实验选择、回退或改换方案；证据是否只支持实际检查过的范围。 |
+| D24：完整系统推导与设计探索 | [组合设计](../knowledge/system-semantics/design-synthesis.md)、[独立检查](../knowledge/system-semantics/evidence-and-independent-checks.md)、[容量规划](../knowledge/workloads/capacity-planning.md)、[场景入口](../knowledge/DESIGN.md) | 能否依据 workload/约束解释方案的合法性、成本预测和失败条件，并根据区分实验保留、修改或更换方案；证据是否只支持实际检查过的范围。 |
 
 ## 三项推理平台依赖
 
@@ -61,7 +61,7 @@ CPU、CUDA、ROCm、Metal 和 Trainium 章节保留各自执行模型；MLX、Ne
 
 [设计入口的场景表](../knowledge/DESIGN.md) 连接 C01–C12：CPU、单 GPU、长前缀、三级存储、CPU–GPU 协同、多卡 MLA/MoE、P/D、LoRA、多模态/语音、扩散以及非生成推理。C12 内进一步区分 embedding/重排、检索/RAG、CNN/检测、推荐与 GNN 五份独立契约。场景覆盖是对机制能否组合的检查，不能由一个代表模型代替全部负载。
 
-应用一个场景时，需要形成六项连贯内容：明确任务函数和质量；写出对象、状态与完成点；列出至少两个满足约束的候选；计算容量、计算、传输和排队的主要成本；选择能区分候选的参考与实验；说明什么条件变化会使选择反转。已有设定算例能检查量纲、数量与逻辑关系，实际设备的性能参数仍需测量。
+场景中的任务函数、状态、成本与反例展示了机制之间的联系。读者可以选取当前问题需要的关系，直接实现、构造局部实验或比较有实际意义的方案；候选数量、记录形式和研发顺序由任务与实际不确定性决定。已有设定算例用于检查量纲、数量和逻辑关系，实际设备的性能参数仍需测量。
 
 实验后继续按现有知识构建逻辑处理：观察保留真实任务、版本与时间，运行期 learned 与预置 seed 分层；Evolution 提案、独立复核和发布规则负责决定哪些认识可写回。外部论文、官方文档与源码索引提供可追溯的依据，独立正文围绕推理问题组织；不要求使用知识库时先运行参考项目。
 

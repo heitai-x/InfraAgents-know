@@ -1,0 +1,544 @@
+--- v2.2-r1/README.md
++++ v2.2-r2/README.md
+@@ -2,14 +2,14 @@
+ 
+ InfraAgents 的独立知识仓库。不同分支承载不同内容版本，保持相同的目录、章节 ID 和现有读取接口。
+ 
+-目标内容分支为 **gpt-6-astra-2026-04-30**。当前本地修订版 **v2.2-r1** 保持 **108 篇专题、114 项固定来源**，相对 v2.1 深化 11 篇原专题。上一版六个新设章节已从活动目录撤回：有用的地址、API、缓冲和通信增量归回原章，重复机制与通用构建流程不再另立知识对象。来源上限仍为 2026-04-30。
++目标内容分支为 **gpt-6-astra-2026-04-30**。当前本地修订版 **v2.2-r2** 保持 **108 篇专题、114 项固定来源**，相对 v2.2-r1 修正 4 篇的流程化表达，并更新读取探针、时间审计和来源定位。v2.2-r1 相对 v2.1 深化的 11 篇仍保留。上一版六个新设章节已从活动目录撤回：有用的地址、API、缓冲和通信增量归回原章，重复机制与通用构建流程不再另立知识对象。来源上限仍为 2026-04-30。
+ 
+-研究目标保持为 Agent 从空工程构建并优化完整推理引擎。这个目标不预设组件划分、研发阶段或候选集合；[使用问题与探索边界](docs/knowledge-use-cases.md) 提供无序、非穷尽的问题示例。[本轮复审](docs/evidence/knowledge-open-exploration-20261024/review.md) 解释撤回与归并决定，[变更清单](docs/actionable-knowledge/change-manifest.json) 保存当前身份。旧v2.2的通过记录仅属于其当时的内容，不能证明新组织合理或Agent探索行为未受影响。
++研究目标保持为 Agent 从空工程构建并优化完整推理引擎。这个目标不预设组件划分、研发阶段或候选集合；[使用问题与探索边界](docs/knowledge-use-cases.md) 提供无序、非穷尽的问题示例。[本轮修改与验证](docs/evidence/knowledge-cleanup-20261027/review.md) 记录清理范围；[v2.2-r1 复审](docs/evidence/knowledge-open-exploration-20261024/review.md) 保留六篇撤回与归并依据，[变更清单](docs/actionable-knowledge/change-manifest.json) 保存当前身份。旧v2.2的通过记录仅属于其当时的内容，不能证明新组织合理或Agent探索行为未受影响。
+ 
+ | 分支 | 内容 |
+ |---|---|
+ | [main](https://github.com/heitai-x/InfraAgents-know/tree/main) | 原始未限时 base，保留初始来源和章节历史；不作模型训练时间声明。 |
+-| [gpt-6-astra-2026-04-30](https://github.com/heitai-x/InfraAgents-know/tree/gpt-6-astra-2026-04-30) | 来源版本上限为 2026-04-30，当前修订保持108个原专题，深化11篇；问题入口不规定构建路线。内容身份以检出的VERSION.json为准。 |
++| [gpt-6-astra-2026-04-30](https://github.com/heitai-x/InfraAgents-know/tree/gpt-6-astra-2026-04-30) | 来源版本上限为 2026-04-30，当前本地修订保持108个原专题；问题入口和参考方法不规定构建路线。内容身份以检出的VERSION.json为准。 |
+ 
+ 从 [设计入口](knowledge/DESIGN.md)、[完整专题索引](knowledge/INDEX.md) 和 [诊断入口](knowledge/DIAGNOSIS.md) 阅读；[来源登记](knowledge/SOURCES.md) 与 [完整原文](references/index.html) 提供本地依据。
+ 
+--- v2.2-r1/knowledge/README.md
++++ v2.2-r2/knowledge/README.md
+@@ -1,6 +1,6 @@
+ # Astra 截止日前的 InfraAgents base 知识库
+ 
+-当前修订版为 base-gpt-6-astra-2026-04-30-v2.2-r1，来源版本上限为 2026-04-30（包含该日）。当前108篇专题、114项固定来源全部保留原有知识对象；相对v2.1深化11篇，撤回上一轮未发布提案的6个新设章节。117份在用专题旧修订和6篇撤回稿分别保留准确身份。当前审查与验证见 [本轮记录](../docs/evidence/knowledge-open-exploration-20261024/review.md)，旧v2.2通过记录只属于其当时内容。
++当前修订版为 base-gpt-6-astra-2026-04-30-v2.2-r2，来源版本上限为 2026-04-30（包含该日）。当前108篇专题、114项固定来源全部保留；相对v2.2-r1修正4篇的流程化表达，并更新读取探针、时间审计与来源定位。121份活动专题旧修订和6篇撤回稿分别保留准确身份。本轮范围见 [修改与验证记录](../docs/evidence/knowledge-cleanup-20261027/review.md)；旧版本报告只证明当时被检查的内容。
+ 
+ [主题索引](INDEX.md)、[设计入口](DESIGN.md)、[诊断入口](DIAGNOSIS.md) 和 [覆盖矩阵](COVERAGE.md) 提供可选阅读路径。[系统组合](system-semantics/design-synthesis.md) 展示条件化例子；它们不要求所有Agent采用同一组件划分、研发顺序或方案集合。
+ 
+--- v2.2-r1/knowledge/DESIGN.md
++++ v2.2-r2/knowledge/DESIGN.md
+@@ -2,21 +2,21 @@
+ 
+ 本页按技术主题提供可选入口，没有固定阅读或研发顺序。场景与示例不穷尽候选；Task 的要求和所选机制的语义决定实际检查，原型、整体编译、联合设计和其他未列方案均可按条件探索。
+ 
+-先用 [组合设计](system-semantics/design-synthesis.md) 建立完整问题，再选与当前决策有关的机制。索引摘要用于导航，具体设计依据来自正文中的关系与推导。
++可按当前问题直接选择专题；[组合设计](system-semantics/design-synthesis.md) 提供连接多个机制的条件化例子。索引摘要用于导航，具体设计依据来自正文中的关系与推导。
+ 
+ 角色只从当前运行的时间 profile 读取正文和原始来源。`checked_at`、`updated_at` 和本地归档时间不是事实发生时间；需要先通过 [时间边界规则](../docs/23-time-bounded-knowledge.md) 的来源版本检查，再把专题用于设计。
+ 
+-本入口按完整推理系统组织阅读顺序；[推理范围与组合验证](../docs/inference-coverage.md) 列出 24 个能力域和集群、存储、部署三项平台依赖。运行实际可读范围还由知识条件、来源资格及原始资料访问限制决定。
++本入口按完整推理系统的技术主题组织导航；[推理范围与组合验证](../docs/inference-coverage.md) 列出 24 个能力域和集群、存储、部署三项平台依赖。运行实际可读范围还由知识条件、来源资格及原始资料访问限制决定。
+ 
+ ## 确定模型函数与状态
+ 
+ 从 [模型计算图](models/prefill-decode-state.md) 出发，识别 [GQA](models/gqa-kv-heads.md)、[MLA](models/mla.md)、[MoE](models/moe-routing.md)、[SSM/混合](models/recurrent-hybrid-state.md) 或 [窗口层](models/sliding-window-attention.md)。对于 [encoder-decoder](models/encoder-decoder-streaming.md)、[VLM](models/vision-language.md)、[扩散](models/image-diffusion.md)、[视频](models/video-generation.md)、[语音生成](models/speech-generation.md) 和 [全模态](models/omni-multimodal.md)，还需还原阶段与模态之间的依赖。
+ 
+-这一步的产物是输入输出、逻辑位置、可见集合和持久状态的明确描述。[Tokenizer 与 I/O](system-semantics/tokenization-io.md) 将用户输入连接到这份描述。
++这些专题解释输入输出、逻辑位置、可见集合和持久状态之间的关系。[Tokenizer 与 I/O](system-semantics/tokenization-io.md) 将用户输入连接到这份描述。
+ 
+ 非生成负载分别进入 [Embedding 与重排](models/embedding-reranking.md)、[视觉识别与检测](models/vision-inference.md)、[推荐](models/recommendation-inference.md) 和 [图模型](models/graph-inference.md)。它们各有 pooling/评分、图像几何、稀疏特征或邻居依赖；[检索与 RAG](system-semantics/retrieval-pipeline.md) 再将编码、索引、材料版本和下游生成连接起来。
+ 
+-再通过 [权重加载](frameworks/checkpoint-loading.md) 还原制品、张量别名与执行布局，以 [基础算子](algorithms/operator-primitives.md) 明确线性、归一化、位置旋转和索引的函数契约。加载完成与实例就绪分开判断，冷启动和预热的峰值都进入容量账。
++通过 [权重加载](frameworks/checkpoint-loading.md) 还原制品、张量别名与执行布局，以 [基础算子](algorithms/operator-primitives.md) 明确线性、归一化、位置旋转和索引的函数契约。加载完成与实例就绪分开判断，冷启动和预热的峰值都进入容量账。
+ 
+ [模型生命周期](system-semantics/model-lifecycle.md) 将加载、编译/预热、准入、排空和版本切换连成状态链，明确旧请求何时结束、新模型何时可以接收请求，以及对应资源何时回收。
+ 
+@@ -30,7 +30,7 @@
+ 
+ ## 映射到平台和执行路径
+ 
+-先建立 [容量/roofline](hardware/memory-and-roofline.md) 与 [通信拓扑](hardware/topology-parallelism.md)，再阅读目标 [CUDA](hardware/cuda-execution.md)、[ROCm](hardware/rocm-execution.md)、[Metal](hardware/metal-unified-memory.md)、[Trainium](hardware/trainium-dataflow.md) 或 [CPU](hardware/cpu-serving.md)。
++[容量/roofline](hardware/memory-and-roofline.md) 与 [通信拓扑](hardware/topology-parallelism.md) 可与目标平台交叉阅读： [CUDA](hardware/cuda-execution.md)、[ROCm](hardware/rocm-execution.md)、[Metal](hardware/metal-unified-memory.md)、[Trainium](hardware/trainium-dataflow.md) 或 [CPU](hardware/cpu-serving.md)。
+ 
+ [Attention IO](algorithms/attention-io.md) 解释 kernel 数据流，[backend 契约](frameworks/attention-backends.md) 连接语义与布局，[编译分桶](frameworks/compile-dynamic-shapes.md)、[CUDA Graph](frameworks/cuda-graph-buffers.md)、[MLX](frameworks/mlx-serving.md)、[Neuron](frameworks/neuron-serving.md) 与 [NKI](frameworks/nki-tiling.md) 承接具体执行模型。
+ 
+@@ -40,7 +40,7 @@
+ 
+ ## 在容量与传输约束下组织驻留
+ 
+-[HBM–DRAM–SSD 驻留](algorithms/tiered-residency.md) 先定义对象版本、有效副本和迁移提交，再由 [存储 I/O](hardware/storage-io.md) 还原真实读取路径。[KV 卸载](algorithms/kv-offload-prefetch.md) 比较恢复、持续读取与重算，[权重和专家卸载](algorithms/weight-expert-offload.md) 则比较层间重用、路由并集与热点变化。
++[HBM–DRAM–SSD 驻留](algorithms/tiered-residency.md) 解释对象版本、有效副本和迁移提交；[存储 I/O](hardware/storage-io.md) 解释真实读取路径。[KV 卸载](algorithms/kv-offload-prefetch.md) 比较恢复、持续读取与重算，[权重和专家卸载](algorithms/weight-expert-offload.md) 则比较层间重用、路由并集与热点变化。
+ 
+ 在 [CPU–GPU 计算放置](algorithms/heterogeneous-execution.md) 中比较搬数据到 GPU 与把计算留在 CPU 的完整路径；[共享内存](hardware/shared-memory-paths.md) 进一步区分统一地址、可迁移驻留和物理共享。三级存储与异构计算各有可复算场景，容量可行、质量合格和 SLO 可达分别判断。
+ 
+@@ -58,7 +58,7 @@
+ 
+ ## 组织多模型与平台依赖
+ 
+-[多模型放置](workloads/multi-model-placement.md) 先确认可共享的基座、adapter、执行缓冲和缓存，再比较驻留、分组与副本。[租户隔离](system-semantics/tenant-isolation.md) 将身份、缓存命名空间、配额、资源干扰和故障边界分别约束。[弹性服务](workloads/elastic-serving.md) 根据真实就绪容量与冷启动/排空时间响应突发，不能把已申请实例数直接当作服务能力。
++[多模型放置](workloads/multi-model-placement.md) 将基座、adapter、执行缓冲与缓存的共享条件连接到驻留、分组和副本选择。[租户隔离](system-semantics/tenant-isolation.md) 将身份、缓存命名空间、配额、资源干扰和故障边界分别约束。[弹性服务](workloads/elastic-serving.md) 根据真实就绪容量与冷启动/排空时间响应突发，不能把已申请实例数直接当作服务能力。
+ 
+ [集群放置](workloads/cluster-resource-placement.md) 检查每个 rank 的资源向量、通信拓扑、共同启动和故障域；[推理存储服务](system-semantics/storage-services.md) 区分权重、KV、索引与提交记录的可见性和持久性；[部署环境](system-semantics/deployment-environment.md) 核对镜像、宿主驱动、设备身份、quota 和 NUMA。这三项决定推理方案是否真正可部署，并与加载、迁移和恢复共用容量及带宽预算。
+ 
+--- v2.2-r1/docs/inference-coverage.md
++++ v2.2-r2/docs/inference-coverage.md
+@@ -1,6 +1,6 @@
+ # 推理知识库的范围与组合验证
+ 
+-当前修订保持既有108篇，深化11篇原专题，继续沿用模型、算法、硬件、框架、引擎索引、系统语义、工作负载和工具八类。这里按初始审计的 24 个能力域说明当前阅读入口、需要连接的机制和验证边界；集群放置、推理存储与部署环境作为三项跨域平台依赖单独展开。
++当前修订保持既有108篇；v2.2-r1深化11篇原专题，本轮再修正4篇的流程化表达，继续沿用模型、算法、硬件、框架、引擎索引、系统语义、工作负载和工具八类。这里按初始审计的 24 个能力域说明当前阅读入口、需要连接的机制和验证边界；集群放置、推理存储与部署环境作为三项跨域平台依赖单独展开。
+ 
+ 知识库面向一个完整推理任务：从固定模型与输入，经过制品加载、算子/执行器、状态管理、调度和平台资源，直到对外输出、质量判断、故障恢复与成本评估。范围包含生成式和非生成式推理，以及支持这些推理服务的集群、存储和部署契约。训练数据构建、优化器/反向传播、完整训练平台生命周期不在本轮范围；硬件章节提供固定来源支持的机制与接口边界，不宣称穷尽全部设备、指令和产品版本。
+ 
+@@ -12,11 +12,11 @@
+ 
+ CPU–GPU知识此前已经由异构计算、主机设备流水、异步调度、stream/分配器与共享路径覆盖；本轮把有限批、缓冲槽位和共享带宽量化放回 [主机设备流水](../knowledge/hardware/host-device-transfer.md)。通信count/标识反例归 [collective](../knowledge/system-semantics/collective-ordering.md)，启动与带宽成本归 [拓扑](../knowledge/hardware/topology-parallelism.md)。算子地址和具体API增量分别归原算子、Attention、服务与主机专题。
+ 
+-使用场景是可选的问题入口，见 [使用问题与探索边界](knowledge-use-cases.md)。能力域和部署例子不穷尽合法方案，不产生固定组件、施工顺序或任务以外的验收要求。当前11篇修订与六篇撤回稿的去向见 [变更清单](actionable-knowledge/change-manifest.json)。
++使用场景是可选的问题入口，见 [使用问题与探索边界](knowledge-use-cases.md)。能力域和部署例子不穷尽合法方案，不产生固定组件、施工顺序或任务以外的验收要求。当前修订见 [变更清单](actionable-knowledge/change-manifest.json)，六篇历史撤回稿的归属见 [撤回登记](actionable-knowledge/withdrawn-chapters.json)。
+ 
+ ## 24 个能力域的阅读与验证
+ 
+-表中的“组合验证”是应用知识时需要完成的检查，不是本页宣称已经执行的实验。先从与任务最相关的域开始，再沿链接补齐依赖；[完整索引](../knowledge/INDEX.md) 提供所有章节，[设计入口](../knowledge/DESIGN.md) 给出阅读顺序，[诊断入口](../knowledge/DIAGNOSIS.md) 从实际行为反推机制。
++表中的“组合验证”列出各机制的可检查关系；哪些关系适用取决于实际任务、所选机制和当前问题。它们不构成统一检查清单，也未在本页被声明为已完成实验。[完整索引](../knowledge/INDEX.md) 提供所有章节，[设计入口](../knowledge/DESIGN.md) 按主题导航，[诊断入口](../knowledge/DIAGNOSIS.md) 从实际行为反推机制。
+ 
+ | 能力域 | 主要入口 | 组合验证应回答的问题 |
+ |---|---|---|
+@@ -24,7 +24,7 @@
+ | D02：模型结构与输入输出语义 | [模型计算图](../knowledge/models/prefill-decode-state.md)、[Tokenizer/I/O](../knowledge/system-semantics/tokenization-io.md)、[位置与 mask](../knowledge/system-semantics/position-mask-cache.md)、[Embedding/重排](../knowledge/models/embedding-reranking.md) | 固定配置、权重、前处理与任务头能否还原完整函数；padding、位置、可见性及持久状态是否一致；生成和非生成输出是否各有参考。 |
+ | D03：模型制品、权重加载与冷启动 | [制品加载](../knowledge/frameworks/checkpoint-loading.md)、[模型生命周期](../knowledge/system-semantics/model-lifecycle.md)、[推理存储](../knowledge/system-semantics/storage-services.md) | 分片、别名、转换格式、编译/预热与就绪是否属于同一版本；源/目标副本和新旧实例并存峰值是否可容纳；缺片、取消或回退时谁回收资源。 |
+ | D04：基础算子与数值计算 | [算子原语](../knowledge/algorithms/operator-primitives.md)、[Attention IO](../knowledge/algorithms/attention-io.md)、[数值参考](../knowledge/frameworks/numerical-reference.md) | GEMM/GEMV、embedding、norm、RoPE、softmax 与索引是否遵守真实形状/布局；尾块、归约和融合能否对照独立函数定位首次分歧。 |
+-| D05：GPU 架构与内核实现 | [GPU 流水](../knowledge/hardware/gpu-kernel-pipelines.md)、[CUDA](../knowledge/hardware/cuda-execution.md)、[ROCm](../knowledge/hardware/rocm-execution.md)、[块程序与调优](../knowledge/frameworks/triton-kernels.md) | 两个合法 tile/流水候选的寄存器、shared/LDS、spill、并行度和搬运成本是什么；局部改善是否保留真实 batch 与服务路径收益。 |
++| D05：GPU 架构与内核实现 | [GPU 流水](../knowledge/hardware/gpu-kernel-pipelines.md)、[CUDA](../knowledge/hardware/cuda-execution.md)、[ROCm](../knowledge/hardware/rocm-execution.md)、[块程序与调优](../knowledge/frameworks/triton-kernels.md) | 所选 tile/流水的寄存器、shared/LDS、spill、并行度和搬运成本是什么；局部改善是否保留真实 batch 与服务路径收益。 |
+ | D06：CPU 架构、内核与线程运行时 | [CPU 服务](../knowledge/hardware/cpu-serving.md)、[CPU 线性层](../knowledge/hardware/cpu-linear-kernels.md)、[CPU 低位执行](../knowledge/frameworks/cpu-quantized-kernels.md)、[主机运行时](../knowledge/system-semantics/host-runtime.md) | 小 batch decode 与 prefill 的重用差异能否落实到打包、cache/TLB、NUMA 和线程；算子线程与分词/协议处理是否争用同一预算。 |
+ | D07：量化、压缩与近似计算 | [量化契约](../knowledge/algorithms/quantization-contract.md)、[数值格式与 kernel](../knowledge/hardware/precision-and-kernel-support.md)、[KV 压缩](../knowledge/algorithms/kv-compression.md) | 校准集、scale/zero point、实际 dispatch 与误差是否分别验证；节省的码字节、元数据、副本和转换是否一起计账；组合近似是否仍满足任务质量。 |
+ | D08：KV 与其他状态的分配、共享和回收 | [分页 KV](../knowledge/algorithms/paged-kv-capacity.md)、[异构状态](../knowledge/algorithms/heterogeneous-state-cache.md)、[分配器](../knowledge/system-semantics/memory-allocators.md)、[取消与完成](../knowledge/system-semantics/cancellation-resource-completion.md) | 跨页、共享分叉、递归状态、抢占和取消的恢复点是否共同合法；逻辑所有权、物理槽与在途引用是否守恒，何时允许复用。 |
+@@ -43,7 +43,7 @@
+ | D21：多模态、语音和扩散服务 | [流式 encoder-decoder](../knowledge/models/encoder-decoder-streaming.md)、[语音](../knowledge/models/speech-generation.md)、[VLM](../knowledge/models/vision-language.md)、[全模态](../knowledge/models/omni-multimodal.md)、[图像](../knowledge/models/image-diffusion.md)、[视频](../knowledge/models/video-generation.md) | 输入处理、专用模型阶段和交付时钟如何连接；chunk、lookahead、CFG、scheduler 与 VAE 状态是否正确；首包与完整输出质量是否联合约束。 |
+ | D22：Embedding、检索和其他推理负载 | [Embedding/重排](../knowledge/models/embedding-reranking.md)、[检索/RAG](../knowledge/system-semantics/retrieval-pipeline.md)、[CNN/检测](../knowledge/models/vision-inference.md)、[推荐](../knowledge/models/recommendation-inference.md)、[GNN](../knowledge/models/graph-inference.md) | 分别验证编码/排序、合法近邻与材料质量、图像几何、bag/交互和采样邻域；每类使用自己的计算链、状态、资源与质量指标。 |
+ | D23：观测、验证与实验统计 | [可观测性](../knowledge/tools/trace-observability.md)、[时间线](../knowledge/tools/timeline-attribution.md)、[计数器](../knowledge/tools/kernel-counter-replay.md)、[独立 oracle](../knowledge/tools/correctness-oracles.md)、[统计实验](../knowledge/tools/statistical-experiments.md) | 材料能否区分竞争解释；区组/配对、重复层级、自相关、尾部样本和搜索选择偏差是否处理；局部正确、机制解释、端到端收益与迁移性是否分开。 |
+-| D24：完整系统推导与设计探索 | [组合设计](../knowledge/system-semantics/design-synthesis.md)、[独立检查](../knowledge/system-semantics/evidence-and-independent-checks.md)、[容量规划](../knowledge/workloads/capacity-planning.md)、[场景入口](../knowledge/DESIGN.md) | 能否从 workload/约束导出多个合法候选、成本预测和失败条件，再通过区分实验选择、回退或改换方案；证据是否只支持实际检查过的范围。 |
++| D24：完整系统推导与设计探索 | [组合设计](../knowledge/system-semantics/design-synthesis.md)、[独立检查](../knowledge/system-semantics/evidence-and-independent-checks.md)、[容量规划](../knowledge/workloads/capacity-planning.md)、[场景入口](../knowledge/DESIGN.md) | 能否依据 workload/约束解释方案的合法性、成本预测和失败条件，并根据区分实验保留、修改或更换方案；证据是否只支持实际检查过的范围。 |
+ 
+ ## 三项推理平台依赖
+ 
+@@ -61,7 +61,7 @@
+ 
+ [设计入口的场景表](../knowledge/DESIGN.md) 连接 C01–C12：CPU、单 GPU、长前缀、三级存储、CPU–GPU 协同、多卡 MLA/MoE、P/D、LoRA、多模态/语音、扩散以及非生成推理。C12 内进一步区分 embedding/重排、检索/RAG、CNN/检测、推荐与 GNN 五份独立契约。场景覆盖是对机制能否组合的检查，不能由一个代表模型代替全部负载。
+ 
+-应用一个场景时，需要形成六项连贯内容：明确任务函数和质量；写出对象、状态与完成点；列出至少两个满足约束的候选；计算容量、计算、传输和排队的主要成本；选择能区分候选的参考与实验；说明什么条件变化会使选择反转。已有设定算例能检查量纲、数量与逻辑关系，实际设备的性能参数仍需测量。
++场景中的任务函数、状态、成本与反例展示了机制之间的联系。读者可以选取当前问题需要的关系，直接实现、构造局部实验或比较有实际意义的方案；候选数量、记录形式和研发顺序由任务与实际不确定性决定。已有设定算例用于检查量纲、数量和逻辑关系，实际设备的性能参数仍需测量。
+ 
+ 实验后继续按现有知识构建逻辑处理：观察保留真实任务、版本与时间，运行期 learned 与预置 seed 分层；Evolution 提案、独立复核和发布规则负责决定哪些认识可写回。外部论文、官方文档与源码索引提供可追溯的依据，独立正文围绕推理问题组织；不要求使用知识库时先运行参考项目。
+ 
+--- v2.2-r1/docs/USAGE.md
++++ v2.2-r2/docs/USAGE.md
+@@ -43,37 +43,44 @@
+ 
+ 仓库没有复制另一套 Controller、角色实现或运行时。正文更新沿用现有章节增量和版本历史；正式发布前仍需独立复核。Git 属性保留知识与原文的精确字节，防止换行转换破坏已有归档校验。
+ 
+-## v2 的读取入口与已验证运行时
++## v2 的读取入口与已验证运行时（历史）
+ 
+ v2 保留全部 108 篇机制正文与 114 项固定来源。完整选择/读取验收见 [Linux 记录](evidence/final-linux-validation.json)。选定视图的导航修复位于 [运行时分支](https://github.com/heitai-x/InfraAgents/tree/codex/knowledge-navigation-20261023)，提交 `aedff22c0885c4fc56db6058b9904e23d5e189b9`；使用修复后的框架可取得按冻结目录生成的设计与诊断入口。其 src/tests 基线与实际验证版本一致，详见 [发布身份](evidence/runtime-navigation-published.json)。
+ 
+ 更换知识版本应创建新任务或新的受控运行；既有冻结运行继续使用原内容和模型身份。知识库更新没有修改正在运行的实验，也没有将当前运行学习伪装成截止日前 seed。
+ 
+-## v2.1 的运行期反馈与发布
++## v2.1 的运行期反馈与发布（历史）
+ 
+-使用这份知识库执行 RSI 反馈或章节修订时，采用包含提交 `6d205853b6135adbc35b43525608ff919eb4dee6` 的运行时，见 [已验证的 GPU 兼容运行时分支](https://github.com/heitai-x/InfraAgents/tree/codex/knowledge-publication-bytes-20261023)。该版本同时包含选定视图导航修复，以及发布、历史保存和中断恢复中的字节保持读取。
++v2.1 当时的 RSI 反馈和章节修订接入使用包含提交 `6d205853b6135adbc35b43525608ff919eb4dee6` 的运行时，见 [已验证的 GPU 兼容运行时分支](https://github.com/heitai-x/InfraAgents/tree/codex/knowledge-publication-bytes-20261023)。该版本同时包含选定视图导航修复，以及发布、历史保存和中断恢复中的字节保持读取。
+ 
+ 真实运行曾发现：旧发布器把 CRLF 正文读取成 LF 后再计算哈希，导致未修改章节也无法通过发布校验。知识正文与登记哈希本身一致。修复保留所有校验和原始换行，已通过 56 项相关回归、真实 108 篇知识库的批准反馈回放与幂等检查，以及状态修订和历史恢复检查，见 [独立审查](evidence/publication-runtime-fix-20261023/review.md)。此前读取验证没有覆盖这条发布路径。
+ 
+ 如使用同一份限时 seed 配合 Luna 等其他实际模型，可以按 Task 选择 `full` 与 `seed_and_learned`；这不声明这些模型具有 Astra 的训练或知识截止日期。为运行建立独立可写知识仓库并将 runs 放在其中，运行期反馈和 learned 保留真实观察日期；已发布的限时 seed 标签保持固定。此次实际接入使用的初始知识内容仍为 `astra-2026-04-30-v2.1`，没有为运行修复改写章节或原始资料。
+ 
+-## 修订版的内容检查
++## 当前 v2.2-r2 的内容与接口检查
+ 
+-v2.2-r1仍通过原有knowledge search/read与knowledge_used版本绑定使用。七组问题只是无序、非穷尽的阅读示例，不是阶段状态机；它们不要求角色检索、提交统一产物或先完成某层验证才准许探索。详见 [使用问题与探索边界](knowledge-use-cases.md)。
++当前探针对应框架已采用的准确 ID / 路径读取接口。角色的采用声明只提交 `entry_id` 和 `purpose`；探针调用所提供运行时的 `KnowledgeUse` 解析器与 `bind_handoff`，由框架取得冻结修订号，再调用内部 `validate_uses`。调用者提供 `revision` 或使用 `ID@revision` 会被拒绝。内部归档和版本检查继续保留准确身份。
+ 
+-在知识仓库根目录执行结构与算例检查：
++七组问题是无序、非穷尽的阅读示例，不要求角色检索、提交统一产物或按固定阶段探索，见 [使用问题与探索边界](knowledge-use-cases.md)。
++
++在知识仓库根目录执行：
+ 
+ ```bash
+-python3 tools/validate_knowledge.py --baseline f640148464929f803a53b55e27ee4cbb83dc8657 --report /tmp/knowledge-structure.json
++python3 tools/validate_knowledge.py --report /tmp/knowledge-structure.json
+ python3 tools/check_knowledge_examples.py --report /tmp/knowledge-examples.json
+-```
+-
+-用已有运行时源码执行实际冻结读取与访问边界检查：
+-
+-```bash
+ python3 tools/probe_knowledge_runtime.py --runtime /path/to/InfraAgents --repository . --report /tmp/knowledge-runtime.json
+ ```
+ 
+-探针在独立副本上读取当前正文和历史，校验引用，并检查撤回ID与受限原文不进入当前视图。模型名是选择条件fixture，没有调用模型。查询命中仅观察可找到哪些入口，不要求实现按入口方案构建；新问题或未命中不构成引擎任务失败。
++内容快照不带 Git 历史，默认结构检查使用已保存的前版清单与正文。只有在真实 Git 检出中具备相应历史对象时，才额外使用 `--baseline f640148464929f803a53b55e27ee4cbb83dc8657` 检查最初基线。
+ 
+-本轮按源码模块SHA记录所用运行时；推荐分支获取时要求GitHub凭据，未重新验证其发布器。[本轮报告](evidence/knowledge-open-exploration-20261024/runtime-probe.json)只支持实际检查的接口。正文去除固定流程、目录去重和读取通过，都不能代替真实Agent行为实验。
++正文或时间 profile 改变后，用所选框架的现有审计函数重新生成根目录报告，再运行结构检查：
++
++```bash
++PYTHONPATH=/path/to/InfraAgents/src python3 -c "from pathlib import Path; from infra_agent.temporal import audit; audit(Path('.'), write_report=True)"
++```
++
++结构检查核对审计的 profile、章节集合、修订号、来源集合与截止日，避免旧版本的通过记录继续冒充当前审计。来源说明中的本地 Markdown 链接也会检查；修正来源说明时保留前版原文，固定来源版本和原始归档不变。
++
++探针在独立副本中验证四种知识视图，完整读取当前正文和历史，经过框架绑定检查采用声明，并核对未读、重复、撤回及受限原文的拒绝行为。模型名仅是选择条件 fixture，没有调用模型。查询命中只作为检索观察，不是引擎任务门禁。
++
++本轮报告及使用的实际运行时模块身份见 [修改与验证](evidence/knowledge-cleanup-20261027/review.md)。上述历史运行时曾验证的发布路径不自动成为当前验证结论；本轮不执行知识发布、真实 Agent 构建、模型请求或 GPU 性能实验。
+--- v2.2-r1/docs/BUILD-STATUS.md
++++ v2.2-r2/docs/BUILD-STATUS.md
+@@ -1,4 +1,12 @@
+-# 知识库 v2.2-r1：探索边界与专题归属修订
++# 知识库 v2.2-r2：表达清理与验证接口更新
++
++2026-10-27。本轮相对 v2.2-r1 修正4篇正文：模型接入、PyTorch 推理、可观测性与容量规划。将固定构建顺序、假设数量和分析先后改成按实际问题选用的方法；数学、状态和资源完成依赖保留。设计导航与范围说明同步去除固定候选数量和统一产物要求。
++
++仍为108篇 seed、114项固定来源；新增4份准确旧修订，活动历史共121份，六篇撤回档案继续保留。固定原始资料未修改。来源定位修正、时间审计再生成、当前读取与采用绑定检查见 [本轮记录](evidence/knowledge-cleanup-20261027/review.md)；当前内容以 [VERSION.json](../VERSION.json) 为准。
++
++本轮为本地修改与验证，不包含独立审查者结论、远端发布或活动 Task 切换。外层 v2.2-r1 bundle/patch 是历史交付，未包含本轮改动。以下旧报告保持其原有验证范围。
++
++## v2.2-r1 历史记录：探索边界与专题归属修订
+ 
+ ## 修订决定
+ 
+--- v2.2-r1/knowledge/models/prefill-decode-state.md
++++ v2.2-r2/knowledge/models/prefill-decode-state.md
+@@ -1,6 +1,6 @@
+ # K-MODEL-001：从模型计算图推导 Prefill、Decode 与持久状态
+ 
+-模型接入首先是一项计算图和状态语义工作：识别哪些量随 token、位置、请求和阶段变化，再选择执行机制。
++模型的计算图和状态语义说明哪些量随 token、位置、请求和执行阶段变化，为执行机制的选择与验证提供依据。
+ 
+ ## 自回归前向实际计算什么
+ 
+@@ -35,7 +35,7 @@
+ 
+ ## 从固定制品还原最小 forward
+ 
+-接入从一份固定版本档案开始：模型配置、权重分片、tokenizer/processor、特殊 token 与生成配置分别绑定身份。[权重加载](../frameworks/checkpoint-loading.md) 将逻辑参数映射到执行布局；在并入服务调度前，先建立单请求、固定输入、无状态复用的 forward，再增加增量状态。这样可以区分“模型函数未还原”和“缓存或调度改变了函数”。
++同一次函数对照使用相容的模型配置、权重分片、tokenizer/processor、特殊 token 与生成配置。[权重加载](../frameworks/checkpoint-loading.md) 解释逻辑参数到执行布局的映射。单请求、固定输入、无状态复用的 forward 可作为隔离缓存与调度影响的一种参考；它可以在诊断需要时建立，并非接入调度或探索增量状态的前置工程阶段。整体原型或编译执行也可借助独立组件参考定位模型还原与状态管理的差异。
+ 
+ 对一层常见的稠密 decoder，设有效 token 数 M、hidden 宽 H、Q head 数 Hq、KV head 数 Hkv、head 维 d、FFN 中间宽 I。Q/K/V 投影输出分别为 M×Hq×d、M×Hkv×d、M×Hkv×d；attention 输出通常还要通过输出投影回到 residual 形状。门控 FFN 的两个输入投影各为 M×I，逐点门控后再回到 M×H。上述是结构设定，不代表所有模型都满足 H=Hq·d、使用门控 FFN 或采用同一种 norm 顺序。
+ 
+--- v2.2-r1/knowledge/frameworks/inference-eval.md
++++ v2.2-r2/knowledge/frameworks/inference-eval.md
+@@ -18,11 +18,11 @@
+ 
+ Python 分支读设备标量会产生同步；构造新的 tensor、隐式 dtype 转换或非连续张量复制会引入额外分配。把这些开销归到“模型慢”会掩盖执行路径。清晰的推理边界通常让输入规范化在外，设备前向消费明确 shape 与状态，输出解释再在定义好的完成点进行。
+ 
+-编译和 graph 可以改变调度成本，却不替代这些语义。先固定模块模式和请求状态关系，再验证 eager/compiled 的函数关系，能够将模型错误与执行优化错误分开定位。
++编译和 graph 可以改变调度成本，却不替代这些语义。在同一模块模式和请求状态条件下比较 eager/compiled 的函数关系，有助于区分模型错误与执行优化错误。
+ 
+ ## 把模型接入分成可检查的边界
+ 
+-首先用 [加载契约](checkpoint-loading.md) 对齐参数名称、轴、别名、dtype 与 device；其次固定 processor 输出和单请求 forward；最后接入每请求状态、并批和优化后端。各阶段保留同一模型函数的参考输入与结果，可以把一次大的“引擎不一致”拆成最早发生分歧的边界。
++[加载契约](checkpoint-loading.md)、processor 与 forward、每请求状态、并批和优化后端分别提供可观察的函数边界。对同一模型输入比较相关边界的结果，可以把一次大的“引擎不一致”定位到最早发生分歧的位置。实现可以整体构建，也可以按当前问题拆分；这些验证边界不规定组件开发顺序。
+ 
+ 模块初始化后还可能在第一次实际输入时生成位置表、选择算法或创建临时缓存。预热需要覆盖计划服务的执行路径，并确认新创建对象的 device、dtype 与共享方式。第一次请求触发共享 buffer 扩容时，应避免其他线程同时读取尚未发布完整的新对象；不可变版本替换或明确的同步边界比依赖调用顺序更容易验证。
+ 
+@@ -34,9 +34,9 @@
+ 
+ ## eager、编译与图执行的对照
+ 
+-先固定一条无编译的参考路径，再逐步加入编译、布局变换、融合和状态复用。对照除了输出数值，还包括新旧状态、别名、错误行为以及 shape 边界。编译 guard 不满足后重新编译或回到其他路径会改变性能分布；只计命中已有 executable 的请求无法代表冷形状负载。
++无编译路径可在其语义独立且覆盖目标输入时作为参考，帮助区分编译、布局变换、融合和状态复用的影响。编译先行或整体原型也可以使用独立算子、状态和模型参考，不要求事先交付一套完整 eager 引擎。对照除了输出数值，还包括新旧状态、别名、错误行为以及 shape 边界。编译 guard 不满足后重新编译或回到其他路径会改变性能分布；只计命中已有 executable 的请求无法代表冷形状负载。
+ 
+-例：一个优化把 QKV 投影合并，并把 RoPE 与 KV 写入融合。分层对照应先检查合并后的 Q/K/V 分段，再检查旋转结果和写入位置，最后检查 attention/logits；直接比较最终 token 容易把轴错误误判成浮点差异。对量化或近似 kernel 另设质量验证，不把 eager 参考的单一容差扩大到任意近似路径。
++例：一个优化把 QKV 投影合并，并把 RoPE 与 KV 写入融合。分层对照可沿 Q/K/V 分段、旋转结果、写入位置与 attention/logits 定位首次分歧；直接比较最终 token 容易把轴错误误判成浮点差异。对量化或近似 kernel 另设质量验证，不把 eager 参考的单一容差扩大到任意近似路径。
+ 
+ 当 Python 调度主导时，减少调用与提交次数有价值；当矩阵或内存路径主导时，复杂编译缓存可能只增加启动和容量成本。把编译命中率、首次成本、工作区峰值和真实服务延迟一起比较，才知道该 Task 是否值得引入更多执行模式。
+ 
+--- v2.2-r1/knowledge/tools/trace-observability.md
++++ v2.2-r2/knowledge/tools/trace-observability.md
+@@ -41,7 +41,7 @@
+ 
+ ## 让一次采集能够反驳假设
+ 
+-先声明至少两个竞争解释及其不同预测。例如长 TTFT 可能来自权重加载，也可能来自已就绪实例的准入等待。前者预测冷启动时存储与转换路径增长；后者预测模型已驻留但请求排队增长。只采集最终 TTFT 无法裁决，应补两者之间的交接事件。
++存在竞争解释时，用它们的不同预测选择观测；已有充分证据指向具体关系时，可直接检查该关系，无需为满足数量要求补造假设。例如长 TTFT 可能来自权重加载，也可能来自已就绪实例的准入等待。前者预测冷启动时存储与转换路径增长；后者预测模型已驻留但请求排队增长。只采集最终 TTFT 无法裁决，应补两者之间的交接事件。
+ 
+ 使用短窗口先确认目标进程和事件确实可见，再扩大到足够覆盖触发与回收的区间。检查事件丢失、缓冲溢出和导出过滤；若采集本身改变队列稳定性，应缩小采集范围并以无 profiler 的重复测量为性能依据。带有观测缺口的材料仍可支持局部结论，但不能把缺口对应阶段的成本视为零。
+ 
+--- v2.2-r1/knowledge/workloads/capacity-planning.md
++++ v2.2-r2/knowledge/workloads/capacity-planning.md
+@@ -20,7 +20,7 @@
+ 
+ ## 从估算到决策
+ 
+-先用下界排除明显不可能的配置，再用真实运行点校准有效算力、带宽和阶段时间。若估算误差很大，优先解释缺失成本而不是堆更多参数搜索。更准确的成本模型本身就是 RSI 应写回知识库的高价值结果。
++已知前提下的资源下界可以排除不可行配置；未知的有效算力、带宽和阶段时间可以通过原型或运行测量取得。解析估算与实验可交替修正，不要求下界筛选先于所有实验。若估算误差很大，优先解释缺失成本而不是堆更多参数搜索。更准确的成本模型本身就是 RSI 应写回知识库的高价值结果。
+ 
+ ## 从一个吞吐常数走向服务曲面
+ 
+@@ -42,7 +42,7 @@
+ 
+ ## 校准与选择反转
+ 
+-先检查容量是否能覆盖指定边界，再检查各资源平均必要条件，最后用到达轨迹和尾部目标评估排队与故障恢复。模型偏差出现时，核对实际完成工作、重复流量、重算、加载、同步和在途资源，而不是只拟合一个更复杂的回归式。
++容量边界、各资源平均必要条件、到达轨迹与尾部目标分别检验驻留、持续供给、排队和故障恢复；根据当前问题选取相应证据，并在完整交付时满足 Task 的实际要求。模型偏差出现时，核对实际完成工作、重复流量、重算、加载、同步和在途资源，而不是只拟合一个更复杂的回归式。
+ 
+ 前缀命中提高会减少 prefill 需求，输出变长会增加 decode 和驻留需求；更快存储改变冷启动成本，但不一定改变常驻模型吞吐。把这些敏感性保留在设计记录中，才能解释为什么同一集群在 workload 改变后需要不同的 P/D、CPU、网络和存储配比。
+ 
+--- v2.2-r1/knowledge/sources/S-TRTLLM-CODE.md
++++ v2.2-r2/knowledge/sources/S-TRTLLM-CODE.md
+@@ -12,7 +12,7 @@
+ 
+ ## InfraAgents 如何据此推导
+ 
+-本库从该责任划分解释业务完成与 KV 回收的差别。文件 SHA 和方法位置存于 docs/evidence/expert-source-locations-20260920.json。
++本库从该责任划分解释业务完成与 KV 回收的差别。文件 SHA 和方法位置见 [固定源码定位证据](../../docs/evidence/astra-source-locations.json) 中的 K-ENGINE-005 / S-TRTLLM-CODE 记录；该证据对应同一固定提交。
+ 
+ ## 适用边界
+ 
+--- v2.2-r1/tools/probe_knowledge_runtime.py
++++ v2.2-r2/tools/probe_knowledge_runtime.py
+@@ -26,12 +26,11 @@
+ RESTRICTED = ("S-VLLM-CODE", "S-SGLANG-CODE", "S-TRTLLM-CODE")
+ NAVIGATION = ("README.md", "DESIGN.md", "DIAGNOSIS.md", "INDEX.md",
+               "SOURCES.md", "COVERAGE.md")
+-RECOMMENDED_RUNTIME = {
+-    "repository": "https://github.com/heitai-x/InfraAgents",
+-    "branch": "codex/knowledge-publication-bytes-20261023",
+-    "documented_commit": "6d205853b6135adbc35b43525608ff919eb4dee6",
+-    "availability_in_this_review": "The documented recommended branch could not be fetched in this session: git requested GitHub credentials. The supplied local source is used instead.",
+-    "verification": "No claim that this probe verifies the recommended branch or all of its behavior.",
++RUNTIME_CONTRACT = {
++    "read": "Exact catalog ID or path in the current frozen view; ID@revision is rejected.",
++    "public_use": "KnowledgeUse contains entry_id and purpose only.",
++    "binding": "The supplied runtime's bind_handoff supplies frozen revisions before validate_uses.",
++    "scope": "Validates the explicitly supplied runtime; no network fetch or historical-runtime compatibility claim.",
+ }
+ 
+ 
+@@ -138,6 +137,17 @@
+     if entry["revision"] == current[entry["id"]]["revision"]:
+         return (root / "knowledge" / current[entry["id"]]["path"]).read_bytes()
+     return (root / "knowledge/history" / entry["id"] / f'{entry["revision"]:04d}.md').read_bytes()
++
++
++def validate_public_uses(bank, role, uses, api):
++    """Exercise public parsing and the Controller's existing version binding."""
++    public = {"knowledge_used": [api["KnowledgeUse"].from_mapping(use).to_mapping() for use in uses]}
++    bound = api["bind_handoff"](bank, public, role=role, purpose="engineering", work_id="probe",
++                                access=None, visible=[])
++    require(public["knowledge_used"] == uses, "Binding changed the public declaration")
++    require([{key: value for key, value in item.items() if key != "revision"}
++             for item in bound["knowledge_used"]] == uses, "Binding changed declared content")
++    return bank.validate_uses(role, bound["knowledge_used"])
+ 
+ 
+ def question_examples(document: dict, catalog: dict) -> list[dict]:
+@@ -270,29 +280,29 @@
+                     and not any(path.startswith(prefix) for path in snapshot["text_sha256"]),
+                     "Withdrawn original/history path entered a frozen view")
+             blocked = [rejection(lambda path=path: bank.read(path), path) for path in paths]
+-            use_rejection = rejection(lambda: bank.validate_uses("planner", [{
+-                "entry_id": identifier, "revision": chapter["revision"],
++            use_rejection = rejection(lambda: validate_public_uses(bank, "planner", [{
++                "entry_id": identifier,
+                 "purpose": "withdrawn-entry negative control"
+-            }]), "Declare withdrawn " + identifier)
++            }], api), "Declare withdrawn " + identifier)
+             withdrawn_checks.append({"entry_id": identifier, "excluded_from_catalog": True,
+                                      "excluded_from_snapshot": True, "read_rejections": blocked,
+                                      "use_declaration_rejection": use_rejection})
+         result["withdrawn_chapters"] = withdrawn_checks
+         if entries:
+             first = entries[0]
+-            result["negative_checks"].append(rejection(lambda: bank.validate_uses("planner", [
+-                {"entry_id": first["id"], "revision": first["revision"], "purpose": "unread negative control"}
+-            ]), "Declare an unread exact revision"))
++            result["negative_checks"].append(rejection(lambda: validate_public_uses(bank, "planner", [
++                {"entry_id": first["id"], "purpose": "unread negative control"}
++            ], api), "Declare an unread current chapter"))
+         reads = []
+         for entry in entries:
+-            identifier = f'{entry["id"]}@{entry["revision"]}'
++            identifier = entry["id"]
+             body, read = paged_read(bank, identifier)
+             expected = revision_body(root, entry, current)
+             require(body == expected.decode("utf-8") and read["sha256"] == entry["sha256"],
+                     "Frozen chapter differs from registered bytes: " + identifier)
+             require(read["entry_id"] == entry["id"] and read["revision"] == entry["revision"],
+                     "Reader lost exact revision identity")
+-            aliases = [entry["id"], "knowledge/" + entry["path"]]
++            aliases = [entry["path"], "knowledge/" + entry["path"]]
+             for alias in aliases:
+                 alternate = bank.read(alias)
+                 require(all(alternate[key] == read[key] for key in ("entry_id", "revision", "sha256")),
+@@ -300,21 +310,27 @@
+                 require(alternate["content"] == body[:20000], "ID/path alias returned different text")
+             reads.append({**read, "requested": identifier, "verified_aliases": aliases})
+         result["chapter_reads"] = reads
+-        declarations = [{"entry_id": entry["id"], "revision": entry["revision"],
++        declarations = [{"entry_id": entry["id"],
+                          "purpose": "Reader/identity probe; no model adoption or engineering execution claim"}
+                         for entry in entries]
+-        frozen_uses = bank.validate_uses("planner", declarations)
++        frozen_uses = validate_public_uses(bank, "planner", declarations, api)
+         for item in frozen_uses:
+             require(item["sha256"] == allowed[item["entry_id"]]["sha256"], "Use declaration changed body identity")
+             require(file_sha(records.directory / item["path"]) == item["sha256"], "Frozen use body differs")
+         result["validated_uses"] = frozen_uses
++        result["public_use_fields"] = ["entry_id", "purpose"]
+         if entries:
+             first = entries[0]
+             result["negative_checks"].append(rejection(
+-                lambda: bank.read(f'{first["id"]}@{first["revision"] + 1}'), "Read a nonselected revision"))
++                lambda: bank.read(f'{first["id"]}@{first["revision"]}'), "Read using removed ID@revision syntax"))
++            result["negative_checks"].append(rejection(lambda: validate_public_uses(bank, "planner", [
++                {"entry_id": first["id"], "revision": first["revision"], "purpose": "obsolete public field"}
++            ], api), "Public declaration must reject a caller-supplied revision"))
++            result["negative_checks"].append(rejection(lambda: validate_public_uses(
++                bank, "planner", [declarations[0], declarations[0]], api), "Duplicate public adoption"))
+             result["negative_checks"].append(rejection(lambda: bank.validate_uses("planner", [
+                 {"entry_id": first["id"], "revision": first["revision"] + 1, "purpose": "wrong revision control"}
+-            ]), "Declare a nonselected revision"))
++            ]), "Internal bound declaration must reject a nonselected revision"))
+         navigation = {}
+         for filename in NAVIGATION:
+             body, read = paged_read(bank, "knowledge/" + filename)
+@@ -420,10 +436,10 @@
+             parser.error("--report must not overwrite knowledge or source assets")
+     if report_path.suffix != ".json":
+         parser.error("--report must name a JSON file")
+-    report = {"schema_version": 2, "result": "FAIL", "started_at": datetime.now(timezone.utc).isoformat(),
++    report = {"schema_version": 3, "result": "FAIL", "started_at": datetime.now(timezone.utc).isoformat(),
+               "repository": str(root), "repository_git": git_identity(root),
+               "script_sha256": file_sha(Path(__file__).resolve()), "python": sys.version,
+-              "recommended_runtime": RECOMMENDED_RUNTIME, "views": {}, "errors": [],
++              "runtime_contract": RUNTIME_CONTRACT, "views": {}, "errors": [],
+               "limits": [
+                   "Real local reader API calls only; no Agent process, model request, GPU execution, publication or serving benchmark.",
+                   "Declared role model identities are selection fixtures, not evidence of a model call or its training data.",
+@@ -442,7 +458,9 @@
+         sys.path.insert(0, str(source))
+         api = {"RepositoryKnowledge": importlib.import_module("infra_agent.knowledge").RepositoryKnowledge,
+                "Records": importlib.import_module("infra_agent.records").Records,
+-               "read_revision": importlib.import_module("infra_agent.knowledge_store").read_revision}
++               "read_revision": importlib.import_module("infra_agent.knowledge_store").read_revision,
++               "KnowledgeUse": importlib.import_module("infra_agent.role_contracts").KnowledgeUse,
++               "bind_handoff": importlib.import_module("infra_agent.knowledge_bindings").bind_handoff}
+         policy = read_json(root / "knowledge/temporal-policy.json")
+         extra = ["docs/actionable-knowledge/use-cases.json",
+                  "docs/actionable-knowledge/withdrawn-chapters.json", policy["model"]["metadata_evidence"]]
+--- v2.2-r1/tools/validate_knowledge.py
++++ v2.2-r2/tools/validate_knowledge.py
+@@ -119,6 +119,8 @@
+                                    ("archive_manifest", "archive_sha256")):
+             if sha(local(source[path_key]).read_bytes()) != source[hash_key]:
+                 issue("source_identity", id=sid, field=path_key)
++        note = local(source["local_path"])
++        inspect_links(note, note.read_text(encoding="utf-8-sig"))
+         manifest_path = local(source["archive_manifest"])
+         manifest = read_json(manifest_path)
+         for member in manifest["files"]:
+@@ -139,6 +141,23 @@
+                 issue("temporal_boundary", id=sid)
+         except (KeyError, ValueError):
+             issue("missing_source_date", id=sid)
++
++    # The checked-in report is an audit of this catalog/profile, not a spare
++    # historical report. Old reports remain under docs/evidence/.
++    audit = read_json(root / "knowledge/temporal-audit.json")
++    if audit.get("profile_id") != policy.get("profile_id") or policy.get("profile_id") != version["version_id"]:
++        issue("temporal_audit_profile")
++    audit_entries = {entry["id"]: entry for entry in audit.get("entries", [])}
++    if len(audit_entries) != len(audit.get("entries", [])) or set(audit_entries) != set(by_id):
++        issue("temporal_audit_entry_set")
++    for entry in entries:
++        record = audit_entries.get(entry["id"], {})
++        if any(record.get(key) != entry[key] for key in ("revision", "path", "category", "source_ids")):
++            issue("temporal_audit_entry_binding", id=entry["id"])
++    if {source["id"] for source in audit.get("sources", [])} != source_ids:
++        issue("temporal_audit_source_set")
++    if audit.get("effective_cutoff") != str(cutoff):
++        issue("temporal_audit_cutoff")
+ 
+     navigation = {}
+     for relative in ["knowledge/INDEX.md", "knowledge/DESIGN.md", "knowledge/DIAGNOSIS.md"]:
+@@ -195,6 +214,11 @@
+     # A delivered local proposal may already have been frozen by its consumer.
+     # Keep its identities even when its topics are subsequently withdrawn.
+     retired = read_json(local(version["withdrawn_chapters"]))
++    withdrawal_catalog = read_json(local(version["withdrawal_catalog"]))
++    withdrawal_entries = {entry["id"]: entry for entry in withdrawal_catalog["entries"]}
++    for key in ("withdrawal_catalog", "withdrawal_version"):
++        if sha(local(version[key]).read_bytes()) != version[key + "_sha256"]:
++            issue("withdrawal_origin_snapshot_hash", file=version[key])
+     retired_by_id = {entry["id"]: entry for entry in retired["chapters"]}
+     if len(retired_by_id) != len(retired["chapters"]):
+         issue("duplicate_withdrawn_id")
+@@ -220,6 +244,8 @@
+             issue("withdrawn_archive_missing", id=identifier)
+             continue
+         meta = read_json(meta_path)
++        if meta != withdrawal_entries.get(identifier):
++            issue("withdrawn_origin_metadata_not_exact", id=identifier)
+         if (meta.get("id") != identifier or meta.get("revision") != record["revision"]
+                 or meta.get("path") != record["path"]
+                 or meta.get("sha256") != record["sha256"]
+@@ -263,8 +289,28 @@
+         previous_delta["new_ids"].append(identifier)
+         if by_id[identifier]["revision"] != 1:
+             issue("new_since_previous_revision", id=identifier)
+-    if set(previous_delta["withdrawn_ids"]) != set(retired_by_id):
+-        issue("withdrawal_set_disagrees_with_previous_catalog")
++    if not set(previous_delta["withdrawn_ids"]) <= set(retired_by_id):
++        issue("removal_missing_withdrawal_record")
++    if set(withdrawal_entries) - set(by_id) != set(retired_by_id):
++        issue("withdrawal_set_disagrees_with_origin_catalog")
++
++    # Source-note maintenance does not change the fixed upstream source.
++    # Retain the previous note bytes and reject changes to source identity.
++    previous_sources_path = local(version["previous_sources"])
++    if sha(previous_sources_path.read_bytes()) != version["previous_sources_sha256"]:
++        issue("previous_source_registry_hash")
++    previous_sources = {source["id"]: source for source in read_json(previous_sources_path)["sources"]}
++    if set(previous_sources) != source_ids:
++        issue("source_set_changed")
++    for source in sources:
++        prior = previous_sources.get(source["id"], {})
++        if {k: v for k, v in source.items() if k != "local_sha256"} != {
++                k: v for k, v in prior.items() if k != "local_sha256"}:
++            issue("fixed_source_changed", id=source["id"])
++        if source["local_sha256"] != prior.get("local_sha256"):
++            note = local(source["local_path"], previous_sources_path.parent.parent)
++            if not note.is_file() or sha(note.read_bytes()) != prior.get("local_sha256"):
++                issue("previous_source_note_not_preserved", id=source["id"])
+ 
+     delta = {"baseline": baseline, "new_ids": [], "revised_ids": [], "unchanged_ids": []}
+     previous_tree_check = "not_requested; portable snapshot and archive hashes checked"
+@@ -303,8 +349,8 @@
+             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode == 0
+         if tree_available:
+             previous_tree_check = "available; exact snapshot and withdrawn body bytes checked"
+-            for archived, old_path in ((version["previous_catalog"], "knowledge/catalog.json"),
+-                                       (version["previous_version"], "VERSION.json")):
++            for archived, old_path in ((version["withdrawal_catalog"], "knowledge/catalog.json"),
++                                       (version["withdrawal_version"], "VERSION.json")):
+                 exact = subprocess.check_output(["git", "show", f"{prior_tree}:{old_path}"], cwd=root)
+                 if local(archived).read_bytes() != exact:
+                     issue("previous_delivery_snapshot_not_exact", file=archived)
+@@ -321,6 +367,11 @@
+             if relative.endswith("temporal-policy.json"):
+                 old = {k: v for k, v in old.items() if k != "profile_id"}
+                 current = {k: v for k, v in current.items() if k != "profile_id"}
++            else:
++                old = {**old, "sources": [{k: v for k, v in item.items() if k != "local_sha256"}
++                                          for item in old["sources"]]}
++                current = {**current, "sources": [{k: v for k, v in item.items() if k != "local_sha256"}
++                                                  for item in current["sources"]]}
+             if old != current:
+                 issue("source_or_policy_changed", file=relative)
+ 

@@ -4,7 +4,7 @@
 
 | 条目 | 版本与状态 | 核心认识 |
 |---|---|---|
-| [K-TOOLS-001：可观测性：执行事件与采集事件的映射](trace-observability.md) | v2 · seed | trace 是由采集范围和工具机制生成的观测，不是系统全部执行事实的无损副本。 |
+| [K-TOOLS-001：可观测性：执行事件与采集事件的映射](trace-observability.md) | v3 · seed | trace 是由采集范围和工具机制生成的观测，不是系统全部执行事实的无损副本。 |
 | [K-TOOLS-002：时间线分析：从请求路径定位执行瓶颈](timeline-attribution.md) | v2 · seed | 时间线分析先建立关联和依赖，再用区间与关键路径解释延迟；热点累计时长只是入口。 |
 | [K-TOOLS-003：Kernel 计数器：吞吐、访存与 Replay 语境](kernel-counter-replay.md) | v2 · seed | 硬件计数器帮助识别单 kernel 的资源限制，但它测到的执行可能与正常并发服务具有不同环境。 |
 | [K-TOOLS-004：框架 Profiler：算子归属、内存与图边界](framework-profiler-scope.md) | v2 · seed | 框架 profiler 解释模型操作怎样落到设备工作，并通过 shape、调用栈与内存事件连接两层视图。 |

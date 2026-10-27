@@ -41,7 +41,7 @@
 
 | 条目 | 版本与状态 | 核心认识 |
 |---|---|---|
-| [K-MODEL-001：从模型计算图推导 Prefill、Decode 与持久状态](models/prefill-decode-state.md) | v4 · seed | 模型接入首先是一项计算图和状态语义工作：识别哪些量随 token、位置、请求和阶段变化，再选择执行机制。 |
+| [K-MODEL-001：从模型计算图推导 Prefill、Decode 与持久状态](models/prefill-decode-state.md) | v5 · seed | 模型计算图和状态语义解释 token、位置、请求与执行阶段的依赖；参考边界帮助验证实现，不规定构建顺序。 |
 | [K-MODEL-002：MHA、GQA 与 MQA：头映射和带宽复用](models/gqa-kv-heads.md) | v3 · seed | GQA 让多个 query heads 读取同一组 K/V；逻辑共享可以减少状态，但是否减少实际访存取决于 kernel。 |
 | [K-MODEL-003：MoE：路由、Dispatch/Combine 与专家负载](models/moe-routing.md) | v3 · seed | MoE 的条件计算节省激活 FLOPs，但全部专家的驻留和路由后的不均衡决定真实服务成本。 |
 | [K-MODEL-004：SSM 与混合模型：递归状态、扫描与恢复](models/recurrent-hybrid-state.md) | v3 · seed | 递归状态是前缀的压缩摘要；它支持低增长成本的 decode，却改变了前缀复用、回滚和批次管理方式。 |
@@ -85,7 +85,7 @@
 
 | 条目 | 版本与状态 | 核心认识 |
 |---|---|---|
-| [K-FW-001：PyTorch 推理：模块模式、Autograd 与状态突变](frameworks/inference-eval.md) | v2 · seed | 推理行为由模型模式、梯度记录、dtype/device、模块状态与执行路径共同决定。 |
+| [K-FW-001：PyTorch 推理：模块模式、Autograd 与状态突变](frameworks/inference-eval.md) | v3 · seed | 推理行为由模型模式、梯度记录、dtype/device、模块状态与执行路径共同决定。 |
 | [K-FW-002：数值参考：误差尺度、条件数与首次分歧](frameworks/numerical-reference.md) | v2 · seed | 一个有解释力的数值参考保持任务函数和输入一致，再分层衡量实现重排与近似产生的差异。 |
 | [K-FW-003：Stream 与分配器：依赖顺序和对象生存期](frameworks/streams-allocator.md) | v2 · seed | stream 解决执行顺序，内存生存期解决地址何时可重用；正确的异步程序需要同时满足两种关系。 |
 | [K-FW-004：编译与动态形状：Guard、分桶和变体成本](frameworks/compile-dynamic-shapes.md) | v2 · seed | 图获取、IR/lowering、布局和 guard 将函数映射到目标程序；编译缓存及在线变体必须保持副作用、容量与生命周期契约。 |
@@ -116,7 +116,7 @@
 
 | 条目 | 版本与状态 | 核心认识 |
 |---|---|---|
-| [K-TOOLS-001：可观测性：执行事件与采集事件的映射](tools/trace-observability.md) | v2 · seed | trace 是由采集范围和工具机制生成的观测，不是系统全部执行事实的无损副本。 |
+| [K-TOOLS-001：可观测性：执行事件与采集事件的映射](tools/trace-observability.md) | v3 · seed | trace 是由采集范围和工具机制生成的观测，不是系统全部执行事实的无损副本。 |
 | [K-TOOLS-002：时间线分析：从请求路径定位执行瓶颈](tools/timeline-attribution.md) | v2 · seed | 时间线分析先建立关联和依赖，再用区间与关键路径解释延迟；热点累计时长只是入口。 |
 | [K-TOOLS-003：Kernel 计数器：吞吐、访存与 Replay 语境](tools/kernel-counter-replay.md) | v2 · seed | 硬件计数器帮助识别单 kernel 的资源限制，但它测到的执行可能与正常并发服务具有不同环境。 |
 | [K-TOOLS-004：框架 Profiler：算子归属、内存与图边界](tools/framework-profiler-scope.md) | v2 · seed | 框架 profiler 解释模型操作怎样落到设备工作，并通过 shape、调用栈与内存事件连接两层视图。 |
@@ -135,7 +135,7 @@
 | [K-WORK-003：工作负载分布：长度、复用、模态与相关性](workloads/input-distribution.md) | v2 · seed | 系统成本由输入输出的联合分布决定；平均长度会丢失影响缓存、批次和尾部行为的结构。 |
 | [K-WORK-004：性能实验：稳定态、对照与不确定性](workloads/measurement-comparability.md) | v2 · seed | 可比较的性能结果来自相同任务函数与负载条件，以及能够解释波动的测量窗口。 |
 | [K-WORK-005：Goodput：联合 SLO、拒绝和容量前沿](workloads/slo-goodput.md) | v2 · seed | 服务能力是单位时间内完成有效任务且满足约束的数量，不能用总生成速度替代。 |
-| [K-WORK-006：容量设计：驻留、服务率与阶段配比](workloads/capacity-planning.md) | v2 · seed | 容量设计把每请求资源需求和阶段服务时间连接到到达过程，得出实例数、并发和缓存预算。 |
+| [K-WORK-006：容量设计：驻留、服务率与阶段配比](workloads/capacity-planning.md) | v3 · seed | 容量设计把每请求资源需求和阶段服务时间连接到到达过程，得出实例数、并发和缓存预算。 |
 | [K-WORK-007：多模型放置：共同容量、混合执行与租户公平](workloads/multi-model-placement.md) | v1 · seed | 多模型与 LoRA 的共享条件决定共同容量、混合执行和公平等待；完整场景联合比较合并、共享及分组路径。 |
 | [K-WORK-008：弹性服务：启动延迟、可用容量与排空](workloads/elastic-serving.md) | v1 · seed | 扩缩容要以实际就绪容量和启动/排空延迟解释队列；冷启动流量、故障余量与状态所有权决定策略是否可行。 |
 | [K-WORK-009：服务成本与能耗：按合格结果计算资源代价](workloads/cost-and-energy.md) | v1 · seed | 成本与能耗以相同质量/SLO 的合格结果为分母，计入闲置、加载和失败，并区分计量域、积分与价格假设。 |

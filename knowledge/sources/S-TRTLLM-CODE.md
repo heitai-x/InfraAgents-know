@@ -12,7 +12,7 @@
 
 ## InfraAgents 如何据此推导
 
-本库从该责任划分解释业务完成与 KV 回收的差别。文件 SHA 和方法位置存于 docs/evidence/expert-source-locations-20260920.json。
+本库从该责任划分解释业务完成与 KV 回收的差别。文件 SHA 和方法位置见 [固定源码定位证据](../../docs/evidence/astra-source-locations.json) 中的 K-ENGINE-005 / S-TRTLLM-CODE 记录；该证据对应同一固定提交。
 
 ## 适用边界
 

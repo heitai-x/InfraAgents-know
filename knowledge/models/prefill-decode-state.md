@@ -1,6 +1,6 @@
 # K-MODEL-001：从模型计算图推导 Prefill、Decode 与持久状态
 
-模型接入首先是一项计算图和状态语义工作：识别哪些量随 token、位置、请求和阶段变化，再选择执行机制。
+模型的计算图和状态语义说明哪些量随 token、位置、请求和执行阶段变化，为执行机制的选择与验证提供依据。
 
 ## 自回归前向实际计算什么
 
@@ -35,7 +35,7 @@ Llama 类稠密 decoder 是理解 GQA、RoPE、SwiGLU 和分页状态的入口�
 
 ## 从固定制品还原最小 forward
 
-接入从一份固定版本档案开始：模型配置、权重分片、tokenizer/processor、特殊 token 与生成配置分别绑定身份。[权重加载](../frameworks/checkpoint-loading.md) 将逻辑参数映射到执行布局；在并入服务调度前，先建立单请求、固定输入、无状态复用的 forward，再增加增量状态。这样可以区分“模型函数未还原”和“缓存或调度改变了函数”。
+同一次函数对照使用相容的模型配置、权重分片、tokenizer/processor、特殊 token 与生成配置。[权重加载](../frameworks/checkpoint-loading.md) 解释逻辑参数到执行布局的映射。单请求、固定输入、无状态复用的 forward 可作为隔离缓存与调度影响的一种参考；它可以在诊断需要时建立，并非接入调度或探索增量状态的前置工程阶段。整体原型或编译执行也可借助独立组件参考定位模型还原与状态管理的差异。
 
 对一层常见的稠密 decoder，设有效 token 数 M、hidden 宽 H、Q head 数 Hq、KV head 数 Hkv、head 维 d、FFN 中间宽 I。Q/K/V 投影输出分别为 M×Hq×d、M×Hkv×d、M×Hkv×d；attention 输出通常还要通过输出投影回到 residual 形状。门控 FFN 的两个输入投影各为 M×I，逐点门控后再回到 M×H。上述是结构设定，不代表所有模型都满足 H=Hq·d、使用门控 FFN 或采用同一种 norm 顺序。
 

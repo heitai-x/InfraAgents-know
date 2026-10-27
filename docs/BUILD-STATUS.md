@@ -1,4 +1,14 @@
-# 知识库 v2.2-r1：探索边界与专题归属修订
+# 知识库 v2.2-r2：表达清理与验证接口更新
+
+Git交付整合记录：本次在远端 `1239948` 上继续提交r2，保留该提交的r1读取兼容性说明与发布前验证回执。当前r2的准确ID及框架版本绑定检查见 [交付核对](evidence/knowledge-r2-publication-20261027.json)；历史 `07d114a` 结论仍只属于r1接口。
+
+2026-10-27。本轮相对 v2.2-r1 修正4篇正文：模型接入、PyTorch 推理、可观测性与容量规划。将固定构建顺序、假设数量和分析先后改成按实际问题选用的方法；数学、状态和资源完成依赖保留。设计导航与范围说明同步去除固定候选数量和统一产物要求。
+
+仍为108篇 seed、114项固定来源；新增4份准确旧修订，活动历史共121份，六篇撤回档案继续保留。固定原始资料未修改。来源定位修正、时间审计再生成、当前读取与采用绑定检查见 [本轮记录](evidence/knowledge-cleanup-20261027/review.md)；当前内容以 [VERSION.json](../VERSION.json) 为准。
+
+上述内容清理阶段仅完成本地修改与验证，没有独立审查者结论、远端发布或活动 Task 切换；本次Git交付按用户后续指令单独进行。外层 v2.2-r1 bundle/patch 是历史交付，未包含本轮改动。以下旧报告保持其原有验证范围。
+
+## v2.2-r1 历史记录：探索边界与专题归属修订
 
 ## 修订决定
 
@@ -19,7 +29,7 @@
 
 前次交付的修订号与正文保留，新修订再次增加revision，避免同一ID/revision对应不同内容。当前活动专题有117份历史；六篇撤回稿另存原v1正文与metadata，ID保留不复用，不能通过当前冻结知识视图读取。前次内容身份见 [旧VERSION](evidence/knowledge-open-exploration-20261024/previous-v2.2-VERSION.json)。
 
-本轮分别提供 [结构检查](evidence/knowledge-open-exploration-20261024/structural.json)、[算例检查](evidence/knowledge-open-exploration-20261024/examples.json)、[真实读取探针](evidence/knowledge-open-exploration-20261024/runtime-probe.json) 和 [独立复审](evidence/knowledge-open-exploration-20261024/review.json)。复现入口见 [使用说明](USAGE.md#修订版的内容检查)。这些结果不证明Agent实际探索不受任何偏置，也不证明模型、GPU、服务性能或RSI收益。
+本轮分别提供 [结构检查](evidence/knowledge-open-exploration-20261024/structural.json)、[算例检查](evidence/knowledge-open-exploration-20261024/examples.json)、[真实读取探针](evidence/knowledge-open-exploration-20261024/runtime-probe.json) 和 [独立复审](evidence/knowledge-open-exploration-20261024/review.json)。复现入口见 [使用说明](USAGE.md#v22-r1-发布时的读取兼容性历史)。这些结果不证明Agent实际探索不受任何偏置，也不证明模型、GPU、服务性能或RSI收益。
 
 内容准备阶段使用此前提供的源码归档并按模块SHA绑定；当时推荐分支获取要求GitHub凭据，未据此冒认推荐提交。该阶段没有改Controller或知识发布器，也没有运行Agent构建实验；当时的工作位于本地 codex/knowledge-open-exploration-20261024，尚未推送远端。
 
@@ -27,7 +37,7 @@
 
 发布前重新核对相对 `f640148` 的全部11篇正文改动及相关固定来源，确认技术细节、适用边界、成本反例和专题归属存在增量提升。交付包1821个文件、结构/历史/来源与22组33项算例检查通过。这个结论不包含Agent交付率、性能或探索多样性收益。
 
-补验发现旧推荐运行时 `6d20585` 不支持新探针使用的 `ID@revision` 读取形式。改用包含该能力及原字节保持发布修复的精确提交 `07d114a451e42d382381bee4cd215f1ebd8630a5` 后，四个视图通过，完整读取324次正文、绑定324项使用声明并核对117个活动历史版本；撤回章节与受限原文的所测访问边界通过。源码从该提交的Git对象归档取得，97个源码文件与43个实际导入模块按字节核对，详见 [验证回执](evidence/knowledge-publication-check-20261024.json) 与 [使用要求](USAGE.md#修订版的内容检查)。
+补验发现旧推荐运行时 `6d20585` 不支持新探针使用的 `ID@revision` 读取形式。改用包含该能力及原字节保持发布修复的精确提交 `07d114a451e42d382381bee4cd215f1ebd8630a5` 后，四个视图通过，完整读取324次正文、绑定324项使用声明并核对117个活动历史版本；撤回章节与受限原文的所测访问边界通过。源码从该提交的Git对象归档取得，97个源码文件与43个实际导入模块按字节核对，详见 [验证回执](evidence/knowledge-publication-check-20261024.json) 与 [使用要求](USAGE.md#v22-r1-发布时的读取兼容性历史)。
 
 本次补充只修正接入说明并保存验证回执，不改变知识正文、catalog、来源、历史或其revision。旧运行时的失败与支持版本的通过分别保留；没有修改Controller，也没有执行Agent、GPU、性能或运行期知识发布实验。原交付提交身份保留在后续文档修正提交的历史中。
 

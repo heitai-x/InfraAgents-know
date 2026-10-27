@@ -26,12 +26,11 @@ ROLES = ("planner", "executor", "experimenter", "diagnostician", "evolution")
 RESTRICTED = ("S-VLLM-CODE", "S-SGLANG-CODE", "S-TRTLLM-CODE")
 NAVIGATION = ("README.md", "DESIGN.md", "DIAGNOSIS.md", "INDEX.md",
               "SOURCES.md", "COVERAGE.md")
-RECOMMENDED_RUNTIME = {
-    "repository": "https://github.com/heitai-x/InfraAgents",
-    "branch": "codex/knowledge-publication-bytes-20261023",
-    "documented_commit": "6d205853b6135adbc35b43525608ff919eb4dee6",
-    "availability_in_this_review": "The documented recommended branch could not be fetched in this session: git requested GitHub credentials. The supplied local source is used instead.",
-    "verification": "No claim that this probe verifies the recommended branch or all of its behavior.",
+RUNTIME_CONTRACT = {
+    "read": "Exact catalog ID or path in the current frozen view; ID@revision is rejected.",
+    "public_use": "KnowledgeUse contains entry_id and purpose only.",
+    "binding": "The supplied runtime's bind_handoff supplies frozen revisions before validate_uses.",
+    "scope": "Validates the explicitly supplied runtime; no network fetch or historical-runtime compatibility claim.",
 }
 
 
@@ -138,6 +137,17 @@ def revision_body(root: Path, entry: dict, current: dict) -> bytes:
     if entry["revision"] == current[entry["id"]]["revision"]:
         return (root / "knowledge" / current[entry["id"]]["path"]).read_bytes()
     return (root / "knowledge/history" / entry["id"] / f'{entry["revision"]:04d}.md').read_bytes()
+
+
+def validate_public_uses(bank, role, uses, api):
+    """Exercise public parsing and the Controller's existing version binding."""
+    public = {"knowledge_used": [api["KnowledgeUse"].from_mapping(use).to_mapping() for use in uses]}
+    bound = api["bind_handoff"](bank, public, role=role, purpose="engineering", work_id="probe",
+                                access=None, visible=[])
+    require(public["knowledge_used"] == uses, "Binding changed the public declaration")
+    require([{key: value for key, value in item.items() if key != "revision"}
+             for item in bound["knowledge_used"]] == uses, "Binding changed declared content")
+    return bank.validate_uses(role, bound["knowledge_used"])
 
 
 def question_examples(document: dict, catalog: dict) -> list[dict]:
@@ -270,29 +280,29 @@ def probe_view(root, records_root, name, config, models, uses, catalog, registry
                     and not any(path.startswith(prefix) for path in snapshot["text_sha256"]),
                     "Withdrawn original/history path entered a frozen view")
             blocked = [rejection(lambda path=path: bank.read(path), path) for path in paths]
-            use_rejection = rejection(lambda: bank.validate_uses("planner", [{
-                "entry_id": identifier, "revision": chapter["revision"],
+            use_rejection = rejection(lambda: validate_public_uses(bank, "planner", [{
+                "entry_id": identifier,
                 "purpose": "withdrawn-entry negative control"
-            }]), "Declare withdrawn " + identifier)
+            }], api), "Declare withdrawn " + identifier)
             withdrawn_checks.append({"entry_id": identifier, "excluded_from_catalog": True,
                                      "excluded_from_snapshot": True, "read_rejections": blocked,
                                      "use_declaration_rejection": use_rejection})
         result["withdrawn_chapters"] = withdrawn_checks
         if entries:
             first = entries[0]
-            result["negative_checks"].append(rejection(lambda: bank.validate_uses("planner", [
-                {"entry_id": first["id"], "revision": first["revision"], "purpose": "unread negative control"}
-            ]), "Declare an unread exact revision"))
+            result["negative_checks"].append(rejection(lambda: validate_public_uses(bank, "planner", [
+                {"entry_id": first["id"], "purpose": "unread negative control"}
+            ], api), "Declare an unread current chapter"))
         reads = []
         for entry in entries:
-            identifier = f'{entry["id"]}@{entry["revision"]}'
+            identifier = entry["id"]
             body, read = paged_read(bank, identifier)
             expected = revision_body(root, entry, current)
             require(body == expected.decode("utf-8") and read["sha256"] == entry["sha256"],
                     "Frozen chapter differs from registered bytes: " + identifier)
             require(read["entry_id"] == entry["id"] and read["revision"] == entry["revision"],
                     "Reader lost exact revision identity")
-            aliases = [entry["id"], "knowledge/" + entry["path"]]
+            aliases = [entry["path"], "knowledge/" + entry["path"]]
             for alias in aliases:
                 alternate = bank.read(alias)
                 require(all(alternate[key] == read[key] for key in ("entry_id", "revision", "sha256")),
@@ -300,21 +310,27 @@ def probe_view(root, records_root, name, config, models, uses, catalog, registry
                 require(alternate["content"] == body[:20000], "ID/path alias returned different text")
             reads.append({**read, "requested": identifier, "verified_aliases": aliases})
         result["chapter_reads"] = reads
-        declarations = [{"entry_id": entry["id"], "revision": entry["revision"],
+        declarations = [{"entry_id": entry["id"],
                          "purpose": "Reader/identity probe; no model adoption or engineering execution claim"}
                         for entry in entries]
-        frozen_uses = bank.validate_uses("planner", declarations)
+        frozen_uses = validate_public_uses(bank, "planner", declarations, api)
         for item in frozen_uses:
             require(item["sha256"] == allowed[item["entry_id"]]["sha256"], "Use declaration changed body identity")
             require(file_sha(records.directory / item["path"]) == item["sha256"], "Frozen use body differs")
         result["validated_uses"] = frozen_uses
+        result["public_use_fields"] = ["entry_id", "purpose"]
         if entries:
             first = entries[0]
             result["negative_checks"].append(rejection(
-                lambda: bank.read(f'{first["id"]}@{first["revision"] + 1}'), "Read a nonselected revision"))
+                lambda: bank.read(f'{first["id"]}@{first["revision"]}'), "Read using removed ID@revision syntax"))
+            result["negative_checks"].append(rejection(lambda: validate_public_uses(bank, "planner", [
+                {"entry_id": first["id"], "revision": first["revision"], "purpose": "obsolete public field"}
+            ], api), "Public declaration must reject a caller-supplied revision"))
+            result["negative_checks"].append(rejection(lambda: validate_public_uses(
+                bank, "planner", [declarations[0], declarations[0]], api), "Duplicate public adoption"))
             result["negative_checks"].append(rejection(lambda: bank.validate_uses("planner", [
                 {"entry_id": first["id"], "revision": first["revision"] + 1, "purpose": "wrong revision control"}
-            ]), "Declare a nonselected revision"))
+            ]), "Internal bound declaration must reject a nonselected revision"))
         navigation = {}
         for filename in NAVIGATION:
             body, read = paged_read(bank, "knowledge/" + filename)
@@ -420,10 +436,10 @@ def main() -> int:
             parser.error("--report must not overwrite knowledge or source assets")
     if report_path.suffix != ".json":
         parser.error("--report must name a JSON file")
-    report = {"schema_version": 2, "result": "FAIL", "started_at": datetime.now(timezone.utc).isoformat(),
+    report = {"schema_version": 3, "result": "FAIL", "started_at": datetime.now(timezone.utc).isoformat(),
               "repository": str(root), "repository_git": git_identity(root),
               "script_sha256": file_sha(Path(__file__).resolve()), "python": sys.version,
-              "recommended_runtime": RECOMMENDED_RUNTIME, "views": {}, "errors": [],
+              "runtime_contract": RUNTIME_CONTRACT, "views": {}, "errors": [],
               "limits": [
                   "Real local reader API calls only; no Agent process, model request, GPU execution, publication or serving benchmark.",
                   "Declared role model identities are selection fixtures, not evidence of a model call or its training data.",
@@ -442,7 +458,9 @@ def main() -> int:
         sys.path.insert(0, str(source))
         api = {"RepositoryKnowledge": importlib.import_module("infra_agent.knowledge").RepositoryKnowledge,
                "Records": importlib.import_module("infra_agent.records").Records,
-               "read_revision": importlib.import_module("infra_agent.knowledge_store").read_revision}
+               "read_revision": importlib.import_module("infra_agent.knowledge_store").read_revision,
+               "KnowledgeUse": importlib.import_module("infra_agent.role_contracts").KnowledgeUse,
+               "bind_handoff": importlib.import_module("infra_agent.knowledge_bindings").bind_handoff}
         policy = read_json(root / "knowledge/temporal-policy.json")
         extra = ["docs/actionable-knowledge/use-cases.json",
                  "docs/actionable-knowledge/withdrawn-chapters.json", policy["model"]["metadata_evidence"]]
