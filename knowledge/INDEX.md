@@ -122,7 +122,7 @@
 | [K-TOOLS-004：框架 Profiler：算子归属、内存与图边界](tools/framework-profiler-scope.md) | v4 · seed | 框架 profiler 解释模型操作怎样落到设备工作，并通过 shape、调用栈与内存事件连接两层视图。 |
 | [K-TOOLS-005：失败分析：最早偏离、最小复现与机制归因](tools/failure-evidence.md) | v5 · seed | 失败记录的价值在于还原系统从哪一个状态开始偏离预期，并区分输入、实现、资源和外部环境。 |
 | [K-TOOLS-006：正确性 Oracle：函数参考、状态变形与服务契约](tools/correctness-oracles.md) | v8 · seed | 独立数值、身份与协议参考及负对照按Task和所选机制检查；缺失、重复或空集不能冒充完整结果。 |
-| [K-TOOLS-007：性能实验：独立重复、效应量与尾部证据](tools/statistical-experiments.md) | v5 · seed | 重复层级、效应量和结论范围；可选知识条件实验区分交付失败、成本与删失，不向Agent规定构建流程。 |
+| [K-TOOLS-007：性能实验：独立重复、效应量与尾部证据](tools/statistical-experiments.md) | v6 · seed | 重复层级、效应量和结论范围；可选知识条件实验区分交付失败、成本与删失，不向Agent规定构建流程。 |
 | [K-TOOLS-008：GPU 从零表征：可持续带宽、矩阵吞吐与测量条件](tools/gpu-characterization.md) | v2 · seed | 用带条件的微基准建立 HBM/L2、矩阵、launch/图、PCIe、时钟功耗与多消费者参数包，并对接资源模型；峰值与异形态结果不能直接代入。 |
 
 ## 工作负载
@@ -131,11 +131,11 @@
 
 | 条目 | 版本与状态 | 核心认识 |
 |---|---|---|
-| [K-WORK-001：服务指标：事件边界、Token 间隔与用户时间](workloads/metric-events.md) | v4 · seed | 一个延迟指标是两个明确事件的时间差；指标名字相同而事件定义不同，会导致不同结论。 |
+| [K-WORK-001：服务指标：事件边界、Token 间隔与用户时间](workloads/metric-events.md) | v5 · seed | 一个延迟指标是两个明确事件的时间差；指标名字相同而事件定义不同，会导致不同结论。 |
 | [K-WORK-002：到达过程与并发：排队、反馈和饱和点](workloads/arrival-and-concurrency.md) | v5 · seed | 负载生成器定义了系统受到的压力；闭环并发和独立到达率回答不同容量问题。 |
 | [K-WORK-003：工作负载分布：长度、复用、模态与相关性](workloads/input-distribution.md) | v4 · seed | 系统成本由输入输出的联合分布决定；平均长度会丢失影响缓存、批次和尾部行为的结构。 |
-| [K-WORK-004：性能实验：稳定态、对照与不确定性](workloads/measurement-comparability.md) | v5 · seed | 可比较的性能结果来自相同任务函数与负载条件，以及能够解释波动的测量窗口。 |
-| [K-WORK-005：Goodput：联合 SLO、拒绝和容量前沿](workloads/slo-goodput.md) | v5 · seed | 服务能力是单位时间内完成有效任务且满足约束的数量，不能用总生成速度替代。 |
+| [K-WORK-004：性能实验：稳定态、对照与不确定性](workloads/measurement-comparability.md) | v6 · seed | 可比较的性能结果来自相同任务函数与负载条件，以及能够解释波动的测量窗口。 |
+| [K-WORK-005：Goodput：联合 SLO、拒绝和容量前沿](workloads/slo-goodput.md) | v6 · seed | 服务能力是单位时间内完成有效任务且满足约束的数量，不能用总生成速度替代。 |
 | [K-WORK-006：容量设计：驻留、服务率与阶段配比](workloads/capacity-planning.md) | v6 · seed | 容量设计把每请求资源需求和阶段服务时间连接到到达过程，得出实例数、并发和缓存预算。 |
 | [K-WORK-007：多模型放置：共同容量、混合执行与租户公平](workloads/multi-model-placement.md) | v3 · seed | 多模型与 LoRA 的共享条件决定共同容量、混合执行和公平等待；完整场景联合比较合并、共享及分组路径。 |
 | [K-WORK-008：弹性服务：启动延迟、可用容量与排空](workloads/elastic-serving.md) | v4 · seed | 扩缩容要以实际就绪容量和启动/排空延迟解释队列；冷启动流量、故障余量与状态所有权决定策略是否可行。 |

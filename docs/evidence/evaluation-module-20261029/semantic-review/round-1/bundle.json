@@ -1,0 +1,445 @@
+{
+  "module_findings": [
+    {
+      "id": "M-001",
+      "severity": "blocking",
+      "affected_entries": [
+        "K-WORK-001"
+      ],
+      "paths": [
+        "knowledge/workloads/metric-events.md",
+        "knowledge/workloads/slo-goodput.md"
+      ],
+      "finding": "The retained Goodput reducer does not enforce the quality-certificate contract introduced by the metrics chapter.",
+      "evidence": [
+        {
+          "path": "knowledge/workloads/metric-events.md",
+          "quote": "身份载荷冲突或同一固定规则产生互相矛盾的标签，必须保存并停止确定资格归约，不能只保留最后一个通过标签。"
+        },
+        {
+          "path": "knowledge/workloads/slo-goodput.md",
+          "quote": "要求已正常完成且证书身份、输出版本一致；保存通过或失败"
+        },
+        {
+          "path": "knowledge/workloads/metric-events.md",
+          "quote": "完整内容身份确定之后，审核可以在协议尾部尚未结束时完成，例如最后内容30、标签35、FINAL45均可合法。"
+        }
+      ],
+      "consequence": "For one normally completed output, distinct certificates under the same unchanged rule can report failure and then success. The retained reducer specifies assignment without a contradiction guard, permitting the later success to determine qualification, whereas SettlePerformanceEvidence requires unresolved conflict. It also rejects a valid certificate received after complete content but before protocol FINAL. The supplied new metrics check handles these cases within its own reducer; that does not establish compatibility with the retained Goodput algorithm.",
+      "bounded_repair": "Define and enforce the interface between the reducers. Either update CohortGoodput to retain early certificates and reject identity or fixed-rule verdict conflicts, or explicitly require normalized certificates from SettlePerformanceEvidence and describe the adapter that buffers early evidence and propagates conflicts. Preserve H/J and output/rule identities. Add a cross-reducer fixture for early certification and for failure-then-success certificates without a rule revision."
+    }
+  ],
+  "reviews": [
+    {
+      "entry_id": "K-WORK-001",
+      "body_sha256": "6bd512aa5f3b62e494cfe0dd23f07a559a23ee4b6fa581eae0c3bcb7c727e528",
+      "reviewer": "sol-reviewer:evaluation-module:round-1",
+      "decision": "revise",
+      "documents": {
+        "AGENTS.md": "b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a",
+        "docs/knowledge-method.md": "69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb",
+        "docs/knowledge-review.md": "f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21",
+        "docs/evaluation-module.md": "c84b5f3b4a4b37a95b277183c33cf14f0c6424754861377e3fc297a17d3700ac",
+        "knowledge/workloads/metric-events.md": "6bd512aa5f3b62e494cfe0dd23f07a559a23ee4b6fa581eae0c3bcb7c727e528",
+        "tools/check_evaluation_metrics.py": "6fd3e7537f23defd1fab99bbef99a784fc42fb350ee8174a115dcc1b48c23689",
+        "tools/check_k_work_001_full.py": "da8d8d624ad2f79cbe95abed2b4f7b60dcabac7bd7804aa90137b79b8d5de7c9",
+        "knowledge/workloads/measurement-comparability.md": "7059c4eb9bd7e77a995ca9a77f57e4289df52ebdb9ff7313fda7dd23b85ae0e5",
+        "tools/check_evaluation_design.py": "cfa6b0ae79cf991b3ad949bd8115aaea6d0a3e5157b7bad1eec3b1c554e3161d",
+        "tools/check_k_work_004_full.py": "f9f071cfced66ce675d944eb7548a752c98793493faf4a8f580031ca837d8150",
+        "knowledge/tools/statistical-experiments.md": "af9dd27a75768d1b99da5ccf23b0e1ca2deaf1ddd29064f884db27113d465546",
+        "tools/check_evaluation_statistics.py": "5934d8af2d7bc1d75abeba4285f5fd01c61c0c5319b04d604822162f2156161e",
+        "tools/check_k_tools_007_full.py": "c4c6ce0d2b8dd9662f009f9e3d173ede67c822a8b2faf565962fc5a35ab684a4",
+        "knowledge/workloads/arrival-and-concurrency.md": "da2be1854f12e55061138e669ebca988f752a31bd2e865ad3f2e7cf199ddffd4",
+        "knowledge/workloads/slo-goodput.md": "e15792741cc4d911e201218dd05bc59a7e37108703d7879ad3dde68dacdf53a2",
+        "knowledge/sources/S-GENAI-PERF.md": "a09b8732dbb2b4f6604755956b368c934705cd355ba2740f33c880c775f2561c",
+        "knowledge/sources/S-STATS.md": "70aaa597c5ab44b118296fe0527f0b510b7c8e4fb2e62170ce6547c0f7457f8e",
+        "knowledge/sources/S-MLPERF-SCENARIOS.md": "e210de2929034d4a6e25a31ee72b81a184412a7e637c979210f91ae02a261b04",
+        "knowledge/sources/S-MLPERF-LLM.md": "d0a591089c57e5e6d0051cdd73ce4ffc1bbfe60657470732921e25710f936cf0",
+        "knowledge/sources/S-TORCH-REPRO.md": "05f2b5b9819f01363fadadf41987482edfebb130bc134c36c44a00138fd5eb28",
+        "knowledge/sources/S-ASGI.md": "ca77c63e9a95b8be934ae485d89245f895dc7fa49fdf7fcce03b139346127ed9",
+        "references/S-GENAI-PERF/fulltext.txt": "357d6fcaafc41f2954ea87da567cd2b41ec8a146f8e4f19cb976acf39f539ddc"
+      },
+      "criteria": {
+        "definition": {
+          "assessment": "sufficient",
+          "reason": "Defines metric identity, units, populations and observability. The TPOT identities correctly separate last content from protocol completion; the eight-request example consistently distinguishes client and planned waiting, three throughput populations, coverage and resource work.",
+          "evidence": [
+            {
+              "path": "knowledge/workloads/metric-events.md",
+              "quote": "指标的完整身份是“起点、终点、观察边界、人口、计数单位、聚合与窗口”，名称只是简写。"
+            }
+          ]
+        },
+        "legality": {
+          "assessment": "sufficient",
+          "reason": "Separates observation boundaries, attempts, content granularity and explicit terminal events. Actual acceptance decisions and effective business admission are reconciled with the arrival chapter; equal-time ordering is identified as a chosen accounting rule.",
+          "evidence": [
+            {
+              "path": "knowledge/workloads/metric-events.md",
+              "quote": "时间域、观察边界和计数单位必须随数值保存。模型时间不能填入客户端内容时间字段。"
+            },
+            {
+              "path": "knowledge/workloads/metric-events.md",
+              "quote": "请求先取消、后被远端接受时，前者可以加一，后者保持零，并保留清理责任。"
+            }
+          ]
+        },
+        "algorithm": {
+          "assessment": "partial",
+          "reason": "The request, cohort and evidence reducers are implementable individually. Their connection to the retained Goodput reducer remains incomplete: early valid certificates and contradictory fixed-rule verdicts receive incompatible treatment. M-001 identifies the bounded interface repair.",
+          "evidence": [
+            {
+              "path": "knowledge/workloads/metric-events.md",
+              "quote": "相同身份幂等去重；身份载荷或固定规则的标签冲突时保留冲突并停止确定归约"
+            },
+            {
+              "path": "knowledge/workloads/slo-goodput.md",
+              "quote": "要求已正常完成且证书身份、输出版本一致；保存通过或失败"
+            }
+          ]
+        },
+        "cost": {
+          "assessment": "sufficient",
+          "reason": "Explains computation, recording traffic, preparation, synchronization and retained identities. The chunking example connects reduced CPU calls to increased first-content waiting without adding all CPU work to request latency; energy uses qualified output and consistent resource boundaries.",
+          "evidence": [
+            {
+              "path": "knowledge/workloads/metric-events.md",
+              "quote": "这是假定模型"
+            },
+            {
+              "path": "knowledge/workloads/metric-events.md",
+              "quote": "这 是"
+            }
+          ]
+        },
+        "adaptation": {
+          "assessment": "sufficient",
+          "reason": "Explains how chunking, retries, caching, speculation, clock uncertainty and non-text delivery change measurement requirements. Unknown qualification produces deterministic evidence bounds rather than fabricated precision or a population confidence claim.",
+          "evidence": [
+            {
+              "path": "knowledge/workloads/metric-events.md",
+              "quote": "这是缺证据造成的确定性范围，不是总体概率的置信区间，不能靠bootstrap替代。"
+            },
+            {
+              "path": "knowledge/workloads/metric-events.md",
+              "quote": "若首内容只剩 20 ms 可用等待预算，在该固定间隔模型中，k=5 不满足目标"
+            }
+          ]
+        },
+        "diagnosis": {
+          "assessment": "sufficient",
+          "reason": "Provides competing explanations and controlled interventions for delivery, generator supply, aggregation, work counting and instrumentation. It distinguishes executed algorithm mutants from output-field sensitivity probes and explicitly limits software-model evidence.",
+          "evidence": [
+            {
+              "path": "knowledge/workloads/metric-events.md",
+              "quote": "这种证据应称为判据敏感性，不能声称执行了对应故障算法。"
+            }
+          ]
+        }
+      },
+      "findings": [
+        {
+          "id": "M-001",
+          "severity": "blocking",
+          "path": "knowledge/workloads/metric-events.md",
+          "finding": "The quality-evidence contract needs an explicit, enforced connection to CohortGoodput.",
+          "evidence": [
+            {
+              "path": "knowledge/workloads/metric-events.md",
+              "quote": "不能只保留最后一个通过标签"
+            },
+            {
+              "path": "knowledge/workloads/slo-goodput.md",
+              "quote": "要求已正常完成且证书身份、输出版本一致；保存通过或失败"
+            }
+          ],
+          "repair": "Implement or specify the certificate-normalization adapter described in module finding M-001, then check early certification and conflicting fixed-rule certificates across the connected reducers."
+        }
+      ],
+      "limitations": [
+        "The supplied metrics preflight reports returncode 0 and PASS for the new script. I inspected its source and supplied summary; I did not execute it or rerun the retained check.",
+        "The new report function filters rows by cohort before accumulating emission-window and completion-window counts. Its fixture supports the published table, where those populations coincide; it does not independently check unrestricted windows containing requests from outside that cohort.",
+        "Finite event, clock, audio and resource models do not establish production event completeness, tokenizer mapping, real service performance, device behavior or knowledge benefit."
+      ],
+      "checks": [
+        {
+          "script": "tools/check_k_work_001_full.py",
+          "args": []
+        },
+        {
+          "script": "tools/check_evaluation_metrics.py",
+          "args": []
+        }
+      ],
+      "reading_scope": "Read the full supplied control documents, module map, three reviewed chapters, arrival and Goodput chapters, six supplied source notes, GenAI-Perf extracted fulltext and all six check sources. Read only the supplied S-STATS fulltext excerpts at lines 696–870, 1381–1690, 2033–2160 and 2307–2407. Inspected the supplied preflight summaries. No independent filesystem reading, upstream implementation inspection or test execution is claimed.",
+      "test_assessment": "The retained source uses adjacent-gap sums, empirical-CDF conditions, event replay, packed PCM bytes and discrete playback as alternative references; it labels report sensitivity separately from executed mutants. The new source adds rational census values, endpoint references, position identities and finite unresolved-label enumeration, with actual fault branches for protocol tails, planned starts, invented token times, late admission and denominator changes. These substantiate the fixture calculations, not a general service implementation. Neither supplied metrics check connects its certificate handling to the retained Goodput reducer, leaving M-001 unresolved."
+    },
+    {
+      "entry_id": "K-WORK-004",
+      "body_sha256": "7059c4eb9bd7e77a995ca9a77f57e4289df52ebdb9ff7313fda7dd23b85ae0e5",
+      "reviewer": "sol-reviewer:evaluation-module:round-1",
+      "decision": "accept",
+      "documents": {
+        "AGENTS.md": "b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a",
+        "docs/knowledge-method.md": "69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb",
+        "docs/knowledge-review.md": "f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21",
+        "docs/evaluation-module.md": "c84b5f3b4a4b37a95b277183c33cf14f0c6424754861377e3fc297a17d3700ac",
+        "knowledge/workloads/metric-events.md": "6bd512aa5f3b62e494cfe0dd23f07a559a23ee4b6fa581eae0c3bcb7c727e528",
+        "tools/check_evaluation_metrics.py": "6fd3e7537f23defd1fab99bbef99a784fc42fb350ee8174a115dcc1b48c23689",
+        "tools/check_k_work_001_full.py": "da8d8d624ad2f79cbe95abed2b4f7b60dcabac7bd7804aa90137b79b8d5de7c9",
+        "knowledge/workloads/measurement-comparability.md": "7059c4eb9bd7e77a995ca9a77f57e4289df52ebdb9ff7313fda7dd23b85ae0e5",
+        "tools/check_evaluation_design.py": "cfa6b0ae79cf991b3ad949bd8115aaea6d0a3e5157b7bad1eec3b1c554e3161d",
+        "tools/check_k_work_004_full.py": "f9f071cfced66ce675d944eb7548a752c98793493faf4a8f580031ca837d8150",
+        "knowledge/tools/statistical-experiments.md": "af9dd27a75768d1b99da5ccf23b0e1ca2deaf1ddd29064f884db27113d465546",
+        "tools/check_evaluation_statistics.py": "5934d8af2d7bc1d75abeba4285f5fd01c61c0c5319b04d604822162f2156161e",
+        "tools/check_k_tools_007_full.py": "c4c6ce0d2b8dd9662f009f9e3d173ede67c822a8b2faf565962fc5a35ab684a4",
+        "knowledge/workloads/arrival-and-concurrency.md": "da2be1854f12e55061138e669ebca988f752a31bd2e865ad3f2e7cf199ddffd4",
+        "knowledge/workloads/slo-goodput.md": "e15792741cc4d911e201218dd05bc59a7e37108703d7879ad3dde68dacdf53a2",
+        "knowledge/sources/S-GENAI-PERF.md": "a09b8732dbb2b4f6604755956b368c934705cd355ba2740f33c880c775f2561c",
+        "knowledge/sources/S-STATS.md": "70aaa597c5ab44b118296fe0527f0b510b7c8e4fb2e62170ce6547c0f7457f8e",
+        "knowledge/sources/S-MLPERF-SCENARIOS.md": "e210de2929034d4a6e25a31ee72b81a184412a7e637c979210f91ae02a261b04",
+        "knowledge/sources/S-MLPERF-LLM.md": "d0a591089c57e5e6d0051cdd73ce4ffc1bbfe60657470732921e25710f936cf0",
+        "knowledge/sources/S-TORCH-REPRO.md": "05f2b5b9819f01363fadadf41987482edfebb130bc134c36c44a00138fd5eb28",
+        "knowledge/sources/S-ASGI.md": "ca77c63e9a95b8be934ae485d89245f895dc7fa49fdf7fcce03b139346127ed9",
+        "references/S-GENAI-PERF/fulltext.txt": "357d6fcaafc41f2954ea87da567cd2b41ec8a146f8e4f19cb976acf39f539ddc"
+      },
+      "criteria": {
+        "definition": {
+          "assessment": "sufficient",
+          "reason": "Connects the decision to population, treatment, outcome, estimand and meaningful-effect boundary. It distinguishes kernel, offline, open-loop, closed-loop and cold-start targets rather than treating their throughput or latency as interchangeable.",
+          "evidence": [
+            {
+              "path": "knowledge/workloads/measurement-comparability.md",
+              "quote": "先写 θ，再选择均值、分位数、均值比、合格比例或合格完成率的计算方法"
+            }
+          ]
+        },
+        "legality": {
+          "assessment": "sufficient",
+          "reason": "Defines comparability beyond machine identity, separates randomized treatment units from correlated requests, and explains why random order does not remove inherited state. Exact t coverage is correctly restricted to normal independent differences with valid pairing.",
+          "evidence": [
+            {
+              "path": "knowledge/workloads/measurement-comparability.md",
+              "quote": "随机顺序降低部分漂移偏差，但不能清除 carryover。"
+            },
+            {
+              "path": "knowledge/workloads/measurement-comparability.md",
+              "quote": "候选不同是实验处理的一部分，不能要求候选身份相同"
+            }
+          ]
+        },
+        "algorithm": {
+          "assessment": "sufficient",
+          "reason": "Gives complete cold/steady execution, preparation completion, failure and draining paths. The four-cell comparison identifies additive interaction and its experimental replication; standardization uses common weights and mixture distributions. The service example connects raw events, quality, timeout absorption and an honest rejection decision.",
+          "evidence": [
+            {
+              "path": "knowledge/workloads/measurement-comparability.md",
+              "quote": "R 个区组提供 R 个交互对比，不是 4R 个独立交互样本。"
+            },
+            {
+              "path": "knowledge/workloads/measurement-comparability.md",
+              "quote": "B 的正常完成数与条件平均值都更好，仍不能通过共同功能参考，也没有改善主 goodput。"
+            }
+          ]
+        },
+        "cost": {
+          "assessment": "sufficient",
+          "reason": "Accounts for preparation, replay, memory retention, transfer, synchronization and logging without confusing accumulated work with wall time. The independent-run versus inner-sample budget optimum follows from the stated variance and cost model and retains integer and model boundaries.",
+          "evidence": [
+            {
+              "path": "knowledge/workloads/measurement-comparability.md",
+              "quote": "若导出与测量交叠，应改用区间并集或关键路径，不能再次相加。"
+            }
+          ]
+        },
+        "adaptation": {
+          "assessment": "sufficient",
+          "reason": "Explains scale-dependent interaction, missing factorial cells, unsupported strata and why changing mixture traffic requires execution. It also explains when changed shapes, caches, platforms or repetition structures invalidate existing preparation and statistical assumptions.",
+          "evidence": [
+            {
+              "path": "knowledge/workloads/measurement-comparability.md",
+              "quote": "不同尺度上的交互不是同一个量。"
+            },
+            {
+              "path": "knowledge/workloads/measurement-comparability.md",
+              "quote": "重加权并不产生一个新系统运行。"
+            }
+          ]
+        },
+        "diagnosis": {
+          "assessment": "sufficient",
+          "reason": "Provides falsifiable interventions for cold paths, carryover, instrumentation, backlog and selection noise. The discrete rare-tail counterexample correctly disproves a small-sample coverage guarantee from iid alone, and confirmation rules prevent postselection reuse.",
+          "evidence": [
+            {
+              "path": "knowledge/workloads/measurement-comparability.md",
+              "quote": "看过确认结果再修候选、改权重或阈值后，这组确认数据已经参与开发"
+            },
+            {
+              "path": "knowledge/workloads/measurement-comparability.md",
+              "quote": "若最终时间改善而预计字节变化没有发生，应修改机制解释"
+            }
+          ]
+        }
+      },
+      "findings": [],
+      "limitations": [
+        "Acceptance concerns this chapter's scoped experimental-design content; module finding M-001 still requires resolution before accepting the integrated qualification interface.",
+        "The supplied design preflight reports returncode 0 and PASS. I inspected the new and retained sources and supplied summary without executing them.",
+        "Permutation checks establish arithmetic invariance, not successful randomization or removal of real carryover. Synthetic service and queue examples establish their finite calculations, not production capacity or causal hardware mechanisms.",
+        "The supplied profiler and replay discussion was assessed as chapter content; no additional upstream profiler or Nsight documentation was independently read."
+      ],
+      "checks": [
+        {
+          "script": "tools/check_k_work_004_full.py",
+          "args": []
+        },
+        {
+          "script": "tools/check_evaluation_design.py",
+          "args": []
+        }
+      ],
+      "reading_scope": "Read the full supplied control documents, module map, three reviewed chapters, arrival and Goodput chapters, six supplied source notes, GenAI-Perf extracted fulltext and all six check sources. Read only the supplied S-STATS fulltext excerpts at lines 696–870, 1381–1690, 2033–2160 and 2307–2407. Inspected the supplied preflight summaries. No independent filesystem reading, upstream implementation inspection or test execution is claimed.",
+      "test_assessment": "The retained source uses stage-duration sums for cold-start endpoints, pairwise variance identities and a discrete count reference for the rare-tail counterexample. The new source compares cell contrasts with signed coefficients, weighted distributions with expanded equiprobable samples, and service endpoints with an absorbing event replay. Negative controls expose population mixing, averaged stratum quantiles, quality omission, deadline revival and substituting conditional latency for goodput. Some controls directly contrast wrong formulas or decisions rather than execute a complete faulty system; they support those narrow distinctions. No randomization-validity, real timing or general statistical-coverage result follows."
+    },
+    {
+      "entry_id": "K-TOOLS-007",
+      "body_sha256": "af9dd27a75768d1b99da5ccf23b0e1ca2deaf1ddd29064f884db27113d465546",
+      "reviewer": "sol-reviewer:evaluation-module:round-1",
+      "decision": "accept",
+      "documents": {
+        "AGENTS.md": "b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a",
+        "docs/knowledge-method.md": "69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb",
+        "docs/knowledge-review.md": "f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21",
+        "docs/evaluation-module.md": "c84b5f3b4a4b37a95b277183c33cf14f0c6424754861377e3fc297a17d3700ac",
+        "knowledge/workloads/metric-events.md": "6bd512aa5f3b62e494cfe0dd23f07a559a23ee4b6fa581eae0c3bcb7c727e528",
+        "tools/check_evaluation_metrics.py": "6fd3e7537f23defd1fab99bbef99a784fc42fb350ee8174a115dcc1b48c23689",
+        "tools/check_k_work_001_full.py": "da8d8d624ad2f79cbe95abed2b4f7b60dcabac7bd7804aa90137b79b8d5de7c9",
+        "knowledge/workloads/measurement-comparability.md": "7059c4eb9bd7e77a995ca9a77f57e4289df52ebdb9ff7313fda7dd23b85ae0e5",
+        "tools/check_evaluation_design.py": "cfa6b0ae79cf991b3ad949bd8115aaea6d0a3e5157b7bad1eec3b1c554e3161d",
+        "tools/check_k_work_004_full.py": "f9f071cfced66ce675d944eb7548a752c98793493faf4a8f580031ca837d8150",
+        "knowledge/tools/statistical-experiments.md": "af9dd27a75768d1b99da5ccf23b0e1ca2deaf1ddd29064f884db27113d465546",
+        "tools/check_evaluation_statistics.py": "5934d8af2d7bc1d75abeba4285f5fd01c61c0c5319b04d604822162f2156161e",
+        "tools/check_k_tools_007_full.py": "c4c6ce0d2b8dd9662f009f9e3d173ede67c822a8b2faf565962fc5a35ab684a4",
+        "knowledge/workloads/arrival-and-concurrency.md": "da2be1854f12e55061138e669ebca988f752a31bd2e865ad3f2e7cf199ddffd4",
+        "knowledge/workloads/slo-goodput.md": "e15792741cc4d911e201218dd05bc59a7e37108703d7879ad3dde68dacdf53a2",
+        "knowledge/sources/S-GENAI-PERF.md": "a09b8732dbb2b4f6604755956b368c934705cd355ba2740f33c880c775f2561c",
+        "knowledge/sources/S-STATS.md": "70aaa597c5ab44b118296fe0527f0b510b7c8e4fb2e62170ce6547c0f7457f8e",
+        "knowledge/sources/S-MLPERF-SCENARIOS.md": "e210de2929034d4a6e25a31ee72b81a184412a7e637c979210f91ae02a261b04",
+        "knowledge/sources/S-MLPERF-LLM.md": "d0a591089c57e5e6d0051cdd73ce4ffc1bbfe60657470732921e25710f936cf0",
+        "knowledge/sources/S-TORCH-REPRO.md": "05f2b5b9819f01363fadadf41987482edfebb130bc134c36c44a00138fd5eb28",
+        "knowledge/sources/S-ASGI.md": "ca77c63e9a95b8be934ae485d89245f895dc7fa49fdf7fcce03b139346127ed9",
+        "references/S-GENAI-PERF/fulltext.txt": "357d6fcaafc41f2954ea87da567cd2b41ec8a146f8e4f19cb976acf39f539ddc"
+      },
+      "criteria": {
+        "definition": {
+          "assessment": "sufficient",
+          "reason": "Defines effect direction, independent units, hierarchical variation, quality states and decision regions. Sample planning correctly distinguishes precision from detection at a specified distance beyond the adoption boundary.",
+          "evidence": [
+            {
+              "path": "knowledge/tools/statistical-experiments.md",
+              "quote": "δ 是决策边界，不能单独决定样本数"
+            },
+            {
+              "path": "knowledge/tools/statistical-experiments.md",
+              "quote": "区间半宽 h 与检出率 1−β 是不同设计目标，不能互相代替。"
+            }
+          ]
+        },
+        "legality": {
+          "assessment": "sufficient",
+          "reason": "Known-normal planning explicitly requires genuinely known population variance. Exact t and binomial results retain their distribution, independence and stopping assumptions. The chapter correctly distinguishes separate endpoint claims from conjunctive promotion and approximate bootstrap validity from exact test-size control.",
+          "evidence": [
+            {
+              "path": "knowledge/tools/statistical-experiments.md",
+              "quote": "不能把预实验样本标准差当成已知总体 σ_D。"
+            },
+            {
+              "path": "knowledge/tools/statistical-experiments.md",
+              "quote": "后者是交并检验"
+            }
+          ]
+        },
+        "algorithm": {
+          "assessment": "sufficient",
+          "reason": "Provides executable branches for paired hierarchical effects, invalid denominators, planned looks and fresh confirmation. Strict zero-exceedance inversion handles equality correctly. The finite-look example accounts for first rejection, and the union-bound argument does not assume independent looks.",
+          "evidence": [
+            {
+              "path": "knowledge/tools/statistical-experiments.md",
+              "quote": "若存在 invalid：返回 point、诊断及区间 UNRESOLVED"
+            },
+            {
+              "path": "knowledge/tools/statistical-experiments.md",
+              "quote": "两者在比值恰好为整数时不同"
+            },
+            {
+              "path": "knowledge/tools/statistical-experiments.md",
+              "quote": "另取未参加预实验、探索或选择的独立确认数据"
+            }
+          ]
+        },
+        "cost": {
+          "assessment": "sufficient",
+          "reason": "Connects complete block costs to feasible sample plans, includes confirmation reserves, and distinguishes cumulative samples from repeated analysis work. Hierarchical allocation is derived under positive variance and a stated continuous cost model rather than presented as a universal optimum.",
+          "evidence": [
+            {
+              "path": "knowledge/tools/statistical-experiments.md",
+              "quote": "计划查看复用累计样本，不应把 n₁+n₂+…+n_J 当作独立采样总数"
+            },
+            {
+              "path": "knowledge/tools/statistical-experiments.md",
+              "quote": "确认占用的设备、模型实例和评价器预算应先预留"
+            }
+          ]
+        },
+        "adaptation": {
+          "assessment": "sufficient",
+          "reason": "Explains consequences of changed populations, weights, pairing, variance, denominator resolution and error allocations. It prevents postselection reuse, opportunistic sample extensions and repeated fresh confirmations until success.",
+          "evidence": [
+            {
+              "path": "knowledge/tools/statistical-experiments.md",
+              "quote": "复用确认集继续调参、失败后反复“独立重试直到成功”，都改变错误事件"
+            },
+            {
+              "path": "knowledge/tools/statistical-experiments.md",
+              "quote": "未使用的额度不自动转给其他候选或时点。"
+            }
+          ]
+        },
+        "diagnosis": {
+          "assessment": "sufficient",
+          "reason": "Supplies counterexamples and alternative predictions for pseudoreplication, missing tails, pairing destruction, denominator selection and optional stopping. It defines appropriate complete-build experimental units for knowledge-benefit research while withholding causal benefit claims.",
+          "evidence": [
+            {
+              "path": "knowledge/tools/statistical-experiments.md",
+              "quote": "只验证最后一次的 9/256 会漏掉提前停下的路径。"
+            },
+            {
+              "path": "knowledge/tools/statistical-experiments.md",
+              "quote": "独立重复单位是完整构建运行，不是同一次运行中的多个工作项。"
+            }
+          ]
+        }
+      },
+      "findings": [],
+      "limitations": [
+        "Acceptance concerns the scoped statistical chapter. The qualification-interface repair in module finding M-001 remains necessary for the integrated module.",
+        "The supplied statistics preflight reports returncode 0. I inspected its source and supplied results without executing the scripts or rerunning retained checks.",
+        "The planning calculations do not supply guarantees for unknown variance, arbitrary tails, service dependence or nonstationarity. The chapter states these boundaries.",
+        "The finite protocol executor does not prove confirmation independence or frozen confirmation sample sizes in a real caller; those remain experimental obligations.",
+        "No real-device result, general bootstrap coverage guarantee or causal knowledge-benefit evidence follows."
+      ],
+      "checks": [
+        {
+          "script": "tools/check_k_tools_007_full.py",
+          "args": []
+        },
+        {
+          "script": "tools/check_evaluation_statistics.py",
+          "args": []
+        }
+      ],
+      "reading_scope": "Read the full supplied control documents, module map, three reviewed chapters, arrival and Goodput chapters, six supplied source notes, GenAI-Perf extracted fulltext and all six check sources. Read only the supplied S-STATS fulltext excerpts at lines 696–870, 1381–1690, 2033–2160 and 2307–2407. Inspected the supplied preflight summaries. The source note's historical full-paper reading claim is not my reading claim. No independent filesystem reading or test execution is claimed.",
+      "test_assessment": "The retained resampling check compares ordered plans with an occupancy/multinomial reference and exercises proportional-pair invariants and actual denominator failures. Its t critical value is an input, and its finite distributions do not establish interval coverage. The new check verifies precision inversion against rational inequalities, strict binomial sample sizes against sequential exact search, and first-rejection probabilities through complete sequences, dynamic programming and intersection counts. The protocol executor exercises all-gate confirmation, failed final confirmation, incomplete prefixes and hard failure. Several named negative controls are explicit alternative-formula or branch-sensitivity comparisons, not full injected implementations. The evidence supports the stated finite arithmetic and stopping examples, including 13/256 and 215/16384, without validating arbitrary service inference."
+    }
+  ]
+}

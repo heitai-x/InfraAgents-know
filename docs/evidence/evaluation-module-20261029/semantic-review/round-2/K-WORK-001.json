@@ -1,0 +1,118 @@
+{
+  "entry_id": "K-WORK-001",
+  "body_sha256": "ae6fd0edcab6a1318ffd7e1c2f42bb87ed1c17e176b4ee68c4b1b056f6a653e6",
+  "reviewer": "sol-reviewer:evaluation-module:round-2",
+  "decision": "accept",
+  "documents": {
+    "AGENTS.md": "b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a",
+    "docs/knowledge-method.md": "69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb",
+    "docs/knowledge-review.md": "f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21",
+    "docs/evaluation-module.md": "0e3436a2018913289b3189368b3656f43a7aa7f54dae25046a1c53a0502af4a6",
+    "knowledge/workloads/metric-events.md": "ae6fd0edcab6a1318ffd7e1c2f42bb87ed1c17e176b4ee68c4b1b056f6a653e6",
+    "tools/check_evaluation_metrics.py": "5270b1c20998b4d219cf4de9a52a290021e33f302001f6b210c37650ce6a251b",
+    "tools/check_k_work_001_full.py": "da8d8d624ad2f79cbe95abed2b4f7b60dcabac7bd7804aa90137b79b8d5de7c9",
+    "knowledge/workloads/measurement-comparability.md": "7059c4eb9bd7e77a995ca9a77f57e4289df52ebdb9ff7313fda7dd23b85ae0e5",
+    "tools/check_evaluation_design.py": "cfa6b0ae79cf991b3ad949bd8115aaea6d0a3e5157b7bad1eec3b1c554e3161d",
+    "tools/check_k_work_004_full.py": "f9f071cfced66ce675d944eb7548a752c98793493faf4a8f580031ca837d8150",
+    "knowledge/tools/statistical-experiments.md": "af9dd27a75768d1b99da5ccf23b0e1ca2deaf1ddd29064f884db27113d465546",
+    "tools/check_evaluation_statistics.py": "5934d8af2d7bc1d75abeba4285f5fd01c61c0c5319b04d604822162f2156161e",
+    "tools/check_k_tools_007_full.py": "c4c6ce0d2b8dd9662f009f9e3d173ede67c822a8b2faf565962fc5a35ab684a4",
+    "knowledge/workloads/slo-goodput.md": "5f55d9a6deb6ef1c3181d399e21c1540c49c782991e9c651ca1874597b56e597",
+    "tools/check_evaluation_goodput.py": "f2cb2ec72574c4ed5620806985ef1adf4221d18ec7c205c68ca4e80d7df1e4dd",
+    "tools/check_k_work_005_full.py": "413852bf8f061d0faddaea0d8ff3fe2def7f3b7175d0680b2e519609ad5bc0d3",
+    "knowledge/workloads/arrival-and-concurrency.md": "da2be1854f12e55061138e669ebca988f752a31bd2e865ad3f2e7cf199ddffd4",
+    "knowledge/sources/S-GENAI-PERF.md": "a09b8732dbb2b4f6604755956b368c934705cd355ba2740f33c880c775f2561c",
+    "knowledge/sources/S-STATS.md": "70aaa597c5ab44b118296fe0527f0b510b7c8e4fb2e62170ce6547c0f7457f8e",
+    "knowledge/sources/S-MLPERF-SCENARIOS.md": "e210de2929034d4a6e25a31ee72b81a184412a7e637c979210f91ae02a261b04",
+    "knowledge/sources/S-MLPERF-LLM.md": "d0a591089c57e5e6d0051cdd73ce4ffc1bbfe60657470732921e25710f936cf0",
+    "knowledge/sources/S-TORCH-REPRO.md": "05f2b5b9819f01363fadadf41987482edfebb130bc134c36c44a00138fd5eb28",
+    "knowledge/sources/S-ASGI.md": "ca77c63e9a95b8be934ae485d89245f895dc7fa49fdf7fcce03b139346127ed9",
+    "knowledge/sources/S-TORCH-PROFILER.md": "e103ff98986d0d266fe73736277d24afc57aa5892fd55d204bed2d84c6f7b050",
+    "knowledge/sources/S-NCU.md": "1bec5edf1e9343ad79094b2772466c3132597f8f83085d1d8959683c187f9f17",
+    "knowledge/sources/S-DISTSERVE.md": "968cbf46667e862085b0e2d72405805351bd33880ac23d8d055bf259192411f4"
+  },
+  "criteria": {
+    "definition": {
+      "assessment": "sufficient",
+      "reason": "Defines event identity, attempts, clocks, populations, units and observation granularity. Endpoint identities correctly separate client TTFT, token TPOT, protocol completion and application completion; the eight-request example reconciles the three throughput populations.",
+      "evidence": [
+        {
+          "path": "knowledge/workloads/metric-events.md",
+          "quote": "指标的完整身份是“起点、终点、观察边界、人口、计数单位、聚合与窗口”，名称只是简写。"
+        }
+      ]
+    },
+    "legality": {
+      "assessment": "sufficient",
+      "reason": "Specifies ordering, deduplication, contiguous content ranges, explicit terminal events and clock compatibility. Distinguishes actual server acceptance from effective business admission and refuses to infer exact token intervals from multi-token chunks.",
+      "evidence": [
+        {
+          "path": "knowledge/workloads/metric-events.md",
+          "quote": "两个截止都不能把它变成一次获接收但未完成的请求。"
+        },
+        {
+          "path": "knowledge/workloads/metric-events.md",
+          "quote": "本章算法对只有多 token chunk 的记录不输出精确 TPOT。"
+        }
+      ]
+    },
+    "algorithm": {
+      "assessment": "sufficient",
+      "reason": "Request reduction, cohort partitioning and evidence settlement expose initialization, state transitions, failure exits and invariants. The repaired interface retains early quality evidence, propagates conflicts and prevents J from extending the H completion population.",
+      "evidence": [
+        {
+          "path": "knowledge/workloads/metric-events.md",
+          "quote": "完整输出绑定事实尚缺则保留UNKNOWN；证据早于FINAL可以挂起，不要求晚于client末内容"
+        }
+      ]
+    },
+    "cost": {
+      "assessment": "sufficient",
+      "reason": "Derives event-processing complexity, storage and reporting costs, synchronization disturbance, chunk batching tradeoffs, PCM bytes and effective-output cost denominators with stated assumptions.",
+      "evidence": [
+        {
+          "path": "knowledge/workloads/metric-events.md",
+          "quote": "仅用 8 字节整数保存 token 时间，原始时间字段为 8,000,000 B，约 7.63 MiB"
+        }
+      ]
+    },
+    "adaptation": {
+      "assessment": "sufficient",
+      "reason": "Explains how chunk size, retries, modality, clocks, quality timing, caching and speculation change observability or accounting. Explicitly identifies when measurements must be recollected rather than reconstructed.",
+      "evidence": [
+        {
+          "path": "knowledge/workloads/metric-events.md",
+          "quote": "需要明确另一种chunk SLO，或在新的可比试验中取得更细的真实事件，不能将缺失TPOT补成零。"
+        }
+      ]
+    },
+    "diagnosis": {
+      "assessment": "sufficient",
+      "reason": "Provides interventions that distinguish generator delay, execution, buffering, protocol tails, clock uncertainty, selection and evidence gaps. Separates genuine executed faulty branches from output-level sensitivity probes.",
+      "evidence": [
+        {
+          "path": "knowledge/workloads/metric-events.md",
+          "quote": "这种证据应称为判据敏感性，不能声称执行了对应故障算法。"
+        }
+      ]
+    }
+  },
+  "findings": [],
+  "limitations": [
+    "The new report helper's emission and completion counters operate within its selected cohort. Its shared fixture does not establish general handling of pre-window arrivals for unrestricted emission or completion windows.",
+    "Synthetic checks do not validate actual tokenizer mapping, acquisition completeness, clock calibration, network behavior, devices or population SLO probabilities.",
+    "The supplied new-check preflight reports success. No independent execution was performed in this review; no current execution outcome is claimed for the unchanged old check."
+  ],
+  "checks": [
+    {
+      "script": "tools/check_k_work_001_full.py",
+      "args": []
+    },
+    {
+      "script": "tools/check_evaluation_metrics.py",
+      "args": []
+    }
+  ],
+  "reading_scope": "Read in full as supplied: AGENTS.md; docs/knowledge-method.md; docs/knowledge-review.md; docs/evaluation-module.md; all four reviewed chapter bodies; arrival-and-concurrency.md; all eight check sources; all nine source explanations; and all four actual_preflight summaries. Upstream originals read only through supplied excerpts: references/S-GENAI-PERF/fulltext.txt lines 484–555, 810–857 and 1007–1027; references/S-STATS/fulltext.txt lines 696–870, 1381–1690, 2033–2160 and 2307–2407. No other upstream originals, PDFs, images, README targets, reader.html targets or source archives were accessed. Historical reading claims embedded in chapters or source explanations are not claims of my own reading. Document hashes were copied from the supplied schema, not independently recomputed.",
+  "test_assessment": "The old source compares endpoint TPOT with adjacent-gap summation, nearest-rank results with empirical-CDF inequalities, cohort classification with event replay, clocks with feasible-offset enumeration, audio recurrence with discrete playback, and PCM conversion with packed-byte lengths. Some probes deliberately alter reports and are correctly labeled sensitivity checks. The new source adds exact hand census/rates, resource-position enumeration, finite unresolved-label assignments and executed erroneous reducer branches. Independent methods support the stated finite examples; shared input fingerprints establish input identity rather than oracle independence. The supplied current preflight reports PASS and matching cross-script summaries, without establishing service or hardware behavior."
+}

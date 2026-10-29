@@ -1,6 +1,6 @@
 # Astra 截止日前的 InfraAgents base 知识库
 
-当前为 base-gpt-6-astra-2026-04-30-v2.3-draft29 构建草稿，含111篇、115项来源和387份活动历史。来源版本上限保持2026-04-30；编辑与独立推导使用真实日期。全库已登记问题、前提等导航字段，逐篇深度复核见[扩展状态](../docs/expansion-status.json)；当前深化分页、调度与GPU流水，见[本批模块](../docs/mechanism-expansion.md)。内容标准见[构建方法](../docs/knowledge-method.md)与[审查问题](../docs/knowledge-review.md)。
+当前为 base-gpt-6-astra-2026-04-30-v2.3-draft30 构建草稿，含111篇、115项来源和391份活动历史。来源版本上限保持2026-04-30；编辑与独立推导使用真实日期。全库已登记问题、前提等导航字段，逐篇深度复核见[扩展状态](../docs/expansion-status.json)；当前深化分页、调度与GPU流水，见[本批模块](../docs/mechanism-expansion.md)。内容标准见[构建方法](../docs/knowledge-method.md)与[审查问题](../docs/knowledge-review.md)。
 
 [主题索引](INDEX.md)、[设计入口](DESIGN.md)、[诊断入口](DIAGNOSIS.md) 和 [覆盖矩阵](COVERAGE.md) 提供可选阅读路径。[系统组合](system-semantics/design-synthesis.md) 展示条件化例子；它们不要求所有Agent采用同一组件划分、研发顺序或方案集合。
 
@@ -11,3 +11,5 @@
 [来源登记](SOURCES.md) · [时间规则](../docs/23-time-bounded-knowledge.md) · [版本与编辑记录](../VERSION.json)。
 
 当前Attention修订的算法、硬件映射、组合状态和验证边界见[模块说明](../docs/attention-module.md)。
+
+[评测与实验设计模块](../docs/evaluation-module.md)提供指标口径与实验设计的阅读地图；[评测设计](workloads/measurement-comparability.md)是可检索正文主入口，连接[服务指标](workloads/metric-events.md)、[联合 SLO](workloads/slo-goodput.md)和[统计实验](tools/statistical-experiments.md)。

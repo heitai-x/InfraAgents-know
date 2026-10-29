@@ -1,0 +1,28 @@
+{
+  "id": "M-001",
+  "severity": "blocking",
+  "affected_entries": [
+    "K-WORK-001"
+  ],
+  "paths": [
+    "knowledge/workloads/metric-events.md",
+    "knowledge/workloads/slo-goodput.md"
+  ],
+  "finding": "The retained Goodput reducer does not enforce the quality-certificate contract introduced by the metrics chapter.",
+  "evidence": [
+    {
+      "path": "knowledge/workloads/metric-events.md",
+      "quote": "身份载荷冲突或同一固定规则产生互相矛盾的标签，必须保存并停止确定资格归约，不能只保留最后一个通过标签。"
+    },
+    {
+      "path": "knowledge/workloads/slo-goodput.md",
+      "quote": "要求已正常完成且证书身份、输出版本一致；保存通过或失败"
+    },
+    {
+      "path": "knowledge/workloads/metric-events.md",
+      "quote": "完整内容身份确定之后，审核可以在协议尾部尚未结束时完成，例如最后内容30、标签35、FINAL45均可合法。"
+    }
+  ],
+  "consequence": "For one normally completed output, distinct certificates under the same unchanged rule can report failure and then success. The retained reducer specifies assignment without a contradiction guard, permitting the later success to determine qualification, whereas SettlePerformanceEvidence requires unresolved conflict. It also rejects a valid certificate received after complete content but before protocol FINAL. The supplied new metrics check handles these cases within its own reducer; that does not establish compatibility with the retained Goodput algorithm.",
+  "bounded_repair": "Define and enforce the interface between the reducers. Either update CohortGoodput to retain early certificates and reject identity or fixed-rule verdict conflicts, or explicitly require normalized certificates from SettlePerformanceEvidence and describe the adapter that buffers early evidence and propagates conflicts. Preserve H/J and output/rule identities. Add a cross-reducer fixture for early certification and for failure-then-success certificates without a rule revision."
+}

@@ -1,0 +1,279 @@
+{
+  "role": "learner",
+  "engine": "ds",
+  "requested_model": "deepseek/deepseek-v4.1-flash-1017",
+  "reasoning_effort": "high",
+  "prompt_sha256": "bef8337f1bb0137aaf347be8ab3d1347eec8788250975b0d96d4f907035f4751",
+  "usage": [
+    {
+      "input": 40952,
+      "output": 18418,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "reasoning": 15474,
+      "totalTokens": 59370,
+      "cost": {
+        "input": 0.0061427999999999995,
+        "output": 0.0110508,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "total": 0.0171936
+      }
+    }
+  ],
+  "answer": "{\n  \"metrics\": {\n    \"request_a\": {\n      \"N_tokens\": 3,\n      \"actual_send_ttft_ms\": 30,\n      \"planned_origin_ttft_ms\": 50,\n      \"exact_tpot_ms\": 10,\n      \"protocol_latency_ms\": 60,\n      \"protocol_latency_minus_ttft_over_N_minus_1_ms\": 15,\n      \"note\": \"(protocol_latency - TTFT)/(N-1) = (60-30)/2 = 15 ms, which is not exact TPOT because the 10 ms FINAL tail is averaged into the two token intervals; exact TPOT is 10 ms.\"\n    },\n    \"request_b\": {\n      \"N_tokens\": 2,\n      \"actual_send_ttft_ms\": 30,\n      \"planned_origin_ttft_ms\": 30,\n      \"exact_tpot_ms\": null,\n      \"exact_tpot_reason\": \"Only one chunk with 2 tokens at time 40 is observed; no per-token times or ITL exist, so exact TPOT is undefined. The chunk endpoint difference cannot be reported as TPOT.\",\n      \"protocol_latency_ms\": 120,\n      \"protocol_latency_minus_ttft_over_N_minus_1_ms\": 90,\n      \"recoverable\": [\n        \"actual-send TTFT from first chunk\",\n        \"planned-origin TTFT\",\n        \"normal FINAL protocol latency\",\n        \"chunk-level token count\"\n      ],\n      \"not_recoverable\": [\n        \"exact TPOT\",\n        \"exact ITL\"\n      ]\n    },\n    \"request_c\": {\n      \"N_tokens\": 0,\n      \"actual_send_ttft_ms\": null,\n      \"planned_origin_ttft_ms\": null,\n      \"exact_tpot_ms\": null,\n      \"protocol_latency_ms\": null,\n      \"termination_latency_ms\": 45,\n      \"protocol_latency_minus_ttft_over_N_minus_1_ms\": null,\n      \"note\": \"No content and no normal FINAL; TIMEOUT at 140 is a termination, not normal protocol completion. TTFT, TPOT, and the protocol-minus-TTFT projection are undefined.\"\n    },\n    \"output_token_throughput\": {\n      \"emission_window\": {\n        \"window_ms\": 100,\n        \"output_tokens\": 5,\n        \"tokens_per_second\": 50,\n        \"counts\": {\n          \"a\": 3,\n          \"b\": 2,\n          \"c\": 0\n        },\n        \"note\": \"Counts all content emitted in [0,100), including b, which is not certified good.\"\n      },\n      \"completion_window\": {\n        \"window_ms\": 100,\n        \"normal_completions_in_window\": [\n          \"a\"\n        ],\n        \"output_tokens\": 3,\n        \"tokens_per_second\": 30,\n        \"note\": \"Only a has normal FINAL in [0,100); b's FINAL at 130 is outside this window.\"\n      },\n      \"arrival_cohort\": {\n        \"cohort_actual_sends\": \"[0,100)\",\n        \"H_ms\": 150,\n        \"elapsed_ms\": 150,\n        \"normal_final_by_H\": [\n          \"a\",\n          \"b\"\n        ],\n        \"output_tokens\": 5,\n        \"tokens_per_second\": 33.3333333333,\n        \"note\": \"a and b complete normally by H; c times out. This is output-token throughput, not goodput.\"\n      }\n    }\n  },\n  \"admission_accounts\": {\n    \"actual_service_admission_decisions_by_H\": 3,\n    \"effective_business_admissions_by_H\": 2,\n    \"offered_actual_send_cohort\": 3,\n    \"per_request\": {\n      \"a\": {\n        \"actual_acceptance_time\": 25,\n        \"effective_business_admitted\": true,\n        \"terminal\": \"FINAL at 80\"\n      },\n      \"b\": {\n        \"actual_acceptance_time\": 12,\n        \"effective_business_admitted\": true,\n        \"terminal\": \"FINAL at 130\"\n      },\n      \"c\": {\n        \"actual_late_acceptance_time\": 145,\n        \"effective_business_admitted\": false,\n        \"terminal\": \"TIMEOUT at 140\",\n        \"status\": \"pre_timeout; late_actual_acceptance does not revive it\"\n      }\n    },\n    \"explanation\": \"a and b were accepted before termination and are effective business admissions. c terminated by timeout at 140 before the actual acceptance at 145; the actual server decision still counts as an actual decision by H, but it is not an effective business admission. Late acceptance does not repair the timeout, does not change the terminal timeout state, and does not prove device or resource completion.\"\n  },\n  \"statistical_judgment\": {\n    \"goodput\": {\n      \"J_150\": {\n        \"classification\": {\n          \"a\": \"good\",\n          \"b\": \"unknown\",\n          \"c\": \"failed\"\n        },\n        \"counts\": {\n          \"offered\": 3,\n          \"certified_good\": 1,\n          \"possible_unknown\": 1,\n          \"definite_failure\": 1\n        },\n        \"certified_goodput_requests_per_second\": 6.6666666667,\n        \"identification_upper_bound_requests_per_second\": 13.3333333333,\n        \"qualified_fraction_bounds\": {\n          \"lower\": 0.3333333333,\n          \"upper\": 0.6666666667\n        },\n        \"reason\": \"a is certified good. b has normal FINAL and TTFT 30<=35, but quality at 160 is after J=150 and exact TPOT is unobserved; it remains unknown. c has no normal FINAL and no quality or exact-TPOT evidence.\"\n      },\n      \"J_180\": {\n        \"classification\": {\n          \"a\": \"good\",\n          \"b\": \"unknown\",\n          \"c\": \"failed\"\n        },\n        \"counts\": {\n          \"offered\": 3,\n          \"certified_good\": 1,\n          \"possible_unknown\": 1,\n          \"definite_failure\": 1\n        },\n        \"certified_goodput_requests_per_second\": 6.6666666667,\n        \"identification_upper_bound_requests_per_second\": 13.3333333333,\n        \"qualified_fraction_bounds\": {\n          \"lower\": 0.3333333333,\n          \"upper\": 0.6666666667\n        },\n        \"reason\": \"a remains good. b's quality PASS is now available by J=180, and its TTFT is 30<=35, but exact TPOT is still unobservable from the single 2-token chunk; b remains unknown. c remains failed. The bounds are deterministic identification bounds, not confidence intervals.\"\n      }\n    },\n    \"two_by_two\": {\n      \"conditional_effects_change_minus_baseline_ms\": {\n        \"low_load\": -3,\n        \"high_load\": 2\n      },\n      \"interaction_high_minus_low_ms\": 5,\n      \"uniformly_faster\": false,\n      \"interpretation\": \"Change is faster at low load by 3 ms but slower at high load by 2 ms. The additive interaction is 5 ms. This single descriptive table does not establish uncertainty or general load behavior.\"\n    },\n    \"pooled_p99\": {\n      \"supported_as_descriptive_only\": \"A pooled p99 of the observed 200 requests can be described as a pooled-sample percentile if the percentile definition, population, and window are stated.\",\n      \"not_supported\": \"It is not 200 independent service repetitions. Requests within a process run are correlated, the two runs yield at most two run-level units, and all baseline runs before all changed runs confound condition with time, drift, warmup, cache, and environment. Pooled p99 does not provide independent evidence of a changed distribution or a causal effect.\"\n    },\n    \"zero_violation_bernoulli\": {\n      \"n_trials\": 200,\n      \"alpha_one_sided\": 0.05,\n      \"upper_bound\": 0.014867039,\n      \"upper_bound_percent\": 1.4867039,\n      \"supports_below_1_percent\": false,\n      \"explanation\": \"Under the separate stipulated iid fixed-sample Bernoulli model, zero violations in 200 trials gives q_U = 1 - 0.05^(1/200) = about 1.4867%, so a below-1% claim is not supported at 95% one-sided confidence. A zero-violation single final look strictly below 1% requires more than log(0.05)/log(0.99) ~= 298.07, hence at least 299 independent iid trials.\",\n      \"correlated_runs\": \"Two correlated service runs do not inherit the iid Bernoulli model. The 200 requests are clustered within runs and are not 200 independent trials; run, order, warmup, cache, and load history induce correlation. A zero-violation bound cannot be transferred to the two-run service setting without an explicit independent-unit and hierarchical model.\"\n    }\n  },\n  \"experiment_plan\": {\n    \"two_run_p99_redesign\": {\n      \"unit\": \"independent complete service/process run or randomized time block; requests within a run are correlated outcomes.\",\n      \"assignment\": \"Predefine multiple blocks and randomize or balance baseline and changed order within each block, for example ABBA or a randomized complete block ordering; do not run all baseline before all changed.\",\n      \"repetitions\": \"Use a pilot to characterize run-level variance and tail-event frequency, then predefine the number of independent runs and requests per run. Do not treat pooled requests as independent repetitions.\",\n      \"warmup\": \"For steady-state comparisons, require declared path coverage and no pending preparation before opening the measurement window. Keep FULL_COLD, LOADED_COLD, and diagnostic profiling runs separate from primary steady-state timing.\",\n      \"timing\": \"Primary performance runs use minimal instrumentation and the same workload, arrival process, cache state, H, J, and joint SLO contract. Detailed profiling runs are separate diagnostics and are not pooled with normal runs.\",\n      \"analysis\": \"Analyze at run/block level or with a pre-specified hierarchical model. Report pooled p99 only descriptively unless the model supports an interval. Retain failures, timeouts, unknowns, and offered-request accounting.\"\n    },\n    \"independent_confirmation_design\": {\n      \"design\": \"Freeze the candidate and joint SLO definition, then use fresh independent units that did not participate in exploration or selection. For a single final look under the separate iid Bernoulli model, preselect n=299 independent units and require zero violations for a strict 95% one-sided upper bound below 1%. If using planned looks, preselect all cumulative n_j and alpha_j with sum alpha_j <= 0.05, use exact one-sided tests at each look, and stop only at those planned looks.\",\n      \"resource_boundaries\": \"Reserve all independent runs/requests, warmup, teardown, quality evaluation, logging, and analysis before starting. Fix the maximum sample size; do not reuse the original two runs, extend opportunistically, or add looks after seeing results. If the independent-unit model is not defensible, the conclusion remains unresolved.\",\n      \"decision_rule\": \"Confirm a below-1% violation rate only if the final valid one-sided upper bound is below 0.01 under the stipulated model. If any violation occurs, do not use the zero-violation formula; use the appropriate full binomial or hierarchical procedure, or report not confirmed. Hard quality failure rejects confirmation. For correlated service runs, the independent unit must be the run/block, not the request; two runs provide at most two independent units and cannot support a 1% tail claim.\"\n    }\n  },\n  \"decision\": \"Reject claims that the change is uniformly faster, that a pooled 200-request p99 is independent evidence, and that zero violations in 200 trials establish a below-1% SLO violation rate. Accept only the directly computed request-a certified success and the stated window-specific output-token rates. Request b remains unknown because exact TPOT is unrecoverable from the single 2-token chunk; request c is a failed timeout, and its late acceptance is not an effective admission.\",\n  \"limits\": [\n    \"No implementation source, author checks, review reports, tools, or independent measurements are provided; all conclusions use only the supplied scenario and knowledge.\",\n    \"Request b's exact TPOT and ITL cannot be recovered from a single multi-token chunk; b cannot be certified good even at J=180.\",\n    \"The goodput ranges are deterministic identification bounds over unobserved evidence, not confidence intervals, and are based on only three requests.\",\n    \"The throughput rates use different populations and windows; they must not be substituted for goodput.\",\n    \"The two-by-two table is a single descriptive table without repetitions, uncertainty, or carryover control.\",\n    \"The pooled 200-request p99 is pseudo-replicated across correlated requests and confounded by all-baseline-before-changed ordering.\",\n    \"The Bernoulli zero-violation bound is valid only under the separate stipulated iid fixed-sample model; it does not apply to the two correlated service runs.\",\n    \"The proposed confirmation design is a plan, not an executed result; no measurements or independent confirmation are claimed.\"\n  ]\n}",
+  "exit_code": 0,
+  "status": "completed",
+  "timeout_seconds": 1800,
+  "response_path": "D:\\桌面\\xdb\\InfraAgents\\InfraAgents-know-astra-new\\InfraAgents-know\\docs\\evidence\\evaluation-module-20261029\\learner\\initial-call\\answer.txt",
+  "record_path": "D:\\桌面\\xdb\\InfraAgents\\InfraAgents-know-astra-new\\InfraAgents-know\\docs\\evidence\\evaluation-module-20261029\\learner\\initial-call\\record.json",
+  "actual_model": "deepseek/deepseek-v4.1-flash-1017",
+  "provider": "openrouter",
+  "identity_verified": true,
+  "stop_reason": "stop",
+  "response_ids": [
+    "gen-1793248352-j4gIVgDGdLo9TXiqIPEW"
+  ],
+  "tool_events": [],
+  "malformed_session_lines": [],
+  "max_output_tokens": 98304,
+  "elapsed_seconds": 144.219,
+  "remote_directory": "/mnt/infra_agents/ops/knowledge-workflow/chapter-c642127a6e7d4d3f81ca06743f5e5363-cf373a4a20",
+  "cost_scope": "Pi cost fields are catalog estimates, not independently verified billing.",
+  "worker_invocation": {
+    "argv": [
+      "/mnt/infra_agents/tools/pi-1.4.0/node_modules/.bin/pi",
+      "--print",
+      "--mode",
+      "json",
+      "--provider",
+      "openrouter",
+      "--model",
+      "deepseek/deepseek-v4.1-flash-1017",
+      "--thinking",
+      "high",
+      "--no-tools",
+      "--no-approve",
+      "--no-extensions",
+      "--no-skills",
+      "--no-prompt-templates",
+      "--no-context-files",
+      "--no-themes",
+      "--system-prompt",
+      "/mnt/infra_agents/ops/knowledge-workflow/chapter-c642127a6e7d4d3f81ca06743f5e5363-cf373a4a20/system.txt",
+      "--session",
+      "/mnt/infra_agents/ops/knowledge-workflow/chapter-c642127a6e7d4d3f81ca06743f5e5363-cf373a4a20/session.jsonl"
+    ],
+    "workspace": "/mnt/infra_agents/ops/knowledge-workflow/chapter-c642127a6e7d4d3f81ca06743f5e5363-cf373a4a20/workspace",
+    "fresh": true,
+    "environment_keys": [
+      "HOME",
+      "LANG",
+      "OPENROUTER_API_KEY",
+      "OPENROUTER_BASE_URL",
+      "PATH",
+      "PI_CODING_AGENT_DIR",
+      "PI_OFFLINE",
+      "PI_SKIP_VERSION_CHECK",
+      "PI_TELEMETRY"
+    ],
+    "requested_model": "deepseek/deepseek-v4.1-flash-1017",
+    "max_output_tokens": 98304,
+    "tool_policy": "no_tools"
+  },
+  "parsed": {
+    "metrics": {
+      "request_a": {
+        "N_tokens": 3,
+        "actual_send_ttft_ms": 30,
+        "planned_origin_ttft_ms": 50,
+        "exact_tpot_ms": 10,
+        "protocol_latency_ms": 60,
+        "protocol_latency_minus_ttft_over_N_minus_1_ms": 15,
+        "note": "(protocol_latency - TTFT)/(N-1) = (60-30)/2 = 15 ms, which is not exact TPOT because the 10 ms FINAL tail is averaged into the two token intervals; exact TPOT is 10 ms."
+      },
+      "request_b": {
+        "N_tokens": 2,
+        "actual_send_ttft_ms": 30,
+        "planned_origin_ttft_ms": 30,
+        "exact_tpot_ms": null,
+        "exact_tpot_reason": "Only one chunk with 2 tokens at time 40 is observed; no per-token times or ITL exist, so exact TPOT is undefined. The chunk endpoint difference cannot be reported as TPOT.",
+        "protocol_latency_ms": 120,
+        "protocol_latency_minus_ttft_over_N_minus_1_ms": 90,
+        "recoverable": [
+          "actual-send TTFT from first chunk",
+          "planned-origin TTFT",
+          "normal FINAL protocol latency",
+          "chunk-level token count"
+        ],
+        "not_recoverable": [
+          "exact TPOT",
+          "exact ITL"
+        ]
+      },
+      "request_c": {
+        "N_tokens": 0,
+        "actual_send_ttft_ms": null,
+        "planned_origin_ttft_ms": null,
+        "exact_tpot_ms": null,
+        "protocol_latency_ms": null,
+        "termination_latency_ms": 45,
+        "protocol_latency_minus_ttft_over_N_minus_1_ms": null,
+        "note": "No content and no normal FINAL; TIMEOUT at 140 is a termination, not normal protocol completion. TTFT, TPOT, and the protocol-minus-TTFT projection are undefined."
+      },
+      "output_token_throughput": {
+        "emission_window": {
+          "window_ms": 100,
+          "output_tokens": 5,
+          "tokens_per_second": 50,
+          "counts": {
+            "a": 3,
+            "b": 2,
+            "c": 0
+          },
+          "note": "Counts all content emitted in [0,100), including b, which is not certified good."
+        },
+        "completion_window": {
+          "window_ms": 100,
+          "normal_completions_in_window": [
+            "a"
+          ],
+          "output_tokens": 3,
+          "tokens_per_second": 30,
+          "note": "Only a has normal FINAL in [0,100); b's FINAL at 130 is outside this window."
+        },
+        "arrival_cohort": {
+          "cohort_actual_sends": "[0,100)",
+          "H_ms": 150,
+          "elapsed_ms": 150,
+          "normal_final_by_H": [
+            "a",
+            "b"
+          ],
+          "output_tokens": 5,
+          "tokens_per_second": 33.3333333333,
+          "note": "a and b complete normally by H; c times out. This is output-token throughput, not goodput."
+        }
+      }
+    },
+    "admission_accounts": {
+      "actual_service_admission_decisions_by_H": 3,
+      "effective_business_admissions_by_H": 2,
+      "offered_actual_send_cohort": 3,
+      "per_request": {
+        "a": {
+          "actual_acceptance_time": 25,
+          "effective_business_admitted": true,
+          "terminal": "FINAL at 80"
+        },
+        "b": {
+          "actual_acceptance_time": 12,
+          "effective_business_admitted": true,
+          "terminal": "FINAL at 130"
+        },
+        "c": {
+          "actual_late_acceptance_time": 145,
+          "effective_business_admitted": false,
+          "terminal": "TIMEOUT at 140",
+          "status": "pre_timeout; late_actual_acceptance does not revive it"
+        }
+      },
+      "explanation": "a and b were accepted before termination and are effective business admissions. c terminated by timeout at 140 before the actual acceptance at 145; the actual server decision still counts as an actual decision by H, but it is not an effective business admission. Late acceptance does not repair the timeout, does not change the terminal timeout state, and does not prove device or resource completion."
+    },
+    "statistical_judgment": {
+      "goodput": {
+        "J_150": {
+          "classification": {
+            "a": "good",
+            "b": "unknown",
+            "c": "failed"
+          },
+          "counts": {
+            "offered": 3,
+            "certified_good": 1,
+            "possible_unknown": 1,
+            "definite_failure": 1
+          },
+          "certified_goodput_requests_per_second": 6.6666666667,
+          "identification_upper_bound_requests_per_second": 13.3333333333,
+          "qualified_fraction_bounds": {
+            "lower": 0.3333333333,
+            "upper": 0.6666666667
+          },
+          "reason": "a is certified good. b has normal FINAL and TTFT 30<=35, but quality at 160 is after J=150 and exact TPOT is unobserved; it remains unknown. c has no normal FINAL and no quality or exact-TPOT evidence."
+        },
+        "J_180": {
+          "classification": {
+            "a": "good",
+            "b": "unknown",
+            "c": "failed"
+          },
+          "counts": {
+            "offered": 3,
+            "certified_good": 1,
+            "possible_unknown": 1,
+            "definite_failure": 1
+          },
+          "certified_goodput_requests_per_second": 6.6666666667,
+          "identification_upper_bound_requests_per_second": 13.3333333333,
+          "qualified_fraction_bounds": {
+            "lower": 0.3333333333,
+            "upper": 0.6666666667
+          },
+          "reason": "a remains good. b's quality PASS is now available by J=180, and its TTFT is 30<=35, but exact TPOT is still unobservable from the single 2-token chunk; b remains unknown. c remains failed. The bounds are deterministic identification bounds, not confidence intervals."
+        }
+      },
+      "two_by_two": {
+        "conditional_effects_change_minus_baseline_ms": {
+          "low_load": -3,
+          "high_load": 2
+        },
+        "interaction_high_minus_low_ms": 5,
+        "uniformly_faster": false,
+        "interpretation": "Change is faster at low load by 3 ms but slower at high load by 2 ms. The additive interaction is 5 ms. This single descriptive table does not establish uncertainty or general load behavior."
+      },
+      "pooled_p99": {
+        "supported_as_descriptive_only": "A pooled p99 of the observed 200 requests can be described as a pooled-sample percentile if the percentile definition, population, and window are stated.",
+        "not_supported": "It is not 200 independent service repetitions. Requests within a process run are correlated, the two runs yield at most two run-level units, and all baseline runs before all changed runs confound condition with time, drift, warmup, cache, and environment. Pooled p99 does not provide independent evidence of a changed distribution or a causal effect."
+      },
+      "zero_violation_bernoulli": {
+        "n_trials": 200,
+        "alpha_one_sided": 0.05,
+        "upper_bound": 0.014867039,
+        "upper_bound_percent": 1.4867039,
+        "supports_below_1_percent": false,
+        "explanation": "Under the separate stipulated iid fixed-sample Bernoulli model, zero violations in 200 trials gives q_U = 1 - 0.05^(1/200) = about 1.4867%, so a below-1% claim is not supported at 95% one-sided confidence. A zero-violation single final look strictly below 1% requires more than log(0.05)/log(0.99) ~= 298.07, hence at least 299 independent iid trials.",
+        "correlated_runs": "Two correlated service runs do not inherit the iid Bernoulli model. The 200 requests are clustered within runs and are not 200 independent trials; run, order, warmup, cache, and load history induce correlation. A zero-violation bound cannot be transferred to the two-run service setting without an explicit independent-unit and hierarchical model."
+      }
+    },
+    "experiment_plan": {
+      "two_run_p99_redesign": {
+        "unit": "independent complete service/process run or randomized time block; requests within a run are correlated outcomes.",
+        "assignment": "Predefine multiple blocks and randomize or balance baseline and changed order within each block, for example ABBA or a randomized complete block ordering; do not run all baseline before all changed.",
+        "repetitions": "Use a pilot to characterize run-level variance and tail-event frequency, then predefine the number of independent runs and requests per run. Do not treat pooled requests as independent repetitions.",
+        "warmup": "For steady-state comparisons, require declared path coverage and no pending preparation before opening the measurement window. Keep FULL_COLD, LOADED_COLD, and diagnostic profiling runs separate from primary steady-state timing.",
+        "timing": "Primary performance runs use minimal instrumentation and the same workload, arrival process, cache state, H, J, and joint SLO contract. Detailed profiling runs are separate diagnostics and are not pooled with normal runs.",
+        "analysis": "Analyze at run/block level or with a pre-specified hierarchical model. Report pooled p99 only descriptively unless the model supports an interval. Retain failures, timeouts, unknowns, and offered-request accounting."
+      },
+      "independent_confirmation_design": {
+        "design": "Freeze the candidate and joint SLO definition, then use fresh independent units that did not participate in exploration or selection. For a single final look under the separate iid Bernoulli model, preselect n=299 independent units and require zero violations for a strict 95% one-sided upper bound below 1%. If using planned looks, preselect all cumulative n_j and alpha_j with sum alpha_j <= 0.05, use exact one-sided tests at each look, and stop only at those planned looks.",
+        "resource_boundaries": "Reserve all independent runs/requests, warmup, teardown, quality evaluation, logging, and analysis before starting. Fix the maximum sample size; do not reuse the original two runs, extend opportunistically, or add looks after seeing results. If the independent-unit model is not defensible, the conclusion remains unresolved.",
+        "decision_rule": "Confirm a below-1% violation rate only if the final valid one-sided upper bound is below 0.01 under the stipulated model. If any violation occurs, do not use the zero-violation formula; use the appropriate full binomial or hierarchical procedure, or report not confirmed. Hard quality failure rejects confirmation. For correlated service runs, the independent unit must be the run/block, not the request; two runs provide at most two independent units and cannot support a 1% tail claim."
+      }
+    },
+    "decision": "Reject claims that the change is uniformly faster, that a pooled 200-request p99 is independent evidence, and that zero violations in 200 trials establish a below-1% SLO violation rate. Accept only the directly computed request-a certified success and the stated window-specific output-token rates. Request b remains unknown because exact TPOT is unrecoverable from the single 2-token chunk; request c is a failed timeout, and its late acceptance is not an effective admission.",
+    "limits": [
+      "No implementation source, author checks, review reports, tools, or independent measurements are provided; all conclusions use only the supplied scenario and knowledge.",
+      "Request b's exact TPOT and ITL cannot be recovered from a single multi-token chunk; b cannot be certified good even at J=180.",
+      "The goodput ranges are deterministic identification bounds over unobserved evidence, not confidence intervals, and are based on only three requests.",
+      "The throughput rates use different populations and windows; they must not be substituted for goodput.",
+      "The two-by-two table is a single descriptive table without repetitions, uncertainty, or carryover control.",
+      "The pooled 200-request p99 is pseudo-replicated across correlated requests and confounded by all-baseline-before-changed ordering.",
+      "The Bernoulli zero-violation bound is valid only under the separate stipulated iid fixed-sample model; it does not apply to the two correlated service runs.",
+      "The proposed confirmation design is a plan, not an executed result; no measurements or independent confirmation are claimed."
+    ]
+  },
+  "format_status": "strict_json",
+  "format_error": null,
+  "output_text": "{\n  \"metrics\": {\n    \"request_a\": {\n      \"N_tokens\": 3,\n      \"actual_send_ttft_ms\": 30,\n      \"planned_origin_ttft_ms\": 50,\n      \"exact_tpot_ms\": 10,\n      \"protocol_latency_ms\": 60,\n      \"protocol_latency_minus_ttft_over_N_minus_1_ms\": 15,\n      \"note\": \"(protocol_latency - TTFT)/(N-1) = (60-30)/2 = 15 ms, which is not exact TPOT because the 10 ms FINAL tail is averaged into the two token intervals; exact TPOT is 10 ms.\"\n    },\n    \"request_b\": {\n      \"N_tokens\": 2,\n      \"actual_send_ttft_ms\": 30,\n      \"planned_origin_ttft_ms\": 30,\n      \"exact_tpot_ms\": null,\n      \"exact_tpot_reason\": \"Only one chunk with 2 tokens at time 40 is observed; no per-token times or ITL exist, so exact TPOT is undefined. The chunk endpoint difference cannot be reported as TPOT.\",\n      \"protocol_latency_ms\": 120,\n      \"protocol_latency_minus_ttft_over_N_minus_1_ms\": 90,\n      \"recoverable\": [\n        \"actual-send TTFT from first chunk\",\n        \"planned-origin TTFT\",\n        \"normal FINAL protocol latency\",\n        \"chunk-level token count\"\n      ],\n      \"not_recoverable\": [\n        \"exact TPOT\",\n        \"exact ITL\"\n      ]\n    },\n    \"request_c\": {\n      \"N_tokens\": 0,\n      \"actual_send_ttft_ms\": null,\n      \"planned_origin_ttft_ms\": null,\n      \"exact_tpot_ms\": null,\n      \"protocol_latency_ms\": null,\n      \"termination_latency_ms\": 45,\n      \"protocol_latency_minus_ttft_over_N_minus_1_ms\": null,\n      \"note\": \"No content and no normal FINAL; TIMEOUT at 140 is a termination, not normal protocol completion. TTFT, TPOT, and the protocol-minus-TTFT projection are undefined.\"\n    },\n    \"output_token_throughput\": {\n      \"emission_window\": {\n        \"window_ms\": 100,\n        \"output_tokens\": 5,\n        \"tokens_per_second\": 50,\n        \"counts\": {\n          \"a\": 3,\n          \"b\": 2,\n          \"c\": 0\n        },\n        \"note\": \"Counts all content emitted in [0,100), including b, which is not certified good.\"\n      },\n      \"completion_window\": {\n        \"window_ms\": 100,\n        \"normal_completions_in_window\": [\n          \"a\"\n        ],\n        \"output_tokens\": 3,\n        \"tokens_per_second\": 30,\n        \"note\": \"Only a has normal FINAL in [0,100); b's FINAL at 130 is outside this window.\"\n      },\n      \"arrival_cohort\": {\n        \"cohort_actual_sends\": \"[0,100)\",\n        \"H_ms\": 150,\n        \"elapsed_ms\": 150,\n        \"normal_final_by_H\": [\n          \"a\",\n          \"b\"\n        ],\n        \"output_tokens\": 5,\n        \"tokens_per_second\": 33.3333333333,\n        \"note\": \"a and b complete normally by H; c times out. This is output-token throughput, not goodput.\"\n      }\n    }\n  },\n  \"admission_accounts\": {\n    \"actual_service_admission_decisions_by_H\": 3,\n    \"effective_business_admissions_by_H\": 2,\n    \"offered_actual_send_cohort\": 3,\n    \"per_request\": {\n      \"a\": {\n        \"actual_acceptance_time\": 25,\n        \"effective_business_admitted\": true,\n        \"terminal\": \"FINAL at 80\"\n      },\n      \"b\": {\n        \"actual_acceptance_time\": 12,\n        \"effective_business_admitted\": true,\n        \"terminal\": \"FINAL at 130\"\n      },\n      \"c\": {\n        \"actual_late_acceptance_time\": 145,\n        \"effective_business_admitted\": false,\n        \"terminal\": \"TIMEOUT at 140\",\n        \"status\": \"pre_timeout; late_actual_acceptance does not revive it\"\n      }\n    },\n    \"explanation\": \"a and b were accepted before termination and are effective business admissions. c terminated by timeout at 140 before the actual acceptance at 145; the actual server decision still counts as an actual decision by H, but it is not an effective business admission. Late acceptance does not repair the timeout, does not change the terminal timeout state, and does not prove device or resource completion.\"\n  },\n  \"statistical_judgment\": {\n    \"goodput\": {\n      \"J_150\": {\n        \"classification\": {\n          \"a\": \"good\",\n          \"b\": \"unknown\",\n          \"c\": \"failed\"\n        },\n        \"counts\": {\n          \"offered\": 3,\n          \"certified_good\": 1,\n          \"possible_unknown\": 1,\n          \"definite_failure\": 1\n        },\n        \"certified_goodput_requests_per_second\": 6.6666666667,\n        \"identification_upper_bound_requests_per_second\": 13.3333333333,\n        \"qualified_fraction_bounds\": {\n          \"lower\": 0.3333333333,\n          \"upper\": 0.6666666667\n        },\n        \"reason\": \"a is certified good. b has normal FINAL and TTFT 30<=35, but quality at 160 is after J=150 and exact TPOT is unobserved; it remains unknown. c has no normal FINAL and no quality or exact-TPOT evidence.\"\n      },\n      \"J_180\": {\n        \"classification\": {\n          \"a\": \"good\",\n          \"b\": \"unknown\",\n          \"c\": \"failed\"\n        },\n        \"counts\": {\n          \"offered\": 3,\n          \"certified_good\": 1,\n          \"possible_unknown\": 1,\n          \"definite_failure\": 1\n        },\n        \"certified_goodput_requests_per_second\": 6.6666666667,\n        \"identification_upper_bound_requests_per_second\": 13.3333333333,\n        \"qualified_fraction_bounds\": {\n          \"lower\": 0.3333333333,\n          \"upper\": 0.6666666667\n        },\n        \"reason\": \"a remains good. b's quality PASS is now available by J=180, and its TTFT is 30<=35, but exact TPOT is still unobservable from the single 2-token chunk; b remains unknown. c remains failed. The bounds are deterministic identification bounds, not confidence intervals.\"\n      }\n    },\n    \"two_by_two\": {\n      \"conditional_effects_change_minus_baseline_ms\": {\n        \"low_load\": -3,\n        \"high_load\": 2\n      },\n      \"interaction_high_minus_low_ms\": 5,\n      \"uniformly_faster\": false,\n      \"interpretation\": \"Change is faster at low load by 3 ms but slower at high load by 2 ms. The additive interaction is 5 ms. This single descriptive table does not establish uncertainty or general load behavior.\"\n    },\n    \"pooled_p99\": {\n      \"supported_as_descriptive_only\": \"A pooled p99 of the observed 200 requests can be described as a pooled-sample percentile if the percentile definition, population, and window are stated.\",\n      \"not_supported\": \"It is not 200 independent service repetitions. Requests within a process run are correlated, the two runs yield at most two run-level units, and all baseline runs before all changed runs confound condition with time, drift, warmup, cache, and environment. Pooled p99 does not provide independent evidence of a changed distribution or a causal effect.\"\n    },\n    \"zero_violation_bernoulli\": {\n      \"n_trials\": 200,\n      \"alpha_one_sided\": 0.05,\n      \"upper_bound\": 0.014867039,\n      \"upper_bound_percent\": 1.4867039,\n      \"supports_below_1_percent\": false,\n      \"explanation\": \"Under the separate stipulated iid fixed-sample Bernoulli model, zero violations in 200 trials gives q_U = 1 - 0.05^(1/200) = about 1.4867%, so a below-1% claim is not supported at 95% one-sided confidence. A zero-violation single final look strictly below 1% requires more than log(0.05)/log(0.99) ~= 298.07, hence at least 299 independent iid trials.\",\n      \"correlated_runs\": \"Two correlated service runs do not inherit the iid Bernoulli model. The 200 requests are clustered within runs and are not 200 independent trials; run, order, warmup, cache, and load history induce correlation. A zero-violation bound cannot be transferred to the two-run service setting without an explicit independent-unit and hierarchical model.\"\n    }\n  },\n  \"experiment_plan\": {\n    \"two_run_p99_redesign\": {\n      \"unit\": \"independent complete service/process run or randomized time block; requests within a run are correlated outcomes.\",\n      \"assignment\": \"Predefine multiple blocks and randomize or balance baseline and changed order within each block, for example ABBA or a randomized complete block ordering; do not run all baseline before all changed.\",\n      \"repetitions\": \"Use a pilot to characterize run-level variance and tail-event frequency, then predefine the number of independent runs and requests per run. Do not treat pooled requests as independent repetitions.\",\n      \"warmup\": \"For steady-state comparisons, require declared path coverage and no pending preparation before opening the measurement window. Keep FULL_COLD, LOADED_COLD, and diagnostic profiling runs separate from primary steady-state timing.\",\n      \"timing\": \"Primary performance runs use minimal instrumentation and the same workload, arrival process, cache state, H, J, and joint SLO contract. Detailed profiling runs are separate diagnostics and are not pooled with normal runs.\",\n      \"analysis\": \"Analyze at run/block level or with a pre-specified hierarchical model. Report pooled p99 only descriptively unless the model supports an interval. Retain failures, timeouts, unknowns, and offered-request accounting.\"\n    },\n    \"independent_confirmation_design\": {\n      \"design\": \"Freeze the candidate and joint SLO definition, then use fresh independent units that did not participate in exploration or selection. For a single final look under the separate iid Bernoulli model, preselect n=299 independent units and require zero violations for a strict 95% one-sided upper bound below 1%. If using planned looks, preselect all cumulative n_j and alpha_j with sum alpha_j <= 0.05, use exact one-sided tests at each look, and stop only at those planned looks.\",\n      \"resource_boundaries\": \"Reserve all independent runs/requests, warmup, teardown, quality evaluation, logging, and analysis before starting. Fix the maximum sample size; do not reuse the original two runs, extend opportunistically, or add looks after seeing results. If the independent-unit model is not defensible, the conclusion remains unresolved.\",\n      \"decision_rule\": \"Confirm a below-1% violation rate only if the final valid one-sided upper bound is below 0.01 under the stipulated model. If any violation occurs, do not use the zero-violation formula; use the appropriate full binomial or hierarchical procedure, or report not confirmed. Hard quality failure rejects confirmation. For correlated service runs, the independent unit must be the run/block, not the request; two runs provide at most two independent units and cannot support a 1% tail claim.\"\n    }\n  },\n  \"decision\": \"Reject claims that the change is uniformly faster, that a pooled 200-request p99 is independent evidence, and that zero violations in 200 trials establish a below-1% SLO violation rate. Accept only the directly computed request-a certified success and the stated window-specific output-token rates. Request b remains unknown because exact TPOT is unrecoverable from the single 2-token chunk; request c is a failed timeout, and its late acceptance is not an effective admission.\",\n  \"limits\": [\n    \"No implementation source, author checks, review reports, tools, or independent measurements are provided; all conclusions use only the supplied scenario and knowledge.\",\n    \"Request b's exact TPOT and ITL cannot be recovered from a single multi-token chunk; b cannot be certified good even at J=180.\",\n    \"The goodput ranges are deterministic identification bounds over unobserved evidence, not confidence intervals, and are based on only three requests.\",\n    \"The throughput rates use different populations and windows; they must not be substituted for goodput.\",\n    \"The two-by-two table is a single descriptive table without repetitions, uncertainty, or carryover control.\",\n    \"The pooled 200-request p99 is pseudo-replicated across correlated requests and confounded by all-baseline-before-changed ordering.\",\n    \"The Bernoulli zero-violation bound is valid only under the separate stipulated iid fixed-sample model; it does not apply to the two correlated service runs.\",\n    \"The proposed confirmation design is a plan, not an executed result; no measurements or independent confirmation are claimed.\"\n  ]\n}"
+}

@@ -1,0 +1,80 @@
+{
+  "participant": "ds-learner:evaluation-module:initial",
+  "task": "Use only the supplied knowledge and this new scenario. Audit metrics and propose a defensible experiment. No tools, implementation source, author checks or review reports are provided. Return one strict JSON object; do not invent measurements.",
+  "contract": {
+    "units": "milliseconds unless reporting rates per second; all listed times have an already valid common mapping",
+    "arrival_cohort": "actual sends in [0,100)",
+    "service_cutoff_H": 150,
+    "quality_evidence_cutoffs_J": [
+      150,
+      180
+    ],
+    "completion_and_emission_window": "[0,100)",
+    "primary_success": "normal FINAL by H, output quality PASS by J, client SEND-to-first-content <=35ms, exact token TPOT <=15ms; unobserved quantities remain unknown",
+    "quality_identity": "Each listed quality result binds that request complete immutable output. No other quality evidence exists.",
+    "effective_admission": "A request already terminated before an acceptance decision is not revived. Keep the actual server decision separately."
+  },
+  "requests": [
+    {
+      "id": "a",
+      "planned": 0,
+      "ready": 5,
+      "send": 20,
+      "accepted": 25,
+      "token_times": [
+        50,
+        60,
+        70
+      ],
+      "final": 80,
+      "quality": {
+        "time": 120,
+        "value": "PASS"
+      }
+    },
+    {
+      "id": "b",
+      "planned": 10,
+      "ready": 10,
+      "send": 10,
+      "accepted": 12,
+      "chunks": [
+        {
+          "time": 40,
+          "tokens": 2
+        }
+      ],
+      "final": 130,
+      "quality": {
+        "time": 160,
+        "value": "PASS"
+      }
+    },
+    {
+      "id": "c",
+      "planned": 90,
+      "ready": 90,
+      "send": 95,
+      "timeout": 140,
+      "late_actual_acceptance": 145,
+      "output_tokens": 0
+    }
+  ],
+  "questions": [
+    "For a compute actual-send TTFT, planned-origin TTFT, exact TPOT and the distinct (protocol latency minus TTFT)/(N-1) value. State what can be recovered for b.",
+    "Compute emission-window output tokens/s, completion-window output tokens/s, and cohort output tokens/s using elapsed H-0. Keep goodput separate.",
+    "At each J, classify good, failed and unknown requests. Give certified goodput and identification bounds on possible goodput; these bounds are not confidence intervals.",
+    "Count actual acceptance decisions and effective business admissions by H. Explain why late acceptance does not repair the timeout or imply resource completion.",
+    "A new 2x2 table has latency means low-load baseline=12, low-load change=9, high-load baseline=15, high-load change=17ms. Derive both conditional effects and interaction, and decide whether the change is uniformly faster.",
+    "A report has two process runs with 100 requests each, all baseline runs before all changed runs. It labels a 200-request pooled p99 as independent evidence. Explain what is and is not supported and redesign assignment, repetitions, warmup and normal versus diagnostic timing.",
+    "Under a separate stipulated iid fixed-sample Bernoulli model only, 200 trials show zero SLO violations. Compute the 95% one-sided upper bound and assess a below-1% claim. Then discuss why two correlated service runs do not inherit that model. Give one valid planned-looks or independent-confirmation design and its resource/decision boundaries."
+  ],
+  "answer_schema": {
+    "metrics": {},
+    "admission_accounts": {},
+    "statistical_judgment": {},
+    "experiment_plan": {},
+    "decision": "",
+    "limits": []
+  }
+}

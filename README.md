@@ -2,7 +2,7 @@
 
 InfraAgents 的独立知识仓库。不同分支承载不同内容版本，保持相同的目录、章节 ID 和现有读取接口。
 
-目标内容分支为 **gpt-6-astra-2026-04-30**。当前本地构建草稿为 **v2.3-draft29：111 篇、115 项来源**。来源上限保持 2026-04-30，原始归档字节不变；登记前正文、来源说明与元数据按准确身份保存。以 Attention 的深度样例为基础，当前继续深化分页 KV、连续批处理和 GPU 流水；算法、组合状态、成本与验证范围见[本批模块](docs/mechanism-expansion.md)。
+目标内容分支为 **gpt-6-astra-2026-04-30**。当前本地构建草稿为 **v2.3-draft30：111 篇、115 项来源**。来源上限保持 2026-04-30，原始归档字节不变；登记前正文、来源说明与元数据按准确身份保存。以 Attention 的深度样例为基础，当前继续深化分页 KV、连续批处理和 GPU 流水；算法、组合状态、成本与验证范围见[本批模块](docs/mechanism-expansion.md)。
 
 制作标准见[知识库构建与修订方法](docs/knowledge-method.md)：说明问题的原因/动机、数学与状态定义、合法条件、具体算法和数据流、各项成本、反转条件及区分实验。允许用伪代码交付实现逻辑，论文与说明文档直接可读。[审查问题](docs/knowledge-review.md)复用多轮审阅发现的缺口；逐篇当前状态见[扩展状态](docs/expansion-status.json)，导航登记不等于深度验收。[构建 workflow](docs/knowledge-build-workflow.md)负责全库队列、修订、非作者复核、真实检查与当前版本登记。
 
@@ -34,3 +34,5 @@ main 对应完整 base，Task 使用 `knowledge.view="full"`、`condition="seed"
 当前未建立 DeepSeek 日期分支；没有确认其知识截止日期之前，不制作同日重复版本。
 
 当前Attention修订的算法、硬件映射、组合状态和验证边界见[模块说明](docs/attention-module.md)。
+
+[评测与实验设计模块](docs/evaluation-module.md)连接 TTFT、TPOT、ITL、吞吐与联合 SLO 的事件口径，以及负载选择、因子交互、独立重复、尾部证据、样本预算和确认实验。核心推导由指标、评测设计、联合 SLO 和统计实验四篇正文共同承担。
