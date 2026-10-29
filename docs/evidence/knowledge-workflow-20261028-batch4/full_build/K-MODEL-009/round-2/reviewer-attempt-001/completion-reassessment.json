@@ -1,0 +1,318 @@
+{
+  "role": "reviewer",
+  "engine": "sol",
+  "requested_model": "gpt-6.1-sol",
+  "reasoning_effort": "high",
+  "prompt_sha256": "ea82a7078b115ebee0bbabece46803f0f4b8d757f2e3857cded6d8aff73de4fa",
+  "usage": [
+    {
+      "input_tokens": 1001876,
+      "cached_input_tokens": 809088,
+      "cache_write_input_tokens": 0,
+      "output_tokens": 8914,
+      "reasoning_output_tokens": 3223
+    }
+  ],
+  "answer": "{\n  \"entry_id\": \"K-MODEL-009\",\n  \"body_sha256\": \"335e221070d09acce65dc14ccdf6ac6f4d53c9d67d7fc8873391c6b77419c2b3\",\n  \"reviewer\": \"sol-reviewer:K-MODEL-009:round-2\",\n  \"decision\": \"revise\",\n  \"documents\": {\n    \"AGENTS.md\": \"b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a\",\n    \"docs/knowledge-method.md\": \"69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb\",\n    \"docs/knowledge-review.md\": \"f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21\",\n    \"knowledge/models/image-diffusion.md\": \"335e221070d09acce65dc14ccdf6ac6f4d53c9d67d7fc8873391c6b77419c2b3\",\n    \"knowledge/sources/S-LDM.md\": \"ebc648c0bb8765c6570517c995678228004499feddb2166602afee570fe76b38\",\n    \"knowledge/sources/S-DIT.md\": \"240ddf8fa388ab631c63b27fab69a7ace383c0e2b3ddc9bd1ad994afa1434c94\",\n    \"knowledge/sources/S-DIFFUSERS.md\": \"54c9f4fc5667c29ca15b24134db906a71336bc3026d98204ce34dedff8303f35\",\n    \"knowledge/sources/S-WAN.md\": \"abc392cb0c5b163ef970b2ddd81802afe2e6e71342ccf21939b57c0f168e1634\",\n    \"knowledge/models/video-generation.md\": \"df8c69ef755bd2794e8f33e2f0927594cbf9769f7ec600d042081b92fc1ef92b\",\n    \"knowledge/algorithms/cross-attention-cache.md\": \"24ccdfcf4b31aba460cc537493e1c17e73643683f1c4e2df5a6c673fb5e2166e\",\n    \"knowledge/frameworks/compile-dynamic-shapes.md\": \"6f9773875d24bbe32fd80e62cfba4e85f841ec1b65876b513c30d8d9f000b1ef\",\n    \"knowledge/workloads/slo-goodput.md\": \"5aa9b71cddb7d896ffa1fe6d78ac61cf0bb92d76279ae4d563f1110ed9dbedb4\",\n    \"knowledge/algorithms/parallelism.md\": \"161a883561e39371ea22a1430c385546c402db2f993d8a37c6f37e03e1e4bd17\",\n    \"knowledge/system-semantics/memory-allocators.md\": \"2e7258787b94ad142c7c236541e8718803ad30b273d08e6c398dff673a1df838\",\n    \"knowledge/tools/statistical-experiments.md\": \"908b3588a6fa20bb1f2aed9f5db51c4b462953d79f8944cdbcfea7141c74644f\",\n    \"knowledge/models/speech-generation.md\": \"9cab040f27f77dc8040a6cc6f0ae96a175542e4379e2262ca2cdb53fb9aee3a4\",\n    \"references/S-LDM/fulltext.txt\": \"e43c16c8e3ff95172ece4bccce68474bc53cd4fcbef8bb4c22a7d9ae06e70c13\",\n    \"references/S-DIT/fulltext.txt\": \"23869af9f1d5177446f63843c29453159d0e77f46bf955e55a6a874f5d4154ad\",\n    \"tools/check_k_model_009_full.py\": \"b9d4a2535acea5f30959323812b3773dc3a47c86cc2863a7a720d45bdd41636f\"\n  },\n  \"criteria\": {\n    \"definition\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"解释了 latent 扩散的动机、前向加噪关系、三类预测、输入输出及请求状态，并区分逻辑 latent 网格、patch token 和显式 scores。当前定义足以支撑后续合法性与容量分析。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/models/image-diffusion.md\",\n          \"quote\": \"请求状态至少包括当前 latent、所选时间步表中的位置、实际时间步、累计 alpha 数组、prediction_type、scheduler 配置、条件表示、guidance 设置、随机数生成器状态，以及使用多步求解器时的历史预测。\"\n        },\n        {\n          \"path\": \"knowledge/models/image-diffusion.md\",\n          \"quote\": \"T 是 patch 化后的 token 数，不是 latent 空间点数 L＝h_l·w_l。\"\n        }\n      ]\n    },\n    \"legality\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"eta 的有限 [0,1] 支持域及初始化拒绝路径已经明确，负 eta 原问题关闭。正文还说明 alpha 顺序、预测端点、CFG 训练前提、浮点等价边界、条件缓存身份和非整除 padding 的适用条件；没有将独立算法选择冒充所有来源版本的约束。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/models/image-diffusion.md\",\n          \"quote\": \"本算法明确支持有限 eta∈[0,1]：初始化时检查 eta 是有限数且 0≤eta≤1；负 eta、NaN、无穷和大于 1 的值在生成任何 z 之前拒绝。\"\n        },\n        {\n          \"path\": \"knowledge/models/image-diffusion.md\",\n          \"quote\": \"只要 τ(y)、W_K、W_V、位置布局和数值格式不变，K/V 就不依赖去噪步，可以一次生成后多次读取；每步的 Q、QKᵀ、softmax 和加权求和仍然执行。\"\n        }\n      ]\n    },\n    \"algorithm\": {\n      \"assessment\": \"partial\",\n      \"reason\": \"原先未展开去噪网络的问题已实质修复：当前给出了 patch 输入、时间调制、逐层 self/cross attention、缓存消费、残差、输出还原及 scheduler 提交关系。不过算法 1 在已经确定 token 为行的布局下，将 FFN 写成左乘整个 token 矩阵，不能与 attention 和输出投影使用同一套张量轴直接实现，需修正。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/models/image-diffusion.md\",\n          \"quote\": \"只有全部 L 层完成后的 raw 才是 scheduler 可消费的整步网络预测；任意中间层输出都不是下一步 latent。\"\n        },\n        {\n          \"path\": \"knowledge/models/image-diffusion.md\",\n          \"quote\": \"Q,K,V ← U·W_Q^l, U·W_K^l, U·W_V^l\"\n        },\n        {\n          \"path\": \"knowledge/models/image-diffusion.md\",\n          \"quote\": \"F ← W_2^l·GELU(W_1^l·U)\"\n        }\n      ]\n    },\n    \"cost\": {\n      \"assessment\": \"partial\",\n      \"reason\": \"latent 通信和历史容量的四倍低估已修复；128 KiB、r·B_z、padding 工作副本及固定网格改变 p 的不变量正确。六类成本和 CFG 选择反转也有展开。剩余问题是 cross K/V 投影的 MAC 公式没有保留已定义的源宽 d_e，且未声明 d_e=d 的限制，影响条件投影及缓存收益的计算。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/models/image-diffusion.md\",\n          \"quote\": \"BF16 的 b＝2，因此一份逻辑预测为 16384·4·2＝131072 字节，即 128 KiB。\"\n        },\n        {\n          \"path\": \"knowledge/models/image-diffusion.md\",\n          \"quote\": \"文本条件 E（S×d_e）\"\n        },\n        {\n          \"path\": \"knowledge/models/image-diffusion.md\",\n          \"quote\": \"cross-attention 还要把源长度 S 纳入：Q 投影 T d²、K/V 各 S d²、输出投影 T d²、QK 与 PV 各 T S d 的 MAC。\"\n        }\n      ]\n    },\n    \"adaptation\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"patch 改变已明确为模型候选变化，并要求相容 checkpoint 或模型支持的可变 patch 机制，原问题关闭。分辨率、步数、CFG 布局、带宽、跨请求条件复用、编译和 VAE tiling 的保留与重验关系具体。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/models/image-diffusion.md\",\n          \"quote\": \"这是不同 patch 配置的模型候选比较；普通 DiT checkpoint 的输入逐 patch 线性嵌入和输出 p×p×2C 解码形状都随 p 改变，必须使用相容 checkpoint 或模型明确支持的可变 patch 机制；重新核对权重、位置处理、输出还原和质量\"\n        }\n      ]\n    },\n    \"diagnosis\": {\n      \"assessment\": \"partial\",\n      \"reason\": \"竞争解释、受控干预和反证后修正充分；原负对照异常混淆及 halo 缺陷已修复。然而 DDIM 随机更新检查使用被测方差构造自己的期望值，错误地把所有合法 eta 的方差置零仍能通过该检查，尚不能验证正文所写非零方差机制。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/models/image-diffusion.md\",\n          \"quote\": \"若跳过 eta 检查并令 z＝0，就执行了零噪声更新，与所写非零方差不是同一函数。\"\n        },\n        {\n          \"path\": \"knowledge/models/image-diffusion.md\",\n          \"quote\": \"做“缓存开/关 × 步数同/少”的 2×2 实验，并把 VAE 单独计时；缓存开/关步数相同是必要条件\"\n        },\n        {\n          \"path\": \"knowledge/models/image-diffusion.md\",\n          \"quote\": \"若验证器错误地接受缺陷，测试框架必须失败；若验证器错误地拒绝正确对象，失败断言也必须传播为测试失败。\"\n        }\n      ]\n    }\n  },\n  \"findings\": [\n    {\n      \"id\": \"K-MODEL-009-ALG-FFN-AXES\",\n      \"criterion\": \"algorithm\",\n      \"evidence\": \"算法 1 定义“X ← 空 T×d”，随后使用“Q,K,V ← U·W_Q^l, U·W_K^l, U·W_V^l”和“Y ← X·W_out”，但 FFN 写为“F ← W_2^l·GELU(W_1^l·U)”。\",\n      \"impact\": \"U 按前后数据流为 T×d。逐 token FFN 的上投影应沿 d 轴执行；当前左乘整个 U 的写法与该布局不相容。例如 T=4096、d=1536，采用列向量惯例的 W_1 为 d_ff×1536，不能与 4096×1536 的 U 相乘。直接照写无法得到可与 X 残差相加的 T×d 输出。\",\n      \"blocking\": true,\n      \"required_revision\": \"统一算法 1 的矩阵轴。按当前 token 为行的布局，可写 F←GELU(U·W_1^l)·W_2^l，并说明 W_1 为 d×d_ff、W_2 为 d_ff×d；也可明确逐 token 操作及转置。核对残差输出仍为 T×d。\"\n    },\n    {\n      \"id\": \"K-MODEL-009-COST-CROSS-SOURCE-WIDTH\",\n      \"criterion\": \"cost\",\n      \"evidence\": \"算法输入明确为“文本条件 E（S×d_e）”，cross 投影为“E·W_Kc^l, E·W_Vc^l”；成本段却写“K/V 各 S d²”，没有限定 d_e=d。\",\n      \"impact\": \"投影到总宽 d 的 K/V 时，每份源投影的 MAC 应为 S·d_e·d。当前公式在 d_e≠d 时误算条件投影及跨步缓存可节省的工作。例如 S=77、d_e=768、d=1536 时，每份实际为 90,832,896 MAC，正文公式为 181,665,792 MAC。\",\n      \"blocking\": true,\n      \"required_revision\": \"保留源宽 d_e，将 K/V 各自投影成本写成 S·d_e·d；或明确当前简式只适用于 d_e=d，并给出与算法输入相容的一般式。\"\n    },\n    {\n      \"id\": \"K-MODEL-009-DIAG-DDIM-VARIANCE-ORACLE\",\n      \"criterion\": \"diagnosis\",\n      \"evidence\": \"test_ddim 先用“sig2 = sigma_sq(0.4, a_t, a_s)”取得被测方差，再用“det = math.sqrt(a_s) * x0 + math.sqrt(1.0 - a_s - sig2) * eps”构造期望，并检查“require(close(xs - math.sqrt(sig2) * 0.3, det), 'stochastic component mismatch')”。ddim_step 自身也调用同一个 sigma_sq。\",\n      \"impact\": \"该断言主要验证用同一方差加入再减去噪声的恒等式。保持 eta/alpha 验证、但让 sigma_sq 对合法输入始终返回 0，仍会满足随机分量断言、eta=1 被开方数检查和 eta=0 检查。审阅者的内存 JavaScript 转写探针复现了全部这些断言接受该缺陷；这不是对 Python 文件的实际变异执行。因而所供 returncode=0 不能证明 DDIM 非零方差更新正确。\",\n      \"blocking\": true,\n      \"required_revision\": \"增加不依赖被测 sigma_sq 返回值的参考，例如独立推导并断言 a_t=0.5、a_s=0.8、eta=0.4 时 σ²=0.024、方向方差=0.176；以此参考验证完整下一状态或 z 改变引起的差值。用同一验证器接受正确实现、拒绝保持域验证但方差恒零的实现，并确认恢复实现后接受；框架失败继续传播。\"\n    }\n  ],\n  \"limitations\": [\n    \"结论限于所供正文、完整来源说明、论文文本及明确摘录。未直接读取 Diffusers 源码；S-DIFFUSERS 是作者核验后的算法说明。\",\n    \"未执行目标 GPU 的数值、HBM 事务、显存、同步、重叠或性能检查，也未执行真实 VAE、checkpoint 质量或用户研究；正文对此已有明确边界。\",\n    \"当前会话没有文件读取或终端执行工具，无法加载本地技能、docs/knowledge-build-workflow.md、历史审查产物或独立核验磁盘字节及链接可达性；采用用户提供的严格 schema、完整材料和绑定字段。\",\n    \"所供 Python 远端执行记录已审阅，但本审阅者未重新执行该 Python 文件；独立执行仅为明确标识的内存算术、形状和断言转写探针。\"\n  ],\n  \"checks\": [\n    {\n      \"script\": \"tools/check_k_model_009_full.py\",\n      \"args\": []\n    }\n  ],\n  \"no_checks_reason\": \"\",\n  \"reading_scope\": \"完整阅读本轮提供的全文，字符范围均采用材料声明的零基半开区间：AGENTS.md [0,567)；docs/knowledge-method.md [0,2251)；docs/knowledge-review.md [0,3016)；knowledge/models/image-diffusion.md [0,17410)；knowledge/sources/S-LDM.md [0,494)；S-DIT.md [0,468)；S-DIFFUSERS.md [0,995)；S-WAN.md [0,487)；knowledge/models/video-generation.md [0,3900)；knowledge/algorithms/cross-attention-cache.md [0,3845)；knowledge/frameworks/compile-dynamic-shapes.md [0,4495)；knowledge/workloads/slo-goodput.md [0,2616)；knowledge/algorithms/parallelism.md [0,6115)；knowledge/system-semantics/memory-allocators.md [0,4191)；knowledge/tools/statistical-experiments.md [0,4269)；knowledge/models/speech-generation.md [0,3599)；references/S-LDM/fulltext.txt [0,101520)；references/S-DIT/fulltext.txt [0,56351)。完整阅读所供 test_script 自 shebang 至 main 调用，以及 author_notes 和 actual_preflight 执行记录。仅阅读摘录：knowledge/hardware/gpu-kernel-pipelines.md [0,500)、[4000,12000)；knowledge/system-semantics/design-synthesis.md [0,8500)；references/S-WAN/fulltext.txt [0,20000)、[36000,68000)、[88000,96000)、[104000,108000)、[112000,120000)、[128000,140000)、[148000,156976)、[160000,175801)。这些摘录文件未列入 documents，不声称读取全文。未读取源码归档或未提供的 workflow、历史审查文件。\",\n  \"test_assessment\": \"所供 actual_preflight 记录的 script_sha256 与绑定脚本一致，remote_bwrap 执行 returncode=0、stderr 为空且未超时；这是协调执行的证据，不改写作者所述“脚本未在本环境执行”。逐函数检查后，prediction 检查使用预先选择的 x0/epsilon 和前向构造作为参考；错误 v 转换与正确转换经过同一验证器。HarnessError 与 Mismatch/DomainError 已分离，正确对象被拒绝或缺陷被接受均会传播为失败，原异常混淆关闭。schedule 接受所选 T[k+1]、拒绝 t−1，恢复后接受；tiling 依据 [start,stop+K−1) 的必需输入范围，以全图 valid 卷积比较相同输出坐标，少一个右端必需输入会明确缺失输出 6，原 halo 问题关闭。eta 检查实际调用 validate_eta，覆盖负值、NaN、正无穷、超上限以及 0/0.4/1 的接受路径。容量检查含固定 131072 字节参考、p=1/2/4/8 和非整除 padding，并拒绝 32768 字节及 padding 冒充逻辑字节；独立内存复算一致。CFG 以另一仿射展开和端点不变量核对。DDIM 随机项断言却共用被测 sigma_sq，缺少独立方差参考；内存转写的恒零方差变异仍被接受，详见 finding。脚本没有执行参考去噪器、矩阵形状、cross 投影成本、固定条件缓存或真实 scheduler 请求循环，因此其成功不能覆盖当前算法轴与源宽成本问题；这些检查也未被记为 PASS。未将 CPU 合成卷积结果外推为真实 VAE 或设备验证。\"\n}",
+  "exit_code": 0,
+  "status": "completed",
+  "timeout_seconds": 1800,
+  "response_path": "D:\\桌面\\xdb\\InfraAgents\\InfraAgents-know-astra-new\\InfraAgents-know\\docs\\evidence\\knowledge-workflow-20261028-batch4\\full_build\\K-MODEL-009\\round-2\\reviewer-attempt-001\\answer.txt",
+  "record_path": "D:\\桌面\\xdb\\InfraAgents\\InfraAgents-know-astra-new\\InfraAgents-know\\docs\\evidence\\knowledge-workflow-20261028-batch4\\full_build\\K-MODEL-009\\round-2\\reviewer-attempt-001\\record.json",
+  "tool_events": [
+    {
+      "type": "item.completed",
+      "item": {
+        "id": "item_1",
+        "type": "mcp_tool_call",
+        "server": "codex",
+        "tool": "list_mcp_resources",
+        "arguments": {},
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"resources\":[]}"
+            }
+          ],
+          "structured_content": null
+        },
+        "error": null,
+        "status": "completed"
+      }
+    },
+    {
+      "type": "item.completed",
+      "item": {
+        "id": "item_2",
+        "type": "mcp_tool_call",
+        "server": "codex",
+        "tool": "list_mcp_resource_templates",
+        "arguments": {},
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"resourceTemplates\":[]}"
+            }
+          ],
+          "structured_content": null
+        },
+        "error": null,
+        "status": "completed"
+      }
+    }
+  ],
+  "inventory_tool_events": [
+    {
+      "type": "item.completed",
+      "item": {
+        "id": "item_1",
+        "type": "mcp_tool_call",
+        "server": "codex",
+        "tool": "list_mcp_resources",
+        "arguments": {},
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"resources\":[]}"
+            }
+          ],
+          "structured_content": null
+        },
+        "error": null,
+        "status": "completed"
+      }
+    },
+    {
+      "type": "item.completed",
+      "item": {
+        "id": "item_2",
+        "type": "mcp_tool_call",
+        "server": "codex",
+        "tool": "list_mcp_resource_templates",
+        "arguments": {},
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"resourceTemplates\":[]}"
+            }
+          ],
+          "structured_content": null
+        },
+        "error": null,
+        "status": "completed"
+      }
+    }
+  ],
+  "rejected_tool_events": [],
+  "tool_policy": "metadata_inventory_only",
+  "tool_policy_version": "2026-10-28-production-v1",
+  "tool_policy_scope": "Only empty-argument codex host plugin/skill-directory descriptors and empty template inventory; inventory is not knowledge evidence. All other tool events reject the call.",
+  "tool_policy_reason": "Production chapter construction allows observed generic capability discovery metadata; this does not claim a zero-tool comparison or external source reading.",
+  "malformed_event_lines": [],
+  "turn_completed": true,
+  "error_events": [
+    {
+      "type": "error",
+      "message": "Reconnecting... 1/5 (exceeded retry limit, last status: 429 Too Many Requests, request id: 49b31e2f-9478-4a7d-82a8-6baedae70026)"
+    }
+  ],
+  "recovered_transport_events": [
+    {
+      "type": "error",
+      "message": "Reconnecting... 1/5 (exceeded retry limit, last status: 429 Too Many Requests, request id: 49b31e2f-9478-4a7d-82a8-6baedae70026)"
+    }
+  ],
+  "terminal_error_events": [],
+  "transport_recovered": true,
+  "actual_model": null,
+  "identity_verified": null,
+  "identity_basis": "Explicit CLI model and isolated HTTP provider; CLI events do not expose server model identity.",
+  "provider": "eval-openai-http",
+  "max_output_tokens": null,
+  "cli_version": "codex-cli 0.164.0-alpha.11.1",
+  "cost_scope": "Codex token usage is reported; subscription charge is not exposed.",
+  "parsed": {
+    "entry_id": "K-MODEL-009",
+    "body_sha256": "335e221070d09acce65dc14ccdf6ac6f4d53c9d67d7fc8873391c6b77419c2b3",
+    "reviewer": "sol-reviewer:K-MODEL-009:round-2",
+    "decision": "revise",
+    "documents": {
+      "AGENTS.md": "b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a",
+      "docs/knowledge-method.md": "69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb",
+      "docs/knowledge-review.md": "f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21",
+      "knowledge/models/image-diffusion.md": "335e221070d09acce65dc14ccdf6ac6f4d53c9d67d7fc8873391c6b77419c2b3",
+      "knowledge/sources/S-LDM.md": "ebc648c0bb8765c6570517c995678228004499feddb2166602afee570fe76b38",
+      "knowledge/sources/S-DIT.md": "240ddf8fa388ab631c63b27fab69a7ace383c0e2b3ddc9bd1ad994afa1434c94",
+      "knowledge/sources/S-DIFFUSERS.md": "54c9f4fc5667c29ca15b24134db906a71336bc3026d98204ce34dedff8303f35",
+      "knowledge/sources/S-WAN.md": "abc392cb0c5b163ef970b2ddd81802afe2e6e71342ccf21939b57c0f168e1634",
+      "knowledge/models/video-generation.md": "df8c69ef755bd2794e8f33e2f0927594cbf9769f7ec600d042081b92fc1ef92b",
+      "knowledge/algorithms/cross-attention-cache.md": "24ccdfcf4b31aba460cc537493e1c17e73643683f1c4e2df5a6c673fb5e2166e",
+      "knowledge/frameworks/compile-dynamic-shapes.md": "6f9773875d24bbe32fd80e62cfba4e85f841ec1b65876b513c30d8d9f000b1ef",
+      "knowledge/workloads/slo-goodput.md": "5aa9b71cddb7d896ffa1fe6d78ac61cf0bb92d76279ae4d563f1110ed9dbedb4",
+      "knowledge/algorithms/parallelism.md": "161a883561e39371ea22a1430c385546c402db2f993d8a37c6f37e03e1e4bd17",
+      "knowledge/system-semantics/memory-allocators.md": "2e7258787b94ad142c7c236541e8718803ad30b273d08e6c398dff673a1df838",
+      "knowledge/tools/statistical-experiments.md": "908b3588a6fa20bb1f2aed9f5db51c4b462953d79f8944cdbcfea7141c74644f",
+      "knowledge/models/speech-generation.md": "9cab040f27f77dc8040a6cc6f0ae96a175542e4379e2262ca2cdb53fb9aee3a4",
+      "references/S-LDM/fulltext.txt": "e43c16c8e3ff95172ece4bccce68474bc53cd4fcbef8bb4c22a7d9ae06e70c13",
+      "references/S-DIT/fulltext.txt": "23869af9f1d5177446f63843c29453159d0e77f46bf955e55a6a874f5d4154ad",
+      "tools/check_k_model_009_full.py": "b9d4a2535acea5f30959323812b3773dc3a47c86cc2863a7a720d45bdd41636f"
+    },
+    "criteria": {
+      "definition": {
+        "assessment": "sufficient",
+        "reason": "解释了 latent 扩散的动机、前向加噪关系、三类预测、输入输出及请求状态，并区分逻辑 latent 网格、patch token 和显式 scores。当前定义足以支撑后续合法性与容量分析。",
+        "evidence": [
+          {
+            "path": "knowledge/models/image-diffusion.md",
+            "quote": "请求状态至少包括当前 latent、所选时间步表中的位置、实际时间步、累计 alpha 数组、prediction_type、scheduler 配置、条件表示、guidance 设置、随机数生成器状态，以及使用多步求解器时的历史预测。"
+          },
+          {
+            "path": "knowledge/models/image-diffusion.md",
+            "quote": "T 是 patch 化后的 token 数，不是 latent 空间点数 L＝h_l·w_l。"
+          }
+        ]
+      },
+      "legality": {
+        "assessment": "sufficient",
+        "reason": "eta 的有限 [0,1] 支持域及初始化拒绝路径已经明确，负 eta 原问题关闭。正文还说明 alpha 顺序、预测端点、CFG 训练前提、浮点等价边界、条件缓存身份和非整除 padding 的适用条件；没有将独立算法选择冒充所有来源版本的约束。",
+        "evidence": [
+          {
+            "path": "knowledge/models/image-diffusion.md",
+            "quote": "本算法明确支持有限 eta∈[0,1]：初始化时检查 eta 是有限数且 0≤eta≤1；负 eta、NaN、无穷和大于 1 的值在生成任何 z 之前拒绝。"
+          },
+          {
+            "path": "knowledge/models/image-diffusion.md",
+            "quote": "只要 τ(y)、W_K、W_V、位置布局和数值格式不变，K/V 就不依赖去噪步，可以一次生成后多次读取；每步的 Q、QKᵀ、softmax 和加权求和仍然执行。"
+          }
+        ]
+      },
+      "algorithm": {
+        "assessment": "partial",
+        "reason": "原先未展开去噪网络的问题已实质修复：当前给出了 patch 输入、时间调制、逐层 self/cross attention、缓存消费、残差、输出还原及 scheduler 提交关系。不过算法 1 在已经确定 token 为行的布局下，将 FFN 写成左乘整个 token 矩阵，不能与 attention 和输出投影使用同一套张量轴直接实现，需修正。",
+        "evidence": [
+          {
+            "path": "knowledge/models/image-diffusion.md",
+            "quote": "只有全部 L 层完成后的 raw 才是 scheduler 可消费的整步网络预测；任意中间层输出都不是下一步 latent。"
+          },
+          {
+            "path": "knowledge/models/image-diffusion.md",
+            "quote": "Q,K,V ← U·W_Q^l, U·W_K^l, U·W_V^l"
+          },
+          {
+            "path": "knowledge/models/image-diffusion.md",
+            "quote": "F ← W_2^l·GELU(W_1^l·U)"
+          }
+        ]
+      },
+      "cost": {
+        "assessment": "partial",
+        "reason": "latent 通信和历史容量的四倍低估已修复；128 KiB、r·B_z、padding 工作副本及固定网格改变 p 的不变量正确。六类成本和 CFG 选择反转也有展开。剩余问题是 cross K/V 投影的 MAC 公式没有保留已定义的源宽 d_e，且未声明 d_e=d 的限制，影响条件投影及缓存收益的计算。",
+        "evidence": [
+          {
+            "path": "knowledge/models/image-diffusion.md",
+            "quote": "BF16 的 b＝2，因此一份逻辑预测为 16384·4·2＝131072 字节，即 128 KiB。"
+          },
+          {
+            "path": "knowledge/models/image-diffusion.md",
+            "quote": "文本条件 E（S×d_e）"
+          },
+          {
+            "path": "knowledge/models/image-diffusion.md",
+            "quote": "cross-attention 还要把源长度 S 纳入：Q 投影 T d²、K/V 各 S d²、输出投影 T d²、QK 与 PV 各 T S d 的 MAC。"
+          }
+        ]
+      },
+      "adaptation": {
+        "assessment": "sufficient",
+        "reason": "patch 改变已明确为模型候选变化，并要求相容 checkpoint 或模型支持的可变 patch 机制，原问题关闭。分辨率、步数、CFG 布局、带宽、跨请求条件复用、编译和 VAE tiling 的保留与重验关系具体。",
+        "evidence": [
+          {
+            "path": "knowledge/models/image-diffusion.md",
+            "quote": "这是不同 patch 配置的模型候选比较；普通 DiT checkpoint 的输入逐 patch 线性嵌入和输出 p×p×2C 解码形状都随 p 改变，必须使用相容 checkpoint 或模型明确支持的可变 patch 机制；重新核对权重、位置处理、输出还原和质量"
+          }
+        ]
+      },
+      "diagnosis": {
+        "assessment": "partial",
+        "reason": "竞争解释、受控干预和反证后修正充分；原负对照异常混淆及 halo 缺陷已修复。然而 DDIM 随机更新检查使用被测方差构造自己的期望值，错误地把所有合法 eta 的方差置零仍能通过该检查，尚不能验证正文所写非零方差机制。",
+        "evidence": [
+          {
+            "path": "knowledge/models/image-diffusion.md",
+            "quote": "若跳过 eta 检查并令 z＝0，就执行了零噪声更新，与所写非零方差不是同一函数。"
+          },
+          {
+            "path": "knowledge/models/image-diffusion.md",
+            "quote": "做“缓存开/关 × 步数同/少”的 2×2 实验，并把 VAE 单独计时；缓存开/关步数相同是必要条件"
+          },
+          {
+            "path": "knowledge/models/image-diffusion.md",
+            "quote": "若验证器错误地接受缺陷，测试框架必须失败；若验证器错误地拒绝正确对象，失败断言也必须传播为测试失败。"
+          }
+        ]
+      }
+    },
+    "findings": [
+      {
+        "id": "K-MODEL-009-ALG-FFN-AXES",
+        "criterion": "algorithm",
+        "evidence": "算法 1 定义“X ← 空 T×d”，随后使用“Q,K,V ← U·W_Q^l, U·W_K^l, U·W_V^l”和“Y ← X·W_out”，但 FFN 写为“F ← W_2^l·GELU(W_1^l·U)”。",
+        "impact": "U 按前后数据流为 T×d。逐 token FFN 的上投影应沿 d 轴执行；当前左乘整个 U 的写法与该布局不相容。例如 T=4096、d=1536，采用列向量惯例的 W_1 为 d_ff×1536，不能与 4096×1536 的 U 相乘。直接照写无法得到可与 X 残差相加的 T×d 输出。",
+        "blocking": true,
+        "required_revision": "统一算法 1 的矩阵轴。按当前 token 为行的布局，可写 F←GELU(U·W_1^l)·W_2^l，并说明 W_1 为 d×d_ff、W_2 为 d_ff×d；也可明确逐 token 操作及转置。核对残差输出仍为 T×d。"
+      },
+      {
+        "id": "K-MODEL-009-COST-CROSS-SOURCE-WIDTH",
+        "criterion": "cost",
+        "evidence": "算法输入明确为“文本条件 E（S×d_e）”，cross 投影为“E·W_Kc^l, E·W_Vc^l”；成本段却写“K/V 各 S d²”，没有限定 d_e=d。",
+        "impact": "投影到总宽 d 的 K/V 时，每份源投影的 MAC 应为 S·d_e·d。当前公式在 d_e≠d 时误算条件投影及跨步缓存可节省的工作。例如 S=77、d_e=768、d=1536 时，每份实际为 90,832,896 MAC，正文公式为 181,665,792 MAC。",
+        "blocking": true,
+        "required_revision": "保留源宽 d_e，将 K/V 各自投影成本写成 S·d_e·d；或明确当前简式只适用于 d_e=d，并给出与算法输入相容的一般式。"
+      },
+      {
+        "id": "K-MODEL-009-DIAG-DDIM-VARIANCE-ORACLE",
+        "criterion": "diagnosis",
+        "evidence": "test_ddim 先用“sig2 = sigma_sq(0.4, a_t, a_s)”取得被测方差，再用“det = math.sqrt(a_s) * x0 + math.sqrt(1.0 - a_s - sig2) * eps”构造期望，并检查“require(close(xs - math.sqrt(sig2) * 0.3, det), 'stochastic component mismatch')”。ddim_step 自身也调用同一个 sigma_sq。",
+        "impact": "该断言主要验证用同一方差加入再减去噪声的恒等式。保持 eta/alpha 验证、但让 sigma_sq 对合法输入始终返回 0，仍会满足随机分量断言、eta=1 被开方数检查和 eta=0 检查。审阅者的内存 JavaScript 转写探针复现了全部这些断言接受该缺陷；这不是对 Python 文件的实际变异执行。因而所供 returncode=0 不能证明 DDIM 非零方差更新正确。",
+        "blocking": true,
+        "required_revision": "增加不依赖被测 sigma_sq 返回值的参考，例如独立推导并断言 a_t=0.5、a_s=0.8、eta=0.4 时 σ²=0.024、方向方差=0.176；以此参考验证完整下一状态或 z 改变引起的差值。用同一验证器接受正确实现、拒绝保持域验证但方差恒零的实现，并确认恢复实现后接受；框架失败继续传播。"
+      }
+    ],
+    "limitations": [
+      "结论限于所供正文、完整来源说明、论文文本及明确摘录。未直接读取 Diffusers 源码；S-DIFFUSERS 是作者核验后的算法说明。",
+      "未执行目标 GPU 的数值、HBM 事务、显存、同步、重叠或性能检查，也未执行真实 VAE、checkpoint 质量或用户研究；正文对此已有明确边界。",
+      "当前会话没有文件读取或终端执行工具，无法加载本地技能、docs/knowledge-build-workflow.md、历史审查产物或独立核验磁盘字节及链接可达性；采用用户提供的严格 schema、完整材料和绑定字段。",
+      "所供 Python 远端执行记录已审阅，但本审阅者未重新执行该 Python 文件；独立执行仅为明确标识的内存算术、形状和断言转写探针。"
+    ],
+    "checks": [
+      {
+        "script": "tools/check_k_model_009_full.py",
+        "args": []
+      }
+    ],
+    "no_checks_reason": "",
+    "reading_scope": "完整阅读本轮提供的全文，字符范围均采用材料声明的零基半开区间：AGENTS.md [0,567)；docs/knowledge-method.md [0,2251)；docs/knowledge-review.md [0,3016)；knowledge/models/image-diffusion.md [0,17410)；knowledge/sources/S-LDM.md [0,494)；S-DIT.md [0,468)；S-DIFFUSERS.md [0,995)；S-WAN.md [0,487)；knowledge/models/video-generation.md [0,3900)；knowledge/algorithms/cross-attention-cache.md [0,3845)；knowledge/frameworks/compile-dynamic-shapes.md [0,4495)；knowledge/workloads/slo-goodput.md [0,2616)；knowledge/algorithms/parallelism.md [0,6115)；knowledge/system-semantics/memory-allocators.md [0,4191)；knowledge/tools/statistical-experiments.md [0,4269)；knowledge/models/speech-generation.md [0,3599)；references/S-LDM/fulltext.txt [0,101520)；references/S-DIT/fulltext.txt [0,56351)。完整阅读所供 test_script 自 shebang 至 main 调用，以及 author_notes 和 actual_preflight 执行记录。仅阅读摘录：knowledge/hardware/gpu-kernel-pipelines.md [0,500)、[4000,12000)；knowledge/system-semantics/design-synthesis.md [0,8500)；references/S-WAN/fulltext.txt [0,20000)、[36000,68000)、[88000,96000)、[104000,108000)、[112000,120000)、[128000,140000)、[148000,156976)、[160000,175801)。这些摘录文件未列入 documents，不声称读取全文。未读取源码归档或未提供的 workflow、历史审查文件。",
+    "test_assessment": "所供 actual_preflight 记录的 script_sha256 与绑定脚本一致，remote_bwrap 执行 returncode=0、stderr 为空且未超时；这是协调执行的证据，不改写作者所述“脚本未在本环境执行”。逐函数检查后，prediction 检查使用预先选择的 x0/epsilon 和前向构造作为参考；错误 v 转换与正确转换经过同一验证器。HarnessError 与 Mismatch/DomainError 已分离，正确对象被拒绝或缺陷被接受均会传播为失败，原异常混淆关闭。schedule 接受所选 T[k+1]、拒绝 t−1，恢复后接受；tiling 依据 [start,stop+K−1) 的必需输入范围，以全图 valid 卷积比较相同输出坐标，少一个右端必需输入会明确缺失输出 6，原 halo 问题关闭。eta 检查实际调用 validate_eta，覆盖负值、NaN、正无穷、超上限以及 0/0.4/1 的接受路径。容量检查含固定 131072 字节参考、p=1/2/4/8 和非整除 padding，并拒绝 32768 字节及 padding 冒充逻辑字节；独立内存复算一致。CFG 以另一仿射展开和端点不变量核对。DDIM 随机项断言却共用被测 sigma_sq，缺少独立方差参考；内存转写的恒零方差变异仍被接受，详见 finding。脚本没有执行参考去噪器、矩阵形状、cross 投影成本、固定条件缓存或真实 scheduler 请求循环，因此其成功不能覆盖当前算法轴与源宽成本问题；这些检查也未被记为 PASS。未将 CPU 合成卷积结果外推为真实 VAE 或设备验证。"
+  },
+  "format_status": "strict_json",
+  "format_error": null,
+  "output_text": "{\n  \"entry_id\": \"K-MODEL-009\",\n  \"body_sha256\": \"335e221070d09acce65dc14ccdf6ac6f4d53c9d67d7fc8873391c6b77419c2b3\",\n  \"reviewer\": \"sol-reviewer:K-MODEL-009:round-2\",\n  \"decision\": \"revise\",\n  \"documents\": {\n    \"AGENTS.md\": \"b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a\",\n    \"docs/knowledge-method.md\": \"69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb\",\n    \"docs/knowledge-review.md\": \"f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21\",\n    \"knowledge/models/image-diffusion.md\": \"335e221070d09acce65dc14ccdf6ac6f4d53c9d67d7fc8873391c6b77419c2b3\",\n    \"knowledge/sources/S-LDM.md\": \"ebc648c0bb8765c6570517c995678228004499feddb2166602afee570fe76b38\",\n    \"knowledge/sources/S-DIT.md\": \"240ddf8fa388ab631c63b27fab69a7ace383c0e2b3ddc9bd1ad994afa1434c94\",\n    \"knowledge/sources/S-DIFFUSERS.md\": \"54c9f4fc5667c29ca15b24134db906a71336bc3026d98204ce34dedff8303f35\",\n    \"knowledge/sources/S-WAN.md\": \"abc392cb0c5b163ef970b2ddd81802afe2e6e71342ccf21939b57c0f168e1634\",\n    \"knowledge/models/video-generation.md\": \"df8c69ef755bd2794e8f33e2f0927594cbf9769f7ec600d042081b92fc1ef92b\",\n    \"knowledge/algorithms/cross-attention-cache.md\": \"24ccdfcf4b31aba460cc537493e1c17e73643683f1c4e2df5a6c673fb5e2166e\",\n    \"knowledge/frameworks/compile-dynamic-shapes.md\": \"6f9773875d24bbe32fd80e62cfba4e85f841ec1b65876b513c30d8d9f000b1ef\",\n    \"knowledge/workloads/slo-goodput.md\": \"5aa9b71cddb7d896ffa1fe6d78ac61cf0bb92d76279ae4d563f1110ed9dbedb4\",\n    \"knowledge/algorithms/parallelism.md\": \"161a883561e39371ea22a1430c385546c402db2f993d8a37c6f37e03e1e4bd17\",\n    \"knowledge/system-semantics/memory-allocators.md\": \"2e7258787b94ad142c7c236541e8718803ad30b273d08e6c398dff673a1df838\",\n    \"knowledge/tools/statistical-experiments.md\": \"908b3588a6fa20bb1f2aed9f5db51c4b462953d79f8944cdbcfea7141c74644f\",\n    \"knowledge/models/speech-generation.md\": \"9cab040f27f77dc8040a6cc6f0ae96a175542e4379e2262ca2cdb53fb9aee3a4\",\n    \"references/S-LDM/fulltext.txt\": \"e43c16c8e3ff95172ece4bccce68474bc53cd4fcbef8bb4c22a7d9ae06e70c13\",\n    \"references/S-DIT/fulltext.txt\": \"23869af9f1d5177446f63843c29453159d0e77f46bf955e55a6a874f5d4154ad\",\n    \"tools/check_k_model_009_full.py\": \"b9d4a2535acea5f30959323812b3773dc3a47c86cc2863a7a720d45bdd41636f\"\n  },\n  \"criteria\": {\n    \"definition\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"解释了 latent 扩散的动机、前向加噪关系、三类预测、输入输出及请求状态，并区分逻辑 latent 网格、patch token 和显式 scores。当前定义足以支撑后续合法性与容量分析。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/models/image-diffusion.md\",\n          \"quote\": \"请求状态至少包括当前 latent、所选时间步表中的位置、实际时间步、累计 alpha 数组、prediction_type、scheduler 配置、条件表示、guidance 设置、随机数生成器状态，以及使用多步求解器时的历史预测。\"\n        },\n        {\n          \"path\": \"knowledge/models/image-diffusion.md\",\n          \"quote\": \"T 是 patch 化后的 token 数，不是 latent 空间点数 L＝h_l·w_l。\"\n        }\n      ]\n    },\n    \"legality\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"eta 的有限 [0,1] 支持域及初始化拒绝路径已经明确，负 eta 原问题关闭。正文还说明 alpha 顺序、预测端点、CFG 训练前提、浮点等价边界、条件缓存身份和非整除 padding 的适用条件；没有将独立算法选择冒充所有来源版本的约束。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/models/image-diffusion.md\",\n          \"quote\": \"本算法明确支持有限 eta∈[0,1]：初始化时检查 eta 是有限数且 0≤eta≤1；负 eta、NaN、无穷和大于 1 的值在生成任何 z 之前拒绝。\"\n        },\n        {\n          \"path\": \"knowledge/models/image-diffusion.md\",\n          \"quote\": \"只要 τ(y)、W_K、W_V、位置布局和数值格式不变，K/V 就不依赖去噪步，可以一次生成后多次读取；每步的 Q、QKᵀ、softmax 和加权求和仍然执行。\"\n        }\n      ]\n    },\n    \"algorithm\": {\n      \"assessment\": \"partial\",\n      \"reason\": \"原先未展开去噪网络的问题已实质修复：当前给出了 patch 输入、时间调制、逐层 self/cross attention、缓存消费、残差、输出还原及 scheduler 提交关系。不过算法 1 在已经确定 token 为行的布局下，将 FFN 写成左乘整个 token 矩阵，不能与 attention 和输出投影使用同一套张量轴直接实现，需修正。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/models/image-diffusion.md\",\n          \"quote\": \"只有全部 L 层完成后的 raw 才是 scheduler 可消费的整步网络预测；任意中间层输出都不是下一步 latent。\"\n        },\n        {\n          \"path\": \"knowledge/models/image-diffusion.md\",\n          \"quote\": \"Q,K,V ← U·W_Q^l, U·W_K^l, U·W_V^l\"\n        },\n        {\n          \"path\": \"knowledge/models/image-diffusion.md\",\n          \"quote\": \"F ← W_2^l·GELU(W_1^l·U)\"\n        }\n      ]\n    },\n    \"cost\": {\n      \"assessment\": \"partial\",\n      \"reason\": \"latent 通信和历史容量的四倍低估已修复；128 KiB、r·B_z、padding 工作副本及固定网格改变 p 的不变量正确。六类成本和 CFG 选择反转也有展开。剩余问题是 cross K/V 投影的 MAC 公式没有保留已定义的源宽 d_e，且未声明 d_e=d 的限制，影响条件投影及缓存收益的计算。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/models/image-diffusion.md\",\n          \"quote\": \"BF16 的 b＝2，因此一份逻辑预测为 16384·4·2＝131072 字节，即 128 KiB。\"\n        },\n        {\n          \"path\": \"knowledge/models/image-diffusion.md\",\n          \"quote\": \"文本条件 E（S×d_e）\"\n        },\n        {\n          \"path\": \"knowledge/models/image-diffusion.md\",\n          \"quote\": \"cross-attention 还要把源长度 S 纳入：Q 投影 T d²、K/V 各 S d²、输出投影 T d²、QK 与 PV 各 T S d 的 MAC。\"\n        }\n      ]\n    },\n    \"adaptation\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"patch 改变已明确为模型候选变化，并要求相容 checkpoint 或模型支持的可变 patch 机制，原问题关闭。分辨率、步数、CFG 布局、带宽、跨请求条件复用、编译和 VAE tiling 的保留与重验关系具体。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/models/image-diffusion.md\",\n          \"quote\": \"这是不同 patch 配置的模型候选比较；普通 DiT checkpoint 的输入逐 patch 线性嵌入和输出 p×p×2C 解码形状都随 p 改变，必须使用相容 checkpoint 或模型明确支持的可变 patch 机制；重新核对权重、位置处理、输出还原和质量\"\n        }\n      ]\n    },\n    \"diagnosis\": {\n      \"assessment\": \"partial\",\n      \"reason\": \"竞争解释、受控干预和反证后修正充分；原负对照异常混淆及 halo 缺陷已修复。然而 DDIM 随机更新检查使用被测方差构造自己的期望值，错误地把所有合法 eta 的方差置零仍能通过该检查，尚不能验证正文所写非零方差机制。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/models/image-diffusion.md\",\n          \"quote\": \"若跳过 eta 检查并令 z＝0，就执行了零噪声更新，与所写非零方差不是同一函数。\"\n        },\n        {\n          \"path\": \"knowledge/models/image-diffusion.md\",\n          \"quote\": \"做“缓存开/关 × 步数同/少”的 2×2 实验，并把 VAE 单独计时；缓存开/关步数相同是必要条件\"\n        },\n        {\n          \"path\": \"knowledge/models/image-diffusion.md\",\n          \"quote\": \"若验证器错误地接受缺陷，测试框架必须失败；若验证器错误地拒绝正确对象，失败断言也必须传播为测试失败。\"\n        }\n      ]\n    }\n  },\n  \"findings\": [\n    {\n      \"id\": \"K-MODEL-009-ALG-FFN-AXES\",\n      \"criterion\": \"algorithm\",\n      \"evidence\": \"算法 1 定义“X ← 空 T×d”，随后使用“Q,K,V ← U·W_Q^l, U·W_K^l, U·W_V^l”和“Y ← X·W_out”，但 FFN 写为“F ← W_2^l·GELU(W_1^l·U)”。\",\n      \"impact\": \"U 按前后数据流为 T×d。逐 token FFN 的上投影应沿 d 轴执行；当前左乘整个 U 的写法与该布局不相容。例如 T=4096、d=1536，采用列向量惯例的 W_1 为 d_ff×1536，不能与 4096×1536 的 U 相乘。直接照写无法得到可与 X 残差相加的 T×d 输出。\",\n      \"blocking\": true,\n      \"required_revision\": \"统一算法 1 的矩阵轴。按当前 token 为行的布局，可写 F←GELU(U·W_1^l)·W_2^l，并说明 W_1 为 d×d_ff、W_2 为 d_ff×d；也可明确逐 token 操作及转置。核对残差输出仍为 T×d。\"\n    },\n    {\n      \"id\": \"K-MODEL-009-COST-CROSS-SOURCE-WIDTH\",\n      \"criterion\": \"cost\",\n      \"evidence\": \"算法输入明确为“文本条件 E（S×d_e）”，cross 投影为“E·W_Kc^l, E·W_Vc^l”；成本段却写“K/V 各 S d²”，没有限定 d_e=d。\",\n      \"impact\": \"投影到总宽 d 的 K/V 时，每份源投影的 MAC 应为 S·d_e·d。当前公式在 d_e≠d 时误算条件投影及跨步缓存可节省的工作。例如 S=77、d_e=768、d=1536 时，每份实际为 90,832,896 MAC，正文公式为 181,665,792 MAC。\",\n      \"blocking\": true,\n      \"required_revision\": \"保留源宽 d_e，将 K/V 各自投影成本写成 S·d_e·d；或明确当前简式只适用于 d_e=d，并给出与算法输入相容的一般式。\"\n    },\n    {\n      \"id\": \"K-MODEL-009-DIAG-DDIM-VARIANCE-ORACLE\",\n      \"criterion\": \"diagnosis\",\n      \"evidence\": \"test_ddim 先用“sig2 = sigma_sq(0.4, a_t, a_s)”取得被测方差，再用“det = math.sqrt(a_s) * x0 + math.sqrt(1.0 - a_s - sig2) * eps”构造期望，并检查“require(close(xs - math.sqrt(sig2) * 0.3, det), 'stochastic component mismatch')”。ddim_step 自身也调用同一个 sigma_sq。\",\n      \"impact\": \"该断言主要验证用同一方差加入再减去噪声的恒等式。保持 eta/alpha 验证、但让 sigma_sq 对合法输入始终返回 0，仍会满足随机分量断言、eta=1 被开方数检查和 eta=0 检查。审阅者的内存 JavaScript 转写探针复现了全部这些断言接受该缺陷；这不是对 Python 文件的实际变异执行。因而所供 returncode=0 不能证明 DDIM 非零方差更新正确。\",\n      \"blocking\": true,\n      \"required_revision\": \"增加不依赖被测 sigma_sq 返回值的参考，例如独立推导并断言 a_t=0.5、a_s=0.8、eta=0.4 时 σ²=0.024、方向方差=0.176；以此参考验证完整下一状态或 z 改变引起的差值。用同一验证器接受正确实现、拒绝保持域验证但方差恒零的实现，并确认恢复实现后接受；框架失败继续传播。\"\n    }\n  ],\n  \"limitations\": [\n    \"结论限于所供正文、完整来源说明、论文文本及明确摘录。未直接读取 Diffusers 源码；S-DIFFUSERS 是作者核验后的算法说明。\",\n    \"未执行目标 GPU 的数值、HBM 事务、显存、同步、重叠或性能检查，也未执行真实 VAE、checkpoint 质量或用户研究；正文对此已有明确边界。\",\n    \"当前会话没有文件读取或终端执行工具，无法加载本地技能、docs/knowledge-build-workflow.md、历史审查产物或独立核验磁盘字节及链接可达性；采用用户提供的严格 schema、完整材料和绑定字段。\",\n    \"所供 Python 远端执行记录已审阅，但本审阅者未重新执行该 Python 文件；独立执行仅为明确标识的内存算术、形状和断言转写探针。\"\n  ],\n  \"checks\": [\n    {\n      \"script\": \"tools/check_k_model_009_full.py\",\n      \"args\": []\n    }\n  ],\n  \"no_checks_reason\": \"\",\n  \"reading_scope\": \"完整阅读本轮提供的全文，字符范围均采用材料声明的零基半开区间：AGENTS.md [0,567)；docs/knowledge-method.md [0,2251)；docs/knowledge-review.md [0,3016)；knowledge/models/image-diffusion.md [0,17410)；knowledge/sources/S-LDM.md [0,494)；S-DIT.md [0,468)；S-DIFFUSERS.md [0,995)；S-WAN.md [0,487)；knowledge/models/video-generation.md [0,3900)；knowledge/algorithms/cross-attention-cache.md [0,3845)；knowledge/frameworks/compile-dynamic-shapes.md [0,4495)；knowledge/workloads/slo-goodput.md [0,2616)；knowledge/algorithms/parallelism.md [0,6115)；knowledge/system-semantics/memory-allocators.md [0,4191)；knowledge/tools/statistical-experiments.md [0,4269)；knowledge/models/speech-generation.md [0,3599)；references/S-LDM/fulltext.txt [0,101520)；references/S-DIT/fulltext.txt [0,56351)。完整阅读所供 test_script 自 shebang 至 main 调用，以及 author_notes 和 actual_preflight 执行记录。仅阅读摘录：knowledge/hardware/gpu-kernel-pipelines.md [0,500)、[4000,12000)；knowledge/system-semantics/design-synthesis.md [0,8500)；references/S-WAN/fulltext.txt [0,20000)、[36000,68000)、[88000,96000)、[104000,108000)、[112000,120000)、[128000,140000)、[148000,156976)、[160000,175801)。这些摘录文件未列入 documents，不声称读取全文。未读取源码归档或未提供的 workflow、历史审查文件。\",\n  \"test_assessment\": \"所供 actual_preflight 记录的 script_sha256 与绑定脚本一致，remote_bwrap 执行 returncode=0、stderr 为空且未超时；这是协调执行的证据，不改写作者所述“脚本未在本环境执行”。逐函数检查后，prediction 检查使用预先选择的 x0/epsilon 和前向构造作为参考；错误 v 转换与正确转换经过同一验证器。HarnessError 与 Mismatch/DomainError 已分离，正确对象被拒绝或缺陷被接受均会传播为失败，原异常混淆关闭。schedule 接受所选 T[k+1]、拒绝 t−1，恢复后接受；tiling 依据 [start,stop+K−1) 的必需输入范围，以全图 valid 卷积比较相同输出坐标，少一个右端必需输入会明确缺失输出 6，原 halo 问题关闭。eta 检查实际调用 validate_eta，覆盖负值、NaN、正无穷、超上限以及 0/0.4/1 的接受路径。容量检查含固定 131072 字节参考、p=1/2/4/8 和非整除 padding，并拒绝 32768 字节及 padding 冒充逻辑字节；独立内存复算一致。CFG 以另一仿射展开和端点不变量核对。DDIM 随机项断言却共用被测 sigma_sq，缺少独立方差参考；内存转写的恒零方差变异仍被接受，详见 finding。脚本没有执行参考去噪器、矩阵形状、cross 投影成本、固定条件缓存或真实 scheduler 请求循环，因此其成功不能覆盖当前算法轴与源宽成本问题；这些检查也未被记为 PASS。未将 CPU 合成卷积结果外推为真实 VAE 或设备验证。\"\n}",
+  "elapsed_seconds": 463.313,
+  "original_status": "model_error",
+  "completion_reassessed": true,
+  "new_model_request": false,
+  "reassessment_basis": "Recorded exit 0; strict final JSON matches completed event; only preceding native reconnect notices; permitted tools.",
+  "reassessment_bindings": {
+    "record.json": "5fee209144257fe8bc7e5ed0623462c8eaa7613962ef1a8578e2e2e9042f6f02",
+    "coordinator-record.json": "1577fd64c777aa76558d915a3b55e76077344c3a0fda9c7f159db9e73b91bf76",
+    "request.json": "8871f3bc4f12ef09d431dec6c4598e0c9c6a65ce68cdff8122a1fb05d4b59b14",
+    "invocation.json": "cdfa69e3da0b733436d741584705b57e1640d9d89042dcd1841e2366ba8ba63b",
+    "prompt.txt": "cc9743660b0bb878219d0f4074172faea1bef17e4ec2da17e620d2be6e78d6fc",
+    "events.jsonl": "8fa4d556d70469688fec0c28617753465d709bf1f2044b79b5ab12fcc3532f2e",
+    "answer.txt": "4d9f9c40fb8516714661371ccb5fa58f56bec7919ce0f63f339cc9d1fd5866db",
+    "cli-version.txt": "da105737ab2648d5fbce3aa8343bd8f8ed04e16c6c37152984e443feaa8a723e"
+  }
+}

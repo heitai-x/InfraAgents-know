@@ -1,0 +1,66 @@
+{
+  "id": "K-SYS-025",
+  "path": "system-semantics/known-tensions.md",
+  "category": "system-semantics",
+  "title": "已知张力：单实例交互式服务中的机制冲突",
+  "summary": "decode 带宽与 ITL、prefill/decode 干扰、投机与批、KV 量化悬崖、图/workspace 挤 KV、小批主机占比：机制、来源、可观测与反转。",
+  "tags": [
+    "设计张力",
+    "ITL",
+    "prefill",
+    "decode",
+    "投机",
+    "KV量化",
+    "CUDA Graph",
+    "主机占比",
+    "单实例服务"
+  ],
+  "scope": {
+    "model_families": [
+      "transformer"
+    ],
+    "platforms": [],
+    "runtimes": [],
+    "workloads": [
+      "text-generation"
+    ]
+  },
+  "source_ids": [
+    "S-ORCA",
+    "S-SARATHI",
+    "S-SPEC",
+    "S-KIVI",
+    "S-TORCH-CUDA",
+    "S-PAGED"
+  ],
+  "related": [
+    "K-HW-001",
+    "K-ALG-007",
+    "K-ALG-006",
+    "K-ALG-005",
+    "K-FW-005",
+    "K-SYS-015",
+    "K-SYS-024"
+  ],
+  "questions": [
+    "decode 流量下界接近 ITL 时，增大同轮批会怎样改变间隔？",
+    "长 prefill 与活跃 decode 同实例交错时，可观测干扰是什么？",
+    "批变大后投机从加速变减速的成本项如何对照？",
+    "KV 量化质量悬崖与平滑误差曲线在观测上如何区分？",
+    "图桶与 workspace 增大时，KV 并发与上下文怎样被挤占？"
+  ],
+  "symptoms": [
+    "新长大请求到达后无关会话 ITL 同步变差",
+    "小批投机加速、大批后关闭反而更快",
+    "加图桶后计算变快但最大并发明显下降"
+  ],
+  "assumes": [
+    "单实例交互式自回归服务",
+    "设备内存上权重与 KV 共存"
+  ],
+  "revision": 1,
+  "status": "seed",
+  "evidence": [],
+  "updated_at": "2026-10-27",
+  "sha256": "e7e30a27ff5b42d93b55bc6e36a008ce6f5c100410fbe357ee3870a4ad601f90"
+}

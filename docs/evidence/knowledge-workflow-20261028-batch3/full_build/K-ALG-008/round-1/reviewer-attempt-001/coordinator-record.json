@@ -1,0 +1,317 @@
+{
+  "role": "reviewer",
+  "engine": "sol",
+  "requested_model": "gpt-6.1-sol",
+  "reasoning_effort": "high",
+  "prompt_sha256": "e42b4526a166dbba611181e30c428226b1d3666eeeb0db1a494a1c5f0011d384",
+  "usage": [
+    {
+      "input_tokens": 769554,
+      "cached_input_tokens": 584192,
+      "cache_write_input_tokens": 0,
+      "output_tokens": 9190,
+      "reasoning_output_tokens": 3226
+    }
+  ],
+  "answer": "{\n  \"entry_id\": \"K-ALG-008\",\n  \"body_sha256\": \"67cde1494d286cbbd513b9a2c47bc34a3e9fc5f2a1d817d5574b33fee9f6681c\",\n  \"reviewer\": \"sol-reviewer:K-ALG-008:round-1\",\n  \"decision\": \"revise\",\n  \"documents\": {\n    \"AGENTS.md\": \"b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a\",\n    \"docs/knowledge-method.md\": \"69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb\",\n    \"docs/knowledge-review.md\": \"f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21\",\n    \"knowledge/algorithms/async-scheduling.md\": \"67cde1494d286cbbd513b9a2c47bc34a3e9fc5f2a1d817d5574b33fee9f6681c\",\n    \"knowledge/sources/S-CUDA-ASYNC.md\": \"40df9287d0648a8ef55a046ceb1c18dd402619ede6e57ca33d3f90e4ace3da05\",\n    \"knowledge/sources/S-CUDA-ALLOC.md\": \"3ba021c941f2ed8f048be34d1ba0110f37675a3460013f24a239cc43a1e8630a\",\n    \"knowledge/sources/S-VLLM-SCHED.md\": \"2e9bbe0d29145039d1bcd43bb54d40c4136ef51641a6e33a5d7097eb0500daf0\",\n    \"knowledge/sources/S-FLASHATTENTION3.md\": \"1c03e7e0674d15ce246c297a814e946774d476c2de6fb073a29a47c323b56121\",\n    \"knowledge/sources/S-POWERINFER.md\": \"2ddb8fae1189c3f837c9f5daaceab96dad85f6ffd8be5bb0ec3ff6a146c51f83\",\n    \"knowledge/frameworks/streams-allocator.md\": \"64427e69f6eb991d4029242e24e4edf56a331d233fdeab3c50f53f0f84a4df7b\",\n    \"knowledge/frameworks/cuda-graph-buffers.md\": \"440b52fb12e41f753d0800016ddd7f9d40b5634e2c33431d1208986d1ccaedef\",\n    \"knowledge/system-semantics/request-batch-identity.md\": \"4bb364464c1ccab29bf079263a4e80d9d352e1477040fdcaf150a36294e37443\",\n    \"knowledge/system-semantics/cancellation-resource-completion.md\": \"919052c77f65a13c9dc09aad03341ed31f0820dbbdcb2750b5789f349f9e86c1\",\n    \"knowledge/algorithms/tiered-residency.md\": \"eb3ebc6320d5a32481cf645605d159860dc6d1edb97f1e98afd89ddb24ee82af\",\n    \"knowledge/algorithms/heterogeneous-execution.md\": \"8fd777e06b150eaba4e3288ccb188adbb975e37c28c77a72a9b6878a70e027f4\",\n    \"knowledge/algorithms/speculation-budget.md\": \"91a6e60d5151fb5b1155d2ba0ddcb3ba1251e69f7caf79b0ec217c7bf9a74d0d\",\n    \"knowledge/engine-index/tensorrt-llm.md\": \"6ade1253f3747041bef4a816d82387c3771bff3459a153719cfbd571c2454c0b\",\n    \"knowledge/frameworks/mlx-serving.md\": \"c308a8ac651460ede6b6e53d3413bea4c4a7707b757516faf8a752b35872b6c1\",\n    \"knowledge/system-semantics/host-device-timing.md\": \"411061489661a325939476348559d80df773a32cc19be2aef216e4d4a5b0b554\",\n    \"tools/check_k_alg_008_full.py\": \"68674aa6028967ee4896ec776b85bdf9d5864d7f5f5deb9f94c8d7151a90e312\"\n  },\n  \"criteria\": {\n    \"definition\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"明确了异步调度的动机、依赖图、请求执行代次、快照组成及输入输出，正确区分已采样 token 与未知自回归后继。执行快照和物理槽身份足以支撑本章的协议讨论；后继执行如何实际形成仍属 algorithm 中的未闭合部分。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/algorithms/async-scheduling.md\",\n          \"quote\": \"异步提交改变等待位置和在途深度，不改变函数依赖；一个调用返回、一个事件记录和一个结果可消费是三个不同状态。\"\n        },\n        {\n          \"path\": \"knowledge/algorithms/async-scheduling.md\",\n          \"quote\": \"一次执行快照 S(r,g) 至少包含：输入 token 范围与逻辑位置、页表或 KV 句柄、历史长度与 mask、采样参数和随机状态、输出槽位、workspace 与图实例身份。\"\n        }\n      ]\n    },\n    \"legality\": {\n      \"assessment\": \"partial\",\n      \"reason\": \"L1–L8 对已知输入、可见性、容量并集及逻辑取消的约束基本正确，也将预测稀疏与保持原函数的要求分开。但组合轨迹允许 CPU 分片在槽交给 B 后才完成，没有说明其物理最后使用是否已经结束，或哪些私有对象继续隔离，尚不足以证明该轨迹满足自身的回收条件。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/algorithms/async-scheduling.md\",\n          \"quote\": \"L5 槽可重用：owner(s)=空，且旧代所有设备访问、传输源读取、图重放和输出消费者均结束；stream-ordered 释放请求只表示逻辑释放意图。\"\n        },\n        {\n          \"path\": \"knowledge/algorithms/async-scheduling.md\",\n          \"quote\": \"若 CPU 分片 c 在 t4 后才完成，也必须按旧代丢弃；把旧 CPU 结果与新 GPU 结果合并会破坏同代快照。\"\n        }\n      ]\n    },\n    \"algorithm\": {\n      \"assessment\": \"partial\",\n      \"reason\": \"事件种类和预期不变量已经展开，但伪代码尚不能形成所声称的完整算法：没有建立槽所有权、active 和准备阶段的推进步骤；READY 所需所有权与提交时检查的 L5 冲突；取消后完成无法通过状态检查；消费没有实现一次性提交与幂等账务。后继代次和全层 KV 完成边界也未实际接入 known 的推进。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/algorithms/async-scheduling.md\",\n          \"quote\": \"下面给出一个保守但完整的单设备算法。\"\n        },\n        {\n          \"path\": \"knowledge/algorithms/async-scheduling.md\",\n          \"quote\": \"要求 owner[s]=(r,g) 且 slot_epoch[s]=epoch\"\n        },\n        {\n          \"path\": \"knowledge/algorithms/async-scheduling.md\",\n          \"quote\": \"对每个 READY 的 (r,g,s) 检查 L1、L4、L5、L6\"\n        },\n        {\n          \"path\": \"knowledge/algorithms/async-scheduling.md\",\n          \"quote\": \"要求 owner[s]=(r,g)、slot_epoch[s]=epoch 且 phase=SUBMITTED\"\n        }\n      ]\n    },\n    \"cost\": {\n      \"assessment\": \"partial\",\n      \"reason\": \"关键路径、共享带宽必要条件、不同对象的槽生存期及容量算例有实质内容；11/8=1.375 和 2×16+2×1=34 MiB 的设定计算成立。但取消成本把即时逻辑抑制与延后物理排空混淆；H 又同时被文字用作时间开销和主机并行度，H_host 未明确对应定义，影响公式的单位与适用条件。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/algorithms/async-scheduling.md\",\n          \"quote\": \"若某类槽从占用到最后消费者结束的固定时间为 L，启动间隔为 P，则至少需要 ceil(L/P) 个槽\"\n        },\n        {\n          \"path\": \"knowledge/algorithms/async-scheduling.md\",\n          \"quote\": \"P ≥ max(G, (C＋O＋H)/H_host, Q/B)\"\n        },\n        {\n          \"path\": \"knowledge/algorithms/async-scheduling.md\",\n          \"quote\": \"若队列中已有 W 个在途任务，取消的业务生效至少要等待其前面已提交工作的排空边界\"\n        }\n      ]\n    },\n    \"adaptation\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"针对设备饱和、短请求、KV 压力、取消率、图地址、异构分片和共享内存分别说明保留的依赖、调整方向及反转信号，没有把增加槽数或流水深度当作普遍收益。图地址稳定与内容生命周期的区分明确。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/algorithms/async-scheduling.md\",\n          \"quote\": \"| 设备已持续饱和 | 自回归链和结果归属不变 | 保持或降低 D，改进入队与结果处理 | 增加槽只增加排队和驻留，设备区间不变 |\"\n        },\n        {\n          \"path\": \"knowledge/algorithms/async-scheduling.md\",\n          \"quote\": \"双槽轮换只有在旧 replay 的最后一个读者结束后才能写回；多图共享 workspace 还需要检查并发活跃集合。\"\n        }\n      ]\n    },\n    \"diagnosis\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"竞争解释表包含不同预测、保持可比的干预和反证后的修正，能够区分主机瓶颈、自回归依赖、错误复用、事件覆盖及容量问题。提供的脚本具有独立预期和实际检出的负对照，并非纯粹复述公式；其覆盖不足以验证正文完整调度算法，具体遗漏已在 findings 和 test_assessment 中限定。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/algorithms/async-scheduling.md\",\n          \"quote\": \"所有实验应在相同输入、相同工作量和相同计时边界下进行，先确认正确性再比较性能。\"\n        },\n        {\n          \"path\": \"knowledge/algorithms/async-scheduling.md\",\n          \"quote\": \"| 同步对象记录过早 | 设备时间正常但结果偶尔读到旧内容，延迟复制时更明显 | 把 event 记录移到最后一个生产者之后，或扩大等待覆盖；用负对照 | 仅改变线程数就消失，不足以证明原同步正确，需定位依赖 |\"\n        },\n        {\n          \"path\": \"knowledge/algorithms/async-scheduling.md\",\n          \"quote\": \"有限事件模型可以证明协议不变量和某些边界，但不能证明编译后指令、真实 GPU 的内存作用域、物理重叠、缓存行为或性能。\"\n        }\n      ]\n    }\n  },\n  \"findings\": [\n    {\n      \"id\": \"K-ALG-008-R1-ALG-001\",\n      \"criterion\": \"algorithm\",\n      \"evidence\": \"正文初始化为“初始化 owner[*]=空，inflight=0，active[*]=空”；ARRIVE 只有“为尚未存在的请求建立初始代 g”；PREPARE_DONE 要求“要求 owner[s]=(r,g) 且 slot_epoch[s]=epoch”；SCHEDULE 又要求“对每个 READY 的 (r,g,s) 检查 L1、L4、L5、L6”，而 L5 明定“owner(s)=空”。\",\n      \"impact\": \"按给出的更新步骤，初始请求没有合法路径取得槽并进入 READY；即使外部补上准备，READY 的非空 owner 仍无法满足提交时的 L5。active 从未设置为 g，消费也无法提交业务输出。成功后没有创建下一代的步骤，普通自回归请求不能持续推进。\",\n      \"blocking\": true,\n      \"required_revision\": \"补齐选择空槽、预留容量、设置 owner/epoch/active/phase、启动准备和完成后的唤醒步骤；区分取得槽前的可复用检查与 READY 提交时的当前代所有权检查。明确 consumers 等状态初始化，以及采样、全层 KV 完成边界、停止条件和后继代次创建的顺序；模型逐层输入与状态契约可明确委托给已有完整说明并添加链接。用同一事件算法验证从 ARRIVE 到首次输出及下一代推进。\"\n    },\n    {\n      \"id\": \"K-ALG-008-R1-ALG-002\",\n      \"criterion\": \"algorithm\",\n      \"evidence\": \"CANCEL 分支执行“phase[r,g]=CANCELED；保留在途完成和所有消费者责任”；DEVICE_DONE 分支却要求“要求 owner[s]=(r,g)、slot_epoch[s]=epoch 且 phase=SUBMITTED”。RELEASE 无条件执行“phase[r,g]=RELEASED；inflight 减一”。错误完成仅写“若带错误：标记该代失败，不发布部分输出，进入清理”。\",\n      \"impact\": \"SUBMITTED→CANCEL→DEVICE_DONE 是正文组合轨迹采用的正常序列，却会被伪代码拒绝，导致设备完成和清理责任无法推进。提交前取消若沿同一释放分支处理，还会错误减少未曾增加的 inflight；错误路径没有说明如何解除已登记消费者，可能永久占槽。\",\n      \"blocking\": true,\n      \"required_revision\": \"分别保存逻辑取消标志与物理执行阶段，允许已取消代次接收并记录真实完成，继续驱动消费者和回收。区分未提交取消、在途取消和错误完成的清理路径，只对确实提交且尚未扣账的代次减少 inflight；为失败输出消费者定义明确的结束或撤销事件。检查模型必须执行这些正文分支。\"\n    },\n    {\n      \"id\": \"K-ALG-008-R1-ALG-003\",\n      \"criterion\": \"algorithm\",\n      \"evidence\": \"CONSUME_DONE 的签名是“若 e 是 CONSUME_DONE(r,g,s,result)：”，随后仅要求“要求 phase 属于 DEVICE_DONE 或 CANCELED”，再执行“consumers 减一”和“按结果对应的逻辑位置提交业务输出；采样得到新 token 后更新 known”。正文同时声称“一个代次只能消费和释放一次”。\",\n      \"impact\": \"该分支没有消费者身份、已处理标记或业务提交标记。重复通知在 RELEASE 执行前仍能通过 phase 检查，重复发布或采样，并使 consumers 为负；多个消费者时，重复一个通知还可能抵消另一个尚未结束的责任。文字不变量没有落实为状态转移。\",\n      \"blocking\": true,\n      \"required_revision\": \"使消费事件携带完整代次及消费者身份，按尚未完成的责任集合幂等撤销；将业务结果的一次性提交与多个资源消费者结束分开记录。旧代或重复通知不得再次改变 known、采样状态或计数。补入释放前重复完成、重复消费和多消费者乱序的检查，并确认错误实现确实被检出。\"\n    },\n    {\n      \"id\": \"K-ALG-008-R1-LEG-001\",\n      \"criterion\": \"legality\",\n      \"evidence\": \"组合轨迹写“t3：所有输出消费者、图重放和传输源读取结束后释放 slot0，slot_epoch 加一。t4：B 才可准备到 slot0”；随后又写“若 CPU 分片 c 在 t4 后才完成，也必须按旧代丢弃”。\",\n      \"impact\": \"丢弃旧代结果只能保护逻辑提交。若迟到的 CPU 分片或其传输仍读取该槽快照、写入共享输出或访问旧 workspace，B 已覆盖或复用这些地址仍会发生物理竞争。正文没有声明该分片已结束全部共享访问，或使用仍受保护的私有副本，因而此组合轨迹的安全条件未闭合。\",\n      \"blocking\": true,\n      \"required_revision\": \"明确 CPU 分片及其结果传输的输入、输出、workspace 最后使用事件。若仍访问旧槽，t3 必须等待；若允许 t4 后才完成，说明其共享槽访问已结束、剩余计算使用哪些私有对象，以及这些对象如何保留到真实完成。把这些责任纳入 ledger 和释放条件，区分迟到通知与迟到物理执行。\"\n    },\n    {\n      \"id\": \"K-ALG-008-R1-COST-001\",\n      \"criterion\": \"cost\",\n      \"evidence\": \"成本段写“取消的业务生效至少要等待其前面已提交工作的排空边界”；算法却在 CANCEL 时“禁止新提交与业务输出”。同段先定义“提交/释放的固定开销记为 H”，随后写“若主机有 H 个有效并行度”，公式使用“(C＋O＋H)/H_host”。\",\n      \"impact\": \"业务输出抑制通常可以在取消被处理时生效，不必等待设备排空；延迟的是资源回收和物理工作结束。混同这两种响应时间会错误评价队列深度及取消策略。H 的复用还混淆时间量与无量纲并行度，使成本公式不能直接按统一单位使用。\",\n      \"blocking\": true,\n      \"required_revision\": \"分别定义取消通知处理/逻辑非提交时间与最后物理使用结束/资源归还时间，只在明确的队列和执行假设下推导排空等待。H 保留为时间开销，另明确定义 H_host 为有效主机并行度，说明 P 是每单位独立工作的启动周期，并使 Q/B 的字节统计对应同一工作单位。\"\n    }\n  ],\n  \"limitations\": [\n    \"结论基于请求内提供的完整文本、摘录和执行记录；本审阅未重新读取磁盘文件或计算哈希，documents 按要求保留所提供的字面绑定。\",\n    \"当前工具未提供文件读取或 Python 执行能力，资源列表为空；未另行运行检查。docs/knowledge-build-workflow.md 未提供正文，因此采用请求内给出的 review JSON schema，未声称读过该文件。\",\n    \"没有目标 GPU 时间线、编译后程序、真实内存作用域、物理重叠、缓存或性能测量；合成时间与容量算例不能作为这些效果的证据。\",\n    \"vLLM 仅提供经过作者整理的机制说明，没有允许读取的原始实现说明；本次没有独立源码核验。\",\n    \"提供的 CUDA 原文摘录未覆盖 stream-ordered allocator 的完整 §11 语义，PowerInfer 摘录未覆盖 §8.4；这些主张与来源说明一致，但本次原始资料核对范围不足以逐项复核它们。\"\n  ],\n  \"checks\": [\n    {\n      \"script\": \"tools/check_k_alg_008_full.py\",\n      \"args\": []\n    }\n  ],\n  \"no_checks_reason\": \"\",\n  \"reading_scope\": \"完整阅读请求内材料：AGENTS.md [0,567)、docs/knowledge-method.md [0,2251)、docs/knowledge-review.md [0,3016)、knowledge/algorithms/async-scheduling.md [0,9661)、knowledge/sources/S-CUDA-ASYNC.md [0,1610)、S-CUDA-ALLOC.md [0,498)、S-VLLM-SCHED.md [0,760)、S-FLASHATTENTION3.md [0,3331)、S-POWERINFER.md [0,739)、knowledge/frameworks/streams-allocator.md [0,2589)、cuda-graph-buffers.md [0,5255)、knowledge/system-semantics/request-batch-identity.md [0,2669)、cancellation-resource-completion.md [0,3782)、knowledge/algorithms/tiered-residency.md [0,4244)、heterogeneous-execution.md [0,3935)、speculation-budget.md [0,3904)、knowledge/engine-index/tensorrt-llm.md [0,2145)、knowledge/frameworks/mlx-serving.md [0,3282)、knowledge/system-semantics/host-device-timing.md [0,3827)，以及 candidate.test_script 提供的完整 tools/check_k_alg_008_full.py 和 actual_preflight 执行记录。仅阅读摘录：knowledge/hardware/gpu-kernel-pipelines.md [4000,6071)、[8000,12000)；knowledge/system-semantics/host-runtime.md [0,6071)；knowledge/algorithms/iteration-batching.md [0,4000)、[8000,10071)；knowledge/hardware/host-device-transfer.md [0,3586)、[4000,6485)。原始资料均仅为摘录：references/S-CUDA-ASYNC/fulltext.txt 与 references/S-CUDA-ALLOC/fulltext.txt 各为 [164000,168000)、[260000,264000)、[444000,460000)、[472000,476000)、[488000,500000)、[504000,520000)、[604000,608000)、[712000,716000)、[756000,756333)；references/S-FLASHATTENTION3/fulltext.txt [0,44994)、[48000,67338)；references/S-POWERINFER/fulltext.txt [0,56332)、[64000,72000)。所有范围均为所提供提取文本的零基半开字符范围；未将摘录列入 documents，未声称阅读全文原始论文、完整 CUDA 指南、PDF 图片或源码归档。正文链接已按所提供目标内容核对语义，未执行文件存在性检查。\",\n  \"test_assessment\": \"已逐步检查完整脚本及提供的真实 remote_bwrap 执行记录：绑定脚本 SHA-256 为 68674aa6028967ee4896ec776b85bdf9d5864d7f5f5deb9f94c8d7151a90e312，returncode=0，无 stderr、超时或输出产物。本审阅未重跑。独立参考包括预先写定的 A/B 输出归属与取消后仅 B 输出的预期；槽数检查用启动/释放时刻模拟分配，再与 ceil(L/P) 比较，覆盖 L>P、L=P、非整倍数及零生存期。按 slot 路由的负对照实际产生 B:[10,20]，与独立预期不同；强制提前释放后旧 A 读取被所有权检查检出，确实涉及本章身份和复用机制。因此这些检查具有有效但有限的证据价值。关键限制是模型与正文不一致：prepare 直接设置 owner、phase 和 active，补上了正文缺失的推进；launch 不检查正文相互冲突的 L5；complete 明确接受 canceled，绕过正文 DEVICE_DONE 仅接受 SUBMITTED 的缺陷。模型没有消费者身份和已提交标记，record 在 submitted/done 阶段均可追加输出，释放前重复 stale_result 可以重复记入结果，而现有 trace 没有检查它。没有验证正文从 ARRIVE 到下一自回归代的推进、全层 KV/末行 logits 边界、提交前取消、错误清理、多个物理最后使用者、CPU/GPU 共同提交、图与传输源的独立生存期；复制完成记录过早和两侧不同代次两个负对照也未执行。现有正常 trace 基本串行使用单槽，没有证明真实重叠。作者说明本轮本人未执行与外部提供的预检记录可以同时成立；只能认定该预检实际通过，不能据此认定完整调度算法或 GPU 同步正确。\"\n}",
+  "exit_code": 0,
+  "status": "completed",
+  "timeout_seconds": 1800,
+  "response_path": "D:\\桌面\\xdb\\InfraAgents\\InfraAgents-know-astra-new\\InfraAgents-know\\docs\\evidence\\knowledge-workflow-20261028-batch3\\full_build\\K-ALG-008\\round-1\\reviewer-attempt-001\\answer.txt",
+  "record_path": "D:\\桌面\\xdb\\InfraAgents\\InfraAgents-know-astra-new\\InfraAgents-know\\docs\\evidence\\knowledge-workflow-20261028-batch3\\full_build\\K-ALG-008\\round-1\\reviewer-attempt-001\\record.json",
+  "tool_events": [
+    {
+      "type": "item.completed",
+      "item": {
+        "id": "item_1",
+        "type": "mcp_tool_call",
+        "server": "codex",
+        "tool": "list_mcp_resources",
+        "arguments": {},
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"resources\":[]}"
+            }
+          ],
+          "structured_content": null
+        },
+        "error": null,
+        "status": "completed"
+      }
+    },
+    {
+      "type": "item.completed",
+      "item": {
+        "id": "item_2",
+        "type": "mcp_tool_call",
+        "server": "codex",
+        "tool": "list_mcp_resource_templates",
+        "arguments": {},
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"resourceTemplates\":[]}"
+            }
+          ],
+          "structured_content": null
+        },
+        "error": null,
+        "status": "completed"
+      }
+    }
+  ],
+  "inventory_tool_events": [
+    {
+      "type": "item.completed",
+      "item": {
+        "id": "item_1",
+        "type": "mcp_tool_call",
+        "server": "codex",
+        "tool": "list_mcp_resources",
+        "arguments": {},
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"resources\":[]}"
+            }
+          ],
+          "structured_content": null
+        },
+        "error": null,
+        "status": "completed"
+      }
+    },
+    {
+      "type": "item.completed",
+      "item": {
+        "id": "item_2",
+        "type": "mcp_tool_call",
+        "server": "codex",
+        "tool": "list_mcp_resource_templates",
+        "arguments": {},
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"resourceTemplates\":[]}"
+            }
+          ],
+          "structured_content": null
+        },
+        "error": null,
+        "status": "completed"
+      }
+    }
+  ],
+  "rejected_tool_events": [],
+  "tool_policy": "metadata_inventory_only",
+  "tool_policy_version": "2026-10-28-production-v1",
+  "tool_policy_scope": "Only empty-argument codex host plugin/skill-directory descriptors and empty template inventory; inventory is not knowledge evidence. All other tool events reject the call.",
+  "tool_policy_reason": "Production chapter construction allows observed generic capability discovery metadata; this does not claim a zero-tool comparison or external source reading.",
+  "malformed_event_lines": [],
+  "turn_completed": true,
+  "error_events": [],
+  "actual_model": null,
+  "identity_verified": null,
+  "identity_basis": "Explicit CLI model and isolated HTTP provider; CLI events do not expose server model identity.",
+  "provider": "eval-openai-http",
+  "max_output_tokens": null,
+  "cli_version": "codex-cli 0.164.0-alpha.11.1",
+  "cost_scope": "Codex token usage is reported; subscription charge is not exposed.",
+  "parsed": {
+    "entry_id": "K-ALG-008",
+    "body_sha256": "67cde1494d286cbbd513b9a2c47bc34a3e9fc5f2a1d817d5574b33fee9f6681c",
+    "reviewer": "sol-reviewer:K-ALG-008:round-1",
+    "decision": "revise",
+    "documents": {
+      "AGENTS.md": "b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a",
+      "docs/knowledge-method.md": "69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb",
+      "docs/knowledge-review.md": "f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21",
+      "knowledge/algorithms/async-scheduling.md": "67cde1494d286cbbd513b9a2c47bc34a3e9fc5f2a1d817d5574b33fee9f6681c",
+      "knowledge/sources/S-CUDA-ASYNC.md": "40df9287d0648a8ef55a046ceb1c18dd402619ede6e57ca33d3f90e4ace3da05",
+      "knowledge/sources/S-CUDA-ALLOC.md": "3ba021c941f2ed8f048be34d1ba0110f37675a3460013f24a239cc43a1e8630a",
+      "knowledge/sources/S-VLLM-SCHED.md": "2e9bbe0d29145039d1bcd43bb54d40c4136ef51641a6e33a5d7097eb0500daf0",
+      "knowledge/sources/S-FLASHATTENTION3.md": "1c03e7e0674d15ce246c297a814e946774d476c2de6fb073a29a47c323b56121",
+      "knowledge/sources/S-POWERINFER.md": "2ddb8fae1189c3f837c9f5daaceab96dad85f6ffd8be5bb0ec3ff6a146c51f83",
+      "knowledge/frameworks/streams-allocator.md": "64427e69f6eb991d4029242e24e4edf56a331d233fdeab3c50f53f0f84a4df7b",
+      "knowledge/frameworks/cuda-graph-buffers.md": "440b52fb12e41f753d0800016ddd7f9d40b5634e2c33431d1208986d1ccaedef",
+      "knowledge/system-semantics/request-batch-identity.md": "4bb364464c1ccab29bf079263a4e80d9d352e1477040fdcaf150a36294e37443",
+      "knowledge/system-semantics/cancellation-resource-completion.md": "919052c77f65a13c9dc09aad03341ed31f0820dbbdcb2750b5789f349f9e86c1",
+      "knowledge/algorithms/tiered-residency.md": "eb3ebc6320d5a32481cf645605d159860dc6d1edb97f1e98afd89ddb24ee82af",
+      "knowledge/algorithms/heterogeneous-execution.md": "8fd777e06b150eaba4e3288ccb188adbb975e37c28c77a72a9b6878a70e027f4",
+      "knowledge/algorithms/speculation-budget.md": "91a6e60d5151fb5b1155d2ba0ddcb3ba1251e69f7caf79b0ec217c7bf9a74d0d",
+      "knowledge/engine-index/tensorrt-llm.md": "6ade1253f3747041bef4a816d82387c3771bff3459a153719cfbd571c2454c0b",
+      "knowledge/frameworks/mlx-serving.md": "c308a8ac651460ede6b6e53d3413bea4c4a7707b757516faf8a752b35872b6c1",
+      "knowledge/system-semantics/host-device-timing.md": "411061489661a325939476348559d80df773a32cc19be2aef216e4d4a5b0b554",
+      "tools/check_k_alg_008_full.py": "68674aa6028967ee4896ec776b85bdf9d5864d7f5f5deb9f94c8d7151a90e312"
+    },
+    "criteria": {
+      "definition": {
+        "assessment": "sufficient",
+        "reason": "明确了异步调度的动机、依赖图、请求执行代次、快照组成及输入输出，正确区分已采样 token 与未知自回归后继。执行快照和物理槽身份足以支撑本章的协议讨论；后继执行如何实际形成仍属 algorithm 中的未闭合部分。",
+        "evidence": [
+          {
+            "path": "knowledge/algorithms/async-scheduling.md",
+            "quote": "异步提交改变等待位置和在途深度，不改变函数依赖；一个调用返回、一个事件记录和一个结果可消费是三个不同状态。"
+          },
+          {
+            "path": "knowledge/algorithms/async-scheduling.md",
+            "quote": "一次执行快照 S(r,g) 至少包含：输入 token 范围与逻辑位置、页表或 KV 句柄、历史长度与 mask、采样参数和随机状态、输出槽位、workspace 与图实例身份。"
+          }
+        ]
+      },
+      "legality": {
+        "assessment": "partial",
+        "reason": "L1–L8 对已知输入、可见性、容量并集及逻辑取消的约束基本正确，也将预测稀疏与保持原函数的要求分开。但组合轨迹允许 CPU 分片在槽交给 B 后才完成，没有说明其物理最后使用是否已经结束，或哪些私有对象继续隔离，尚不足以证明该轨迹满足自身的回收条件。",
+        "evidence": [
+          {
+            "path": "knowledge/algorithms/async-scheduling.md",
+            "quote": "L5 槽可重用：owner(s)=空，且旧代所有设备访问、传输源读取、图重放和输出消费者均结束；stream-ordered 释放请求只表示逻辑释放意图。"
+          },
+          {
+            "path": "knowledge/algorithms/async-scheduling.md",
+            "quote": "若 CPU 分片 c 在 t4 后才完成，也必须按旧代丢弃；把旧 CPU 结果与新 GPU 结果合并会破坏同代快照。"
+          }
+        ]
+      },
+      "algorithm": {
+        "assessment": "partial",
+        "reason": "事件种类和预期不变量已经展开，但伪代码尚不能形成所声称的完整算法：没有建立槽所有权、active 和准备阶段的推进步骤；READY 所需所有权与提交时检查的 L5 冲突；取消后完成无法通过状态检查；消费没有实现一次性提交与幂等账务。后继代次和全层 KV 完成边界也未实际接入 known 的推进。",
+        "evidence": [
+          {
+            "path": "knowledge/algorithms/async-scheduling.md",
+            "quote": "下面给出一个保守但完整的单设备算法。"
+          },
+          {
+            "path": "knowledge/algorithms/async-scheduling.md",
+            "quote": "要求 owner[s]=(r,g) 且 slot_epoch[s]=epoch"
+          },
+          {
+            "path": "knowledge/algorithms/async-scheduling.md",
+            "quote": "对每个 READY 的 (r,g,s) 检查 L1、L4、L5、L6"
+          },
+          {
+            "path": "knowledge/algorithms/async-scheduling.md",
+            "quote": "要求 owner[s]=(r,g)、slot_epoch[s]=epoch 且 phase=SUBMITTED"
+          }
+        ]
+      },
+      "cost": {
+        "assessment": "partial",
+        "reason": "关键路径、共享带宽必要条件、不同对象的槽生存期及容量算例有实质内容；11/8=1.375 和 2×16+2×1=34 MiB 的设定计算成立。但取消成本把即时逻辑抑制与延后物理排空混淆；H 又同时被文字用作时间开销和主机并行度，H_host 未明确对应定义，影响公式的单位与适用条件。",
+        "evidence": [
+          {
+            "path": "knowledge/algorithms/async-scheduling.md",
+            "quote": "若某类槽从占用到最后消费者结束的固定时间为 L，启动间隔为 P，则至少需要 ceil(L/P) 个槽"
+          },
+          {
+            "path": "knowledge/algorithms/async-scheduling.md",
+            "quote": "P ≥ max(G, (C＋O＋H)/H_host, Q/B)"
+          },
+          {
+            "path": "knowledge/algorithms/async-scheduling.md",
+            "quote": "若队列中已有 W 个在途任务，取消的业务生效至少要等待其前面已提交工作的排空边界"
+          }
+        ]
+      },
+      "adaptation": {
+        "assessment": "sufficient",
+        "reason": "针对设备饱和、短请求、KV 压力、取消率、图地址、异构分片和共享内存分别说明保留的依赖、调整方向及反转信号，没有把增加槽数或流水深度当作普遍收益。图地址稳定与内容生命周期的区分明确。",
+        "evidence": [
+          {
+            "path": "knowledge/algorithms/async-scheduling.md",
+            "quote": "| 设备已持续饱和 | 自回归链和结果归属不变 | 保持或降低 D，改进入队与结果处理 | 增加槽只增加排队和驻留，设备区间不变 |"
+          },
+          {
+            "path": "knowledge/algorithms/async-scheduling.md",
+            "quote": "双槽轮换只有在旧 replay 的最后一个读者结束后才能写回；多图共享 workspace 还需要检查并发活跃集合。"
+          }
+        ]
+      },
+      "diagnosis": {
+        "assessment": "sufficient",
+        "reason": "竞争解释表包含不同预测、保持可比的干预和反证后的修正，能够区分主机瓶颈、自回归依赖、错误复用、事件覆盖及容量问题。提供的脚本具有独立预期和实际检出的负对照，并非纯粹复述公式；其覆盖不足以验证正文完整调度算法，具体遗漏已在 findings 和 test_assessment 中限定。",
+        "evidence": [
+          {
+            "path": "knowledge/algorithms/async-scheduling.md",
+            "quote": "所有实验应在相同输入、相同工作量和相同计时边界下进行，先确认正确性再比较性能。"
+          },
+          {
+            "path": "knowledge/algorithms/async-scheduling.md",
+            "quote": "| 同步对象记录过早 | 设备时间正常但结果偶尔读到旧内容，延迟复制时更明显 | 把 event 记录移到最后一个生产者之后，或扩大等待覆盖；用负对照 | 仅改变线程数就消失，不足以证明原同步正确，需定位依赖 |"
+          },
+          {
+            "path": "knowledge/algorithms/async-scheduling.md",
+            "quote": "有限事件模型可以证明协议不变量和某些边界，但不能证明编译后指令、真实 GPU 的内存作用域、物理重叠、缓存行为或性能。"
+          }
+        ]
+      }
+    },
+    "findings": [
+      {
+        "id": "K-ALG-008-R1-ALG-001",
+        "criterion": "algorithm",
+        "evidence": "正文初始化为“初始化 owner[*]=空，inflight=0，active[*]=空”；ARRIVE 只有“为尚未存在的请求建立初始代 g”；PREPARE_DONE 要求“要求 owner[s]=(r,g) 且 slot_epoch[s]=epoch”；SCHEDULE 又要求“对每个 READY 的 (r,g,s) 检查 L1、L4、L5、L6”，而 L5 明定“owner(s)=空”。",
+        "impact": "按给出的更新步骤，初始请求没有合法路径取得槽并进入 READY；即使外部补上准备，READY 的非空 owner 仍无法满足提交时的 L5。active 从未设置为 g，消费也无法提交业务输出。成功后没有创建下一代的步骤，普通自回归请求不能持续推进。",
+        "blocking": true,
+        "required_revision": "补齐选择空槽、预留容量、设置 owner/epoch/active/phase、启动准备和完成后的唤醒步骤；区分取得槽前的可复用检查与 READY 提交时的当前代所有权检查。明确 consumers 等状态初始化，以及采样、全层 KV 完成边界、停止条件和后继代次创建的顺序；模型逐层输入与状态契约可明确委托给已有完整说明并添加链接。用同一事件算法验证从 ARRIVE 到首次输出及下一代推进。"
+      },
+      {
+        "id": "K-ALG-008-R1-ALG-002",
+        "criterion": "algorithm",
+        "evidence": "CANCEL 分支执行“phase[r,g]=CANCELED；保留在途完成和所有消费者责任”；DEVICE_DONE 分支却要求“要求 owner[s]=(r,g)、slot_epoch[s]=epoch 且 phase=SUBMITTED”。RELEASE 无条件执行“phase[r,g]=RELEASED；inflight 减一”。错误完成仅写“若带错误：标记该代失败，不发布部分输出，进入清理”。",
+        "impact": "SUBMITTED→CANCEL→DEVICE_DONE 是正文组合轨迹采用的正常序列，却会被伪代码拒绝，导致设备完成和清理责任无法推进。提交前取消若沿同一释放分支处理，还会错误减少未曾增加的 inflight；错误路径没有说明如何解除已登记消费者，可能永久占槽。",
+        "blocking": true,
+        "required_revision": "分别保存逻辑取消标志与物理执行阶段，允许已取消代次接收并记录真实完成，继续驱动消费者和回收。区分未提交取消、在途取消和错误完成的清理路径，只对确实提交且尚未扣账的代次减少 inflight；为失败输出消费者定义明确的结束或撤销事件。检查模型必须执行这些正文分支。"
+      },
+      {
+        "id": "K-ALG-008-R1-ALG-003",
+        "criterion": "algorithm",
+        "evidence": "CONSUME_DONE 的签名是“若 e 是 CONSUME_DONE(r,g,s,result)：”，随后仅要求“要求 phase 属于 DEVICE_DONE 或 CANCELED”，再执行“consumers 减一”和“按结果对应的逻辑位置提交业务输出；采样得到新 token 后更新 known”。正文同时声称“一个代次只能消费和释放一次”。",
+        "impact": "该分支没有消费者身份、已处理标记或业务提交标记。重复通知在 RELEASE 执行前仍能通过 phase 检查，重复发布或采样，并使 consumers 为负；多个消费者时，重复一个通知还可能抵消另一个尚未结束的责任。文字不变量没有落实为状态转移。",
+        "blocking": true,
+        "required_revision": "使消费事件携带完整代次及消费者身份，按尚未完成的责任集合幂等撤销；将业务结果的一次性提交与多个资源消费者结束分开记录。旧代或重复通知不得再次改变 known、采样状态或计数。补入释放前重复完成、重复消费和多消费者乱序的检查，并确认错误实现确实被检出。"
+      },
+      {
+        "id": "K-ALG-008-R1-LEG-001",
+        "criterion": "legality",
+        "evidence": "组合轨迹写“t3：所有输出消费者、图重放和传输源读取结束后释放 slot0，slot_epoch 加一。t4：B 才可准备到 slot0”；随后又写“若 CPU 分片 c 在 t4 后才完成，也必须按旧代丢弃”。",
+        "impact": "丢弃旧代结果只能保护逻辑提交。若迟到的 CPU 分片或其传输仍读取该槽快照、写入共享输出或访问旧 workspace，B 已覆盖或复用这些地址仍会发生物理竞争。正文没有声明该分片已结束全部共享访问，或使用仍受保护的私有副本，因而此组合轨迹的安全条件未闭合。",
+        "blocking": true,
+        "required_revision": "明确 CPU 分片及其结果传输的输入、输出、workspace 最后使用事件。若仍访问旧槽，t3 必须等待；若允许 t4 后才完成，说明其共享槽访问已结束、剩余计算使用哪些私有对象，以及这些对象如何保留到真实完成。把这些责任纳入 ledger 和释放条件，区分迟到通知与迟到物理执行。"
+      },
+      {
+        "id": "K-ALG-008-R1-COST-001",
+        "criterion": "cost",
+        "evidence": "成本段写“取消的业务生效至少要等待其前面已提交工作的排空边界”；算法却在 CANCEL 时“禁止新提交与业务输出”。同段先定义“提交/释放的固定开销记为 H”，随后写“若主机有 H 个有效并行度”，公式使用“(C＋O＋H)/H_host”。",
+        "impact": "业务输出抑制通常可以在取消被处理时生效，不必等待设备排空；延迟的是资源回收和物理工作结束。混同这两种响应时间会错误评价队列深度及取消策略。H 的复用还混淆时间量与无量纲并行度，使成本公式不能直接按统一单位使用。",
+        "blocking": true,
+        "required_revision": "分别定义取消通知处理/逻辑非提交时间与最后物理使用结束/资源归还时间，只在明确的队列和执行假设下推导排空等待。H 保留为时间开销，另明确定义 H_host 为有效主机并行度，说明 P 是每单位独立工作的启动周期，并使 Q/B 的字节统计对应同一工作单位。"
+      }
+    ],
+    "limitations": [
+      "结论基于请求内提供的完整文本、摘录和执行记录；本审阅未重新读取磁盘文件或计算哈希，documents 按要求保留所提供的字面绑定。",
+      "当前工具未提供文件读取或 Python 执行能力，资源列表为空；未另行运行检查。docs/knowledge-build-workflow.md 未提供正文，因此采用请求内给出的 review JSON schema，未声称读过该文件。",
+      "没有目标 GPU 时间线、编译后程序、真实内存作用域、物理重叠、缓存或性能测量；合成时间与容量算例不能作为这些效果的证据。",
+      "vLLM 仅提供经过作者整理的机制说明，没有允许读取的原始实现说明；本次没有独立源码核验。",
+      "提供的 CUDA 原文摘录未覆盖 stream-ordered allocator 的完整 §11 语义，PowerInfer 摘录未覆盖 §8.4；这些主张与来源说明一致，但本次原始资料核对范围不足以逐项复核它们。"
+    ],
+    "checks": [
+      {
+        "script": "tools/check_k_alg_008_full.py",
+        "args": []
+      }
+    ],
+    "no_checks_reason": "",
+    "reading_scope": "完整阅读请求内材料：AGENTS.md [0,567)、docs/knowledge-method.md [0,2251)、docs/knowledge-review.md [0,3016)、knowledge/algorithms/async-scheduling.md [0,9661)、knowledge/sources/S-CUDA-ASYNC.md [0,1610)、S-CUDA-ALLOC.md [0,498)、S-VLLM-SCHED.md [0,760)、S-FLASHATTENTION3.md [0,3331)、S-POWERINFER.md [0,739)、knowledge/frameworks/streams-allocator.md [0,2589)、cuda-graph-buffers.md [0,5255)、knowledge/system-semantics/request-batch-identity.md [0,2669)、cancellation-resource-completion.md [0,3782)、knowledge/algorithms/tiered-residency.md [0,4244)、heterogeneous-execution.md [0,3935)、speculation-budget.md [0,3904)、knowledge/engine-index/tensorrt-llm.md [0,2145)、knowledge/frameworks/mlx-serving.md [0,3282)、knowledge/system-semantics/host-device-timing.md [0,3827)，以及 candidate.test_script 提供的完整 tools/check_k_alg_008_full.py 和 actual_preflight 执行记录。仅阅读摘录：knowledge/hardware/gpu-kernel-pipelines.md [4000,6071)、[8000,12000)；knowledge/system-semantics/host-runtime.md [0,6071)；knowledge/algorithms/iteration-batching.md [0,4000)、[8000,10071)；knowledge/hardware/host-device-transfer.md [0,3586)、[4000,6485)。原始资料均仅为摘录：references/S-CUDA-ASYNC/fulltext.txt 与 references/S-CUDA-ALLOC/fulltext.txt 各为 [164000,168000)、[260000,264000)、[444000,460000)、[472000,476000)、[488000,500000)、[504000,520000)、[604000,608000)、[712000,716000)、[756000,756333)；references/S-FLASHATTENTION3/fulltext.txt [0,44994)、[48000,67338)；references/S-POWERINFER/fulltext.txt [0,56332)、[64000,72000)。所有范围均为所提供提取文本的零基半开字符范围；未将摘录列入 documents，未声称阅读全文原始论文、完整 CUDA 指南、PDF 图片或源码归档。正文链接已按所提供目标内容核对语义，未执行文件存在性检查。",
+    "test_assessment": "已逐步检查完整脚本及提供的真实 remote_bwrap 执行记录：绑定脚本 SHA-256 为 68674aa6028967ee4896ec776b85bdf9d5864d7f5f5deb9f94c8d7151a90e312，returncode=0，无 stderr、超时或输出产物。本审阅未重跑。独立参考包括预先写定的 A/B 输出归属与取消后仅 B 输出的预期；槽数检查用启动/释放时刻模拟分配，再与 ceil(L/P) 比较，覆盖 L>P、L=P、非整倍数及零生存期。按 slot 路由的负对照实际产生 B:[10,20]，与独立预期不同；强制提前释放后旧 A 读取被所有权检查检出，确实涉及本章身份和复用机制。因此这些检查具有有效但有限的证据价值。关键限制是模型与正文不一致：prepare 直接设置 owner、phase 和 active，补上了正文缺失的推进；launch 不检查正文相互冲突的 L5；complete 明确接受 canceled，绕过正文 DEVICE_DONE 仅接受 SUBMITTED 的缺陷。模型没有消费者身份和已提交标记，record 在 submitted/done 阶段均可追加输出，释放前重复 stale_result 可以重复记入结果，而现有 trace 没有检查它。没有验证正文从 ARRIVE 到下一自回归代的推进、全层 KV/末行 logits 边界、提交前取消、错误清理、多个物理最后使用者、CPU/GPU 共同提交、图与传输源的独立生存期；复制完成记录过早和两侧不同代次两个负对照也未执行。现有正常 trace 基本串行使用单槽，没有证明真实重叠。作者说明本轮本人未执行与外部提供的预检记录可以同时成立；只能认定该预检实际通过，不能据此认定完整调度算法或 GPU 同步正确。"
+  },
+  "format_status": "strict_json",
+  "format_error": null,
+  "output_text": "{\n  \"entry_id\": \"K-ALG-008\",\n  \"body_sha256\": \"67cde1494d286cbbd513b9a2c47bc34a3e9fc5f2a1d817d5574b33fee9f6681c\",\n  \"reviewer\": \"sol-reviewer:K-ALG-008:round-1\",\n  \"decision\": \"revise\",\n  \"documents\": {\n    \"AGENTS.md\": \"b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a\",\n    \"docs/knowledge-method.md\": \"69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb\",\n    \"docs/knowledge-review.md\": \"f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21\",\n    \"knowledge/algorithms/async-scheduling.md\": \"67cde1494d286cbbd513b9a2c47bc34a3e9fc5f2a1d817d5574b33fee9f6681c\",\n    \"knowledge/sources/S-CUDA-ASYNC.md\": \"40df9287d0648a8ef55a046ceb1c18dd402619ede6e57ca33d3f90e4ace3da05\",\n    \"knowledge/sources/S-CUDA-ALLOC.md\": \"3ba021c941f2ed8f048be34d1ba0110f37675a3460013f24a239cc43a1e8630a\",\n    \"knowledge/sources/S-VLLM-SCHED.md\": \"2e9bbe0d29145039d1bcd43bb54d40c4136ef51641a6e33a5d7097eb0500daf0\",\n    \"knowledge/sources/S-FLASHATTENTION3.md\": \"1c03e7e0674d15ce246c297a814e946774d476c2de6fb073a29a47c323b56121\",\n    \"knowledge/sources/S-POWERINFER.md\": \"2ddb8fae1189c3f837c9f5daaceab96dad85f6ffd8be5bb0ec3ff6a146c51f83\",\n    \"knowledge/frameworks/streams-allocator.md\": \"64427e69f6eb991d4029242e24e4edf56a331d233fdeab3c50f53f0f84a4df7b\",\n    \"knowledge/frameworks/cuda-graph-buffers.md\": \"440b52fb12e41f753d0800016ddd7f9d40b5634e2c33431d1208986d1ccaedef\",\n    \"knowledge/system-semantics/request-batch-identity.md\": \"4bb364464c1ccab29bf079263a4e80d9d352e1477040fdcaf150a36294e37443\",\n    \"knowledge/system-semantics/cancellation-resource-completion.md\": \"919052c77f65a13c9dc09aad03341ed31f0820dbbdcb2750b5789f349f9e86c1\",\n    \"knowledge/algorithms/tiered-residency.md\": \"eb3ebc6320d5a32481cf645605d159860dc6d1edb97f1e98afd89ddb24ee82af\",\n    \"knowledge/algorithms/heterogeneous-execution.md\": \"8fd777e06b150eaba4e3288ccb188adbb975e37c28c77a72a9b6878a70e027f4\",\n    \"knowledge/algorithms/speculation-budget.md\": \"91a6e60d5151fb5b1155d2ba0ddcb3ba1251e69f7caf79b0ec217c7bf9a74d0d\",\n    \"knowledge/engine-index/tensorrt-llm.md\": \"6ade1253f3747041bef4a816d82387c3771bff3459a153719cfbd571c2454c0b\",\n    \"knowledge/frameworks/mlx-serving.md\": \"c308a8ac651460ede6b6e53d3413bea4c4a7707b757516faf8a752b35872b6c1\",\n    \"knowledge/system-semantics/host-device-timing.md\": \"411061489661a325939476348559d80df773a32cc19be2aef216e4d4a5b0b554\",\n    \"tools/check_k_alg_008_full.py\": \"68674aa6028967ee4896ec776b85bdf9d5864d7f5f5deb9f94c8d7151a90e312\"\n  },\n  \"criteria\": {\n    \"definition\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"明确了异步调度的动机、依赖图、请求执行代次、快照组成及输入输出，正确区分已采样 token 与未知自回归后继。执行快照和物理槽身份足以支撑本章的协议讨论；后继执行如何实际形成仍属 algorithm 中的未闭合部分。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/algorithms/async-scheduling.md\",\n          \"quote\": \"异步提交改变等待位置和在途深度，不改变函数依赖；一个调用返回、一个事件记录和一个结果可消费是三个不同状态。\"\n        },\n        {\n          \"path\": \"knowledge/algorithms/async-scheduling.md\",\n          \"quote\": \"一次执行快照 S(r,g) 至少包含：输入 token 范围与逻辑位置、页表或 KV 句柄、历史长度与 mask、采样参数和随机状态、输出槽位、workspace 与图实例身份。\"\n        }\n      ]\n    },\n    \"legality\": {\n      \"assessment\": \"partial\",\n      \"reason\": \"L1–L8 对已知输入、可见性、容量并集及逻辑取消的约束基本正确，也将预测稀疏与保持原函数的要求分开。但组合轨迹允许 CPU 分片在槽交给 B 后才完成，没有说明其物理最后使用是否已经结束，或哪些私有对象继续隔离，尚不足以证明该轨迹满足自身的回收条件。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/algorithms/async-scheduling.md\",\n          \"quote\": \"L5 槽可重用：owner(s)=空，且旧代所有设备访问、传输源读取、图重放和输出消费者均结束；stream-ordered 释放请求只表示逻辑释放意图。\"\n        },\n        {\n          \"path\": \"knowledge/algorithms/async-scheduling.md\",\n          \"quote\": \"若 CPU 分片 c 在 t4 后才完成，也必须按旧代丢弃；把旧 CPU 结果与新 GPU 结果合并会破坏同代快照。\"\n        }\n      ]\n    },\n    \"algorithm\": {\n      \"assessment\": \"partial\",\n      \"reason\": \"事件种类和预期不变量已经展开，但伪代码尚不能形成所声称的完整算法：没有建立槽所有权、active 和准备阶段的推进步骤；READY 所需所有权与提交时检查的 L5 冲突；取消后完成无法通过状态检查；消费没有实现一次性提交与幂等账务。后继代次和全层 KV 完成边界也未实际接入 known 的推进。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/algorithms/async-scheduling.md\",\n          \"quote\": \"下面给出一个保守但完整的单设备算法。\"\n        },\n        {\n          \"path\": \"knowledge/algorithms/async-scheduling.md\",\n          \"quote\": \"要求 owner[s]=(r,g) 且 slot_epoch[s]=epoch\"\n        },\n        {\n          \"path\": \"knowledge/algorithms/async-scheduling.md\",\n          \"quote\": \"对每个 READY 的 (r,g,s) 检查 L1、L4、L5、L6\"\n        },\n        {\n          \"path\": \"knowledge/algorithms/async-scheduling.md\",\n          \"quote\": \"要求 owner[s]=(r,g)、slot_epoch[s]=epoch 且 phase=SUBMITTED\"\n        }\n      ]\n    },\n    \"cost\": {\n      \"assessment\": \"partial\",\n      \"reason\": \"关键路径、共享带宽必要条件、不同对象的槽生存期及容量算例有实质内容；11/8=1.375 和 2×16+2×1=34 MiB 的设定计算成立。但取消成本把即时逻辑抑制与延后物理排空混淆；H 又同时被文字用作时间开销和主机并行度，H_host 未明确对应定义，影响公式的单位与适用条件。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/algorithms/async-scheduling.md\",\n          \"quote\": \"若某类槽从占用到最后消费者结束的固定时间为 L，启动间隔为 P，则至少需要 ceil(L/P) 个槽\"\n        },\n        {\n          \"path\": \"knowledge/algorithms/async-scheduling.md\",\n          \"quote\": \"P ≥ max(G, (C＋O＋H)/H_host, Q/B)\"\n        },\n        {\n          \"path\": \"knowledge/algorithms/async-scheduling.md\",\n          \"quote\": \"若队列中已有 W 个在途任务，取消的业务生效至少要等待其前面已提交工作的排空边界\"\n        }\n      ]\n    },\n    \"adaptation\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"针对设备饱和、短请求、KV 压力、取消率、图地址、异构分片和共享内存分别说明保留的依赖、调整方向及反转信号，没有把增加槽数或流水深度当作普遍收益。图地址稳定与内容生命周期的区分明确。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/algorithms/async-scheduling.md\",\n          \"quote\": \"| 设备已持续饱和 | 自回归链和结果归属不变 | 保持或降低 D，改进入队与结果处理 | 增加槽只增加排队和驻留，设备区间不变 |\"\n        },\n        {\n          \"path\": \"knowledge/algorithms/async-scheduling.md\",\n          \"quote\": \"双槽轮换只有在旧 replay 的最后一个读者结束后才能写回；多图共享 workspace 还需要检查并发活跃集合。\"\n        }\n      ]\n    },\n    \"diagnosis\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"竞争解释表包含不同预测、保持可比的干预和反证后的修正，能够区分主机瓶颈、自回归依赖、错误复用、事件覆盖及容量问题。提供的脚本具有独立预期和实际检出的负对照，并非纯粹复述公式；其覆盖不足以验证正文完整调度算法，具体遗漏已在 findings 和 test_assessment 中限定。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/algorithms/async-scheduling.md\",\n          \"quote\": \"所有实验应在相同输入、相同工作量和相同计时边界下进行，先确认正确性再比较性能。\"\n        },\n        {\n          \"path\": \"knowledge/algorithms/async-scheduling.md\",\n          \"quote\": \"| 同步对象记录过早 | 设备时间正常但结果偶尔读到旧内容，延迟复制时更明显 | 把 event 记录移到最后一个生产者之后，或扩大等待覆盖；用负对照 | 仅改变线程数就消失，不足以证明原同步正确，需定位依赖 |\"\n        },\n        {\n          \"path\": \"knowledge/algorithms/async-scheduling.md\",\n          \"quote\": \"有限事件模型可以证明协议不变量和某些边界，但不能证明编译后指令、真实 GPU 的内存作用域、物理重叠、缓存行为或性能。\"\n        }\n      ]\n    }\n  },\n  \"findings\": [\n    {\n      \"id\": \"K-ALG-008-R1-ALG-001\",\n      \"criterion\": \"algorithm\",\n      \"evidence\": \"正文初始化为“初始化 owner[*]=空，inflight=0，active[*]=空”；ARRIVE 只有“为尚未存在的请求建立初始代 g”；PREPARE_DONE 要求“要求 owner[s]=(r,g) 且 slot_epoch[s]=epoch”；SCHEDULE 又要求“对每个 READY 的 (r,g,s) 检查 L1、L4、L5、L6”，而 L5 明定“owner(s)=空”。\",\n      \"impact\": \"按给出的更新步骤，初始请求没有合法路径取得槽并进入 READY；即使外部补上准备，READY 的非空 owner 仍无法满足提交时的 L5。active 从未设置为 g，消费也无法提交业务输出。成功后没有创建下一代的步骤，普通自回归请求不能持续推进。\",\n      \"blocking\": true,\n      \"required_revision\": \"补齐选择空槽、预留容量、设置 owner/epoch/active/phase、启动准备和完成后的唤醒步骤；区分取得槽前的可复用检查与 READY 提交时的当前代所有权检查。明确 consumers 等状态初始化，以及采样、全层 KV 完成边界、停止条件和后继代次创建的顺序；模型逐层输入与状态契约可明确委托给已有完整说明并添加链接。用同一事件算法验证从 ARRIVE 到首次输出及下一代推进。\"\n    },\n    {\n      \"id\": \"K-ALG-008-R1-ALG-002\",\n      \"criterion\": \"algorithm\",\n      \"evidence\": \"CANCEL 分支执行“phase[r,g]=CANCELED；保留在途完成和所有消费者责任”；DEVICE_DONE 分支却要求“要求 owner[s]=(r,g)、slot_epoch[s]=epoch 且 phase=SUBMITTED”。RELEASE 无条件执行“phase[r,g]=RELEASED；inflight 减一”。错误完成仅写“若带错误：标记该代失败，不发布部分输出，进入清理”。\",\n      \"impact\": \"SUBMITTED→CANCEL→DEVICE_DONE 是正文组合轨迹采用的正常序列，却会被伪代码拒绝，导致设备完成和清理责任无法推进。提交前取消若沿同一释放分支处理，还会错误减少未曾增加的 inflight；错误路径没有说明如何解除已登记消费者，可能永久占槽。\",\n      \"blocking\": true,\n      \"required_revision\": \"分别保存逻辑取消标志与物理执行阶段，允许已取消代次接收并记录真实完成，继续驱动消费者和回收。区分未提交取消、在途取消和错误完成的清理路径，只对确实提交且尚未扣账的代次减少 inflight；为失败输出消费者定义明确的结束或撤销事件。检查模型必须执行这些正文分支。\"\n    },\n    {\n      \"id\": \"K-ALG-008-R1-ALG-003\",\n      \"criterion\": \"algorithm\",\n      \"evidence\": \"CONSUME_DONE 的签名是“若 e 是 CONSUME_DONE(r,g,s,result)：”，随后仅要求“要求 phase 属于 DEVICE_DONE 或 CANCELED”，再执行“consumers 减一”和“按结果对应的逻辑位置提交业务输出；采样得到新 token 后更新 known”。正文同时声称“一个代次只能消费和释放一次”。\",\n      \"impact\": \"该分支没有消费者身份、已处理标记或业务提交标记。重复通知在 RELEASE 执行前仍能通过 phase 检查，重复发布或采样，并使 consumers 为负；多个消费者时，重复一个通知还可能抵消另一个尚未结束的责任。文字不变量没有落实为状态转移。\",\n      \"blocking\": true,\n      \"required_revision\": \"使消费事件携带完整代次及消费者身份，按尚未完成的责任集合幂等撤销；将业务结果的一次性提交与多个资源消费者结束分开记录。旧代或重复通知不得再次改变 known、采样状态或计数。补入释放前重复完成、重复消费和多消费者乱序的检查，并确认错误实现确实被检出。\"\n    },\n    {\n      \"id\": \"K-ALG-008-R1-LEG-001\",\n      \"criterion\": \"legality\",\n      \"evidence\": \"组合轨迹写“t3：所有输出消费者、图重放和传输源读取结束后释放 slot0，slot_epoch 加一。t4：B 才可准备到 slot0”；随后又写“若 CPU 分片 c 在 t4 后才完成，也必须按旧代丢弃”。\",\n      \"impact\": \"丢弃旧代结果只能保护逻辑提交。若迟到的 CPU 分片或其传输仍读取该槽快照、写入共享输出或访问旧 workspace，B 已覆盖或复用这些地址仍会发生物理竞争。正文没有声明该分片已结束全部共享访问，或使用仍受保护的私有副本，因而此组合轨迹的安全条件未闭合。\",\n      \"blocking\": true,\n      \"required_revision\": \"明确 CPU 分片及其结果传输的输入、输出、workspace 最后使用事件。若仍访问旧槽，t3 必须等待；若允许 t4 后才完成，说明其共享槽访问已结束、剩余计算使用哪些私有对象，以及这些对象如何保留到真实完成。把这些责任纳入 ledger 和释放条件，区分迟到通知与迟到物理执行。\"\n    },\n    {\n      \"id\": \"K-ALG-008-R1-COST-001\",\n      \"criterion\": \"cost\",\n      \"evidence\": \"成本段写“取消的业务生效至少要等待其前面已提交工作的排空边界”；算法却在 CANCEL 时“禁止新提交与业务输出”。同段先定义“提交/释放的固定开销记为 H”，随后写“若主机有 H 个有效并行度”，公式使用“(C＋O＋H)/H_host”。\",\n      \"impact\": \"业务输出抑制通常可以在取消被处理时生效，不必等待设备排空；延迟的是资源回收和物理工作结束。混同这两种响应时间会错误评价队列深度及取消策略。H 的复用还混淆时间量与无量纲并行度，使成本公式不能直接按统一单位使用。\",\n      \"blocking\": true,\n      \"required_revision\": \"分别定义取消通知处理/逻辑非提交时间与最后物理使用结束/资源归还时间，只在明确的队列和执行假设下推导排空等待。H 保留为时间开销，另明确定义 H_host 为有效主机并行度，说明 P 是每单位独立工作的启动周期，并使 Q/B 的字节统计对应同一工作单位。\"\n    }\n  ],\n  \"limitations\": [\n    \"结论基于请求内提供的完整文本、摘录和执行记录；本审阅未重新读取磁盘文件或计算哈希，documents 按要求保留所提供的字面绑定。\",\n    \"当前工具未提供文件读取或 Python 执行能力，资源列表为空；未另行运行检查。docs/knowledge-build-workflow.md 未提供正文，因此采用请求内给出的 review JSON schema，未声称读过该文件。\",\n    \"没有目标 GPU 时间线、编译后程序、真实内存作用域、物理重叠、缓存或性能测量；合成时间与容量算例不能作为这些效果的证据。\",\n    \"vLLM 仅提供经过作者整理的机制说明，没有允许读取的原始实现说明；本次没有独立源码核验。\",\n    \"提供的 CUDA 原文摘录未覆盖 stream-ordered allocator 的完整 §11 语义，PowerInfer 摘录未覆盖 §8.4；这些主张与来源说明一致，但本次原始资料核对范围不足以逐项复核它们。\"\n  ],\n  \"checks\": [\n    {\n      \"script\": \"tools/check_k_alg_008_full.py\",\n      \"args\": []\n    }\n  ],\n  \"no_checks_reason\": \"\",\n  \"reading_scope\": \"完整阅读请求内材料：AGENTS.md [0,567)、docs/knowledge-method.md [0,2251)、docs/knowledge-review.md [0,3016)、knowledge/algorithms/async-scheduling.md [0,9661)、knowledge/sources/S-CUDA-ASYNC.md [0,1610)、S-CUDA-ALLOC.md [0,498)、S-VLLM-SCHED.md [0,760)、S-FLASHATTENTION3.md [0,3331)、S-POWERINFER.md [0,739)、knowledge/frameworks/streams-allocator.md [0,2589)、cuda-graph-buffers.md [0,5255)、knowledge/system-semantics/request-batch-identity.md [0,2669)、cancellation-resource-completion.md [0,3782)、knowledge/algorithms/tiered-residency.md [0,4244)、heterogeneous-execution.md [0,3935)、speculation-budget.md [0,3904)、knowledge/engine-index/tensorrt-llm.md [0,2145)、knowledge/frameworks/mlx-serving.md [0,3282)、knowledge/system-semantics/host-device-timing.md [0,3827)，以及 candidate.test_script 提供的完整 tools/check_k_alg_008_full.py 和 actual_preflight 执行记录。仅阅读摘录：knowledge/hardware/gpu-kernel-pipelines.md [4000,6071)、[8000,12000)；knowledge/system-semantics/host-runtime.md [0,6071)；knowledge/algorithms/iteration-batching.md [0,4000)、[8000,10071)；knowledge/hardware/host-device-transfer.md [0,3586)、[4000,6485)。原始资料均仅为摘录：references/S-CUDA-ASYNC/fulltext.txt 与 references/S-CUDA-ALLOC/fulltext.txt 各为 [164000,168000)、[260000,264000)、[444000,460000)、[472000,476000)、[488000,500000)、[504000,520000)、[604000,608000)、[712000,716000)、[756000,756333)；references/S-FLASHATTENTION3/fulltext.txt [0,44994)、[48000,67338)；references/S-POWERINFER/fulltext.txt [0,56332)、[64000,72000)。所有范围均为所提供提取文本的零基半开字符范围；未将摘录列入 documents，未声称阅读全文原始论文、完整 CUDA 指南、PDF 图片或源码归档。正文链接已按所提供目标内容核对语义，未执行文件存在性检查。\",\n  \"test_assessment\": \"已逐步检查完整脚本及提供的真实 remote_bwrap 执行记录：绑定脚本 SHA-256 为 68674aa6028967ee4896ec776b85bdf9d5864d7f5f5deb9f94c8d7151a90e312，returncode=0，无 stderr、超时或输出产物。本审阅未重跑。独立参考包括预先写定的 A/B 输出归属与取消后仅 B 输出的预期；槽数检查用启动/释放时刻模拟分配，再与 ceil(L/P) 比较，覆盖 L>P、L=P、非整倍数及零生存期。按 slot 路由的负对照实际产生 B:[10,20]，与独立预期不同；强制提前释放后旧 A 读取被所有权检查检出，确实涉及本章身份和复用机制。因此这些检查具有有效但有限的证据价值。关键限制是模型与正文不一致：prepare 直接设置 owner、phase 和 active，补上了正文缺失的推进；launch 不检查正文相互冲突的 L5；complete 明确接受 canceled，绕过正文 DEVICE_DONE 仅接受 SUBMITTED 的缺陷。模型没有消费者身份和已提交标记，record 在 submitted/done 阶段均可追加输出，释放前重复 stale_result 可以重复记入结果，而现有 trace 没有检查它。没有验证正文从 ARRIVE 到下一自回归代的推进、全层 KV/末行 logits 边界、提交前取消、错误清理、多个物理最后使用者、CPU/GPU 共同提交、图与传输源的独立生存期；复制完成记录过早和两侧不同代次两个负对照也未执行。现有正常 trace 基本串行使用单槽，没有证明真实重叠。作者说明本轮本人未执行与外部提供的预检记录可以同时成立；只能认定该预检实际通过，不能据此认定完整调度算法或 GPU 同步正确。\"\n}",
+  "elapsed_seconds": 242.719
+}

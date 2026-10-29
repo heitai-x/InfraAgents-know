@@ -1,0 +1,154 @@
+{
+  "entry_id": "K-SYS-015",
+  "body_sha256": "29d0dd8ef0d0db53d7081ef5879dfc68a3ee48b92b2f6e842f0afa17154d27d5",
+  "reviewer": "sol-reviewer:K-SYS-015:round-2",
+  "decision": "revise",
+  "documents": {
+    "AGENTS.md": "b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a",
+    "docs/knowledge-method.md": "69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb",
+    "docs/knowledge-review.md": "f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21",
+    "knowledge/system-semantics/host-runtime.md": "29d0dd8ef0d0db53d7081ef5879dfc68a3ee48b92b2f6e842f0afa17154d27d5",
+    "knowledge/sources/S-ASGI.md": "ca77c63e9a95b8be934ae485d89245f895dc7fa49fdf7fcce03b139346127ed9",
+    "knowledge/sources/S-CPU-TUNING.md": "46948047959d30284614764d498ea02e41e76a47bf55597fec93df61e14964fb",
+    "knowledge/sources/S-OTEL.md": "b68ba3b2833dc7f9f5ad7f49ae395fa70cc31b94252dd1741149e1fd1eca4068",
+    "knowledge/sources/S-PY-SUBPROCESS.md": "a466b22c1b51e2d1612328903406712c1e30d38770a6510d96a3937ff1bede32",
+    "knowledge/sources/S-LINUX-RESOURCES.md": "d829824442f5a9abd36c3caf63c5fd30da8da4f8839db88e33aa045b7baa05f0",
+    "knowledge/sources/S-TORCH-CUDA.md": "8ee61677a1e35d475d9bb122b2c7fa824ccf054acefbe2f12345d72c1fb1b00e",
+    "knowledge/engine-index/vllm-scheduler.md": "9e576ff7711ed5e448a4bedfe7ab69949a79bc3f61417bf258f7a3b56caf1fe5",
+    "references/S-ASGI/fulltext.txt": "ba273c91f3e7b8c32f863e8b57145798c3b5c9275073f758a41e1cb0a6f5bee3",
+    "references/S-OTEL/fulltext.txt": "f00d2f265bdd7aceff39c2d3c52f7cd3ab12b061e1f02cefaf84d6e12afa34a4",
+    "references/S-PY-SUBPROCESS/fulltext.txt": "c0e2a25feb2068a3f3bd2b0dae31f1f1e090e470631df574f92f4ceb935b37e5",
+    "tools/check_k_sys_015_full.py": "90d9004d871aeaddd5d7c8a7ed7abdae1082a559c2fbf4512ff82c383e6157c8"
+  },
+  "criteria": {
+    "definition": {
+      "assessment": "sufficient",
+      "reason": "明确区分请求尝试、物理代次、执行阶段、业务资格及缓冲责任；容量账具有项数、字节和释放边界，足以解释本章承担的主机协调问题。",
+      "evidence": [
+        {
+          "path": "knowledge/system-semantics/host-runtime.md",
+          "quote": "请求尝试 g 与物理槽代次 epoch 不同：前者决定业务结果归属，后者决定哪次分配仍受保护。"
+        },
+        {
+          "path": "knowledge/system-semantics/host-runtime.md",
+          "quote": "缓冲另存容量 cap、有效长度 n、逻辑拥有者 L、唯一写者 writer、读取授权 R 和实际使用集合 U。"
+        }
+      ]
+    },
+    "legality": {
+      "assessment": "sufficient",
+      "reason": "前轮事件循环绝对禁令已修复，以响应预算和阻塞风险判断执行域；专用提交线程、完成后发布和不可变输出均明确为有条件的选择。异步写入可信容量上界及最后访问保护属于必要约束。",
+      "evidence": [
+        {
+          "path": "knowledge/system-semantics/host-runtime.md",
+          "quote": "合法性取决于声明的响应性预算，而不是调用名称。"
+        },
+        {
+          "path": "knowledge/system-semantics/host-runtime.md",
+          "quote": "有界、非阻塞的设备提交或短原生调用可以留在事件循环。"
+        },
+        {
+          "path": "knowledge/system-semantics/host-runtime.md",
+          "quote": "异步操作若不能限制写入范围，就必须在提交前取得完整可信上界，否则该候选不可用。"
+        }
+      ]
+    },
+    "algorithm": {
+      "assessment": "partial",
+      "reason": "输出预留、满下游等待、原子交接和 RESERVED→FILLING→完成→发布已补齐。但 STEP 与迟到完成统一调用 ON_DONE，而其 READ 完成分支没有解除 R，也没有规定转交 RELEASE_READ；脚本自动补上了该更新。按正文直接实现仍可能保留已结束读者并阻断回收。",
+      "evidence": [
+        {
+          "path": "knowledge/system-semantics/host-runtime.md",
+          "quote": "保留 WAIT_HANDOFF；输出仍由 ticket 持有，继续占 O_j 和 M"
+        },
+        {
+          "path": "knowledge/system-semantics/host-runtime.md",
+          "quote": "7 ON_DONE 收集每项最后访问与结果状态；未齐时返回，不等待设备完成"
+        },
+        {
+          "path": "knowledge/system-semantics/host-runtime.md",
+          "quote": "匹配且证明全部最后访问结束：仅移除该 key"
+        },
+        {
+          "path": "knowledge/system-semantics/host-runtime.md",
+          "quote": "只在匹配证据证明最后读取结束后移除自己的 R 和 U"
+        }
+      ]
+    },
+    "cost": {
+      "assessment": "sufficient",
+      "reason": "六类成本在同一候选边界内展开，CPU 秒与配额周期单位一致，局部 credit 与唯一物理容量不混加。独立复算得到配置上界4、需求4.2/3.9 CPU秒每秒、驻留主项48 MiB及串行排队100 ms；均有明确假设和非充分性声明。",
+      "evidence": [
+        {
+          "path": "knowledge/system-semantics/host-runtime.md",
+          "quote": "阶段 credit 是局部责任预算，与全局物理账分别检查，不能把两者相加当成实际内存。"
+        },
+        {
+          "path": "knowledge/system-semantics/host-runtime.md",
+          "quote": "处理一份覆盖 m 项使用的证书仍需 O(m) 核对。"
+        },
+        {
+          "path": "knowledge/system-semantics/host-runtime.md",
+          "quote": "取消后尚未排空的对象仍在 live 集合内。"
+        }
+      ]
+    },
+    "adaptation": {
+      "assessment": "sufficient",
+      "reason": "输入长度、输出上界、CPU额度、下游速度、复制方式和提交长尾变化后，分别说明保留哪些正确性关系、重算哪些预算以及何时调整或放弃隔离与缓冲方案。",
+      "evidence": [
+        {
+          "path": "knowledge/system-semantics/host-runtime.md",
+          "quote": "输出上界变大时，重算 Oⱼ、Dₖ 和过渡峰值；原先能容纳的完整输出可以改为合法 chunk，不能静默截断内容。"
+        },
+        {
+          "path": "knowledge/system-semantics/host-runtime.md",
+          "quote": "设备已饱和而主机充足时，继续增加域与在途槽可能只增加驻留和尾延迟。"
+        }
+      ]
+    },
+    "diagnosis": {
+      "assessment": "partial",
+      "reason": "竞争解释及区分实验充分，前轮提前复用和 kill 即退出的负对照缺陷已修复。当前剩余问题是生命周期检查为 done 自动执行正文未规定的读取授权清理，因而实际成功执行不能证明正文的统一完成路径闭合。",
+      "evidence": [
+        {
+          "path": "knowledge/system-semantics/host-runtime.md",
+          "quote": "检查最早覆盖点，不能以之后拒绝迟到释放掩盖此前覆盖"
+        },
+        {
+          "path": "knowledge/system-semantics/host-runtime.md",
+          "quote": "清理资格必须随证据改变，不能由 kill 参数直接给答案"
+        },
+        {
+          "path": "knowledge/system-semantics/host-runtime.md",
+          "quote": "另一判定器依据事件历史维护原代次访问债务与生产证书，核对每个状态快照。"
+        }
+      ]
+    }
+  },
+  "findings": [
+    {
+      "id": "K-SYS-015-R2-READ-COMPLETION-ROUTING",
+      "criterion": "algorithm",
+      "evidence": "STEP 第7步为“7 ON_DONE 收集每项最后访问与结果状态；未齐时返回，不等待设备完成”，正文另称“取消后的迟到完成经过同一个 ON_DONE”。BUFFER_EVENTS 的 ON_DONE 在“尚不能证明最后访问结束：保留 U”之后规定“匹配且证明全部最后访问结束：仅移除该 key”，只另外展开 WRITE 的 writer 更新；解除读取授权的动作仅见 RELEASE_READ：“只在匹配证据证明最后读取结束后移除自己的 R 和 U”。全文未规定 ON_DONE 对 READ 调用或执行 RELEASE_READ。脚本却将两事件合并为“elif op in ('done', 'release'):”，对 READ 自动执行“s['readers'].discard(uid)”，audit_buffer 也采用相同合并。",
+      "impact": "输入取得 READ 后取消或正常结束，若完整最后读取证书按 STEP 进入 ON_DONE，则 U 中该使用可以结束，但 R 中授权仍保留；RECYCLE 要求 L/R/U/Q 均空，入口 credit 的释放也要求读取授权结束，因此输入存储与阶段容量可能永久占用。脚本在 done 中自动清除 readers，使这一正文缺口不会出现在现有通过记录中。审阅时执行的最小 V8 状态探针得到 RETIRING、L=[]、U=[]、R=['r1']，回收条件为 false。",
+      "blocking": true,
+      "required_revision": "明确统一完成入口的 READ 分派：匹配且覆盖最后读取的证书应原子、幂等地结算对应 U 与 R，并保留 RETIRING 状态；也可以明确由 ON_DONE 调用 RELEASE_READ。同步输入完成和取消后的迟到输入完成都应使用该规则。随后使 reducer 与 oracle 对应修订后的明确事件语义，并加入遗漏读取授权结算的故障轨迹，要求同一检查器检出残留责任或无法最终回收，重新执行绑定新字节的脚本。"
+    }
+  ],
+  "limitations": [
+    "检查为确定性 CPU 符号模型，不证明真实线程原子性、锁与内存序、分配器回滚、cgroup 节流、NUMA、设备 DMA与可见性、真实进程退出、网络交付或端到端 SLO；正文已正确声明这些边界。",
+    "阶段容量模型不含未结算异步访问，异步生命周期由另一模型分别检查；没有完整引擎集成验证。物理不足测试中的外部占用快照明确排除在封闭对象账判定器之外，不能据此声称该快照的全局容量守恒已经验证。",
+    "S-CPU-TUNING 仅有机制说明；Linux、CUDA及多数相关章节仅核对提供的摘录。CUDA 普通跨 stream 生命周期事实主要由完整来源说明和 streams-allocator 摘录支持，未声称阅读全文或核验上游源码。",
+    "本次工具发现没有文件读取、shell或Python执行接口，资源与模板列表为空。无法打开 C:/Users/26815/.codex/skills/infraagents-knowledge-build/SKILL.md，未实际执行该技能流程、检查磁盘链接存在性、重算文件哈希或写入审查文件。",
+    "作者材料账记录的是供给范围，不证明认知阅读；作者说明未执行本轮脚本，与随后单独提供的预检执行记录并不矛盾。没有将预检归为作者执行，也没有将其冒充审阅者重新运行。"
+  ],
+  "checks": [
+    {
+      "script": "tools/check_k_sys_015_full.py",
+      "args": []
+    }
+  ],
+  "reading_scope": "依据消息提供的材料阅读，范围均为零基、半开字符区间。全文：AGENTS.md[0,567)、docs/knowledge-method.md[0,2251)、docs/knowledge-review.md[0,3016)、当前host-runtime.md[0,14624)、S-ASGI.md[0,491)、S-CPU-TUNING.md[0,731)、S-OTEL.md[0,520)、S-PY-SUBPROCESS.md[0,509)、S-LINUX-RESOURCES.md[0,949)、S-TORCH-CUDA.md[0,1468)、vllm-scheduler.md[0,2314)、ASGI原文[0,23566)、OTEL原文[0,8256)、subprocess原文[0,62026)，以及候选脚本、作者说明和actual_preflight执行记录的全部所供内容。相关章节摘录：cpu-serving[12000,14833)；service-protocol、cancellation-resource-completion、trace-observability、streams-allocator、iteration-batching、inference-eval、speech-generation、deployment-environment、vision-inference、graph-inference、known-tensions各[0,2833)；request-batch-identity[16000,18833)；async-scheduling、memory-and-roofline、tokenization-io、framework-profiler-scope、metric-events、slo-goodput、cpu-linear-kernels、storage-io各[8000,10833)；design-synthesis、cross-attention-cache、vision-language、video-generation各[12000,14833)；mlx-serving、capacity-planning各[4000,6833)；encoder-decoder-streaming[4000,4934)及[12000,13899)；omni-multimodal[0,772)及[20000,22061)。Linux原文仅[0,4000)、[8000,12000)、[16000,20000)、[40000,68000)、[72000,76000)、[84000,96000)、[100000,102319)、[112000,116000)、[120000,124000)。CUDA原文仅[0,4000)、[8000,12000)、[16000,50319)、[52000,72000)、[76000,80000)。documents只列全文提供的材料，并按要求复制绑定哈希。作者材料范围单独依据author_material_scopes核对：其旧正文为[0,7559)，Linux和CUDA供给范围与本审阅者不完全相同，未混同两份账。",
+  "test_assessment": "完整检查了脚本算法及所附实际执行记录。actual_preflight绑定脚本SHA-256 90d9004d871aeaddd5d7c8a7ed7abdae1082a559c2fbf4512ff82c383e6157c8，Python3.12在remote_bwrap中以-I -S -B -X utf8执行，returncode=0、stderr为空、未超时；输出包含四组检查及具体负对照拒绝原因。这是已提供的真实预检证据，本审阅者未重跑Python。生命周期oracle从历史维护代次与访问债务，能在reducer抹掉本地责任时拒绝EARLY_REUSE，并拒绝缺FILLING、无生产证书和失败后发布；前轮负对照缺陷在该范围内关闭。容量oracle独立从对象归属重建项数、字节与物理账，检测零字节超项、输出漏账和丢失拥有者；正常满下游重试、控制服务、交接及取消清理实际推进。进程oracle依赖独立os_exit事件，再要求退出确认与EOF，负对照确实拒绝仅timeout或kill请求后的清理声明。算术使用Fraction、固定手算结果和逐字节集合参考；4核、4.2/3.9需求与48MiB算例正确。剩余阻断在于BufferModel和audit_buffer都把done与release合并，自动解除READ授权，而正文ON_DONE没有定义这一动作或分派；因此它们虽检测了原有负对照，仍未忠实覆盖正文当前完成入口。额外V8最小探针仅检查该集合更新缺口，不计作Python脚本或真实设备验证。前轮有界交接、首次填充与完成后发布、旧负对照和事件循环合法性问题的原始缺口均已实质修复；本次revise仅依据当前读取完成路由及其测试映射缺口。"
+}

@@ -1,0 +1,151 @@
+{
+  "entry_id": "K-WORK-011",
+  "body_sha256": "b82151bc29b1b1cdefb3152475b007d91a30abd2cb2d3b44e5e69966e42b6725",
+  "reviewer": "sol-reviewer:K-WORK-011:round-3",
+  "decision": "accept",
+  "documents": {
+    "AGENTS.md": "b395db677de0398c8aeefd1c021bcbcfeb89deec3f1a10865fb829f3ba433f861a",
+    "docs/knowledge-method.md": "69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb",
+    "docs/knowledge-review.md": "f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21",
+    "knowledge/workloads/cluster-resource-placement.md": "b82151bc29b1b1cdefb3152475b007d91a30abd2cb2d3b44e5e69966e42b6725",
+    "knowledge/sources/S-BORG.md": "2efc1ae7dfd3d9751a94b3ce8ee9426cb4943197fa2afc80c344f009d52c7331",
+    "knowledge/sources/S-ALPASERVE.md": "7f6908cd7b40479e932d8f7dc3074354322e218a92b03a15d229e3fdcd9612be",
+    "knowledge/sources/S-CUDA-TOPOLOGY.md": "39d4039179728ce8570c3b9ec3801aaad52108d030f278fb598a4d6d47de1f8e",
+    "knowledge/system-semantics/tenant-isolation.md": "0ca7501a80e750152a5fb3b9815c77f9e3f9aa393ff7546b3f05375958f88606",
+    "knowledge/system-semantics/storage-services.md": "283ceab23fbbf5c27bbb4486b56c2123459a19a00229c5baae70d09c18062661",
+    "knowledge/system-semantics/deployment-environment.md": "1b47e39a7f36c9f1cba4dc1792ad9243fd69d083ae1d6a7bb13bfd80dae1a8a5",
+    "references/S-ALPASERVE/fulltext.txt": "14cfb8691f5780a5916f9354af8a2713b5c8876abbd174e1c53a983f9eb995db",
+    "tools/check_k_work_011_full.py": "cf81f6946c25ddc57ec4acbae8ba8251d07290f7621149dba7c85ec4b3af8fd3"
+  },
+  "criteria": {
+    "definition": {
+      "assessment": "sufficient",
+      "reason": "完整定义逐 rank 需求、物理槽、节点聚合供给和放置输出，区分 CPU 时间份额与绑核、逐设备容量与总量。请求键、载荷摘要、所有权票据及生命周期含义明确，历史决定与当前运行状态分别保存。",
+      "evidence": [
+        {
+          "path": "knowledge/workloads/cluster-resource-placement.md",
+          "quote": "放置输出应包含逐 rank 的实际资源映射、不可变执行身份、资源责任和未满足条件，而不只是节点名列表。"
+        },
+        {
+          "path": "knowledge/workloads/cluster-resource-placement.md",
+          "quote": "请求键 k=(G,e)，其中 G 是稳定组身份，e 是不复用的准入尝试代次。"
+        },
+        {
+          "path": "knowledge/workloads/cluster-resource-placement.md",
+          "quote": "准入决定表与运行状态分开：历史 COMMITTED 决定不会因退役而消失。"
+        }
+      ]
+    },
+    "legality": {
+      "assessment": "sufficient",
+      "reason": "完整覆盖、独占槽、设备相容性、逐槽容量、节点聚合、路径与授权均作为硬条件；装箱偏好和保守协调模型明确属于方案选择。提交重检防止过期候选取得授权。故障容量公式限定固定非冗余组、完整依赖和共同预算，未将独立峰值直接相加。",
+      "evidence": [
+        {
+          "path": "knowledge/workloads/cluster-resource-placement.md",
+          "quote": "这些是硬条件。紧凑装箱、制品局部性、减少迁移和副本分散可以是软偏好；若服务契约明确承诺某种故障隔离，相关分散条件就成为硬约束。"
+        },
+        {
+          "path": "knowledge/workloads/cluster-resource-placement.md",
+          "quote": "失败则累计具体原因，继续；快照上合法不授权跳过重检。"
+        },
+        {
+          "path": "knowledge/workloads/cluster-resource-placement.md",
+          "quote": "只有在存活组仍能兑现同一负载口径下的 μ_g，且这些服务率满足共同资源预算时，才可计算"
+        }
+      ]
+    },
+    "algorithm": {
+      "assessment": "sufficient",
+      "reason": "候选生成展开初始化、预算扣减、合法剪枝、叶子检查、回溯恢复和停止语义；准入展开查重、当前状态重检、带所有权日志的取得与回滚、唯一提交及后继派发。本轮成功分支退出循环后实际进入临界区外派发，再返回；历史和拒绝分支不取得新派发责任。K-WORK-011-R2-GANG-START-01 已修复，相关 workflow 修订要求随完整候选复核关闭。准备、开放服务和最后使用后回收的衔接与已提供的弹性服务算法一致。",
+      "evidence": [
+        {
+          "path": "knowledge/workloads/cluster-resource-placement.md",
+          "quote": "将这些命令保存到本调用的 prepare_commands。\n         退出候选循环，不从 GANG_ADMIT 返回。"
+        },
+        {
+          "path": "knowledge/workloads/cluster-resource-placement.md",
+          "quote": "在临界区外逐项向对应节点派发准备命令，记录每项发起结果。"
+        },
+        {
+          "path": "knowledge/workloads/cluster-resource-placement.md",
+          "quote": "若 k 已有终局决定，返回原决定及当前状态，不派发准备。"
+        },
+        {
+          "path": "knowledge/workloads/cluster-resource-placement.md",
+          "quote": "无论普通返回还是预算停止，都撤销本层变更。"
+        }
+      ]
+    },
+    "cost": {
+      "assessment": "sufficient",
+      "reason": "搜索成本区分 K、B、E、Q，显式计入预处理、增量及完整检查、复制、评分与排序，并单列拓扑路径成本和缓存维护。六类成本包含提交重检、回滚、临界区等待、派发、准备与已占资源。独立复算 ring 的半双工服务量与单位换算：每轮 8 MiB、781.25 微秒，六轮加启动为 4.7175 ms；全双工为 2.37375 ms，端点发送共 96 MiB、跨节点 48 MiB，均一致。准备时间公式保留各节点接收时刻及共享争用前提。",
+      "evidence": [
+        {
+          "path": "knowledge/workloads/cluster-resource-placement.md",
+          "quote": "T_search=O(T_pre+Σ_{a=1..E}(d+c_inc(a))+Σ_{q=1..Q}c_full(q)+n(P+c_score)+n log n)。"
+        },
+        {
+          "path": "knowledge/workloads/cluster-resource-placement.md",
+          "quote": "准备命令可共同引用一份不可变 π，每 rank 只增加固定字段，命令描述主项为 O(P)；若每条消息都序列化完整 π，P 条命令的映射字段总量可达 O(P²)。"
+        },
+        {
+          "path": "knowledge/workloads/cluster-resource-placement.md",
+          "quote": "则绝对就绪时刻为 max_i(a_i+D_i)+T_g。"
+        }
+      ]
+    },
+    "adaptation": {
+      "assessment": "sufficient",
+      "reason": "节点、负载、设备、链路、碎片、预算和优先级变化分别对应需保留的不变量及失效的候选或成本。跨节点改形状需要重新验证执行配置；预算耗尽保留未知；预占与缩容不提前兑现尚未释放的资源。",
+      "evidence": [
+        {
+          "path": "knowledge/workloads/cluster-resource-placement.md",
+          "quote": "也可以把 A 改为两节点各两卡，但那是新的执行配置，必须重新核对逐 rank 容量、通信、组准备、故障条件和 SLO。"
+        },
+        {
+          "path": "knowledge/workloads/cluster-resource-placement.md",
+          "quote": "增加预算、改顺序或索引；把预算耗尽保留为未知，不改写成无解"
+        },
+        {
+          "path": "knowledge/workloads/cluster-resource-placement.md",
+          "quote": "若故障导致绕行、剩余出口拥塞或负载组成变化，应重算条件化 μ_g(F) 及其共同资源约束。"
+        }
+      ]
+    },
+    "diagnosis": {
+      "assessment": "sufficient",
+      "reason": "观察、竞争解释、干预预测及反证修正形成可执行的诊断链。新增准备事件核对能够区分控制流未推进、派发失败、消息未达和节点拒绝；资源账审计与事件审计职责不同，实际负对照证明确能识别账本正确但首次未派发的轨迹。真实设备、异步撤销和 SLO 的证据边界明确。",
+      "evidence": [
+        {
+          "path": "knowledge/workloads/cluster-resource-placement.md",
+          "quote": "分记提交、离开临界区、逐 rank 派发、接收与票据校验；先用可靠事件接收器固定传输因素"
+        },
+        {
+          "path": "knowledge/workloads/cluster-resource-placement.md",
+          "quote": "接收器也无事件时修控制流；已有派发才继续定位传输或节点，不先归因加载慢"
+        },
+        {
+          "path": "knowledge/workloads/cluster-resource-placement.md",
+          "quote": "故意遗漏派发的错误版本可以通过账本审计，却必须被事件审计拒绝"
+        }
+      ]
+    }
+  },
+  "findings": [],
+  "limitations": [
+    "结论限于单活动控制器、共同串行权威账及操作期间无崩溃的模型；没有证明生产锁覆盖、控制器恢复、网络分区隔离或一般分布式事务。",
+    "准备事件代表控制器发起命令。脚本未验证派发失败处理、网络送达、节点票据核验、实际启动、异步撤销与最后使用完成；退役使用理想无使用者证据。这些边界已明确声明。",
+    "放置检查覆盖整数内存、CPU、独占槽与可选同节点约束；没有执行一般拓扑合法性、性能评分、真实设备分配或准备期峰值检查。故障检查限定固定非冗余组及可相加的设定服务率。",
+    "Borg 和 CUDA 原文在本审阅中仅提供摘录；CUDA 摘录未完整覆盖多 GPU 专节，未据此核验具体 peer 路径或有效带宽。来源说明及正文均未把这些机制说明当作设备实测。",
+    "本次审阅未重新执行 Python，也未检查磁盘链接存在性、reader.html 渲染或登记工具；实际脚本执行结论仅引用用户提供且绑定本轮脚本哈希的预检记录。",
+    "CPU 模型、来源核对和内容验收不证明真实 GPU/NCCL 性能、故障排空、端到端 SLO 或知识改善 Agent 构建能力。"
+  ],
+  "checks": [
+    {
+      "script": "tools/check_k_work_011_full.py",
+      "args": []
+    }
+  ],
+  "reading_scope": "本审阅完整阅读用户供应的 AGENTS.md [0,567)、docs/knowledge-method.md [0,2251)、docs/knowledge-review.md [0,3016)、本轮候选 knowledge/workloads/cluster-resource-placement.md [0,15132)、三个来源说明 S-BORG [0,732)、S-ALPASERVE [0,657)、S-CUDA-TOPOLOGY [0,500)，以及 tenant-isolation.md [0,4131)、storage-services.md [0,3922)、deployment-environment.md [0,3882)、references/S-ALPASERVE/fulltext.txt [0,82594)。完整阅读消息内交付的 test_script、author_notes、两项待处理问题及 actual_preflight 执行记录。相关章节仅阅读所供摘录：parallelism.md [0,2802)、[8000,14642)；topology-parallelism.md [0,4000)、[8000,10276)、[12000,15168)；cpu-serving.md [0,4000)、[8000,13444)；multi-model-placement.md [0,7836)、[12000,13608)；elastic-serving.md [0,7235)、[12000,14209)；design-synthesis.md [0,2146)、[12000,19298)。Borg 原文仅阅读 [0,11924)、[12000,68000)、[72000,88000)；CUDA 原文仅阅读 [4000,8000)、[16000,20000)、[36000,52000)、[56000,71923)、[208000,212000)、[280000,288000)、[456000,460000)、[644000,648000)、[688000,692000)、[800000,804000)、[948000,956000)、[1068000,1072000)、[1080000,1084000)。范围单位均为抽取文本的零基半开字符区间；摘录文件未列入 documents。未读取源码归档。作者材料账与本审阅范围分别处理：作者账记录原始正文全文、Borg 全文及比本审阅更长的 CUDA 摘录，不因本审阅仅获摘录而推断作者只获摘录；供应范围也不等于认知阅读证明。",
+  "test_assessment": "独立检查了测试算法及用户供应的实际执行，而非仅采信退出码。放置参考通过完整互斥物理槽排列和整图资源求和得到合法集合，区别于被测增量回溯；结果审计同时核对映射与可行集合。总内存、总槽数和重复槽负对照会被同一审计器拒绝。准入审计从正式分配与历史决定重建资源责任，覆盖两种串行顺序、同键重试、竞争、载荷冲突、代次与两类回滚失败；没有真实并发线程。首次派发检查的 admit 在 _decide_locked 返回后继续离开 critical、执行 dispatch，再记录 RETURN；内部子过程的 return 不再中断后继工作。audit_prepares 独立从 COMMIT 的不可变计划恢复逐 rank 命令义务，检查完整载荷及 EXIT < PREPARE < RETURN。EarlyReturnAdmission 实际执行跳过派发的错误分支，先通过账本审计再被事件审计拒绝，直接检测了上轮具体缺陷；漏 rank、临界区内派发、拒绝及普通/退役重试再派发的轨迹也被同一事件审计拒绝。故障参考先移除实际资源再判断组完整性，与依赖并集公式比较，代表域错误负对照确实偏离参考。actual_preflight 的 remote_bwrap 记录使用 Python 3.12，绑定脚本 cf81f6946c25ddc57ec4acbae8ba8251d07290f7621149dba7c85ec4b3af8fd3，返回码 0、stderr 为空、未超时；stdout 记录 2808 个放置输入、201 个故障组合及上述负对照被拒绝。此执行发生于供应的预检阶段，本审阅没有重新运行。作者明确未声称作者阶段运行过本轮 Python；后续预检记录补充了执行证据，二者不矛盾。未覆盖派发失败、真实传输和节点启动、一般路径与评分、设备成本及 SLO，正文已将其保留为验证边界。来源核对方面，Borg 所供技术摘录支持逐维资源、可行性与评分分离、过期计划重检、幂等操作和可压缩资源区别；AlpaServe 全文支持配置枚举、模拟驱动束搜索、整组故障及未实现 swapping 的限制。章内串行组准入与首次派发明确归为本库推导，未借用论文性能结论。相对链接的路径关系可由文本理解，但未将磁盘存在性或渲染记为通过。"
+}

@@ -1,0 +1,161 @@
+{
+  "entry_id": "K-FW-012",
+  "body_sha256": "9afdc0df244952035be0336310be8c9fd4b05cd0a048acd96b2466850b6ad65b",
+  "reviewer": "sol-reviewer:K-FW-012:round-1",
+  "decision": "revise",
+  "documents": {
+    "AGENTS.md": "b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a",
+    "docs/knowledge-method.md": "69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb",
+    "docs/knowledge-review.md": "f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21",
+    "knowledge/frameworks/cpu-quantized-kernels.md": "9afdc0df244952035be0336310be8c9fd4b05cd0a048acd96b2466850b6ad65b",
+    "knowledge/sources/S-INT8.md": "fd85648a08a0e4bb18fe9d74d25e9d8a5fc6d29faf941554ff2e29f88fa98744",
+    "knowledge/sources/S-GPTQ.md": "ab4b597c9d425e72b110a2be5ee56d98542a61f02630e542886d8c1afc15d1cb",
+    "knowledge/sources/S-CPU-TUNING.md": "46948047959d30284614764d498ea02e41e76a47bf55597fec93df61e14964fb",
+    "knowledge/sources/S-TORCH-NUMERIC.md": "cbe91153d9ff7bd2f596d1d6c4e15de1ad68571f3cbde23215891a8ec7f6fab4",
+    "knowledge/hardware/cpu-linear-kernels.md": "b4d5391890478b2874f6ea548b154a580a0810356f9cf9cb05248a9d2f728dcc",
+    "knowledge/algorithms/weight-expert-offload.md": "cb230fafeec2d39fa40228ad44dbb41d34c62673fbac2325b6e797f206bc0fde",
+    "references/S-INT8/fulltext.txt": "1137a01d16d677bc5d236a2fd4905a2fff8319b3f719494e51f1fb830176c3d4",
+    "references/S-GPTQ/fulltext.txt": "d7ead62158a73d4a9ecff58495f901feba52a48f521313ce34fe0e0191c69d79",
+    "references/S-TORCH-NUMERIC/fulltext.txt": "bb6b2d8154a10f8f3b15e5ae4465cbc8d833067046964fc6b4d66dc036131b45",
+    "tools/check_k_fw_012_full.py": "4326680bd9ede8ab061659ba56805ed4a261aaf471230b0dc9a429c4214696b9"
+  },
+  "criteria": {
+    "definition": {
+      "assessment": "sufficient",
+      "reason": "动机、矩阵轴、冻结制品与本调用激活的身份、整数和实数输出的单位均有定义；状态链区分局部累加与完整发布，取消后的物理最后使用也有明确约束。",
+      "evidence": [
+        {
+          "path": "knowledge/frameworks/cpu-quantized-kernels.md",
+          "quote": "设输出通道数 N、归约维 K、token 数 M。W 为 N×K，X 为 K×M，Y 为 N×M。"
+        },
+        {
+          "path": "knowledge/frameworks/cpu-quantized-kernels.md",
+          "quote": "失败或取消时，未发布的 Y 行丢弃，已借用的 scratch 等待在途工作结束再复用。"
+        }
+      ]
+    },
+    "legality": {
+      "assessment": "sufficient",
+      "reason": "固定 INT4 格式给出了行跨度、nibble 顺序、符号解释、组轴和冻结参数条件；仿射补偿、实际尾长、bias 单位与累加宽度的主要合法边界正确。分组策略与缓存、线程等选择也有区分。伪代码未完整实现这些条件的问题另计入 algorithm。",
+      "evidence": [
+        {
+          "path": "knowledge/frameworks/cpu-quantized-kernels.md",
+          "quote": "有效元素恰好消费一次；填充位置不进入归约；累加器的单位与 epilogue 的倍率一致。"
+        },
+        {
+          "path": "knowledge/frameworks/cpu-quantized-kernels.md",
+          "quote": "不同组的 s_w s_x 可能不同，不能先把所有整数和合并，再乘一个全局 scale"
+        }
+      ]
+    },
+    "algorithm": {
+      "assessment": "partial",
+      "reason": "解包规则与两条补偿恒等式可重建，但 W8A8 核心伪代码没有初始化 Y，且先分别覆盖标量 qw、qx，再更新所有 n,m，按所写顺序会将最后一行、最后一列的乘积用于全部输出。tile 范围和 k1 也未展开。现有单向量脚本没有执行这条矩阵 tile 算法。",
+      "evidence": [
+        {
+          "path": "knowledge/frameworks/cpu-quantized-kernels.md",
+          "quote": "对 n：qw=QW[n,k]；sum_qw[n]=sum_qw[n]+qw"
+        },
+        {
+          "path": "knowledge/frameworks/cpu-quantized-kernels.md",
+          "quote": "对 n,m：I[n,m]=I[n,m]+qw*qx"
+        },
+        {
+          "path": "knowledge/frameworks/cpu-quantized-kernels.md",
+          "quote": "Y[n,m]=Y[n,m]+SX[m,g]*SW[n,g]*corr"
+        }
+      ]
+    },
+    "cost": {
+      "assessment": "partial",
+      "reason": "8.5 MiB、4.25 bit/weight、算术强度及设定带宽下界可复算，准备、同步、NUMA 与驻留账也有条件说明。但组补偿成本按逻辑组数计算，与 W4A16 伪代码在每个组和 k tile 的交段上执行补偿、缩放及 Y 更新的实际工作不一致。",
+      "evidence": [
+        {
+          "path": "knowledge/frameworks/cpu-quantized-kernels.md",
+          "quote": "计算侧至少有三类工作：核心乘加 O(MNK)，解包/符号扩展/转换 O(NK) 每遍，以及组补偿 O(MN ceil(K/G))。"
+        },
+        {
+          "path": "knowledge/frameworks/cpu-quantized-kernels.md",
+          "quote": "对 m：Y[n,m]=Y[n,m]+S[n,g]*(qsum[m]-Z[n,g]*xsum[m])"
+        }
+      ]
+    },
+    "adaptation": {
+      "assessment": "sufficient",
+      "reason": "条件表将 M、G、参数精度、位宽、动态激活尺度、线程和 NUMA 的变化连接到保留关系、重算对象及退出依据；没有把压缩比或来源平台的实验结论外推为通用加速保证。",
+      "evidence": [
+        {
+          "path": "knowledge/frameworks/cpu-quantized-kernels.md",
+          "quote": "解包与转换超过读取节省时保留 FP32 或 W8 路径"
+        },
+        {
+          "path": "knowledge/frameworks/cpu-quantized-kernels.md",
+          "quote": "权重格式或目标内核改变后，预打包产物和摊销结论都要重新检查。"
+        }
+      ]
+    },
+    "diagnosis": {
+      "assessment": "partial",
+      "reason": "竞争解释与干预表有实质内容，但开头把同制品高精度参考与目标 kernel 的差异错误归为表示损失。脚本的 padding 负对照和 int32 边界检查也未进入正文要求的实际归约、拒绝机制，成功预检不足以支持这些覆盖声明。",
+      "evidence": [
+        {
+          "path": "knowledge/frameworks/cpu-quantized-kernels.md",
+          "quote": "第一层失败是格式或执行错误，第二层差异用于讨论表示损失，第三层才涉及任务质量。"
+        },
+        {
+          "path": "knowledge/frameworks/cpu-quantized-kernels.md",
+          "quote": "填充检查要实际遍历有效位置；accumulator 检查要在 K=131,072 的界上触发拒绝。"
+        }
+      ]
+    }
+  },
+  "findings": [
+    {
+      "id": "K-FW-012-R1-W8A8-STATE-INDEXING",
+      "criterion": "algorithm",
+      "evidence": "正文 W8A8-GROUP-DOT 写为“对 n：qw=QW[n,k]；sum_qw[n]=sum_qw[n]+qw”，随后“对 m：qx=QX[k,m]；sum_qx[m]=sum_qx[m]+qx”，再执行“对 n,m：I[n,m]=I[n,m]+qw*qx”。算法在“1 校验两条量化契约、共同细化组、码域、S/Z、布局和输出转换”之后直接进入循环，没有 Y=0；[k0,k1) 中的 k1 也未赋值。",
+      "impact": "按标量变量和所写循环顺序，最后取得的 qw、qx 被用于所有输出。审阅者实际用 JavaScript 复现 N=M=2、K=1、QW=[[1],[2]]、QX=[[3,5]]、尺度为 1、零点为 0 的情况：独立矩阵参考为 [[3,5],[6,10]]，所写标量循环产生 [[10,10],[10,10]]。该复现已额外将 Y 清零，说明索引错误独立存在；原文缺少初始化还使普通调用和 K=0 输出未定义。",
+      "blocking": true,
+      "required_revision": "在归约前初始化实数输出累加器，明确各 tile 的起止范围和 k1；使用 qw[n]、qx[m] 或直接按 QW[n,k]、QX[k,m] 更新 I[n,m]。明确 K=0 进入一次 epilogue，并以独立稠密参考检查多行多列及空 K 路径。"
+    },
+    {
+      "id": "K-FW-012-R1-GROUP-TILE-COST",
+      "criterion": "cost",
+      "evidence": "正文称“组补偿 O(MN ceil(K/G))”，但 W4A16-GROUP-TILE 对“每个与 [k0,k1) 相交的组 g”重置 qsum/xsum，并执行“对 m：Y[n,m]=Y[n,m]+S[n,g]*(qsum[m]-Z[n,g]*xsum[m])”。正文明确允许“同一个组可能跨多个 k tile”。",
+      "impact": "补偿、scale 应用及输出累加次数由组与 tile 的交段数决定，不能一般地只按逻辑组数列账。对 N=M=1、K=128、G=128、BK=1，审阅者实际枚举得到 128 次交段更新，而逻辑组数为 1；原成本式遗漏 BK 对这部分工作的影响。",
+      "blocking": true,
+      "required_revision": "令 J 为所有 k tile 与量化组的非空交段数，将当前算法的交段补偿和更新成本写为 O(MNJ)，说明其与 BK、G 的关系；或者修改算法，跨 tile 保留同组部分和并在组结束时只缩放一次，同时补计该状态的驻留和合并成本。"
+    },
+    {
+      "id": "K-FW-012-R1-DIAGNOSTIC-BOUNDARY",
+      "criterion": "diagnosis",
+      "evidence": "正文依次要求“用独立解码器检查 q 和 w_hat”、“再用高精度实数或 Fraction 计算同一组的点积，与目标 kernel 比较”、“最后才把量化模型与原浮点模型比较”，随后却写“第二层差异用于讨论表示损失”。",
+      "impact": "第二步两侧消费相同的量化制品，其差异反映执行、索引、单位或有限精度路径，不能衡量相对原始权重的量化表示损失。按当前归因会把补偿或 kernel 错误误判为低位表示的正常代价。",
+      "blocking": true,
+      "required_revision": "统一三层比较的对象与归因：独立解码检查格式和参数映射；同制品高精度算子与 kernel 比较检查执行语义和数值路径；量化参考与原浮点参考比较表示近似，再单独评价任务质量。同步核对诊断表和相邻章节的衔接。"
+    },
+    {
+      "id": "K-FW-012-R1-NEGATIVE-CONTROL-PATH",
+      "criterion": "diagnosis",
+      "evidence": "正文要求“填充检查要实际遍历有效位置；accumulator 检查要在 K=131,072 的界上触发拒绝”。脚本 padding 对照却是“pad_wrong = Fraction(1, 2) * (0 - 3) * 1”后与 Fraction(0) 比较；另一处为“extra = Fraction(1, 2) * (0 - 3) * 1”。宽度检查是“check(128 * 128 * 131072 > INT32_MAX, 'K=131072 int32 overflow')”，没有执行任何累加宽度准入或拒绝函数。",
+      "impact": "这些检查证明设定表达式非零、整数界超过上限，但即使归约实际消费了 padding，或实现完全不拒绝危险宽度，它们仍会通过。提供的预检确实报告 1390 项检查和 9 个负对照，但这些计数不证明正文所述掩码与拒绝机制被检验。",
+      "blocking": true,
+      "required_revision": "让正确归约实际读取 packed 行并按有效长度消费元素，再注入错误消费尾 nibble 的变体，与独立逐元素参考比较；增加依据真实码域和归约长度作出准入、分段或拒绝决定的算术模型，在边界输入上检查决定，并注入错误界或取消拒绝的负对照。脚本与正文的覆盖说明应准确对应实际执行路径。"
+    }
+  ],
+  "limitations": [
+    "没有目标 CPU 的 ISA、实际 dispatch、cache/TLB、NUMA、线程同步或性能计数器证据；正文对此已明确限定，无须将其升级为额外设备验收条件。",
+    "没有真实 checkpoint、模型质量、端到端 SLO 或知识改善 Agent 构建效果的实测。",
+    "S-CPU-TUNING 仅提供机制说明，没有允许读取的上游散文全文；未读取 PDF 版面或源码归档。",
+    "审阅基于用户提供的绑定全文、摘录和执行记录；未重新计算磁盘文件哈希、核查链接目标存在性或独立复跑 Python 脚本。本次实际执行的补充检查仅为 JavaScript 小整数反例与交段计数。"
+  ],
+  "checks": [
+    {
+      "script": "tools/check_k_fw_012_full.py",
+      "args": []
+    }
+  ],
+  "no_checks_reason": "",
+  "reading_scope": "完整阅读的是所供提取文本，不声称另行访问磁盘原文件。全文范围均为零基半开字符区间：AGENTS.md [0,567)；docs/knowledge-method.md [0,2251)；docs/knowledge-review.md [0,3016)；knowledge/frameworks/cpu-quantized-kernels.md [0,13848)；knowledge/sources/S-INT8.md [0,756)；S-GPTQ.md [0,527)；S-CPU-TUNING.md [0,731)；S-TORCH-NUMERIC.md [0,532)；knowledge/hardware/cpu-linear-kernels.md [0,4016)；knowledge/algorithms/weight-expert-offload.md [0,3216)；references/S-INT8/fulltext.txt [0,52394)；references/S-GPTQ/fulltext.txt [0,56815)；references/S-TORCH-NUMERIC/fulltext.txt [0,10998)。完整阅读 candidate.test_script 中 tools/check_k_fw_012_full.py 的全部脚本及 author_notes、actual_preflight 的执行和隔离范围说明。仅阅读摘录：knowledge/algorithms/quantization-contract.md [0,4000)、[8000,13444)；knowledge/hardware/precision-and-kernel-support.md [0,4000)、[8000,13444)；knowledge/frameworks/numerical-reference.md [0,609)、[4000,12835)；knowledge/frameworks/checkpoint-loading.md [0,3347)、[8000,14097)；knowledge/hardware/cpu-serving.md [0,2264)、[8000,15180)；knowledge/system-semantics/design-synthesis.md [0,7570)、[8000,9874)；knowledge/tools/kernel-counter-replay.md [0,5444)、[8000,12000)。摘录文件未列入 documents；来源原文的全文结论限于所供提取文本，未核对版面。",
+  "test_assessment": "已检查完整脚本算法和所供实际执行记录。actual_preflight 的 script_sha256 与绑定脚本一致，记录为 remote_bwrap 中 Python 3.12 隔离执行，returncode=0、stderr 为空，输出 checks passed: 1390、negative controls detected: 9；这是提供的真实执行证据，不是审阅者自行复跑，也不代表目标 CPU kernel 通过。有效独立参考包括 Fraction 逐元素解量化乘积与分组补偿展开式的比较；非零零点、不同组尺度及短末组确实进入这两条路径，漏零点和全局尺度变体能产生差异。nibble 交换也实际改变非对称 packed 数据后再解码。256 字节枚举的期望值与被检解码器采用相同的位提取和符号变换，独立性有限，应结合已知字节与往返证据理解。padding 负对照主要比较预先写出的非零表达式和零，没有检验有效长度控制下的点积；int32 检查只复算常数界，没有触发拒绝路径。脚本不执行章节的多行多列 tile 循环，也未覆盖跨 BK 的组部分和、不同权重和激活分组的参数映射、输出初始化、真实舍入与饱和。审阅者另外实际执行了独立 JavaScript 小整数矩阵参考与原文标量循环，检出多输出索引反例，并枚举确认 K=128、G=128、BK=1 有 128 个交段。这些软件算术证据不证明设备数值、同步或性能。S-INT8 的补偿代数、bias 尺度和窄累加条件，以及 GPTQ 的上游量化定位，与所供来源相符；未发现把来源的 ARM 视觉模型或 GPU 实验外推为本章性能保证。"
+}

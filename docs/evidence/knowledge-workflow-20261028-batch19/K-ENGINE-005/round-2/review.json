@@ -1,0 +1,147 @@
+{
+  "entry_id": "K-ENGINE-005",
+  "body_sha256": "f5eeba0fadb35288804441c8c35e1dee610b2b535b98bb9faaeebfc94f9801f4",
+  "reviewer": "sol-reviewer:K-ENGINE-005:round-2",
+  "decision": "accept",
+  "documents": {
+    "AGENTS.md": "b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a",
+    "docs/knowledge-method.md": "69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb",
+    "docs/knowledge-review.md": "f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21",
+    "knowledge/engine-index/tensorrt-llm.md": "f5eeba0fadb35288804441c8c35e1dee610b2b535b98bb9faaeebfc94f9801f4",
+    "knowledge/sources/S-TRTLLM.md": "0d3a0b8dcfb6f7c0975080c5fbecb4c36e0c647e93185d7cb2df3b08999dfc97",
+    "knowledge/sources/S-TRTLLM-CODE.md": "19f7e47ee4001e3d262f3eb7274c8c4880baa7a5a52a71ed129520eebfaf90a4",
+    "knowledge/algorithms/tiered-residency.md": "eb3ebc6320d5a32481cf645605d159860dc6d1edb97f1e98afd89ddb24ee82af",
+    "references/S-TRTLLM/fulltext.txt": "5ab2e4a7ee9b15bdbad3624a17f5f67e3b3c078d346e95328322cbac8b66b39d",
+    "tools/check_k_engine_005_full.py": "c4a9d7c54dcc3adf28594af8ae4f1b085445baee2ce535c9772432f456d1a6fe"
+  },
+  "criteria": {
+    "definition": {
+      "assessment": "sufficient",
+      "reason": "明确了入口历史、末个已知输入、完整采样控制状态及消费位置，区分确认 token、公共全层 KV 和临时链边界。逐层 hidden、当前行 KV、logits 与采样的产生顺序清楚；后继继承实际 Q_out，提交不重复采样。R1-003 已关闭。",
+      "evidence": [
+        {
+          "path": "knowledge/engine-index/tensorrt-llm.md",
+          "quote": "c_g 自身的 KV 由消费它的 P_{g+1} 产生"
+        },
+        {
+          "path": "knowledge/engine-index/tensorrt-llm.md",
+          "quote": "A=n+q，K=n−1+q=A−1。"
+        },
+        {
+          "path": "knowledge/engine-index/tensorrt-llm.md",
+          "quote": "主机提交只将已验证的 Q_out 安装为正式 Q，不再采样或重新消耗随机数。"
+        }
+      ]
+    },
+    "legality": {
+      "assessment": "sufficient",
+      "reason": "将身份、完整成功证据、最后访问证据、顺序提交和存储隔离分别作为合法条件，并明确单分支普通 causal decoder 的范围。候选重叠、COW、staging 和图路径均作为带条件的选择；不能复制完整采样状态时关闭候选重叠，避免将 token 转发误当作完整依赖。",
+      "evidence": [
+        {
+          "path": "knowledge/engine-index/tensorrt-llm.md",
+          "quote": "顺序提交：只有 g=q 且输入链与当前确认历史、正式 Q 一致时才能安装结果。临时执行不是确认权。"
+        },
+        {
+          "path": "knowledge/engine-index/tensorrt-llm.md",
+          "quote": "完成覆盖：成功产物证书与最后访问结束证据分别核对；错误、取消、超时和主机 launch 返回都不自动结束访问。"
+        },
+        {
+          "path": "knowledge/engine-index/tensorrt-llm.md",
+          "quote": "依赖外部可变状态的 CPU callback、无法提前复制的约束状态或不满足图安全随机状态合同的配置，应先关闭这种单请求候选重叠。"
+        }
+      ]
+    },
+    "algorithm": {
+      "assessment": "sufficient",
+      "reason": "DEVICE_PACKAGE 展开逐层输入、私有 KV 写入、采样及整步汇合；BOUNDED_OVERLAP 给出初始化、限额、前驱快照、主机提案、原子提交、终止与独立结算。物理完成不再被业务提交覆盖，票据保存到后继取得输入；排空遍历全部步骤且不依赖提交游标。传输另有身份化完成与封闭门。正文轨迹、检查实现及执行记录共同支持关闭 R1-001、R1-002 和本轮 workflow 修订项。",
+      "evidence": [
+        {
+          "path": "knowledge/engine-index/tensorrt-llm.md",
+          "quote": "每步分别记录以下状态，提交不改写物理完成事实。"
+        },
+        {
+          "path": "knowledge/engine-index/tensorrt-llm.md",
+          "quote": "成功提交后的最后一个票据在尚未建立后继快照时仍须保留。"
+        },
+        {
+          "path": "knowledge/engine-index/tensorrt-llm.md",
+          "quote": "独立扫描全部已建立步骤，不要求 g=q 或前驱 COMMITTED："
+        },
+        {
+          "path": "knowledge/engine-index/tensorrt-llm.md",
+          "quote": "只有 open=false 且 outstanding=空时，撤销这一阶段的 guard_hold"
+        }
+      ]
+    },
+    "cost": {
+      "assessment": "sufficient",
+      "reason": "两阶段公式明确恒定时间、资源独立、深度和背压前提；三步 17 ms、串行 21 ms 与渐近 1.4 倍计算正确。KV 公式按层、head、通道及元素字节展开，设定值为每位置 128 KiB，深度二的额外数据主项为 256 KiB。六类成本包含无效后缀、Q 复制、汇合和外部保护，并区分逻辑字节、实际事务、峰值容量及字节时间积分。",
+      "evidence": [
+        {
+          "path": "knowledge/engine-index/tensorrt-llm.md",
+          "quote": "T_pipe(0)=0，T_pipe(N)=D+H+(N−1)max(D,H)，N≥1。"
+        },
+        {
+          "path": "knowledge/engine-index/tensorrt-llm.md",
+          "quote": "b_KV=2Σ_l H_KV,l·d_l·b_l，"
+        },
+        {
+          "path": "knowledge/engine-index/tensorrt-llm.md",
+          "quote": "单位是 byte·second，它描述占用持续时间，不能当作峰值字节相加。"
+        }
+      ]
+    },
+    "adaptation": {
+      "assessment": "sufficient",
+      "reason": "依据设备与主机阶段比例、抖动、短生成、约束状态、传输长尾、图容量和模型身份变化，说明哪些依赖必须保留、何时调整深度或放弃重叠。选择同时考虑有效产出、驻留与排空尾部，没有从更多缓冲直接推出性能改善。",
+      "evidence": [
+        {
+          "path": "knowledge/engine-index/tensorrt-llm.md",
+          "quote": "更深缓冲只能吸收有限波动，不能消除持续的主机瓶颈。"
+        },
+        {
+          "path": "knowledge/engine-index/tensorrt-llm.md",
+          "quote": "CPU grammar 或外部 callback 改变采样 | 在完整 Q 就绪后再推进，不能满足时关闭候选重叠"
+        },
+        {
+          "path": "knowledge/engine-index/tensorrt-llm.md",
+          "quote": "模型、adapter、数值或状态族改变 | 重建快照与合法性判断，放弃不兼容临时后缀"
+        }
+      ]
+    },
+    "diagnosis": {
+      "assessment": "sufficient",
+      "reason": "竞争解释连接到可控事件顺序、不同预测和反证后的修正动作，覆盖提交后停滞、逻辑停止与物理排空、采样状态继承、KV 位置及资源瓶颈。检查具有完整历史参考、责任不变量、独立时间模拟和已检测负对照；设备可见性与真实性能被明确留在验证边界内。",
+      "evidence": [
+        {
+          "path": "knowledge/engine-index/tensorrt-llm.md",
+          "quote": "有额度和完整票据仍不能推进，检查物理/业务状态混用，不能只加缓冲"
+        },
+        {
+          "path": "knowledge/engine-index/tensorrt-llm.md",
+          "quote": "拒绝提交不等于丢弃检查通过"
+        },
+        {
+          "path": "knowledge/engine-index/tensorrt-llm.md",
+          "quote": "候选或 Q 首次分歧时核对继承与事件定位，不能归因于正常异步顺序"
+        }
+      ]
+    }
+  },
+  "findings": [],
+  "limitations": [
+    "源码事实仅核对所供完整 S-TRTLLM-CODE 机制说明；作者和本次审阅均未获得源码归档，不能声称独立验证上游实现。正文已将正交状态、Q 链、封闭门及排空协议归为本库推导。",
+    "Python 检查是合成整数 CPU 模型；主机提交按原子动作处理，未模拟异步 H_g 工作线程及其真实访问竞争。未知提交适配、真实页分配、COW 和票据压缩没有被该脚本验证。",
+    "没有真实 Transformer 浮点计算、CUDA、跨 stream/rank 可见性、图捕获、NIC/DMA 排空、持久恢复、目标设备性能或 Agent 使用效果证据；这些边界在正文中已清楚声明。",
+    "本次依据任务提供的文本、摘要和绑定执行记录审阅，未重新执行 Python、读取磁盘文件、重算文件哈希或逐项验证离线链接目标。所供 S-TRTLLM 全文支持正文引用的架构、重叠和 KV 传输事实；reader.html 图版未读取。"
+  ],
+  "checks": [
+    {
+      "script": "tools/check_k_engine_005_full.py",
+      "args": []
+    }
+  ],
+  "no_checks_reason": "",
+  "reading_scope": "本次完整阅读任务所供 AGENTS.md [0,567)、docs/knowledge-method.md [0,2251)、docs/knowledge-review.md [0,3016)、当前候选 knowledge/engine-index/tensorrt-llm.md [0,14525)、S-TRTLLM.md [0,564)、S-TRTLLM-CODE.md [0,712)、tiered-residency.md [0,4244) 和 references/S-TRTLLM/fulltext.txt [0,17175)，以及完整候选 Python 脚本、author_notes、author_material_scopes 和 actual_preflight 记录。相关章节仅阅读所供摘录：async-scheduling [0,7504)、[12000,13940)；disaggregated-serving [0,6561)、[16000,18883)；cuda-graph-buffers [0,2197)、[4000,8000)、[12000,15247)；cancellation-resource-completion [0,7165)、[16000,18279)；weight-expert-offload [0,5920)、[12000,15524)；transport-and-rdma [0,9444)；serving-recovery [0,9036)、[16000,16408)；memory-allocators [4000,11212)、[16000,18232)。范围为提取文本的零基右开字符区间；摘录文件未列入 documents。作者账本与审阅范围分别核对：作者获得的是旧基线全文及账本列明的来源全文和相关摘录，当前替换正文另由候选提供；账本只证明供给范围，不证明实际认知阅读。作者未运行本轮 Python 的说明与随后提供的独立 preflight 执行记录不矛盾。",
+  "test_assessment": "已逐项检查脚本算法及所供 actual_preflight，而非依据 CHECK_OK 字样判断正确性。serial_reference 不调用增量前向、增量采样或 Pipeline，每次重算完整历史，并以独立写法执行 categorical selection；对照候选、完整控制状态和逐层 KV，能够检查位置与临时采样链。audit 从未结束步骤及其访问描述重建 device uid，配合停止轨迹对具体 KV 区域和独立 save 读者的断言，检查取消不提前清账；它不独立证明访问描述覆盖真实 kernel 的全部地址。resource_clock 逐整数时刻推进设备和主机资源，与闭式公式对照，避免仅重算同一个公式。检查包含零生成、短 prompt、多 seed、深度 1/2/4、两种事件策略、超过深度的持续生成、前驱先提交再建立后继、乱序提交拒绝、运行中停止、无已提交前驱的后缀丢弃、取消、缺层证书及缺失结束证据。七个错误变体分别改变推进、排空、责任、RNG、KV 位置、提交顺序和传输保护，均由相关参考或不变量捕获，不是仅声明存在负对照。所供 remote_bwrap 记录绑定脚本 SHA256 c4a9d7c54dcc3adf28594af8ae4f1b085445baee2ce535c9772432f456d1a6fe 和当前正文哈希，实际使用 Python 3.12 的 -I -S -B -X utf8 执行；returncode=0、stderr 为空、未超时，stdout 记录 270 个参考轨迹、200 个时间组合及七项 NEGATIVE_DETECTED。由此确认本轮所列 CPU 检查实际通过；这是任务提供的执行证据，本次审阅没有另行运行。异步主机访问、真实分配器与设备完成合同等未覆盖部分按 limitation 保留，不扩大为 PASS。"
+}

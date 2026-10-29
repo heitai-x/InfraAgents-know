@@ -1,0 +1,157 @@
+{
+  "entry_id": "K-ALG-016",
+  "body_sha256": "664ed35987656ab046defe938db6c289fea83d9b75f0737f3599ac5fbc8f3e03",
+  "reviewer": "sol-reviewer:K-ALG-016:round-2",
+  "decision": "accept",
+  "documents": {
+    "AGENTS.md": "b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a",
+    "docs/knowledge-method.md": "69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb",
+    "docs/knowledge-review.md": "f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21",
+    "knowledge/algorithms/operator-primitives.md": "664ed35987656ab046defe938db6c289fea83d9b75f0737f3599ac5fbc8f3e03",
+    "knowledge/sources/S-TRANSFORMER.md": "e1858681f1645209756f7eb640dcdfe3a786f5af3e529fb61bce6de0212a82d7",
+    "knowledge/sources/S-RMSNORM.md": "8452f19bc904b7110926cd4c08426b6133fb24fbecd3cf64adeccc228b1035c8",
+    "knowledge/sources/S-ROPE.md": "4aa6355e80fda16b405b8eab355e3a0efd1e8afa10de5e81431839391b77232a",
+    "knowledge/sources/S-TORCH-NUMERIC.md": "cbe91153d9ff7bd2f596d1d6c4e15de1ad68571f3cbde23215891a8ec7f6fab4",
+    "knowledge/sources/S-FLASH.md": "58fd332d0b00d7116d21660e8e2e8ee147d939a55859d6e624aea100e768ae39",
+    "knowledge/sources/S-CPU-TUNING.md": "46948047959d30284614764d498ea02e41e76a47bf55597fec93df61e14964fb",
+    "knowledge/sources/S-SDPA.md": "f209595c61cf92d30cf44312522d64ac6585ed259653722dae2874b61b170d77",
+    "knowledge/sources/S-FA-IMPL.md": "8f68d299f331833caeea6f0ca366e0dbd2559744f50f546bd089a2dbc8079ad6",
+    "knowledge/sources/S-CUDA-BEST.md": "4b752c1a26f66a195df62be354649f0a6880f733fb365e82e87bdd63bf71d45c",
+    "knowledge/sources/S-TRITON.md": "424109f8cee2e62edafdcd161f46190ecece6dcde0107ce42e67c1291801d14f",
+    "knowledge/hardware/cpu-linear-kernels.md": "b4d5391890478b2874f6ea548b154a580a0810356f9cf9cb05248a9d2f728dcc",
+    "knowledge/frameworks/inference-eval.md": "9381e25cf021f5338aef4311ba5c95ca2255fead917335c292b79347acf6b4b9",
+    "knowledge/tools/correctness-oracles.md": "c2f88bc9746ac25586fc6700aaf0f5a8d043a1b1f4aee99dfdee02e1ef468aab",
+    "knowledge/models/embedding-reranking.md": "44f22a27c9b4a11579bed108952f18722d90cd0d4c326db189c865d7e51aef38",
+    "knowledge/models/vision-inference.md": "a3b95c24c3838a54df90db945066257c0960e20a24929ed2812838fc5a3528a0",
+    "knowledge/models/recommendation-inference.md": "a36b0addea05174460d8f51179643665f98c51c6aa4a4d9dec235535948dd06d",
+    "knowledge/models/graph-inference.md": "343135d67c7fd61ed1e7fb82185df7a8f30ebfc86cb5427dfd9e6313046fe6fe",
+    "references/S-TRANSFORMER/fulltext.txt": "7bae85f4505c924b16d6c601c744b9665f245a20ea84258aa86bb51036a16805",
+    "references/S-ROPE/fulltext.txt": "0f7582a0829c2b689e18b8c7f95f03d12135d5de46e526f4f321c13948bd806c",
+    "references/S-TORCH-NUMERIC/fulltext.txt": "bb6b2d8154a10f8f3b15e5ae4465cbc8d833067046964fc6b4d66dc036131b45",
+    "references/S-FA-IMPL/fulltext.txt": "64ac6b9a0dd03fcf4c75426b81f879f53dadf066e12277691d9764f8b58a8dbc",
+    "tools/check_k_alg_016_full.py": "2411d4d758b04b2f1bd764f2ac61595f92d3889af27ad6e392dc2ecb0ace76dc"
+  },
+  "criteria": {
+    "definition": {
+      "assessment": "sufficient",
+      "reason": "正文从算子可替代性的动机出发，定义张量地址、轴、数值路径及三类状态；线性层、索引、归一化、旋转和 softmax 均给出可恢复的数学关系与输入输出。空域和特殊值分别限定，没有把数学结果与执行完成混为一谈。",
+      "evidence": [
+        {
+          "path": "knowledge/algorithms/operator-primitives.md",
+          "quote": "逻辑张量可表示为 T=(V,shape,stride,offset,dtype,device,meta)。"
+        },
+        {
+          "path": "knowledge/algorithms/operator-primitives.md",
+          "quote": "需要分开三种状态：逻辑状态说明张量、请求、有效元素和位置；数学状态说明累加器、归约统计和旋转结果；执行状态说明缓冲、就绪事件、全部消费者和最后读取。"
+        }
+      ]
+    },
+    "legality": {
+      "assessment": "sufficient",
+      "reason": "归约覆盖、地址范围、别名、位置身份和舍入边界被列为合法条件，tile、打包和融合边界作为方案选择。原来源错配已修复：N×K 明确为自设制品契约，functional.softmax dtype 归因已删除；SDPA math 提升精度的论述可沿完整提供的 Numerical accuracy 文档核对。RoPE 的同请求等长域也已明确。",
+      "evidence": [
+        {
+          "path": "knowledge/algorithms/operator-primitives.md",
+          "quote": "这里的 N×K 是该设定制品的定义，不是从 S-SDPA 推出的通用框架接口事实。"
+        },
+        {
+          "path": "knowledge/algorithms/operator-primitives.md",
+          "quote": "Q 与新 K 的 token 行数必须相等，M=T；第 j 行同时属于请求 req 的同一个新增 token，其逻辑位置均为 p0+j，j∈[0,T)。"
+        },
+        {
+          "path": "knowledge/algorithms/operator-primitives.md",
+          "quote": "若参考先将 u 舍入到 residual 存储精度再做 norm，步骤 4 后也必须保留该舍入点；直接对更高精度的和归一化可能改变函数。"
+        }
+      ]
+    },
+    "algorithm": {
+      "assessment": "sufficient",
+      "reason": "完整伪代码交付了初始化、边界保护、循环、归约和完成条件。GEMM 尾部与零 K 的 epilogue、RMSNorm 本行临时值、scatter 重复索引语义、softmax 空状态与向量重标度均可重建。RotateNewQK 现在先检查行数与身份，明确遍历范围、未旋转尾部、缓存追加和发布边界；M=1、T=2 的原缺口关闭。算法限定为局部算子，不以单层 K 完成冒充整个模型提交。",
+      "evidence": [
+        {
+          "path": "knowledge/algorithms/operator-primitives.md",
+          "quote": "处理完前 t 个 K 分块后，acc 等于对应输出在 [0,min(tBK,K)) 上的乘积和，这是循环不变量。"
+        },
+        {
+          "path": "knowledge/algorithms/operator-primitives.md",
+          "quote": "1 在任何写入前检查：Q/K 行数相等、行身份逐行对应、行宽为 d"
+        },
+        {
+          "path": "knowledge/algorithms/operator-primitives.md",
+          "quote": "16 发布本段 K 就绪范围到 p0+T；不据此单独推进整个模型的 consumed_len"
+        },
+        {
+          "path": "knowledge/algorithms/operator-primitives.md",
+          "quote": "新最大值改变尺度时，l 与 U 都要重标度；只修正分母会让输出错误。"
+        }
+      ]
+    },
+    "cost": {
+      "assessment": "sufficient",
+      "reason": "六类成本均有机制解释，并区分逻辑访问、实际事务、驻留容量与关键路径。独立复算确认 GEMM 的 FLOP/byte、QKV 分段容量、split-K 工作区、residual 的 5N/4N/3N 访问账、RoPE 的 3TR(Hq+Hkv) 算术主项及打包摊销条件成立。成本结论保留缓存、重读、spill、同步和准备的条件，没有把 CPU 事件模型换称 HBM 实测。",
+      "evidence": [
+        {
+          "path": "knowledge/algorithms/operator-primitives.md",
+          "quote": "独立两步先读 x/r、写 u，norm 再读一次 u、保留本行值并写 y，合计 5N 次。融合并保留活跃 u 时，读 x/r、写 u/y，最低 4N 次。只有 u 没有外部消费者，才可省掉 u 的写出，降为 3N 次。"
+        },
+        {
+          "path": "knowledge/algorithms/operator-primitives.md",
+          "quote": "若有 P 份完整部分矩阵、累加元素 s_acc 字节，工作区主项为 PMNs_acc，写出与重读约为 2PMNs_acc，最终输出另计。"
+        },
+        {
+          "path": "knowledge/algorithms/operator-primitives.md",
+          "quote": "重叠阶段不能直接将耗时全部相加，关键路径由依赖与共享资源决定。"
+        }
+      ]
+    },
+    "adaptation": {
+      "assessment": "sufficient",
+      "reason": "正文说明 shape、stride、dtype、residual 活跃性和片上资源改变后，哪些函数不变量保留、哪些数据流及成本必须重算；也明确旋转格式变化会使旧 K-rot 失去兼容性。调整和放弃方案的理由来自实际依赖与成本，未承诺统一最佳配置。",
+      "evidence": [
+        {
+          "path": "knowledge/algorithms/operator-primitives.md",
+          "quote": "u 从死亡变成活跃时，必须恢复其写出；不能继续沿用 3N 的融合账。片上资源不足时，应调整保留策略、分块或融合边界，必要时放弃该融合。"
+        },
+        {
+          "path": "knowledge/algorithms/operator-primitives.md",
+          "quote": "频率、配对或旋转维变化时，旧 K-rot 不再自动兼容，须重建或放弃复用。"
+        }
+      ]
+    },
+    "diagnosis": {
+      "assessment": "sufficient",
+      "reason": "竞争解释对应可区分预测、干预和反证后的修正。脚本具有独立数值参考及能触发具体机制错误的负对照。residual 已从常数比较改为实际访问事件与后续消费者检查；漏写和旧值两种错误均保持 y 正确，随后被消费者拒绝，原检查辨别力缺口关闭。所附执行记录只支持声明的离线标量与顺序事件范围。",
+      "evidence": [
+        {
+          "path": "knowledge/algorithms/operator-primitives.md",
+          "quote": "检查必须让该消费者实际读取 u，并核对其存储覆盖和数值。不能以预设的 4N 与 3N 不相等，声称已经检测了漏写。"
+        },
+        {
+          "path": "knowledge/algorithms/operator-primitives.md",
+          "quote": "residual 三条路径逐元素执行并记录缓冲读写，按事件汇总成本；错误路径确实生成正确 y 但漏写 u，再交给后续消费者拒绝。"
+        },
+        {
+          "path": "knowledge/algorithms/operator-primitives.md",
+          "quote": "softmax 同时核对标量质量、加权向量 U 和自然对数 LSE，不能只检查概率和为 1。"
+        }
+      ]
+    }
+  },
+  "findings": [],
+  "limitations": [
+    "执行证据来自所附 actual_preflight：remote_bwrap 中 Python 3.12 运行所绑定脚本，returncode=0、stderr 为空。本审阅调用未重新执行脚本，也未从本地文件重新计算哈希；不把所附记录表述为审阅者自行运行。",
+    "检查限 CPU binary64、Decimal 和顺序逻辑缓冲事件；不证明真实低精度舍入、GPU 内存可见性、异步最后使用、并发别名、设备事务、性能或完整模型质量。",
+    "RoPE 执行检查限单请求、单 head 的同步 K-rot 追加；不同 Q/K 行数的其他接口、格式迁移及多层提交未作为该子算法的实现验证范围。",
+    "S-CPU-TUNING、S-SDPA、S-TRITON 本轮仅有允许读取的作者机制说明，没有相应原始文档或源码阅读证据；正文对其使用范围已作限定。",
+    "未进行物理链接存在性、reader.html、PDF 图像或源码归档检查；仅核对所给文本中的相对路径及其引用范围。"
+  ],
+  "checks": [
+    {
+      "script": "tools/check_k_alg_016_full.py",
+      "args": []
+    }
+  ],
+  "no_checks_reason": "",
+  "reading_scope": "完整阅读用户提供的候选正文、完整候选脚本、author_notes 和 actual_preflight（含命令、输出、退出码及身份元数据）。以下范围均为材料声明的抽取文本零基半开字符范围。完整文件：AGENTS.md [0,567)；docs/knowledge-method.md [0,2251)；docs/knowledge-review.md [0,3016)；knowledge/algorithms/operator-primitives.md [0,16062)。十份来源说明完整阅读：S-TRANSFORMER [0,550)、S-RMSNORM [0,696)、S-ROPE [0,683)、S-TORCH-NUMERIC [0,532)、S-FLASH [0,2072)、S-CPU-TUNING [0,731)、S-SDPA [0,1619)、S-FA-IMPL [0,1318)、S-CUDA-BEST [0,992)、S-TRITON [0,1098)，路径均位于 knowledge/sources/ 且扩展名为 .md。完整相关章节：knowledge/hardware/cpu-linear-kernels.md [0,4016)、knowledge/frameworks/inference-eval.md [0,3779)、knowledge/tools/correctness-oracles.md [0,5245)、knowledge/models/embedding-reranking.md [0,4128)、knowledge/models/vision-inference.md [0,4331)、knowledge/models/recommendation-inference.md [0,3902)、knowledge/models/graph-inference.md [0,3892)。完整提供的原文抽取文本：references/S-TRANSFORMER/fulltext.txt [0,39757)、references/S-ROPE/fulltext.txt [0,30520)、references/S-TORCH-NUMERIC/fulltext.txt [0,10998)、references/S-FA-IMPL/fulltext.txt [0,24478)。仅阅读摘录的相关章节：knowledge/models/prefill-decode-state.md [0,4000)、[16000,17666)；knowledge/algorithms/attention-io.md [0,1666)、[8000,12000)；knowledge/frameworks/numerical-reference.md [0,5666)；knowledge/frameworks/checkpoint-loading.md [0,5666)；knowledge/frameworks/triton-kernels.md [0,4000)、[8000,9666)；knowledge/frameworks/attention-backends.md [0,5666)；knowledge/frameworks/nki-tiling.md [0,4000)、[12000,13666)；knowledge/system-semantics/design-synthesis.md [0,1666)、[4000,8000)。仅阅读摘录的来源原文：references/S-RMSNORM/fulltext.txt [0,36000)、[40000,43783)；references/S-FLASH/fulltext.txt [0,20000)、[32000,36000)、[60000,68000)、[72000,76000)、[88000,91783)；references/S-CUDA-BEST/fulltext.txt [48000,56000)、[64000,72000)、[76000,92000)、[108000,112000)、[128000,131784)。摘录文件未列入 documents，也不据此声称阅读全文。未读取源码归档、未视觉核对 PDF；documents 中的哈希按要求复制所给绑定值。",
+  "test_assessment": "独立审阅了完整检查算法及所附实际执行。布局检查以逻辑轴枚举构造重排参考，flat copy 在48个位置中产生32处错位；GEMM 以逐输出 math.fsum 参考检验三组 tile、非整除尾部和 M/N/K 零维，并拒绝重复 bias 与权重轴错误。RMSNorm 使用60位 Decimal 参考及全一闭式结果，H=3072、P=4096 的错误分母被拒绝。residual 的三条执行路径通过 BufferModel 实际生成逐缓冲、逐索引事件，Counter 检查覆盖与次数，核内事件汇总得到 N=10 时50/40/30次访问；消费者事件明确排除在该成本账外。错误融合路径实际省略活跃 u 的写入而保留正确 y，后续消费者分别报 read-before-write:u[0] 和 consumer saw stale residual at 0，确实检查了生命周期与存储交付机制，已不再依赖不同常数的不等式。RoPE 使用复数乘法参考、固定正向四分之一周结果、范数和相对内积关系；覆盖位置7/8/9、两种配对、未旋转尾部、跨 chunk、空 chunk、容量及身份错误，非法调用检查缓存不变，并拒绝截断共同循环、方向反转和位置重置。softmax 使用70位 Decimal 直接整行指数参考，独立于候选分块合并，比较概率、两通道 U/l 和自然 LSE，覆盖空块、全空行、空输入及反向合并顺序；遗漏 U 重标度、分段独立归一化、有限常数代替空 mask 和 LSE 底数错用均被拒绝。所附 remote_bwrap 记录绑定脚本 SHA256=2411d4d758b04b2f1bd764f2ac61595f92d3889af27ad6e392dc2ecb0ace76dc，实际解释器参数为 -I -S -B -X utf8，退出码0且无stderr；这与作者明确未自行执行、交由协调者执行的声明相容。检查未实现任意 strided GEMM 地址空间、真实 epilogue/低精度转换、异步失败与多 head/多层缓存协议，也未执行设备性能实验，正文没有把这些范围记成通过。K-ALG-016-ROPE-DOMAIN-001、K-ALG-016-SOURCE-CONTRACT-001、K-ALG-016-TRAFFIC-ORACLE-001 均依据当前修订关闭；完整候选复核未发现新的阻断问题，campaign-K-ALG-016-r1 的具体修订要求已得到满足。"
+}

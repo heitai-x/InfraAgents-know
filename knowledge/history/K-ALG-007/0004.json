@@ -1,0 +1,60 @@
+{
+  "id": "K-ALG-007",
+  "path": "algorithms/chunked-prefill.md",
+  "category": "algorithms",
+  "title": "分块 Prefill：服务时间切片与历史可见性",
+  "summary": "分块 prefill 将长输入的执行切成可调度时间片；每块仍读取其之前完整且有效的上下文。",
+  "revision": 4,
+  "status": "seed",
+  "tags": [
+    "chunked prefill",
+    "分块",
+    "时间片",
+    "TTFT"
+  ],
+  "scope": {
+    "model_families": [],
+    "platforms": [],
+    "runtimes": [],
+    "workloads": []
+  },
+  "source_ids": [
+    "S-SARATHI",
+    "S-ORCA",
+    "S-HF-CACHE"
+  ],
+  "related": [
+    "K-ALG-001",
+    "K-ALG-004",
+    "K-WORK-005",
+    "K-HW-001",
+    "K-WORK-010",
+    "K-SYS-012",
+    "K-TOOLS-007",
+    "K-ALG-013",
+    "K-ENGINE-001",
+    "K-FW-004",
+    "K-SYS-003",
+    "K-SYS-010",
+    "K-SYS-025"
+  ],
+  "evidence": [],
+  "updated_at": "2026-10-27",
+  "sha256": "cc96f3196a037ac067209b9df1d3c7d1ce2ce7b291ff0b75ffc22ba0d2b66668",
+  "questions": [
+    "一个长 prompt 的 prefill 被切成时间片后，每块仍要读取哪些历史，哪些成本随块数增加？",
+    "在给定 ITL 预算和已有 decode 负载下，怎样从剩余时间反求可接受的块长？",
+    "token 预算与时间预算分别限制什么，为什么同样的 token 数在不同历史长度下成本不同？",
+    "混合批里 prefill 块和 decode 行的数据形态有什么差别，这对 kernel 选择意味着什么？",
+    "时间模型的预测残差、图桶约束和多个长 prompt 竞争如何共同改变块长选择？"
+  ],
+  "symptoms": [
+    "首 token 快但已有请求的输出间隔突然变长",
+    "分块后 logits 与整段 prefill 不一致",
+    "块减小后 ITL 好转但 TTFT 和总服务成本明显恶化"
+  ],
+  "assumes": [
+    "自回归 decoder 模型",
+    "连续批或迭代级调度已存在"
+  ]
+}

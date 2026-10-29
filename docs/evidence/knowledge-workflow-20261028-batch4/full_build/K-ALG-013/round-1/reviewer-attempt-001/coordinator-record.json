@@ -1,0 +1,299 @@
+{
+  "role": "reviewer",
+  "engine": "sol",
+  "requested_model": "gpt-6.1-sol",
+  "reasoning_effort": "high",
+  "prompt_sha256": "7be47bba0e452eaf0a7861c9d6c5822c48c4c12bb3bcd1813e2e0e206b538269",
+  "usage": [
+    {
+      "input_tokens": 708665,
+      "cached_input_tokens": 538368,
+      "cache_write_input_tokens": 0,
+      "output_tokens": 8061,
+      "reasoning_output_tokens": 2770
+    }
+  ],
+  "answer": "{\n  \"entry_id\": \"K-ALG-013\",\n  \"body_sha256\": \"b26529fa014c85cf1d813b5f745305e447ad66a5eddee4eca7090a06104a9648\",\n  \"reviewer\": \"sol-reviewer:K-ALG-013:round-1\",\n  \"decision\": \"revise\",\n  \"documents\": {\n    \"AGENTS.md\": \"b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a\",\n    \"docs/knowledge-method.md\": \"69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb\",\n    \"docs/knowledge-review.md\": \"f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21\",\n    \"knowledge/algorithms/disaggregated-serving.md\": \"b26529fa014c85cf1d813b5f745305e447ad66a5eddee4eca7090a06104a9648\",\n    \"knowledge/sources/S-DISTSERVE.md\": \"968cbf46667e862085b0e2d72405805351bd33880ac23d8d055bf259192411f4\",\n    \"knowledge/sources/S-CUDA-TOPOLOGY.md\": \"39d4039179728ce8570c3b9ec3801aaad52108d030f278fb598a4d6d47de1f8e\",\n    \"knowledge/sources/S-PAGED.md\": \"50893a22385b0d577980153a9bc9c617acdcb2a9d7be0af655ad49421f06cc09\",\n    \"knowledge/sources/S-MOONCAKE.md\": \"87547af306062e8e7c7d5da5de6102cd47ac371d0b9172a1b4c2eda719134e8b\",\n    \"knowledge/hardware/topology-parallelism.md\": \"44b63f4291293b51e17b58d64bcfa9fe2bd384534a589c9b74fae0ad157ead29\",\n    \"knowledge/system-semantics/distributed-state-transfer.md\": \"425985efff21e4acbe091ddfa9043cf97b37e550b606f10c0e1560a3c02b1f6f\",\n    \"knowledge/workloads/slo-goodput.md\": \"5aa9b71cddb7d896ffa1fe6d78ac61cf0bb92d76279ae4d563f1110ed9dbedb4\",\n    \"knowledge/system-semantics/distributed-kv-store.md\": \"ecc4f667ff186b05fececba52c500e43d0460def524e6200b9cfa00fcdb984c0\",\n    \"knowledge/hardware/transport-and-rdma.md\": \"72bcf1d8948eae41c243e422f6b0370462dcc4bf33ef86f5664a09b4e46d3ba2\",\n    \"knowledge/algorithms/routing-and-migration.md\": \"1b9dcfd5fea499a91611459bb936e1c1c49ceb562171fb0f1ba360a7010f5d32\",\n    \"knowledge/system-semantics/serving-recovery.md\": \"f551fa1f1e6213469c856a880839eefff504fb39f4dd692000b2df80a20a7f5e\",\n    \"knowledge/algorithms/parallelism.md\": \"161a883561e39371ea22a1430c385546c402db2f993d8a37c6f37e03e1e4bd17\",\n    \"knowledge/engine-index/tensorrt-llm.md\": \"6ade1253f3747041bef4a816d82387c3771bff3459a153719cfbd571c2454c0b\",\n    \"knowledge/workloads/capacity-planning.md\": \"2a1fab417c30d8e6984c202d805f31863e0f00e248558c583609b5f9ba7e88c7\",\n    \"tools/check_k_alg_013_full.py\": \"4ee95a0bcaa8f4d0b61c1d51fa036890315be9c062c8170fdfbd8dac1cd097f1\"\n  },\n  \"criteria\": {\n    \"definition\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"动机、请求与传输身份、右开位置范围、目标缺失范围和首 token 因果关系已明确。正确区分首 token 已采样与其自身 KV 尚未计算；未沿用这一已修复问题作为缺口。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/algorithms/disaggregated-serving.md\",\n          \"quote\": \"首 token 记为 y_n，它在位置 n 被采样，但其自身 KV 尚未计算。\"\n        },\n        {\n          \"path\": \"knowledge/algorithms/disaggregated-serving.md\",\n          \"quote\": \"收益来自阶段干扰消除和并行策略解耦；代价来自第二份权重、跨池状态、两侧排队和提交协议。\"\n        }\n      ]\n    },\n    \"legality\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"模型与数值身份、几何与分片、目标容量、共享写区、异步最后使用者、状态可见性和恢复责任均有明确约束。来源归属基本准确：DistServe 的抢占和容错未被冒充为已实现能力，Mooncake 的 dummy 模型及预测假设得到限定。具体执行流程仍有 algorithm 项所列缺口。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/algorithms/disaggregated-serving.md\",\n          \"quote\": \"两边必须匹配固定 checkpoint、adapter、规范化输入、位置规则、RoPE 或其他位置状态，以及影响中间值的数值表示。\"\n        },\n        {\n          \"path\": \"knowledge/algorithms/disaggregated-serving.md\",\n          \"quote\": \"共享页只在所有逻辑读者与异步物理使用者都结束后回收。\"\n        }\n      ]\n    },\n    \"algorithm\": {\n      \"assessment\": \"partial\",\n      \"reason\": \"已有规划、分块传输、全层提交和首次 decode 的主体流程，但源端计算前缀与目标接收前缀未分别定义；完整缓存恢复分支未闭合；提前发送的伪代码顺序与时间轴不一致；候选循环产生的预留缺少结算。上述问题影响可独立实现的数据流和状态推进。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/algorithms/disaggregated-serving.md\",\n          \"quote\": \"在 p 上执行尚缺的 prompt 范围；块化和层间流水只能改变执行粒度，不能改变逻辑位置、因果 mask 或提交边界\"\n        },\n        {\n          \"path\": \"knowledge/algorithms/disaggregated-serving.md\",\n          \"quote\": \"按策略写入 D 预留、生成 g 与 tx，并用条件化 SLO 计算候选代价\"\n        }\n      ]\n    },\n    \"cost\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"逻辑 KV 字节公式、512 MiB/384 MiB、20 GiB/s 下的 25 ms、4 GiB/s 平均需求及时间轴算术正确。覆盖计算与访存、双池权重、源目标驻留、通信、准备、同步和排队，明确重叠取尾段、平均约束不保证尾延迟。源端前缀未定义使规划器的具体 prefill 成本仍无法落实，归入对应算法 finding。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/algorithms/disaggregated-serving.md\",\n          \"quote\": \"每个 token 的全层逻辑 KV 字节为 B_tok = 2 * L * H_kv * d_h * b\"\n        },\n        {\n          \"path\": \"knowledge/algorithms/disaggregated-serving.md\",\n          \"quote\": \"若层间传输与 prefill 重叠，`T_x` 的完整总量不能直接加到 prefill 后面；应取最后一个阻挡消费者的尾段。\"\n        }\n      ]\n    },\n    \"adaptation\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"对短输入、低负载、链路下降、目标容量不足、布局和 TP 改变以及非普通 causal 状态族给出调整或放弃条件，区分必须保留的语义不变量与可替换策略。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/algorithms/disaggregated-serving.md\",\n          \"quote\": \"无论条件怎样变化，逻辑位置、已确认输入、完整前缀和提交点这些不变量要保留；可替换的是页长、分块、并行度、输出门控和预留策略。\"\n        }\n      ]\n    },\n    \"diagnosis\": {\n      \"assessment\": \"partial\",\n      \"reason\": \"正文的竞争解释、控制变量和反证修正具有实质内容，设备与 CPU 边界也声明正确。但脚本所称四个负对照中，部分只是手工构造错误布尔量或算式，没有让协议检查实际拒绝错误提交、读取或就绪事件，不能支撑相应机制已被检测的表述。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/algorithms/disaggregated-serving.md\",\n          \"quote\": \"负对照应故意把“发送已提交”当作“目标已可见”，或让 decode 在 M 未覆盖时读取目标页；正确检查应发现缺失范围、旧代次或读取早于提交。\"\n        },\n        {\n          \"path\": \"knowledge/algorithms/disaggregated-serving.md\",\n          \"quote\": \"比较立即发送与门控发送；若门控后首内容变晚而第二 token 不变，说明首内容可见性与状态提交被混用\"\n        }\n      ]\n    }\n  },\n  \"findings\": [\n    {\n      \"id\": \"K-ALG-013-A01\",\n      \"criterion\": \"algorithm\",\n      \"evidence\": \"knowledge/algorithms/disaggregated-serving.md：“设 H 为目标端已有、且与源端满足同一数值契约的公共前缀终点”；“在 p 上执行尚缺的 prompt 范围”。PLAN 只计算 H_d，未定义 p 已有的历史范围或取得该历史的步骤。\",\n      \"impact\": \"目标已有 [0,H) 不证明所选 p 拥有这段逐层历史。若 p 无缓存而直接计算后缀，attention 缺少输入；若 p 重算完整 prompt，则不能用目标 H 推断 prefill 节省或对应服务时间。当前计划无法确定源端真实计算范围及其成本。\",\n      \"blocking\": true,\n      \"required_revision\": \"分别定义源端可用前缀与目标端可用前缀，说明 p 如何取得计算所需的逐层历史，并据此确定 prefill 范围和时间；也可明确限定源端始终完整重算。目标 M 只控制接收缺失范围，不能自动作为源端计算范围。\"\n    },\n    {\n      \"id\": \"K-ALG-013-A02\",\n      \"criterion\": \"algorithm\",\n      \"evidence\": \"knowledge/algorithms/disaggregated-serving.md：“2  若需要 RECOVER_LAST_LOGITS，在合法历史上恢复最后一行 logits，并得到 y_n”；“4  当 prompt 最后一行完成时，用固定采样状态得到 y_n，记录输出票据、位置 n 和请求代次 g”；“读取已有 [0,n−1) 的合法历史，计算位置 n−1 的最后一行输出，取得可采样 logits”。\",\n      \"impact\": \"完整命中时只明确标记无 token 且无 logits 的分支，没有闭合已有 token、仅有 logits、需要恢复三条执行路径。恢复得到 y_n 后仍进入后续无条件步骤，缺少跳过重算和重复采样的规则。恢复执行端、逐层 hidden 输入、当前行暂存与共享缓存隔离也未展开或明确委托，无法据此实现多层恢复。\",\n      \"blocking\": true,\n      \"required_revision\": \"将已有 y_n、仅有合法 logits、恢复末行、正常 prefill 写成互斥路径，汇合到同一首 token 票据，确保只采样确认一次。指定恢复位置和执行端，补充逐层输入、历史读取、当前行暂存、最终 logits 与全请求提交关系；可明确链接委托给 K-ALG-007 的完整恢复算法，并说明本章如何满足其前提。\"\n    },\n    {\n      \"id\": \"K-ALG-013-A03\",\n      \"criterion\": \"algorithm\",\n      \"evidence\": \"knowledge/algorithms/disaggregated-serving.md 的 EXECUTE_HANDOFF 先执行“6  当所有层的 M、布局转换和必要可见性都完成”，再执行“7  按输出策略发送 y_n：若提前发送”；时间轴却写“若首 token 在 90 ms 后立即发送并在 95 ms 到达客户端”，目标状态到 130 ms 才提交。\",\n      \"impact\": \"按当前步骤顺序，提前发送也必须等待目标提交，无法产生正文的 95 ms 首 token。后面的重叠说明没有给出改变该等待关系的事件或分支，因此核心伪代码与成本示例描述了不同执行过程。\",\n      \"blocking\": true,\n      \"required_revision\": \"把提前输出挂到 FIRST_TOKEN_READY 事件，使其可与传输并发；门控输出等待目标提交。分别说明输出票据、发送去重及失败后的可见输出边界，保持首次 decode 同时等待 token 和状态。用同一事件依赖复核两种策略的时间轴。\"\n    },\n    {\n      \"id\": \"K-ALG-013-A04\",\n      \"criterion\": \"algorithm\",\n      \"evidence\": \"knowledge/algorithms/disaggregated-serving.md 在“3  对每个可行 p,d 对”内部执行“按策略写入 D 预留、生成 g 与 tx”，之后才“4  选择合法且预测代价最小、同时满足 TTFT 与第一次间隔目标的候选”，没有释放未选候选预留的步骤。\",\n      \"impact\": \"同一请求可能为多个候选重复占用目标容量，改变后续候选的可行性并遗留未选预留；无候选成功时也没有统一结算。结果依赖枚举顺序，且实际驻留不再对应最终选择。\",\n      \"blocking\": true,\n      \"required_revision\": \"候选阶段只做无副作用估算，选定后原子预留，竞争失败则重试选择；或者明确临时预留的所有权，并在选中、拒绝和异常出口释放全部未选项。请求代次与尝试身份的生成也应有明确作用域。\"\n    },\n    {\n      \"id\": \"K-ALG-013-D01\",\n      \"criterion\": \"diagnosis\",\n      \"evidence\": \"tools/check_k_alg_013_full.py：“bad_full_cache_ready = True”及“assert bad_full_cache_ready and not have_first”；“bad_commit_on_post = len(posted_only) > 0”及“assert bad_commit_on_post and not intervals_cover(posted_only, h, n)”。脚本随后打印“negative control detected”和“PASS: scoped invariants and four negative controls”。\",\n      \"impact\": \"这些断言能说明手工构造的错误条件与已知事实冲突，但没有把错误 READY 或提前提交事件交给协议检查，也没有实际驱动 decode 读取。区间 helper 和分类函数的正常断言有价值，却不能据此声称已检测提交/消费协议缺陷；当前接管流程中的错误仍不在检查覆盖内。\",\n      \"blocking\": true,\n      \"required_revision\": \"让最小 CPU 接管模型实际处理 token 就绪、分层范围完成、提交和消费事件，用独立不变量拒绝至少一个注入的提前提交或提前消费缺陷，并断言检测确实发生。保留现有算术与分类检查，收窄未覆盖的旧代次、取消和设备可见性结论，不把打印语句作为检测证据。\"\n    }\n  ],\n  \"limitations\": [\n    \"没有目标 GPU 数值、内存可见性、真实网络重叠、SLO、吞吐或 Agent 使用效果证据；正文对此声明清楚，这些边界本身不构成 blocking finding。\",\n    \"来源事实核对限于完整来源说明和提供的原文摘录；没有阅读全文原始论文或 CUDA 全文，也未读取源码归档。\",\n    \"提供的 CUDA 原文摘录未包含完整多 GPU peer-access 专节；拓扑结论仅按来源说明、相关章节和已提供文档范围核对。\",\n    \"docs/knowledge-build-workflow.md 未包含在提供材料中，当前工具也未暴露文件读取入口；本次采用请求嵌入的 review JSON schema，未声称核对该 workflow 文件。\",\n    \"执行证据来自提供的 actual_preflight；本审阅没有另行重跑脚本或重新计算本地文件哈希。\"\n  ],\n  \"checks\": [\n    {\n      \"script\": \"tools/check_k_alg_013_full.py\",\n      \"args\": []\n    }\n  ],\n  \"no_checks_reason\": \"\",\n  \"reading_scope\": \"完整阅读提供文本，字符范围均为零起点右开区间：AGENTS.md [0,567)；docs/knowledge-method.md [0,2251)；docs/knowledge-review.md [0,3016)；knowledge/algorithms/disaggregated-serving.md [0,10714)；knowledge/sources/S-DISTSERVE.md [0,443)；knowledge/sources/S-CUDA-TOPOLOGY.md [0,500)；knowledge/sources/S-PAGED.md [0,2206)；knowledge/sources/S-MOONCAKE.md [0,997)；knowledge/hardware/topology-parallelism.md [0,3562)；knowledge/system-semantics/distributed-state-transfer.md [0,3216)；knowledge/workloads/slo-goodput.md [0,2616)；knowledge/system-semantics/distributed-kv-store.md [0,3441)；knowledge/hardware/transport-and-rdma.md [0,4088)；knowledge/algorithms/routing-and-migration.md [0,3228)；knowledge/system-semantics/serving-recovery.md [0,3834)；knowledge/algorithms/parallelism.md [0,6115)；knowledge/engine-index/tensorrt-llm.md [0,2145)；knowledge/workloads/capacity-planning.md [0,3442)。完整阅读提供的 tools/check_k_alg_013_full.py，从 shebang 至 raise SystemExit(main())，以及 author_notes 和 actual_preflight 的执行记录。仅阅读以下摘录，不将其列入 documents：knowledge/algorithms/chunked-prefill.md [0,3083)、[8000,12000)；knowledge/system-semantics/design-synthesis.md [0,7083)；references/S-DISTSERVE/fulltext.txt [0,44000)、[48000,59330)、[60000,68000)、[80000,84000)；references/S-CUDA-TOPOLOGY/fulltext.txt [16000,19330)、[76000,96000)、[284000,288000)、[296000,304000)、[440000,444000)、[452000,456000)、[492000,496000)、[504000,508000)、[516000,520000)、[580000,584000)、[788000,792000)、[1080000,1084000)；references/S-PAGED/fulltext.txt [0,51329)、[52000,68000)；references/S-MOONCAKE/fulltext.txt [0,60000)、[68000,75329)。未将来源说明中他人的全文阅读记录当作本次全文阅读。\",\n  \"test_assessment\": \"actual_preflight 记录绑定脚本哈希 4ee95a0bcaa8f4d0b61c1d51fa036890315be9c062c8170fdfbd8dac1cd097f1，在 remote_bwrap 中以 Python 3.12 隔离执行，returncode=0、stderr 为空、未超时；这支持该脚本本次执行成功。作者声明自己未执行，与协调者另行执行的记录不矛盾。检查中的固定数值可独立复算：每 token 131072 字节、4096 token 为 512 MiB、3072 token 为 384 MiB；时间依赖给出 90/130/95/135/145 ms，首次间隔为 50/10 ms；容量总需求 11 大于 10。intervals_cover 检查完整后缀和缺少末块，output_route 覆盖完整命中缺输出、空输入、H>n、adapter 不匹配、已有 logits 和部分命中，具有有限的 helper 与分支验证价值。所谓 posted-transfer 负对照实际只是删除末块，未区分 posted、到达、转换及可见；错误第二 token 时间和忽略 receiving 的容量算式是可复算的代数反例；完整缓存 READY 负对照则直接设置布尔量，没有实际执行被拒绝的就绪事件。脚本不包含完整接管状态机、逐层恢复、输出票据消费或候选预留结算，因此不能验证本次发现的算法问题，也不能证明设备可见性。正文提出的共置/分离数值比较和性能区分实验均未在该执行中完成，未将其记为 PASS。\"\n}",
+  "exit_code": 0,
+  "status": "completed",
+  "timeout_seconds": 1800,
+  "response_path": "D:\\桌面\\xdb\\InfraAgents\\InfraAgents-know-astra-new\\InfraAgents-know\\docs\\evidence\\knowledge-workflow-20261028-batch4\\full_build\\K-ALG-013\\round-1\\reviewer-attempt-001\\answer.txt",
+  "record_path": "D:\\桌面\\xdb\\InfraAgents\\InfraAgents-know-astra-new\\InfraAgents-know\\docs\\evidence\\knowledge-workflow-20261028-batch4\\full_build\\K-ALG-013\\round-1\\reviewer-attempt-001\\record.json",
+  "tool_events": [
+    {
+      "type": "item.completed",
+      "item": {
+        "id": "item_2",
+        "type": "mcp_tool_call",
+        "server": "codex",
+        "tool": "list_mcp_resource_templates",
+        "arguments": {},
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"resourceTemplates\":[]}"
+            }
+          ],
+          "structured_content": null
+        },
+        "error": null,
+        "status": "completed"
+      }
+    },
+    {
+      "type": "item.completed",
+      "item": {
+        "id": "item_1",
+        "type": "mcp_tool_call",
+        "server": "codex",
+        "tool": "list_mcp_resources",
+        "arguments": {},
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"resources\":[]}"
+            }
+          ],
+          "structured_content": null
+        },
+        "error": null,
+        "status": "completed"
+      }
+    }
+  ],
+  "inventory_tool_events": [
+    {
+      "type": "item.completed",
+      "item": {
+        "id": "item_2",
+        "type": "mcp_tool_call",
+        "server": "codex",
+        "tool": "list_mcp_resource_templates",
+        "arguments": {},
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"resourceTemplates\":[]}"
+            }
+          ],
+          "structured_content": null
+        },
+        "error": null,
+        "status": "completed"
+      }
+    },
+    {
+      "type": "item.completed",
+      "item": {
+        "id": "item_1",
+        "type": "mcp_tool_call",
+        "server": "codex",
+        "tool": "list_mcp_resources",
+        "arguments": {},
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"resources\":[]}"
+            }
+          ],
+          "structured_content": null
+        },
+        "error": null,
+        "status": "completed"
+      }
+    }
+  ],
+  "rejected_tool_events": [],
+  "tool_policy": "metadata_inventory_only",
+  "tool_policy_version": "2026-10-28-production-v1",
+  "tool_policy_scope": "Only empty-argument codex host plugin/skill-directory descriptors and empty template inventory; inventory is not knowledge evidence. All other tool events reject the call.",
+  "tool_policy_reason": "Production chapter construction allows observed generic capability discovery metadata; this does not claim a zero-tool comparison or external source reading.",
+  "malformed_event_lines": [],
+  "turn_completed": true,
+  "error_events": [],
+  "recovered_transport_events": [],
+  "terminal_error_events": [],
+  "transport_recovered": false,
+  "actual_model": null,
+  "identity_verified": null,
+  "identity_basis": "Explicit CLI model and isolated HTTP provider; CLI events do not expose server model identity.",
+  "provider": "eval-openai-http",
+  "max_output_tokens": null,
+  "cli_version": "codex-cli 0.164.0-alpha.11.1",
+  "cost_scope": "Codex token usage is reported; subscription charge is not exposed.",
+  "parsed": {
+    "entry_id": "K-ALG-013",
+    "body_sha256": "b26529fa014c85cf1d813b5f745305e447ad66a5eddee4eca7090a06104a9648",
+    "reviewer": "sol-reviewer:K-ALG-013:round-1",
+    "decision": "revise",
+    "documents": {
+      "AGENTS.md": "b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a",
+      "docs/knowledge-method.md": "69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb",
+      "docs/knowledge-review.md": "f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21",
+      "knowledge/algorithms/disaggregated-serving.md": "b26529fa014c85cf1d813b5f745305e447ad66a5eddee4eca7090a06104a9648",
+      "knowledge/sources/S-DISTSERVE.md": "968cbf46667e862085b0e2d72405805351bd33880ac23d8d055bf259192411f4",
+      "knowledge/sources/S-CUDA-TOPOLOGY.md": "39d4039179728ce8570c3b9ec3801aaad52108d030f278fb598a4d6d47de1f8e",
+      "knowledge/sources/S-PAGED.md": "50893a22385b0d577980153a9bc9c617acdcb2a9d7be0af655ad49421f06cc09",
+      "knowledge/sources/S-MOONCAKE.md": "87547af306062e8e7c7d5da5de6102cd47ac371d0b9172a1b4c2eda719134e8b",
+      "knowledge/hardware/topology-parallelism.md": "44b63f4291293b51e17b58d64bcfa9fe2bd384534a589c9b74fae0ad157ead29",
+      "knowledge/system-semantics/distributed-state-transfer.md": "425985efff21e4acbe091ddfa9043cf97b37e550b606f10c0e1560a3c02b1f6f",
+      "knowledge/workloads/slo-goodput.md": "5aa9b71cddb7d896ffa1fe6d78ac61cf0bb92d76279ae4d563f1110ed9dbedb4",
+      "knowledge/system-semantics/distributed-kv-store.md": "ecc4f667ff186b05fececba52c500e43d0460def524e6200b9cfa00fcdb984c0",
+      "knowledge/hardware/transport-and-rdma.md": "72bcf1d8948eae41c243e422f6b0370462dcc4bf33ef86f5664a09b4e46d3ba2",
+      "knowledge/algorithms/routing-and-migration.md": "1b9dcfd5fea499a91611459bb936e1c1c49ceb562171fb0f1ba360a7010f5d32",
+      "knowledge/system-semantics/serving-recovery.md": "f551fa1f1e6213469c856a880839eefff504fb39f4dd692000b2df80a20a7f5e",
+      "knowledge/algorithms/parallelism.md": "161a883561e39371ea22a1430c385546c402db2f993d8a37c6f37e03e1e4bd17",
+      "knowledge/engine-index/tensorrt-llm.md": "6ade1253f3747041bef4a816d82387c3771bff3459a153719cfbd571c2454c0b",
+      "knowledge/workloads/capacity-planning.md": "2a1fab417c30d8e6984c202d805f31863e0f00e248558c583609b5f9ba7e88c7",
+      "tools/check_k_alg_013_full.py": "4ee95a0bcaa8f4d0b61c1d51fa036890315be9c062c8170fdfbd8dac1cd097f1"
+    },
+    "criteria": {
+      "definition": {
+        "assessment": "sufficient",
+        "reason": "动机、请求与传输身份、右开位置范围、目标缺失范围和首 token 因果关系已明确。正确区分首 token 已采样与其自身 KV 尚未计算；未沿用这一已修复问题作为缺口。",
+        "evidence": [
+          {
+            "path": "knowledge/algorithms/disaggregated-serving.md",
+            "quote": "首 token 记为 y_n，它在位置 n 被采样，但其自身 KV 尚未计算。"
+          },
+          {
+            "path": "knowledge/algorithms/disaggregated-serving.md",
+            "quote": "收益来自阶段干扰消除和并行策略解耦；代价来自第二份权重、跨池状态、两侧排队和提交协议。"
+          }
+        ]
+      },
+      "legality": {
+        "assessment": "sufficient",
+        "reason": "模型与数值身份、几何与分片、目标容量、共享写区、异步最后使用者、状态可见性和恢复责任均有明确约束。来源归属基本准确：DistServe 的抢占和容错未被冒充为已实现能力，Mooncake 的 dummy 模型及预测假设得到限定。具体执行流程仍有 algorithm 项所列缺口。",
+        "evidence": [
+          {
+            "path": "knowledge/algorithms/disaggregated-serving.md",
+            "quote": "两边必须匹配固定 checkpoint、adapter、规范化输入、位置规则、RoPE 或其他位置状态，以及影响中间值的数值表示。"
+          },
+          {
+            "path": "knowledge/algorithms/disaggregated-serving.md",
+            "quote": "共享页只在所有逻辑读者与异步物理使用者都结束后回收。"
+          }
+        ]
+      },
+      "algorithm": {
+        "assessment": "partial",
+        "reason": "已有规划、分块传输、全层提交和首次 decode 的主体流程，但源端计算前缀与目标接收前缀未分别定义；完整缓存恢复分支未闭合；提前发送的伪代码顺序与时间轴不一致；候选循环产生的预留缺少结算。上述问题影响可独立实现的数据流和状态推进。",
+        "evidence": [
+          {
+            "path": "knowledge/algorithms/disaggregated-serving.md",
+            "quote": "在 p 上执行尚缺的 prompt 范围；块化和层间流水只能改变执行粒度，不能改变逻辑位置、因果 mask 或提交边界"
+          },
+          {
+            "path": "knowledge/algorithms/disaggregated-serving.md",
+            "quote": "按策略写入 D 预留、生成 g 与 tx，并用条件化 SLO 计算候选代价"
+          }
+        ]
+      },
+      "cost": {
+        "assessment": "sufficient",
+        "reason": "逻辑 KV 字节公式、512 MiB/384 MiB、20 GiB/s 下的 25 ms、4 GiB/s 平均需求及时间轴算术正确。覆盖计算与访存、双池权重、源目标驻留、通信、准备、同步和排队，明确重叠取尾段、平均约束不保证尾延迟。源端前缀未定义使规划器的具体 prefill 成本仍无法落实，归入对应算法 finding。",
+        "evidence": [
+          {
+            "path": "knowledge/algorithms/disaggregated-serving.md",
+            "quote": "每个 token 的全层逻辑 KV 字节为 B_tok = 2 * L * H_kv * d_h * b"
+          },
+          {
+            "path": "knowledge/algorithms/disaggregated-serving.md",
+            "quote": "若层间传输与 prefill 重叠，`T_x` 的完整总量不能直接加到 prefill 后面；应取最后一个阻挡消费者的尾段。"
+          }
+        ]
+      },
+      "adaptation": {
+        "assessment": "sufficient",
+        "reason": "对短输入、低负载、链路下降、目标容量不足、布局和 TP 改变以及非普通 causal 状态族给出调整或放弃条件，区分必须保留的语义不变量与可替换策略。",
+        "evidence": [
+          {
+            "path": "knowledge/algorithms/disaggregated-serving.md",
+            "quote": "无论条件怎样变化，逻辑位置、已确认输入、完整前缀和提交点这些不变量要保留；可替换的是页长、分块、并行度、输出门控和预留策略。"
+          }
+        ]
+      },
+      "diagnosis": {
+        "assessment": "partial",
+        "reason": "正文的竞争解释、控制变量和反证修正具有实质内容，设备与 CPU 边界也声明正确。但脚本所称四个负对照中，部分只是手工构造错误布尔量或算式，没有让协议检查实际拒绝错误提交、读取或就绪事件，不能支撑相应机制已被检测的表述。",
+        "evidence": [
+          {
+            "path": "knowledge/algorithms/disaggregated-serving.md",
+            "quote": "负对照应故意把“发送已提交”当作“目标已可见”，或让 decode 在 M 未覆盖时读取目标页；正确检查应发现缺失范围、旧代次或读取早于提交。"
+          },
+          {
+            "path": "knowledge/algorithms/disaggregated-serving.md",
+            "quote": "比较立即发送与门控发送；若门控后首内容变晚而第二 token 不变，说明首内容可见性与状态提交被混用"
+          }
+        ]
+      }
+    },
+    "findings": [
+      {
+        "id": "K-ALG-013-A01",
+        "criterion": "algorithm",
+        "evidence": "knowledge/algorithms/disaggregated-serving.md：“设 H 为目标端已有、且与源端满足同一数值契约的公共前缀终点”；“在 p 上执行尚缺的 prompt 范围”。PLAN 只计算 H_d，未定义 p 已有的历史范围或取得该历史的步骤。",
+        "impact": "目标已有 [0,H) 不证明所选 p 拥有这段逐层历史。若 p 无缓存而直接计算后缀，attention 缺少输入；若 p 重算完整 prompt，则不能用目标 H 推断 prefill 节省或对应服务时间。当前计划无法确定源端真实计算范围及其成本。",
+        "blocking": true,
+        "required_revision": "分别定义源端可用前缀与目标端可用前缀，说明 p 如何取得计算所需的逐层历史，并据此确定 prefill 范围和时间；也可明确限定源端始终完整重算。目标 M 只控制接收缺失范围，不能自动作为源端计算范围。"
+      },
+      {
+        "id": "K-ALG-013-A02",
+        "criterion": "algorithm",
+        "evidence": "knowledge/algorithms/disaggregated-serving.md：“2  若需要 RECOVER_LAST_LOGITS，在合法历史上恢复最后一行 logits，并得到 y_n”；“4  当 prompt 最后一行完成时，用固定采样状态得到 y_n，记录输出票据、位置 n 和请求代次 g”；“读取已有 [0,n−1) 的合法历史，计算位置 n−1 的最后一行输出，取得可采样 logits”。",
+        "impact": "完整命中时只明确标记无 token 且无 logits 的分支，没有闭合已有 token、仅有 logits、需要恢复三条执行路径。恢复得到 y_n 后仍进入后续无条件步骤，缺少跳过重算和重复采样的规则。恢复执行端、逐层 hidden 输入、当前行暂存与共享缓存隔离也未展开或明确委托，无法据此实现多层恢复。",
+        "blocking": true,
+        "required_revision": "将已有 y_n、仅有合法 logits、恢复末行、正常 prefill 写成互斥路径，汇合到同一首 token 票据，确保只采样确认一次。指定恢复位置和执行端，补充逐层输入、历史读取、当前行暂存、最终 logits 与全请求提交关系；可明确链接委托给 K-ALG-007 的完整恢复算法，并说明本章如何满足其前提。"
+      },
+      {
+        "id": "K-ALG-013-A03",
+        "criterion": "algorithm",
+        "evidence": "knowledge/algorithms/disaggregated-serving.md 的 EXECUTE_HANDOFF 先执行“6  当所有层的 M、布局转换和必要可见性都完成”，再执行“7  按输出策略发送 y_n：若提前发送”；时间轴却写“若首 token 在 90 ms 后立即发送并在 95 ms 到达客户端”，目标状态到 130 ms 才提交。",
+        "impact": "按当前步骤顺序，提前发送也必须等待目标提交，无法产生正文的 95 ms 首 token。后面的重叠说明没有给出改变该等待关系的事件或分支，因此核心伪代码与成本示例描述了不同执行过程。",
+        "blocking": true,
+        "required_revision": "把提前输出挂到 FIRST_TOKEN_READY 事件，使其可与传输并发；门控输出等待目标提交。分别说明输出票据、发送去重及失败后的可见输出边界，保持首次 decode 同时等待 token 和状态。用同一事件依赖复核两种策略的时间轴。"
+      },
+      {
+        "id": "K-ALG-013-A04",
+        "criterion": "algorithm",
+        "evidence": "knowledge/algorithms/disaggregated-serving.md 在“3  对每个可行 p,d 对”内部执行“按策略写入 D 预留、生成 g 与 tx”，之后才“4  选择合法且预测代价最小、同时满足 TTFT 与第一次间隔目标的候选”，没有释放未选候选预留的步骤。",
+        "impact": "同一请求可能为多个候选重复占用目标容量，改变后续候选的可行性并遗留未选预留；无候选成功时也没有统一结算。结果依赖枚举顺序，且实际驻留不再对应最终选择。",
+        "blocking": true,
+        "required_revision": "候选阶段只做无副作用估算，选定后原子预留，竞争失败则重试选择；或者明确临时预留的所有权，并在选中、拒绝和异常出口释放全部未选项。请求代次与尝试身份的生成也应有明确作用域。"
+      },
+      {
+        "id": "K-ALG-013-D01",
+        "criterion": "diagnosis",
+        "evidence": "tools/check_k_alg_013_full.py：“bad_full_cache_ready = True”及“assert bad_full_cache_ready and not have_first”；“bad_commit_on_post = len(posted_only) > 0”及“assert bad_commit_on_post and not intervals_cover(posted_only, h, n)”。脚本随后打印“negative control detected”和“PASS: scoped invariants and four negative controls”。",
+        "impact": "这些断言能说明手工构造的错误条件与已知事实冲突，但没有把错误 READY 或提前提交事件交给协议检查，也没有实际驱动 decode 读取。区间 helper 和分类函数的正常断言有价值，却不能据此声称已检测提交/消费协议缺陷；当前接管流程中的错误仍不在检查覆盖内。",
+        "blocking": true,
+        "required_revision": "让最小 CPU 接管模型实际处理 token 就绪、分层范围完成、提交和消费事件，用独立不变量拒绝至少一个注入的提前提交或提前消费缺陷，并断言检测确实发生。保留现有算术与分类检查，收窄未覆盖的旧代次、取消和设备可见性结论，不把打印语句作为检测证据。"
+      }
+    ],
+    "limitations": [
+      "没有目标 GPU 数值、内存可见性、真实网络重叠、SLO、吞吐或 Agent 使用效果证据；正文对此声明清楚，这些边界本身不构成 blocking finding。",
+      "来源事实核对限于完整来源说明和提供的原文摘录；没有阅读全文原始论文或 CUDA 全文，也未读取源码归档。",
+      "提供的 CUDA 原文摘录未包含完整多 GPU peer-access 专节；拓扑结论仅按来源说明、相关章节和已提供文档范围核对。",
+      "docs/knowledge-build-workflow.md 未包含在提供材料中，当前工具也未暴露文件读取入口；本次采用请求嵌入的 review JSON schema，未声称核对该 workflow 文件。",
+      "执行证据来自提供的 actual_preflight；本审阅没有另行重跑脚本或重新计算本地文件哈希。"
+    ],
+    "checks": [
+      {
+        "script": "tools/check_k_alg_013_full.py",
+        "args": []
+      }
+    ],
+    "no_checks_reason": "",
+    "reading_scope": "完整阅读提供文本，字符范围均为零起点右开区间：AGENTS.md [0,567)；docs/knowledge-method.md [0,2251)；docs/knowledge-review.md [0,3016)；knowledge/algorithms/disaggregated-serving.md [0,10714)；knowledge/sources/S-DISTSERVE.md [0,443)；knowledge/sources/S-CUDA-TOPOLOGY.md [0,500)；knowledge/sources/S-PAGED.md [0,2206)；knowledge/sources/S-MOONCAKE.md [0,997)；knowledge/hardware/topology-parallelism.md [0,3562)；knowledge/system-semantics/distributed-state-transfer.md [0,3216)；knowledge/workloads/slo-goodput.md [0,2616)；knowledge/system-semantics/distributed-kv-store.md [0,3441)；knowledge/hardware/transport-and-rdma.md [0,4088)；knowledge/algorithms/routing-and-migration.md [0,3228)；knowledge/system-semantics/serving-recovery.md [0,3834)；knowledge/algorithms/parallelism.md [0,6115)；knowledge/engine-index/tensorrt-llm.md [0,2145)；knowledge/workloads/capacity-planning.md [0,3442)。完整阅读提供的 tools/check_k_alg_013_full.py，从 shebang 至 raise SystemExit(main())，以及 author_notes 和 actual_preflight 的执行记录。仅阅读以下摘录，不将其列入 documents：knowledge/algorithms/chunked-prefill.md [0,3083)、[8000,12000)；knowledge/system-semantics/design-synthesis.md [0,7083)；references/S-DISTSERVE/fulltext.txt [0,44000)、[48000,59330)、[60000,68000)、[80000,84000)；references/S-CUDA-TOPOLOGY/fulltext.txt [16000,19330)、[76000,96000)、[284000,288000)、[296000,304000)、[440000,444000)、[452000,456000)、[492000,496000)、[504000,508000)、[516000,520000)、[580000,584000)、[788000,792000)、[1080000,1084000)；references/S-PAGED/fulltext.txt [0,51329)、[52000,68000)；references/S-MOONCAKE/fulltext.txt [0,60000)、[68000,75329)。未将来源说明中他人的全文阅读记录当作本次全文阅读。",
+    "test_assessment": "actual_preflight 记录绑定脚本哈希 4ee95a0bcaa8f4d0b61c1d51fa036890315be9c062c8170fdfbd8dac1cd097f1，在 remote_bwrap 中以 Python 3.12 隔离执行，returncode=0、stderr 为空、未超时；这支持该脚本本次执行成功。作者声明自己未执行，与协调者另行执行的记录不矛盾。检查中的固定数值可独立复算：每 token 131072 字节、4096 token 为 512 MiB、3072 token 为 384 MiB；时间依赖给出 90/130/95/135/145 ms，首次间隔为 50/10 ms；容量总需求 11 大于 10。intervals_cover 检查完整后缀和缺少末块，output_route 覆盖完整命中缺输出、空输入、H>n、adapter 不匹配、已有 logits 和部分命中，具有有限的 helper 与分支验证价值。所谓 posted-transfer 负对照实际只是删除末块，未区分 posted、到达、转换及可见；错误第二 token 时间和忽略 receiving 的容量算式是可复算的代数反例；完整缓存 READY 负对照则直接设置布尔量，没有实际执行被拒绝的就绪事件。脚本不包含完整接管状态机、逐层恢复、输出票据消费或候选预留结算，因此不能验证本次发现的算法问题，也不能证明设备可见性。正文提出的共置/分离数值比较和性能区分实验均未在该执行中完成，未将其记为 PASS。"
+  },
+  "format_status": "strict_json",
+  "format_error": null,
+  "output_text": "{\n  \"entry_id\": \"K-ALG-013\",\n  \"body_sha256\": \"b26529fa014c85cf1d813b5f745305e447ad66a5eddee4eca7090a06104a9648\",\n  \"reviewer\": \"sol-reviewer:K-ALG-013:round-1\",\n  \"decision\": \"revise\",\n  \"documents\": {\n    \"AGENTS.md\": \"b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a\",\n    \"docs/knowledge-method.md\": \"69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb\",\n    \"docs/knowledge-review.md\": \"f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21\",\n    \"knowledge/algorithms/disaggregated-serving.md\": \"b26529fa014c85cf1d813b5f745305e447ad66a5eddee4eca7090a06104a9648\",\n    \"knowledge/sources/S-DISTSERVE.md\": \"968cbf46667e862085b0e2d72405805351bd33880ac23d8d055bf259192411f4\",\n    \"knowledge/sources/S-CUDA-TOPOLOGY.md\": \"39d4039179728ce8570c3b9ec3801aaad52108d030f278fb598a4d6d47de1f8e\",\n    \"knowledge/sources/S-PAGED.md\": \"50893a22385b0d577980153a9bc9c617acdcb2a9d7be0af655ad49421f06cc09\",\n    \"knowledge/sources/S-MOONCAKE.md\": \"87547af306062e8e7c7d5da5de6102cd47ac371d0b9172a1b4c2eda719134e8b\",\n    \"knowledge/hardware/topology-parallelism.md\": \"44b63f4291293b51e17b58d64bcfa9fe2bd384534a589c9b74fae0ad157ead29\",\n    \"knowledge/system-semantics/distributed-state-transfer.md\": \"425985efff21e4acbe091ddfa9043cf97b37e550b606f10c0e1560a3c02b1f6f\",\n    \"knowledge/workloads/slo-goodput.md\": \"5aa9b71cddb7d896ffa1fe6d78ac61cf0bb92d76279ae4d563f1110ed9dbedb4\",\n    \"knowledge/system-semantics/distributed-kv-store.md\": \"ecc4f667ff186b05fececba52c500e43d0460def524e6200b9cfa00fcdb984c0\",\n    \"knowledge/hardware/transport-and-rdma.md\": \"72bcf1d8948eae41c243e422f6b0370462dcc4bf33ef86f5664a09b4e46d3ba2\",\n    \"knowledge/algorithms/routing-and-migration.md\": \"1b9dcfd5fea499a91611459bb936e1c1c49ceb562171fb0f1ba360a7010f5d32\",\n    \"knowledge/system-semantics/serving-recovery.md\": \"f551fa1f1e6213469c856a880839eefff504fb39f4dd692000b2df80a20a7f5e\",\n    \"knowledge/algorithms/parallelism.md\": \"161a883561e39371ea22a1430c385546c402db2f993d8a37c6f37e03e1e4bd17\",\n    \"knowledge/engine-index/tensorrt-llm.md\": \"6ade1253f3747041bef4a816d82387c3771bff3459a153719cfbd571c2454c0b\",\n    \"knowledge/workloads/capacity-planning.md\": \"2a1fab417c30d8e6984c202d805f31863e0f00e248558c583609b5f9ba7e88c7\",\n    \"tools/check_k_alg_013_full.py\": \"4ee95a0bcaa8f4d0b61c1d51fa036890315be9c062c8170fdfbd8dac1cd097f1\"\n  },\n  \"criteria\": {\n    \"definition\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"动机、请求与传输身份、右开位置范围、目标缺失范围和首 token 因果关系已明确。正确区分首 token 已采样与其自身 KV 尚未计算；未沿用这一已修复问题作为缺口。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/algorithms/disaggregated-serving.md\",\n          \"quote\": \"首 token 记为 y_n，它在位置 n 被采样，但其自身 KV 尚未计算。\"\n        },\n        {\n          \"path\": \"knowledge/algorithms/disaggregated-serving.md\",\n          \"quote\": \"收益来自阶段干扰消除和并行策略解耦；代价来自第二份权重、跨池状态、两侧排队和提交协议。\"\n        }\n      ]\n    },\n    \"legality\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"模型与数值身份、几何与分片、目标容量、共享写区、异步最后使用者、状态可见性和恢复责任均有明确约束。来源归属基本准确：DistServe 的抢占和容错未被冒充为已实现能力，Mooncake 的 dummy 模型及预测假设得到限定。具体执行流程仍有 algorithm 项所列缺口。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/algorithms/disaggregated-serving.md\",\n          \"quote\": \"两边必须匹配固定 checkpoint、adapter、规范化输入、位置规则、RoPE 或其他位置状态，以及影响中间值的数值表示。\"\n        },\n        {\n          \"path\": \"knowledge/algorithms/disaggregated-serving.md\",\n          \"quote\": \"共享页只在所有逻辑读者与异步物理使用者都结束后回收。\"\n        }\n      ]\n    },\n    \"algorithm\": {\n      \"assessment\": \"partial\",\n      \"reason\": \"已有规划、分块传输、全层提交和首次 decode 的主体流程，但源端计算前缀与目标接收前缀未分别定义；完整缓存恢复分支未闭合；提前发送的伪代码顺序与时间轴不一致；候选循环产生的预留缺少结算。上述问题影响可独立实现的数据流和状态推进。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/algorithms/disaggregated-serving.md\",\n          \"quote\": \"在 p 上执行尚缺的 prompt 范围；块化和层间流水只能改变执行粒度，不能改变逻辑位置、因果 mask 或提交边界\"\n        },\n        {\n          \"path\": \"knowledge/algorithms/disaggregated-serving.md\",\n          \"quote\": \"按策略写入 D 预留、生成 g 与 tx，并用条件化 SLO 计算候选代价\"\n        }\n      ]\n    },\n    \"cost\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"逻辑 KV 字节公式、512 MiB/384 MiB、20 GiB/s 下的 25 ms、4 GiB/s 平均需求及时间轴算术正确。覆盖计算与访存、双池权重、源目标驻留、通信、准备、同步和排队，明确重叠取尾段、平均约束不保证尾延迟。源端前缀未定义使规划器的具体 prefill 成本仍无法落实，归入对应算法 finding。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/algorithms/disaggregated-serving.md\",\n          \"quote\": \"每个 token 的全层逻辑 KV 字节为 B_tok = 2 * L * H_kv * d_h * b\"\n        },\n        {\n          \"path\": \"knowledge/algorithms/disaggregated-serving.md\",\n          \"quote\": \"若层间传输与 prefill 重叠，`T_x` 的完整总量不能直接加到 prefill 后面；应取最后一个阻挡消费者的尾段。\"\n        }\n      ]\n    },\n    \"adaptation\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"对短输入、低负载、链路下降、目标容量不足、布局和 TP 改变以及非普通 causal 状态族给出调整或放弃条件，区分必须保留的语义不变量与可替换策略。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/algorithms/disaggregated-serving.md\",\n          \"quote\": \"无论条件怎样变化，逻辑位置、已确认输入、完整前缀和提交点这些不变量要保留；可替换的是页长、分块、并行度、输出门控和预留策略。\"\n        }\n      ]\n    },\n    \"diagnosis\": {\n      \"assessment\": \"partial\",\n      \"reason\": \"正文的竞争解释、控制变量和反证修正具有实质内容，设备与 CPU 边界也声明正确。但脚本所称四个负对照中，部分只是手工构造错误布尔量或算式，没有让协议检查实际拒绝错误提交、读取或就绪事件，不能支撑相应机制已被检测的表述。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/algorithms/disaggregated-serving.md\",\n          \"quote\": \"负对照应故意把“发送已提交”当作“目标已可见”，或让 decode 在 M 未覆盖时读取目标页；正确检查应发现缺失范围、旧代次或读取早于提交。\"\n        },\n        {\n          \"path\": \"knowledge/algorithms/disaggregated-serving.md\",\n          \"quote\": \"比较立即发送与门控发送；若门控后首内容变晚而第二 token 不变，说明首内容可见性与状态提交被混用\"\n        }\n      ]\n    }\n  },\n  \"findings\": [\n    {\n      \"id\": \"K-ALG-013-A01\",\n      \"criterion\": \"algorithm\",\n      \"evidence\": \"knowledge/algorithms/disaggregated-serving.md：“设 H 为目标端已有、且与源端满足同一数值契约的公共前缀终点”；“在 p 上执行尚缺的 prompt 范围”。PLAN 只计算 H_d，未定义 p 已有的历史范围或取得该历史的步骤。\",\n      \"impact\": \"目标已有 [0,H) 不证明所选 p 拥有这段逐层历史。若 p 无缓存而直接计算后缀，attention 缺少输入；若 p 重算完整 prompt，则不能用目标 H 推断 prefill 节省或对应服务时间。当前计划无法确定源端真实计算范围及其成本。\",\n      \"blocking\": true,\n      \"required_revision\": \"分别定义源端可用前缀与目标端可用前缀，说明 p 如何取得计算所需的逐层历史，并据此确定 prefill 范围和时间；也可明确限定源端始终完整重算。目标 M 只控制接收缺失范围，不能自动作为源端计算范围。\"\n    },\n    {\n      \"id\": \"K-ALG-013-A02\",\n      \"criterion\": \"algorithm\",\n      \"evidence\": \"knowledge/algorithms/disaggregated-serving.md：“2  若需要 RECOVER_LAST_LOGITS，在合法历史上恢复最后一行 logits，并得到 y_n”；“4  当 prompt 最后一行完成时，用固定采样状态得到 y_n，记录输出票据、位置 n 和请求代次 g”；“读取已有 [0,n−1) 的合法历史，计算位置 n−1 的最后一行输出，取得可采样 logits”。\",\n      \"impact\": \"完整命中时只明确标记无 token 且无 logits 的分支，没有闭合已有 token、仅有 logits、需要恢复三条执行路径。恢复得到 y_n 后仍进入后续无条件步骤，缺少跳过重算和重复采样的规则。恢复执行端、逐层 hidden 输入、当前行暂存与共享缓存隔离也未展开或明确委托，无法据此实现多层恢复。\",\n      \"blocking\": true,\n      \"required_revision\": \"将已有 y_n、仅有合法 logits、恢复末行、正常 prefill 写成互斥路径，汇合到同一首 token 票据，确保只采样确认一次。指定恢复位置和执行端，补充逐层输入、历史读取、当前行暂存、最终 logits 与全请求提交关系；可明确链接委托给 K-ALG-007 的完整恢复算法，并说明本章如何满足其前提。\"\n    },\n    {\n      \"id\": \"K-ALG-013-A03\",\n      \"criterion\": \"algorithm\",\n      \"evidence\": \"knowledge/algorithms/disaggregated-serving.md 的 EXECUTE_HANDOFF 先执行“6  当所有层的 M、布局转换和必要可见性都完成”，再执行“7  按输出策略发送 y_n：若提前发送”；时间轴却写“若首 token 在 90 ms 后立即发送并在 95 ms 到达客户端”，目标状态到 130 ms 才提交。\",\n      \"impact\": \"按当前步骤顺序，提前发送也必须等待目标提交，无法产生正文的 95 ms 首 token。后面的重叠说明没有给出改变该等待关系的事件或分支，因此核心伪代码与成本示例描述了不同执行过程。\",\n      \"blocking\": true,\n      \"required_revision\": \"把提前输出挂到 FIRST_TOKEN_READY 事件，使其可与传输并发；门控输出等待目标提交。分别说明输出票据、发送去重及失败后的可见输出边界，保持首次 decode 同时等待 token 和状态。用同一事件依赖复核两种策略的时间轴。\"\n    },\n    {\n      \"id\": \"K-ALG-013-A04\",\n      \"criterion\": \"algorithm\",\n      \"evidence\": \"knowledge/algorithms/disaggregated-serving.md 在“3  对每个可行 p,d 对”内部执行“按策略写入 D 预留、生成 g 与 tx”，之后才“4  选择合法且预测代价最小、同时满足 TTFT 与第一次间隔目标的候选”，没有释放未选候选预留的步骤。\",\n      \"impact\": \"同一请求可能为多个候选重复占用目标容量，改变后续候选的可行性并遗留未选预留；无候选成功时也没有统一结算。结果依赖枚举顺序，且实际驻留不再对应最终选择。\",\n      \"blocking\": true,\n      \"required_revision\": \"候选阶段只做无副作用估算，选定后原子预留，竞争失败则重试选择；或者明确临时预留的所有权，并在选中、拒绝和异常出口释放全部未选项。请求代次与尝试身份的生成也应有明确作用域。\"\n    },\n    {\n      \"id\": \"K-ALG-013-D01\",\n      \"criterion\": \"diagnosis\",\n      \"evidence\": \"tools/check_k_alg_013_full.py：“bad_full_cache_ready = True”及“assert bad_full_cache_ready and not have_first”；“bad_commit_on_post = len(posted_only) > 0”及“assert bad_commit_on_post and not intervals_cover(posted_only, h, n)”。脚本随后打印“negative control detected”和“PASS: scoped invariants and four negative controls”。\",\n      \"impact\": \"这些断言能说明手工构造的错误条件与已知事实冲突，但没有把错误 READY 或提前提交事件交给协议检查，也没有实际驱动 decode 读取。区间 helper 和分类函数的正常断言有价值，却不能据此声称已检测提交/消费协议缺陷；当前接管流程中的错误仍不在检查覆盖内。\",\n      \"blocking\": true,\n      \"required_revision\": \"让最小 CPU 接管模型实际处理 token 就绪、分层范围完成、提交和消费事件，用独立不变量拒绝至少一个注入的提前提交或提前消费缺陷，并断言检测确实发生。保留现有算术与分类检查，收窄未覆盖的旧代次、取消和设备可见性结论，不把打印语句作为检测证据。\"\n    }\n  ],\n  \"limitations\": [\n    \"没有目标 GPU 数值、内存可见性、真实网络重叠、SLO、吞吐或 Agent 使用效果证据；正文对此声明清楚，这些边界本身不构成 blocking finding。\",\n    \"来源事实核对限于完整来源说明和提供的原文摘录；没有阅读全文原始论文或 CUDA 全文，也未读取源码归档。\",\n    \"提供的 CUDA 原文摘录未包含完整多 GPU peer-access 专节；拓扑结论仅按来源说明、相关章节和已提供文档范围核对。\",\n    \"docs/knowledge-build-workflow.md 未包含在提供材料中，当前工具也未暴露文件读取入口；本次采用请求嵌入的 review JSON schema，未声称核对该 workflow 文件。\",\n    \"执行证据来自提供的 actual_preflight；本审阅没有另行重跑脚本或重新计算本地文件哈希。\"\n  ],\n  \"checks\": [\n    {\n      \"script\": \"tools/check_k_alg_013_full.py\",\n      \"args\": []\n    }\n  ],\n  \"no_checks_reason\": \"\",\n  \"reading_scope\": \"完整阅读提供文本，字符范围均为零起点右开区间：AGENTS.md [0,567)；docs/knowledge-method.md [0,2251)；docs/knowledge-review.md [0,3016)；knowledge/algorithms/disaggregated-serving.md [0,10714)；knowledge/sources/S-DISTSERVE.md [0,443)；knowledge/sources/S-CUDA-TOPOLOGY.md [0,500)；knowledge/sources/S-PAGED.md [0,2206)；knowledge/sources/S-MOONCAKE.md [0,997)；knowledge/hardware/topology-parallelism.md [0,3562)；knowledge/system-semantics/distributed-state-transfer.md [0,3216)；knowledge/workloads/slo-goodput.md [0,2616)；knowledge/system-semantics/distributed-kv-store.md [0,3441)；knowledge/hardware/transport-and-rdma.md [0,4088)；knowledge/algorithms/routing-and-migration.md [0,3228)；knowledge/system-semantics/serving-recovery.md [0,3834)；knowledge/algorithms/parallelism.md [0,6115)；knowledge/engine-index/tensorrt-llm.md [0,2145)；knowledge/workloads/capacity-planning.md [0,3442)。完整阅读提供的 tools/check_k_alg_013_full.py，从 shebang 至 raise SystemExit(main())，以及 author_notes 和 actual_preflight 的执行记录。仅阅读以下摘录，不将其列入 documents：knowledge/algorithms/chunked-prefill.md [0,3083)、[8000,12000)；knowledge/system-semantics/design-synthesis.md [0,7083)；references/S-DISTSERVE/fulltext.txt [0,44000)、[48000,59330)、[60000,68000)、[80000,84000)；references/S-CUDA-TOPOLOGY/fulltext.txt [16000,19330)、[76000,96000)、[284000,288000)、[296000,304000)、[440000,444000)、[452000,456000)、[492000,496000)、[504000,508000)、[516000,520000)、[580000,584000)、[788000,792000)、[1080000,1084000)；references/S-PAGED/fulltext.txt [0,51329)、[52000,68000)；references/S-MOONCAKE/fulltext.txt [0,60000)、[68000,75329)。未将来源说明中他人的全文阅读记录当作本次全文阅读。\",\n  \"test_assessment\": \"actual_preflight 记录绑定脚本哈希 4ee95a0bcaa8f4d0b61c1d51fa036890315be9c062c8170fdfbd8dac1cd097f1，在 remote_bwrap 中以 Python 3.12 隔离执行，returncode=0、stderr 为空、未超时；这支持该脚本本次执行成功。作者声明自己未执行，与协调者另行执行的记录不矛盾。检查中的固定数值可独立复算：每 token 131072 字节、4096 token 为 512 MiB、3072 token 为 384 MiB；时间依赖给出 90/130/95/135/145 ms，首次间隔为 50/10 ms；容量总需求 11 大于 10。intervals_cover 检查完整后缀和缺少末块，output_route 覆盖完整命中缺输出、空输入、H>n、adapter 不匹配、已有 logits 和部分命中，具有有限的 helper 与分支验证价值。所谓 posted-transfer 负对照实际只是删除末块，未区分 posted、到达、转换及可见；错误第二 token 时间和忽略 receiving 的容量算式是可复算的代数反例；完整缓存 READY 负对照则直接设置布尔量，没有实际执行被拒绝的就绪事件。脚本不包含完整接管状态机、逐层恢复、输出票据消费或候选预留结算，因此不能验证本次发现的算法问题，也不能证明设备可见性。正文提出的共置/分离数值比较和性能区分实验均未在该执行中完成，未将其记为 PASS。\"\n}",
+  "elapsed_seconds": 291.782
+}

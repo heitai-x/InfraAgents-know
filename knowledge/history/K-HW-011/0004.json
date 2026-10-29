@@ -1,0 +1,83 @@
+{
+  "id": "K-HW-011",
+  "path": "hardware/gpu-kernel-pipelines.md",
+  "category": "hardware",
+  "title": "GPU 矩阵与归约流水：布局、资源和完成依赖",
+  "summary": "完整SIMT GEMM映射和带代次多读者缓冲算法，联立有限流水时序、资源驻留与网格成本，区分同步合法性与实际重叠。",
+  "revision": 4,
+  "status": "seed",
+  "tags": [
+    "GPU",
+    "Tensor Core",
+    "MFMA",
+    "TMA",
+    "WGMMA",
+    "tile",
+    "warp specialization",
+    "寄存器",
+    "LDS",
+    "spill",
+    "SIMT GEMM",
+    "缓冲读者",
+    "有限流水",
+    "驻留反转"
+  ],
+  "scope": {
+    "model_families": [],
+    "platforms": [
+      "cuda",
+      "rocm"
+    ],
+    "runtimes": [],
+    "workloads": []
+  },
+  "source_ids": [
+    "S-FLASHATTENTION3",
+    "S-FLASH",
+    "S-CUDA-BEST",
+    "S-CUDA-ASYNC",
+    "S-ROCM",
+    "S-TORCH-NUMERIC",
+    "S-CUDA-CAPABILITY"
+  ],
+  "related": [
+    "K-HW-005",
+    "K-HW-006",
+    "K-ALG-004",
+    "K-FW-007",
+    "K-FW-003",
+    "K-HW-001",
+    "K-ALG-005",
+    "K-ALG-008",
+    "K-FW-006",
+    "K-FW-010",
+    "K-HW-004",
+    "K-MODEL-003",
+    "K-MODEL-004",
+    "K-MODEL-006",
+    "K-MODEL-007",
+    "K-MODEL-009",
+    "K-TOOLS-003",
+    "K-TOOLS-004"
+  ],
+  "evidence": [],
+  "updated_at": "2026-10-28",
+  "sha256": "4db609a35cae2c7bd05603e026fc76d3e1281111ca2dad54d1a319851b3b498a",
+  "questions": [
+    "GEMM 的数据依赖与片上资源账如何建立，哪些项常被漏算？",
+    "为什么要先适配矩阵指令布局再安排线程，swizzle 的代价落在哪里？",
+    "生产者与消费者分工下，环形缓冲的代次与完成依赖必须满足什么？",
+    "attention 中归约与矩阵流水怎样连接，缩放方向错误如何用反例检查？",
+    "缺少 TMA 与线程块簇时，同一依赖由哪些替代机制承担，代价如何测？",
+    "怎样把非整除GEMM的逻辑tile落到全局/共享地址、线程累加和保护写回？",
+    "增加缓冲级数后，单CTA时序与全网格驻留为何可能给出相反选择，哪些观测能区分原因？"
+  ],
+  "symptoms": [
+    "GPU 增加流水级数反而变慢",
+    "在另一代 GPU 上共享存储超限无法启动"
+  ],
+  "assumes": [
+    "具有矩阵指令的 GPU",
+    "tile 级的 kernel 组织"
+  ]
+}

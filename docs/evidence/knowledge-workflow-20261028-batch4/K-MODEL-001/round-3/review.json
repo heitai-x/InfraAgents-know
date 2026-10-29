@@ -1,0 +1,162 @@
+{
+  "entry_id": "K-MODEL-001",
+  "body_sha256": "81edc95498ce71ea7d4b7d92e0f2faafe531e39a57ef38d56d045a8c9fd9a39d",
+  "reviewer": "sol-reviewer:K-MODEL-001:round-3",
+  "decision": "accept",
+  "documents": {
+    "AGENTS.md": "b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a",
+    "docs/knowledge-method.md": "69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb",
+    "docs/knowledge-review.md": "f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21",
+    "knowledge/models/prefill-decode-state.md": "81edc95498ce71ea7d4b7d92e0f2faafe531e39a57ef38d56d045a8c9fd9a39d",
+    "knowledge/sources/S-TRANSFORMER.md": "e1858681f1645209756f7eb640dcdfe3a786f5af3e529fb61bce6de0212a82d7",
+    "knowledge/sources/S-HF-CACHE.md": "1a4afcf0d800ba3f42836445874d620ae9f7ba8ab4c361caa505376cc471595c",
+    "knowledge/sources/S-SARATHI.md": "a4616b358fc59f97fd787e1eabbbca74d50c6f279bf3192d4c585f3ea80fb165",
+    "knowledge/sources/S-MISTRAL.md": "60f92e5430c9d7c8c06a1eda0a6590ea02782aaaa62d9db3bbc78714e485b058",
+    "knowledge/sources/S-MLA.md": "13dd0ca7fb487a136088c826ce5dae79e946400b2191afff20f5d29b33fc689f",
+    "knowledge/sources/S-MAMBA.md": "c549c121da3cfc3d5c5fa33ae151ce27f7440cbd2d2c911d545aaafca8f18b37",
+    "knowledge/sources/S-WHISPER.md": "3983e829fbc2948712af3a9aab931917271565753f83cb0e89f1cfad2a4b36e1",
+    "knowledge/sources/S-QWEN-VL.md": "a41acb4d122419b0575a7fb4b0e510fb409a3b8b8cdb3bf875c571e3ae4c479a",
+    "knowledge/models/gqa-kv-heads.md": "9b51a72ccc9c86095f9c8a37e234893fe93068938390f69513c6ff90dd22da1d",
+    "knowledge/models/recurrent-hybrid-state.md": "b16b229713829787bffef07a62a08c0feca0a7b3a188aea2332a3689388c0417",
+    "knowledge/models/mla.md": "01385fb7e6be8482ebd773498a96fc9d027a9c6d300abb415002864fccb9521b",
+    "knowledge/system-semantics/tokenization-io.md": "1dea61a1f632805cb90873e747cb3079230a7b6bab76b17b4281662b82367565",
+    "knowledge/frameworks/checkpoint-loading.md": "5205ab97f77cdb821e5a0c3f6685a99cfc12ccc8474f96c6de82375372cb59bf",
+    "knowledge/algorithms/operator-primitives.md": "7e67de661bf7263bb65c68fbb97c8344055f1795758a89b149c7c95b097526eb",
+    "knowledge/system-semantics/memory-allocators.md": "2e7258787b94ad142c7c236541e8718803ad30b273d08e6c398dff673a1df838",
+    "knowledge/hardware/memory-and-roofline.md": "2bebeecbaa625667b8ad8c2fbc13449f0da31ac24b0abd6289127be1150c7d0c",
+    "references/S-HF-CACHE/fulltext.txt": "373837b8ac246d43867eb21de168cc59e5e6e78f5f3b9c27bee54740c4a635b4",
+    "references/S-MISTRAL/fulltext.txt": "333bc2fce794d4c1ea82fe3aee1718101266f8c58d81b8ce716ad0722defd573",
+    "tools/check_k_model_001_full.py": "9443dbaaed0024feefc84c7efd08b41915f7c4820c5a2c6251e7d6df82740de6"
+  },
+  "criteria": {
+    "definition": {
+      "assessment": "sufficient",
+      "reason": "明确了因果函数、logits 的预测位置及 S(n) 的充分性，并将已消费状态、已采样 pending、已输出记录和模型位置坐标分开。各层 Q/K/V 与输出的轴也能对应后续算法和成本。",
+      "evidence": [
+        {
+          "path": "knowledge/models/prefill-decode-state.md",
+          "quote": "以 S(n) 表示恰好消费前 n 个有效输入后的持久状态。"
+        },
+        {
+          "path": "knowledge/models/prefill-decode-state.md",
+          "quote": "S(n) 不是完整的生成会话。继续生成还可能需要末行 logits、已采样但尚未消费的 pending token、采样随机状态、停止条件和输出提交记录。"
+        }
+      ]
+    },
+    "legality": {
+      "assessment": "sufficient",
+      "reason": "增量等价的归纳条件覆盖可见集合、位置、模型身份、摘要完整性与提交一致性；明确实数等价和浮点结果的区别。窗口边界属于声明的选择，K-raw/K-rot 属于表示选择，MLA、递归及源条件变化不会被错误纳入普通 KV 路径。固定来源中的机制与独立推导有所区分。",
+      "evidence": [
+        {
+          "path": "knowledge/models/prefill-decode-state.md",
+          "quote": "状态提交一致。计算失败不能发布部分层；共享前缀只读，物理回收等待最后一个消费者结束。"
+        },
+        {
+          "path": "knowledge/models/prefill-decode-state.md",
+          "quote": "实数等价不保证浮点逐位相同。"
+        },
+        {
+          "path": "knowledge/models/prefill-decode-state.md",
+          "quote": "这是明确的边界约定，实际 checkpoint 必须核对是否相同。"
+        }
+      ]
+    },
+    "algorithm": {
+      "assessment": "sufficient",
+      "reason": "算法 A 现在具有合法的同请求多行入口契约，逐层先产生当前块 K/V，再按请求及因果位置读取旧状态和暂存状态；RoPE 的生产、存储与消费位置明确。私有目录直到全部层和 logits 成功才整体提交，失败与异步最后使用的处理一致。算法 C 按层重建最新末行 query 路径而不追加 KV；算法 B 正确区分恢复分布、选择 pending、输出和消费。原五项具体缺陷及 campaign-r1 对应问题已关闭；campaign-r2 的负对照失败由当前有区分力的检查和真实执行关闭。",
+      "evidence": [
+        {
+          "path": "knowledge/models/prefill-decode-state.md",
+          "quote": "入口冻结 n_r，要求第 j 行位置为 n_r+j。"
+        },
+        {
+          "path": "knowledge/models/prefill-decode-state.md",
+          "quote": "K-rot：保存 R(φ(j))k_raw,j。新增 Q/K 旋转一次；读取历史 K 时直接使用，不能再次旋转。"
+        },
+        {
+          "path": "knowledge/models/prefill-decode-state.md",
+          "quote": "否则用一次不可分割、发布后不再回退的 root 引用切换提交"
+        },
+        {
+          "path": "knowledge/models/prefill-decode-state.md",
+          "quote": "返回 lm_head(final_norm(H))；长度、目录、KV 和代次全部不变"
+        }
+      ]
+    },
+    "cost": {
+      "assessment": "sufficient",
+      "reason": "独立复算投影、FFN、输出头、有效 attention 对数、KV 容量和长历史强度，主项一致。P_pair 已排除 head 轴，N=2、Hq=2 的例子正确得到 24d；容量例为 128 KiB/token。正文区分有效读取与 HBM 事务，计入私有新增状态、写时复制、旧读者延迟退休及深拷贝差异，并说明准备、通信、同步和驻留的边界。",
+      "evidence": [
+        {
+          "path": "knowledge/models/prefill-decode-state.md",
+          "quote": "以下按一次乘加计两次 FLOP，假定普通 attention 的 K/Q/V head 维相同为 d。"
+        },
+        {
+          "path": "knowledge/models/prefill-decode-state.md",
+          "quote": "令 P_pair 为单个 query head 的有效 query-key 对数，按请求及本次 query 行求和，不包含 head 轴。"
+        },
+        {
+          "path": "knowledge/models/prefill-decode-state.md",
+          "quote": "共享尾页的写时复制、窗口的新旧槽并存、工作区和旧读者延迟退休会增加峰值。"
+        },
+        {
+          "path": "knowledge/models/prefill-decode-state.md",
+          "quote": "共享带宽需求须合并，不能把重叠阶段的累计时间直接相加。"
+        }
+      ]
+    },
+    "adaptation": {
+      "assessment": "sufficient",
+      "reason": "说明序列、batch、chunk、状态表示、位置规则、源输入和设备变化分别改变哪些依赖与成本。分块对数守恒与重复权重读取的组合例能支持方案反转；窗口和递归状态的恢复边界也明确，未将固定来源装置的收益推广为目标设备结论。",
+      "evidence": [
+        {
+          "path": "knowledge/models/prefill-decode-state.md",
+          "quote": "混合模型需要所有层处于同一个消费边界，不能将各层独立命中的最大长度直接拼成可用状态。"
+        },
+        {
+          "path": "knowledge/models/prefill-decode-state.md",
+          "quote": "举例，将 N=6 分成 q=2 的三块，对数依次为 3、7、11，总和为 21，与整段相同。"
+        },
+        {
+          "path": "knowledge/models/prefill-decode-state.md",
+          "quote": "位置频率、adapter、dtype、量化组、页布局或 TP head 映射变化时，应判断是可验证的表示转换，还是模型函数改变。"
+        }
+      ]
+    },
+    "diagnosis": {
+      "assessment": "sufficient",
+      "reason": "诊断表把观察、竞争解释、受控实验及反证后的修改连起来。完整 KV 无分布和已有 pending 零工作已分开；位置检查区分共同平移不变量与仅新增块归零。检查使用独立整段参考、解析位置见证及完整状态不变性，当前执行实际检出了所注入的位置、提前发布和重复追加错误。",
+      "evidence": [
+        {
+          "path": "knowledge/models/prefill-decode-state.md",
+          "quote": "完整 KV 无 logits 的反例发生在首 token 尚未选出时；已有 pending 却计算零行的反例发生在输入已经就绪时。"
+        },
+        {
+          "path": "knowledge/models/prefill-decode-state.md",
+          "quote": "负对照应保留历史、只错改新增位置，并选择不同 K/V 贡献可被观测的输入。"
+        },
+        {
+          "path": "knowledge/models/prefill-decode-state.md",
+          "quote": "提前发布和重复追加分别由状态不变性与位置唯一性检出。"
+        }
+      ]
+    }
+  },
+  "findings": [],
+  "limitations": [
+    "数值检查限定为两层、单 head、D=4 的 CPU 模型；未验证真实 checkpoint、GQA kernel、MLA、递归、cross attention、量化或并行执行。",
+    "软件私有状态与旧 root 不变性检查不能证明设备内存可见性、并发 root 切换、物理槽回收或异步取消的目标实现正确；正文已明确这些边界。",
+    "算法 C 仅适用于普通 KV decoder 的最新末行，要求输入身份和每层完整可见 K/V；不支持从缺失窗口历史或覆盖式递归状态直接恢复。",
+    "未测 GPU 流量、带宽、同步、重叠、最优 chunk 或 Agent 使用效果；成本结论是带假设的解析推导。",
+    "本审查读取的是消息内绑定材料与协调者提供的实际执行记录，未重新读取磁盘、计算哈希、遍历离线链接或独立重跑 Python。原文摘录不构成完整原文阅读证明。"
+  ],
+  "checks": [
+    {
+      "script": "tools/check_k_model_001_full.py",
+      "args": []
+    }
+  ],
+  "no_checks_reason": "",
+  "reading_scope": "完整阅读所提供正文、脚本、author_notes、actual_preflight 和待处理问题。完整文件范围采用零基半开字符区间：AGENTS.md [0,567)；docs/knowledge-method.md [0,2251)；docs/knowledge-review.md [0,3016)；knowledge/models/prefill-decode-state.md [0,20148)；八份来源说明 S-TRANSFORMER [0,550)、S-HF-CACHE [0,827)、S-SARATHI [0,1423)、S-MISTRAL [0,452)、S-MLA [0,497)、S-MAMBA [0,487)、S-WHISPER [0,518)、S-QWEN-VL [0,466)；相关章节 gqa-kv-heads [0,3902)、recurrent-hybrid-state [0,3563)、mla [0,4303)、tokenization-io [0,3217)、checkpoint-loading [0,3354)、operator-primitives [0,9934)、memory-allocators [0,4191)、memory-and-roofline [0,4009)。完整原文抽取文本：references/S-HF-CACHE/fulltext.txt [0,7977)、references/S-MISTRAL/fulltext.txt [0,24980)。其余原文仅阅读实际提供摘录：S-TRANSFORMER [0,34471)、[36000,39757)；S-SARATHI [8000,24000)、[28000,44000)、[48000,50228)、[52000,56000)；S-MLA [0,20000)、[24000,32000)、[76000,82228)、[104000,108000)；S-MAMBA [24000,28000)、[36000,44000)、[96000,114585)、[116000,120000)、[132000,135643)；S-WHISPER [0,4000)、[8000,20000)、[32000,34228)、[36000,40000)、[52000,64000)、[68000,72000)；S-QWEN-VL [0,34228)、[56000,60000)。这些摘录未列入 documents，也未采用作者所述更宽范围作为本审查阅读记录。tools/check_k_model_001_full.py 为消息内完整脚本。docs/knowledge-build-workflow.md、两轮历史目录及源码归档未提供正文，未声称阅读；JSON 使用用户明确提供的 review schema。",
+  "test_assessment": "已逐函数检查完整脚本及提供的真实执行记录。full_reference 不使用缓存、追加或提交路径；RoPE 分数用独立的相对位置展开式计算，与 consume 的显式 Q/K 旋转形成有效交叉核对。两条路径共享 norm 和 finish_layer 的数学定义，因此检查能支持层间数据流与缓存机制，不能证明真实模型图还原。16 组完整序列/分块/逐行对照覆盖 RoPE raw/rot、加性位置、分数偏置以及窗口 None/1/2/3；另覆盖空输入、padding、重复/间隙/逆序位置、不同历史请求交错及跨请求置换。reserve、第二层和 logits 阶段失败通过完整旧状态比较检查，提前发布负对照确实修改第一层窗口而保持旧长度，因此不变性断言具有区分力。12 组恢复用 want=False 真正不产生 prompt logits，然后恢复末行、对照整段参考、确认状态不变，再从恢复分布选择首 token 并消费 pending；重复追加和缺失最老依赖分别被检出。位置负对照 local/missing/double 的误差分别约为 0.1423、0.3516、0.2620；四位置闭式见证的差异约为 0.1627，同时单独验证共同平移不变量，实际解决了 round-2 样例未越过阈值的问题。成本检查以显式位置对枚举和逐 head 运算计数核对公式，能检出 head 轴重复乘法。actual_preflight 的脚本哈希与绑定值一致，returncode=0、stderr 为空，整段对照及恢复最大误差均为 3.331e-16；这是协调者提供的 remote_bwrap Python 3.12 实际执行，非本审阅者重跑。脚本未执行完整算法 B 的预算、EOS、停止及输出重试状态机，也未测试多 head 数值映射、独立模型坐标、并发版本冲突或物理异步回收；这些未登记为 PASS。正文对已执行 CPU 检查和未执行设备/服务验证的范围声明与证据相符。"
+}

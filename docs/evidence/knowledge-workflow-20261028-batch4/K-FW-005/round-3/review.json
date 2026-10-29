@@ -1,0 +1,153 @@
+{
+  "entry_id": "K-FW-005",
+  "body_sha256": "1c08b6a70f287162611caabe1d7061b3b5195f72a59664778a1ef83d2d052272",
+  "reviewer": "sol-reviewer:K-FW-005:round-3",
+  "decision": "accept",
+  "documents": {
+    "AGENTS.md": "b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a",
+    "docs/knowledge-method.md": "69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb",
+    "docs/knowledge-review.md": "f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21",
+    "knowledge/frameworks/cuda-graph-buffers.md": "1c08b6a70f287162611caabe1d7061b3b5195f72a59664778a1ef83d2d052272",
+    "knowledge/sources/S-TORCH-CUDA.md": "8ee61677a1e35d475d9bb122b2c7fa824ccf054acefbe2f12345d72c1fb1b00e",
+    "knowledge/sources/S-CUDA-ASYNC.md": "40df9287d0648a8ef55a046ceb1c18dd402619ede6e57ca33d3f90e4ace3da05",
+    "knowledge/sources/S-FI.md": "bc0a19124be4e05621f93ff9c2f35ed8cccfee0465383f4df1671e1dcec9bfc9",
+    "knowledge/sources/S-TRTLLM.md": "0d3a0b8dcfb6f7c0975080c5fbecb4c36e0c647e93185d7cb2df3b08999dfc97",
+    "knowledge/sources/S-FLASHINFERPAPER.md": "0e4c6f197789b08bbd5d0f35b202ce316bbe788bdc6a3f67ca0c27e19e256437",
+    "knowledge/algorithms/cross-attention-cache.md": "24ccdfcf4b31aba460cc537493e1c17e73643683f1c4e2df5a6c673fb5e2166e",
+    "knowledge/system-semantics/cancellation-resource-completion.md": "919052c77f65a13c9dc09aad03341ed31f0820dbbdcb2750b5789f349f9e86c1",
+    "knowledge/algorithms/weight-expert-offload.md": "cb230fafeec2d39fa40228ad44dbb41d34c62673fbac2325b6e797f206bc0fde",
+    "knowledge/algorithms/lora-serving.md": "3cba63cc43866f40cca61ad911f32115e9beaa5c4adff9559b4deb592fd3d4d7",
+    "knowledge/algorithms/tiered-residency.md": "eb3ebc6320d5a32481cf645605d159860dc6d1edb97f1e98afd89ddb24ee82af",
+    "knowledge/system-semantics/memory-allocators.md": "2e7258787b94ad142c7c236541e8718803ad30b273d08e6c398dff673a1df838",
+    "knowledge/system-semantics/model-lifecycle.md": "bf15950cafcbb584f031cc3a1ea9eaf3331d2816819c6e468ae333d70a3c7c0e",
+    "knowledge/engine-index/vllm-model-runner.md": "87d1433d4f64d939ff8f137d1c1d4092cfdf2b3d7ebdd011a0f344cc66564714",
+    "knowledge/engine-index/tensorrt-llm.md": "6ade1253f3747041bef4a816d82387c3771bff3459a153719cfbd571c2454c0b",
+    "knowledge/frameworks/streams-allocator.md": "64427e69f6eb991d4029242e24e4edf56a331d233fdeab3c50f53f0f84a4df7b",
+    "knowledge/frameworks/compile-dynamic-shapes.md": "6f9773875d24bbe32fd80e62cfba4e85f841ec1b65876b513c30d8d9f000b1ef",
+    "references/S-TRTLLM/fulltext.txt": "5ab2e4a7ee9b15bdbad3624a17f5f67e3b3c078d346e95328322cbac8b66b39d",
+    "tools/check_k_fw_005_full.py": "34d4cb29e9ad1e54f23c83e7e864283c005c8c09db58cb7ffc4fb39bd639a9f8"
+  },
+  "criteria": {
+    "definition": {
+      "assessment": "sufficient",
+      "reason": "明确说明减少提交开销的动机，区分捕获地址、特化参数与逐代内容；定义请求布局、偏移单位、输入输出及内容身份。图的收益没有被扩大为模型计算或KV交通自动减少。",
+      "evidence": [
+        {
+          "path": "knowledge/frameworks/cuda-graph-buffers.md",
+          "quote": "可重放状态可写为 `(E_G,A_G,κ_G,D_g,g)`。输入是本轮请求快照及其所需状态，输出是张量结果、KV 副作用和与请求身份对应的行映射。"
+        },
+        {
+          "path": "knowledge/frameworks/cuda-graph-buffers.md",
+          "quote": "偏移单位分别是 query 行和页索引位置，末页有效长度则以 token 计，不能混用。"
+        }
+      ]
+    },
+    "legality": {
+      "assessment": "sufficient",
+      "reason": "区分PyTorch捕获限制、graphExec自身串行、框架私有池共享与CUDA图内存节点；共享池修订符合所供原文的两种安全情形。自建有效范围布局与现成backend接口保证明确分开，更新和并发也没有被地址稳定性替代。",
+      "evidence": [
+        {
+          "path": "knowledge/frameworks/cuda-graph-buffers.md",
+          "quote": "文档还明确允许互不依赖对方输出的独立图共享池，只要它们从不并发；这一情形不要求总按捕获顺序选择图桶。"
+        },
+        {
+          "path": "knowledge/frameworks/cuda-graph-buffers.md",
+          "quote": "这是一种带有效范围保护的布局选择，不是对所有现成 wrapper 的保证。"
+        },
+        {
+          "path": "knowledge/frameworks/cuda-graph-buffers.md",
+          "quote": "更新成功不证明新地址的内容版本正确，也不替代在途生存期保护。"
+        }
+      ]
+    },
+    "algorithm": {
+      "assessment": "sufficient",
+      "reason": "当前数据流贯通输入就绪、布局聚合、计划区段检查、拆批、具体图与槽绑定、发布、执行及最后消费者回收。高水位有初始化、成功更新及FREE后保留规则，拒绝路径不写内容，异步准备失败须隔离排空。三个算法阻塞项均已关闭；取消轨迹正确区分逻辑不交付与物理访问结束。attention计划消费与稳定合并也有明确输入和状态变化。",
+      "evidence": [
+        {
+          "path": "knowledge/frameworks/cuda-graph-buffers.md",
+          "quote": "按实际布局计算 n、全部 query/page 偏移、Q、P 和输出行映射。"
+        },
+        {
+          "path": "knowledge/frameworks/cuda-graph-buffers.md",
+          "quote": "只启动 E_(b,s)，记录 H=(b,s,E_(b,s),g,映射,完成票据,状态引用)。"
+        },
+        {
+          "path": "knowledge/frameworks/cuda-graph-buffers.md",
+          "quote": "gen=g；last_published_gen=g；保存映射和 ready 依赖；"
+        },
+        {
+          "path": "knowledge/frameworks/cuda-graph-buffers.md",
+          "quote": "准备阶段若已发出异步写入后失败，槽进入隔离清理状态，不发布部分内容，也不能立即 FREE；待所有已发出访问结束并重新初始化后才恢复可用。"
+        }
+      ]
+    },
+    "cost": {
+      "assessment": "sufficient",
+      "reason": "分别解释提交、模型计算、padding、设备队列访存、计划准备与复制、通信、同步等待、捕获冷路径和物理驻留。时间公式附有关键路径与重叠前提；容量按物理并集避免重复计量。0.8毫秒提交算例、2176 token机会成本和槽数推导的单位及条件一致，且明确属于设定计算。",
+      "evidence": [
+        {
+          "path": "knowledge/frameworks/cuda-graph-buffers.md",
+          "quote": "主机工作 H 与设备工作 D 可充分重叠时，稳态周期近似受 `max(H,D)` 及反馈依赖约束；"
+        },
+        {
+          "path": "knowledge/frameworks/cuda-graph-buffers.md",
+          "quote": "先排序再用堆分配的一种计划器需要约 `O(W log W+W log C)` 的 CPU 工作，另有 `O(n+Q+P)` 的输入与索引整理；"
+        },
+        {
+          "path": "knowledge/frameworks/cuda-graph-buffers.md",
+          "quote": "workspace 若已属于某个图池保留区域，不能再把其完整 bytes 加一次。"
+        }
+      ]
+    },
+    "adaptation": {
+      "assessment": "sufficient",
+      "reason": "对批组成、长度长尾、adapter与backend、执行重叠、取消背压和显存压力分别说明不变量、调整候选及推翻信号。选择空间包含拆批、普通执行、减桶减槽及合法串行共享，没有把多槽或完整捕获写成统一要求。",
+      "evidence": [
+        {
+          "path": "knowledge/frameworks/cuda-graph-buffers.md",
+          "quote": "| 显存紧张 | 容量按物理并集计量 | 减桶、减槽、共享相容串行池 | kernel 更快但准入下降、驱逐或 OOM 增加 |"
+        },
+        {
+          "path": "knowledge/frameworks/cuda-graph-buffers.md",
+          "quote": "仅一条执行链且并发收益有限时，单绑定加串行事件保护可能更简单；独立桶从不并发时，可以利用文档允许的私有池共享。"
+        }
+      ]
+    },
+    "diagnosis": {
+      "assessment": "sufficient",
+      "reason": "区分实验针对具体机制给出干预、独立观测和反证后的修正。容量、地址绑定和高水位负对照确实能暴露上轮缺陷；性能诊断区分提交、padding、准备、驻留和共享workspace解释。离散模型与设备验证的证据边界声明正确。",
+      "evidence": [
+        {
+          "path": "knowledge/frameworks/cuda-graph-buffers.md",
+          "quote": "| 迟到旧代覆盖新代 | 先发布 2，完成所有消费者，再提交 1；比较拒绝前后快照 | 高水位正确维护时拒绝且不写入；缺少更新会覆盖 |"
+        },
+        {
+          "path": "knowledge/frameworks/cuda-graph-buffers.md",
+          "quote": "| 提交开销位于关键路径 | 相同张量、KV、同步点下切换 eager/图，分记 host、设备和墙钟 | host API 与间隙缩小而 kernel 工作近似不变；墙钟不变则重新定位瓶颈 |"
+        },
+        {
+          "path": "knowledge/frameworks/cuda-graph-buffers.md",
+          "quote": "结构正确不能由性能提升抵消，模型检查也不能替代设备可见性验证。"
+        }
+      ]
+    }
+  },
+  "findings": [],
+  "limitations": [
+    "接受范围是正文声明的机制、算法及条件化成本分析；没有真实CUDA capture、stream/event可见性、设备并发、驱动分配、数值kernel或性能验证，也没有知识使用效果证据。",
+    "有效范围保护的压紧布局是自建接口契约。具体backend是否接受零长尾段、如何实现dummy布局及保护设备写入，仍需接入验证。",
+    "CPU脚本没有模拟异步准备失败后的真实排空、共享池输出覆盖、权重与adapter换入、跨桶切换，或实际任务计划器的全部队列与partial容量。正文已将这些列为实现验证边界。",
+    "论文原文摘录在附录D.3开头截断，未直接展示2×CTA上界的完整论证；本次对该条件化事实的支持来自完整提供的S-FLASHINFERPAPER来源说明，不能声称独立复核了附录D.3全文。",
+    "本次无法访问实际文件系统核验链接目标或重新计算文件哈希；绑定值采用请求提供的冻结身份。原文链接已检查相对路径写法，未证明目标文件实际存在。"
+  ],
+  "checks": [
+    {
+      "script": "tools/check_k_fw_005_full.py",
+      "args": []
+    }
+  ],
+  "no_checks_reason": "",
+  "reading_scope": "完整阅读请求内提供的以下全文，范围均为所供提取文本的零基半开字符区间：AGENTS.md [0,567)；docs/knowledge-method.md [0,2251)；docs/knowledge-review.md [0,3016)；knowledge/frameworks/cuda-graph-buffers.md [0,15154)；knowledge/sources/S-TORCH-CUDA.md [0,1468)；S-CUDA-ASYNC.md [0,1610)；S-FI.md [0,1582)；S-TRTLLM.md [0,564)；S-FLASHINFERPAPER.md [0,2811)；knowledge/algorithms/cross-attention-cache.md [0,3845)；knowledge/system-semantics/cancellation-resource-completion.md [0,3782)；knowledge/algorithms/weight-expert-offload.md [0,3216)；lora-serving.md [0,3960)；tiered-residency.md [0,4244)；knowledge/system-semantics/memory-allocators.md [0,4191)；model-lifecycle.md [0,3556)；knowledge/engine-index/vllm-model-runner.md [0,2207)；tensorrt-llm.md [0,2145)；knowledge/frameworks/streams-allocator.md [0,2589)；compile-dynamic-shapes.md [0,4495)；references/S-TRTLLM/fulltext.txt [0,17175)。另完整阅读candidate.test_script提供的Python脚本、author_notes和actual_preflight执行记录。仅阅读所供摘录：knowledge/algorithms/async-scheduling.md [8000,10782)、[12000,13940)；knowledge/frameworks/attention-backends.md [16000,16722)、[24000,28000)；knowledge/hardware/cuda-execution.md [0,1423)、[4000,7299)；knowledge/system-semantics/design-synthesis.md [0,722)、[4000,8000)；knowledge/tools/gpu-characterization.md [0,2770)、[4000,5952)；knowledge/system-semantics/specialization-levers.md [0,3714)、[4000,5008)；knowledge/system-semantics/known-tensions.md [0,4722)；references/S-TORCH-CUDA/fulltext.txt [0,5121)、[12000,80851)；references/S-CUDA-ASYNC/fulltext.txt [104000,120000)、[124000,148000)、[188000,192000)、[784000,812000)、[1020000,1021973)；references/S-FLASHINFERPAPER/fulltext.txt [0,37972)、[40000,52000)、[60000,76000)、[80000,88000)。摘录文件未列入documents，不声称通读其完整原始文件。未读取源码归档。docs/knowledge-build-workflow.md未包含在本次材料中，工具也未提供文件读取能力；JSON采用请求明确附带的review schema。",
+  "test_assessment": "逐项检查了脚本实现及所附实际执行记录，未把作者判断或退出码单独当作正确性证明。layout以逐项写入固定大小数组的bounded_reference作为独立聚合容量参考，不复用前缀和及总容量比较；820个批次、3280次比较覆盖小批布局，另有query总量、page总量、请求数分别越界、精确容量、单请求边界、签名失配、空批和零页索引。旧逐请求谓词确实错误接受40+40行等输入，而布局与有界数组参考拒绝，因此负对照直接检验ALG-001。绑定模型的访问全部沿捕获地址执行，s1正确图产生(3,92)，错误启动s0产生(2,22)且写入s0输出，直接检验ALG-002。代次测试以到达序列的记录最大值为参考，24种排列得到50次接受；先发布2并排空后拒绝1、快照保持不变，遗漏高水位更新的负对照则覆盖为旧内容，直接检验ALG-003。图与输出两项责任检查覆盖输出提前完成拒绝、图完成后仍占槽、BUSY拒绝不修改、旧代和重复完成隔离。槽数用半开生存区间冲突枚举核对，少槽负对照产生冲突；填充负对照实际重复写真实KV目的；attention合并与直接稠密softmax参考比较，覆盖空分区和极端有限logits，重叠分区负对照得到2/3而非1。容量算术的2176 token结果正确。actual_preflight将同一脚本哈希绑定到Python 3.12隔离执行，returncode=0、stderr为空，stdout与代码中的检查结果一致；这是协调者提供的真实执行证据，本审阅者未重新执行。作者正文所述未执行Python属于作者阶段的声明，后续预检已执行二者应分别记录。检查未覆盖真实CUDA行为、实际计划器生成及其全部容量上界、失败排空或完整服务调度；这些遗漏与正文声明的验证边界一致，不妨碍关闭本轮四项具体问题及campaign重新审查项。"
+}

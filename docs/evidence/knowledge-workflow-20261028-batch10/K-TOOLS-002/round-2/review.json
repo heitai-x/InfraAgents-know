@@ -1,0 +1,149 @@
+{
+  "entry_id": "K-TOOLS-002",
+  "body_sha256": "5f79ce878ac9fe0e0fb141c17c8af5f249e99fadb0391eab2c3c0a148d9a78c2",
+  "reviewer": "sol-reviewer:K-TOOLS-002:round-2",
+  "decision": "accept",
+  "documents": {
+    "AGENTS.md": "b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a",
+    "docs/knowledge-method.md": "69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb",
+    "docs/knowledge-review.md": "f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21",
+    "knowledge/tools/timeline-attribution.md": "5f79ce878ac9fe0e0fb141c17c8af5f249e99fadb0391eab2c3c0a148d9a78c2",
+    "knowledge/sources/S-NSYS.md": "823ebab3b5e25820e6d55b2c6ad4dba63004b08fe75d562fb0890ace857f8336",
+    "knowledge/sources/S-OTEL.md": "b68ba3b2833dc7f9f5ad7f49ae395fa70cc31b94252dd1741149e1fd1eca4068",
+    "knowledge/sources/S-CUDA-ASYNC.md": "40df9287d0648a8ef55a046ceb1c18dd402619ede6e57ca33d3f90e4ace3da05",
+    "knowledge/sources/S-LINUX-IO.md": "786caae53cc1e80173616ce470c481145e285c2176b7cff4777576cc893fc316",
+    "knowledge/sources/S-RDMA.md": "660948886af9019ac90e6c58ab7b2a4ca9dbf282f1bb74de37162403f24f4d49",
+    "knowledge/workloads/measurement-comparability.md": "c3c5fbcd9a6b8b4f94954bda424488c83c3a741a2de339fea4f7aa83b4dcc215",
+    "knowledge/hardware/storage-io.md": "cec95f0a908c9abf7e9f7b83a5c930d044709d06c479d3c82967241edb49ff31",
+    "knowledge/hardware/transport-and-rdma.md": "72bcf1d8948eae41c243e422f6b0370462dcc4bf33ef86f5664a09b4e46d3ba2",
+    "knowledge/algorithms/kv-offload-prefetch.md": "a7088eba5c78cd9e96cf011d61946ad7dec4ecb6378ac16e7f2fc3820af38301",
+    "knowledge/tools/statistical-experiments.md": "908b3588a6fa20bb1f2aed9f5db51c4b462953d79f8944cdbcfea7141c74644f",
+    "references/S-OTEL/fulltext.txt": "f00d2f265bdd7aceff39c2d3c52f7cd3ab12b061e1f02cefaf84d6e12afa34a4",
+    "references/S-LINUX-IO/fulltext.txt": "d6da925f1c90da275de1e6aa94a179a3273ad342fe77b61608a8b77fa75c3495",
+    "references/S-RDMA/fulltext.txt": "9f4bea8bc130fc7dcdf0b53d20ce7269555cddd2a7c67e5d54c6dbd7a55b2720",
+    "tools/check_k_tools_002_full.py": "034034983165818608959579f4374610e5a01e4a85b09371c3177d10c44652a1"
+  },
+  "criteria": {
+    "definition": {
+      "assessment": "sufficient",
+      "reason": "明确了归因动机、请求完成边界、点与半开区间、物理身份及多对多归属；累计、覆盖、并发和带释放时间的完成下界各有数学定义。发现完成与实际完成分开，输出与未决状态也有明确含义。",
+      "evidence": [
+        {
+          "path": "knowledge/tools/timeline-attribution.md",
+          "quote": "必须先声明完成语义：设备计算结束、结果对主机可读、应用消费和输出提交可以是四个不同事件。"
+        },
+        {
+          "path": "knowledge/tools/timeline-attribution.md",
+          "quote": "S 是累计时间，U 是至少一项所选活动覆盖的时间，K 是最大活动并发数。"
+        }
+      ]
+    },
+    "legality": {
+      "assessment": "sufficient",
+      "reason": "将真实关联、时钟映射、完成依赖、最后使用和观测覆盖作为合法前提，将完整关联键、分摊权重及资源顺序建模明确为方案选择。零端点、冲突身份、部分提交、错误完成和通知语义均未被当作正常完成。来源中的条件未被扩展成通用设备保证。",
+      "evidence": [
+        {
+          "path": "knowledge/tools/timeline-attribution.md",
+          "quote": "它是检查模型的选择，不是所有工具都提供的固定 schema。API 未携带队列时，应使用该工具明确支持的关联关系，不能填默认队列伪造完整键。"
+        },
+        {
+          "path": "knowledge/tools/timeline-attribution.md",
+          "quote": "因果边来自生产消费、经过核验的 stream 顺序、event 等候、资源移交或屏障；较早时间戳本身不是因果边。"
+        },
+        {
+          "path": "knowledge/tools/timeline-attribution.md",
+          "quote": "槽依赖来自最后使用结束，不能仅凭提交返回释放。"
+        }
+      ]
+    },
+    "algorithm": {
+      "assessment": "sufficient",
+      "reason": "关联分区、身份去重、裁剪、区间合并与端点扫描、拓扑遍历及见证路径回溯均交付了可实现的步骤。内部节点释放可以重置约束路径起点；全起点路径枚举与递推等价，修复没有删除正确的释放约束。组合轨迹保留跨请求前驱，流水图明确各阶段生产消费、引擎串行及槽复用边。",
+      "evidence": [
+        {
+          "path": "knowledge/tools/timeline-attribution.md",
+          "quote": "检查精确匹配的实例与 U 不相交，且并集等于全部 dispatch"
+        },
+        {
+          "path": "knowledge/tools/timeline-attribution.md",
+          "quote": "释放约束主导内部节点时，回溯路径可以从内部节点开始。"
+        },
+        {
+          "path": "knowledge/tools/timeline-attribution.md",
+          "quote": "对任意结束于目标 t 的非空有向路径 p，分数为 r_first+Σd+Σl；EF_t 等于这些路径分数的最大值。"
+        }
+      ]
+    },
+    "cost": {
+      "assessment": "sufficient",
+      "reason": "实际核算了排序与图遍历复杂度、事件与索引状态、文件字节、六类观测成本、共享工作守恒及槽容量。三阶段流水在独立引擎和固定时长假设下，两主机槽周期10、单主机槽周期14，容量分别4b与3b，推导一致。组合设备账15τ、覆盖14τ与请求完成18/20保持不同口径；有效速率估计与能力上界下界也作了区分。",
+      "evidence": [
+        {
+          "path": "knowledge/tools/timeline-attribution.md",
+          "quote": "FIFO 拓扑遍历、递推和回溯为 O(|V|+|E|) 时间，图与状态占 O(|V|+|E|) 空间"
+        },
+        {
+          "path": "knowledge/tools/timeline-attribution.md",
+          "quote": "若每槽 b 字节，这两个候选的槽容量分别为 4b 与 3b，原有池与池内槽不能重复相加。"
+        },
+        {
+          "path": "knowledge/tools/timeline-attribution.md",
+          "quote": "条目数复杂度不能代替字节预算。文件主项为 Σ_k N_k b_k，其中 b_k 包含对应类型记录与元数据；索引、临时导出和运行时缓冲另计。"
+        }
+      ]
+    },
+    "adaptation": {
+      "assessment": "sufficient",
+      "reason": "说明了多stream、共享容量、预取深度、采集窗口、平台及校准变化后应保留什么依赖、重算什么成本以及何时放弃结论。固定workspace释放与随前驱移动的释放分别计算，避免把旧轨迹拟合出的释放无条件用于优化预测。",
+      "evidence": [
+        {
+          "path": "knowledge/tools/timeline-attribution.md",
+          "quote": "反事实必须区分外部固定释放与随前驱变化的等待，重新计算后再验证。"
+        },
+        {
+          "path": "knowledge/tools/timeline-attribution.md",
+          "quote": "等待减少但驻留挤压其他请求时应降低深度或放弃预取"
+        },
+        {
+          "path": "knowledge/tools/timeline-attribution.md",
+          "quote": "每次改变 d、r 或边都应重算，不能永久给某节点贴关键标签。"
+        }
+      ]
+    },
+    "diagnosis": {
+      "assessment": "sufficient",
+      "reason": "对设备空洞、API等待转移、并发无收益、CQE后停滞、时钟变化及观测扰动提出竞争解释与可区分观测。干预有预测及反证后的修改规则。旧检查失败被定位到参考器漏内部释放，并以正确13、错误9及随机逐目标比较验证修复；本轮实际Python预检证据支持关闭原阻塞项。",
+      "evidence": [
+        {
+          "path": "knowledge/tools/timeline-attribution.md",
+          "quote": "若全部已记录 kernel 完成而请求仍停住，应沿状态追踪缺少哪个后继"
+        },
+        {
+          "path": "knowledge/tools/timeline-attribution.md",
+          "quote": "若总性能改善而预测没有出现，应修改机制解释，即使候选本身仍可保留。"
+        },
+        {
+          "path": "knowledge/tools/timeline-attribution.md",
+          "quote": "修订后的检查同时验证旧参考确实返回 9、新参考及递推返回 13。"
+        }
+      ]
+    }
+  },
+  "findings": [],
+  "limitations": [
+    "本结论限于所供正文、来源说明、指定原文范围及有限模型。未核验上游实现；CUDA和Nsight Systems原文只阅读指定摘录。",
+    "Python检查限定整数和有理数、规范化点事件及字段齐全的关联模型；没有测试真实schema解析、任意实数精度、非恒定漂移或独立端点误差。",
+    "没有CUDA、DMA、块设备、RDMA、profiler或真实服务执行证据；不证明设备可见性、无损采集、实际资源调度、性能及Agent使用效果。",
+    "已检查所供引用的相对路径表达与章节对应关系；未通过文件系统验证所有链接目标存在、reader.html可打开或冻结发布可取回。",
+    "作者报告的JavaScript执行没有附独立原始日志，未单独认定为已复现；本轮Python通过结论来自所供actual_preflight记录，并非本审阅者新启动的执行。"
+  ],
+  "checks": [
+    {
+      "script": "tools/check_k_tools_002_full.py",
+      "args": []
+    }
+  ],
+  "no_checks_reason": "",
+  "reading_scope": "完整阅读所供AGENTS.md、docs/knowledge-method.md、docs/knowledge-review.md、当前候选正文、完整候选Python脚本、author_notes、前轮具体失败记录及本轮actual_preflight。完整材料字符范围：AGENTS.md [0,567)，方法[0,2251)，审查标准[0,3016)，正文[0,13224)；五份来源说明S-NSYS [0,498)、S-OTEL [0,520)、S-CUDA-ASYNC [0,1610)、S-LINUX-IO [0,850)、S-RDMA [0,739)；相关完整章节measurement-comparability [0,2988)、storage-io [0,3886)、transport-and-rdma [0,4088)、kv-offload-prefetch [0,3710)、statistical-experiments [0,4269)；完整所供原文OTel [0,8256)、Linux I/O [0,52366)、RDMA [0,25147)。相关章节仅阅读所供摘录：host-device-timing [0,4500)、[8000,12000)；kernel-counter-replay [4000,12500)；distributed-state-transfer [0,4000)、[8000,12500)；trace-observability [0,1658)、[8000,12000)、[16000,18842)；framework-profiler-scope [0,4500)、[8000,12000)。Nsight Systems原文仅所供摘录[0,4000)、[8000,16000)、[52000,56000)、[84000,88000)、[120000,123275)、[128000,132000)、[144000,148000)、[168000,180000)、[212000,216000)、[252000,260000)、[268000,272000)、[304000,308000)、[484000,500000)、[504000,508000)。CUDA原文仅所供摘录[72000,76000)、[208000,212000)、[280000,288000)、[296000,304000)、[316000,320000)、[324000,332000)、[688000,692000)、[948000,956000)、[1024000,1028000)、[1032000,1040000)、[1044000,1047275)、[1052000,1056000)、[1060000,1072000)、[1100000,1104000)。范围按材料声明的抽取文本零基半开字符坐标记录；摘录不代表通读原文件，documents仅列完整所供文件。",
+  "test_assessment": "已独立检查脚本算法及所供实际执行记录。区间主算法采用合并与端点扫描，参考器按全部端点分割后用中点计数积分，比较完整输出，并有U≤S≤KU及窗口覆盖不变量；累计冒充并集和同刻先开始两个错误版本确实产生错误覆盖或假并发，属于机制负对照。关键路径参考从每个节点开始直接枚举有向路径，不调用拓扑递推；这与每节点释放约束等价。最小回归中主算法和新参考为13，旧根路径参考为9；漏释放与汇合取最早前驱也被检出。200个随机小DAG逐节点及744个目标比较，并反转插入顺序，覆盖标签不按数值拓扑排序；另检查环、空图、非法边、重复边、等长路径和精确分数。关联采用索引连接对照嵌套连接，保留缺字段、跨队列、跨代次和歧义记录；correlation-only错误连接确实误认K7。共享分摊检查守恒并检出重复全额计费。时钟参考枚举整数偏移，336例及空可行集支持所声明有限范围，不证明连续漂移模型。组合轨迹与全路径参考比较；流水使用同一earliest实现，另外核对由阶段与槽约束推得的封闭公式，不能视为独立调度器或设备验证。所供remote_bwrap实际预检绑定脚本SHA256 034034983165818608959579f4374610e5a01e4a85b09371c3177d10c44652a1及本轮正文SHA256，使用Python3.12的-I -S -B -X utf8执行，returncode=0、stderr为空、未超时，stdout包含全部检查组和PASS。作者正文明确区分其JavaScript模型执行与待协调者执行Python，未将未执行检查记为PASS；后续actual_preflight提供了本轮Python实际结果。因此campaign-K-TOOLS-002-r1的具体失败已修复并关闭。其余未测边界保留为limitations，不据进程成功外推设备或使用效果。"
+}

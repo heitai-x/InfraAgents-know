@@ -1,0 +1,226 @@
+{
+  "prepared_by": "/root",
+  "created_at": "2026-10-28T23:56:44+00:00",
+  "artifact_hashes_checked": 49,
+  "entries": [
+    {
+      "id": "K-ENGINE-002",
+      "action": "targeted_repair",
+      "candidate": {
+        "path": "docs/evidence/knowledge-workflow-20261028-batch19/full_build/K-ENGINE-002/round-3/candidate.json",
+        "sha256": "ab180039ed3e73d0f878b70c59142e6c01625e6907effd04db9c7375b0bf2a4a"
+      },
+      "additional_rounds": 1,
+      "findings": [
+        {
+          "id": "K-ENGINE-002-H-SETTLEMENT",
+          "criterion": "algorithm",
+          "evidence": "knowledge/engine-index/vllm-kv-manager.md 将“准备事务保护 H”与“私有准备归属 T”定义为不同责任，并规定“只有不存在 O、H、U、T 时，它才可能被淘汰并交给新内容”。ReservePlan 执行“重新核验命中对象身份，并为其登记 tx 的临时保护”；Commit 只写“将目标私有责任转交请求，撤销被替换的旧逻辑持有”，AbortAndDrain 最后只写“撤销剩余私有责任并归还容量一次”。两条终结路径都未明确解除 tx 的 H。相比之下，所供脚本 publish 明确执行 p['holds'].discard(tx)，release_tx 也明确清除 holds。",
+          "impact": "按正文显式状态更新实现时，本地命中页在成功提交、请求随后退役且全部访问结束后仍可能保留 H；中止路径的非私有源页也没有明确解除保护的步骤。页因回收门永远不成立而泄漏可分配容量。脚本包含正文遗漏的清理动作，其通过不能证明正文协议已闭合。",
+          "blocking": true,
+          "required_revision": "在 Commit 和 AbortAndDrain 中明确结算本事务取得的全部 H，包括未进入目标请求视图的源对象。成功路径应先确保接管后的 O、U 或其他恢复责任成立，再解除临时保护；失败路径应在相应真实最后使用结束后解除，并明确未使用保护与重复收尾的处理。核对这些动作与脚本 publish、release_tx 的对应关系。"
+        }
+      ],
+      "manager_notes": [
+        "以此处绑定的 batch19 round-3 candidate.json 的 chapter/test_script 为修订基线，不退回较旧正式正文，不无依据重写整章。本轮唯一阻塞是 K-ENGINE-002-H-SETTLEMENT。把 tx 取得的全部准备保护 H 作为可枚举的事务责任，明确它与私有目标 T、请求所有权 O、在途使用 U 的区别。在 Commit 的协调提交边界内，先建立接管后的请求/消费责任，再解除本事务已完成用途的 H；处理全集必须覆盖没有进入新视图的恢复源或未采用命中页，不能只遍历目标 handles。AbortAndDrain 应区分从未使用的保护和仍被本事务真实访问的保护：前者可立即结算，后者在相应最后使用证据成立后结算；保留别的事务、请求或在途操作的责任。无论选择保守延后还是有明确 U 接管的等价转移，正文和脚本必须声明同一时点，不能仅援引脚本已清理来填补正文。重复收尾按 tx 身份幂等；不能清除另一个 tx 的 H。核对 publish/release_tx 及调用者的作用范围，补充明确的事务结算入口和实际回归。保留六项已有论证、所有模型边界和既有负对照；本轮作者执行过程留在 author_notes。",
+        "本次需要真实触发的回归与负对照：{\"positive\": \"构造包含目标命中页和未入新视图源页的 tx。成功提交后先证明接管责任成立，再结束请求及读者，检查本 tx 的 H 全部消失、应可淘汰页进入可分配集合。失败/取消分支在真实访问未结束前仍保护相关源，结束后无需其他请求事件即可清完本 tx 保护。重复结算保持状态不变，另一个 tx 的保护保留。\", \"negative\": \"实际执行遗漏成功结算 H、遗漏中止源页 H，或只清目标 handles 的故障变体；同一独立责任/可分配性观察器应检测本 tx 遗留保护和容量滞留。不要在故障分支主动抛异常代替观察器检出，也不要强行清掉所有事务的 holds 使测试通过。\"}"
+      ],
+      "reason": "已复核最后候选，按明确阻塞 K-ENGINE-002-H-SETTLEMENT 进行一次定点修订；保留已成立内容和此前已关闭问题。"
+    },
+    {
+      "id": "K-HW-003",
+      "action": "targeted_repair",
+      "candidate": {
+        "path": "docs/evidence/knowledge-workflow-20261028-batch16/full_build/K-HW-003/round-4/candidate.json",
+        "sha256": "bf3ea3b14bcd6fe74d4f34cd8c0307ee7d01a7764da2f25b3e7d502301f591e7"
+      },
+      "additional_rounds": 1,
+      "findings": [
+        {
+          "id": "K-HW-003-R4-ACCEPTED-END-QUARANTINE",
+          "criterion": "algorithm",
+          "evidence": "正文规定“若 ended 不能证明所有相关访问已结束”则“登记隔离原因；quarantined=true；保留 writer/readers 和 pending”。后来 ended 充分的分支只写“若本次证据同时澄清 UNKNOWN 的接受与最终结束，解除该 uid 的隔离原因”，但 UNKNOWN 已被定义为部分接受或无法确定是否接受，没有覆盖此前明确 ACCEPTED、仅缺最后访问结束证据的操作。发布又要求“若有目的且 success 且请求仍有执行资格”。脚本 Pipeline.complete 则无条件执行 self.isolated.discard(uid)，与正文分支不同。",
+          "impact": "按正文逐步追踪 N=1：prepare 明确 ACCEPTED，next=1；首次通知 ended 不充分，设置隔离并保留 pending；随后同 uid 返回成功、完整范围及充分 ended。此时接受状态从未是 UNKNOWN，指定解除条件不成立；pending 和 writer 已结算，但 quarantined 仍为 true，H 因无执行资格不发布而被归还。请求没有终态，没有待完成操作，也没有 READY 后继，无法继续或排空。这是抽象协议自身的恢复缺口，不属于真实 CUDA 尚未验证的边界。",
+          "blocking": true,
+          "required_revision": "按隔离原因逐项结算：当新的证据证明该 uid 的全部访问结束时，解除其“访问结束未确认”原因，无论入队分类原先为 ACCEPTED 还是 UNKNOWN；仅对证据实际澄清的其他原因进行解除，再由剩余原因重算 quarantined。加入未取消的 ACCEPTED prepare 先 ended=false、再成功且 ended=true 的实际推进检查，要求恢复完整输出并排空；并以遗漏该原因解除的故障对照确认测试能检出停滞。正文与脚本采用相同恢复规则。"
+        }
+      ],
+      "manager_notes": [
+        "以绑定的 batch16 round-4 候选为基线，只修 K-HW-003-R4-ACCEPTED-END-QUARANTINE。不要重新改写已经关闭的未入队 prepare 回滚/保留 next/容量唤醒或取消后不再准入。把隔离表示成能按 uid 和具体原因结算的责任，或给出等价的明确原因语义：新的充分结束证据总能解除该 uid 的“最后访问未确认”，无论最初是 ACCEPTED 还是 UNKNOWN；接受状态未知、身份破坏等其他原因只在其各自证据充分时解除。由剩余原因重新计算 quarantined，再判断该目的是否可 READY 以及请求是否可继续。正文完成分支与 Pipeline.complete 使用同一恢复条件；不能保留正文 UNKNOWN 专属解除而让脚本继续用无条件 discard 隐式补全，也不能在清一个 uid 时解开别的 uid 或不同原因。保留取消/失败终态对后续发布的否决，重复完成不再次提交。补充未取消 ACCEPTED 的 ended=false→ended=true 全路径回归及遗漏解除的故障变体，不把真实平台证明责任扩成新硬件测试要求。",
+        "本次需要真实触发的回归与负对照：{\"positive\": \"N=1、小非空载荷、prepare 正常 ACCEPTED；先发送 ended=false，检查 pending、writer、借用及隔离均保留且未发布；随后发送同 uid 的成功/完整/充分 ended，自动恢复 H→D→O→R→CPU 推进，独立 raw→响应参考相等、只提交一次、所有池和责任排空。补一个其他隔离原因仍存在的控制，确认解除本 uid 的结束未确认不会无条件恢复整个请求。\", \"negative\": \"故障仅省略 ACCEPTED 情况下的结束未确认原因解除，实际执行上述相同轨迹；原观察器加终态/输出/可推进性断言应检出停滞，而不是由测试直接补清 isolated 或人工调用缺失分支。\"}"
+      ],
+      "reason": "已复核最后候选，按明确阻塞 K-HW-003-R4-ACCEPTED-END-QUARANTINE 进行一次定点修订；保留已成立内容和此前已关闭问题。"
+    },
+    {
+      "id": "K-ALG-017",
+      "action": "targeted_repair",
+      "candidate": {
+        "path": "docs/evidence/knowledge-workflow-20261028-batch17/full_build/K-ALG-017/round-4/candidate.json",
+        "sha256": "f60285871d7ce544d81089bf303dedbedef83dbd279cede36f16c177df21ac7a"
+      },
+      "additional_rounds": 1,
+      "findings": [
+        {
+          "id": "K-ALG-017-r4-unstarted-rejection-retirement",
+          "criterion": "algorithm",
+          "evidence": "START_STAGE 先执行“将目的副本置为 LOADING，保存不可变操作描述与目标范围”，再启动操作。随后全部未启动分支为“明确全部未启动：以未启动证据撤销本次使用责任”“失败或重试；撤销放弃候选的持有，尝试 FREE，再执行 WAKE”。此处没有调用 RETIRE，也没有明确置为 RETIRING；FREE 则要求“仅当 state=RETIRING、L=空、U=空且无未知访问隔离时执行”。现有 Machine.start 的拒绝检查都在登记 uses 和设置 LOADING 之前，未模拟登记后实际启动被明确全部拒绝的分支。",
+          "impact": "令目的候选占满设备池，进入 LOADING 后提交接口明确全部未启动，计划选择失败并放弃候选。按正文撤销 U 和最后一个 L 后，候选仍为 LOADING，因此 FREE 不释放，WAKE 也无法准入容量等待者。被拒绝的操作不会产生 END，正文也没有保证失败计划再次进入 START_STAGE 的开头清理分支，容量可以永久滞留。当前执行成功不能覆盖这条缺失转换。",
+          "blocking": true,
+          "required_revision": "在全部未启动且放弃候选的分支中，明确完成撤销逻辑持有、关闭入口并转入 RETIRING，再尝试 FREE 和 WAKE；若选择重试，则明确保留哪些预留与待办。给 CPU 模型增加登记责任并进入 LOADING 后收到全部未启动证据的路径，检验放弃后无需任何未来完成事件即可归还容量并推进等待者，并让遗漏该退休转换的缺陷路径被同一观察器检出。"
+        }
+      ],
+      "manager_notes": [
+        "以绑定的 batch17 round-4 候选为基线；保留此前 CANCEL 立即回收/唤醒及观察器 event_index 的修复，不退回 round-2/3。只补 START_STAGE 在“已登记 U、目的已为 LOADING、随后确认整个操作未启动”之后的结算。选择放弃时，应关闭该失败计划的后继入口，幂等撤销本次 U 和本计划 L；无其他合法持有者的目标/工作区明确 RETIRE→FREE，最后 WAKE。共享对象仍有别的 L 时保留其合法责任，独立稳定源不因目标失败被删除。若选择重试，明确保留何种预留和待办以及重新准入入口，不能把 LOADING 当作仍在执行；新尝试的操作身份及旧拒绝通知去重应一致。检查模型必须真正经过登记/LOADING 后收到 NOT_STARTED 的分支，不能继续以 Machine.start 前置 require 拒绝代替。观察器不添加 END、gc 或 wake 来替作者推进。保留所有旧正/负回归；新的错误变体只省略退休转换，仍要被相同状态/容量推进判据检出。",
+        "本次需要真实触发的回归与负对照：{\"positive\": \"让一个无共享持有者的目的候选占满池，登记源/目标使用并置 LOADING，然后注入可信的全部未启动结果并选择放弃；从该入口实际完成 U/L 结算、RETIRING→GONE、容量归还和等待者准入，不生成未来 END/READER_END。重复拒绝通知不改新代对象；原稳定源仍有效。\", \"negative\": \"同轨迹中故障版撤掉 U/L 但不进入 RETIRING；测试应观察到旧 LOADING 对象仍占容量、等待者未准入，并以明确 CheckError 拒绝。不能调用带隐含退休副作用的 remove_owner 后假称测试覆盖了省略退休的版本；应让故障真实保留 LOADING。\"}"
+      ],
+      "reason": "已复核最后候选，按明确阻塞 K-ALG-017-r4-unstarted-rejection-retirement 进行一次定点修订；保留已成立内容和此前已关闭问题。"
+    },
+    {
+      "id": "K-HW-013",
+      "action": "targeted_repair",
+      "candidate": {
+        "path": "docs/evidence/knowledge-workflow-20261028-batch17/full_build/K-HW-013/round-4/candidate.json",
+        "sha256": "5e8c4a2d22907df7c9211f3539ea0aa535c29a3083340ea32b469b53b6127653"
+      },
+      "additional_rounds": 1,
+      "findings": [
+        {
+          "id": "K-HW-013-A04",
+          "criterion": "algorithm",
+          "evidence": "RESTORE_RANGE 创建任务时规定“建立 WAIT 任务并原子发布到 pending，随后尝试 PHYSICAL_ADMIT”，失败后“冲突时任务保持 WAIT”；但再次遇到已有任务的分支仅为“若存在相同 key 的 WAIT/ACTIVE 任务：将 parent 加入订阅者，保存同一完成票据，不重复提交”。主循环没有遍历已有 WAIT 任务并重新尝试 PHYSICAL_ADMIT 的步骤，消费者又要求“所有可能写本次实际范围的 WAIT/ACTIVE 恢复任务均已结束”。“继续其保存的推进位置”没有明确 WAIT 任务应恢复到哪一步及由谁触发。脚本 expanded 正常案例通过 st.finish_read('old') 后显式 require(st.start_copy(move)) 推进，绕过了正文尚未给出的调度转换。",
+          "impact": "正文自己的放大复制案例可以触发：old 正在读取有效的 D[0,2)，new 需要失效的 [2,4)，恢复策略创建写 [0,4) 的任务并因 old 的物理 R 进入 WAIT。old 完成后，冲突已经消失，但若按 RESTORE_RANGE 重新进入，已有 WAIT 分支只订阅，不再尝试启动；new 又等待该任务结束。没有其他在途工作时，主循环会拒绝本可合法完成的访问，或持续等待。当前测试的人工再次启动不能证明正文算法能够自行推进。",
+          "blocking": true,
+          "required_revision": "明确已有 WAIT 恢复任务的重试入口和 WAIT→ACTIVE 转换，例如每轮完成处理后，由同一状态拥有者对可重试 WAIT 任务重新核对版本、地址和保活，再原子调用 PHYSICAL_ADMIT，成功后只提交一次；或明确保存并恢复到该准入步骤的任务续执行机制。保持原 parent、uid 和订阅关系。让放大复制等待读者的检查通过这一实际推进入口在读者完成后自动排空，并加入遗漏重试的负对照；无需实现或穷尽完整 phase/DAG 调度器。"
+        }
+      ],
+      "manager_notes": [
+        "以绑定的 batch17 round-4 候选为基线，只闭合 A04；不要重做已经关闭的 A03 物理冲突保护。保留 addr/valid/ν/epoch 分离、共享 pending、实际源 R/目标 W、全部相关目标移动的消费门、原子发布/清账和旧代身份。增加明确、有限的 WAIT 推进入口：完成处理释放物理责任后，由同一状态拥有者扫描或调度已建立的可重试 WAIT 恢复任务，重新核对原冻结版本、地址资格、保活和实际访问范围，调用 PHYSICAL_ADMIT；成功后原子进入 ACTIVE 并只提交一次，冲突仍在则保留同一任务身份等待。不得创建新 parent/uid 来绕过既有订阅关系，ACTIVE/DONE 不重复提交，未来父逻辑预约不能成为自阻塞的物理访问。正文主循环应在判定无进展/拒绝前实际调用这个入口。RestoreScheduler 的正常组合回归必须经该入口推进；测试/观察器不再在 old 完成后额外手工 start_copy 来掩盖缺失转换。完整 phase/DAG 调度、真实 UVM/驱动交错等已声明边界保持，不扩成无关实现要求。",
+        "本次需要真实触发的回归与负对照：{\"positive\": \"沿正文 expanded 案例建立 old 物理读与 new 的扩大恢复 WAIT；提交一次 old 完成事件，再调用公开的正常推进/事件循环，要求同一 move 自动 WAIT→ACTIVE、只出现一次物理 begin；复制完成后 new 自动取得合法消费资格并最终排空，逐字节值/ν 与独立参考一致。可复用源端 W 结束后恢复源 R 的案例核对相同重试入口。保留共享订阅及反序完成的既有安全检查。\", \"negative\": \"故障版禁止已有 WAIT 的重试扫描/续执行；在 old 已结束且无其他在途工作的同一轨迹中，外部只提供真实完成和正常推进调用，观察器应检出任务仍 WAIT、消费者未完成或错误 REJECT。不能由观察器手动 start_copy、制造完成或清空 pending 来满足排空。\"}"
+      ],
+      "reason": "已复核最后候选，按明确阻塞 K-HW-013-A04 进行一次定点修订；保留已成立内容和此前已关闭问题。"
+    },
+    {
+      "id": "K-MODEL-011",
+      "action": "targeted_repair",
+      "candidate": {
+        "path": "docs/evidence/knowledge-workflow-20261028-batch13/full_build/K-MODEL-011/round-3/candidate.json",
+        "sha256": "d32d305b11845c449745c41a1b984862b0578a8edc2683cd55261af6456bb6ed"
+      },
+      "additional_rounds": 1,
+      "findings": [
+        {
+          "id": "K-MODEL-011-ALG-TALKER-RESULT",
+          "criterion": "algorithm",
+          "evidence": "TalkerStep 声明“输出：COMPUTED、SELECTED、EOS、等待或明确失败”；AdvanceSpeech 在未就绪分支却仅写“EOS 未知且条件与 code ring 额度允许时，执行一个 TalkerStep 后继续；”。TalkerStep 第 4 步先保存并追加 y，第 6 步才“拒绝无解释的半帧、越界 code 和已提交前缀回退”；调用方没有接收返回值、传播失败或更新 phase 的步骤。",
+          "impact": "当 EOS 在必需 codebook 尚未齐备时被判为 FAILED_INCOMPLETE_FRAME，外层仍可能保持 RUN、eos_known=false，并再次调用 TalkerStep，消费刚追加的结束标志或继续生成。失败可能被预算暂停掩盖。取消和条件等待返回也没有明确的外层处理路径。Python 模型通过不能排除此错误，因为它通过 feed/seal 外部注入 code 与 EOS，没有执行该调用链。",
+          "blocking": true,
+          "required_revision": "在 AdvanceSpeech 显式接收并分派 TalkerStep 结果：COMPUTED/SELECTED 后重新判断依赖；EOS 后重新判断最终边界；等待返回真实等待原因；CANCELLED 撤销资格并进入对应终态；明确失败立即保存原因、进入 FAILED，禁止继续消费或选择。说明失败时已追加 token 和暂定 code 的隔离。增加针对该调用链的回归：半帧 EOS 返回失败后不得再调用 TalkerStep、发布 DATA 或 END；移除结果分派的负对照须被同一判据检出。"
+        }
+      ],
+      "manager_notes": [
+        "本轮是针对最后保留的 round-3 完整候选的局部修复。保留已成立的多层 Talker、块几何、EOS/flush、flow/vocoder、背压与成本推导；不要退回较浅的已登记旧正文重写。previous_attempts 中该候选和原审查是准确修订基线。",
+        "原 review-submitted.json 的 K-MODEL-011-ALG-TALKER-RESULT 是真实语义问题，虽因额外 inline 检查声明导致合同拒绝，不能遗漏此 finding。AdvanceSpeech 必须显式捕获 TalkerStep 结果，并在再次循环或预算判断之前分派：COMPUTED/SELECTED 重查依赖，EOS 重查最终边界，WAIT 返回对应真实原因，CANCELLED 撤销资格并进入终态，FAILED 立即保存原因并进入 FAILED。",
+        "说明 TalkerStep 已暂存的 token/code 在半帧 EOS 等失败后的隔离边界：不得继续被推进或发布；已经合法提交的前缀不回写，物理责任按既有最后使用规则结算。不要只在说明段落补一句而保留伪代码中的无条件继续。",
+        "检查必须走真实的 TalkerStep 返回值→AdvanceSpeech 分派调用链，不能由 feed/seal 外部注入绕过缺口。最小回归：第一步返回 FAILED_INCOMPLETE_FRAME 后，不得再调用 TalkerStep，不得发布新的 DATA 或 END；即使该步耗尽时间片，也必须返回 FAILED 而非 PAUSED。再覆盖成功 EOS、等待和取消。故意去掉分派的负对照要由同一独立终态/事件判据拒绝。",
+        "只交付本章指定 Python 检查；作者自己的 JS/V8 过程和工具限制放 author_notes，正文保留稳定覆盖与未测边界。不要预写执行成功，不增加或复制 inline 检查配方。"
+      ],
+      "reason": "已复核最后候选，按明确阻塞 K-MODEL-011-ALG-TALKER-RESULT 进行一次定点修订；保留已成立内容和此前已关闭问题。"
+    },
+    {
+      "id": "K-SYS-006",
+      "action": "targeted_repair",
+      "candidate": {
+        "path": "docs/evidence/knowledge-workflow-20261028-batch13/full_build/K-SYS-006/round-3/candidate.json",
+        "sha256": "8b4fe95b4d4046868f3d9fad47c5a1f7730a14af14949358f42362426cca7ec6"
+      },
+      "additional_rounds": 1,
+      "findings": [
+        {
+          "id": "K-SYS-006-R3-TRANSFER-UNRESOLVED",
+          "criterion": "algorithm",
+          "evidence": "正文将 heldout_changed 定义为“已在改变条件上执行未参与选择的保留评价”，将 heldout_conflict 定义为“该评价按预定规则反驳迁移预测”；P13 仅检查 changed_reference、changed_control_rejected 和 mechanism，随后 P14 返回 TRANSFERABLE。与此同时，正文明确写道“区间包含零表示尚不足以区分方向，不等于证明相等。”",
+          "impact": "设 P 为改变条件后 A 的平均延迟低于 B，原范围已取得充分支持。改变条件上的 16 个独立配对区组给出均值差 0 ms、样本标准差 4 ms，采用临界值 2.131 得到区间 [-2.131,2.131] ms。评价已执行、测量参考独立且负对照有效，但结果既不支持负方向，也未按预定区间规则反驳负方向。按现有谓词可令 heldout_changed=true、heldout_conflict=false，其余晋升前提均成立，P14 就授予 TRANSFERABLE。审阅者实际执行的 JavaScript 内存探针确认了这条路径。参考正确和负对照有效不能补足收益方向尚未区分的问题。",
+          "blocking": true,
+          "required_revision": "在迁移分支分别保留评价已执行、支持预测、反驳预测和未区分的语义。保留现有冲突处理优先级，但只有结果满足 P 的预声明判定条件时才授予 TRANSFERABLE；未区分时停在 CHECKED 并说明下一检查。同步修改表格、谓词、伪代码和声明式证书，加入上述区间跨界反例及对应的支持、反驳对照，确认实际晋升函数不会把未区分结果晋升。"
+        }
+      ],
+      "manager_notes": [
+        "以最后保留的 round-3 完整候选为基线定点修改，保留现有 MECH/OBS/TRANSFER/BUILD_EFFECT 分类、原范围检查、冲突优先级、使用路径和成本/诊断说明。此次不重开已经澄清的作者全文读取范围问题：作者与审阅者实际材料范围不同，当前执行器已经分别提供范围证据。",
+        "修复 K-SYS-006-R3-TRANSFER-UNRESOLVED：评价已执行、结果支持预声明预测、结果反驳预测、结果尚未区分必须具有不同语义。已执行且未反驳不等于支持。同步修改晋升条件表、输入谓词、TRANSFER 伪代码和声明式证书，只有确实支持 P 且其余门槛成立才授予 TRANSFERABLE；未区分保留 CHECKED 并给下一实验方向。",
+        "保留冲突处理优先级；若用多个布尔量，明确矛盾组合和未评价时的消费规则，或用互斥结果状态避免歧义。不能为了修复未区分就使已存在的反驳证据被其他未完成门槛静默遮蔽。支持的判据服从具体预声明命题，不将某一个方向的 CI 规则泛化为所有命题。",
+        "保留并实际测试最小反例：16 个配对区组，均值差 0 ms，样本标准差 4 ms，临界值 2.131，区间 [-2.131,2.131] ms；对 A 更快的命题尚未区分，不能晋升。增加明确支持和反驳对照、未评价分支，以及只漏支持门槛的故障版本；判定要进入真正的晋升函数及独立声明式参考，而非仅断言手工标签。",
+        "这些检查只是条件逻辑/区间算术模型，不证明区间覆盖率或实际知识收益。保持该限制；工具能力和执行进度只写 author_notes，不进入长期正文。"
+      ],
+      "reason": "已复核最后候选，按明确阻塞 K-SYS-006-R3-TRANSFER-UNRESOLVED 进行一次定点修订；保留已成立内容和此前已关闭问题。"
+    },
+    {
+      "id": "K-WORK-010",
+      "action": "targeted_repair",
+      "candidate": {
+        "path": "docs/evidence/knowledge-workflow-20261028-batch17/full_build/K-WORK-010/round-3/candidate.json",
+        "sha256": "619d6cb7a8cabe03f390680d0a17f32a304a9acf376ef8cc7e1f4dbb2c299675"
+      },
+      "additional_rounds": 1,
+      "findings": [
+        {
+          "id": "K-WORK-010-CLOSEOUT-FINAL-ELIGIBILITY",
+          "origin": "coordinator_diagnosis",
+          "criterion": "algorithm",
+          "blocking": true,
+          "evidence": "spec={'U':node(bad=('FULL',))}, cancellations={}；原脚本真实隔离重现退出1；replay 为 start=0、t=1 FAILED、无发布/输出并排空；reference 错为 t=1 COMMITTED，并安装 FULL 输出。",
+          "impact": "reference 无条件先放 COMMITTED 候选，再添加失败操作。最终操作失败时两个候选排序键相同，min 稳定选中先加入的 COMMITTED。进一步，最终 FULL 即使不具备共同提交资格，也可能被通用非最终事件条件当作普通成功事件发布。",
+          "required_revision": "只有全部必需结果成功时，参考才有最终 COMMITTED 候选；最终事件发布必须同时满足最终提交资格。非最终 FIRST 等事件仍可在后来失败前合法发布并保留。不要通过改变候选插入顺序解决资格问题。"
+        },
+        {
+          "id": "K-WORK-010-CLOSEOUT-SAME-TIME-DISPATCH",
+          "origin": "coordinator_diagnosis",
+          "criterion": "algorithm",
+          "blocking": true,
+          "evidence": "U=成功FULL偏移1、lag0；V依赖U.FULL，a=2；cancellations={'U':2,'V':2}；U于1提交。replay在2先处理U取消，紧接着reconsider启动V，再处理V取消，记录V.start=2；reference以 own_cancel_time<=ready_time 判断V从未启动。两者终态相同但启动/物理责任轨迹不同。",
+          "impact": "逐事件后调度本身是合法组织选择；问题是正文/replay与静态参考采用了不同的同刻调度合同，不能直接把replay称为一般非法。",
+          "required_revision": "采用本次已实际验证的保守参考组织：同一时刻的外部取消按既有稳定身份逐条处理，每条取消的失败传播仍立即完成；在这些同刻取消全部处理完前不启动新节点，随后恢复eager调度。同步修改正文的时序说明和replay，保留所有同刻终态优先级与身份顺序。此为选定检查模型的组织方式，不是所有服务系统的必要条件。"
+        }
+      ],
+      "manager_notes": [
+        "以batch17/full_build/K-WORK-010/round-3/candidate.json为修订基线，保留已有完整正文、成本、来源边界及全部检查；不要从已登记旧正文重新扩写整章。round2 COMPLETE确定失败分支、max时间门和首次不可逆终态已在round3修复。",
+        "真实首个失败在reference的最终提交资格：单U的FULL失败时错误生成与FAILED同键的COMMITTED；需仅在全部必需结果成功时建立最终提交候选，并把最终事件发布绑定该资格。FIRST等先前合法发布不能因后来失败撤回。不要只调换列表顺序，不删失败正例。",
+        "随后真实组合失败是同刻调度合同不一致：U在1已提交，V外部下界2且依赖U.FULL，U/V都在2取消；原replay在U取消之后、V取消之前启动V，而reference认为V未启动。逐事件调度并非一般非法。推荐明确选定“同刻取消逐条按稳定身份处理且立即传播，全部同刻取消完成后才启动新工作”的保守检查组织，同时修改正文line112、replay的reconsider入口和参考说明，保留既有同刻终态顺序。保留完整starts/pub/state/output/terminal比较。",
+        "可参考state/production/closeout-20261029/work010-diagnostic/contract_fix/input/tools/check_work010.py中的三个小改位置和追加回归；它已真实跑完原整套检查并退出0，但不能直接把诊断结果称为新正式候选执行。正式检查应包含最小失败最终操作、同刻其他必需操作失败的最终发布门、U/V同刻取消准入边界，以及恢复旧最终资格/旧取消间启动的真实负对照。",
+        "不要缩减原16主轨迹、1440组合、资源/回合/布局/驻留检查，不放宽比较器。新的执行过程写author_notes/证据，长期正文保留机制、选定时序合同、检查覆盖和未测边界。修订后由协调者对最终正文/脚本绑定重新执行并交新独审。",
+        "诊断环境实际已运行通过的差异如下，供正式修订核对；正文的同刻时序说明也必须同步修改。这不是新候选已经执行的声明。\n--- retained-round-3-test_script\n+++ isolated-diagnostic-contract_fix\n@@ -105,7 +105,7 @@\n             result = dict(start=None, pub={}, terminal=own_cancel)\n         else:\n             final, offset = n['events'][-1]\n-            choices = [((t + offset, 1, v, final), 'COMMITTED')]\n+            choices = [] if n['bad'] else [((t + offset, 1, v, final), 'COMMITTED')]\n             choices.extend(((t + off, 1, v, event), 'FAILED')\n                            for event, off in n['events'] if event in n['bad'])\n             if own_cancel:\n@@ -114,7 +114,7 @@\n             publications = {}\n             for event, off in n['events']:\n                 ek = (t + off, 1, v, event)\n-                if event not in n['bad'] and (ek < terminal[0] or\n+                if event not in n['bad'] and (event != final or terminal[1] == 'COMMITTED') and (ek < terminal[0] or\n                         (ek == terminal[0] and terminal[1] == 'COMMITTED')):\n                     publications[event] = t + off\n             result = dict(start=t, pub=publications, terminal=terminal)\n@@ -291,7 +291,8 @@\n         elif action != 'wake':\n             raise AssertionError('unknown queue action')\n         propagate(t)\n-        reconsider(t)\n+        if fault == 'dispatch_between_cancels' or not (queue and queue[0][0] == t and queue[0][1] == 0):\n+            reconsider(t)\n         for v in held:\n             if states[v] in TERMINAL and not pending[v]:\n                 held[v] = False\n@@ -756,5 +757,101 @@\n     print('scope: deterministic CPU symbolic models; no model forward, GPU, DMA, network or quality measurement')\n \n \n+\n+def reference_old(spec, cancellations, fault=''):\n+    # Independent DAG constraints: no heap, delivery counters or replay state.\n+    # A terminal retains its originating ordered cause, including propagation.\n+    memo = {}\n+\n+    def visit(v):\n+        if v in memo:\n+            return memo[v]\n+        n = spec[v]\n+        bounds = [n['a']]\n+        impossible = []\n+        own_cancel = None\n+        if v in cancellations:\n+            own_cancel = ((cancellations[v], 0, v, ''), 'CANCELLED')\n+        for u, event, wait in n['deps']:\n+            upstream = visit(u)\n+            if event not in upstream['pub']:\n+                impossible.append((upstream['terminal'][0], 'FAILED'))\n+            else:\n+                pt = upstream['pub'][event]\n+                if fault == 'serial_wait':\n+                    bounds.append(pt + spec[u]['lag'] + wait)\n+                else:\n+                    bounds.extend((pt + wait, pt + spec[u]['lag']))\n+        t = max(bounds)\n+        if impossible:\n+            choices = impossible + ([own_cancel] if own_cancel else [])\n+            terminal = min(choices, key=lambda x: x[0])\n+            result = dict(start=None, pub={}, terminal=terminal)\n+        elif own_cancel and own_cancel[0][0] <= t:\n+            result = dict(start=None, pub={}, terminal=own_cancel)\n+        else:\n+            final, offset = n['events'][-1]\n+            choices = [((t + offset, 1, v, final), 'COMMITTED')]\n+            choices.extend(((t + off, 1, v, event), 'FAILED')\n+                           for event, off in n['events'] if event in n['bad'])\n+            if own_cancel:\n+                choices.append(own_cancel)\n+            terminal = min(choices, key=lambda x: x[0])\n+            publications = {}\n+            for event, off in n['events']:\n+                ek = (t + off, 1, v, event)\n+                if event not in n['bad'] and (ek < terminal[0] or\n+                        (ek == terminal[0] and terminal[1] == 'COMMITTED')):\n+                    publications[event] = t + off\n+            result = dict(start=t, pub=publications, terminal=terminal)\n+        memo[v] = result\n+        return result\n+\n+    for v in spec:\n+        visit(v)\n+    starts, pub, states, outputs, terminals = {}, {}, {}, {}, {}\n+    for v, n in spec.items():\n+        r = memo[v]\n+        if r['start'] is not None:\n+            starts[v] = r['start']\n+        pub.update({key(v, e): t for e, t in r['pub'].items()})\n+        states[v] = r['terminal'][1]\n+        terminals[v] = (r['terminal'][0][0], states[v])\n+        if states[v] == 'COMMITTED':\n+            outputs[v] = (v, n['events'][-1][0], 1)\n+        if fault == 'cancel_plan_wins' and v in cancellations and states[v] != 'COMMITTED':\n+            states[v] = 'CANCELLED'\n+            terminals[v] = (cancellations[v], 'CANCELLED')\n+    return starts, pub, states, outputs, terminals\n+\n+\n if __name__ == '__main__':\n     run_checks()\n+    repaired_reference = reference\n+    for label, spec, cancels in [\n+        ('failed-final', {'U': node(bad=('FULL',))}, {}),\n+        ('same-time-bad-required-before-final', {'U': node(events=(('FIRST', 1), ('FULL', 1)), bad=('FIRST',))}, {}),\n+        ('same-time-bad-required-after-final-key', {'U': node(events=(('TAIL', 1), ('FULL', 1)), bad=('TAIL',))}, {}),\n+        ('cancel-before-failed-final', {'U': node(bad=('FULL',))}, {'U': 0}),\n+        ('same-time-cancel-before-failed-final', {'U': node(bad=('FULL',))}, {'U': 1}),\n+    ]:\n+        result = replay(spec, cancels)\n+        audit_events(spec, cancels, result)\n+        print('DIAG_FIXED_CASE', label, result['states'], result['pub'], result['terminals'])\n+    spec = {'U': node(bad=('FULL',))}\n+    result = replay(spec, {})\n+    reference = reference_old\n+    rejected('old oracle commits failed final', lambda: audit_events(spec, {}, result))\n+    reference = repaired_reference\n+    print('DIAG_REFERENCE_FIX_CONFIRMED')\n+\n+    spec = {'U': node(lag=0), 'V': node(a=2, deps=(('U', 'FULL', 0),))}\n+    cancels = {'U': 2, 'V': 2}\n+    result = replay(spec, cancels)\n+    audit_events(spec, cancels, result)\n+    check(result['starts'] == {'U': 0}, 'same-time cancellation phase must prevent V launch')\n+    check(result['terminals'] == {'U': (1, 'COMMITTED'), 'V': (2, 'CANCELLED')}, 'first terminals changed')\n+    print('DIAG_CANCEL_PHASE', result['starts'], result['terminals'])\n+    rejected('dispatch between same-time cancellations',\n+             lambda: audit_events(spec, cancels, replay(spec, cancels, 'dispatch_between_cancels')))\n+    print('DIAG_TWO_SCOPED_FIXES_CONFIRMED')\n"
+      ],
+      "reason": "真实隔离复现并定位最终提交/发布资格错误与同刻取消调度合同失配；完整诊断修正版通过，按已验证反例追加一次定点修订并重新独审。"
+    },
+    {
+      "id": "K-WORK-011",
+      "action": "fresh_review_only",
+      "candidate": {
+        "path": "docs/evidence/knowledge-workflow-20261028-batch16/full_build/K-WORK-011/round-3/candidate.json",
+        "sha256": "8f92fb600aa46d7f5ccf0174dfe409ffa3f64fa1242f73efbe3c57421e968837",
+        "original_author": "sol-author:K-WORK-011:round-3",
+        "original_author_workflow": "docs/evidence/knowledge-workflow-20261028-batch16/workflow.json",
+        "chapter_path": "knowledge/workloads/cluster-resource-placement.md",
+        "chapter_sha256": "b82151bc29b1b1cdefb3152475b007d91a30abd2cb2d3b44e5e69966e42b6725",
+        "script_path": "tools/check_k_work_011_full.py",
+        "script_sha256": "cf81f6946c25ddc57ec4acbae8ba8251d07290f7621149dba7c85ec4b3af8fd3",
+        "author_invocation": {
+          "path": "docs/evidence/knowledge-workflow-20261028-batch16/full_build/K-WORK-011/round-3/author-attempt-001/coordinator-record.json",
+          "sha256": "2ac694c37cf55e28fcf7bbf77e440a65e0c700bb86b41e1b602ce95df4c35e8d",
+          "engine": "sol",
+          "requested_model": "gpt-6.1-sol",
+          "status": "completed",
+          "exit_code": 0,
+          "identity_limit": "The record does not independently expose the provider's actual backend model identity. The original author identity is the retained workflow identity."
+        }
+      },
+      "additional_rounds": 0,
+      "manager_notes": [
+        "保留round-3候选的完整正文和检查脚本，不因字面散列输出错误让作者重写技术内容。",
+        "新独审以新一轮实际提供的required_literal_fields.documents为准，逐字复制文档路径和64位SHA；不能复用旧documents映射，也不能把作者范围当成审阅者范围。",
+        "旧审阅认为K-WORK-011-R2-GANG-START-01已修复；新独审仍应实际检查首次提交后临界区外准备派发、历史重试不重复派发及对应负对照，不能把旧accept当作新判定。",
+        "不修改旧review的错误SHA、不降低映射相等要求、不把本诊断作为语义验收。"
+      ],
+      "reason": "旧独审的12项材料映射仅有AGENTS.md散列多写bc，导致64位值成为66位；实际提示与材料账均正确。保留原候选及作者，重新执行实际检查和全新独立审查，不重写整章、不修改旧review原件，也不扩大正文修订轮数。"
+    }
+  ]
+}

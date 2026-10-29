@@ -1,0 +1,134 @@
+{
+  "entry_id": "K-ALG-007",
+  "body_sha256": "c5a854cb96507bd6efc8baaf217b78156b4b02f49ee26d388539050a1a692b50",
+  "reviewer": "/root/primary-content-review",
+  "decision": "revise",
+  "documents": {
+    "knowledge/algorithms/chunked-prefill.md": "c5a854cb96507bd6efc8baaf217b78156b4b02f49ee26d388539050a1a692b50",
+    "tools/check_k_alg_007_full.py": "3b17a77b91f78059960ee98ea88307645ed9d8a104c42d47fe3185aacfa846e9"
+  },
+  "criteria": {
+    "definition": {
+      "assessment": "partial",
+      "reason": "P is defined as the prompt endpoint but reused for the new suffix length; absolute c and prompt/decode progress need one consistent contract.",
+      "evidence": [
+        {
+          "path": "knowledge/algorithms/chunked-prefill.md",
+          "quote": "对请求 r 定义 P 为 prompt 的逻辑 token 数"
+        }
+      ]
+    },
+    "legality": {
+      "assessment": "partial",
+      "reason": "Available logits do not supply the known input token at the next position. Invalid request states also fall through into executable classifications.",
+      "evidence": [
+        {
+          "path": "knowledge/algorithms/chunked-prefill.md",
+          "quote": "否则若 r.L = true：r.kind = DECODE_READY"
+        }
+      ]
+    },
+    "algorithm": {
+      "assessment": "partial",
+      "reason": "A legal decode-only view must remain executable when all prefill candidates are unavailable; current selection and commit do not implement this.",
+      "evidence": [
+        {
+          "path": "knowledge/algorithms/chunked-prefill.md",
+          "quote": "若 candidates 为空且仍有 PREFILL 或 RECOVERY"
+        }
+      ]
+    },
+    "cost": {
+      "assessment": "partial",
+      "reason": "reserve_time is not consistently subtracted or included in a complete mixed-view cost, so separate feasible estimates may exceed the total budget.",
+      "evidence": [
+        {
+          "path": "knowledge/algorithms/chunked-prefill.md",
+          "quote": "记录 reserve_time、reserve_pages 与最紧迫 decode 的剩余间隔"
+        }
+      ]
+    },
+    "adaptation": {
+      "assessment": "sufficient",
+      "reason": "The supplied host-gap reversal and low-load versus ITL tradeoff are valid conditional examples, subject to correcting the scheduler itself.",
+      "evidence": [
+        {
+          "path": "knowledge/algorithms/chunked-prefill.md",
+          "quote": "低负载且没有 decode 等待时，整段 prefill 往往减少固定成本和 K/V 重读"
+        }
+      ]
+    },
+    "diagnosis": {
+      "assessment": "partial",
+      "reason": "Independent mask and arithmetic checks are useful, but they cannot validate unknown-input readiness, invalid-state fallthrough or the mixed scheduler. Add actual state trajectories and negative controls.",
+      "evidence": [
+        {
+          "path": "knowledge/algorithms/chunked-prefill.md",
+          "quote": "参考 mask 应由逻辑位置独立构造"
+        }
+      ]
+    }
+  },
+  "findings": [
+    {
+      "id": "K-ALG-007-R2-STATE",
+      "criterion": "algorithm",
+      "evidence": "正文定义“P 为 prompt 的逻辑 token 数”，并检查“若 r.c < 0 或 r.c > r.P：标记 inconsistent_state”；同时建立“decode 行：位置 r.c，逐行可见 0 到 r.c”。成功提交仅列 prefill 与 recovery，没有 decode 的输入 token、KV 边界推进及 logits 消费/更新。",
+      "impact": "例如 P=c=8、L=true 时，执行位置 8 之前还需从位置 7 的 logits 采样并确认输入 token。算法没有产生或接收这个输入；执行后若 c 不更新会重复写位置 8，若正确更新为 9，下一轮又违反 c≤P。因而不能按给定状态合同持续服务混合批中的 decode。",
+      "blocking": true,
+      "required_revision": "区分固定 prompt 终点、已确认 token 边界和已提交 KV 边界，明确采样到 decode 输入的交接、decode 成功提交及失败保持的状态。也可将 decode 明确作为外部合同，但须完整给出其输入就绪条件、行位置和完成回调，不能继续用仅适合 prefill 的 c≤P 状态代表持续 decode。检查提交说明中的末行位置应与零起始的 P−1 一致。增加能够连续推进至少两轮的状态轨迹验证。"
+    },
+    {
+      "id": "K-ALG-007-R2-DECODE-FALLBACK",
+      "criterion": "algorithm",
+      "evidence": "伪代码先“为 DECODE_READY 行预留本轮 decode 的预算和页容量”，随后规定“若 candidates 为空且仍有 PREFILL 或 RECOVERY：返回 blocked_by”。在没有 PREFILL/RECOVERY 时，又无条件“按 policy 从 candidates 选择一个 prefill 或 recovery 段”。",
+      "impact": "已有可执行 decode 而长 prompt 没有可行块时，函数直接返回，导致本应受到保护的 decode 也失去服务。只有 decode 的轮次则无法从空 candidates 中选择。两条路径都会破坏本章保护 ITL 的核心机制。",
+      "blocking": true,
+      "required_revision": "允许零个 prefill/recovery 段与已选 decode 组成合法 view；仅当整个执行视图为空时返回 blocked_by。明确无请求时的退出，并在放弃选择时撤销不再使用的预留。验证 decode-only，以及 decode 可行但所有 prefill 候选因时间或页限制失败的路径。"
+    },
+    {
+      "id": "K-ALG-007-R2-MIXED-BUDGET",
+      "criterion": "cost",
+      "evidence": "伪代码记录“reserve_time、reserve_pages”，但候选估时仅为“用 h=r.c 计算 T_prep + T_linear(q) + T_attention(h,q)”，比较条件为“若 T_prep 加本次成本加余量超过 budget”；输入 budget 被定义为“本轮时间预算”。",
+      "impact": "没有说明 budget 是否已扣除 reserve_time，也没有用混合批总行数、各 decode 历史和 padding 重新估计执行时间。在可相加的校准模型中，总预算 10 ms、decode 预留 6 ms、prefill 候选 8 ms 会被单独比较错误放行；融合模型则更不能直接假设两个独立估时之和或仅用 prefill 估时。T_prep 的表达还存在重复计入歧义。",
+      "blocking": true,
+      "required_revision": "给出明确的候选视图成本变量和单位：可使用包含 decode、prefill、桶/padding 的混合成本模型，或在声明适用条件后从总预算扣除预留并采用保守增量上界。准备成本只计一次；页检查应明确基于扣除既有预留后的可用物理容量。验证加入 decode 后最大合法 q 改变及边界候选被拒绝的情况。"
+    },
+    {
+      "id": "K-ALG-007-R2-INVALID-FALLTHROUGH",
+      "criterion": "algorithm",
+      "evidence": "分类循环依次执行“若 r.P = 0 且模型合同没有外部 BOS 输入：标记 invalid_empty”“若 r.c < 0 或 r.c > r.P：标记 inconsistent_state”，随后仍执行 PREFILL/DECODE_READY/RECOVERY 分类，没有 continue、拒绝返回或候选排除条件。",
+      "impact": "P=c=0、L=false 在标记 invalid_empty 后仍会进入 RECOVERY，形成位置 P−1=−1 的查询；c 超界的请求同样可能进入执行类别。脚本 next_action 的提前 return 与正文的控制流不同，其空 prompt 通过不能证明该伪代码拒绝了非法输入。",
+      "blocking": true,
+      "required_revision": "让非法输入和身份失效成为明确的终止或跳过分支，保证其不参与预留、候选或执行视图。用与正文相同的分类控制流验证空输入、负 c 和 c 超出相应合法边界时不会产生设备行或改变提交状态。"
+    },
+    {
+      "id": "K-ALG-007-PRIMARY-NOTATION",
+      "criterion": "definition",
+      "blocking": true,
+      "evidence": "P is the total prompt token count in state definitions but the new prompt length after cached prefix H in the pair-count section.",
+      "impact": "A nonzero cached prefix can make the c<=P validation and final-row condition contradict the mathematical decomposition.",
+      "required_revision": "Use distinct symbols for total known prompt endpoint and remaining/new suffix length; identify zero-based last row consistently."
+    },
+    {
+      "id": "K-ALG-007-PRIMARY-DRAIN",
+      "criterion": "algorithm",
+      "blocking": true,
+      "evidence": "The failure/cancellation branch rolls back reservations and COW without stating when outstanding physical readers/writers have ended.",
+      "impact": "A logical noncommit or generation check alone cannot justify reusing addresses still touched by accepted asynchronous work.",
+      "required_revision": "State the completion/drain contract before physical release, including partial-layer work and COW; either clearly delegate a complete linked protocol or spell out the retained obligations."
+    }
+  ],
+  "limitations": [
+    "This is a rejection based on the primary coordinator reading the complete candidate and check, not a new full-source acceptance audit.",
+    "The original Sol call violated the declared tool policy and remains unaccepted. Its concrete observations were independently checked against the candidate.",
+    "No GPU or Agent construction effectiveness is established by this rejection."
+  ],
+  "checks": [],
+  "no_checks_reason": "The candidate requires semantic revision; existing executed checks cover local masks and arithmetic but not its invalid scheduling branches.",
+  "reading_scope": {
+    "knowledge/algorithms/chunked-prefill.md": "Complete supplied candidate, including comparison against the prior draft",
+    "tools/check_k_alg_007_full.py": "Complete generated script and actual preflight stdout"
+  },
+  "test_assessment": "Mask sets and cost arithmetic have meaningful references, but next_action equates has_logits with decode readiness and does not model a known next input. The implementation also fails to exercise decode-only and prefill-blocked control flow."
+}

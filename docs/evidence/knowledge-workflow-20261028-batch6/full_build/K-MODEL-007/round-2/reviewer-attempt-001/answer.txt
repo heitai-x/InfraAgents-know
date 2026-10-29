@@ -1,0 +1,163 @@
+{
+  "entry_id": "K-MODEL-007",
+  "body_sha256": "1a901cb3e18bc6b22c742fb0b8e5517f580490758084c2a7a9a073942608249e",
+  "reviewer": "sol-reviewer:K-MODEL-007:round-2",
+  "decision": "revise",
+  "documents": {
+    "AGENTS.md": "b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a",
+    "docs/knowledge-method.md": "69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb",
+    "docs/knowledge-review.md": "f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21",
+    "knowledge/models/sliding-window-attention.md": "1a901cb3e18bc6b22c742fb0b8e5517f580490758084c2a7a9a073942608249e",
+    "knowledge/sources/S-MISTRAL.md": "60f92e5430c9d7c8c06a1eda0a6590ea02782aaaa62d9db3bbc78714e485b058",
+    "knowledge/sources/S-HF-CACHE.md": "1a4afcf0d800ba3f42836445874d620ae9f7ba8ab4c361caa505376cc471595c",
+    "knowledge/sources/S-VLLM-HYBRID.md": "0b3b67b14c24f707211afc5bf40eb2af9c5c549d5170c2ff25bd3efe5e81c8c9",
+    "knowledge/sources/S-KIVI.md": "79161876fab16fe335430a8d38d01de97bb0e17bee0cb9d29c6ba2dfa598998e",
+    "knowledge/sources/S-H2O.md": "1d56de5a56e43c8e88a9df34cb87ae0af71865fbe0d3ee2ead23186bdb75b53d",
+    "knowledge/system-semantics/position-mask-cache.md": "91641b10a52209747af8d9fa83f822bedb01c583cede42a58550ad87ffe14ad6",
+    "knowledge/algorithms/heterogeneous-state-cache.md": "268efd94fdf7c091765d06e5542070e6da19ac9e18892ad56dc3632335bdcfa5",
+    "knowledge/algorithms/attention-io.md": "63cb995ae9a462f6a65387e3acdc339335f39df7b44f8b444ec72f09368a9431",
+    "knowledge/algorithms/kv-compression.md": "b106cc93bcd9d5acfce5e7766eb25f5c1fbd4ba7844dd1fe6454fc08cc1d99f4",
+    "knowledge/algorithms/kv-offload-prefetch.md": "a7088eba5c78cd9e96cf011d61946ad7dec4ecb6378ac16e7f2fc3820af38301",
+    "knowledge/hardware/gpu-kernel-pipelines.md": "4db609a35cae2c7bd05603e026fc76d3e1281111ca2dad54d1a319851b3b498a",
+    "references/S-MISTRAL/fulltext.txt": "333bc2fce794d4c1ea82fe3aee1718101266f8c58d81b8ce716ad0722defd573",
+    "references/S-HF-CACHE/fulltext.txt": "373837b8ac246d43867eb21de168cc59e5e6e78f5f3b9c27bee54740c4a635b4",
+    "references/S-VLLM-HYBRID/fulltext.txt": "c82febf32c70bc2755f7678dfe63925a264fbe68cf44980ad8f63b891f76ecc0",
+    "references/S-KIVI/fulltext.txt": "399fb46e139f4cda57cbcd18c7b75fb1ddeb7dd6957d4a059efe8e40081438f3",
+    "references/S-H2O/fulltext.txt": "0b7709408763841d6574c6afcb6c90d689fab935b9426c4a6fea137bf1d854e6",
+    "tools/check_k_model_007_full.py": "b40beebf16eb0077c29e21d8b0d345a15fc877dc6c84bd74a1cf0fcfc3060690"
+  },
+  "criteria": {
+    "definition": {
+      "assessment": "sufficient",
+      "reason": "解释了限制直接历史的动机、跨层信息传播、包含当前位置的窗口、逐head函数、空行合同、输入输出和对象状态；明确高层KV依赖高层输入，以及本层边界与共同提交的区别。",
+      "evidence": [
+        {
+          "path": "knowledge/models/sliding-window-attention.md",
+          "quote": "窗口宽 W_l≥1 包含当前 token，普通窗口为 L_{l,t}=[max(0,t−W_l＋1),t] 的整数集合。"
+        },
+        {
+          "path": "knowledge/models/sliding-window-attention.md",
+          "quote": "高层新 KV 来自高层输入，不能直接从原始 token 构造。"
+        },
+        {
+          "path": "knowledge/models/sliding-window-attention.md",
+          "quote": "必须区分“已分配”“已写入”“已发布”“仍保留”；任何一个长度字段都不能独立证明其他事实。"
+        }
+      ]
+    },
+    "legality": {
+      "assessment": "sufficient",
+      "reason": "区分模型原生窗口与近似裁剪、逻辑位置与物理槽、表示与驻留变化；明确因果范围、GQA选择集合、保护集合前提及单推进所有者。Mistral端点差异、HF乘mask示意和vLLM历史实现限制的归因与提供原文相符。",
+      "evidence": [
+        {
+          "path": "knowledge/models/sliding-window-attention.md",
+          "quote": "原生窗口属于模型函数。给全 attention 模型缩小窗口，或按重要性删除当前仍可见的历史，会改变函数，需要独立质量评估。"
+        },
+        {
+          "path": "knowledge/models/sliding-window-attention.md",
+          "quote": "位置编码、相对偏置和 mask 使用逻辑位置及模型约定的位置坐标。槽 t mod W 只决定地址。"
+        },
+        {
+          "path": "knowledge/models/sliding-window-attention.md",
+          "quote": "本章另规定每请求同层一次只有一个推进操作：chunk 开始先取得全部旧历史保护，chunk 完成后才更新 ring，下一 chunk 在更新完成后开始。"
+        }
+      ]
+    },
+    "algorithm": {
+      "assessment": "partial",
+      "reason": "protected固定地址分支、旧/当前chunk互斥归约、原子获取与关闭协议已修复上一轮三个算法问题，可关闭原问题。但RestoreLayer没有full层的目标地址分支，与Locate及完整历史恢复要求冲突；检查脚本采用正确的另一条分支，未检验这一正文错误。",
+      "evidence": [
+        {
+          "path": "knowledge/models/sliding-window-attention.md",
+          "quote": "j∈P 时只写 protected[j]，其余位置写 ring[j mod W]。读取始终使用同一分支；"
+        },
+        {
+          "path": "knowledge/models/sliding-window-attention.md",
+          "quote": "J←[kB,min((k+1)B,b))∩U"
+        },
+        {
+          "path": "knowledge/models/sliding-window-attention.md",
+          "quote": "身份核对和读者登记必须是同一个可线性化操作，且与关闭获取共享协调关系。"
+        },
+        {
+          "path": "knowledge/models/sliding-window-attention.md",
+          "quote": "创建私有目标映射；P 中位置放 protected，其余按 j mod W 放 ring"
+        }
+      ]
+    },
+    "cost": {
+      "assessment": "sufficient",
+      "reason": "已修复query-head轴缺失：时间轴Q、H_q计算轴与H_kv唯一字节轴分开，整层求和和算例正确。六类成本覆盖protected、staging、间接访问、准备、排空与共同提交，并区分有效工作、执行tile、逻辑流量、设备事务和峰值。",
+      "evidence": [
+        {
+          "path": "knowledge/models/sliding-window-attention.md",
+          "quote": "H_q 为 query head 数，H_kv 为唯一 KV head 数，Q 是时间轴上的 query token 数，不包含 head 轴。"
+        },
+        {
+          "path": "knowledge/models/sliding-window-attention.md",
+          "quote": "F=2Σ_{h=1}^{H_q}Σ_{t=b}^{e−1}|A_{l,h,t}|(d+d_v)。"
+        },
+        {
+          "path": "knowledge/models/sliding-window-attention.md",
+          "quote": "恢复或失败保护使源、目标和 staging 同时存活时，不能只报最终 ring 容量。"
+        }
+      ]
+    },
+    "adaptation": {
+      "assessment": "sufficient",
+      "reason": "围绕W、保护集合规模、块长、并发、全层比例及量化/近似保留说明依赖如何改变、何时需要重建或重放、何时容量优势消失及替代方案；没有把来源质量或设备结果外推成普遍保证。",
+      "evidence": [
+        {
+          "path": "knowledge/models/sliding-window-attention.md",
+          "quote": "W 增大后，需要更多旧历史、ring 和恢复内容；已经覆盖的位置不能靠改长度找回。"
+        },
+        {
+          "path": "knowledge/models/sliding-window-attention.md",
+          "quote": "若 P 几乎覆盖全部历史，这种保护表失去有界窗口容量优势；可以采用分页全保留或其他具有明确质量合同的方案，不能静默丢弃保护对象。"
+        }
+      ]
+    },
+    "diagnosis": {
+      "assessment": "sufficient",
+      "reason": "提供内容身份、重复贡献、获取竞态、恢复缺项和数值误差的区分方法；性能解释有固定条件、可观察预测与反证后的转查路径。CPU模型与设备证据边界清楚，但当前检查遗漏的full恢复分支须按算法finding补齐。",
+      "evidence": [
+        {
+          "path": "knowledge/models/sliding-window-attention.md",
+          "quote": "集合并集检查会漏掉这种重复，必须同时检查贡献次数或数值。"
+        },
+        {
+          "path": "knowledge/models/sliding-window-attention.md",
+          "quote": "若有效对数下降而执行 tile 不变，不能继续声称计算已经按窗口缩减；若 kernel 改善而完整调用没有改善，应转查准备与同步。"
+        },
+        {
+          "path": "knowledge/models/sliding-window-attention.md",
+          "quote": "这个模型能检验抽象协议，不能证明真实 GPU 原子作用域、barrier 或 DMA 可见性。"
+        }
+      ]
+    }
+  },
+  "findings": [
+    {
+      "id": "SWA-FULL-RESTORE-MAPPING",
+      "criterion": "algorithm",
+      "evidence": "正文要求“全层要求 R_l(p)=[0,p)。”，Locate规定“若 Kind(l)=full：返回 full_l[j]”，但通用RestoreLayer仅写“创建私有目标映射；P 中位置放 protected，其余按 j mod W 放 ring”。脚本Cache.locate则优先执行“if self.rules.full: table = self.full”，restore通过result.put使用这个正确分支，未复现正文恢复映射。",
+      "impact": "full层恢复目标与读取地址不一致。取W=4、P为空、p=5，必需位置为0…4；按正文目标映射写入ring会使0与4冲突，而且full_l没有这些对象。下一query通过Locate(full,j)无法取得完整历史。因此脚本中full变体通过不能证明正文的full恢复算法正确。",
+      "blocking": true,
+      "required_revision": "RestoreLayer显式按层类型分支：full层将每个必需位置映射到full_l[j]；只有窗口层再按P分流到protected或ring。使检查实现与该恢复分支一致，实际执行p>W的full恢复及后续attention，核对全部位置身份、内容和独立参考输出；加入把full历史错误恢复到ring的负对照，并确认检查检出冲突或缺项。"
+    }
+  ],
+  "limitations": [
+    "保护集合P须预先覆盖未来sink/global责任；运行时提升旧位置需仍有受保护内容或合法恢复来源。P线性增长时总缓存不再受W限制。",
+    "基线每请求同层串行推进；原地写回失败不保证回滚，需失效并合法重放。多个模型chunk并行及更早protected淘汰需要额外证明。",
+    "检查是单层标量KV与有限事件模型，不验证真实多层Transformer数值、GQA设备复用、量化组合质量、GPU作用域与可见性、DMA取消、设备性能或Agent使用效果。",
+    "依据所提供完整提取文本核对来源；未读取PDF或reader.html版面、上游源码，未独立核验磁盘字节及离线链接目标存在性。"
+  ],
+  "checks": [
+    {
+      "script": "tools/check_k_model_007_full.py",
+      "args": []
+    }
+  ],
+  "reading_scope": "完整阅读任务提供的提取文本；以下均为零基半开字符范围，无节选：AGENTS.md [0,567)；docs/knowledge-method.md [0,2251)；docs/knowledge-review.md [0,3016)；knowledge/models/sliding-window-attention.md [0,14087)；knowledge/sources/S-MISTRAL.md [0,452)；S-HF-CACHE.md [0,827)；S-VLLM-HYBRID.md [0,568)；S-KIVI.md [0,713)；S-H2O.md [0,810)；knowledge/system-semantics/position-mask-cache.md [0,4078)；knowledge/algorithms/heterogeneous-state-cache.md [0,14022)；attention-io.md [0,13310)；kv-compression.md [0,5839)；kv-offload-prefetch.md [0,3710)；knowledge/hardware/gpu-kernel-pipelines.md [0,14078)；references/S-MISTRAL/fulltext.txt [0,24980)；references/S-HF-CACHE/fulltext.txt [0,7977)；references/S-VLLM-HYBRID/fulltext.txt [0,15489)；references/S-KIVI/fulltext.txt [0,44977)；references/S-H2O/fulltext.txt [0,126476)。另完整阅读candidate.test_script、author_notes及actual_preflight执行记录。documents采用任务要求的字面绑定哈希，不表示本审阅者重新计算过磁盘哈希。",
+  "test_assessment": "已检查完整脚本算法及提供的真实preflight记录；本审阅调用未重新执行Python。提供记录绑定脚本SHA256 b40beebf16eb0077c29e21d8b0d345a15fc877dc6c84bd74a1cf0fcfc3060690，returncode=0、stderr为空，输出2304行/1440个chunk匹配及560条事件交错。作者说明中的Python尚未执行属于其交付时状态，后续提供的preflight可证明该脚本随后实际运行，不能由此扩张验证范围。独立参考按j逐项扫描可见性，以整行稳定softmax和math.fsum对照在线归约；Counter检验每个key贡献恰好一次，实际槽读写核对位置、K、V，恢复后继续消费。覆盖W=1/2/4/7、空输入、短请求、Q>W、不对齐chunk、尾块、sink及延迟激活global、full变体和恢复缺项。ring-only sink负对照实际读出位置4而非0；重复旧/当前路径实际产生3.8而非3.5；分离检查/登记轨迹实际误读位置4，均针对原缺陷机制，非仅复述断言。有限事件模型用已取得票据阻止发布，检查旧内容身份和重复释放；它不验证设备原子实现。成本算例经独立审阅复算成立，但脚本成本段主要验证算术与轴展开，不是硬件操作计数。关键遗漏是正文RestoreLayer的full目标映射：脚本result.put自行选择full字典，绕开了正文无full分支的错误，因此本次成功执行不能关闭该新finding。上一轮SWA-SINK-MAPPING、SWA-PREFILL-DISJOINTNESS、SWA-READER-ACQUIRE、SWA-FLOP-AXIS的具体问题均已修复；当前revise仅依据现有恢复伪代码的不一致。"
+}

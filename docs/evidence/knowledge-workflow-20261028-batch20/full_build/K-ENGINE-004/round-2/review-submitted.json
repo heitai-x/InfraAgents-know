@@ -1,0 +1,142 @@
+{
+  "entry_id": "K-ENGINE-004",
+  "body_sha256": "9ffc27126d5668137404580d70603c63a49612cd71bc26b783c42cdc206e6a5c",
+  "reviewer": "sol-reviewer:K-ENGINE-004:round-2",
+  "decision": "accept",
+  "documents": {
+    "AGENTS.md": "b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a",
+    "docs/knowledge-method.md": "69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb",
+    "docs/knowledge-review.md": "f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21",
+    "knowledge/engine-index/sglang-radix-scheduler.md": "9ffc27126d5668137404580d70603c63a49612cd71bc26b783c42cdc206e6a5c",
+    "knowledge/sources/S-SGLANG.md": "4fd6badbee1df40da422f2866f1536bbe4f5266856b8d97004072a21b9d0e2c9",
+    "knowledge/sources/S-SGLANG-CODE.md": "ce47d4db433a518d0ce0874f2fe39b53fd103e2c380bec3ca77d9765a2c4ddab",
+    "knowledge/algorithms/prefix-cache-identity.md": "98389e4a67eb746a52f39d11986256c857a00167f4c989f26dbd2d3f1b3275d9",
+    "knowledge/algorithms/kv-offload-prefetch.md": "4b8d8bad42a337904a2630f9ecf2fb39b5b8d6142bb00aa51f43afb36a842b20",
+    "references/S-SGLANG/fulltext.txt": "7dfb3a43ba73d9d9861c06311005edf12dfafa9f60a268fec327deb4d8e8770d",
+    "tools/check_k_engine_004_full.py": "bf82b32b6bdc625b70c7dcf87f5c0f6af976d9be25c99a281fdb6de3815f887e"
+  },
+  "criteria": {
+    "definition": {
+      "assessment": "sufficient",
+      "reason": "明确了避免重复状态计算的动机、计算身份、已知输入、消费位置、完整恢复状态和返回清单；区分 token 已知、KV 完成、输出存在与物理容量。树节点字段及边页关系足以解释后续操作。",
+      "evidence": [
+        {
+          "path": "knowledge/engine-index/sglang-radix-scheduler.md",
+          "quote": "S(p) 表示消费 x[0:p) 后，继续计算所需的全部状态；p 不是输出 token 数、已提交工作数或已分配槽数。"
+        },
+        {
+          "path": "knowledge/engine-index/sglang-radix-scheduler.md",
+          "quote": "根到 v 的标签连接是完整逻辑前缀。本边 pages 只保存父前缀之后的新增状态；父路径与本边拼接，才构成到 v 的历史。"
+        }
+      ]
+    },
+    "legality": {
+      "assessment": "sufficient",
+      "reason": "共同恢复位置采用集合交集，正确处理空交集、合法初始化、末行 logits 缺失和私有重算。单 token 页、不可变内容及串行协调是明确选择，未推广成所有模型或上游实现的必然条件。活跃路径保护、发布资格和物理最后使用构成不同合法性条件。",
+      "evidence": [
+        {
+          "path": "knowledge/engine-index/sglang-radix-scheduler.md",
+          "quote": "p∈{0,…,m}∩I∩⋂Rᶠ。"
+        },
+        {
+          "path": "knowledge/engine-index/sglang-radix-scheduler.md",
+          "quote": "只有 KV、没有合格末行 logits 的普通生成请求，需要处理最后一个已知输入位置。因此 I 还要求 p≤n−1；重算区必须私有，不能覆盖共享页。"
+        },
+        {
+          "path": "knowledge/engine-index/sglang-radix-scheduler.md",
+          "quote": "本章禁止原地切分 H 非空的边，避免旧票据仍指向旧边、祖先保护却未继承。"
+        }
+      ]
+    },
+    "algorithm": {
+      "assessment": "sufficient",
+      "reason": "切分、匹配与保护、完成发布、原路径结算、叶递归淘汰和实际预留形成完整控制链。先摘旧索引再改标签修复了记录中的具体失败；保存取得路径避免发布后误释放新增节点。新增页需求与共享保护分开，六页轨迹可逐事件核对。全层状态生产及请求推进与所链连续批处理、前缀缓存和卸载章节相衔接；本章不把索引操作冒充模型计算。",
+      "evidence": [
+        {
+          "path": "knowledge/engine-index/sglang-radix-scheduler.md",
+          "quote": "从 parent.children 删除 old_key\n    建立 u，标签 old_label[0:k]，页 old_pages[0:k]，H 为空\n    child.label ← old_label[k:]；child.pages ← old_pages[k:]"
+        },
+        {
+          "path": "knowledge/engine-index/sglang-radix-scheduler.md",
+          "quote": "沿 ticket 取得时保存的路径，恰好一次地移除 ticket"
+        },
+        {
+          "path": "knowledge/engine-index/sglang-radix-scheduler.md",
+          "quote": "插入只接收真正完成到 k 的状态 x[0:k)，不把已经采样但尚未计算自身 KV 的最后 token 算入 k。"
+        }
+      ]
+    },
+    "cost": {
+      "assessment": "sufficient",
+      "reason": "六类成本覆盖主机目录工作、设备历史读取、实际通信、准备、同步和唯一驻留。手工核对了注意力对数恒等式及 QK/PV FLOPs 因子；六页算例中 D 的 384 KiB 来自 256 KiB 淘汰与 128 KiB 空闲，未重复分配共享页。切片元数据、重复扫描、排序更新及关键路径条件均有说明，设定时间未充当测量。",
+      "evidence": [
+        {
+          "path": "knowledge/engine-index/sglang-radix-scheduler.md",
+          "quote": "V=pq+q(q+1)/2=n(n+1)/2−p(p+1)/2。"
+        },
+        {
+          "path": "knowledge/engine-index/sglang-radix-scheduler.md",
+          "quote": "对 L 层、Hq 个 query head、键值维度 dₖ、dᵥ，QK/PV 主项为 2LHq(dₖ+dᵥ)V FLOPs，另计 softmax、投影和 MLP。"
+        },
+        {
+          "path": "knowledge/engine-index/sglang-radix-scheduler.md",
+          "quote": "物理共享降低唯一驻留，不自动消除各请求对公共 KV 的读取。是否减少 HBM 事务，需要目标内核与缓存行为的证据。"
+        },
+        {
+          "path": "knowledge/engine-index/sglang-radix-scheduler.md",
+          "quote": "重叠执行按依赖和共享资源求关键路径。驻留机会成本属于保留策略的目标账，不能无依据地当作额外 TTFT 相加。"
+        }
+      ]
+    },
+    "adaptation": {
+      "assessment": "sufficient",
+      "reason": "解释了重用变稀、热点排队、容量不足、页粒度和表示改变后的选择变化，并保留身份、共同恢复与最后使用条件。静态 DFS 结论被限制为新建 KV 工作量；一次快照排序与动态更新的反例正确，未外推为在线延迟最优或公平保证。",
+      "evidence": [
+        {
+          "path": "knowledge/engine-index/sglang-radix-scheduler.md",
+          "quote": "前缀变短、重用距离增加或版本频繁改变时，可减少缓存保留；热点使亲和节点排队增加时，可复制、改路由或重算；容量不足时可缩小合法 q、等待或拒绝，但不能撤销仍在使用的保护。"
+        },
+        {
+          "path": "knowledge/engine-index/sglang-radix-scheduler.md",
+          "quote": "状态族或表示改变时，应重建恢复集合与切片资格，而不是只调整命中长度。"
+        },
+        {
+          "path": "knowledge/engine-index/sglang-radix-scheduler.md",
+          "quote": "未知输出、在线到达、并行在途、末行重算及公平限制都会改变设定；一次初始排序不能直接继承该定理。"
+        }
+      ]
+    },
+    "diagnosis": {
+      "assessment": "sufficient",
+      "reason": "诊断表为索引失败、错误内容、恢复停滞、引用失衡、容量误判和尾延迟提供竞争解释、可控干预及反证后的修正。检查存在独立平面映射、逐前缀参考、外部逻辑持有记录和页池守恒；实际执行记录显示五个缺陷均被相关操作或审计捕获，未仅凭退出码判断。",
+      "evidence": [
+        {
+          "path": "knowledge/engine-index/sglang-radix-scheduler.md",
+          "quote": "固定 abcd→ab/cd，逐步核对旧索引、父指针和完整前缀到页映射；先摘除再改名仍失败时查连接关系"
+        },
+        {
+          "path": "knowledge/engine-index/sglang-radix-scheduler.md",
+          "quote": "保护审计根据外部记录的逻辑持有终点重建所需祖先，不以实现保存的路径定义正确答案。容量审计核对缓存、私有分配和空闲页的互斥并集。"
+        }
+      ]
+    }
+  },
+  "findings": [],
+  "limitations": [
+    "检查仅验证确定性串行 CPU 符号模型；不证明数值 K/V、logits、真实 SGLang 接口、并发事务、allocator、GPU/DMA 最后访问或跨设备可见性。",
+    "六页检查实际执行正常完成发布分支；取消期间的保护通过保留持有责任表示，没有实现取消适配器、完成证书核验或旧设备写入污染实验。正文和作者说明对此边界一致。",
+    "调度检查验证指定容量和顺序下的 9 对 7 算例，没有执行一般在线调度器、公平性或服务 SLO 实验；成本公式经本次静态推导核对，未作为设备测量。",
+    "S-SGLANG 原文核对限于所供完整提取文本，未检查 PDF 图像版面；S-SGLANG-CODE 仅依据所供机制说明，未独立核验源码归档及具体行号。",
+    "实际 Python 结果来自提供的、绑定当前脚本与正文的 remote_bwrap 执行记录；本审阅未另行启动 Python，也未执行本地链接存在性或冻结读取检查。",
+    "作者材料账记录的是暴露范围，不能证明认知阅读；作者阶段未执行 Python 的说明与随后工作流提供的真实预检结果属于不同阶段，不能互相替代。"
+  ],
+  "checks": [
+    {
+      "script": "tools/check_k_engine_004_full.py",
+      "args": []
+    }
+  ],
+  "no_checks_reason": "",
+  "reading_scope": "本审阅完整阅读所供 AGENTS.md [0,567)、docs/knowledge-method.md [0,2251)、docs/knowledge-review.md [0,3016)、当前候选 knowledge/engine-index/sglang-radix-scheduler.md [0,9913)、S-SGLANG.md [0,472)、S-SGLANG-CODE.md [0,724)、prefix-cache-identity.md [0,10003)、kv-offload-prefetch.md [0,11529)、S-SGLANG/fulltext.txt 的所供完整提取文本，以及 candidate.test_script 全部脚本、author_notes 和 actual_preflight 记录。相关摘录阅读范围分别为 iteration-batching.md [0,6297)、[8000,13845)；cancellation-resource-completion.md [0,8000)、[12000,13863)、[16000,18279)；distributed-kv-store.md [0,3039)、[4000,13103)；routing-and-migration.md [0,10045)、[12000,14097)；kv-compression.md [0,8654)、[12000,15488)。这些摘录未列入 documents，未声称读取缺失区间。作者材料范围另按 author_material_scopes 核对：其收到的是原当前章的完整旧文本，当前候选由其生成；相关完整文件和摘录范围与该账一致。没有读取源码归档或未提供的 workflow 文件。",
+  "test_assessment": "已逐函数检查交付脚本，而非仅接受作者判断。add_reference 用独立平面逻辑前缀映射保留已有公共页身份；oracle_lcp 按参考前缀枚举；audit 根据外部 holds 的逻辑终点重建祖先保护，并检查父子索引、页宽、完整前缀和物理唯一性；audit_pool 检查缓存、空闲及私有分配的互斥与守恒。边界包含六种插入旋转、边内分叉与结束、空查询、其他命名空间、活跃边回退及延迟插入、恢复交集空洞、末行上限、单 token、空交集失败、递归叶淘汰、容量拒绝和重复释放。五个缺陷分别进入真实切分、取得保护、淘汰、容量准入或发布后释放路径，捕获点与机制错误对应，不是预写成功标签。提供的 actual_preflight 以 Python 3.12 隔离执行当前脚本，returncode=0、stderr 为空、未超时；script_sha256 为 bf82b32b6bdc625b70c7dcf87f5c0f6af976d9be25c99a281fdb6de3815f887e，正文输入绑定为 9ffc27126d5668137404580d70603c63a49612cd71bc26b783c42cdc206e6a5c。输出记录 3276 次前缀参考比较，并分别检出 child index mismatch、logical ancestor protection mismatch、protected state disappeared、physical reservation impossible、release of an unacquired node。原 campaign-K-ENGINE-004-r1 的改名后摘除失败已在正常路径修复，且旧顺序作为负对照仍能触发，因此关闭该问题。此结论不扩大到真实异步取消、物理访问排空、数值模型、一般调度最优性或设备性能。"
+}

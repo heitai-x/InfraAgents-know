@@ -1,0 +1,64 @@
+{
+  "id": "K-FW-003",
+  "path": "frameworks/streams-allocator.md",
+  "category": "frameworks",
+  "title": "Stream 与分配器：依赖顺序和对象生存期",
+  "summary": "stream 解决执行顺序，内存生存期解决地址何时可重用；正确的异步程序需要同时满足两种关系。",
+  "revision": 3,
+  "status": "seed",
+  "tags": [
+    "stream",
+    "allocator",
+    "record_stream",
+    "event",
+    "生命周期"
+  ],
+  "scope": {
+    "model_families": [],
+    "platforms": [
+      "cuda",
+      "rocm"
+    ],
+    "runtimes": [
+      "pytorch"
+    ],
+    "workloads": []
+  },
+  "source_ids": [
+    "S-TORCH-CUDA",
+    "S-CUDA-ASYNC",
+    "S-CUDA-ALLOC"
+  ],
+  "related": [
+    "K-ALG-008",
+    "K-FW-005",
+    "K-SYS-004",
+    "K-HW-011",
+    "K-HW-013",
+    "K-ALG-018",
+    "K-SYS-012",
+    "K-FW-006",
+    "K-HW-003",
+    "K-SYS-001",
+    "K-SYS-015",
+    "K-HW-014"
+  ],
+  "evidence": [],
+  "updated_at": "2026-10-27",
+  "sha256": "64427e69f6eb991d4029242e24e4edf56a331d233fdeab3c50f53f0f84a4df7b",
+  "questions": [
+    "执行顺序正确的异步程序为什么仍可能地址失效，stream 与分配器各自负责哪一半？",
+    "生产者与消费者跨 stream 时，哪些依赖必须显式表达，哪些由分配器隐式承担？",
+    "共享 workspace 在并发 kernel 之间引入了什么隐式依赖，如何把它显式化？",
+    "多个消费者使用同一缓冲时，完成关系如何汇合后才允许释放？",
+    "取消一个操作与保证其执行顺序为什么是两件事，各自需要什么机制？"
+  ],
+  "symptoms": [
+    "偶发的结果串扰只在多 stream 下出现",
+    "释放后被覆盖的数据被迟到 kernel 读取"
+  ],
+  "assumes": [
+    "CUDA 风格的 stream 与事件模型",
+    "异步提交与延迟释放的分配器"
+  ]
+}

@@ -1,0 +1,151 @@
+{
+  "entry_id": "K-SYS-010",
+  "body_sha256": "c6703ea365f5a72b9b983e129be13d25d6cc98dc83420ae83ea15de0247f6507",
+  "reviewer": "sol-reviewer:K-SYS-010:round-1",
+  "decision": "revise",
+  "documents": {
+    "AGENTS.md": "b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a",
+    "docs/knowledge-method.md": "69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb",
+    "docs/knowledge-review.md": "f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21",
+    "knowledge/system-semantics/design-synthesis.md": "c6703ea365f5a72b9b983e129be13d25d6cc98dc83420ae83ea15de0247f6507",
+    "knowledge/sources/S-PAGED.md": "50893a22385b0d577980153a9bc9c617acdcb2a9d7be0af655ad49421f06cc09",
+    "knowledge/sources/S-SARATHI.md": "a4616b358fc59f97fd787e1eabbbca74d50c6f279bf3192d4c585f3ea80fb165",
+    "knowledge/sources/S-DISTSERVE.md": "968cbf46667e862085b0e2d72405805351bd33880ac23d8d055bf259192411f4",
+    "knowledge/sources/S-MLA.md": "13dd0ca7fb487a136088c826ce5dae79e946400b2191afff20f5d29b33fc689f",
+    "knowledge/sources/S-NXDI.md": "dcaaabf089394f00959b8f425199cf6eb4b281655eb4ae9086f6411d047d34e9",
+    "knowledge/sources/S-CPU-TUNING.md": "46948047959d30284614764d498ea02e41e76a47bf55597fec93df61e14964fb",
+    "knowledge/sources/S-GOTO.md": "b7537681924b9b66b32b49cf011be9602818a2b4db4025bdea51ba37fd9c58d2",
+    "knowledge/sources/S-INT8.md": "fd85648a08a0e4bb18fe9d74d25e9d8a5fc6d29faf941554ff2e29f88fa98744",
+    "knowledge/sources/S-STATS.md": "70aaa597c5ab44b118296fe0527f0b510b7c8e4fb2e62170ce6547c0f7457f8e",
+    "tools/check_k_sys_010_full.py": "eaeae5bc0bf256ffad2937d9841b58473b47c29d8fdbd6b48a6b4a3a01a9dc81"
+  },
+  "criteria": {
+    "definition": {
+      "assessment": "sufficient",
+      "reason": "明确设计条件、候选变量、条件格、输出证书及已知 token 与完整 KV 的不同边界；驻留公式说明物理去重和同时存活峰值。定义足以支持本章的条件化设计分析。",
+      "evidence": [
+        {
+          "path": "knowledge/system-semantics/design-synthesis.md",
+          "quote": "把一次设计问题的条件写成元组 C＝(F,W,H,N,Q,S,E)。"
+        },
+        {
+          "path": "knowledge/system-semantics/design-synthesis.md",
+          "quote": "设请求 r 的已知 token 数为 nᵣ，已提交且各必要层完整、可复用的 KV 终点为 cᵣ，且 0≤cᵣ≤nᵣ。"
+        }
+      ]
+    },
+    "legality": {
+      "assessment": "partial",
+      "reason": "四层合法性、缓存身份与异步回收边界解释充分；但质量门槛虽写入 VERIFIED 定义，推导算法没有处理上界通过而质量失败或尚未验证的分支，软件分类器也未表达该门槛。",
+      "evidence": [
+        {
+          "path": "knowledge/system-semantics/design-synthesis.md",
+          "quote": "身份与并发合法性要求请求、版本、页、adapter、输出和迟到的完成通知不会串用。"
+        },
+        {
+          "path": "knowledge/system-semantics/design-synthesis.md",
+          "quote": "有效上界不超过目标且质量通过：记录 VERIFIED"
+        }
+      ]
+    },
+    "algorithm": {
+      "assessment": "partial",
+      "reason": "提供候选枚举、容量筛选、资源下界、证据分类和实验选择流程，但把超过目标的上界当作排除证据，可能错误删除仍可满足目标的候选。此错误直接进入检查脚本的 classify 分支。",
+      "evidence": [
+        {
+          "path": "knowledge/system-semantics/design-synthesis.md",
+          "quote": "若存在 E 中的有效上界或测量："
+        },
+        {
+          "path": "knowledge/system-semantics/design-synthesis.md",
+          "quote": "有效上界超过目标：记录 EXCLUDED_MEASURED"
+        }
+      ]
+    },
+    "cost": {
+      "assessment": "sufficient",
+      "reason": "六类成本、逻辑读取与唯一容量、共享带宽域、串行关键路径及准备摊销均有条件说明。独立复算得到 KV 49152 B/token、B 的 39.0625 ms、共享域双副本的 70.3125 ms，容量主项也与正文一致。没有把这些设定量冒充设备性能。",
+      "evidence": [
+        {
+          "path": "knowledge/system-semantics/design-synthesis.md",
+          "quote": "容量约束是 max_t M(t)≤M_cap，而不是把各项各自峰值相加后当成唯一峰值；后者只是保守上界。"
+        },
+        {
+          "path": "knowledge/system-semantics/design-synthesis.md",
+          "quote": "若 r 个副本共享一个带宽域，粗略均分时 β_r≈β_total/r；若各自拥有独立内存控制器、NUMA 域或本地 cache，则不能直接采用该均分式。"
+        }
+      ]
+    },
+    "adaptation": {
+      "assessment": "sufficient",
+      "reason": "解释条件格中的局部保留、准入收窄、共享与独立带宽域的选择反转，以及布局转换随复用次数和输入变化的调整条件；没有把特定候选组织固定为统一施工要求。",
+      "evidence": [
+        {
+          "path": "knowledge/system-semantics/design-synthesis.md",
+          "quote": "若一个候选在短请求格通过、在长请求格被容量约束排除，它在服务系统中仍可能作为短请求专用路径保留，但必须带上准入条件和拒绝语义。"
+        },
+        {
+          "path": "knowledge/system-semantics/design-synthesis.md",
+          "quote": "若输入每次改变，复用前提则不成立；若转换争用另一消费者的带宽，也需重新计算。"
+        }
+      ]
+    },
+    "diagnosis": {
+      "assessment": "partial",
+      "reason": "竞争解释、单因素干预、运行层级与反证修正表有实质内容；但算法在下界超过目标时立即退出，会跳过已有同作用域上界与下界矛盾的诊断，违背正文自己的 INCONSISTENT 规则。",
+      "evidence": [
+        {
+          "path": "knowledge/system-semantics/design-synthesis.md",
+          "quote": "若 T_LB 已超过该格的硬目标：记录 EXCLUDED_LOWER_BOUND，继续"
+        },
+        {
+          "path": "knowledge/system-semantics/design-synthesis.md",
+          "quote": "有效上界低于下界：记录 INCONSISTENT，转诊断而不是直接采用"
+        }
+      ]
+    }
+  },
+  "findings": [
+    {
+      "id": "K-SYS-010-R1-ALG-01",
+      "criterion": "algorithm",
+      "evidence": "正文先写“若存在 E 中的有效上界或测量”，随后写“有效上界超过目标：记录 EXCLUDED_MEASURED”。脚本 classify 在 ub > target 时直接返回 'EXCLUDED_MEASURED'。",
+      "impact": "上界未通过只能说明尚未证明达标，不能证明实际耗时超标。例如下界 39.0625 ms、上界 80 ms、目标 60 ms，实际耗时可以为 50 ms。现流程会把这样的候选排除，并可能在所有条件格中删除它。",
+      "blocking": true,
+      "required_revision": "区分保守上界与直接观测及其统计口径。仅因上界超过目标时保留为开放候选；只有相应作用域的失败测量或有效下界才支持相应排除。同步修正 classify，并以实际值位于下界与宽松上界之间且满足目标的反例验证分类。"
+    },
+    {
+      "id": "K-SYS-010-R1-LEGAL-01",
+      "criterion": "legality",
+      "evidence": "正文定义“`VERIFIED` | 同作用域上界与质量门槛均通过”，但算法只有“有效上界不超过目标且质量通过：记录 VERIFIED”，没有质量失败或未知的后继分支。脚本签名为 classify(legal, capacity, lb, target, ub=None, scope=True)，其 ub <= target 分支无条件返回 'VERIFIED'。",
+      "impact": "当耗时证据通过而质量失败或未验证时，正文算法没有确定结果；脚本也无法区分这些状态。因而分类检查不能支持正文所定义的完整 VERIFIED 含义。",
+      "blocking": true,
+      "required_revision": "明确质量失败与质量未知时的状态、保留或排除规则。软件分类模型应显式接收质量状态，或清楚限定质量已通过的调用前提；加入质量失败和未知时禁止 VERIFIED 的负对照。无需把离线检查扩成真实模型质量实验。"
+    },
+    {
+      "id": "K-SYS-010-R1-DIAG-01",
+      "criterion": "diagnosis",
+      "evidence": "正文“若 T_LB 已超过该格的硬目标：记录 EXCLUDED_LOWER_BOUND，继续”位于证据作用域和上下界一致性检查之前。脚本同样先执行 if lb > target: return 'EXCLUDED_LOWER_BOUND'。",
+      "impact": "例如声明下界 70 ms、目标 60 ms，却已有同作用域有效上界 55 ms，流程直接排除而不会报告 INCONSISTENT。该证据实际要求修正下界前提、单位或测量边界；继续依赖矛盾下界可能错删可用方案。",
+      "blocking": true,
+      "required_revision": "在最终依据下界排除前，检查已有同作用域证据与下界是否矛盾；矛盾应转诊断并暂停该下界的排除效力。同步调整 classify，增加 lb > target 且 ub < lb 的分支反例。"
+    }
+  ],
+  "limitations": [
+    "原始论文和文档仅按所供摘录核对；未通读完整原件。S-PAGED 的部分性能数字仅核对到完整来源说明，所供原文范围未覆盖相应完整实验段落。",
+    "S-CPU-TUNING 仅提供作者整理的机制说明，没有允许读取的原始说明文档；未接触任何源码归档。",
+    "正文已经正确声明离线模型不证明真实 CPU/GPU 时间、设备可见性、网络、调度和模型质量；这些未测范围可以继续保留为 limitation。",
+    "本审核未运行绑定 Python 脚本；实际退出码依据所附、绑定脚本哈希的 remote_bwrap 执行记录。独立算术复算使用 JavaScript，不冒充 Python 重跑。",
+    "未重新计算磁盘文件哈希，也未验证离线链接目标存在和 reader 页面渲染；documents 使用要求的完整材料绑定值。相关章节只读到所供摘录，不据此认证十二类入口的完整正文。",
+    "当前工具没有本地文件读取能力，未能打开 infraagents-knowledge-build 的 SKILL.md；本结论依据所供 AGENTS.md、方法、审查标准及材料。"
+  ],
+  "checks": [
+    {
+      "script": "tools/check_k_sys_010_full.py",
+      "args": []
+    }
+  ],
+  "no_checks_reason": "",
+  "reading_scope": "完整阅读所供 AGENTS.md [0,567)、docs/knowledge-method.md [0,2251)、docs/knowledge-review.md [0,3016)、knowledge/system-semantics/design-synthesis.md [0,16319)；完整来源说明：knowledge/sources/S-PAGED.md [0,2206)、S-SARATHI.md [0,1423)、S-DISTSERVE.md [0,443)、S-MLA.md [0,497)、S-NXDI.md [0,559)、S-CPU-TUNING.md [0,731)、S-GOTO.md [0,757)、S-INT8.md [0,756)、S-STATS.md [0,983)。另完整阅读 candidate.test_script 提供的 tools/check_k_sys_010_full.py、author_notes 与 actual_preflight 执行记录。以下均为摘录，范围采用材料声明的零基半开提取字符坐标：knowledge/algorithms/iteration-batching.md [4000,6236)；knowledge/algorithms/heterogeneous-state-cache.md [8000,10236)；knowledge/frameworks/cuda-graph-buffers.md [12000,14236)；knowledge/frameworks/checkpoint-loading.md [8000,10236)；knowledge/algorithms/operator-primitives.md [8000,10236)；knowledge/frameworks/cpu-quantized-kernels.md [12000,14236)；knowledge/system-semantics/host-runtime.md [4000,6236)；knowledge/hardware/cuda-execution.md [16000,18236)；knowledge/algorithms/disaggregated-serving.md [4000,6236)；knowledge/models/image-diffusion.md [12000,14236)；knowledge/models/video-generation.md [12000,14236)；knowledge/models/omni-multimodal.md [8000,10236)。以下每个文件均仅为 [0,2236) 摘录：knowledge/workloads/capacity-planning.md、knowledge/hardware/cpu-linear-kernels.md、knowledge/system-semantics/memory-allocators.md、knowledge/workloads/session-workloads.md、knowledge/tools/statistical-experiments.md、knowledge/algorithms/prefix-cache-identity.md、knowledge/algorithms/tiered-residency.md、knowledge/algorithms/heterogeneous-execution.md、knowledge/algorithms/parallelism.md、knowledge/workloads/multi-model-placement.md、knowledge/models/encoder-decoder-streaming.md、knowledge/models/vision-language.md、knowledge/models/speech-generation.md、knowledge/models/embedding-reranking.md、knowledge/system-semantics/retrieval-pipeline.md、knowledge/models/vision-inference.md、knowledge/models/recommendation-inference.md、knowledge/models/graph-inference.md、knowledge/workloads/cluster-resource-placement.md、knowledge/system-semantics/storage-services.md、knowledge/system-semantics/deployment-environment.md、knowledge/algorithms/chunked-prefill.md、knowledge/engine-index/vllm-scheduler.md、knowledge/system-semantics/evidence-and-independent-checks.md、knowledge/system-semantics/service-protocol.md、knowledge/system-semantics/specialization-levers.md。原始资料摘录：references/S-PAGED/fulltext.txt [4000,6605)、[8000,12000)、[16000,28000)、[44000,48000)、[64000,68000)；references/S-SARATHI/fulltext.txt [8000,16000)、[20000,22605)、[24000,32000)、[36000,40000)、[64000,68000)；references/S-DISTSERVE/fulltext.txt [28000,30605)、[32000,48000)、[72000,76000)、[80000,84000)；references/S-MLA/fulltext.txt [12000,20000)、[24000,32000)、[44000,48000)、[100000,102605)、[104000,108000)；references/S-NXDI/fulltext.txt [4000,8000)、[20000,24000)、[28000,38605)、[40000,48000)；references/S-GOTO/fulltext.txt [0,4000)、[8000,26605)、[28000,32000)；references/S-INT8/fulltext.txt [0,8000)、[12000,16000)、[20000,24000)、[28000,30605)、[44000,52000)；references/S-STATS/fulltext.txt [0,4000)、[32000,36000)、[48000,52000)、[68000,72000)、[108000,116000)、[156000,158605)。未把任何摘录文件列入 documents，未把来源说明中的作者全文阅读声明算成本审核的全文阅读。",
+  "test_assessment": "完整检查脚本后，确认其有实际的窄范围参考：页容量按物理 ID 去重，读取流量按每个请求逐项累计；手工展开的 9 个唯一 token 槽与 13 次请求读取独立约束两个函数。bad_t 调用容量算法充当流量算法，bad_c 调用逻辑累计充当容量算法，两者确实被不同预期值拒绝，能够检测本章强调的共享容量与读取流量混淆。第三个负对照实际生成无上界却标为 VERIFIED 的结果，再由 status_ok 拒绝，能检测该特定证据错误。Fraction 断言核对了 A/B/C、64 请求与容量算例；另覆盖空页集合、共享页计数冲突、合法性失败、容量失败、过期作用域和一例上下界矛盾。所附执行记录绑定脚本 SHA256，实际使用 Python 3.12 的隔离只读环境，退出码 0、stderr 为空、未超时；作者备注中“未执行”属于作者自身范围，不能覆盖随后提供的实际 preflight，也不能把 preflight 解释为作者做过设备测试。本审核用独立 JavaScript 槽集合和字节算术再次得到 unique=442368 B、logical=638976 B、A1=32.2265625 ms、A8=257.8125 ms、B=39.0625 ms、Cshared=70.3125 ms、Cindep=35.15625 ms、D64=93.75 ms。检查并非整体同义反复，但没有验证完整 SYNTHESIZE：没有区分上界与失败观测，没有质量状态，未覆盖下界超目标时与有效上界矛盾的优先级。classify 还直接复现正文错误，现有成功退出不能关闭这些缺口。检查范围不包含多层模型 forward、异步物理回收、真实性能或质量，正文对此已作限制。"
+}

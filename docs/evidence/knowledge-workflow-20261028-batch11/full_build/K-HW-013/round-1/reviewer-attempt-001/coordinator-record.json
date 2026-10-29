@@ -1,0 +1,230 @@
+{
+  "role": "reviewer",
+  "engine": "sol",
+  "requested_model": "gpt-6.1-sol",
+  "reasoning_effort": "high",
+  "prompt_sha256": "07c4cfe8cacddeb3c8807e5e660a182d6961369b50219fae629a75568401c453",
+  "usage": [
+    {
+      "input_tokens": 788006,
+      "cached_input_tokens": 598912,
+      "cache_write_input_tokens": 0,
+      "output_tokens": 8800,
+      "reasoning_output_tokens": 2606
+    }
+  ],
+  "answer": "{\n  \"entry_id\": \"K-HW-013\",\n  \"body_sha256\": \"96ec402fb123f30a3813dd8d849c154c5ee5eea7d4679e2aaa8928aa75a1bcf2\",\n  \"reviewer\": \"sol-reviewer:K-HW-013:round-1\",\n  \"decision\": \"revise\",\n  \"documents\": {\n    \"AGENTS.md\": \"b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a\",\n    \"docs/knowledge-method.md\": \"69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb\",\n    \"docs/knowledge-review.md\": \"f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21\",\n    \"knowledge/hardware/shared-memory-paths.md\": \"96ec402fb123f30a3813dd8d849c154c5ee5eea7d4679e2aaa8928aa75a1bcf2\",\n    \"knowledge/sources/S-MLX-MEM.md\": \"1d65e19c9f1394965bdf43eb8e6049a56dcdbe06af5602af386d4608845192d0\",\n    \"knowledge/sources/S-CUDA-ASYNC.md\": \"40df9287d0648a8ef55a046ceb1c18dd402619ede6e57ca33d3f90e4ace3da05\",\n    \"knowledge/sources/S-TORCH-CUDA.md\": \"8ee61677a1e35d475d9bb122b2c7fa824ccf054acefbe2f12345d72c1fb1b00e\",\n    \"knowledge/hardware/host-device-transfer.md\": \"e4921a0714af21f7ab1a336f40af662f716f2c64a42dd598eb2cede548c858d2\",\n    \"knowledge/algorithms/heterogeneous-execution.md\": \"8fd777e06b150eaba4e3288ccb188adbb975e37c28c77a72a9b6878a70e027f4\",\n    \"knowledge/system-semantics/memory-allocators.md\": \"2e7258787b94ad142c7c236541e8718803ad30b273d08e6c398dff673a1df838\",\n    \"references/S-MLX-MEM/fulltext.txt\": \"472f16846acae9c84a7daca168b900903579e71b5c05aa2376229f79a0d70f64\",\n    \"references/S-TORCH-CUDA/fulltext.txt\": \"4756fc37be9c52d4128b5f4b46f996fddb8b136a9ef51183a6f0e1c7d49b18df\",\n    \"tools/check_k_hw_013_full.py\": \"fea77c84b1b08c9da465954116fa1533357b9c91a92d3ac6e55edcae679ff5a2\"\n  },\n  \"criteria\": {\n    \"definition\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"清楚区分逻辑对象、内容版本、物理分配、访问范围与四种关系，也给出规划输入输出。成本符号的具体不一致列入 cost。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/hardware/shared-memory-paths.md\",\n          \"quote\": \"设逻辑对象为 O=(id, va, bytes, version)。\"\n        },\n        {\n          \"path\": \"knowledge/hardware/shared-memory-paths.md\",\n          \"quote\": \"输出：路径、容量预留、复制/映射/迁移计划与完成票据；或拒绝原因\"\n        }\n      ]\n    },\n    \"legality\": {\n      \"assessment\": \"partial\",\n      \"reason\": \"映射能力、原子限制、生产可见性、源与目的生命周期和图地址保活均有实质解释；但把按捕获顺序重放表述为所有图共享池的必要条件，遗漏固定来源明确允许的独立图情形。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/hardware/shared-memory-paths.md\",\n          \"quote\": \"源在 DMA 读取结束前不能改写，目的在复制写入结束前不能被读者消费。\"\n        },\n        {\n          \"path\": \"knowledge/hardware/shared-memory-paths.md\",\n          \"quote\": \"多个图共享池只有在确定按捕获顺序重放且从不并发时才安全\"\n        }\n      ]\n    },\n    \"algorithm\": {\n      \"assessment\": \"partial\",\n      \"reason\": \"已提供初始化、候选筛选和取消排空原则，但执行部分没有按访问轨迹推进的循环和完整状态更新。组合案例需要的写后失效与再次复制、写者登记、读者结束及版本发布尚不能由伪代码独立恢复。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/hardware/shared-memory-paths.md\",\n          \"quote\": \"第一步：枚举每个非空访问并计算页集\"\n        },\n        {\n          \"path\": \"knowledge/hardware/shared-memory-paths.md\",\n          \"quote\": \"active_readers 为空，writer 为空，plan_epoch 等于 O.version\"\n        },\n        {\n          \"path\": \"knowledge/hardware/shared-memory-paths.md\",\n          \"quote\": \"每次主机写入产生新的 version；GPU 读取前等待该 version 可见\"\n        }\n      ]\n    },\n    \"cost\": {\n      \"assessment\": \"partial\",\n      \"reason\": \"六类成本、物理身份去重和重叠边界已展开，组合例中的主要字节除以带宽算术成立。但一般复制公式与映射公式使用不同读取量，迁移次数定义与乘法不一致且 R_t 未定义；映射访问又被错误地按页大小推断事务放大。这些问题会改变路径选择。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/hardware/shared-memory-paths.md\",\n          \"quote\": \"T_copy ≈ D/B_l + R·D/B_d + T_prep + T_sync + T_stage。\"\n        },\n        {\n          \"path\": \"knowledge/hardware/shared-memory-paths.md\",\n          \"quote\": \"T_mig ≈ M·N_p·g/B_l + R_t·N_p·g/B_d + F·T_f + T_prefetch + T_sync。\"\n        },\n        {\n          \"path\": \"knowledge/hardware/shared-memory-paths.md\",\n          \"quote\": \"远端读取会按整页事务放大。\"\n        }\n      ]\n    },\n    \"adaptation\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"对重复访问、小比例访问、交替写读、容量、页大小、能力变化及共享资源竞争给出了保留机制与调整信号。定量选择需在修正成本模型后重算。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/hardware/shared-memory-paths.md\",\n          \"quote\": \"迁移次数随交替次数增长时，比较批量交接、双缓冲或计算放置；不能允许覆盖在途页\"\n        },\n        {\n          \"path\": \"knowledge/hardware/shared-memory-paths.md\",\n          \"quote\": \"不支持时拒绝该路径，不沿用旧假设\"\n        }\n      ]\n    },\n    \"diagnosis\": {\n      \"assessment\": \"partial\",\n      \"reason\": \"诊断表有竞争解释、干预和反证修正，设备验证边界也声明清楚；但配套检查的冲突参考遗漏与候选相同的写后读错误，旧 epoch 检查没有携带 epoch 的事件或相应错误变体，不能支撑正文和作者所述验证范围。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/hardware/shared-memory-paths.md\",\n          \"quote\": \"负对照应实际进入同一判据，而不是只打印成功。\"\n        },\n        {\n          \"path\": \"knowledge/hardware/shared-memory-paths.md\",\n          \"quote\": \"旧 epoch 的迟到完成清除新对象\"\n        },\n        {\n          \"path\": \"knowledge/hardware/shared-memory-paths.md\",\n          \"quote\": \"用独立的冲突关系参考比较接受/拒绝决定\"\n        }\n      ]\n    }\n  },\n  \"findings\": [\n    {\n      \"id\": \"K-HW-013-C01\",\n      \"criterion\": \"cost\",\n      \"evidence\": \"正文并列使用“T_copy ≈ D/B_l + R·D/B_d + T_prep + T_sync + T_stage。”与“T_map ≈ R·α·x·D/B_l + T_sync + T_prep_map。”；脚本 explicit_cost 返回 D / link_bw + R * D / local_bw，threshold_x 返回 1.0 / R + link_bw / local_bw。\",\n      \"impact\": \"同一轨迹每次只读取 xD 时，完整复制 D 不会使消费者每次读取量自动变成 D。以正文带宽、D=64 MiB、R=4、x=0.27、α=1 且忽略其他成本复算，实际复制路径约 4.0381 ms，映射约 4.2188 ms，应选复制；脚本却将复制算成 4.3945 ms，选择映射。现有阈值检查验证了不同工作量之间的比较。\",\n      \"blocking\": true,\n      \"required_revision\": \"分别定义实际复制字节与消费者本地读取字节。完整复制、无本地事务放大的该轨迹应使用 D/B_l + R·x·D/B_d；相应阈值为 x=1/[R·(α−B_l/B_d)]，并说明分母、取值域及其他成本的适用条件。同步修正脚本，用同一访问枚举构造两条路径的独立字节账，检出当前错误公式。\"\n    },\n    {\n      \"id\": \"K-HW-013-C02\",\n      \"criterion\": \"cost\",\n      \"evidence\": \"正文定义“M 为总页迁移次数”，随后写“T_mig ≈ M·N_p·g/B_l + R_t·N_p·g/B_d + F·T_f + T_prefetch + T_sync。”，没有定义 R_t。\",\n      \"impact\": \"若 M 已是所有页迁移事件的总数，再乘被触及页数会重复计数。组合案例的 16 页各迁移三次共有 48 次页迁移，真实迁移量为 48×64 KiB=3 MiB，而按当前定义代入公式得到 48 MiB。未定义的 R_t 也使本地读取项无法核对。\",\n      \"blocking\": true,\n      \"required_revision\": \"统一迁移计数口径，例如使用各页迁移次数之和 Σ_p m_p·g，或明确限定 M 为同一页集合的整批迁移轮数。定义本地读取量及全部符号，避免把触及页容量直接当成消费者实际读取量。用组合轨迹和不等迁移次数的页事件账核对公式。\"\n    },\n    {\n      \"id\": \"K-HW-013-C03\",\n      \"criterion\": \"cost\",\n      \"evidence\": \"正文写“若访问退化为每页一个元素，α 可能接近 g/元素字节，远端读取会按整页事务放大。”；所供 CUDA 摘录说明 mapped memory 按 kernel 访问隐式传输并要求合并访问，没有给出每次映射读取传输整页的保证。\",\n      \"impact\": \"把地址翻译或迁移粒度当成映射读取事务粒度，会严重高估稀疏映射流量，并错误解释页大小变化的效果。TLB 缺失、页迁移与远端数据事务是不同成本。\",\n      \"blocking\": true,\n      \"required_revision\": \"删除映射读取必然按整页传输的断言。按目标支持的事务、访问合并、缓存与实际远端字节定义 α；页粒度另用于页表、TLB 和确实发生的页迁移。若保留整页读取情形，明确其额外机制与证据，不能由每页一个元素直接推出。\"\n    },\n    {\n      \"id\": \"K-HW-013-A01\",\n      \"criterion\": \"algorithm\",\n      \"evidence\": \"伪代码仅在“第一步：枚举每个非空访问并计算页集”中遍历 A；执行部分对显式复制只写“预留目的和 staging；先提交复制”，初始化的 writer 后续没有更新，active_readers 只有登记而没有结束处理；提交条件为“version 匹配且 active_readers 允许时”。\",\n      \"impact\": \"输入包含多个阶段及读写访问，但执行部分没有说明如何逐阶段建立生产依赖、关闭读者、处理 CPU 改写后的旧副本失效和再次复制。正文组合例需要第二次 1 MiB H2D，这一动作无法从当前伪代码的推进规则恢复；只读访问与新内容版本发布的关系也不明确。\",\n      \"blocking\": true,\n      \"required_revision\": \"补齐按 phase 和依赖图推进访问的循环：在授权访问前检查冲突，登记实际使用及完成票据，完成后更新读写状态；主机写入后使相应设备副本范围失效，消费前复制缺失版本并发布有效范围。明确内容版本与存储 epoch 的更新时机。通用所有权步骤可明确委托给已链接的完整协议，但本章仍须展开路径特有的数据移动和驻留转换。\"\n    },\n    {\n      \"id\": \"K-HW-013-D01\",\n      \"criterion\": \"diagnosis\",\n      \"evidence\": \"脚本 Ownership.read 只检查 phase 与 ident，没有检查 writer；reference_accepts 的 read 分支同样不检查活动写者。done(self, ident) 不接收 epoch，reuse 虽递增 epoch，却清空 ids 后允许重新使用相同 ident。现有 invalid_late_done 只测试复用后不存在同名新读者的情况。正文却声称覆盖“关闭时仍有读者、复用后旧完成”，作者还声称实际注入了旧完成负对照。\",\n      \"impact\": \"按所供函数逐句转写的 JavaScript 反例中，write(w1)→read(r1) 被候选和参考同时接受。完成旧 r1、关闭回收、复用、登记新 r1 后，旧 done(r1) 也能清除新读者并允许关闭。当前比较器共享缺陷，epoch 字段没有参与事件验证；预检成功不能证明读写互斥或旧代隔离。\",\n      \"blocking\": true,\n      \"required_revision\": \"用独立冲突定义覆盖两个方向的读写冲突。完成通知携带并验证 epoch 与使用者身份，或明确实现全局不复用的使用身份。加入旧完成与同名新使用者碰撞、写者存在时读入、带读者关闭的实际轨迹；让错误变体进入相同参考或状态不变量。修正正文及作者说明中超出实际覆盖的陈述。\"\n    },\n    {\n      \"id\": \"K-HW-013-L01\",\n      \"criterion\": \"legality\",\n      \"evidence\": \"正文写“多个图共享池只有在确定按捕获顺序重放且从不并发时才安全”。完整 PyTorch 来源同时明确：“It's also safe to share a memory pool across separate graphs that do not depend\\non each other's outputs, provided they never run concurrently.”\",\n      \"impact\": \"正文把一种充分条件升级为唯一合法条件，排除了来源明确允许的、彼此无输出依赖且不并发的独立图共享情形。\",\n      \"blocking\": true,\n      \"required_revision\": \"区分来源给出的两种共享情形，或明确把固定重放顺序限定为本章采用的保守策略。同步调整适应表中的必要条件表述，保留不并发、输出保护和地址保活要求。\"\n    }\n  ],\n  \"limitations\": [\n    \"CPU 模型不能证明目标 GPU 的映射支持、UVM 迁移策略、TLB、硬件可见性、allocator、CUDA Graph 重放、物理重叠或性能；正文对此声明清楚，这些未实测范围本身不构成拒绝理由。\",\n    \"来源结论仅限所供固定版本与 2026-04-30 cutoff；未读取源码归档、reader.html 或完整 CUDA 指南。\",\n    \"本次使用任务提供的完整文本、摘录和绑定哈希；未从文件系统独立重算哈希，也未验证离线链接目标实际存在。\",\n    \"审阅了所供真实 Python 预检记录，但本次未重新执行 Python 文件；独立执行的是工具内 JavaScript 算术及相关状态函数的逐句转写反例，不属于设备实验或整个 Python 脚本重跑。\"\n  ],\n  \"checks\": [\n    {\n      \"script\": \"tools/check_k_hw_013_full.py\",\n      \"args\": []\n    }\n  ],\n  \"no_checks_reason\": \"\",\n  \"reading_scope\": \"完整阅读任务所供全文，零基半开字符范围：AGENTS.md [0,567)；docs/knowledge-method.md [0,2251)；docs/knowledge-review.md [0,3016)；knowledge/hardware/shared-memory-paths.md [0,11888)；knowledge/sources/S-MLX-MEM.md [0,495)；knowledge/sources/S-CUDA-ASYNC.md [0,1610)；knowledge/sources/S-TORCH-CUDA.md [0,1468)；knowledge/hardware/host-device-transfer.md [0,6485)；knowledge/algorithms/heterogeneous-execution.md [0,3935)；knowledge/system-semantics/memory-allocators.md [0,4191)；references/S-MLX-MEM/fulltext.txt [0,2656)；references/S-TORCH-CUDA/fulltext.txt [0,80851)。tools/check_k_hw_013_full.py 阅读完整 supplied test_script，从 import sys 至 sys.exit(main())；完整阅读 author_notes 与 actual_preflight。仅阅读所供摘录：knowledge/hardware/metal-unified-memory.md [0,4000)、[8000,10918)、[12000,15707)；knowledge/frameworks/streams-allocator.md [0,5750)、[8000,12875)；knowledge/frameworks/mlx-serving.md [0,8990)、[12000,13635)；knowledge/algorithms/attention-io.md [0,5315)、[8000,13310)；knowledge/hardware/rocm-execution.md [0,3767)、[8000,14858)。references/S-CUDA-ASYNC/fulltext.txt 仅限 [4000,5451)、[40000,44000)、[72000,80000)、[88000,92000)、[156000,164000)、[204000,208000)、[212000,216000)、[228000,232000)、[240000,244000)、[260000,264000)、[300000,304000)、[344000,348000)、[352000,356000)、[456000,460000)、[488000,500000)、[508000,512000)、[644000,652000)、[692000,696000)、[732000,736000)、[940000,956000)、[960000,972000)、[1020000,1044000)、[1052000,1060000)、[1068000,1076000)、[1088000,1092000)、[1104000,1108000)。所有 excerpt 均未列入 documents，未声称阅读其完整原件。\",\n  \"test_assessment\": \"所供 actual_preflight 绑定脚本哈希 fea77c84b1b08c9da465954116fa1533357b9c91a92d3ac6e55edcae679ff5a2，记录在 remote_bwrap 隔离环境以 Python 3.12、-I -S -B -X utf8 执行，returncode=0、stderr 为空、未超时。本次核对记录与完整脚本，没有把该记录称为审阅者重新运行。逐字节枚举与算术页集合是有效的不同参考，10 个范围覆盖空、对齐、跨页、单字节和非整除边界，结束地址错误变体确实产生差异。staging、别名与一字节页迁移检查具有明确算术不变量。成本阈值虽有代数比较和 always-explicit 负对照，却沿用不一致的本地读取量，不能验证同一轨迹的选择。所有权候选与所谓独立参考共享 read 不检查 writer 的遗漏；epoch 从未进入完成匹配。现有旧完成案例只检出未知 ID，没有检出旧代事件清除新代同名使用者，也没有实际旧 epoch 错误变体；关闭时有读者的轨迹未出现在四条测试中。loose_write_during_read 直接改字段并返回 True，没有将故障状态送入统一状态不变量检查。审阅者实际执行 JavaScript 独立复算，确认 R=4、x=0.27 时路径选择反转，以及候选和参考共同接受写后读冲突、无法区分旧完成与新读者；另确认按 M 的当前定义会把组合例 3 MiB 迁移算成 48 MiB。应修正模型与参考后再运行检查，不能以当前退出码 0 关闭这些问题。\"\n}",
+  "exit_code": 0,
+  "status": "completed",
+  "timeout_seconds": 1800,
+  "response_path": "D:\\桌面\\xdb\\InfraAgents\\InfraAgents-know-astra-new\\InfraAgents-know\\docs\\evidence\\knowledge-workflow-20261028-batch11\\full_build\\K-HW-013\\round-1\\reviewer-attempt-001\\answer.txt",
+  "record_path": "D:\\桌面\\xdb\\InfraAgents\\InfraAgents-know-astra-new\\InfraAgents-know\\docs\\evidence\\knowledge-workflow-20261028-batch11\\full_build\\K-HW-013\\round-1\\reviewer-attempt-001\\record.json",
+  "tool_events": [],
+  "inventory_tool_events": [],
+  "rejected_tool_events": [],
+  "tool_policy": "metadata_inventory_only",
+  "tool_policy_version": "metadata-inventory-v1",
+  "tool_policy_scope": "Only empty-argument codex host plugin/skill-directory descriptors and empty template inventory; inventory is not knowledge evidence. All other tool events reject the call.",
+  "tool_policy_reason": "Production chapter construction allows observed generic capability discovery metadata; this does not claim a zero-tool comparison or external source reading.",
+  "malformed_event_lines": [],
+  "turn_completed": true,
+  "error_events": [],
+  "recovered_transport_events": [],
+  "terminal_error_events": [],
+  "transport_recovered": false,
+  "actual_model": null,
+  "identity_verified": null,
+  "identity_basis": "Explicit CLI model and isolated HTTP provider; CLI events do not expose server model identity.",
+  "provider": "eval-openai-http",
+  "max_output_tokens": null,
+  "cli_version": "codex-cli 0.164.0-alpha.11.1",
+  "cost_scope": "Codex token usage is reported; subscription charge is not exposed.",
+  "parsed": {
+    "entry_id": "K-HW-013",
+    "body_sha256": "96ec402fb123f30a3813dd8d849c154c5ee5eea7d4679e2aaa8928aa75a1bcf2",
+    "reviewer": "sol-reviewer:K-HW-013:round-1",
+    "decision": "revise",
+    "documents": {
+      "AGENTS.md": "b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a",
+      "docs/knowledge-method.md": "69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb",
+      "docs/knowledge-review.md": "f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21",
+      "knowledge/hardware/shared-memory-paths.md": "96ec402fb123f30a3813dd8d849c154c5ee5eea7d4679e2aaa8928aa75a1bcf2",
+      "knowledge/sources/S-MLX-MEM.md": "1d65e19c9f1394965bdf43eb8e6049a56dcdbe06af5602af386d4608845192d0",
+      "knowledge/sources/S-CUDA-ASYNC.md": "40df9287d0648a8ef55a046ceb1c18dd402619ede6e57ca33d3f90e4ace3da05",
+      "knowledge/sources/S-TORCH-CUDA.md": "8ee61677a1e35d475d9bb122b2c7fa824ccf054acefbe2f12345d72c1fb1b00e",
+      "knowledge/hardware/host-device-transfer.md": "e4921a0714af21f7ab1a336f40af662f716f2c64a42dd598eb2cede548c858d2",
+      "knowledge/algorithms/heterogeneous-execution.md": "8fd777e06b150eaba4e3288ccb188adbb975e37c28c77a72a9b6878a70e027f4",
+      "knowledge/system-semantics/memory-allocators.md": "2e7258787b94ad142c7c236541e8718803ad30b273d08e6c398dff673a1df838",
+      "references/S-MLX-MEM/fulltext.txt": "472f16846acae9c84a7daca168b900903579e71b5c05aa2376229f79a0d70f64",
+      "references/S-TORCH-CUDA/fulltext.txt": "4756fc37be9c52d4128b5f4b46f996fddb8b136a9ef51183a6f0e1c7d49b18df",
+      "tools/check_k_hw_013_full.py": "fea77c84b1b08c9da465954116fa1533357b9c91a92d3ac6e55edcae679ff5a2"
+    },
+    "criteria": {
+      "definition": {
+        "assessment": "sufficient",
+        "reason": "清楚区分逻辑对象、内容版本、物理分配、访问范围与四种关系，也给出规划输入输出。成本符号的具体不一致列入 cost。",
+        "evidence": [
+          {
+            "path": "knowledge/hardware/shared-memory-paths.md",
+            "quote": "设逻辑对象为 O=(id, va, bytes, version)。"
+          },
+          {
+            "path": "knowledge/hardware/shared-memory-paths.md",
+            "quote": "输出：路径、容量预留、复制/映射/迁移计划与完成票据；或拒绝原因"
+          }
+        ]
+      },
+      "legality": {
+        "assessment": "partial",
+        "reason": "映射能力、原子限制、生产可见性、源与目的生命周期和图地址保活均有实质解释；但把按捕获顺序重放表述为所有图共享池的必要条件，遗漏固定来源明确允许的独立图情形。",
+        "evidence": [
+          {
+            "path": "knowledge/hardware/shared-memory-paths.md",
+            "quote": "源在 DMA 读取结束前不能改写，目的在复制写入结束前不能被读者消费。"
+          },
+          {
+            "path": "knowledge/hardware/shared-memory-paths.md",
+            "quote": "多个图共享池只有在确定按捕获顺序重放且从不并发时才安全"
+          }
+        ]
+      },
+      "algorithm": {
+        "assessment": "partial",
+        "reason": "已提供初始化、候选筛选和取消排空原则，但执行部分没有按访问轨迹推进的循环和完整状态更新。组合案例需要的写后失效与再次复制、写者登记、读者结束及版本发布尚不能由伪代码独立恢复。",
+        "evidence": [
+          {
+            "path": "knowledge/hardware/shared-memory-paths.md",
+            "quote": "第一步：枚举每个非空访问并计算页集"
+          },
+          {
+            "path": "knowledge/hardware/shared-memory-paths.md",
+            "quote": "active_readers 为空，writer 为空，plan_epoch 等于 O.version"
+          },
+          {
+            "path": "knowledge/hardware/shared-memory-paths.md",
+            "quote": "每次主机写入产生新的 version；GPU 读取前等待该 version 可见"
+          }
+        ]
+      },
+      "cost": {
+        "assessment": "partial",
+        "reason": "六类成本、物理身份去重和重叠边界已展开，组合例中的主要字节除以带宽算术成立。但一般复制公式与映射公式使用不同读取量，迁移次数定义与乘法不一致且 R_t 未定义；映射访问又被错误地按页大小推断事务放大。这些问题会改变路径选择。",
+        "evidence": [
+          {
+            "path": "knowledge/hardware/shared-memory-paths.md",
+            "quote": "T_copy ≈ D/B_l + R·D/B_d + T_prep + T_sync + T_stage。"
+          },
+          {
+            "path": "knowledge/hardware/shared-memory-paths.md",
+            "quote": "T_mig ≈ M·N_p·g/B_l + R_t·N_p·g/B_d + F·T_f + T_prefetch + T_sync。"
+          },
+          {
+            "path": "knowledge/hardware/shared-memory-paths.md",
+            "quote": "远端读取会按整页事务放大。"
+          }
+        ]
+      },
+      "adaptation": {
+        "assessment": "sufficient",
+        "reason": "对重复访问、小比例访问、交替写读、容量、页大小、能力变化及共享资源竞争给出了保留机制与调整信号。定量选择需在修正成本模型后重算。",
+        "evidence": [
+          {
+            "path": "knowledge/hardware/shared-memory-paths.md",
+            "quote": "迁移次数随交替次数增长时，比较批量交接、双缓冲或计算放置；不能允许覆盖在途页"
+          },
+          {
+            "path": "knowledge/hardware/shared-memory-paths.md",
+            "quote": "不支持时拒绝该路径，不沿用旧假设"
+          }
+        ]
+      },
+      "diagnosis": {
+        "assessment": "partial",
+        "reason": "诊断表有竞争解释、干预和反证修正，设备验证边界也声明清楚；但配套检查的冲突参考遗漏与候选相同的写后读错误，旧 epoch 检查没有携带 epoch 的事件或相应错误变体，不能支撑正文和作者所述验证范围。",
+        "evidence": [
+          {
+            "path": "knowledge/hardware/shared-memory-paths.md",
+            "quote": "负对照应实际进入同一判据，而不是只打印成功。"
+          },
+          {
+            "path": "knowledge/hardware/shared-memory-paths.md",
+            "quote": "旧 epoch 的迟到完成清除新对象"
+          },
+          {
+            "path": "knowledge/hardware/shared-memory-paths.md",
+            "quote": "用独立的冲突关系参考比较接受/拒绝决定"
+          }
+        ]
+      }
+    },
+    "findings": [
+      {
+        "id": "K-HW-013-C01",
+        "criterion": "cost",
+        "evidence": "正文并列使用“T_copy ≈ D/B_l + R·D/B_d + T_prep + T_sync + T_stage。”与“T_map ≈ R·α·x·D/B_l + T_sync + T_prep_map。”；脚本 explicit_cost 返回 D / link_bw + R * D / local_bw，threshold_x 返回 1.0 / R + link_bw / local_bw。",
+        "impact": "同一轨迹每次只读取 xD 时，完整复制 D 不会使消费者每次读取量自动变成 D。以正文带宽、D=64 MiB、R=4、x=0.27、α=1 且忽略其他成本复算，实际复制路径约 4.0381 ms，映射约 4.2188 ms，应选复制；脚本却将复制算成 4.3945 ms，选择映射。现有阈值检查验证了不同工作量之间的比较。",
+        "blocking": true,
+        "required_revision": "分别定义实际复制字节与消费者本地读取字节。完整复制、无本地事务放大的该轨迹应使用 D/B_l + R·x·D/B_d；相应阈值为 x=1/[R·(α−B_l/B_d)]，并说明分母、取值域及其他成本的适用条件。同步修正脚本，用同一访问枚举构造两条路径的独立字节账，检出当前错误公式。"
+      },
+      {
+        "id": "K-HW-013-C02",
+        "criterion": "cost",
+        "evidence": "正文定义“M 为总页迁移次数”，随后写“T_mig ≈ M·N_p·g/B_l + R_t·N_p·g/B_d + F·T_f + T_prefetch + T_sync。”，没有定义 R_t。",
+        "impact": "若 M 已是所有页迁移事件的总数，再乘被触及页数会重复计数。组合案例的 16 页各迁移三次共有 48 次页迁移，真实迁移量为 48×64 KiB=3 MiB，而按当前定义代入公式得到 48 MiB。未定义的 R_t 也使本地读取项无法核对。",
+        "blocking": true,
+        "required_revision": "统一迁移计数口径，例如使用各页迁移次数之和 Σ_p m_p·g，或明确限定 M 为同一页集合的整批迁移轮数。定义本地读取量及全部符号，避免把触及页容量直接当成消费者实际读取量。用组合轨迹和不等迁移次数的页事件账核对公式。"
+      },
+      {
+        "id": "K-HW-013-C03",
+        "criterion": "cost",
+        "evidence": "正文写“若访问退化为每页一个元素，α 可能接近 g/元素字节，远端读取会按整页事务放大。”；所供 CUDA 摘录说明 mapped memory 按 kernel 访问隐式传输并要求合并访问，没有给出每次映射读取传输整页的保证。",
+        "impact": "把地址翻译或迁移粒度当成映射读取事务粒度，会严重高估稀疏映射流量，并错误解释页大小变化的效果。TLB 缺失、页迁移与远端数据事务是不同成本。",
+        "blocking": true,
+        "required_revision": "删除映射读取必然按整页传输的断言。按目标支持的事务、访问合并、缓存与实际远端字节定义 α；页粒度另用于页表、TLB 和确实发生的页迁移。若保留整页读取情形，明确其额外机制与证据，不能由每页一个元素直接推出。"
+      },
+      {
+        "id": "K-HW-013-A01",
+        "criterion": "algorithm",
+        "evidence": "伪代码仅在“第一步：枚举每个非空访问并计算页集”中遍历 A；执行部分对显式复制只写“预留目的和 staging；先提交复制”，初始化的 writer 后续没有更新，active_readers 只有登记而没有结束处理；提交条件为“version 匹配且 active_readers 允许时”。",
+        "impact": "输入包含多个阶段及读写访问，但执行部分没有说明如何逐阶段建立生产依赖、关闭读者、处理 CPU 改写后的旧副本失效和再次复制。正文组合例需要第二次 1 MiB H2D，这一动作无法从当前伪代码的推进规则恢复；只读访问与新内容版本发布的关系也不明确。",
+        "blocking": true,
+        "required_revision": "补齐按 phase 和依赖图推进访问的循环：在授权访问前检查冲突，登记实际使用及完成票据，完成后更新读写状态；主机写入后使相应设备副本范围失效，消费前复制缺失版本并发布有效范围。明确内容版本与存储 epoch 的更新时机。通用所有权步骤可明确委托给已链接的完整协议，但本章仍须展开路径特有的数据移动和驻留转换。"
+      },
+      {
+        "id": "K-HW-013-D01",
+        "criterion": "diagnosis",
+        "evidence": "脚本 Ownership.read 只检查 phase 与 ident，没有检查 writer；reference_accepts 的 read 分支同样不检查活动写者。done(self, ident) 不接收 epoch，reuse 虽递增 epoch，却清空 ids 后允许重新使用相同 ident。现有 invalid_late_done 只测试复用后不存在同名新读者的情况。正文却声称覆盖“关闭时仍有读者、复用后旧完成”，作者还声称实际注入了旧完成负对照。",
+        "impact": "按所供函数逐句转写的 JavaScript 反例中，write(w1)→read(r1) 被候选和参考同时接受。完成旧 r1、关闭回收、复用、登记新 r1 后，旧 done(r1) 也能清除新读者并允许关闭。当前比较器共享缺陷，epoch 字段没有参与事件验证；预检成功不能证明读写互斥或旧代隔离。",
+        "blocking": true,
+        "required_revision": "用独立冲突定义覆盖两个方向的读写冲突。完成通知携带并验证 epoch 与使用者身份，或明确实现全局不复用的使用身份。加入旧完成与同名新使用者碰撞、写者存在时读入、带读者关闭的实际轨迹；让错误变体进入相同参考或状态不变量。修正正文及作者说明中超出实际覆盖的陈述。"
+      },
+      {
+        "id": "K-HW-013-L01",
+        "criterion": "legality",
+        "evidence": "正文写“多个图共享池只有在确定按捕获顺序重放且从不并发时才安全”。完整 PyTorch 来源同时明确：“It's also safe to share a memory pool across separate graphs that do not depend\non each other's outputs, provided they never run concurrently.”",
+        "impact": "正文把一种充分条件升级为唯一合法条件，排除了来源明确允许的、彼此无输出依赖且不并发的独立图共享情形。",
+        "blocking": true,
+        "required_revision": "区分来源给出的两种共享情形，或明确把固定重放顺序限定为本章采用的保守策略。同步调整适应表中的必要条件表述，保留不并发、输出保护和地址保活要求。"
+      }
+    ],
+    "limitations": [
+      "CPU 模型不能证明目标 GPU 的映射支持、UVM 迁移策略、TLB、硬件可见性、allocator、CUDA Graph 重放、物理重叠或性能；正文对此声明清楚，这些未实测范围本身不构成拒绝理由。",
+      "来源结论仅限所供固定版本与 2026-04-30 cutoff；未读取源码归档、reader.html 或完整 CUDA 指南。",
+      "本次使用任务提供的完整文本、摘录和绑定哈希；未从文件系统独立重算哈希，也未验证离线链接目标实际存在。",
+      "审阅了所供真实 Python 预检记录，但本次未重新执行 Python 文件；独立执行的是工具内 JavaScript 算术及相关状态函数的逐句转写反例，不属于设备实验或整个 Python 脚本重跑。"
+    ],
+    "checks": [
+      {
+        "script": "tools/check_k_hw_013_full.py",
+        "args": []
+      }
+    ],
+    "no_checks_reason": "",
+    "reading_scope": "完整阅读任务所供全文，零基半开字符范围：AGENTS.md [0,567)；docs/knowledge-method.md [0,2251)；docs/knowledge-review.md [0,3016)；knowledge/hardware/shared-memory-paths.md [0,11888)；knowledge/sources/S-MLX-MEM.md [0,495)；knowledge/sources/S-CUDA-ASYNC.md [0,1610)；knowledge/sources/S-TORCH-CUDA.md [0,1468)；knowledge/hardware/host-device-transfer.md [0,6485)；knowledge/algorithms/heterogeneous-execution.md [0,3935)；knowledge/system-semantics/memory-allocators.md [0,4191)；references/S-MLX-MEM/fulltext.txt [0,2656)；references/S-TORCH-CUDA/fulltext.txt [0,80851)。tools/check_k_hw_013_full.py 阅读完整 supplied test_script，从 import sys 至 sys.exit(main())；完整阅读 author_notes 与 actual_preflight。仅阅读所供摘录：knowledge/hardware/metal-unified-memory.md [0,4000)、[8000,10918)、[12000,15707)；knowledge/frameworks/streams-allocator.md [0,5750)、[8000,12875)；knowledge/frameworks/mlx-serving.md [0,8990)、[12000,13635)；knowledge/algorithms/attention-io.md [0,5315)、[8000,13310)；knowledge/hardware/rocm-execution.md [0,3767)、[8000,14858)。references/S-CUDA-ASYNC/fulltext.txt 仅限 [4000,5451)、[40000,44000)、[72000,80000)、[88000,92000)、[156000,164000)、[204000,208000)、[212000,216000)、[228000,232000)、[240000,244000)、[260000,264000)、[300000,304000)、[344000,348000)、[352000,356000)、[456000,460000)、[488000,500000)、[508000,512000)、[644000,652000)、[692000,696000)、[732000,736000)、[940000,956000)、[960000,972000)、[1020000,1044000)、[1052000,1060000)、[1068000,1076000)、[1088000,1092000)、[1104000,1108000)。所有 excerpt 均未列入 documents，未声称阅读其完整原件。",
+    "test_assessment": "所供 actual_preflight 绑定脚本哈希 fea77c84b1b08c9da465954116fa1533357b9c91a92d3ac6e55edcae679ff5a2，记录在 remote_bwrap 隔离环境以 Python 3.12、-I -S -B -X utf8 执行，returncode=0、stderr 为空、未超时。本次核对记录与完整脚本，没有把该记录称为审阅者重新运行。逐字节枚举与算术页集合是有效的不同参考，10 个范围覆盖空、对齐、跨页、单字节和非整除边界，结束地址错误变体确实产生差异。staging、别名与一字节页迁移检查具有明确算术不变量。成本阈值虽有代数比较和 always-explicit 负对照，却沿用不一致的本地读取量，不能验证同一轨迹的选择。所有权候选与所谓独立参考共享 read 不检查 writer 的遗漏；epoch 从未进入完成匹配。现有旧完成案例只检出未知 ID，没有检出旧代事件清除新代同名使用者，也没有实际旧 epoch 错误变体；关闭时有读者的轨迹未出现在四条测试中。loose_write_during_read 直接改字段并返回 True，没有将故障状态送入统一状态不变量检查。审阅者实际执行 JavaScript 独立复算，确认 R=4、x=0.27 时路径选择反转，以及候选和参考共同接受写后读冲突、无法区分旧完成与新读者；另确认按 M 的当前定义会把组合例 3 MiB 迁移算成 48 MiB。应修正模型与参考后再运行检查，不能以当前退出码 0 关闭这些问题。"
+  },
+  "format_status": "strict_json",
+  "format_error": null,
+  "output_text": "{\n  \"entry_id\": \"K-HW-013\",\n  \"body_sha256\": \"96ec402fb123f30a3813dd8d849c154c5ee5eea7d4679e2aaa8928aa75a1bcf2\",\n  \"reviewer\": \"sol-reviewer:K-HW-013:round-1\",\n  \"decision\": \"revise\",\n  \"documents\": {\n    \"AGENTS.md\": \"b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a\",\n    \"docs/knowledge-method.md\": \"69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb\",\n    \"docs/knowledge-review.md\": \"f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21\",\n    \"knowledge/hardware/shared-memory-paths.md\": \"96ec402fb123f30a3813dd8d849c154c5ee5eea7d4679e2aaa8928aa75a1bcf2\",\n    \"knowledge/sources/S-MLX-MEM.md\": \"1d65e19c9f1394965bdf43eb8e6049a56dcdbe06af5602af386d4608845192d0\",\n    \"knowledge/sources/S-CUDA-ASYNC.md\": \"40df9287d0648a8ef55a046ceb1c18dd402619ede6e57ca33d3f90e4ace3da05\",\n    \"knowledge/sources/S-TORCH-CUDA.md\": \"8ee61677a1e35d475d9bb122b2c7fa824ccf054acefbe2f12345d72c1fb1b00e\",\n    \"knowledge/hardware/host-device-transfer.md\": \"e4921a0714af21f7ab1a336f40af662f716f2c64a42dd598eb2cede548c858d2\",\n    \"knowledge/algorithms/heterogeneous-execution.md\": \"8fd777e06b150eaba4e3288ccb188adbb975e37c28c77a72a9b6878a70e027f4\",\n    \"knowledge/system-semantics/memory-allocators.md\": \"2e7258787b94ad142c7c236541e8718803ad30b273d08e6c398dff673a1df838\",\n    \"references/S-MLX-MEM/fulltext.txt\": \"472f16846acae9c84a7daca168b900903579e71b5c05aa2376229f79a0d70f64\",\n    \"references/S-TORCH-CUDA/fulltext.txt\": \"4756fc37be9c52d4128b5f4b46f996fddb8b136a9ef51183a6f0e1c7d49b18df\",\n    \"tools/check_k_hw_013_full.py\": \"fea77c84b1b08c9da465954116fa1533357b9c91a92d3ac6e55edcae679ff5a2\"\n  },\n  \"criteria\": {\n    \"definition\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"清楚区分逻辑对象、内容版本、物理分配、访问范围与四种关系，也给出规划输入输出。成本符号的具体不一致列入 cost。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/hardware/shared-memory-paths.md\",\n          \"quote\": \"设逻辑对象为 O=(id, va, bytes, version)。\"\n        },\n        {\n          \"path\": \"knowledge/hardware/shared-memory-paths.md\",\n          \"quote\": \"输出：路径、容量预留、复制/映射/迁移计划与完成票据；或拒绝原因\"\n        }\n      ]\n    },\n    \"legality\": {\n      \"assessment\": \"partial\",\n      \"reason\": \"映射能力、原子限制、生产可见性、源与目的生命周期和图地址保活均有实质解释；但把按捕获顺序重放表述为所有图共享池的必要条件，遗漏固定来源明确允许的独立图情形。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/hardware/shared-memory-paths.md\",\n          \"quote\": \"源在 DMA 读取结束前不能改写，目的在复制写入结束前不能被读者消费。\"\n        },\n        {\n          \"path\": \"knowledge/hardware/shared-memory-paths.md\",\n          \"quote\": \"多个图共享池只有在确定按捕获顺序重放且从不并发时才安全\"\n        }\n      ]\n    },\n    \"algorithm\": {\n      \"assessment\": \"partial\",\n      \"reason\": \"已提供初始化、候选筛选和取消排空原则，但执行部分没有按访问轨迹推进的循环和完整状态更新。组合案例需要的写后失效与再次复制、写者登记、读者结束及版本发布尚不能由伪代码独立恢复。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/hardware/shared-memory-paths.md\",\n          \"quote\": \"第一步：枚举每个非空访问并计算页集\"\n        },\n        {\n          \"path\": \"knowledge/hardware/shared-memory-paths.md\",\n          \"quote\": \"active_readers 为空，writer 为空，plan_epoch 等于 O.version\"\n        },\n        {\n          \"path\": \"knowledge/hardware/shared-memory-paths.md\",\n          \"quote\": \"每次主机写入产生新的 version；GPU 读取前等待该 version 可见\"\n        }\n      ]\n    },\n    \"cost\": {\n      \"assessment\": \"partial\",\n      \"reason\": \"六类成本、物理身份去重和重叠边界已展开，组合例中的主要字节除以带宽算术成立。但一般复制公式与映射公式使用不同读取量，迁移次数定义与乘法不一致且 R_t 未定义；映射访问又被错误地按页大小推断事务放大。这些问题会改变路径选择。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/hardware/shared-memory-paths.md\",\n          \"quote\": \"T_copy ≈ D/B_l + R·D/B_d + T_prep + T_sync + T_stage。\"\n        },\n        {\n          \"path\": \"knowledge/hardware/shared-memory-paths.md\",\n          \"quote\": \"T_mig ≈ M·N_p·g/B_l + R_t·N_p·g/B_d + F·T_f + T_prefetch + T_sync。\"\n        },\n        {\n          \"path\": \"knowledge/hardware/shared-memory-paths.md\",\n          \"quote\": \"远端读取会按整页事务放大。\"\n        }\n      ]\n    },\n    \"adaptation\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"对重复访问、小比例访问、交替写读、容量、页大小、能力变化及共享资源竞争给出了保留机制与调整信号。定量选择需在修正成本模型后重算。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/hardware/shared-memory-paths.md\",\n          \"quote\": \"迁移次数随交替次数增长时，比较批量交接、双缓冲或计算放置；不能允许覆盖在途页\"\n        },\n        {\n          \"path\": \"knowledge/hardware/shared-memory-paths.md\",\n          \"quote\": \"不支持时拒绝该路径，不沿用旧假设\"\n        }\n      ]\n    },\n    \"diagnosis\": {\n      \"assessment\": \"partial\",\n      \"reason\": \"诊断表有竞争解释、干预和反证修正，设备验证边界也声明清楚；但配套检查的冲突参考遗漏与候选相同的写后读错误，旧 epoch 检查没有携带 epoch 的事件或相应错误变体，不能支撑正文和作者所述验证范围。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/hardware/shared-memory-paths.md\",\n          \"quote\": \"负对照应实际进入同一判据，而不是只打印成功。\"\n        },\n        {\n          \"path\": \"knowledge/hardware/shared-memory-paths.md\",\n          \"quote\": \"旧 epoch 的迟到完成清除新对象\"\n        },\n        {\n          \"path\": \"knowledge/hardware/shared-memory-paths.md\",\n          \"quote\": \"用独立的冲突关系参考比较接受/拒绝决定\"\n        }\n      ]\n    }\n  },\n  \"findings\": [\n    {\n      \"id\": \"K-HW-013-C01\",\n      \"criterion\": \"cost\",\n      \"evidence\": \"正文并列使用“T_copy ≈ D/B_l + R·D/B_d + T_prep + T_sync + T_stage。”与“T_map ≈ R·α·x·D/B_l + T_sync + T_prep_map。”；脚本 explicit_cost 返回 D / link_bw + R * D / local_bw，threshold_x 返回 1.0 / R + link_bw / local_bw。\",\n      \"impact\": \"同一轨迹每次只读取 xD 时，完整复制 D 不会使消费者每次读取量自动变成 D。以正文带宽、D=64 MiB、R=4、x=0.27、α=1 且忽略其他成本复算，实际复制路径约 4.0381 ms，映射约 4.2188 ms，应选复制；脚本却将复制算成 4.3945 ms，选择映射。现有阈值检查验证了不同工作量之间的比较。\",\n      \"blocking\": true,\n      \"required_revision\": \"分别定义实际复制字节与消费者本地读取字节。完整复制、无本地事务放大的该轨迹应使用 D/B_l + R·x·D/B_d；相应阈值为 x=1/[R·(α−B_l/B_d)]，并说明分母、取值域及其他成本的适用条件。同步修正脚本，用同一访问枚举构造两条路径的独立字节账，检出当前错误公式。\"\n    },\n    {\n      \"id\": \"K-HW-013-C02\",\n      \"criterion\": \"cost\",\n      \"evidence\": \"正文定义“M 为总页迁移次数”，随后写“T_mig ≈ M·N_p·g/B_l + R_t·N_p·g/B_d + F·T_f + T_prefetch + T_sync。”，没有定义 R_t。\",\n      \"impact\": \"若 M 已是所有页迁移事件的总数，再乘被触及页数会重复计数。组合案例的 16 页各迁移三次共有 48 次页迁移，真实迁移量为 48×64 KiB=3 MiB，而按当前定义代入公式得到 48 MiB。未定义的 R_t 也使本地读取项无法核对。\",\n      \"blocking\": true,\n      \"required_revision\": \"统一迁移计数口径，例如使用各页迁移次数之和 Σ_p m_p·g，或明确限定 M 为同一页集合的整批迁移轮数。定义本地读取量及全部符号，避免把触及页容量直接当成消费者实际读取量。用组合轨迹和不等迁移次数的页事件账核对公式。\"\n    },\n    {\n      \"id\": \"K-HW-013-C03\",\n      \"criterion\": \"cost\",\n      \"evidence\": \"正文写“若访问退化为每页一个元素，α 可能接近 g/元素字节，远端读取会按整页事务放大。”；所供 CUDA 摘录说明 mapped memory 按 kernel 访问隐式传输并要求合并访问，没有给出每次映射读取传输整页的保证。\",\n      \"impact\": \"把地址翻译或迁移粒度当成映射读取事务粒度，会严重高估稀疏映射流量，并错误解释页大小变化的效果。TLB 缺失、页迁移与远端数据事务是不同成本。\",\n      \"blocking\": true,\n      \"required_revision\": \"删除映射读取必然按整页传输的断言。按目标支持的事务、访问合并、缓存与实际远端字节定义 α；页粒度另用于页表、TLB 和确实发生的页迁移。若保留整页读取情形，明确其额外机制与证据，不能由每页一个元素直接推出。\"\n    },\n    {\n      \"id\": \"K-HW-013-A01\",\n      \"criterion\": \"algorithm\",\n      \"evidence\": \"伪代码仅在“第一步：枚举每个非空访问并计算页集”中遍历 A；执行部分对显式复制只写“预留目的和 staging；先提交复制”，初始化的 writer 后续没有更新，active_readers 只有登记而没有结束处理；提交条件为“version 匹配且 active_readers 允许时”。\",\n      \"impact\": \"输入包含多个阶段及读写访问，但执行部分没有说明如何逐阶段建立生产依赖、关闭读者、处理 CPU 改写后的旧副本失效和再次复制。正文组合例需要第二次 1 MiB H2D，这一动作无法从当前伪代码的推进规则恢复；只读访问与新内容版本发布的关系也不明确。\",\n      \"blocking\": true,\n      \"required_revision\": \"补齐按 phase 和依赖图推进访问的循环：在授权访问前检查冲突，登记实际使用及完成票据，完成后更新读写状态；主机写入后使相应设备副本范围失效，消费前复制缺失版本并发布有效范围。明确内容版本与存储 epoch 的更新时机。通用所有权步骤可明确委托给已链接的完整协议，但本章仍须展开路径特有的数据移动和驻留转换。\"\n    },\n    {\n      \"id\": \"K-HW-013-D01\",\n      \"criterion\": \"diagnosis\",\n      \"evidence\": \"脚本 Ownership.read 只检查 phase 与 ident，没有检查 writer；reference_accepts 的 read 分支同样不检查活动写者。done(self, ident) 不接收 epoch，reuse 虽递增 epoch，却清空 ids 后允许重新使用相同 ident。现有 invalid_late_done 只测试复用后不存在同名新读者的情况。正文却声称覆盖“关闭时仍有读者、复用后旧完成”，作者还声称实际注入了旧完成负对照。\",\n      \"impact\": \"按所供函数逐句转写的 JavaScript 反例中，write(w1)→read(r1) 被候选和参考同时接受。完成旧 r1、关闭回收、复用、登记新 r1 后，旧 done(r1) 也能清除新读者并允许关闭。当前比较器共享缺陷，epoch 字段没有参与事件验证；预检成功不能证明读写互斥或旧代隔离。\",\n      \"blocking\": true,\n      \"required_revision\": \"用独立冲突定义覆盖两个方向的读写冲突。完成通知携带并验证 epoch 与使用者身份，或明确实现全局不复用的使用身份。加入旧完成与同名新使用者碰撞、写者存在时读入、带读者关闭的实际轨迹；让错误变体进入相同参考或状态不变量。修正正文及作者说明中超出实际覆盖的陈述。\"\n    },\n    {\n      \"id\": \"K-HW-013-L01\",\n      \"criterion\": \"legality\",\n      \"evidence\": \"正文写“多个图共享池只有在确定按捕获顺序重放且从不并发时才安全”。完整 PyTorch 来源同时明确：“It's also safe to share a memory pool across separate graphs that do not depend\\non each other's outputs, provided they never run concurrently.”\",\n      \"impact\": \"正文把一种充分条件升级为唯一合法条件，排除了来源明确允许的、彼此无输出依赖且不并发的独立图共享情形。\",\n      \"blocking\": true,\n      \"required_revision\": \"区分来源给出的两种共享情形，或明确把固定重放顺序限定为本章采用的保守策略。同步调整适应表中的必要条件表述，保留不并发、输出保护和地址保活要求。\"\n    }\n  ],\n  \"limitations\": [\n    \"CPU 模型不能证明目标 GPU 的映射支持、UVM 迁移策略、TLB、硬件可见性、allocator、CUDA Graph 重放、物理重叠或性能；正文对此声明清楚，这些未实测范围本身不构成拒绝理由。\",\n    \"来源结论仅限所供固定版本与 2026-04-30 cutoff；未读取源码归档、reader.html 或完整 CUDA 指南。\",\n    \"本次使用任务提供的完整文本、摘录和绑定哈希；未从文件系统独立重算哈希，也未验证离线链接目标实际存在。\",\n    \"审阅了所供真实 Python 预检记录，但本次未重新执行 Python 文件；独立执行的是工具内 JavaScript 算术及相关状态函数的逐句转写反例，不属于设备实验或整个 Python 脚本重跑。\"\n  ],\n  \"checks\": [\n    {\n      \"script\": \"tools/check_k_hw_013_full.py\",\n      \"args\": []\n    }\n  ],\n  \"no_checks_reason\": \"\",\n  \"reading_scope\": \"完整阅读任务所供全文，零基半开字符范围：AGENTS.md [0,567)；docs/knowledge-method.md [0,2251)；docs/knowledge-review.md [0,3016)；knowledge/hardware/shared-memory-paths.md [0,11888)；knowledge/sources/S-MLX-MEM.md [0,495)；knowledge/sources/S-CUDA-ASYNC.md [0,1610)；knowledge/sources/S-TORCH-CUDA.md [0,1468)；knowledge/hardware/host-device-transfer.md [0,6485)；knowledge/algorithms/heterogeneous-execution.md [0,3935)；knowledge/system-semantics/memory-allocators.md [0,4191)；references/S-MLX-MEM/fulltext.txt [0,2656)；references/S-TORCH-CUDA/fulltext.txt [0,80851)。tools/check_k_hw_013_full.py 阅读完整 supplied test_script，从 import sys 至 sys.exit(main())；完整阅读 author_notes 与 actual_preflight。仅阅读所供摘录：knowledge/hardware/metal-unified-memory.md [0,4000)、[8000,10918)、[12000,15707)；knowledge/frameworks/streams-allocator.md [0,5750)、[8000,12875)；knowledge/frameworks/mlx-serving.md [0,8990)、[12000,13635)；knowledge/algorithms/attention-io.md [0,5315)、[8000,13310)；knowledge/hardware/rocm-execution.md [0,3767)、[8000,14858)。references/S-CUDA-ASYNC/fulltext.txt 仅限 [4000,5451)、[40000,44000)、[72000,80000)、[88000,92000)、[156000,164000)、[204000,208000)、[212000,216000)、[228000,232000)、[240000,244000)、[260000,264000)、[300000,304000)、[344000,348000)、[352000,356000)、[456000,460000)、[488000,500000)、[508000,512000)、[644000,652000)、[692000,696000)、[732000,736000)、[940000,956000)、[960000,972000)、[1020000,1044000)、[1052000,1060000)、[1068000,1076000)、[1088000,1092000)、[1104000,1108000)。所有 excerpt 均未列入 documents，未声称阅读其完整原件。\",\n  \"test_assessment\": \"所供 actual_preflight 绑定脚本哈希 fea77c84b1b08c9da465954116fa1533357b9c91a92d3ac6e55edcae679ff5a2，记录在 remote_bwrap 隔离环境以 Python 3.12、-I -S -B -X utf8 执行，returncode=0、stderr 为空、未超时。本次核对记录与完整脚本，没有把该记录称为审阅者重新运行。逐字节枚举与算术页集合是有效的不同参考，10 个范围覆盖空、对齐、跨页、单字节和非整除边界，结束地址错误变体确实产生差异。staging、别名与一字节页迁移检查具有明确算术不变量。成本阈值虽有代数比较和 always-explicit 负对照，却沿用不一致的本地读取量，不能验证同一轨迹的选择。所有权候选与所谓独立参考共享 read 不检查 writer 的遗漏；epoch 从未进入完成匹配。现有旧完成案例只检出未知 ID，没有检出旧代事件清除新代同名使用者，也没有实际旧 epoch 错误变体；关闭时有读者的轨迹未出现在四条测试中。loose_write_during_read 直接改字段并返回 True，没有将故障状态送入统一状态不变量检查。审阅者实际执行 JavaScript 独立复算，确认 R=4、x=0.27 时路径选择反转，以及候选和参考共同接受写后读冲突、无法区分旧完成与新读者；另确认按 M 的当前定义会把组合例 3 MiB 迁移算成 48 MiB。应修正模型与参考后再运行检查，不能以当前退出码 0 关闭这些问题。\"\n}",
+  "elapsed_seconds": 283.547
+}

@@ -1,0 +1,271 @@
+{
+  "role": "reviewer",
+  "engine": "sol",
+  "requested_model": "gpt-6.1-sol",
+  "reasoning_effort": "high",
+  "prompt_sha256": "71f506919a8363f30249a6a2017188fbf9f9032da85e6456a756307ede7c35f1",
+  "usage": [
+    {
+      "input_tokens": 810589,
+      "cached_input_tokens": 614912,
+      "cache_write_input_tokens": 0,
+      "output_tokens": 6766,
+      "reasoning_output_tokens": 2165
+    }
+  ],
+  "answer": "{\n  \"entry_id\": \"K-SYS-009\",\n  \"body_sha256\": \"ee40de53b4ef61a20dc99a9c0fb213cbacabb009f9952e09e6bdc76c2754a285\",\n  \"reviewer\": \"sol-reviewer:K-SYS-009:round-3\",\n  \"decision\": \"accept\",\n  \"documents\": {\n    \"AGENTS.md\": \"b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a\",\n    \"docs/knowledge-method.md\": \"69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb\",\n    \"docs/knowledge-review.md\": \"f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21\",\n    \"knowledge/system-semantics/distributed-state-transfer.md\": \"ee40de53b4ef61a20dc99a9c0fb213cbacabb009f9952e09e6bdc76c2754a285\",\n    \"knowledge/sources/S-DISTSERVE.md\": \"968cbf46667e862085b0e2d72405805351bd33880ac23d8d055bf259192411f4\",\n    \"knowledge/sources/S-CUDA-TOPOLOGY.md\": \"39d4039179728ce8570c3b9ec3801aaad52108d030f278fb598a4d6d47de1f8e\",\n    \"knowledge/sources/S-VLLM-PREFIX.md\": \"9e3f16fdac245da8aa97deea55a820642b67e626329748c980eaa2fc0b7656f5\",\n    \"knowledge/sources/S-RDMA.md\": \"660948886af9019ac90e6c58ab7b2a4ca9dbf282f1bb74de37162403f24f4d49\",\n    \"knowledge/sources/S-GPUDIRECT.md\": \"7a14b2ca6cdf1f54e79fc02dbf10739305b285a6d454f08cf03594249ffd36f1\",\n    \"knowledge/sources/S-LLUMNIX.md\": \"86e48c54e7733dffeaec420e7205c4eeb3d28f7d59c7d0d8c2f16d2fa275d586\",\n    \"knowledge/hardware/transport-and-rdma.md\": \"72bcf1d8948eae41c243e422f6b0370462dcc4bf33ef86f5664a09b4e46d3ba2\",\n    \"knowledge/system-semantics/distributed-kv-store.md\": \"ecc4f667ff186b05fececba52c500e43d0460def524e6200b9cfa00fcdb984c0\",\n    \"knowledge/system-semantics/serving-recovery.md\": \"f551fa1f1e6213469c856a880839eefff504fb39f4dd692000b2df80a20a7f5e\",\n    \"knowledge/algorithms/routing-and-migration.md\": \"1b9dcfd5fea499a91611459bb936e1c1c49ceb562171fb0f1ba360a7010f5d32\",\n    \"knowledge/system-semantics/evidence-and-independent-checks.md\": \"50b7c97de928be322713ef149fb734c0c20acda17c4a321c46a198b0019831be\",\n    \"knowledge/tools/timeline-attribution.md\": \"cf4b01a8ca5cb35e653b65fbe2bc018d3ae5cc42788a77688524fb29c7da817d\",\n    \"knowledge/algorithms/kv-offload-prefetch.md\": \"a7088eba5c78cd9e96cf011d61946ad7dec4ecb6378ac16e7f2fc3820af38301\",\n    \"references/S-VLLM-PREFIX/fulltext.txt\": \"0d6423dca458bb628af7d15961bdba92b0d501660f93690610a354ef68f07353\",\n    \"references/S-RDMA/fulltext.txt\": \"9f4bea8bc130fc7dcdf0b53d20ce7269555cddd2a7c67e5d54c6dbd7a55b2720\",\n    \"tools/check_k_sys_009_full.py\": \"57db6b3e6e436145e7328c05283f12e8a3abf5b87b6e0df06b170952fd9f7341\"\n  },\n  \"criteria\": {\n    \"definition\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"动机、输入输出、逻辑坐标及身份分工完整。S(p)、已知输入 A、未消费 ticket 和输出游标分开；组合轨迹正确区分采样 token 与该 token 尚未产生的 KV。普通 causal decoder、完整步骤冻结及全部状态就绪后接管的范围明确。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/system-semantics/distributed-state-transfer.md\",\n          \"quote\": \"令 x[0:p) 表示已消费的 token，S(p) 表示所有必需状态族完成这些输入后的模型状态；下一次消费位置为 p。\"\n        },\n        {\n          \"path\": \"knowledge/system-semantics/distributed-state-transfer.md\",\n          \"quote\": \"迁移输入包括源与目标描述、计算身份、共同恢复位置、目标已有状态、请求控制状态、容量和传输能力。输出是目标可执行视图与唯一的新执行授权，或者明确的中止、待排空或待恢复状态。\"\n        }\n      ]\n    },\n    \"legality\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"计算相容性、稳定快照、逐副本覆盖、共享尾页隔离、消费可见性、唯一授权和物理最后使用均有明确条件，并与 wire layout、push/pull 等实现选择分开。固定来源支持前缀身份、部分 WR 提交、CQE 与通知区别及 GPUDirect 主机排序；应用权威协议被明确标为独立推导，未冒充来源保证。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/system-semantics/distributed-state-transfer.md\",\n          \"quote\": \"以下条件来自正确性：读取前生产和可见性完成；快照内容稳定；每个目标物理需求贡献完整；发布绑定同一 manifest；同一请求只有一个有效提交权；最后物理使用结束前不复用存储。\"\n        },\n        {\n          \"path\": \"knowledge/system-semantics/distributed-state-transfer.md\",\n          \"quote\": \"这是本章的应用协议推导，不是 RDMA、DistServe 或 Llumnix 自动提供的事务接口。\"\n        }\n      ]\n    },\n    \"algorithm\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"两段伪代码贯通需求枚举、源覆盖、分页与通道分段、冻结计划、提交前去重、实际复制、逐目标可见、包级 READY、权威决定、安装与失败排空。地址算例的源偏移 29、目标偏移 3 成立。C 与 W 已分开，W 绑定目标副本、分配及映射，READY 使用原始目标需求，关闭 K-SYS-009-target-replica-task-key。完整候选复核未发现仍需阻断的语义问题，campaign-K-SYS-009-r2 的具体修订要求已落实。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/system-semantics/distributed-state-transfer.md\",\n          \"quote\": \"目标写入键 W 则为 (tx、阶段计划身份、C、目标绑定 B_d)。\"\n        },\n        {\n          \"path\": \"knowledge/system-semantics/distributed-state-transfer.md\",\n          \"quote\": \"READY 检查的需求全集应来自目标执行几何与分配描述，而不能从去重表反推。\"\n        },\n        {\n          \"path\": \"knowledge/system-semantics/distributed-state-transfer.md\",\n          \"quote\": \"只有相关访问全部排空，才归还本次私有页、staging 和注册资源\"\n        }\n      ]\n    },\n    \"cost\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"六类成本均落实到具体工作与对象，区分逻辑内容、目标物理副本、链路字节、分配容量和驻留时间。640/1024/768 B、480/960 B、512/128 MiB、6.25 ms、530 MiB 及追赶总量 1111 MiB、11.11 s 的单位和算术一致。流水公式明确独立阶段及无资源争用假设，未把跨设备累计访存直接转换为单设备时间。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/system-semantics/distributed-state-transfer.md\",\n          \"quote\": \"更一般地，令 m_d(z) 为逻辑元素 z 要新建的目标物理副本数，则目的有效数据写入量为 Σ_z m_d(z)s_z，辅助状态另按其实际绑定计量。\"\n        },\n        {\n          \"path\": \"knowledge/system-semantics/distributed-state-transfer.md\",\n          \"quote\": \"这要求阶段可并行、缓冲足够且无共享资源争用。\"\n        },\n        {\n          \"path\": \"knowledge/system-semantics/distributed-state-transfer.md\",\n          \"quote\": \"若来自既有池，应在池内核算，不能再把池总容量与这些对象相加。\"\n        }\n      ]\n    },\n    \"adaptation\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"TP/PP、head 复制、目标命中集合、量化封组、带宽竞争、容量和请求剩余寿命变化均会触发重新规划或成本重估。q<1 与固定准备开销残余下限推导正确；窗口覆盖及递归状态不被错误纳入 append-only 模型。保留、调整和放弃在线迁移的条件明确。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/system-semantics/distributed-state-transfer.md\",\n          \"quote\": \"若 B≤g、残余不降、目标余量不足、请求即将结束或重试消耗已超过收益预算，应停止在线追赶，选择有界的冻结复制、保持源执行或中止迁移。\"\n        },\n        {\n          \"path\": \"knowledge/system-semantics/distributed-state-transfer.md\",\n          \"quote\": \"窗口覆盖和递归状态不满足上述增长模型。可以在完整步骤边界冻结、复制独立版本，或增加模型特定检查点与重放协议；没有稳定快照时应放弃该在线方案。\"\n        }\n      ]\n    },\n    \"diagnosis\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"诊断表给出竞争解释、单变量干预、可区分预测及反证后的修正。任务键负对照实际进入规划、去重和复制机制，独立参考不从缩小后的任务表生成；因此本轮检查实质检验了历史缺陷。设备实验设计与已执行 CPU 检查的范围清楚分开。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/system-semantics/distributed-state-transfer.md\",\n          \"quote\": \"正确路径每个落点写一次；去目标字段后任务账自报完成而独立落点参考报漏写，支持身份合并错误\"\n        },\n        {\n          \"path\": \"knowledge/system-semantics/distributed-state-transfer.md\",\n          \"quote\": \"检查中的完成、可见和排空是抽象证明事件，不是查询真实 CQ、CUDA event 或 NIC 状态。\"\n        }\n      ]\n    }\n  },\n  \"findings\": [],\n  \"limitations\": [\n    \"结论限定于普通 causal decoder、稳定历史、完整步骤冻结和全部必需状态就绪后接管的基线；不验收边接收边执行、窗口或递归状态的在线迁移扩展。\",\n    \"CPU 整数标签、集合和协议事件检查不证明真实 attention 数值、量化编解码、CUDA/GPUDirect 可见性、NIC 排空、注册撤销、带宽、延迟或 Agent 使用收益。\",\n    \"TaskLedger 为串行模型；并发首次登记、账本持久化、多尝试隔离、分配别名组合和权威故障恢复需要实现证据。字段变更检查主要验证键区分及封闭后拒绝新增，不等于执行了完整重规划。\",\n    \"本审阅核对了用户提供且绑定当前脚本哈希的实际 preflight 记录，没有自行重跑 Python。当前工具没有文件读取或 Python 执行能力，资源列表为空，未能读取本地 infraagents-knowledge-build/SKILL.md，也未实际检查文件系统中的离线链接存在性。\",\n    \"四份标为 excerpt 的来源原文仅支持所供范围内的事实核对；未声称读取完整原始文档、PDF 版面或上游源码归档。\"\n  ],\n  \"checks\": [\n    {\n      \"script\": \"tools/check_k_sys_009_full.py\",\n      \"args\": []\n    }\n  ],\n  \"no_checks_reason\": \"\",\n  \"reading_scope\": \"完整阅读所供文件：AGENTS.md [0,567)；docs/knowledge-method.md [0,2251)；docs/knowledge-review.md [0,3016)；knowledge/system-semantics/distributed-state-transfer.md [0,17560)；knowledge/sources/S-DISTSERVE.md [0,443)；S-CUDA-TOPOLOGY.md [0,500)；S-VLLM-PREFIX.md [0,521)；S-RDMA.md [0,739)；S-GPUDIRECT.md [0,615)；S-LLUMNIX.md [0,962)；knowledge/hardware/transport-and-rdma.md [0,4088)；knowledge/system-semantics/distributed-kv-store.md [0,3441)；serving-recovery.md [0,3834)；knowledge/algorithms/routing-and-migration.md [0,3228)；knowledge/system-semantics/evidence-and-independent-checks.md [0,3845)；knowledge/tools/timeline-attribution.md [0,3485)；knowledge/algorithms/kv-offload-prefetch.md [0,3710)；references/S-VLLM-PREFIX/fulltext.txt [0,13926)；references/S-RDMA/fulltext.txt [0,25147)。完整检查 candidate.test_script 所供 tools/check_k_sys_009_full.py，从文件说明至 main 调用，并阅读 author_notes、当前待处理 findings 和 actual_preflight。相关章节仅阅读摘录：knowledge/algorithms/disaggregated-serving.md [0,4000)、[16000,18071)；knowledge/system-semantics/collective-ordering.md [8000,10258)、[16000,19813)；knowledge/algorithms/heterogeneous-state-cache.md [0,4049)、[12000,14022)；knowledge/models/gqa-kv-heads.md [0,2071)、[12000,16000)；knowledge/models/mla.md [0,2420)、[12000,15651)；knowledge/system-semantics/host-device-timing.md [0,4000)、[8000,10071)；knowledge/system-semantics/position-mask-cache.md [0,4000)、[8000,10071)。来源原文仅阅读摘录：references/S-DISTSERVE/fulltext.txt [12000,20000)、[28000,52000)、[60000,69993)、[72000,76000)、[80000,84000)；references/S-CUDA-TOPOLOGY/fulltext.txt [40000,41993)、[76000,80000)、[84000,88000)、[224000,228000)、[296000,304000)、[472000,476000)、[488000,496000)、[500000,504000)、[508000,512000)、[1064000,1072000)；references/S-GPUDIRECT/fulltext.txt [0,45993)、[48000,52000)；references/S-LLUMNIX/fulltext.txt [0,13993)、[20000,36000)、[40000,44000)、[48000,52000)、[56000,60000)、[64000,72000)。范围均为所供提取文本的零起点半开字符区间；documents 仅列完整供给并阅读的文件，哈希按指定绑定复制，未声称独立复算本地文件哈希。\",\n  \"test_assessment\": \"检查了实际算法而非仅看退出码。transfer_case 先从原始目标几何建立 required_atoms 和 expected，再由 plan_tasks 按两端页界及通道范围规划，经 TaskLedger.submit 去重、complete 实际读取源布局并写目标布局、ready 逐需求核对。physical_reference 反向枚举物理槽，不调用 address、planner 或 task_key；与需求集合参考共同检验覆盖及内容。普通案例包含 N=0、1、5、7，并覆盖空局部分片、单通道及等价源副本；复制案例有 256 个任务、480 次元素写入。omit_target 和 omit_channels 真实改变键后进入同一路径，分别只写 240 和 160 个元素，自身任务表仍错误宣告完成；两者分别被原始需求检查和独立物理内容参考拒绝，直接检验本轮修复。错误布局覆盖全部位置但内容参考拒绝，说明覆盖计数没有代替内容验证。协议另有独立日志审计及遗漏 scale、ABORT 后提前回收负对照，覆盖 24 种完成顺序和空 manifest，但不等于穷举所有故障交错。成本部分核对 Fraction 追赶算术、容量和独立枚举的副本工作量。所供 actual_preflight 的 script_sha256 为 57db6b3e6e436145e7328c05283f12e8a3abf5b87b6e0df06b170952fd9f7341，远端隔离 Python 运行 returncode=0、stderr 为空、未超时；stdout 报告 360 个区间案例、832 次普通布局写入、480 次复制写入及 25 条合法协议顺序，与脚本路径一致。这是协调者当前 Python 执行证据，不是作者此前 JavaScript 核算或本审阅者自行执行。未覆盖真实并发原子性、完整多阶段多尝试恢复、模型推进及设备语义；正文已明确声明这些边界，可作为 limitation 保留。\"\n}",
+  "exit_code": 0,
+  "status": "completed",
+  "timeout_seconds": 1800,
+  "response_path": "D:\\桌面\\xdb\\InfraAgents\\InfraAgents-know-astra-new\\InfraAgents-know\\docs\\evidence\\knowledge-workflow-20261028-batch9\\full_build\\K-SYS-009\\round-3\\reviewer-attempt-001\\answer.txt",
+  "record_path": "D:\\桌面\\xdb\\InfraAgents\\InfraAgents-know-astra-new\\InfraAgents-know\\docs\\evidence\\knowledge-workflow-20261028-batch9\\full_build\\K-SYS-009\\round-3\\reviewer-attempt-001\\record.json",
+  "tool_events": [
+    {
+      "type": "item.completed",
+      "item": {
+        "id": "item_1",
+        "type": "mcp_tool_call",
+        "server": "codex",
+        "tool": "list_mcp_resources",
+        "arguments": {},
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"resources\":[]}"
+            }
+          ],
+          "structured_content": null
+        },
+        "error": null,
+        "status": "completed"
+      }
+    },
+    {
+      "type": "item.completed",
+      "item": {
+        "id": "item_2",
+        "type": "mcp_tool_call",
+        "server": "codex",
+        "tool": "list_mcp_resource_templates",
+        "arguments": {},
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"resourceTemplates\":[]}"
+            }
+          ],
+          "structured_content": null
+        },
+        "error": null,
+        "status": "completed"
+      }
+    }
+  ],
+  "inventory_tool_events": [
+    {
+      "type": "item.completed",
+      "item": {
+        "id": "item_1",
+        "type": "mcp_tool_call",
+        "server": "codex",
+        "tool": "list_mcp_resources",
+        "arguments": {},
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"resources\":[]}"
+            }
+          ],
+          "structured_content": null
+        },
+        "error": null,
+        "status": "completed"
+      }
+    },
+    {
+      "type": "item.completed",
+      "item": {
+        "id": "item_2",
+        "type": "mcp_tool_call",
+        "server": "codex",
+        "tool": "list_mcp_resource_templates",
+        "arguments": {},
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"resourceTemplates\":[]}"
+            }
+          ],
+          "structured_content": null
+        },
+        "error": null,
+        "status": "completed"
+      }
+    }
+  ],
+  "rejected_tool_events": [],
+  "tool_policy": "metadata_inventory_only",
+  "tool_policy_version": "metadata-inventory-v1",
+  "tool_policy_scope": "Only empty-argument codex host plugin/skill-directory descriptors and empty template inventory; inventory is not knowledge evidence. All other tool events reject the call.",
+  "tool_policy_reason": "Production chapter construction allows observed generic capability discovery metadata; this does not claim a zero-tool comparison or external source reading.",
+  "malformed_event_lines": [],
+  "turn_completed": true,
+  "error_events": [],
+  "recovered_transport_events": [],
+  "terminal_error_events": [],
+  "transport_recovered": false,
+  "actual_model": null,
+  "identity_verified": null,
+  "identity_basis": "Explicit CLI model and isolated HTTP provider; CLI events do not expose server model identity.",
+  "provider": "eval-openai-http",
+  "max_output_tokens": null,
+  "cli_version": "codex-cli 0.164.0-alpha.11.1",
+  "cost_scope": "Codex token usage is reported; subscription charge is not exposed.",
+  "parsed": {
+    "entry_id": "K-SYS-009",
+    "body_sha256": "ee40de53b4ef61a20dc99a9c0fb213cbacabb009f9952e09e6bdc76c2754a285",
+    "reviewer": "sol-reviewer:K-SYS-009:round-3",
+    "decision": "accept",
+    "documents": {
+      "AGENTS.md": "b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a",
+      "docs/knowledge-method.md": "69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb",
+      "docs/knowledge-review.md": "f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21",
+      "knowledge/system-semantics/distributed-state-transfer.md": "ee40de53b4ef61a20dc99a9c0fb213cbacabb009f9952e09e6bdc76c2754a285",
+      "knowledge/sources/S-DISTSERVE.md": "968cbf46667e862085b0e2d72405805351bd33880ac23d8d055bf259192411f4",
+      "knowledge/sources/S-CUDA-TOPOLOGY.md": "39d4039179728ce8570c3b9ec3801aaad52108d030f278fb598a4d6d47de1f8e",
+      "knowledge/sources/S-VLLM-PREFIX.md": "9e3f16fdac245da8aa97deea55a820642b67e626329748c980eaa2fc0b7656f5",
+      "knowledge/sources/S-RDMA.md": "660948886af9019ac90e6c58ab7b2a4ca9dbf282f1bb74de37162403f24f4d49",
+      "knowledge/sources/S-GPUDIRECT.md": "7a14b2ca6cdf1f54e79fc02dbf10739305b285a6d454f08cf03594249ffd36f1",
+      "knowledge/sources/S-LLUMNIX.md": "86e48c54e7733dffeaec420e7205c4eeb3d28f7d59c7d0d8c2f16d2fa275d586",
+      "knowledge/hardware/transport-and-rdma.md": "72bcf1d8948eae41c243e422f6b0370462dcc4bf33ef86f5664a09b4e46d3ba2",
+      "knowledge/system-semantics/distributed-kv-store.md": "ecc4f667ff186b05fececba52c500e43d0460def524e6200b9cfa00fcdb984c0",
+      "knowledge/system-semantics/serving-recovery.md": "f551fa1f1e6213469c856a880839eefff504fb39f4dd692000b2df80a20a7f5e",
+      "knowledge/algorithms/routing-and-migration.md": "1b9dcfd5fea499a91611459bb936e1c1c49ceb562171fb0f1ba360a7010f5d32",
+      "knowledge/system-semantics/evidence-and-independent-checks.md": "50b7c97de928be322713ef149fb734c0c20acda17c4a321c46a198b0019831be",
+      "knowledge/tools/timeline-attribution.md": "cf4b01a8ca5cb35e653b65fbe2bc018d3ae5cc42788a77688524fb29c7da817d",
+      "knowledge/algorithms/kv-offload-prefetch.md": "a7088eba5c78cd9e96cf011d61946ad7dec4ecb6378ac16e7f2fc3820af38301",
+      "references/S-VLLM-PREFIX/fulltext.txt": "0d6423dca458bb628af7d15961bdba92b0d501660f93690610a354ef68f07353",
+      "references/S-RDMA/fulltext.txt": "9f4bea8bc130fc7dcdf0b53d20ce7269555cddd2a7c67e5d54c6dbd7a55b2720",
+      "tools/check_k_sys_009_full.py": "57db6b3e6e436145e7328c05283f12e8a3abf5b87b6e0df06b170952fd9f7341"
+    },
+    "criteria": {
+      "definition": {
+        "assessment": "sufficient",
+        "reason": "动机、输入输出、逻辑坐标及身份分工完整。S(p)、已知输入 A、未消费 ticket 和输出游标分开；组合轨迹正确区分采样 token 与该 token 尚未产生的 KV。普通 causal decoder、完整步骤冻结及全部状态就绪后接管的范围明确。",
+        "evidence": [
+          {
+            "path": "knowledge/system-semantics/distributed-state-transfer.md",
+            "quote": "令 x[0:p) 表示已消费的 token，S(p) 表示所有必需状态族完成这些输入后的模型状态；下一次消费位置为 p。"
+          },
+          {
+            "path": "knowledge/system-semantics/distributed-state-transfer.md",
+            "quote": "迁移输入包括源与目标描述、计算身份、共同恢复位置、目标已有状态、请求控制状态、容量和传输能力。输出是目标可执行视图与唯一的新执行授权，或者明确的中止、待排空或待恢复状态。"
+          }
+        ]
+      },
+      "legality": {
+        "assessment": "sufficient",
+        "reason": "计算相容性、稳定快照、逐副本覆盖、共享尾页隔离、消费可见性、唯一授权和物理最后使用均有明确条件，并与 wire layout、push/pull 等实现选择分开。固定来源支持前缀身份、部分 WR 提交、CQE 与通知区别及 GPUDirect 主机排序；应用权威协议被明确标为独立推导，未冒充来源保证。",
+        "evidence": [
+          {
+            "path": "knowledge/system-semantics/distributed-state-transfer.md",
+            "quote": "以下条件来自正确性：读取前生产和可见性完成；快照内容稳定；每个目标物理需求贡献完整；发布绑定同一 manifest；同一请求只有一个有效提交权；最后物理使用结束前不复用存储。"
+          },
+          {
+            "path": "knowledge/system-semantics/distributed-state-transfer.md",
+            "quote": "这是本章的应用协议推导，不是 RDMA、DistServe 或 Llumnix 自动提供的事务接口。"
+          }
+        ]
+      },
+      "algorithm": {
+        "assessment": "sufficient",
+        "reason": "两段伪代码贯通需求枚举、源覆盖、分页与通道分段、冻结计划、提交前去重、实际复制、逐目标可见、包级 READY、权威决定、安装与失败排空。地址算例的源偏移 29、目标偏移 3 成立。C 与 W 已分开，W 绑定目标副本、分配及映射，READY 使用原始目标需求，关闭 K-SYS-009-target-replica-task-key。完整候选复核未发现仍需阻断的语义问题，campaign-K-SYS-009-r2 的具体修订要求已落实。",
+        "evidence": [
+          {
+            "path": "knowledge/system-semantics/distributed-state-transfer.md",
+            "quote": "目标写入键 W 则为 (tx、阶段计划身份、C、目标绑定 B_d)。"
+          },
+          {
+            "path": "knowledge/system-semantics/distributed-state-transfer.md",
+            "quote": "READY 检查的需求全集应来自目标执行几何与分配描述，而不能从去重表反推。"
+          },
+          {
+            "path": "knowledge/system-semantics/distributed-state-transfer.md",
+            "quote": "只有相关访问全部排空，才归还本次私有页、staging 和注册资源"
+          }
+        ]
+      },
+      "cost": {
+        "assessment": "sufficient",
+        "reason": "六类成本均落实到具体工作与对象，区分逻辑内容、目标物理副本、链路字节、分配容量和驻留时间。640/1024/768 B、480/960 B、512/128 MiB、6.25 ms、530 MiB 及追赶总量 1111 MiB、11.11 s 的单位和算术一致。流水公式明确独立阶段及无资源争用假设，未把跨设备累计访存直接转换为单设备时间。",
+        "evidence": [
+          {
+            "path": "knowledge/system-semantics/distributed-state-transfer.md",
+            "quote": "更一般地，令 m_d(z) 为逻辑元素 z 要新建的目标物理副本数，则目的有效数据写入量为 Σ_z m_d(z)s_z，辅助状态另按其实际绑定计量。"
+          },
+          {
+            "path": "knowledge/system-semantics/distributed-state-transfer.md",
+            "quote": "这要求阶段可并行、缓冲足够且无共享资源争用。"
+          },
+          {
+            "path": "knowledge/system-semantics/distributed-state-transfer.md",
+            "quote": "若来自既有池，应在池内核算，不能再把池总容量与这些对象相加。"
+          }
+        ]
+      },
+      "adaptation": {
+        "assessment": "sufficient",
+        "reason": "TP/PP、head 复制、目标命中集合、量化封组、带宽竞争、容量和请求剩余寿命变化均会触发重新规划或成本重估。q<1 与固定准备开销残余下限推导正确；窗口覆盖及递归状态不被错误纳入 append-only 模型。保留、调整和放弃在线迁移的条件明确。",
+        "evidence": [
+          {
+            "path": "knowledge/system-semantics/distributed-state-transfer.md",
+            "quote": "若 B≤g、残余不降、目标余量不足、请求即将结束或重试消耗已超过收益预算，应停止在线追赶，选择有界的冻结复制、保持源执行或中止迁移。"
+          },
+          {
+            "path": "knowledge/system-semantics/distributed-state-transfer.md",
+            "quote": "窗口覆盖和递归状态不满足上述增长模型。可以在完整步骤边界冻结、复制独立版本，或增加模型特定检查点与重放协议；没有稳定快照时应放弃该在线方案。"
+          }
+        ]
+      },
+      "diagnosis": {
+        "assessment": "sufficient",
+        "reason": "诊断表给出竞争解释、单变量干预、可区分预测及反证后的修正。任务键负对照实际进入规划、去重和复制机制，独立参考不从缩小后的任务表生成；因此本轮检查实质检验了历史缺陷。设备实验设计与已执行 CPU 检查的范围清楚分开。",
+        "evidence": [
+          {
+            "path": "knowledge/system-semantics/distributed-state-transfer.md",
+            "quote": "正确路径每个落点写一次；去目标字段后任务账自报完成而独立落点参考报漏写，支持身份合并错误"
+          },
+          {
+            "path": "knowledge/system-semantics/distributed-state-transfer.md",
+            "quote": "检查中的完成、可见和排空是抽象证明事件，不是查询真实 CQ、CUDA event 或 NIC 状态。"
+          }
+        ]
+      }
+    },
+    "findings": [],
+    "limitations": [
+      "结论限定于普通 causal decoder、稳定历史、完整步骤冻结和全部必需状态就绪后接管的基线；不验收边接收边执行、窗口或递归状态的在线迁移扩展。",
+      "CPU 整数标签、集合和协议事件检查不证明真实 attention 数值、量化编解码、CUDA/GPUDirect 可见性、NIC 排空、注册撤销、带宽、延迟或 Agent 使用收益。",
+      "TaskLedger 为串行模型；并发首次登记、账本持久化、多尝试隔离、分配别名组合和权威故障恢复需要实现证据。字段变更检查主要验证键区分及封闭后拒绝新增，不等于执行了完整重规划。",
+      "本审阅核对了用户提供且绑定当前脚本哈希的实际 preflight 记录，没有自行重跑 Python。当前工具没有文件读取或 Python 执行能力，资源列表为空，未能读取本地 infraagents-knowledge-build/SKILL.md，也未实际检查文件系统中的离线链接存在性。",
+      "四份标为 excerpt 的来源原文仅支持所供范围内的事实核对；未声称读取完整原始文档、PDF 版面或上游源码归档。"
+    ],
+    "checks": [
+      {
+        "script": "tools/check_k_sys_009_full.py",
+        "args": []
+      }
+    ],
+    "no_checks_reason": "",
+    "reading_scope": "完整阅读所供文件：AGENTS.md [0,567)；docs/knowledge-method.md [0,2251)；docs/knowledge-review.md [0,3016)；knowledge/system-semantics/distributed-state-transfer.md [0,17560)；knowledge/sources/S-DISTSERVE.md [0,443)；S-CUDA-TOPOLOGY.md [0,500)；S-VLLM-PREFIX.md [0,521)；S-RDMA.md [0,739)；S-GPUDIRECT.md [0,615)；S-LLUMNIX.md [0,962)；knowledge/hardware/transport-and-rdma.md [0,4088)；knowledge/system-semantics/distributed-kv-store.md [0,3441)；serving-recovery.md [0,3834)；knowledge/algorithms/routing-and-migration.md [0,3228)；knowledge/system-semantics/evidence-and-independent-checks.md [0,3845)；knowledge/tools/timeline-attribution.md [0,3485)；knowledge/algorithms/kv-offload-prefetch.md [0,3710)；references/S-VLLM-PREFIX/fulltext.txt [0,13926)；references/S-RDMA/fulltext.txt [0,25147)。完整检查 candidate.test_script 所供 tools/check_k_sys_009_full.py，从文件说明至 main 调用，并阅读 author_notes、当前待处理 findings 和 actual_preflight。相关章节仅阅读摘录：knowledge/algorithms/disaggregated-serving.md [0,4000)、[16000,18071)；knowledge/system-semantics/collective-ordering.md [8000,10258)、[16000,19813)；knowledge/algorithms/heterogeneous-state-cache.md [0,4049)、[12000,14022)；knowledge/models/gqa-kv-heads.md [0,2071)、[12000,16000)；knowledge/models/mla.md [0,2420)、[12000,15651)；knowledge/system-semantics/host-device-timing.md [0,4000)、[8000,10071)；knowledge/system-semantics/position-mask-cache.md [0,4000)、[8000,10071)。来源原文仅阅读摘录：references/S-DISTSERVE/fulltext.txt [12000,20000)、[28000,52000)、[60000,69993)、[72000,76000)、[80000,84000)；references/S-CUDA-TOPOLOGY/fulltext.txt [40000,41993)、[76000,80000)、[84000,88000)、[224000,228000)、[296000,304000)、[472000,476000)、[488000,496000)、[500000,504000)、[508000,512000)、[1064000,1072000)；references/S-GPUDIRECT/fulltext.txt [0,45993)、[48000,52000)；references/S-LLUMNIX/fulltext.txt [0,13993)、[20000,36000)、[40000,44000)、[48000,52000)、[56000,60000)、[64000,72000)。范围均为所供提取文本的零起点半开字符区间；documents 仅列完整供给并阅读的文件，哈希按指定绑定复制，未声称独立复算本地文件哈希。",
+    "test_assessment": "检查了实际算法而非仅看退出码。transfer_case 先从原始目标几何建立 required_atoms 和 expected，再由 plan_tasks 按两端页界及通道范围规划，经 TaskLedger.submit 去重、complete 实际读取源布局并写目标布局、ready 逐需求核对。physical_reference 反向枚举物理槽，不调用 address、planner 或 task_key；与需求集合参考共同检验覆盖及内容。普通案例包含 N=0、1、5、7，并覆盖空局部分片、单通道及等价源副本；复制案例有 256 个任务、480 次元素写入。omit_target 和 omit_channels 真实改变键后进入同一路径，分别只写 240 和 160 个元素，自身任务表仍错误宣告完成；两者分别被原始需求检查和独立物理内容参考拒绝，直接检验本轮修复。错误布局覆盖全部位置但内容参考拒绝，说明覆盖计数没有代替内容验证。协议另有独立日志审计及遗漏 scale、ABORT 后提前回收负对照，覆盖 24 种完成顺序和空 manifest，但不等于穷举所有故障交错。成本部分核对 Fraction 追赶算术、容量和独立枚举的副本工作量。所供 actual_preflight 的 script_sha256 为 57db6b3e6e436145e7328c05283f12e8a3abf5b87b6e0df06b170952fd9f7341，远端隔离 Python 运行 returncode=0、stderr 为空、未超时；stdout 报告 360 个区间案例、832 次普通布局写入、480 次复制写入及 25 条合法协议顺序，与脚本路径一致。这是协调者当前 Python 执行证据，不是作者此前 JavaScript 核算或本审阅者自行执行。未覆盖真实并发原子性、完整多阶段多尝试恢复、模型推进及设备语义；正文已明确声明这些边界，可作为 limitation 保留。"
+  },
+  "format_status": "strict_json",
+  "format_error": null,
+  "output_text": "{\n  \"entry_id\": \"K-SYS-009\",\n  \"body_sha256\": \"ee40de53b4ef61a20dc99a9c0fb213cbacabb009f9952e09e6bdc76c2754a285\",\n  \"reviewer\": \"sol-reviewer:K-SYS-009:round-3\",\n  \"decision\": \"accept\",\n  \"documents\": {\n    \"AGENTS.md\": \"b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a\",\n    \"docs/knowledge-method.md\": \"69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb\",\n    \"docs/knowledge-review.md\": \"f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21\",\n    \"knowledge/system-semantics/distributed-state-transfer.md\": \"ee40de53b4ef61a20dc99a9c0fb213cbacabb009f9952e09e6bdc76c2754a285\",\n    \"knowledge/sources/S-DISTSERVE.md\": \"968cbf46667e862085b0e2d72405805351bd33880ac23d8d055bf259192411f4\",\n    \"knowledge/sources/S-CUDA-TOPOLOGY.md\": \"39d4039179728ce8570c3b9ec3801aaad52108d030f278fb598a4d6d47de1f8e\",\n    \"knowledge/sources/S-VLLM-PREFIX.md\": \"9e3f16fdac245da8aa97deea55a820642b67e626329748c980eaa2fc0b7656f5\",\n    \"knowledge/sources/S-RDMA.md\": \"660948886af9019ac90e6c58ab7b2a4ca9dbf282f1bb74de37162403f24f4d49\",\n    \"knowledge/sources/S-GPUDIRECT.md\": \"7a14b2ca6cdf1f54e79fc02dbf10739305b285a6d454f08cf03594249ffd36f1\",\n    \"knowledge/sources/S-LLUMNIX.md\": \"86e48c54e7733dffeaec420e7205c4eeb3d28f7d59c7d0d8c2f16d2fa275d586\",\n    \"knowledge/hardware/transport-and-rdma.md\": \"72bcf1d8948eae41c243e422f6b0370462dcc4bf33ef86f5664a09b4e46d3ba2\",\n    \"knowledge/system-semantics/distributed-kv-store.md\": \"ecc4f667ff186b05fececba52c500e43d0460def524e6200b9cfa00fcdb984c0\",\n    \"knowledge/system-semantics/serving-recovery.md\": \"f551fa1f1e6213469c856a880839eefff504fb39f4dd692000b2df80a20a7f5e\",\n    \"knowledge/algorithms/routing-and-migration.md\": \"1b9dcfd5fea499a91611459bb936e1c1c49ceb562171fb0f1ba360a7010f5d32\",\n    \"knowledge/system-semantics/evidence-and-independent-checks.md\": \"50b7c97de928be322713ef149fb734c0c20acda17c4a321c46a198b0019831be\",\n    \"knowledge/tools/timeline-attribution.md\": \"cf4b01a8ca5cb35e653b65fbe2bc018d3ae5cc42788a77688524fb29c7da817d\",\n    \"knowledge/algorithms/kv-offload-prefetch.md\": \"a7088eba5c78cd9e96cf011d61946ad7dec4ecb6378ac16e7f2fc3820af38301\",\n    \"references/S-VLLM-PREFIX/fulltext.txt\": \"0d6423dca458bb628af7d15961bdba92b0d501660f93690610a354ef68f07353\",\n    \"references/S-RDMA/fulltext.txt\": \"9f4bea8bc130fc7dcdf0b53d20ce7269555cddd2a7c67e5d54c6dbd7a55b2720\",\n    \"tools/check_k_sys_009_full.py\": \"57db6b3e6e436145e7328c05283f12e8a3abf5b87b6e0df06b170952fd9f7341\"\n  },\n  \"criteria\": {\n    \"definition\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"动机、输入输出、逻辑坐标及身份分工完整。S(p)、已知输入 A、未消费 ticket 和输出游标分开；组合轨迹正确区分采样 token 与该 token 尚未产生的 KV。普通 causal decoder、完整步骤冻结及全部状态就绪后接管的范围明确。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/system-semantics/distributed-state-transfer.md\",\n          \"quote\": \"令 x[0:p) 表示已消费的 token，S(p) 表示所有必需状态族完成这些输入后的模型状态；下一次消费位置为 p。\"\n        },\n        {\n          \"path\": \"knowledge/system-semantics/distributed-state-transfer.md\",\n          \"quote\": \"迁移输入包括源与目标描述、计算身份、共同恢复位置、目标已有状态、请求控制状态、容量和传输能力。输出是目标可执行视图与唯一的新执行授权，或者明确的中止、待排空或待恢复状态。\"\n        }\n      ]\n    },\n    \"legality\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"计算相容性、稳定快照、逐副本覆盖、共享尾页隔离、消费可见性、唯一授权和物理最后使用均有明确条件，并与 wire layout、push/pull 等实现选择分开。固定来源支持前缀身份、部分 WR 提交、CQE 与通知区别及 GPUDirect 主机排序；应用权威协议被明确标为独立推导，未冒充来源保证。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/system-semantics/distributed-state-transfer.md\",\n          \"quote\": \"以下条件来自正确性：读取前生产和可见性完成；快照内容稳定；每个目标物理需求贡献完整；发布绑定同一 manifest；同一请求只有一个有效提交权；最后物理使用结束前不复用存储。\"\n        },\n        {\n          \"path\": \"knowledge/system-semantics/distributed-state-transfer.md\",\n          \"quote\": \"这是本章的应用协议推导，不是 RDMA、DistServe 或 Llumnix 自动提供的事务接口。\"\n        }\n      ]\n    },\n    \"algorithm\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"两段伪代码贯通需求枚举、源覆盖、分页与通道分段、冻结计划、提交前去重、实际复制、逐目标可见、包级 READY、权威决定、安装与失败排空。地址算例的源偏移 29、目标偏移 3 成立。C 与 W 已分开，W 绑定目标副本、分配及映射，READY 使用原始目标需求，关闭 K-SYS-009-target-replica-task-key。完整候选复核未发现仍需阻断的语义问题，campaign-K-SYS-009-r2 的具体修订要求已落实。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/system-semantics/distributed-state-transfer.md\",\n          \"quote\": \"目标写入键 W 则为 (tx、阶段计划身份、C、目标绑定 B_d)。\"\n        },\n        {\n          \"path\": \"knowledge/system-semantics/distributed-state-transfer.md\",\n          \"quote\": \"READY 检查的需求全集应来自目标执行几何与分配描述，而不能从去重表反推。\"\n        },\n        {\n          \"path\": \"knowledge/system-semantics/distributed-state-transfer.md\",\n          \"quote\": \"只有相关访问全部排空，才归还本次私有页、staging 和注册资源\"\n        }\n      ]\n    },\n    \"cost\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"六类成本均落实到具体工作与对象，区分逻辑内容、目标物理副本、链路字节、分配容量和驻留时间。640/1024/768 B、480/960 B、512/128 MiB、6.25 ms、530 MiB 及追赶总量 1111 MiB、11.11 s 的单位和算术一致。流水公式明确独立阶段及无资源争用假设，未把跨设备累计访存直接转换为单设备时间。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/system-semantics/distributed-state-transfer.md\",\n          \"quote\": \"更一般地，令 m_d(z) 为逻辑元素 z 要新建的目标物理副本数，则目的有效数据写入量为 Σ_z m_d(z)s_z，辅助状态另按其实际绑定计量。\"\n        },\n        {\n          \"path\": \"knowledge/system-semantics/distributed-state-transfer.md\",\n          \"quote\": \"这要求阶段可并行、缓冲足够且无共享资源争用。\"\n        },\n        {\n          \"path\": \"knowledge/system-semantics/distributed-state-transfer.md\",\n          \"quote\": \"若来自既有池，应在池内核算，不能再把池总容量与这些对象相加。\"\n        }\n      ]\n    },\n    \"adaptation\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"TP/PP、head 复制、目标命中集合、量化封组、带宽竞争、容量和请求剩余寿命变化均会触发重新规划或成本重估。q<1 与固定准备开销残余下限推导正确；窗口覆盖及递归状态不被错误纳入 append-only 模型。保留、调整和放弃在线迁移的条件明确。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/system-semantics/distributed-state-transfer.md\",\n          \"quote\": \"若 B≤g、残余不降、目标余量不足、请求即将结束或重试消耗已超过收益预算，应停止在线追赶，选择有界的冻结复制、保持源执行或中止迁移。\"\n        },\n        {\n          \"path\": \"knowledge/system-semantics/distributed-state-transfer.md\",\n          \"quote\": \"窗口覆盖和递归状态不满足上述增长模型。可以在完整步骤边界冻结、复制独立版本，或增加模型特定检查点与重放协议；没有稳定快照时应放弃该在线方案。\"\n        }\n      ]\n    },\n    \"diagnosis\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"诊断表给出竞争解释、单变量干预、可区分预测及反证后的修正。任务键负对照实际进入规划、去重和复制机制，独立参考不从缩小后的任务表生成；因此本轮检查实质检验了历史缺陷。设备实验设计与已执行 CPU 检查的范围清楚分开。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/system-semantics/distributed-state-transfer.md\",\n          \"quote\": \"正确路径每个落点写一次；去目标字段后任务账自报完成而独立落点参考报漏写，支持身份合并错误\"\n        },\n        {\n          \"path\": \"knowledge/system-semantics/distributed-state-transfer.md\",\n          \"quote\": \"检查中的完成、可见和排空是抽象证明事件，不是查询真实 CQ、CUDA event 或 NIC 状态。\"\n        }\n      ]\n    }\n  },\n  \"findings\": [],\n  \"limitations\": [\n    \"结论限定于普通 causal decoder、稳定历史、完整步骤冻结和全部必需状态就绪后接管的基线；不验收边接收边执行、窗口或递归状态的在线迁移扩展。\",\n    \"CPU 整数标签、集合和协议事件检查不证明真实 attention 数值、量化编解码、CUDA/GPUDirect 可见性、NIC 排空、注册撤销、带宽、延迟或 Agent 使用收益。\",\n    \"TaskLedger 为串行模型；并发首次登记、账本持久化、多尝试隔离、分配别名组合和权威故障恢复需要实现证据。字段变更检查主要验证键区分及封闭后拒绝新增，不等于执行了完整重规划。\",\n    \"本审阅核对了用户提供且绑定当前脚本哈希的实际 preflight 记录，没有自行重跑 Python。当前工具没有文件读取或 Python 执行能力，资源列表为空，未能读取本地 infraagents-knowledge-build/SKILL.md，也未实际检查文件系统中的离线链接存在性。\",\n    \"四份标为 excerpt 的来源原文仅支持所供范围内的事实核对；未声称读取完整原始文档、PDF 版面或上游源码归档。\"\n  ],\n  \"checks\": [\n    {\n      \"script\": \"tools/check_k_sys_009_full.py\",\n      \"args\": []\n    }\n  ],\n  \"no_checks_reason\": \"\",\n  \"reading_scope\": \"完整阅读所供文件：AGENTS.md [0,567)；docs/knowledge-method.md [0,2251)；docs/knowledge-review.md [0,3016)；knowledge/system-semantics/distributed-state-transfer.md [0,17560)；knowledge/sources/S-DISTSERVE.md [0,443)；S-CUDA-TOPOLOGY.md [0,500)；S-VLLM-PREFIX.md [0,521)；S-RDMA.md [0,739)；S-GPUDIRECT.md [0,615)；S-LLUMNIX.md [0,962)；knowledge/hardware/transport-and-rdma.md [0,4088)；knowledge/system-semantics/distributed-kv-store.md [0,3441)；serving-recovery.md [0,3834)；knowledge/algorithms/routing-and-migration.md [0,3228)；knowledge/system-semantics/evidence-and-independent-checks.md [0,3845)；knowledge/tools/timeline-attribution.md [0,3485)；knowledge/algorithms/kv-offload-prefetch.md [0,3710)；references/S-VLLM-PREFIX/fulltext.txt [0,13926)；references/S-RDMA/fulltext.txt [0,25147)。完整检查 candidate.test_script 所供 tools/check_k_sys_009_full.py，从文件说明至 main 调用，并阅读 author_notes、当前待处理 findings 和 actual_preflight。相关章节仅阅读摘录：knowledge/algorithms/disaggregated-serving.md [0,4000)、[16000,18071)；knowledge/system-semantics/collective-ordering.md [8000,10258)、[16000,19813)；knowledge/algorithms/heterogeneous-state-cache.md [0,4049)、[12000,14022)；knowledge/models/gqa-kv-heads.md [0,2071)、[12000,16000)；knowledge/models/mla.md [0,2420)、[12000,15651)；knowledge/system-semantics/host-device-timing.md [0,4000)、[8000,10071)；knowledge/system-semantics/position-mask-cache.md [0,4000)、[8000,10071)。来源原文仅阅读摘录：references/S-DISTSERVE/fulltext.txt [12000,20000)、[28000,52000)、[60000,69993)、[72000,76000)、[80000,84000)；references/S-CUDA-TOPOLOGY/fulltext.txt [40000,41993)、[76000,80000)、[84000,88000)、[224000,228000)、[296000,304000)、[472000,476000)、[488000,496000)、[500000,504000)、[508000,512000)、[1064000,1072000)；references/S-GPUDIRECT/fulltext.txt [0,45993)、[48000,52000)；references/S-LLUMNIX/fulltext.txt [0,13993)、[20000,36000)、[40000,44000)、[48000,52000)、[56000,60000)、[64000,72000)。范围均为所供提取文本的零起点半开字符区间；documents 仅列完整供给并阅读的文件，哈希按指定绑定复制，未声称独立复算本地文件哈希。\",\n  \"test_assessment\": \"检查了实际算法而非仅看退出码。transfer_case 先从原始目标几何建立 required_atoms 和 expected，再由 plan_tasks 按两端页界及通道范围规划，经 TaskLedger.submit 去重、complete 实际读取源布局并写目标布局、ready 逐需求核对。physical_reference 反向枚举物理槽，不调用 address、planner 或 task_key；与需求集合参考共同检验覆盖及内容。普通案例包含 N=0、1、5、7，并覆盖空局部分片、单通道及等价源副本；复制案例有 256 个任务、480 次元素写入。omit_target 和 omit_channels 真实改变键后进入同一路径，分别只写 240 和 160 个元素，自身任务表仍错误宣告完成；两者分别被原始需求检查和独立物理内容参考拒绝，直接检验本轮修复。错误布局覆盖全部位置但内容参考拒绝，说明覆盖计数没有代替内容验证。协议另有独立日志审计及遗漏 scale、ABORT 后提前回收负对照，覆盖 24 种完成顺序和空 manifest，但不等于穷举所有故障交错。成本部分核对 Fraction 追赶算术、容量和独立枚举的副本工作量。所供 actual_preflight 的 script_sha256 为 57db6b3e6e436145e7328c05283f12e8a3abf5b87b6e0df06b170952fd9f7341，远端隔离 Python 运行 returncode=0、stderr 为空、未超时；stdout 报告 360 个区间案例、832 次普通布局写入、480 次复制写入及 25 条合法协议顺序，与脚本路径一致。这是协调者当前 Python 执行证据，不是作者此前 JavaScript 核算或本审阅者自行执行。未覆盖真实并发原子性、完整多阶段多尝试恢复、模型推进及设备语义；正文已明确声明这些边界，可作为 limitation 保留。\"\n}",
+  "elapsed_seconds": 212.219
+}

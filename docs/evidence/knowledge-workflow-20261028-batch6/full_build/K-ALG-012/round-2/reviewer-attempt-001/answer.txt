@@ -1,0 +1,163 @@
+{
+  "entry_id": "K-ALG-012",
+  "body_sha256": "8cf3458d737ea8a601546d25adf3b03aab920da110fde4b8e790a4f5f923c14e",
+  "reviewer": "sol-reviewer:K-ALG-012:round-2",
+  "decision": "accept",
+  "documents": {
+    "AGENTS.md": "b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a",
+    "docs/knowledge-method.md": "69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb",
+    "docs/knowledge-review.md": "f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21",
+    "knowledge/algorithms/structured-output.md": "8cf3458d737ea8a601546d25adf3b03aab920da110fde4b8e790a4f5f923c14e",
+    "knowledge/sources/S-XGRAMMAR.md": "2f5ce127d3226f6dd1be7bd091216e8ad4ffa40138a84d1d9827489ce924c31c",
+    "knowledge/sources/S-FI-SAMPLE.md": "ed5a4b98c3c64499022096e8dfd65ff84a1b3d5f9d118783f950a59fc6ecde9c",
+    "knowledge/sources/S-CHAT.md": "ce1c32f9382e4ec5d94c6e269d84e910347d792bdb8327d6324436de2e39ab07",
+    "knowledge/algorithms/batched-sampling.md": "eedef73ece886112211c643f263add7644e5bd2018f2043c1716a172368aa6f2",
+    "knowledge/algorithms/speculation-budget.md": "91a6e60d5151fb5b1155d2ba0ddcb3ba1251e69f7caf79b0ec217c7bf9a74d0d",
+    "knowledge/system-semantics/tokenization-io.md": "1dea61a1f632805cb90873e747cb3079230a7b6bab76b17b4281662b82367565",
+    "knowledge/algorithms/branch-generation.md": "42157d4da17ab8ffd7a0aa2f5cd57a1cacdf1a989757261993f6671ae231de3a",
+    "knowledge/system-semantics/serving-recovery.md": "f551fa1f1e6213469c856a880839eefff504fb39f4dd692000b2df80a20a7f5e",
+    "knowledge/tools/correctness-oracles.md": "c2f88bc9746ac25586fc6700aaf0f5a8d043a1b1f4aee99dfdee02e1ef468aab",
+    "references/S-XGRAMMAR/fulltext.txt": "e7a169d0e89d2d09c964f2eedab3f8866f473bc3d942092d68263a8fa85a33fa",
+    "references/S-CHAT/fulltext.txt": "7e5e268a64c716d3e87ebb5c11989e16afab9f10589a2190e281a0800a255287",
+    "tools/check_k_alg_012_full.py": "38eae46e4694f81b26b35c94a5436d93bec32f8dd0a9770837f1ad6e31e6d232"
+  },
+  "criteria": {
+    "definition": {
+      "assessment": "sufficient",
+      "reason": "明确了约束生成的动机、字节语言、普通 token 展开、特殊终止事件、多配置解析、可完成性与逐步归一化分布。模型输入、解析确认和模型计算边界分别定义，未把已采样 token 当成已经计算其 KV。字符级可完成与词表可表达、有限预算可完成的区别也已声明。",
+      "evidence": [
+        {
+          "path": "knowledge/algorithms/structured-output.md",
+          "quote": "普通合法 token 集为 A_text(S)={v∈V : advance(S,σ(v)) 至少有一个可完成配置}。"
+        },
+        {
+          "path": "knowledge/algorithms/structured-output.md",
+          "quote": "刚采出的 token 已进入 H 和 S，其自身 KV 可能尚未计算，不能将这两个边界混成一个长度。"
+        }
+      ]
+    },
+    "legality": {
+      "assessment": "sufficient",
+      "reason": "合法性覆盖完整展开、至少一条接受路径、可生成性、EOS 与可继续状态、输入起点、缓存依赖和请求身份。采样顺序作为明确选择处理，空集合和零质量作为失败处理。JSON 与 schema 保证范围没有混淆。Chat 模板约束与所供固定文档一致。",
+      "evidence": [
+        {
+          "path": "knowledge/algorithms/structured-output.md",
+          "quote": "接受与可继续并不矛盾：语言 L={a,ab} 的前缀 a 已接受，但 b 仍合法；只有不存在非空合法延伸时，接受状态才只能选择 EOS。"
+        },
+        {
+          "path": "knowledge/algorithms/structured-output.md",
+          "quote": "A(S) 为空或 Z_S=0 时没有合法采样结果，应返回声明的失败或恢复路径，不能解除约束。"
+        },
+        {
+          "path": "knowledge/algorithms/structured-output.md",
+          "quote": "缓存有效性应按对象实际依赖判断。"
+        }
+      ]
+    },
+    "algorithm": {
+      "assessment": "sufficient",
+      "reason": "完整 token 消费与生成循环均交付了初始化、逐步推进、失败和结束路径。闭包终止前提、分叉栈所有权、配置接受集求并及混合表示合并得到解释。每轮前向先产生当前前缀的 logits，再与同身份 mask 汇合采样；EOS 在普通展开前分派。该章承担 grammar 与模型调用边界的组合算法，不声称实现模型内部各层。XGrammar 分类、上下文扩展和合并方式与原文 §3 及算法 1、2 相符。",
+      "evidence": [
+        {
+          "path": "knowledge/algorithms/structured-output.md",
+          "quote": "for 输入符号 a in w:"
+        },
+        {
+          "path": "knowledge/algorithms/structured-output.md",
+          "quote": "最终拒绝集是 PartialRej−PartialAcc，接受集是它在 V 中的补集。"
+        },
+        {
+          "path": "knowledge/algorithms/structured-output.md",
+          "quote": "每轮 logits 由本轮 H 产生，不能复用上轮前缀的 logits。"
+        },
+        {
+          "path": "knowledge/algorithms/structured-output.md",
+          "quote": "EOS 必须在普通展开之前分派；完成不需要计算 EOS 的 σ，也不需要为了结束请求再计算 EOS 的 KV。"
+        }
+      ]
+    },
+    "cost": {
+      "assessment": "sufficient",
+      "reason": "实际配置转移工作 W 包括候选重复、token 内分叉、闭包和失败，修复了仅按去重 token 估算的问题。访存按 bitset 字数和全词表扫描说明；准备、同步及驻留单独计账。通信区分生产、存储与消费位置，未把映射主机内存视为零通信。131072 位等于 16384 字节的算例正确，重叠公式明确了关键路径成立条件。论文两个优化数值分别对应原文报告，没有冒充本库测量。",
+      "evidence": [
+        {
+          "path": "knowledge/algorithms/structured-output.md",
+          "quote": "D_unique=|∪D_i| 仅统计去重 token，D_pair=Σ_i|D_i| 统计配置与候选对。"
+        },
+        {
+          "path": "knowledge/algorithms/structured-output.md",
+          "quote": "完整 bitset 的逻辑载荷是 ceil(N/8) 字节；N=131072 时为 16384 字节，即 16 KiB。"
+        },
+        {
+          "path": "knowledge/algorithms/structured-output.md",
+          "quote": "T_step≈max(T_forward,T_mask+T_copy)+T_join+T_sampling"
+        },
+        {
+          "path": "knowledge/algorithms/structured-output.md",
+          "quote": "共享节点只计一次；逻辑回滚不等于立即释放节点。"
+        }
+      ]
+    },
+    "adaptation": {
+      "assessment": "sufficient",
+      "reason": "根据 batch、歧义、深度、grammar 变化频率和 tokenizer 身份变化说明了保留、调整和替换方案的依据。投机组合要求实际处理后的同前缀分布，并区分确认状态、计算范围和物理驻留；取消撤销提交权与最后使用结束后回收明确分开。恢复细节链接到已有恢复章节，衔接没有把输出长度直接当作有效 KV 长度。",
+      "evidence": [
+        {
+          "path": "knowledge/algorithms/structured-output.md",
+          "quote": "选择依据是同一负载下的编译加在线总成本。"
+        },
+        {
+          "path": "knowledge/algorithms/structured-output.md",
+          "quote": "tokenizer 或特殊 token 分类变化后，相关编译缓存应失效。"
+        },
+        {
+          "path": "knowledge/algorithms/structured-output.md",
+          "quote": "若第三轮前向已经在途，则逻辑取消先撤销提交权，物理 KV 和 mask 缓冲仍需等待最后使用者结束才能回收。"
+        },
+        {
+          "path": "knowledge/algorithms/structured-output.md",
+          "quote": "若投机额外工作超过确认 token 带来的收益，应缩减或关闭投机，不能放松 grammar 来提高接受率。"
+        }
+      ]
+    },
+    "diagnosis": {
+      "assessment": "sufficient",
+      "reason": "区分映射、匹配、起点、EOS、旧结果身份与 schema 等竞争解释，并提供相应可控实验。有限语言枚举独立于栈转移，生成轨迹有独立期望表，负对照确实干预完整消费、logits 前缀、EOS 分派和接受后延伸这些机制。性能实验给出不同预测及反证后的瓶颈修正；未执行的并发和设备实验没有记为通过。",
+      "evidence": [
+        {
+          "path": "knowledge/algorithms/structured-output.md",
+          "quote": "被测路径则执行文法栈的闭包和逐字符转移，两者共享语言规范但不共享转移实现。"
+        },
+        {
+          "path": "knowledge/algorithms/structured-output.md",
+          "quote": "期望轨迹由独立表格给出；故意复用首轮 logits 应改变输出并被拒绝。"
+        },
+        {
+          "path": "knowledge/algorithms/structured-output.md",
+          "quote": "若总时间下降却 mask 服务时间不变，可能是重叠收益；若 CPU 服务下降而端到端不变，可能是原本不在关键路径。"
+        },
+        {
+          "path": "knowledge/algorithms/structured-output.md",
+          "quote": "异步取消、缓存失效和投机修正的实验设计也不能记作已经执行通过。"
+        }
+      ]
+    }
+  },
+  "findings": [],
+  "limitations": [
+    "审查基于本轮提供的完整文本和执行记录；没有独立读取磁盘字节、重新计算文件哈希或重新执行脚本。所列哈希采用本轮给定的绑定身份。",
+    "解析检查仅覆盖指定有限闭包语法、定向不可生成分支及字节边界，不证明任意 CFG 编译、完整 JSON 或生产 tokenizer 映射正确。",
+    "模型替身验证条件前缀、logits 生产和计算边界，不验证真实模型逐层前向、KV 实现或设备执行。",
+    "局部分类缓存、上下文扩展与 persistent stack 优化没有在该脚本中实现并作差分验证；其机制结论由正文推导和所供论文支持。",
+    "异步取消、缓存失效、服务重排、投机修正及 schema 业务校验未执行注入检查；GPU 可见性、传输事务、真实重叠、吞吐、统计采样频率及 Agent 使用效果均无本轮实测。",
+    "S-FI-SAMPLE 阅读范围是完整机制说明，没有提供可读原始文档或源码核验范围；未检查 reader.html、PDF 呈现及离线链接目标的文件存在性。"
+  ],
+  "checks": [
+    {
+      "script": "tools/check_k_alg_012_full.py",
+      "args": []
+    }
+  ],
+  "reading_scope": "完整阅读本轮提供的全部材料；以下范围均为所供提取文本的零基、左闭右开字符范围：AGENTS.md [0,567)；docs/knowledge-method.md [0,2251)；docs/knowledge-review.md [0,3016)；knowledge/algorithms/structured-output.md [0,11823)；knowledge/sources/S-XGRAMMAR.md [0,454)；knowledge/sources/S-FI-SAMPLE.md [0,943)；knowledge/sources/S-CHAT.md [0,522)；knowledge/algorithms/batched-sampling.md [0,2567)；knowledge/algorithms/speculation-budget.md [0,3904)；knowledge/system-semantics/tokenization-io.md [0,3217)；knowledge/algorithms/branch-generation.md [0,3670)；knowledge/system-semantics/serving-recovery.md [0,3834)；knowledge/tools/correctness-oracles.md [0,5245)；references/S-XGRAMMAR/fulltext.txt [0,78203)；references/S-CHAT/fulltext.txt [0,12274)。这些条目均按供应材料标记为 full，无摘录冒充整篇原文。另完整阅读 candidate.test_script 从 shebang 至 main 调用的全部代码、author_notes 和 actual_preflight 的输出及执行元数据。论文阅读指完整供应的全文提取文本，不扩张为读取 PDF、图片、HTML 或源码归档。",
+  "test_assessment": "明确批准本轮 assigned check 在所声明的 CPU 逻辑范围内通过，关闭 campaign-K-ALG-012-r1 的检查审批阻塞。批准依据是完整检查算法审阅与提供的真实 actual_preflight 记录共同成立，而非仅看退出码。该记录的 script_sha256 为 38eae46e4694f81b26b35c94a5436d93bec32f8dd0a9770837f1ad6e31e6d232，与本轮绑定脚本一致，章正文输入摘要也与 body_sha256 一致；remote_bwrap 中 Python 实际执行返回 0、stderr 为空且未超时。本审阅者没有自行重跑。有限语言参考直接通过数组元素笛卡尔积构造接受串，不调用 Parser 的闭包或转移；91 个接受串、282 个合法前缀加四个非法前缀，对 17 个 token 作 4862 次比较。状态相关首字符错误产生 370 次分歧，直接检验跨 token 尾部和规则返回机制。混合表示的 256 次穷举以布尔集合并为参考。生成检查通过明确表格核对输出、每轮调用历史及前沿；实际检测了沿用首轮 logits、先展开 EOS、接受后强制 EOS 三个缺陷。还执行了预填、零预算、接受与未接受两类长度限制、空 mask、零合法质量、不可生成分支和拆分 UTF-8 检查。有理数算例独立核对支持集、归一化与概率比，不提供统计采样结论。作者仅执行过 JavaScript 子集、未运行新 Python 的原声明没有被冒充为 Python 通过证据；后续提供的独立真实 preflight 补足了这一执行缺口。脚本不覆盖优化缓存实现、生产模型及异步设备机制，正文已如实限定，因此这些遗漏保留为 limitation，不构成本轮阻塞问题。"
+}

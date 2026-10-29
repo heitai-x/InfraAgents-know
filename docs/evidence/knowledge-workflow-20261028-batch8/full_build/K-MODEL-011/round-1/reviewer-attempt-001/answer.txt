@@ -1,0 +1,176 @@
+{
+  "entry_id": "K-MODEL-011",
+  "body_sha256": "9019815e83aebb74afd23964ac32f087a3c69bf3abc8cf826eb965adc73d44c2",
+  "reviewer": "sol-reviewer:K-MODEL-011:round-1",
+  "decision": "revise",
+  "documents": {
+    "AGENTS.md": "b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a",
+    "docs/knowledge-method.md": "69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb",
+    "docs/knowledge-review.md": "f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21",
+    "knowledge/models/speech-generation.md": "9019815e83aebb74afd23964ac32f087a3c69bf3abc8cf826eb965adc73d44c2",
+    "knowledge/sources/S-OMNI.md": "f9f782f335b1c8171f60d218d02b4294715266c0aad5499d3f8c0e867af15ff1",
+    "knowledge/sources/S-MOONSHINE.md": "4370d127afcf5863d1df06bda22911b343655c31bd1ead107135f30e81074759",
+    "knowledge/sources/S-WHISPER.md": "3983e829fbc2948712af3a9aab931917271565753f83cb0e89f1cfad2a4b36e1",
+    "knowledge/workloads/metric-events.md": "c21db7895f35f10ebe16fe4fc795de05ea48de02cd90339712f9a4a49252d1bb",
+    "knowledge/system-semantics/service-protocol.md": "8995b7ecd763f40525388858c4c483d4550783f80ca112f35045ef954af437ab",
+    "knowledge/system-semantics/host-runtime.md": "005342b6131acdd072d5cf35456a5b01e5630f764b614e7090639fde01a5b36a",
+    "knowledge/system-semantics/cancellation-resource-completion.md": "919052c77f65a13c9dc09aad03341ed31f0820dbbdcb2750b5789f349f9e86c1",
+    "knowledge/system-semantics/serving-recovery.md": "f551fa1f1e6213469c856a880839eefff504fb39f4dd692000b2df80a20a7f5e",
+    "knowledge/workloads/slo-goodput.md": "5aa9b71cddb7d896ffa1fe6d78ac61cf0bb92d76279ae4d563f1110ed9dbedb4",
+    "knowledge/models/omni-multimodal.md": "f1fc4dc6611ad1b53ad8cc7f2abf0cbf9b9b2022d2d22c64dc712a39943d9d15",
+    "references/S-OMNI/fulltext.txt": "53a114a7567542c936f1d98cfc7dbba2315a0215ba18c1234470efa0abe01af6",
+    "references/S-MOONSHINE/fulltext.txt": "e0fd9d8b31bccf8c41eee0c181bcfb00cf89461a7e0b80844984e7b4cf0d19eb",
+    "references/S-WHISPER/fulltext.txt": "74d3fc9a7877dd5ff86ac147cb73f4a88d9443aec76f79f12fed602d351eb7de",
+    "tools/check_k_model_011_full.py": "1fc1e2e7929b431bb44d99cce45dc7254d7b193d5d2de41dd7b6400b6375c654"
+  },
+  "criteria": {
+    "definition": {
+      "assessment": "partial",
+      "reason": "声学帧、codebook、逻辑样本区间及生成、解码、发送和播放状态定义清楚；但初始缓冲量与墙钟等待混用，使播放起点公式存在实质歧义。",
+      "evidence": [
+        {
+          "path": "knowledge/models/speech-generation.md",
+          "quote": "输出样本 y[s] 的 s 是请求内逻辑 sample offset，不是网络 chunk 序号。"
+        },
+        {
+          "path": "knowledge/models/speech-generation.md",
+          "quote": "若选择先积 B_0 秒再播放，则 T_0=A_0+B_0。"
+        }
+      ]
+    },
+    "legality": {
+      "assessment": "sufficient",
+      "reason": "声明层面充分区分完整 code、合法上下文与可提交样本，明确 startup、lookahead、EOS、尾部规则和代次条件。固定来源支持所述 Qwen 路径，Whisper、Moonshine 被正确限定为 ASR 对照。算法落实问题另列。",
+      "evidence": [
+        {
+          "path": "knowledge/models/speech-generation.md",
+          "quote": "EOS 只表示不会再有新的真实 code，不表示尾部上下文已经自动满足。"
+        },
+        {
+          "path": "knowledge/models/speech-generation.md",
+          "quote": "lookahead 是函数和质量契约，不是可以任意删减的性能参数；缩短 lookahead 后必须重新验证内容、音色、韵律和接缝。"
+        }
+      ]
+    },
+    "algorithm": {
+      "assessment": "partial",
+      "reason": "有理边界、窗口就绪和波形裁剪具备可检查步骤；主推进仍缺少明确的结束身份、可恢复 flush、背压及发布失败处理，取消检查也未贯通提交点。DiT 与 token 生成的核心网络数据流仍为未解释调用，未明确委托给已有完整算法。",
+      "evidence": [
+        {
+          "path": "knowledge/models/speech-generation.md",
+          "quote": "若 req.next_code<req.code_end 且预算允许："
+        },
+        {
+          "path": "knowledge/models/speech-generation.md",
+          "quote": "若 req.code_end 且 next_decode 已覆盖最后块："
+        },
+        {
+          "path": "knowledge/models/speech-generation.md",
+          "quote": "v←DiT(z,t_k,context_blocks)；"
+        },
+        {
+          "path": "knowledge/models/speech-generation.md",
+          "quote": "原子发布 DECODED(b)，把 req.emit 设为 s_{b+1}；"
+        }
+      ]
+    },
+    "cost": {
+      "assessment": "partial",
+      "reason": "六类成本均有相关内容，PCM 字节、70 ms 首块发送和25%串行占用算例可复算，重叠与共享资源条件也正确。客户端170 ms首样本估计依赖额外等待100 ms的策略，不能直接由积累100 ms音频缓冲推出；当前文字未区分。",
+      "evidence": [
+        {
+          "path": "knowledge/models/speech-generation.md",
+          "quote": "若客户端先积 100 ms 再播，首样本约 70+100=170 ms；"
+        },
+        {
+          "path": "knowledge/models/speech-generation.md",
+          "quote": "若这些阶段可以重叠，应改用实际依赖图和共享资源的关键路径，不能把可重叠时间全部相加，也不能只取最大值而忽略同一设备上的争用。"
+        }
+      ]
+    },
+    "adaptation": {
+      "assessment": "sufficient",
+      "reason": "条件变化表和反转讨论把块大小、采样率、帧率、codebook、lookahead、求解步数、batch、网络和版本变化连接到依赖、质量与资源变化；也说明何时放弃仅靠网络切块或继续优化非瓶颈阶段。",
+      "evidence": [
+        {
+          "path": "knowledge/models/speech-generation.md",
+          "quote": "若模型不支持所需流式块，继续缩小网络 chunk 只是把同一段非因果计算切碎，不会产生合法的低延迟声学输出。"
+        },
+        {
+          "path": "knowledge/models/speech-generation.md",
+          "quote": "计算下降但求解误差和音质改变，必须独立评估，不能记作免费加速"
+        }
+      ]
+    },
+    "diagnosis": {
+      "assessment": "partial",
+      "reason": "竞争解释、事件定位和控制变量实验有实质内容；但正文把尾块补零负对照列为配套检查覆盖，脚本并无该检查，且局部谓词通过不能支持主推进和取消提交机制正确。",
+      "evidence": [
+        {
+          "path": "knowledge/models/speech-generation.md",
+          "quote": "若 code 完成早而播放晚，不能把原因归给 token 生成"
+        },
+        {
+          "path": "knowledge/models/speech-generation.md",
+          "quote": "负对照包括漏掉 lookahead、只检查一个 codebook、重复发送左 overlap、忽略 deadline、用旧代次提交和把尾块补零当作稳态；这些故障必须由同一验证器拒绝，正确路径再被接受。"
+        }
+      ]
+    }
+  },
+  "findings": [
+    {
+      "id": "K-MODEL-011-ADVANCE-TERMINATION",
+      "criterion": "algorithm",
+      "evidence": "正文先使用“若 req.next_code<req.code_end 且预算允许：”，随后使用“若 req.code_end 且 next_decode 已覆盖最后块：”；解码入口又先执行“若 b 的 code 尚未齐备：返回 WAIT_CODE；”。结束分支为“按终止策略 flush 尾部；若尾部合法且发送队列允许，state←DONE 并返回；否则返回 NEED_END_POLICY；”。",
+      "impact": "code_end同时承担结束位置和结束标志，未知长度流的EOS如何设置最终边界没有定义。空输出会先返回WAIT_CODE，无法进入终态；最后块解码后若flush或发送尚未完成，恢复时next_decode已指向不存在的下一块，也会先返回WAIT_CODE。发送队列容量未在发布前检查，WAIT_SEND没有实际可达的处理路径。",
+      "blocking": true,
+      "required_revision": "分开定义最终块数或最终帧数与EOS已知标志；在访问下一块前处理空输出、全部块完成和独立可恢复的flush阶段。明确部分尾块的合法处理、输出队列额度和WAIT_SEND恢复动作，保留尾部合法性错误与暂时等待的区别。用状态轨迹验证结束和背压恢复。"
+    },
+    {
+      "id": "K-MODEL-011-PUBLISH-TRANSACTION",
+      "criterion": "algorithm",
+      "evidence": "PublishStableBlock写有“若保留数不等于 s_{b+1}−s_b：返回 BLOCK_LENGTH_MISMATCH；”及“原子发布 DECODED(b)，把 req.emit 设为 s_{b+1}；”。调用方连续执行“PublishStableBlock(req,b,wav_b,decoder_origin,left_overlap)；”和“req.next_decode←b+1；计入 flow/vocoder 工作；”。取消仅在AdvanceSpeech入口检查。",
+      "impact": "发布失败后调用方仍推进next_decode，最后一个块失败也可能进入DONE，造成缺失音频被当作成功。若取消发生在入口检查之后、声学计算完成之前，发布函数没有取消与代次检查，仍可能提交已取消结果；原子更新emit本身不能防止此竞态。",
+      "blocking": true,
+      "required_revision": "让发布返回值控制推进：只有成功提交后才更新next_decode，错误进入明确失败或可恢复分支。在提交事务中共同校验当前代次、取消状态、预期偏移和队列额度，再发布样本与游标。说明失败时overlap和solver等暂定状态的保留或回滚；物理回收继续遵循已链接的最后使用完成条件。加入发布失败及计算后、提交前取消的负对照。"
+    },
+    {
+      "id": "K-MODEL-011-NETWORK-DATAFLOW",
+      "criterion": "algorithm",
+      "evidence": "FlowMatchBlock的网络步骤只有“v←DiT(z,t_k,context_blocks)；”，mel输出为“按模型规定的输出投影得到 mel；”；主算法的token生成步骤为“按模型实际 track/codebook 顺序生成块 b 所需 token；”。",
+      "impact": "Euler更新说明了求解器外循环，却未说明噪声或mel状态、code条件如何进入多层DiT，逐层表示如何流动，以及完整网络预测何时允许推进solver。token选择与已计算自回归状态也未展开或明确委托。读者仍需自行补足本章核心生成路径，无法据现有算法恢复完整数据流。",
+      "blocking": true,
+      "required_revision": "给出声明范围内的参考网络路径，或明确链接并委托已有完整算法：说明输入形状、code和时间条件接入、逐层attention及残差/FFN、最终速度场输出与solver提交关系；对Talker明确消费已知token、产生logits、选择新token和后续计算其状态的关系。可保留真实checkpoint排列、solver和声码器实现为限制，不必臆造其细节。"
+    },
+    {
+      "id": "K-MODEL-011-BUFFER-CLOCK",
+      "criterion": "definition",
+      "evidence": "正文称“若选择先积 B_0 秒再播放，则 T_0=A_0+B_0。”算例又称“若客户端先积 100 ms 再播，首样本约 70+100=170 ms；”。",
+      "impact": "音频缓冲量以可播放秒数计，墙钟等待则取决于到达轨迹，两者不能直接相加。按现有算例，第一个完整块已有200 ms音频，在70 ms到达时已满足100 ms音频缓冲阈值；170 ms只对应额外等待100 ms的另一策略。这会改变首样本估计及后续deadline。",
+      "blocking": true,
+      "required_revision": "明确选择固定墙钟启动延迟还是音频量阈值。前者另定义等待量并说明届时缓冲量依赖到达；后者以累计到达样本量首次达到阈值定义T_0，处理整块到达和短请求。相应修正算例，并用已有离散到达模型核对两种量的区别。"
+    },
+    {
+      "id": "K-MODEL-011-CHECK-COVERAGE",
+      "criterion": "diagnosis",
+      "evidence": "正文明确声称负对照包括“把尾块补零当作稳态”。完整脚本的candidate_can_decode没有EOS或end_policy参数，main没有尾部填充、flush或尾块稳态负对照；脚本也未实现AdvanceSpeech或PublishStableBlock的提交事务。",
+      "impact": "实际退出0不能证明正文列出的全部故障被拒绝。当前检查未覆盖主推进、终态恢复、发布错误传播或取消发生在检查与提交之间的状态变化，因此不能发现上述算法缺陷。",
+      "blocking": true,
+      "required_revision": "将已执行覆盖描述改为与脚本一致；为本轮修复的结束、发布及缓冲机制加入可执行的小状态模型和独立事件/样本不变量。若继续声称覆盖尾块补零，必须让无合法尾策略的缺陷输出进入同一验证器并实际被拒绝，同时验证合法尾路径被接受。"
+    }
+  ],
+  "limitations": [
+    "固定论文支持当前章节所述Thinker/Talker、Flow-Matching DiT、修改BigVGAN及2个lookback加当前块加1个lookahead的报告事实；未核验具体checkpoint的token排列、solver、startup和vocoder overlap实现。",
+    "CPU算术和事件模型不证明GPU内存可见性、物理最后使用完成、真实设备性能、声码器质量、WER或知识使用效果；正文对此总体限定正确。",
+    "本次审查使用提示内提供的完整材料和明确节选，未重新计算磁盘文件哈希、检查链接目标存在性或读取上游源码。",
+    "检查执行结论来自提供的actual_preflight记录，本审阅者未另行运行脚本。"
+  ],
+  "checks": [
+    {
+      "script": "tools/check_k_model_011_full.py",
+      "args": []
+    }
+  ],
+  "reading_scope": "完整阅读所供绑定文本，范围均为提取文本的零基半开字符区间：AGENTS.md [0,567)；docs/knowledge-method.md [0,2251)；docs/knowledge-review.md [0,3016)；knowledge/models/speech-generation.md [0,11070)；knowledge/sources/S-OMNI.md [0,452)；knowledge/sources/S-MOONSHINE.md [0,537)；knowledge/sources/S-WHISPER.md [0,518)；knowledge/workloads/metric-events.md [0,2891)；knowledge/system-semantics/service-protocol.md [0,6732)；knowledge/system-semantics/host-runtime.md [0,7559)；knowledge/system-semantics/cancellation-resource-completion.md [0,3782)；knowledge/system-semantics/serving-recovery.md [0,3834)；knowledge/workloads/slo-goodput.md [0,2616)；knowledge/models/omni-multimodal.md [0,3735)；references/S-OMNI/fulltext.txt [0,71173)；references/S-MOONSHINE/fulltext.txt [0,26755)；references/S-WHISPER/fulltext.txt [0,112336)。另外完整阅读candidate.test_script所供脚本及actual_preflight执行记录。仅节选阅读：knowledge/models/encoder-decoder-streaming.md [4000,6601)、[8000,13899)；knowledge/models/image-diffusion.md [0,500)、[4000,8000)、[12000,16000)；knowledge/system-semantics/design-synthesis.md [0,8500)。这些节选文件未列入documents，不声称完整阅读。未读取来源源码归档。",
+  "test_assessment": "提供的预检记录绑定脚本SHA256为1fc1e2e7929b431bb44d99cce45dc7254d7b193d5d2de41dd7b6400b6375c654，在remote_bwrap内使用Python3.12隔离执行，returncode=0、stderr为空、未超时。这证明该脚本实际完成；作者备注称作者未运行，与协调者后续预检可以并存。独立参考和不变量包括固定24kHz几何向量、非整数步长的总样本数与108/109长度集合、字面就绪向量、规范样本流、逐块deadline及固定首包/字节结果。候选与expected就绪函数结构近似，完整性函数也主要复述同一谓词，但字面结果和缺陷路径提供了部分独立约束。实际执行的负对照能拒绝固定向上取整漂移、遗漏lookahead、仅检查首codebook、重复overlap、迟到块、首包漏算lookahead及旧代次参数。其范围是局部谓词与算术：旧代次检查直接调用validate_chunk，不代表PublishStableBlock已受保护；迟到轨迹检测也不测试调度器如何推进。没有尾部补零负对照，没有EOS/部分尾块/空输出、flush暂停恢复、发送队列饱和、发布错误传播或取消提交交错测试，也没有执行DiT、flow积分或完整主状态机。validate_offsets只检查局部长度和最终总量，未逐边界核对floor公式。因此保留局部检查通过结论，不能将其扩大为章节算法完整正确。"
+}

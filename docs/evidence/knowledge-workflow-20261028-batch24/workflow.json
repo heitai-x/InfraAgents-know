@@ -1,0 +1,112 @@
+{
+  "schema_version": 1,
+  "created_at": "2026-10-29T00:40:33+00:00",
+  "baseline_version": "base-gpt-6-astra-2026-04-30-v2.3-draft28",
+  "baseline_sha256": "2e293bfcf15f274c8ed14d8fcab29a0e99efb348a0072f4bdc1cfb09748d8776",
+  "max_rounds": 3,
+  "questions": [
+    "definition",
+    "legality",
+    "algorithm",
+    "cost",
+    "adaptation",
+    "diagnosis"
+  ],
+  "scope": "Whole selected queue, not a certificate of semantic completeness or device performance.",
+  "jobs": {
+    "K-ALG-017": {
+      "id": "K-ALG-017",
+      "path": "knowledge/algorithms/tiered-residency.md",
+      "baseline_revision": 2,
+      "baseline_sha256": "eb3ebc6320d5a32481cf645605d159860dc6d1edb97f1e98afd89ddb24ee82af",
+      "prior_review": "navigation_registered_deep_review_pending",
+      "source_ids": [
+        "S-FLEXGEN",
+        "S-SERVERLESSLLM",
+        "S-PAGED",
+        "S-CUDA-ASYNC"
+      ],
+      "related": [
+        "K-SYS-012",
+        "K-HW-012",
+        "K-ALG-018",
+        "K-ALG-019",
+        "K-ALG-020",
+        "K-SYS-004",
+        "K-WORK-006",
+        "K-ALG-008",
+        "K-ALG-009",
+        "K-ALG-010",
+        "K-ENGINE-002",
+        "K-ENGINE-005",
+        "K-FW-005",
+        "K-HW-003",
+        "K-HW-005",
+        "K-MODEL-004",
+        "K-SYS-010",
+        "K-SYS-013",
+        "K-SYS-018",
+        "K-MODEL-015"
+      ],
+      "state": "verified",
+      "round": 6,
+      "author": "/root/closeout_protocols",
+      "reviews": [
+        {
+          "path": "docs/evidence/knowledge-workflow-20261028-batch24/K-ALG-017/round-6/review.json",
+          "sha256": "a983fb13c9638c95a4976fa60d8a8659d3261670e64bf5894fba4f6e5f1148a0"
+        }
+      ],
+      "checks": [
+        {
+          "path": "docs/evidence/knowledge-workflow-20261028-batch24/K-ALG-017/round-6/check-0.json",
+          "sha256": "92f48fd37c0ae003c3eb00d9f2daca081951f9e0bc1673864f383d52fd8629ca",
+          "exit_code": 0
+        }
+      ],
+      "agent_use": "unassessed",
+      "issues": [],
+      "max_rounds": 6,
+      "budget_adjustments": [
+        {
+          "round": 3,
+          "previous_max_rounds": 3,
+          "max_rounds": 4,
+          "additional_rounds": 1,
+          "reason": "Audited specialist plan: round3_check_harness_error_before_semantic_review; original candidate docs/evidence/knowledge-workflow-20261028-batch12/full_build/K-ALG-017/round-3/candidate.json; original evidence retained.",
+          "at": "2026-10-28T16:48:32+00:00"
+        },
+        {
+          "round": 4,
+          "previous_max_rounds": 4,
+          "max_rounds": 5,
+          "additional_rounds": 1,
+          "reason": "已复核最后候选，按明确阻塞 K-ALG-017-r4-unstarted-rejection-retirement 进行一次定点修订；保留已成立内容和此前已关闭问题。",
+          "at": "2026-10-28T23:56:45+00:00"
+        },
+        {
+          "round": 5,
+          "previous_max_rounds": 5,
+          "max_rounds": 6,
+          "additional_rounds": 1,
+          "reason": "新独审明确指出K-ALG-017-r5-end-auxiliary-retirement；实际定点作者已修复最终候选，保留原失败记录，追加一轮用于该候选的真实检查与新独审。",
+          "at": "2026-10-29T00:44:32+00:00"
+        }
+      ],
+      "manager_notes": [
+        "以绑定的 batch17 round-4 候选为基线；保留此前 CANCEL 立即回收/唤醒及观察器 event_index 的修复，不退回 round-2/3。只补 START_STAGE 在“已登记 U、目的已为 LOADING、随后确认整个操作未启动”之后的结算。选择放弃时，应关闭该失败计划的后继入口，幂等撤销本次 U 和本计划 L；无其他合法持有者的目标/工作区明确 RETIRE→FREE，最后 WAKE。共享对象仍有别的 L 时保留其合法责任，独立稳定源不因目标失败被删除。若选择重试，明确保留何种预留和待办以及重新准入入口，不能把 LOADING 当作仍在执行；新尝试的操作身份及旧拒绝通知去重应一致。检查模型必须真正经过登记/LOADING 后收到 NOT_STARTED 的分支，不能继续以 Machine.start 前置 require 拒绝代替。观察器不添加 END、gc 或 wake 来替作者推进。保留所有旧正/负回归；新的错误变体只省略退休转换，仍要被相同状态/容量推进判据检出。",
+        "本次需要真实触发的回归与负对照：{\"positive\": \"让一个无共享持有者的目的候选占满池，登记源/目标使用并置 LOADING，然后注入可信的全部未启动结果并选择放弃；从该入口实际完成 U/L 结算、RETIRING→GONE、容量归还和等待者准入，不生成未来 END/READER_END。重复拒绝通知不改新代对象；原稳定源仍有效。\", \"negative\": \"同轨迹中故障版撤掉 U/L 但不进入 RETIRING；测试应观察到旧 LOADING 对象仍占容量、等待者未准入，并以明确 CheckError 拒绝。不能调用带隐含退休副作用的 remove_owner 后假称测试覆盖了省略退休的版本；应让故障真实保留 LOADING。\"}"
+      ],
+      "revision_reasons": [
+        {
+          "round": 5,
+          "reason": "新独审明确指出K-ALG-017-r5-end-auxiliary-retirement；实际定点作者已修复最终候选，保留原失败记录，追加一轮用于该候选的真实检查与新独审。",
+          "at": "2026-10-29T00:44:32+00:00"
+        }
+      ]
+    }
+  },
+  "predecessor_run": "docs/evidence/knowledge-workflow-20261028-batch23",
+  "registered_version": "base-gpt-6-astra-2026-04-30-v2.3-draft29",
+  "verified_at": "2026-10-29T00:48:29+00:00"
+}

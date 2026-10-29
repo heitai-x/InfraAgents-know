@@ -1,0 +1,301 @@
+{
+  "role": "reviewer",
+  "engine": "sol",
+  "requested_model": "gpt-6.1-sol",
+  "reasoning_effort": "high",
+  "prompt_sha256": "9bb49ac846fa576fc8d059ca8969f34bfd92589621738f4a5dc3f301f414264f",
+  "usage": [
+    {
+      "input_tokens": 696532,
+      "cached_input_tokens": 529152,
+      "cache_write_input_tokens": 0,
+      "output_tokens": 7591,
+      "reasoning_output_tokens": 2604
+    }
+  ],
+  "answer": "{\n  \"entry_id\": \"K-FW-011\",\n  \"body_sha256\": \"7ba26eed5dbc03c67ea3dd5982939fa6adb0fb3f9038bded6a3bac5a3dbbb04e\",\n  \"reviewer\": \"sol-reviewer:K-FW-011:round-1\",\n  \"decision\": \"revise\",\n  \"documents\": {\n    \"AGENTS.md\": \"b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a\",\n    \"docs/knowledge-method.md\": \"69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb\",\n    \"docs/knowledge-review.md\": \"f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21\",\n    \"knowledge/frameworks/checkpoint-loading.md\": \"7ba26eed5dbc03c67ea3dd5982939fa6adb0fb3f9038bded6a3bac5a3dbbb04e\",\n    \"knowledge/sources/S-SERVERLESSLLM.md\": \"aff9202b72fffcdf3145d0f014888070d2e12995b04f9c259930ad90a806473d\",\n    \"knowledge/sources/S-TORCH-INFERENCE.md\": \"2114aca130a5c62a0b10baa52b7d59becea788c98dd5cd8221573b1a8d5178b3\",\n    \"knowledge/sources/S-TORCH-CUDA.md\": \"8ee61677a1e35d475d9bb122b2c7fa824ccf054acefbe2f12345d72c1fb1b00e\",\n    \"knowledge/frameworks/inference-eval.md\": \"9381e25cf021f5338aef4311ba5c95ca2255fead917335c292b79347acf6b4b9\",\n    \"knowledge/frameworks/cpu-quantized-kernels.md\": \"fcb634a208ad9c814cc9b3228aee7082ca77091c7a385b3d3d57618f14aba310\",\n    \"knowledge/engine-index/vllm-model-runner.md\": \"87d1433d4f64d939ff8f137d1c1d4092cfdf2b3d7ebdd011a0f344cc66564714\",\n    \"knowledge/workloads/measurement-comparability.md\": \"c3c5fbcd9a6b8b4f94954bda424488c83c3a741a2de339fea4f7aa83b4dcc215\",\n    \"knowledge/workloads/capacity-planning.md\": \"2a1fab417c30d8e6984c202d805f31863e0f00e248558c583609b5f9ba7e88c7\",\n    \"knowledge/algorithms/weight-expert-offload.md\": \"cb230fafeec2d39fa40228ad44dbb41d34c62673fbac2325b6e797f206bc0fde\",\n    \"knowledge/system-semantics/model-lifecycle.md\": \"bf15950cafcbb584f031cc3a1ea9eaf3331d2816819c6e468ae333d70a3c7c0e\",\n    \"references/S-SERVERLESSLLM/fulltext.txt\": \"8fb94782eb4bf30cd44f72b99bbf5adc5ee88c9ae831a29d0ad604fb99f3e4c3\",\n    \"references/S-TORCH-CUDA/fulltext.txt\": \"4756fc37be9c52d4128b5f4b46f996fddb8b136a9ef51183a6f0e1c7d49b18df\",\n    \"tools/check_k_fw_011_full.py\": \"e1d26c43b6bf56bbf1e01a709b91f5ee679a06f20a13cb58571695456901a4b6\"\n  },\n  \"criteria\": {\n    \"definition\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"明确加载动机、制品输入、版本输出、轴坐标和完成事件，能够区分字节读取、张量可读与服务就绪。全文来源支持加载格式和异步语义，独立推导与来源报告的归属也有明确声明。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/frameworks/checkpoint-loading.md\",\n          \"quote\": \"加载的结果不是“文件字节已复制”，而是一组能够共同实现指定模型函数的张量、配置和执行布局。\"\n        },\n        {\n          \"path\": \"knowledge/frameworks/checkpoint-loading.md\",\n          \"quote\": \"主机调用返回、设备开始执行、设备完成、最后消费者结束和版本可发布必须分开记录。\"\n        }\n      ]\n    },\n    \"legality\": {\n      \"assessment\": \"partial\",\n      \"reason\": \"必需项、表示转换、别名、并行放置和执行环境条件较完整，也区分了合法性与优化选择；但多分片输入的范围检查没有落实文件身份，按所有范围的起点统一检查会误拒绝不同文件中的合法载荷。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/frameworks/checkpoint-loading.md\",\n          \"quote\": \"每 rank 一个文件还是多个文件、整段读取还是分块、直接 I/O 还是 mmap，是可比较的方案选择，不是数学必然。\"\n        },\n        {\n          \"path\": \"knowledge/frameworks/checkpoint-loading.md\",\n          \"quote\": \"6 对所有非别名源范围按起点排序；若存在交叠且无 alias 声明，失败\"\n        }\n      ]\n    },\n    \"algorithm\": {\n      \"assessment\": \"partial\",\n      \"reason\": \"坐标置换公式及转置反例可核算，发布与物理最后使用的原则正确；但 ExecuteLoadPlan 初始化 PENDING 后没有给出 chunk 离开该状态的更新，循环和最终排空缺少可执行的推进关系，尚不能按所列步骤恢复一个会终止的完整算法。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/frameworks/checkpoint-loading.md\",\n          \"quote\": \"2 初始化所有 chunk 为 PENDING；所有根 ready=false；保留旧版本引用\"\n        },\n        {\n          \"path\": \"knowledge/frameworks/checkpoint-loading.md\",\n          \"quote\": \"3 当存在 PENDING chunk：\"\n        },\n        {\n          \"path\": \"knowledge/frameworks/checkpoint-loading.md\",\n          \"quote\": \"9   记录 b 与目标根的完成事件、消费者集合和代次；不得标记根 ready\"\n        }\n      ]\n    },\n    \"cost\": {\n      \"assessment\": \"partial\",\n      \"reason\": \"讨论了转换、I/O、传输、准备、同步及版本并存成本，理想等块流水式成立；但容量公式没有建立互斥的物理计数项，D_h 未定义，锁页池可能与池内在途块重复相加。后续多 rank 公式又直接累加可重叠阶段，与前述流水假设缺少衔接。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/frameworks/checkpoint-loading.md\",\n          \"quote\": \"M_h ≈ S_s + D_h + C_h + n_b·b + M + R_h + P_h，\"\n        },\n        {\n          \"path\": \"knowledge/frameworks/checkpoint-loading.md\",\n          \"quote\": \"T ≈ t_r + t_c + t_d + (N_c−1)·max(t_r,t_c,t_d)，\"\n        },\n        {\n          \"path\": \"knowledge/frameworks/checkpoint-loading.md\",\n          \"quote\": \"T_ready ≈ max_r( queued_r + read_r + transform_r + transfer_r + compile/prewarm_r ) + barrier，\"\n        }\n      ]\n    },\n    \"adaptation\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"条件变化与选择反转有具体因果关系：加载频率影响准备成本摊销，瓶颈迁移影响线程和分块收益，目标布局变化影响离线产物资格，独立更新需求影响别名选择，图地址依赖影响版本切换。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/frameworks/checkpoint-loading.md\",\n          \"quote\": \"目标 rank 数、量化格式、内核布局或编译器变化后，预打包产物可能失效；比较时必须把转换次数、缓存失效和分发成本计入整个模型生命周期。\"\n        },\n        {\n          \"path\": \"knowledge/frameworks/checkpoint-loading.md\",\n          \"quote\": \"源存储很快而主机转换很慢时，瓶颈会从 SSD 移到解包、转置或量化元数据处理\"\n        }\n      ]\n    },\n    \"diagnosis\": {\n      \"assessment\": \"partial\",\n      \"reason\": \"诊断表能区分布局、表示、缓存、传输和版本解释，且给出反证后的修正方向；但是所声称的缓冲提前复用负对照没有实际复用被保护缓冲，其报错不能作为流水所有权机制的验证证据。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/frameworks/checkpoint-loading.md\",\n          \"quote\": \"用提前发布和提前复用缓冲的负对照检查状态不变量。\"\n        },\n        {\n          \"path\": \"knowledge/frameworks/checkpoint-loading.md\",\n          \"quote\": \"再比较完整前向的中间层和 logits，定位最早分歧点，不能只比较最终 token。\"\n        }\n      ]\n    }\n  },\n  \"findings\": [\n    {\n      \"id\": \"K-FW-011-R1-F01\",\n      \"criterion\": \"algorithm\",\n      \"evidence\": \"ExecuteLoadPlan 写明“2 初始化所有 chunk 为 PENDING”及“3 当存在 PENDING chunk：”，后续步骤只有选择、读取、转换、提交和记录事件，没有将所选 chunk 改为在途或完成，也没有明确成功路径在最后一次提交后等待并处理全部完成事件。\",\n      \"impact\": \"逐步执行该伪代码时 PENDING 集合不会减少，可以反复选择同一 chunk；即使读者自行补上提交状态，最后一批异步操作如何推进到完成和 Cert_g 仍不明确。正文的正确性原则尚未落成完整状态算法。\",\n      \"blocking\": true,\n      \"required_revision\": \"明确 chunk 的待处理、在途、完成及失败转换，在提交时移出 PENDING，按匹配代次的完成事件解除实际消费者责任；区分无可提交工作时的等待与不可推进错误，全部工作完成后执行验证和发布。失败或取消排空后显式返回，不再进入成功发布分支。\"\n    },\n    {\n      \"id\": \"K-FW-011-R1-F02\",\n      \"criterion\": \"legality\",\n      \"evidence\": \"制品定义包含“F_s 是分片文件”，但 BuildLoadPlan 第 6 步为“对所有非别名源范围按起点排序；若存在交叠且无 alias 声明，失败”，chunk 记录也只列“源区间”，未明确该区间的文件身份。\",\n      \"impact\": \"不同 shard 都在 offset=8 保存各自载荷完全合法；若统一比较偏移区间，它们会被判为重叠。省略文件身份也无法唯一确定实际读取对象，与本章支持多个分片的输入范围不相容。\",\n      \"blocking\": true,\n      \"required_revision\": \"将源位置明确表示为固定制品版本下的文件或 shard 身份加偏移；按文件分别检查边界、排序和重叠，chunk 保留对应源文件身份。用不同文件相同偏移合法、同一文件未声明重叠非法的对照核对该规则。\"\n    },\n    {\n      \"id\": \"K-FW-011-R1-F03\",\n      \"criterion\": \"cost\",\n      \"evidence\": \"正文定义“同时在途块数为 n_b”“锁页池为 P_h”，随后使用“M_h ≈ S_s + D_h + C_h + n_b·b + M + R_h + P_h”；D_h 未定义，也没有说明池内块与 P_h、活跃分配与 R_h/R_d 的排除关系。多 rank 公式又使用“read_r + transform_r + transfer_r”。\",\n      \"impact\": \"若两个 16 MiB 在途块恰好来自一个 32 MiB 锁页池，仅这两项就会把实际 32 MiB 计为 64 MiB。分配器保留若采用总 reserved 口径，还会重复计算活跃对象。时间方面，在两块、三个独立阶段各耗时 1 的设定下，前式给出完成时间 4，直接累加各阶段总工作时间则为 6，可能改变容量可行性和启动路径判断。\",\n      \"blocking\": true,\n      \"required_revision\": \"定义 D_h，按唯一物理存储建立互斥容量项；明确锁页池已包含哪些在途缓冲，allocator 项只计尚未归入其他项的保留容量，并说明图池等交叠关系。多 rank 公式应使用每 rank 依赖图或流水的实际完成时间；阶段直接相加时明确其串行前提。\"\n    },\n    {\n      \"id\": \"K-FW-011-R1-F04\",\n      \"criterion\": \"diagnosis\",\n      \"evidence\": \"脚本 pipeline 使用“for i in range(2)”及“buf = 'b' + str(i % 2)”，实际只选择 b0、b1。early_release 分支在 i=1 检查的是 old=b0，并直接执行“errors.append('buffer reused while pending')”，没有把 b0 交给新工作、覆盖它或改变其释放状态。成功分支以 pending.clear() 直接代替所有完成事件。正文却称其为“提前复用缓冲的负对照”。\",\n      \"impact\": \"合法地让 b0、b1 同时在途也会在该开关下报错；负对照检测的是预设条件，而不是同一物理槽在最后使用前被再次取得。所供执行确实打印了错误列表并退出 0，但没有建立缓冲复用和排空机制的辨别证据。\",\n      \"blocking\": true,\n      \"required_revision\": \"以实际申请、提交、消费者完成、释放及再次申请事件构造小状态模型，并由独立不变量观察器判断同一槽的未完成访问是否与新使用重叠。让负对照实际提前复用同一槽，保留不同槽合法并发的正例；完成集合应由事件推进，失败清理也应核对未结束责任。同步修正正文对检查范围的声明。\"\n    }\n  ],\n  \"limitations\": [\n    \"本次依据用户提供的完整文本、明确摘录、脚本及 actual_preflight 记录审查；当前可用工具没有文件读取或命令执行接口，未重新读取本地文件、重算文件哈希或独立重跑 Python。documents 采用任务提供的字面绑定。\",\n    \"S-TORCH-INFERENCE 只提供来源说明，未提供允许读取的原始文档正文；章节对此边界的声明正确。\",\n    \"ServerlessLLM 的格式、块池、直接 I/O、锁页及调度估计与所供论文相符；性能报告仅支持其测试条件。CUDA 异步、跨 stream 生存期及图地址语义与所供固定文档相符。\",\n    \"没有真实 checkpoint、CUDA、PCIe、O_DIRECT、锁页、图捕获、目标设备数值与性能、实际故障恢复或 Agent 使用效果证据；这些已明确声明的边界本身不构成阻塞项。\",\n    \"摘录仅支持所列范围的衔接核对；未检查 reader.html 版面、PDF 图版、源码归档或磁盘链接目标是否存在。\"\n  ],\n  \"checks\": [\n    {\n      \"script\": \"tools/check_k_fw_011_full.py\",\n      \"args\": []\n    }\n  ],\n  \"no_checks_reason\": \"\",\n  \"reading_scope\": \"完整阅读用户所供以下全文，范围沿用材料声明的零基半开抽取字符坐标：AGENTS.md [0,567)；docs/knowledge-method.md [0,2251)；docs/knowledge-review.md [0,3016)；knowledge/frameworks/checkpoint-loading.md [0,9858)；knowledge/sources/S-SERVERLESSLLM.md [0,781)；knowledge/sources/S-TORCH-INFERENCE.md [0,727)；knowledge/sources/S-TORCH-CUDA.md [0,1468)；knowledge/frameworks/inference-eval.md [0,3779)；knowledge/frameworks/cpu-quantized-kernels.md [0,3369)；knowledge/engine-index/vllm-model-runner.md [0,2207)；knowledge/workloads/measurement-comparability.md [0,2988)；knowledge/workloads/capacity-planning.md [0,3442)；knowledge/algorithms/weight-expert-offload.md [0,3216)；knowledge/system-semantics/model-lifecycle.md [0,3556)；references/S-SERVERLESSLLM/fulltext.txt 所供全文，材料标注 [0,89875)，包含 PDF pp.1–18；references/S-TORCH-CUDA/fulltext.txt 所供全文，材料标注 [0,80851)。另完整阅读 candidate.test_script，从 import itertools 到最终 PASS 打印语句，以及 author_notes 和 actual_preflight 执行记录。仅阅读以下摘录，不列入 documents：knowledge/models/prefill-decode-state.md [16000,19863)；knowledge/system-semantics/memory-allocators.md [0,3863)；knowledge/hardware/host-device-transfer.md [0,1378)、[4000,6485)；knowledge/frameworks/compile-dynamic-shapes.md [0,3863)；knowledge/frameworks/mlx-serving.md [4000,6228)、[12000,13635)；knowledge/frameworks/neuron-serving.md [0,2915)、[12000,12948)；knowledge/hardware/trainium-dataflow.md [0,1641)、[12000,14222)；knowledge/system-semantics/position-mask-cache.md [0,2504)、[12000,13359)；knowledge/system-semantics/tokenization-io.md [0,3863)；knowledge/system-semantics/design-synthesis.md [0,3863)；knowledge/tools/correctness-oracles.md [0,3863)；knowledge/algorithms/operator-primitives.md [4000,5929)、[8000,9934)；knowledge/hardware/storage-io.md [0,3863)；knowledge/system-semantics/storage-services.md [0,3863)；knowledge/system-semantics/deployment-environment.md [0,3863)。以上是所供材料阅读，不声称独立访问了本地原文件或摘录之外内容。\",\n  \"test_assessment\": \"所供 actual_preflight 表明绑定脚本在 remote_bwrap 中实际执行，returncode=0、未超时，stdout 包含转置、别名字节、恒等切片、40/64 字节容量、范围重叠拒绝和三个负对照结果。author_notes 仅称作者会话未运行，与后来提供的预检执行记录不矛盾；本 reviewer 未独立重跑。布局被测路径按目标坐标读取源元素，参考按源坐标散写目标，方向具有一定独立性；二者共用 lin/read_value 等辅助函数，因此不能证明这些公共组件正确。忽略转置的负对照实际改变了字节顺序并被比较检出，重叠载荷也确实触发拒绝。别名检查只比较值，容量数字来自描述符求和，不能证明实际存储身份或物理容量。流水 early_publish 的计数检查能发现指定的提前发布标志，但没有覆盖 chunk 完成、rank、参考检查和预热证书。early_release 没有实际复用同一槽，是 F04 所述无效负对照；pending.clear() 也不验证物理完成或失败排空。validate 尚未检查合法轴置换、负偏移、别名环等合同边界，脚本没有多文件身份、量化布局或成本模型检查。因此退出 0 只支持已执行的小样例，不能支持正文声称的完整制品合同及流水状态机验证。\"\n}",
+  "exit_code": 0,
+  "status": "completed",
+  "timeout_seconds": 1800,
+  "response_path": "D:\\桌面\\xdb\\InfraAgents\\InfraAgents-know-astra-new\\InfraAgents-know\\docs\\evidence\\knowledge-workflow-20261028-batch9\\full_build\\K-FW-011\\round-1\\reviewer-attempt-001\\answer.txt",
+  "record_path": "D:\\桌面\\xdb\\InfraAgents\\InfraAgents-know-astra-new\\InfraAgents-know\\docs\\evidence\\knowledge-workflow-20261028-batch9\\full_build\\K-FW-011\\round-1\\reviewer-attempt-001\\record.json",
+  "tool_events": [
+    {
+      "type": "item.completed",
+      "item": {
+        "id": "item_1",
+        "type": "mcp_tool_call",
+        "server": "codex",
+        "tool": "list_mcp_resources",
+        "arguments": {},
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"resources\":[]}"
+            }
+          ],
+          "structured_content": null
+        },
+        "error": null,
+        "status": "completed"
+      }
+    },
+    {
+      "type": "item.completed",
+      "item": {
+        "id": "item_2",
+        "type": "mcp_tool_call",
+        "server": "codex",
+        "tool": "list_mcp_resource_templates",
+        "arguments": {},
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"resourceTemplates\":[]}"
+            }
+          ],
+          "structured_content": null
+        },
+        "error": null,
+        "status": "completed"
+      }
+    }
+  ],
+  "inventory_tool_events": [
+    {
+      "type": "item.completed",
+      "item": {
+        "id": "item_1",
+        "type": "mcp_tool_call",
+        "server": "codex",
+        "tool": "list_mcp_resources",
+        "arguments": {},
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"resources\":[]}"
+            }
+          ],
+          "structured_content": null
+        },
+        "error": null,
+        "status": "completed"
+      }
+    },
+    {
+      "type": "item.completed",
+      "item": {
+        "id": "item_2",
+        "type": "mcp_tool_call",
+        "server": "codex",
+        "tool": "list_mcp_resource_templates",
+        "arguments": {},
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"resourceTemplates\":[]}"
+            }
+          ],
+          "structured_content": null
+        },
+        "error": null,
+        "status": "completed"
+      }
+    }
+  ],
+  "rejected_tool_events": [],
+  "tool_policy": "metadata_inventory_only",
+  "tool_policy_version": "metadata-inventory-v1",
+  "tool_policy_scope": "Only empty-argument codex host plugin/skill-directory descriptors and empty template inventory; inventory is not knowledge evidence. All other tool events reject the call.",
+  "tool_policy_reason": "Production chapter construction allows observed generic capability discovery metadata; this does not claim a zero-tool comparison or external source reading.",
+  "malformed_event_lines": [],
+  "turn_completed": true,
+  "error_events": [],
+  "recovered_transport_events": [],
+  "terminal_error_events": [],
+  "transport_recovered": false,
+  "actual_model": null,
+  "identity_verified": null,
+  "identity_basis": "Explicit CLI model and isolated HTTP provider; CLI events do not expose server model identity.",
+  "provider": "eval-openai-http",
+  "max_output_tokens": null,
+  "cli_version": "codex-cli 0.164.0-alpha.11.1",
+  "cost_scope": "Codex token usage is reported; subscription charge is not exposed.",
+  "parsed": {
+    "entry_id": "K-FW-011",
+    "body_sha256": "7ba26eed5dbc03c67ea3dd5982939fa6adb0fb3f9038bded6a3bac5a3dbbb04e",
+    "reviewer": "sol-reviewer:K-FW-011:round-1",
+    "decision": "revise",
+    "documents": {
+      "AGENTS.md": "b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a",
+      "docs/knowledge-method.md": "69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb",
+      "docs/knowledge-review.md": "f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21",
+      "knowledge/frameworks/checkpoint-loading.md": "7ba26eed5dbc03c67ea3dd5982939fa6adb0fb3f9038bded6a3bac5a3dbbb04e",
+      "knowledge/sources/S-SERVERLESSLLM.md": "aff9202b72fffcdf3145d0f014888070d2e12995b04f9c259930ad90a806473d",
+      "knowledge/sources/S-TORCH-INFERENCE.md": "2114aca130a5c62a0b10baa52b7d59becea788c98dd5cd8221573b1a8d5178b3",
+      "knowledge/sources/S-TORCH-CUDA.md": "8ee61677a1e35d475d9bb122b2c7fa824ccf054acefbe2f12345d72c1fb1b00e",
+      "knowledge/frameworks/inference-eval.md": "9381e25cf021f5338aef4311ba5c95ca2255fead917335c292b79347acf6b4b9",
+      "knowledge/frameworks/cpu-quantized-kernels.md": "fcb634a208ad9c814cc9b3228aee7082ca77091c7a385b3d3d57618f14aba310",
+      "knowledge/engine-index/vllm-model-runner.md": "87d1433d4f64d939ff8f137d1c1d4092cfdf2b3d7ebdd011a0f344cc66564714",
+      "knowledge/workloads/measurement-comparability.md": "c3c5fbcd9a6b8b4f94954bda424488c83c3a741a2de339fea4f7aa83b4dcc215",
+      "knowledge/workloads/capacity-planning.md": "2a1fab417c30d8e6984c202d805f31863e0f00e248558c583609b5f9ba7e88c7",
+      "knowledge/algorithms/weight-expert-offload.md": "cb230fafeec2d39fa40228ad44dbb41d34c62673fbac2325b6e797f206bc0fde",
+      "knowledge/system-semantics/model-lifecycle.md": "bf15950cafcbb584f031cc3a1ea9eaf3331d2816819c6e468ae333d70a3c7c0e",
+      "references/S-SERVERLESSLLM/fulltext.txt": "8fb94782eb4bf30cd44f72b99bbf5adc5ee88c9ae831a29d0ad604fb99f3e4c3",
+      "references/S-TORCH-CUDA/fulltext.txt": "4756fc37be9c52d4128b5f4b46f996fddb8b136a9ef51183a6f0e1c7d49b18df",
+      "tools/check_k_fw_011_full.py": "e1d26c43b6bf56bbf1e01a709b91f5ee679a06f20a13cb58571695456901a4b6"
+    },
+    "criteria": {
+      "definition": {
+        "assessment": "sufficient",
+        "reason": "明确加载动机、制品输入、版本输出、轴坐标和完成事件，能够区分字节读取、张量可读与服务就绪。全文来源支持加载格式和异步语义，独立推导与来源报告的归属也有明确声明。",
+        "evidence": [
+          {
+            "path": "knowledge/frameworks/checkpoint-loading.md",
+            "quote": "加载的结果不是“文件字节已复制”，而是一组能够共同实现指定模型函数的张量、配置和执行布局。"
+          },
+          {
+            "path": "knowledge/frameworks/checkpoint-loading.md",
+            "quote": "主机调用返回、设备开始执行、设备完成、最后消费者结束和版本可发布必须分开记录。"
+          }
+        ]
+      },
+      "legality": {
+        "assessment": "partial",
+        "reason": "必需项、表示转换、别名、并行放置和执行环境条件较完整，也区分了合法性与优化选择；但多分片输入的范围检查没有落实文件身份，按所有范围的起点统一检查会误拒绝不同文件中的合法载荷。",
+        "evidence": [
+          {
+            "path": "knowledge/frameworks/checkpoint-loading.md",
+            "quote": "每 rank 一个文件还是多个文件、整段读取还是分块、直接 I/O 还是 mmap，是可比较的方案选择，不是数学必然。"
+          },
+          {
+            "path": "knowledge/frameworks/checkpoint-loading.md",
+            "quote": "6 对所有非别名源范围按起点排序；若存在交叠且无 alias 声明，失败"
+          }
+        ]
+      },
+      "algorithm": {
+        "assessment": "partial",
+        "reason": "坐标置换公式及转置反例可核算，发布与物理最后使用的原则正确；但 ExecuteLoadPlan 初始化 PENDING 后没有给出 chunk 离开该状态的更新，循环和最终排空缺少可执行的推进关系，尚不能按所列步骤恢复一个会终止的完整算法。",
+        "evidence": [
+          {
+            "path": "knowledge/frameworks/checkpoint-loading.md",
+            "quote": "2 初始化所有 chunk 为 PENDING；所有根 ready=false；保留旧版本引用"
+          },
+          {
+            "path": "knowledge/frameworks/checkpoint-loading.md",
+            "quote": "3 当存在 PENDING chunk："
+          },
+          {
+            "path": "knowledge/frameworks/checkpoint-loading.md",
+            "quote": "9   记录 b 与目标根的完成事件、消费者集合和代次；不得标记根 ready"
+          }
+        ]
+      },
+      "cost": {
+        "assessment": "partial",
+        "reason": "讨论了转换、I/O、传输、准备、同步及版本并存成本，理想等块流水式成立；但容量公式没有建立互斥的物理计数项，D_h 未定义，锁页池可能与池内在途块重复相加。后续多 rank 公式又直接累加可重叠阶段，与前述流水假设缺少衔接。",
+        "evidence": [
+          {
+            "path": "knowledge/frameworks/checkpoint-loading.md",
+            "quote": "M_h ≈ S_s + D_h + C_h + n_b·b + M + R_h + P_h，"
+          },
+          {
+            "path": "knowledge/frameworks/checkpoint-loading.md",
+            "quote": "T ≈ t_r + t_c + t_d + (N_c−1)·max(t_r,t_c,t_d)，"
+          },
+          {
+            "path": "knowledge/frameworks/checkpoint-loading.md",
+            "quote": "T_ready ≈ max_r( queued_r + read_r + transform_r + transfer_r + compile/prewarm_r ) + barrier，"
+          }
+        ]
+      },
+      "adaptation": {
+        "assessment": "sufficient",
+        "reason": "条件变化与选择反转有具体因果关系：加载频率影响准备成本摊销，瓶颈迁移影响线程和分块收益，目标布局变化影响离线产物资格，独立更新需求影响别名选择，图地址依赖影响版本切换。",
+        "evidence": [
+          {
+            "path": "knowledge/frameworks/checkpoint-loading.md",
+            "quote": "目标 rank 数、量化格式、内核布局或编译器变化后，预打包产物可能失效；比较时必须把转换次数、缓存失效和分发成本计入整个模型生命周期。"
+          },
+          {
+            "path": "knowledge/frameworks/checkpoint-loading.md",
+            "quote": "源存储很快而主机转换很慢时，瓶颈会从 SSD 移到解包、转置或量化元数据处理"
+          }
+        ]
+      },
+      "diagnosis": {
+        "assessment": "partial",
+        "reason": "诊断表能区分布局、表示、缓存、传输和版本解释，且给出反证后的修正方向；但是所声称的缓冲提前复用负对照没有实际复用被保护缓冲，其报错不能作为流水所有权机制的验证证据。",
+        "evidence": [
+          {
+            "path": "knowledge/frameworks/checkpoint-loading.md",
+            "quote": "用提前发布和提前复用缓冲的负对照检查状态不变量。"
+          },
+          {
+            "path": "knowledge/frameworks/checkpoint-loading.md",
+            "quote": "再比较完整前向的中间层和 logits，定位最早分歧点，不能只比较最终 token。"
+          }
+        ]
+      }
+    },
+    "findings": [
+      {
+        "id": "K-FW-011-R1-F01",
+        "criterion": "algorithm",
+        "evidence": "ExecuteLoadPlan 写明“2 初始化所有 chunk 为 PENDING”及“3 当存在 PENDING chunk：”，后续步骤只有选择、读取、转换、提交和记录事件，没有将所选 chunk 改为在途或完成，也没有明确成功路径在最后一次提交后等待并处理全部完成事件。",
+        "impact": "逐步执行该伪代码时 PENDING 集合不会减少，可以反复选择同一 chunk；即使读者自行补上提交状态，最后一批异步操作如何推进到完成和 Cert_g 仍不明确。正文的正确性原则尚未落成完整状态算法。",
+        "blocking": true,
+        "required_revision": "明确 chunk 的待处理、在途、完成及失败转换，在提交时移出 PENDING，按匹配代次的完成事件解除实际消费者责任；区分无可提交工作时的等待与不可推进错误，全部工作完成后执行验证和发布。失败或取消排空后显式返回，不再进入成功发布分支。"
+      },
+      {
+        "id": "K-FW-011-R1-F02",
+        "criterion": "legality",
+        "evidence": "制品定义包含“F_s 是分片文件”，但 BuildLoadPlan 第 6 步为“对所有非别名源范围按起点排序；若存在交叠且无 alias 声明，失败”，chunk 记录也只列“源区间”，未明确该区间的文件身份。",
+        "impact": "不同 shard 都在 offset=8 保存各自载荷完全合法；若统一比较偏移区间，它们会被判为重叠。省略文件身份也无法唯一确定实际读取对象，与本章支持多个分片的输入范围不相容。",
+        "blocking": true,
+        "required_revision": "将源位置明确表示为固定制品版本下的文件或 shard 身份加偏移；按文件分别检查边界、排序和重叠，chunk 保留对应源文件身份。用不同文件相同偏移合法、同一文件未声明重叠非法的对照核对该规则。"
+      },
+      {
+        "id": "K-FW-011-R1-F03",
+        "criterion": "cost",
+        "evidence": "正文定义“同时在途块数为 n_b”“锁页池为 P_h”，随后使用“M_h ≈ S_s + D_h + C_h + n_b·b + M + R_h + P_h”；D_h 未定义，也没有说明池内块与 P_h、活跃分配与 R_h/R_d 的排除关系。多 rank 公式又使用“read_r + transform_r + transfer_r”。",
+        "impact": "若两个 16 MiB 在途块恰好来自一个 32 MiB 锁页池，仅这两项就会把实际 32 MiB 计为 64 MiB。分配器保留若采用总 reserved 口径，还会重复计算活跃对象。时间方面，在两块、三个独立阶段各耗时 1 的设定下，前式给出完成时间 4，直接累加各阶段总工作时间则为 6，可能改变容量可行性和启动路径判断。",
+        "blocking": true,
+        "required_revision": "定义 D_h，按唯一物理存储建立互斥容量项；明确锁页池已包含哪些在途缓冲，allocator 项只计尚未归入其他项的保留容量，并说明图池等交叠关系。多 rank 公式应使用每 rank 依赖图或流水的实际完成时间；阶段直接相加时明确其串行前提。"
+      },
+      {
+        "id": "K-FW-011-R1-F04",
+        "criterion": "diagnosis",
+        "evidence": "脚本 pipeline 使用“for i in range(2)”及“buf = 'b' + str(i % 2)”，实际只选择 b0、b1。early_release 分支在 i=1 检查的是 old=b0，并直接执行“errors.append('buffer reused while pending')”，没有把 b0 交给新工作、覆盖它或改变其释放状态。成功分支以 pending.clear() 直接代替所有完成事件。正文却称其为“提前复用缓冲的负对照”。",
+        "impact": "合法地让 b0、b1 同时在途也会在该开关下报错；负对照检测的是预设条件，而不是同一物理槽在最后使用前被再次取得。所供执行确实打印了错误列表并退出 0，但没有建立缓冲复用和排空机制的辨别证据。",
+        "blocking": true,
+        "required_revision": "以实际申请、提交、消费者完成、释放及再次申请事件构造小状态模型，并由独立不变量观察器判断同一槽的未完成访问是否与新使用重叠。让负对照实际提前复用同一槽，保留不同槽合法并发的正例；完成集合应由事件推进，失败清理也应核对未结束责任。同步修正正文对检查范围的声明。"
+      }
+    ],
+    "limitations": [
+      "本次依据用户提供的完整文本、明确摘录、脚本及 actual_preflight 记录审查；当前可用工具没有文件读取或命令执行接口，未重新读取本地文件、重算文件哈希或独立重跑 Python。documents 采用任务提供的字面绑定。",
+      "S-TORCH-INFERENCE 只提供来源说明，未提供允许读取的原始文档正文；章节对此边界的声明正确。",
+      "ServerlessLLM 的格式、块池、直接 I/O、锁页及调度估计与所供论文相符；性能报告仅支持其测试条件。CUDA 异步、跨 stream 生存期及图地址语义与所供固定文档相符。",
+      "没有真实 checkpoint、CUDA、PCIe、O_DIRECT、锁页、图捕获、目标设备数值与性能、实际故障恢复或 Agent 使用效果证据；这些已明确声明的边界本身不构成阻塞项。",
+      "摘录仅支持所列范围的衔接核对；未检查 reader.html 版面、PDF 图版、源码归档或磁盘链接目标是否存在。"
+    ],
+    "checks": [
+      {
+        "script": "tools/check_k_fw_011_full.py",
+        "args": []
+      }
+    ],
+    "no_checks_reason": "",
+    "reading_scope": "完整阅读用户所供以下全文，范围沿用材料声明的零基半开抽取字符坐标：AGENTS.md [0,567)；docs/knowledge-method.md [0,2251)；docs/knowledge-review.md [0,3016)；knowledge/frameworks/checkpoint-loading.md [0,9858)；knowledge/sources/S-SERVERLESSLLM.md [0,781)；knowledge/sources/S-TORCH-INFERENCE.md [0,727)；knowledge/sources/S-TORCH-CUDA.md [0,1468)；knowledge/frameworks/inference-eval.md [0,3779)；knowledge/frameworks/cpu-quantized-kernels.md [0,3369)；knowledge/engine-index/vllm-model-runner.md [0,2207)；knowledge/workloads/measurement-comparability.md [0,2988)；knowledge/workloads/capacity-planning.md [0,3442)；knowledge/algorithms/weight-expert-offload.md [0,3216)；knowledge/system-semantics/model-lifecycle.md [0,3556)；references/S-SERVERLESSLLM/fulltext.txt 所供全文，材料标注 [0,89875)，包含 PDF pp.1–18；references/S-TORCH-CUDA/fulltext.txt 所供全文，材料标注 [0,80851)。另完整阅读 candidate.test_script，从 import itertools 到最终 PASS 打印语句，以及 author_notes 和 actual_preflight 执行记录。仅阅读以下摘录，不列入 documents：knowledge/models/prefill-decode-state.md [16000,19863)；knowledge/system-semantics/memory-allocators.md [0,3863)；knowledge/hardware/host-device-transfer.md [0,1378)、[4000,6485)；knowledge/frameworks/compile-dynamic-shapes.md [0,3863)；knowledge/frameworks/mlx-serving.md [4000,6228)、[12000,13635)；knowledge/frameworks/neuron-serving.md [0,2915)、[12000,12948)；knowledge/hardware/trainium-dataflow.md [0,1641)、[12000,14222)；knowledge/system-semantics/position-mask-cache.md [0,2504)、[12000,13359)；knowledge/system-semantics/tokenization-io.md [0,3863)；knowledge/system-semantics/design-synthesis.md [0,3863)；knowledge/tools/correctness-oracles.md [0,3863)；knowledge/algorithms/operator-primitives.md [4000,5929)、[8000,9934)；knowledge/hardware/storage-io.md [0,3863)；knowledge/system-semantics/storage-services.md [0,3863)；knowledge/system-semantics/deployment-environment.md [0,3863)。以上是所供材料阅读，不声称独立访问了本地原文件或摘录之外内容。",
+    "test_assessment": "所供 actual_preflight 表明绑定脚本在 remote_bwrap 中实际执行，returncode=0、未超时，stdout 包含转置、别名字节、恒等切片、40/64 字节容量、范围重叠拒绝和三个负对照结果。author_notes 仅称作者会话未运行，与后来提供的预检执行记录不矛盾；本 reviewer 未独立重跑。布局被测路径按目标坐标读取源元素，参考按源坐标散写目标，方向具有一定独立性；二者共用 lin/read_value 等辅助函数，因此不能证明这些公共组件正确。忽略转置的负对照实际改变了字节顺序并被比较检出，重叠载荷也确实触发拒绝。别名检查只比较值，容量数字来自描述符求和，不能证明实际存储身份或物理容量。流水 early_publish 的计数检查能发现指定的提前发布标志，但没有覆盖 chunk 完成、rank、参考检查和预热证书。early_release 没有实际复用同一槽，是 F04 所述无效负对照；pending.clear() 也不验证物理完成或失败排空。validate 尚未检查合法轴置换、负偏移、别名环等合同边界，脚本没有多文件身份、量化布局或成本模型检查。因此退出 0 只支持已执行的小样例，不能支持正文声称的完整制品合同及流水状态机验证。"
+  },
+  "format_status": "strict_json",
+  "format_error": null,
+  "output_text": "{\n  \"entry_id\": \"K-FW-011\",\n  \"body_sha256\": \"7ba26eed5dbc03c67ea3dd5982939fa6adb0fb3f9038bded6a3bac5a3dbbb04e\",\n  \"reviewer\": \"sol-reviewer:K-FW-011:round-1\",\n  \"decision\": \"revise\",\n  \"documents\": {\n    \"AGENTS.md\": \"b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a\",\n    \"docs/knowledge-method.md\": \"69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb\",\n    \"docs/knowledge-review.md\": \"f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21\",\n    \"knowledge/frameworks/checkpoint-loading.md\": \"7ba26eed5dbc03c67ea3dd5982939fa6adb0fb3f9038bded6a3bac5a3dbbb04e\",\n    \"knowledge/sources/S-SERVERLESSLLM.md\": \"aff9202b72fffcdf3145d0f014888070d2e12995b04f9c259930ad90a806473d\",\n    \"knowledge/sources/S-TORCH-INFERENCE.md\": \"2114aca130a5c62a0b10baa52b7d59becea788c98dd5cd8221573b1a8d5178b3\",\n    \"knowledge/sources/S-TORCH-CUDA.md\": \"8ee61677a1e35d475d9bb122b2c7fa824ccf054acefbe2f12345d72c1fb1b00e\",\n    \"knowledge/frameworks/inference-eval.md\": \"9381e25cf021f5338aef4311ba5c95ca2255fead917335c292b79347acf6b4b9\",\n    \"knowledge/frameworks/cpu-quantized-kernels.md\": \"fcb634a208ad9c814cc9b3228aee7082ca77091c7a385b3d3d57618f14aba310\",\n    \"knowledge/engine-index/vllm-model-runner.md\": \"87d1433d4f64d939ff8f137d1c1d4092cfdf2b3d7ebdd011a0f344cc66564714\",\n    \"knowledge/workloads/measurement-comparability.md\": \"c3c5fbcd9a6b8b4f94954bda424488c83c3a741a2de339fea4f7aa83b4dcc215\",\n    \"knowledge/workloads/capacity-planning.md\": \"2a1fab417c30d8e6984c202d805f31863e0f00e248558c583609b5f9ba7e88c7\",\n    \"knowledge/algorithms/weight-expert-offload.md\": \"cb230fafeec2d39fa40228ad44dbb41d34c62673fbac2325b6e797f206bc0fde\",\n    \"knowledge/system-semantics/model-lifecycle.md\": \"bf15950cafcbb584f031cc3a1ea9eaf3331d2816819c6e468ae333d70a3c7c0e\",\n    \"references/S-SERVERLESSLLM/fulltext.txt\": \"8fb94782eb4bf30cd44f72b99bbf5adc5ee88c9ae831a29d0ad604fb99f3e4c3\",\n    \"references/S-TORCH-CUDA/fulltext.txt\": \"4756fc37be9c52d4128b5f4b46f996fddb8b136a9ef51183a6f0e1c7d49b18df\",\n    \"tools/check_k_fw_011_full.py\": \"e1d26c43b6bf56bbf1e01a709b91f5ee679a06f20a13cb58571695456901a4b6\"\n  },\n  \"criteria\": {\n    \"definition\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"明确加载动机、制品输入、版本输出、轴坐标和完成事件，能够区分字节读取、张量可读与服务就绪。全文来源支持加载格式和异步语义，独立推导与来源报告的归属也有明确声明。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/frameworks/checkpoint-loading.md\",\n          \"quote\": \"加载的结果不是“文件字节已复制”，而是一组能够共同实现指定模型函数的张量、配置和执行布局。\"\n        },\n        {\n          \"path\": \"knowledge/frameworks/checkpoint-loading.md\",\n          \"quote\": \"主机调用返回、设备开始执行、设备完成、最后消费者结束和版本可发布必须分开记录。\"\n        }\n      ]\n    },\n    \"legality\": {\n      \"assessment\": \"partial\",\n      \"reason\": \"必需项、表示转换、别名、并行放置和执行环境条件较完整，也区分了合法性与优化选择；但多分片输入的范围检查没有落实文件身份，按所有范围的起点统一检查会误拒绝不同文件中的合法载荷。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/frameworks/checkpoint-loading.md\",\n          \"quote\": \"每 rank 一个文件还是多个文件、整段读取还是分块、直接 I/O 还是 mmap，是可比较的方案选择，不是数学必然。\"\n        },\n        {\n          \"path\": \"knowledge/frameworks/checkpoint-loading.md\",\n          \"quote\": \"6 对所有非别名源范围按起点排序；若存在交叠且无 alias 声明，失败\"\n        }\n      ]\n    },\n    \"algorithm\": {\n      \"assessment\": \"partial\",\n      \"reason\": \"坐标置换公式及转置反例可核算，发布与物理最后使用的原则正确；但 ExecuteLoadPlan 初始化 PENDING 后没有给出 chunk 离开该状态的更新，循环和最终排空缺少可执行的推进关系，尚不能按所列步骤恢复一个会终止的完整算法。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/frameworks/checkpoint-loading.md\",\n          \"quote\": \"2 初始化所有 chunk 为 PENDING；所有根 ready=false；保留旧版本引用\"\n        },\n        {\n          \"path\": \"knowledge/frameworks/checkpoint-loading.md\",\n          \"quote\": \"3 当存在 PENDING chunk：\"\n        },\n        {\n          \"path\": \"knowledge/frameworks/checkpoint-loading.md\",\n          \"quote\": \"9   记录 b 与目标根的完成事件、消费者集合和代次；不得标记根 ready\"\n        }\n      ]\n    },\n    \"cost\": {\n      \"assessment\": \"partial\",\n      \"reason\": \"讨论了转换、I/O、传输、准备、同步及版本并存成本，理想等块流水式成立；但容量公式没有建立互斥的物理计数项，D_h 未定义，锁页池可能与池内在途块重复相加。后续多 rank 公式又直接累加可重叠阶段，与前述流水假设缺少衔接。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/frameworks/checkpoint-loading.md\",\n          \"quote\": \"M_h ≈ S_s + D_h + C_h + n_b·b + M + R_h + P_h，\"\n        },\n        {\n          \"path\": \"knowledge/frameworks/checkpoint-loading.md\",\n          \"quote\": \"T ≈ t_r + t_c + t_d + (N_c−1)·max(t_r,t_c,t_d)，\"\n        },\n        {\n          \"path\": \"knowledge/frameworks/checkpoint-loading.md\",\n          \"quote\": \"T_ready ≈ max_r( queued_r + read_r + transform_r + transfer_r + compile/prewarm_r ) + barrier，\"\n        }\n      ]\n    },\n    \"adaptation\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"条件变化与选择反转有具体因果关系：加载频率影响准备成本摊销，瓶颈迁移影响线程和分块收益，目标布局变化影响离线产物资格，独立更新需求影响别名选择，图地址依赖影响版本切换。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/frameworks/checkpoint-loading.md\",\n          \"quote\": \"目标 rank 数、量化格式、内核布局或编译器变化后，预打包产物可能失效；比较时必须把转换次数、缓存失效和分发成本计入整个模型生命周期。\"\n        },\n        {\n          \"path\": \"knowledge/frameworks/checkpoint-loading.md\",\n          \"quote\": \"源存储很快而主机转换很慢时，瓶颈会从 SSD 移到解包、转置或量化元数据处理\"\n        }\n      ]\n    },\n    \"diagnosis\": {\n      \"assessment\": \"partial\",\n      \"reason\": \"诊断表能区分布局、表示、缓存、传输和版本解释，且给出反证后的修正方向；但是所声称的缓冲提前复用负对照没有实际复用被保护缓冲，其报错不能作为流水所有权机制的验证证据。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/frameworks/checkpoint-loading.md\",\n          \"quote\": \"用提前发布和提前复用缓冲的负对照检查状态不变量。\"\n        },\n        {\n          \"path\": \"knowledge/frameworks/checkpoint-loading.md\",\n          \"quote\": \"再比较完整前向的中间层和 logits，定位最早分歧点，不能只比较最终 token。\"\n        }\n      ]\n    }\n  },\n  \"findings\": [\n    {\n      \"id\": \"K-FW-011-R1-F01\",\n      \"criterion\": \"algorithm\",\n      \"evidence\": \"ExecuteLoadPlan 写明“2 初始化所有 chunk 为 PENDING”及“3 当存在 PENDING chunk：”，后续步骤只有选择、读取、转换、提交和记录事件，没有将所选 chunk 改为在途或完成，也没有明确成功路径在最后一次提交后等待并处理全部完成事件。\",\n      \"impact\": \"逐步执行该伪代码时 PENDING 集合不会减少，可以反复选择同一 chunk；即使读者自行补上提交状态，最后一批异步操作如何推进到完成和 Cert_g 仍不明确。正文的正确性原则尚未落成完整状态算法。\",\n      \"blocking\": true,\n      \"required_revision\": \"明确 chunk 的待处理、在途、完成及失败转换，在提交时移出 PENDING，按匹配代次的完成事件解除实际消费者责任；区分无可提交工作时的等待与不可推进错误，全部工作完成后执行验证和发布。失败或取消排空后显式返回，不再进入成功发布分支。\"\n    },\n    {\n      \"id\": \"K-FW-011-R1-F02\",\n      \"criterion\": \"legality\",\n      \"evidence\": \"制品定义包含“F_s 是分片文件”，但 BuildLoadPlan 第 6 步为“对所有非别名源范围按起点排序；若存在交叠且无 alias 声明，失败”，chunk 记录也只列“源区间”，未明确该区间的文件身份。\",\n      \"impact\": \"不同 shard 都在 offset=8 保存各自载荷完全合法；若统一比较偏移区间，它们会被判为重叠。省略文件身份也无法唯一确定实际读取对象，与本章支持多个分片的输入范围不相容。\",\n      \"blocking\": true,\n      \"required_revision\": \"将源位置明确表示为固定制品版本下的文件或 shard 身份加偏移；按文件分别检查边界、排序和重叠，chunk 保留对应源文件身份。用不同文件相同偏移合法、同一文件未声明重叠非法的对照核对该规则。\"\n    },\n    {\n      \"id\": \"K-FW-011-R1-F03\",\n      \"criterion\": \"cost\",\n      \"evidence\": \"正文定义“同时在途块数为 n_b”“锁页池为 P_h”，随后使用“M_h ≈ S_s + D_h + C_h + n_b·b + M + R_h + P_h”；D_h 未定义，也没有说明池内块与 P_h、活跃分配与 R_h/R_d 的排除关系。多 rank 公式又使用“read_r + transform_r + transfer_r”。\",\n      \"impact\": \"若两个 16 MiB 在途块恰好来自一个 32 MiB 锁页池，仅这两项就会把实际 32 MiB 计为 64 MiB。分配器保留若采用总 reserved 口径，还会重复计算活跃对象。时间方面，在两块、三个独立阶段各耗时 1 的设定下，前式给出完成时间 4，直接累加各阶段总工作时间则为 6，可能改变容量可行性和启动路径判断。\",\n      \"blocking\": true,\n      \"required_revision\": \"定义 D_h，按唯一物理存储建立互斥容量项；明确锁页池已包含哪些在途缓冲，allocator 项只计尚未归入其他项的保留容量，并说明图池等交叠关系。多 rank 公式应使用每 rank 依赖图或流水的实际完成时间；阶段直接相加时明确其串行前提。\"\n    },\n    {\n      \"id\": \"K-FW-011-R1-F04\",\n      \"criterion\": \"diagnosis\",\n      \"evidence\": \"脚本 pipeline 使用“for i in range(2)”及“buf = 'b' + str(i % 2)”，实际只选择 b0、b1。early_release 分支在 i=1 检查的是 old=b0，并直接执行“errors.append('buffer reused while pending')”，没有把 b0 交给新工作、覆盖它或改变其释放状态。成功分支以 pending.clear() 直接代替所有完成事件。正文却称其为“提前复用缓冲的负对照”。\",\n      \"impact\": \"合法地让 b0、b1 同时在途也会在该开关下报错；负对照检测的是预设条件，而不是同一物理槽在最后使用前被再次取得。所供执行确实打印了错误列表并退出 0，但没有建立缓冲复用和排空机制的辨别证据。\",\n      \"blocking\": true,\n      \"required_revision\": \"以实际申请、提交、消费者完成、释放及再次申请事件构造小状态模型，并由独立不变量观察器判断同一槽的未完成访问是否与新使用重叠。让负对照实际提前复用同一槽，保留不同槽合法并发的正例；完成集合应由事件推进，失败清理也应核对未结束责任。同步修正正文对检查范围的声明。\"\n    }\n  ],\n  \"limitations\": [\n    \"本次依据用户提供的完整文本、明确摘录、脚本及 actual_preflight 记录审查；当前可用工具没有文件读取或命令执行接口，未重新读取本地文件、重算文件哈希或独立重跑 Python。documents 采用任务提供的字面绑定。\",\n    \"S-TORCH-INFERENCE 只提供来源说明，未提供允许读取的原始文档正文；章节对此边界的声明正确。\",\n    \"ServerlessLLM 的格式、块池、直接 I/O、锁页及调度估计与所供论文相符；性能报告仅支持其测试条件。CUDA 异步、跨 stream 生存期及图地址语义与所供固定文档相符。\",\n    \"没有真实 checkpoint、CUDA、PCIe、O_DIRECT、锁页、图捕获、目标设备数值与性能、实际故障恢复或 Agent 使用效果证据；这些已明确声明的边界本身不构成阻塞项。\",\n    \"摘录仅支持所列范围的衔接核对；未检查 reader.html 版面、PDF 图版、源码归档或磁盘链接目标是否存在。\"\n  ],\n  \"checks\": [\n    {\n      \"script\": \"tools/check_k_fw_011_full.py\",\n      \"args\": []\n    }\n  ],\n  \"no_checks_reason\": \"\",\n  \"reading_scope\": \"完整阅读用户所供以下全文，范围沿用材料声明的零基半开抽取字符坐标：AGENTS.md [0,567)；docs/knowledge-method.md [0,2251)；docs/knowledge-review.md [0,3016)；knowledge/frameworks/checkpoint-loading.md [0,9858)；knowledge/sources/S-SERVERLESSLLM.md [0,781)；knowledge/sources/S-TORCH-INFERENCE.md [0,727)；knowledge/sources/S-TORCH-CUDA.md [0,1468)；knowledge/frameworks/inference-eval.md [0,3779)；knowledge/frameworks/cpu-quantized-kernels.md [0,3369)；knowledge/engine-index/vllm-model-runner.md [0,2207)；knowledge/workloads/measurement-comparability.md [0,2988)；knowledge/workloads/capacity-planning.md [0,3442)；knowledge/algorithms/weight-expert-offload.md [0,3216)；knowledge/system-semantics/model-lifecycle.md [0,3556)；references/S-SERVERLESSLLM/fulltext.txt 所供全文，材料标注 [0,89875)，包含 PDF pp.1–18；references/S-TORCH-CUDA/fulltext.txt 所供全文，材料标注 [0,80851)。另完整阅读 candidate.test_script，从 import itertools 到最终 PASS 打印语句，以及 author_notes 和 actual_preflight 执行记录。仅阅读以下摘录，不列入 documents：knowledge/models/prefill-decode-state.md [16000,19863)；knowledge/system-semantics/memory-allocators.md [0,3863)；knowledge/hardware/host-device-transfer.md [0,1378)、[4000,6485)；knowledge/frameworks/compile-dynamic-shapes.md [0,3863)；knowledge/frameworks/mlx-serving.md [4000,6228)、[12000,13635)；knowledge/frameworks/neuron-serving.md [0,2915)、[12000,12948)；knowledge/hardware/trainium-dataflow.md [0,1641)、[12000,14222)；knowledge/system-semantics/position-mask-cache.md [0,2504)、[12000,13359)；knowledge/system-semantics/tokenization-io.md [0,3863)；knowledge/system-semantics/design-synthesis.md [0,3863)；knowledge/tools/correctness-oracles.md [0,3863)；knowledge/algorithms/operator-primitives.md [4000,5929)、[8000,9934)；knowledge/hardware/storage-io.md [0,3863)；knowledge/system-semantics/storage-services.md [0,3863)；knowledge/system-semantics/deployment-environment.md [0,3863)。以上是所供材料阅读，不声称独立访问了本地原文件或摘录之外内容。\",\n  \"test_assessment\": \"所供 actual_preflight 表明绑定脚本在 remote_bwrap 中实际执行，returncode=0、未超时，stdout 包含转置、别名字节、恒等切片、40/64 字节容量、范围重叠拒绝和三个负对照结果。author_notes 仅称作者会话未运行，与后来提供的预检执行记录不矛盾；本 reviewer 未独立重跑。布局被测路径按目标坐标读取源元素，参考按源坐标散写目标，方向具有一定独立性；二者共用 lin/read_value 等辅助函数，因此不能证明这些公共组件正确。忽略转置的负对照实际改变了字节顺序并被比较检出，重叠载荷也确实触发拒绝。别名检查只比较值，容量数字来自描述符求和，不能证明实际存储身份或物理容量。流水 early_publish 的计数检查能发现指定的提前发布标志，但没有覆盖 chunk 完成、rank、参考检查和预热证书。early_release 没有实际复用同一槽，是 F04 所述无效负对照；pending.clear() 也不验证物理完成或失败排空。validate 尚未检查合法轴置换、负偏移、别名环等合同边界，脚本没有多文件身份、量化布局或成本模型检查。因此退出 0 只支持已执行的小样例，不能支持正文声称的完整制品合同及流水状态机验证。\"\n}",
+  "elapsed_seconds": 257.204
+}

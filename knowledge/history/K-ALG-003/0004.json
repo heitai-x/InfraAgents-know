@@ -1,0 +1,70 @@
+{
+  "id": "K-ALG-003",
+  "path": "algorithms/prefix-cache-identity.md",
+  "category": "algorithms",
+  "title": "前缀缓存：计算等价类、Radix 与淘汰收益",
+  "summary": "可复用前缀是能产生等价中间状态的一组输入和执行条件；字符串相同只是其中一个投影。",
+  "revision": 4,
+  "status": "seed",
+  "tags": [
+    "prefix caching",
+    "Radix",
+    "前缀",
+    "身份",
+    "cache key"
+  ],
+  "scope": {
+    "model_families": [
+      "transformer"
+    ],
+    "platforms": [],
+    "runtimes": [],
+    "workloads": []
+  },
+  "source_ids": [
+    "S-SGLANG",
+    "S-VLLM-PREFIX",
+    "S-HF-CACHE",
+    "S-MOONCAKE"
+  ],
+  "related": [
+    "K-ALG-002",
+    "K-ALG-009",
+    "K-ALG-014",
+    "K-SYS-007",
+    "K-SYS-013",
+    "K-ALG-023",
+    "K-ALG-021",
+    "K-HW-014",
+    "K-WORK-010",
+    "K-ENGINE-004",
+    "K-FW-006",
+    "K-MODEL-004",
+    "K-SYS-010",
+    "K-WORK-003",
+    "K-SYS-012",
+    "K-ALG-018",
+    "K-SYS-016",
+    "K-ALG-022"
+  ],
+  "evidence": [],
+  "updated_at": "2026-10-27",
+  "sha256": "fe888e513cd79ce5be2e5c4c8fc43d019b33bc9015e5d6358ddd79d101264e03",
+  "questions": [
+    "缓存身份需要包含哪些依赖才不会让命中跨越不同计算，哪些配置不必混入 key？",
+    "链式块哈希与 Radix 树在发现最长共享路径和管理物理状态上各承担什么角色？",
+    "逻辑最长匹配长度与内核可跳过的 token 数为什么不同，尾块如何影响实际收益？",
+    "混合模型中各类状态的恢复位置集合不一致时，全模型可继续的位置怎样确定？",
+    "淘汰排序如何同时考虑再访问概率、重算成本和驻留字节，为什么 token 命中率会误导？"
+  ],
+  "symptoms": [
+    "前缀命中率上升但热门实例排队更长",
+    "相同文本不同模板或 adapter 的请求出现错误命中",
+    "容量允许保留全部会话但同时 decode 时 ITL 远超目标"
+  ],
+  "assumes": [
+    "因果模型，状态只依赖可见前缀",
+    "有块或树形索引的 KV 缓存",
+    "多请求共享公共前缀的负载"
+  ]
+}

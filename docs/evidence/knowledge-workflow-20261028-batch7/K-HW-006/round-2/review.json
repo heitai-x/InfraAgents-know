@@ -1,0 +1,135 @@
+{
+  "entry_id": "K-HW-006",
+  "body_sha256": "b04d187e5f1987418b5c5cc8ae2723fc07d4877b220265eac6ed79fa32f7673a",
+  "reviewer": "sol-reviewer:K-HW-006:round-2",
+  "decision": "accept",
+  "documents": {
+    "AGENTS.md": "b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a",
+    "docs/knowledge-method.md": "69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb",
+    "docs/knowledge-review.md": "f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21",
+    "knowledge/hardware/rocm-execution.md": "b04d187e5f1987418b5c5cc8ae2723fc07d4877b220265eac6ed79fa32f7673a",
+    "knowledge/sources/S-ROCM.md": "a781dedf1327b2478e84466832a80e9bb81605e10ec2535450f472d6dd1d0483",
+    "knowledge/sources/S-AITER.md": "8e8e3f7799b0cef8a69eb5803fc7a5c72aa2ecb93596c5e8c3736e9bcbe380ad",
+    "knowledge/sources/S-TRITON.md": "424109f8cee2e62edafdcd161f46190ecece6dcde0107ce42e67c1291801d14f",
+    "knowledge/hardware/gpu-kernel-pipelines.md": "4db609a35cae2c7bd05603e026fc76d3e1281111ca2dad54d1a319851b3b498a",
+    "knowledge/hardware/shared-memory-paths.md": "9471f29d33a5821b00e11b6d08fb69fe31288087d558f05c5f9234350efe8b0d",
+    "knowledge/algorithms/heterogeneous-execution.md": "8fd777e06b150eaba4e3288ccb188adbb975e37c28c77a72a9b6878a70e027f4",
+    "references/S-ROCM/fulltext.txt": "f5364f72aaaf3149705e29af60d62c448b0f60b6da9e69a470090c68236af29e",
+    "references/S-AITER/fulltext.txt": "ae4425731e2cf494c3d20c921aa10135f26bce3ddbb0bab6497cd3dbdd7ac1c6",
+    "tools/check_k_hw_006_full.py": "b02da561da3e2a1fd429061ad4fb06d9efacd5ef3b5c9a889eaa5c553b8abf72"
+  },
+  "criteria": {
+    "definition": {
+      "assessment": "sufficient",
+      "reason": "明确移植动机、单请求单 query head 的数学函数、轴与可见集合，区分逻辑、数学和执行状态，并定义有限数值域及空输入输出。未把单 head 示例冒充完整模型执行。",
+      "evidence": [
+        {
+          "path": "knowledge/hardware/rocm-execution.md",
+          "quote": "zᵢⱼ=a·QᵢKⱼᵀ+bᵢⱼ，pᵢⱼ=exp(zᵢⱼ)/Σ_{t∈Aᵢ}exp(zᵢₜ)，Oᵢ=Σ_{j∈Aᵢ}pᵢⱼVⱼ。"
+        },
+        {
+          "path": "knowledge/hardware/rocm-execution.md",
+          "quote": "L=0 没有输出工作；S=0 或整行不可见时，本例规定 O 为零、empty 为真。"
+        }
+      ]
+    },
+    "legality": {
+      "assessment": "sufficient",
+      "reason": "wave64、64 线程 workgroup、同步参与范围、访问保护、输出不别名及唯一写者均有明确契约。empty 已移出 value 循环，由 l=0 写独立的 32-bit 行元素；写事件检查能够拒绝旧同值重复写入。关闭 K-HW-006-EMPTY-WRITER。硬件陈述与所供固定 ROCm 文档相符，未从概述推定 fragment 或异步调用已合法落实。",
+      "evidence": [
+        {
+          "path": "knowledge/hardware/rocm-execution.md",
+          "quote": "每个非原子输出元素有唯一写者；相同写值不能使多个并发写者自动合法。标记数组也属于输出。"
+        },
+        {
+          "path": "knowledge/hardware/rocm-execution.md",
+          "quote": "若 l=0：empty[query_row]=(ell_lane=0)   # 每行恰写一次，位于 value 循环外"
+        }
+      ]
+    },
+    "algorithm": {
+      "assessment": "sufficient",
+      "reason": "完整追踪协作装载、分页定位、分数、两次行归约、在线重标度、分片 U 更新和写回。六次每块同步覆盖发布及最后读者结束，空块分支保持持久状态。load_row 与 query_row 生命周期已分离；检查实际执行装载循环，再注入遗留身份，以行间 mask 和 bias 差异触发独立参考失败。关闭 K-HW-006-ROW-OWNERSHIP。",
+      "evidence": [
+        {
+          "path": "knowledge/hardware/rocm-execution.md",
+          "quote": "query_row=r0+g                 # 独立绑定；不使用 load_row 的最终值"
+        },
+        {
+          "path": "knowledge/hardware/rocm-execution.md",
+          "quote": "旧 ℓ 和旧 U 同乘 exp(m_old−m_new)，再加入新贡献。最终 U/ℓ 恢复整行 softmax。"
+        },
+        {
+          "path": "knowledge/hardware/rocm-execution.md",
+          "quote": "同步整个 workgroup，确认本块所有读者结束后才进入下一轮"
+        }
+      ]
+    },
+    "cost": {
+      "assessment": "sufficient",
+      "reason": "独立重算得到 LDS 容量 11,840 B、Q/K 主读取各 32,768 B、P/V 各 4,096 B，主读取合计 73,728 B，辅助读取 1,024 B，总计 74,752 B；写入及双缓冲增量也与对象一致。区分概率指数与按 lane 复制的重标度指数，并覆盖准备摊销、全局重读、片上通信、同步和驻留限制。关闭 K-HW-006-LDS-COST。",
+      "evidence": [
+        {
+          "path": "knowledge/hardware/rocm-execution.md",
+          "quote": "因此 Q/K 两类合计是 65,536 B，不能把它们合并成只有一次 Br·Bc·d 的读取。"
+        },
+        {
+          "path": "knowledge/hardware/rocm-execution.md",
+          "quote": "因此四行均已有贡献时另有 64 次重标度指数，合计 128 次。"
+        },
+        {
+          "path": "knowledge/hardware/rocm-execution.md",
+          "quote": "这些是程序逻辑读写，不是 bank 服务周期。"
+        }
+      ]
+    },
+    "adaptation": {
+      "assessment": "sufficient",
+      "reason": "对维度、块大小、wave 宽度、bank、MFMA、分派、异步搬运及主存 KV 逐项说明保留关系、调整成本和放弃条件。分区合并公式正确处理概率质量与空分区；共享地址及 CPU 放置边界与所供相邻章节一致。",
+      "evidence": [
+        {
+          "path": "knowledge/hardware/rocm-execution.md",
+          "quote": "空分区直接略过；全部为空时走空行契约。分区必须互不重叠且覆盖合法集合，统计量必须使用同一分数单位和指数底数。"
+        },
+        {
+          "path": "knowledge/hardware/rocm-execution.md",
+          "quote": "换成普通加载时，上述槽生命周期仍成立，只是发射、寄存器中转与暴露等待可能不同。"
+        }
+      ]
+    },
+    "diagnosis": {
+      "assessment": "sufficient",
+      "reason": "提供能够区分行身份、标记写者、非法归一化项和重标度方向的实际负对照，并给出性能竞争解释、干预和反证修正。scratch 已更正为相邻子组相交，逐槽核对逻辑写者，结论限于地址别名。关闭 K-HW-006-SCRATCH-INTERSECTIONS；完整候选及检查已重新评估，关闭 campaign-K-HW-006-r1。",
+      "evidence": [
+        {
+          "path": "knowledge/hardware/rocm-execution.md",
+          "quote": "相交的是子组 0/1 的槽 8..15、1/2 的槽 16..23、2/3 的槽 24..31，各有 8 槽。"
+        },
+        {
+          "path": "knowledge/hardware/rocm-execution.md",
+          "quote": "本章不以这份地址枚举声称已经模拟了块最大值被覆盖。"
+        },
+        {
+          "path": "knowledge/hardware/rocm-execution.md",
+          "quote": "检查必须让假项实际进入分母，而不能只比两个独立指数值。"
+        }
+      ]
+    }
+  },
+  "findings": [],
+  "limitations": [
+    "Python 检查使用宿主双精度标量及串行阶段，未验证完整 FP32 舍入、指数近似、GPU 并发、barrier 可见性或真实内存模型；正文已声明这些边界。",
+    "未取得目标编译产物或设备证据，不能据此确认 bank 服务周期、MFMA fragment、异步重叠、真实 dispatch、HBM 事务、寄存器分配、spill、驻留或性能，也不能证明模型质量或 Agent 使用效果。",
+    "分页检查采用页大小 7、逆序物理页和尾部 poison；没有执行任意实际 stride/offset、共享物理页或非空块之间夹空块的独立专门用例。相应通用关系本轮通过伪代码和不变量审查，不能称为这些条件的执行覆盖。",
+    "S-AITER 原文范围仅 README；S-TRITON 仅作者核验后的机制说明，未阅读上游源码。相邻 excerpt 不构成全文阅读。",
+    "本调用没有文件读取或 shell 工具，MCP 也未提供资源，因此未读取本地技能文件、重新计算磁盘哈希或重跑 Python；文档身份采用所供绑定，Python 结果依据所附 actual_preflight 真实执行记录。"
+  ],
+  "checks": [
+    {
+      "script": "tools/check_k_hw_006_full.py",
+      "args": []
+    }
+  ],
+  "reading_scope": "完整阅读用户提供的 AGENTS.md [0,567)、docs/knowledge-method.md [0,2251)、docs/knowledge-review.md [0,3016)、knowledge/hardware/rocm-execution.md [0,14858)、knowledge/sources/S-ROCM.md [0,514)、knowledge/sources/S-AITER.md [0,740)、knowledge/sources/S-TRITON.md [0,1098)、knowledge/hardware/gpu-kernel-pipelines.md [0,14078)、knowledge/hardware/shared-memory-paths.md [0,3129)、knowledge/algorithms/heterogeneous-execution.md [0,3935)、references/S-ROCM/fulltext.txt [0,32330)、references/S-AITER/fulltext.txt [0,7709)。范围单位均为提取文本的零基半开字符区间。完整阅读 candidate.test_script 提供的 tools/check_k_hw_006_full.py，从 import math 至 main() 调用，以及作者说明和 actual_preflight 执行记录。仅阅读 knowledge/frameworks/attention-backends.md 的 [0,4000)、[8000,12000)、[16000,18166)、[24000,28000)，knowledge/frameworks/triton-kernels.md 的 [0,7598)、[8000,14568)，knowledge/hardware/precision-and-kernel-support.md 的 [0,10807)、[12000,15359)；这些 excerpt 未列入 documents。未扩展声称读取未提供的原文、源码或本地文件。",
+  "test_assessment": "检查算法具有独立参考：reference_state/dense_reference 直接遍历原始逻辑 Q/K/V 和可见集合，不消费模型 LDS，也不复用在线递推；verify 比较最终输出、empty、逐块前缀 m/ell/U，并核对输出写事件。legacy_row 故障实际使用协作装载留下的 lane 临时行，d=128 经独立输出比较得到正确 1 对错误 3，d=4 在分数阶段前拒绝未初始化身份；单独 bias 反例也被拒绝。duplicate_empty 由写事件唯一性拒绝，避免串行同值覆盖掩盖竞态；dv=1 的旧写法仅一次写入，因此脚本正确允许该例。mask_zero 实际进入分母，reverse_rescale 实际进入在线更新，均由稠密参考拒绝。scratch 由地址到写者映射推出准确配对及槽范围，而非仅验证 40/24 总数。主读取和指数数量来自模型实际访问/调用计数；容量是解析核对，辅助读取与写入没有完整事件计数。已检查所附实际执行：script_sha256 与绑定一致，隔离 Python 3.12 执行 returncode=0、stderr 为空、未超时，常规用例最大误差 2.22045e-16，列出的负对照均被拒绝；这不是评审者重跑 Python。作者关于交付时 Python 未执行的说明与后续协调者 preflight 记录应按不同阶段理解。本评审另通过 functions.exec 实际执行独立 JavaScript 枚举，确认 d=4/128 的装载生命周期、dv=1/16/17/33 的 O/empty 所有权、scratch 相邻交集，以及 11,840 B 容量和 74,752 B 总逻辑消费读取。检查不以 GPU 或使用效果为结论；未覆盖条件已列入 limitations，不将未执行项目记为 PASS。"
+}

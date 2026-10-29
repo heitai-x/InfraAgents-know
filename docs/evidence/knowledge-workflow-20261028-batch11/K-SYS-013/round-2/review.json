@@ -1,0 +1,152 @@
+{
+  "entry_id": "K-SYS-013",
+  "body_sha256": "77136e70ade22745a885219596c78cc6eb35ab586cc17aa42723c866e49616ef",
+  "reviewer": "sol-reviewer:K-SYS-013:round-2",
+  "decision": "accept",
+  "documents": {
+    "AGENTS.md": "b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a",
+    "docs/knowledge-method.md": "69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb",
+    "docs/knowledge-review.md": "f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21",
+    "knowledge/system-semantics/distributed-kv-store.md": "77136e70ade22745a885219596c78cc6eb35ab586cc17aa42723c866e49616ef",
+    "knowledge/sources/S-MOONCAKE.md": "87547af306062e8e7c7d5da5de6102cd47ac371d0b9172a1b4c2eda719134e8b",
+    "knowledge/sources/S-CACHEGEN.md": "6e151b26d74bfb170ea4c3b58a1336b5e85509b556ba4db60380416a1abf1543",
+    "knowledge/sources/S-PAGED.md": "50893a22385b0d577980153a9bc9c617acdcb2a9d7be0af655ad49421f06cc09",
+    "knowledge/sources/S-SGLANG.md": "4fd6badbee1df40da422f2866f1536bbe4f5266856b8d97004072a21b9d0e2c9",
+    "knowledge/algorithms/tiered-residency.md": "eb3ebc6320d5a32481cf645605d159860dc6d1edb97f1e98afd89ddb24ee82af",
+    "knowledge/hardware/transport-and-rdma.md": "72bcf1d8948eae41c243e422f6b0370462dcc4bf33ef86f5664a09b4e46d3ba2",
+    "knowledge/system-semantics/serving-recovery.md": "f551fa1f1e6213469c856a880839eefff504fb39f4dd692000b2df80a20a7f5e",
+    "knowledge/algorithms/routing-and-migration.md": "1b9dcfd5fea499a91611459bb936e1c1c49ceb562171fb0f1ba360a7010f5d32",
+    "knowledge/engine-index/vllm-kv-manager.md": "50b09c7a66c1282b7f6f7ac7ef1f265b953b908ae5fba883c9beec4732e1ab89",
+    "knowledge/engine-index/sglang-radix-scheduler.md": "abf1eb7040f1f6ba697822719094f8cc26172a329d6003a027862ef89de03374",
+    "knowledge/system-semantics/storage-services.md": "283ceab23fbbf5c27bbb4486b56c2123459a19a00229c5baae70d09c18062661",
+    "knowledge/algorithms/context-reuse.md": "ddd8fa928d5ebd9876aca4971dc357b666ea999be9b148e3e88404c9e271ab13",
+    "tools/check_k_sys_013_full.py": "962ad2bbe8ca0e13a944c85e4ab256babb17f2b154d8d008bed03abb3602fb4d"
+  },
+  "criteria": {
+    "definition": {
+      "assessment": "sufficient",
+      "reason": "动机、计算等价条件、表示合同、副本字段及输入消费位置定义明确。根身份与块身份分开，首块包含 κ₀，目录下标、块数和逻辑位置可直接换算，关闭 R1-F001。",
+      "evidence": [
+        {
+          "path": "knowledge/system-semantics/distributed-kv-store.md",
+          "quote": "h₋₁=H(根域标签,η)，\nhⱼ=H(块域标签,hⱼ₋₁,κⱼ,jP,(j+1)P,状态几何,表示合同)，j=0,…,m−1。"
+        },
+        {
+          "path": "knowledge/system-semantics/distributed-kv-store.md",
+          "quote": "目录 D[hⱼ] 的块下标是 j；取得前 b 块覆盖的是 [0,bP)，其逻辑恢复位置为 p=bP。"
+        }
+      ]
+    },
+    "legality": {
+      "assessment": "sufficient",
+      "reason": "身份、授权、范围、代次、就绪、转换与消费者可见性构成明确的合法条件；完整块是声明的方案选择。共同位置资格与充分状态清单分别核验，位置零也要求初始化依据。完整 KV 与末行输出票据没有混同。",
+      "evidence": [
+        {
+          "path": "knowledge/system-semantics/distributed-kv-store.md",
+          "quote": "Rᶠ 是位置资格，实际交付还需一份对应 p 的充分状态清单 M_f(p)。"
+        },
+        {
+          "path": "knowledge/system-semantics/distributed-kv-store.md",
+          "quote": "完整 KV 不自动提供生成第一个新 token 所需的末行 logits。"
+        },
+        {
+          "path": "knowledge/system-semantics/distributed-kv-store.md",
+          "quote": "位置 0 也要有语义依据：只有模型初始状态和必要控制状态确实可以初始化时，才把 0 加入各恢复集合。"
+        }
+      ]
+    },
+    "algorithm": {
+      "assessment": "sufficient",
+      "reason": "取得算法实际枚举共同位置，展开对应清单、取得源保护、核算目标容量并结算失败候选；12→8 轨迹与交付脚本贯通检查点和容量回退，关闭 R1-F002。构建、共同发布和回收顺序完整，全部必要层与状态族完成后才发布；取消后的逻辑失效与物理排空明确分开。",
+      "evidence": [
+        {
+          "path": "knowledge/system-semantics/distributed-kv-store.md",
+          "quote": "candidates ← E ∩ I ∩ 所有 R_f 的交集，按位置递减"
+        },
+        {
+          "path": "knowledge/system-semantics/distributed-kv-store.md",
+          "quote": "若 reservation 失败：\n        撤销本候选全部 holds；继续下一个 p"
+        },
+        {
+          "path": "knowledge/system-semantics/distributed-kv-store.md",
+          "quote": "全部必要状态族、层组与范围完成后，在目标协调区复核："
+        },
+        {
+          "path": "knowledge/system-semantics/distributed-kv-store.md",
+          "quote": "对已接受及接受未知操作保留源、目的、暂存与注册保护"
+        }
+      ]
+    },
+    "cost": {
+      "assessment": "sufficient",
+      "reason": "候选采用相同请求起止事件，剩余输入和生成各计一次，40/48/70 ms 事件账能反驳错误选择，关闭 R1-F003。二进制字节到十进制链路速率的换算正确，关闭 R1-F004。六类成本、物理容量去重、候选回退开销、流水假设与共享出口需求均有具体说明。",
+      "evidence": [
+        {
+          "path": "knowledge/system-semantics/distributed-kv-store.md",
+          "quote": "T_recompute≈A_recompute+T_suffix(0)。"
+        },
+        {
+          "path": "knowledge/system-semantics/distributed-kv-store.md",
+          "quote": "重算完整请求为 30+10=40 ms，远端路径为 20+18+10=48 ms，应选择重算。"
+        },
+        {
+          "path": "knowledge/system-semantics/distributed-kv-store.md",
+          "quote": "0.6×2³⁰×8/10⁹≈5.154 Gbit/s。"
+        },
+        {
+          "path": "knowledge/system-semantics/distributed-kv-store.md",
+          "quote": "逐候选重建整个 KV 前缀最坏可产生 O(m²) 个描述访问，回退也会增加 pin/unpin 往返。"
+        }
+      ]
+    },
+    "adaptation": {
+      "assessment": "sufficient",
+      "reason": "模型、表示、恢复状态、带宽、排队和热点改变后，分别指出应重建的身份或清单、重新核算的成本，以及缩短恢复位置、减少副本或放弃远端恢复的条件。没有把最大合法位置误写成最快方案。",
+      "evidence": [
+        {
+          "path": "knowledge/system-semantics/distributed-kv-store.md",
+          "quote": "带宽下降、源排队增长或重算加速时，重新比较完整候选，允许缩短恢复点或放弃远端恢复。"
+        },
+        {
+          "path": "knowledge/system-semantics/distributed-kv-store.md",
+          "quote": "窗口覆盖和递归状态改变后，必须重建恢复集合与清单，不能只沿用“命中长度”。"
+        }
+      ]
+    },
+    "diagnosis": {
+      "assessment": "sufficient",
+      "reason": "区分目录控制、源热点、容量、传输、转换与生命周期等竞争解释，给出受控改变、观察阶段和反证后的转查方向。检查包含独立参考、资源不变量及实际触发的负对照；设备效果没有由 CPU 模型越界推出。",
+      "evidence": [
+        {
+          "path": "knowledge/system-semantics/distributed-kv-store.md",
+          "quote": "若延迟或拒绝随空闲页改变，支持容量解释；固定容量后改变有效带宽，才区分传输解释。"
+        },
+        {
+          "path": "knowledge/system-semantics/distributed-kv-store.md",
+          "quote": "代次拒绝测试与真实物理排空测试分别进行。"
+        },
+        {
+          "path": "knowledge/system-semantics/distributed-kv-store.md",
+          "quote": "成本核对使用独立事件账，包含非零剩余输入和公共生成阶段；故意加入一次重复完整输入计费，要求它被参考账拒绝。"
+        }
+      ]
+    }
+  },
+  "findings": [],
+  "limitations": [
+    "充分状态清单 M_f(p) 和恢复集合由模型合同提供；取得协议不自动推导任意模型的充分状态，也不保证全局最优布局、副本组合或最快恢复位置。",
+    "Python 检查限定为空目标、互不重叠的目标分配和串行控制模型；其逐位置、逐单元参考不构成任意碎片副本组合或并发目标规划的证明。",
+    "没有真实网络、转换 kernel、发布事务、分布式 pin 线性化、GPU 可见性、异步 DMA 排空或设备性能验证；没有带宽、SLO 或 Agent 使用改善结论。",
+    "来源事实核对限于提供的来源说明和论文摘录，未读取上游源码或声称阅读全文；所用来源版本均早于 2026-04-30 cutoff。",
+    "本次审阅使用提供的冻结正文、脚本和实际 preflight 记录，未另外运行 Python、重新计算磁盘哈希或验证离线链接目标存在性。"
+  ],
+  "checks": [
+    {
+      "script": "tools/check_k_sys_013_full.py",
+      "args": []
+    }
+  ],
+  "no_checks_reason": "",
+  "reading_scope": "完整阅读所提供全文：AGENTS.md [0,567)、docs/knowledge-method.md [0,2251)、docs/knowledge-review.md [0,3016)、knowledge/system-semantics/distributed-kv-store.md [0,13110)、knowledge/sources/S-MOONCAKE.md [0,997)、knowledge/sources/S-CACHEGEN.md [0,909)、knowledge/sources/S-PAGED.md [0,2206)、knowledge/sources/S-SGLANG.md [0,472)、knowledge/algorithms/tiered-residency.md [0,4244)、knowledge/hardware/transport-and-rdma.md [0,4088)、knowledge/system-semantics/serving-recovery.md [0,3834)、knowledge/algorithms/routing-and-migration.md [0,3228)、knowledge/engine-index/vllm-kv-manager.md [0,2189)、knowledge/engine-index/sglang-radix-scheduler.md [0,1901)、knowledge/system-semantics/storage-services.md [0,3922)、knowledge/algorithms/context-reuse.md [0,4611)。完整阅读 candidate.test_script 提供的 tools/check_k_sys_013_full.py，并核对 author_notes 与 actual_preflight 的退出状态、输出、脚本哈希、实际 argv 和执行边界。以下仅阅读提供的摘录，范围均为零起点、右开字符区间：knowledge/algorithms/prefix-cache-identity.md [0,6071)；knowledge/algorithms/kv-compression.md [0,6071)；knowledge/system-semantics/distributed-state-transfer.md [0,2071)、[8000,12000)；knowledge/algorithms/paged-kv-capacity.md [0,2646)、[12000,15425)；knowledge/algorithms/disaggregated-serving.md [0,4000)、[16000,18071)；knowledge/hardware/topology-parallelism.md [0,2855)、[12000,15216)；references/S-MOONCAKE/fulltext.txt [0,42893)、[52000,72000)；references/S-CACHEGEN/fulltext.txt [0,28000)、[32000,48000)、[52000,62893)、[68000,72000)、[84000,88000)；references/S-PAGED/fulltext.txt [0,12000)、[16000,50893)、[52000,68000)；references/S-SGLANG/fulltext.txt [0,8000)、[12000,30893)、[32000,68000)。摘录文件未加入 documents，不将来源说明作者的完整阅读记录算作本审阅者阅读全文。",
+  "test_assessment": "检查具有实质独立性：Store.acquire 从目录逐对象验证并取得租约；reference 不调用 manifest 或 usable，而从副本全集逐位置、逐 token 单元构造需求，并用独立单位容量账判断可行位置。audit 检查实际 readers 与交付 holds 一致、失败候选无租约泄漏及目标预留守恒。128 例覆盖八种容量、四种缺块条件、BUILDING 和旧代次组合；专门轨迹验证 p=12 容量失败后释放九份租约，跳过非共同位置 10，最终交付 p=8、七份租约及 22 MiB 预留。其他边界覆盖空状态、非整页输入、缺失初始化依据、空任务集合、不可见与未公布副本、活跃租约阻止淘汰和重复结算。忽略恢复集合、目录存在即命中、忽略代次/身份/范围及回退泄漏的故障开关实际进入取得路径，并被参考位置或交付不变量拒绝，因此直接检验正文机制。首块身份检查验证根与 κ₀ 的对应和因果传播；遗漏首块的负对照暴露首 token 改变后身份不变。成本参考按事件逐项列账，包含非零剩余输入及公共生成，得到重算 40 ms、远端 48 ms，并拒绝重复输入计费的 70 ms；单位检查分别计算 Gbit/s 与 Gibit/s。提供的 actual_preflight 显示绑定哈希脚本通过 Python 3.12 在 remote_bwrap 中以 -I -S -B -X utf8 执行，returncode=0、stderr 为空，输出包含上述结果及九项负对照检测。正文和作者说明中的 Python 未执行是作者阶段的边界，后续协调者 preflight 已执行；本审阅未将作者声称的 JavaScript 运行当作 Python 执行，也未声称亲自重跑。测试未覆盖真实并发、一般目标物理绑定去重、发布和传输排空，正文已明确限定，保留为 limitation。R1-F001 至 F004 均已由当前文本与相应检查闭合，未发现新的阻塞缺口，workflow 语义修订项可关闭。"
+}

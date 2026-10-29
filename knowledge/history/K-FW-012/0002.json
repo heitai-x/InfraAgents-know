@@ -1,0 +1,62 @@
+{
+  "id": "K-FW-012",
+  "path": "frameworks/cpu-quantized-kernels.md",
+  "category": "frameworks",
+  "title": "CPU 低位执行：解包、补偿与累加路径",
+  "summary": "低位存储、解包和实际乘加是不同执行路径；补偿、组尺度、累加宽度和舍入共同决定正确性与收益。",
+  "revision": 2,
+  "status": "seed",
+  "tags": [
+    "CPU",
+    "INT4",
+    "INT8",
+    "zero point",
+    "解包",
+    "量化",
+    "累加",
+    "requantization"
+  ],
+  "scope": {
+    "model_families": [],
+    "platforms": [
+      "cpu"
+    ],
+    "runtimes": [],
+    "workloads": []
+  },
+  "source_ids": [
+    "S-INT8",
+    "S-GPTQ",
+    "S-CPU-TUNING",
+    "S-TORCH-NUMERIC"
+  ],
+  "related": [
+    "K-ALG-005",
+    "K-HW-010",
+    "K-HW-004",
+    "K-FW-002",
+    "K-FW-011",
+    "K-HW-009",
+    "K-SYS-010",
+    "K-TOOLS-003",
+    "K-ALG-019"
+  ],
+  "evidence": [],
+  "updated_at": "2026-10-27",
+  "sha256": "fcb634a208ad9c814cc9b3228aee7082ca77091c7a385b3d3d57618f14aba310",
+  "questions": [
+    "低位存储、解包与实际乘加是哪三条执行路径，各自的收益条件是什么？",
+    "从仿射量化推导点积时，零点补偿项如何进入累加，省略会产生什么偏差？",
+    "低位布局与算术宽度如何匹配，窄累加何时溢出？",
+    "字节减少在什么条件下才转化为时间减少，解包成本何时主导？",
+    "怎样区分实现错误与量化本身的损失，需要哪些独立参考？"
+  ],
+  "symptoms": [
+    "低位内核结果有系统偏差而非随机噪声",
+    "量化后 CPU 路径反而更慢"
+  ],
+  "assumes": [
+    "CPU 上的整数向量指令可用",
+    "权重以分组量化格式存储"
+  ]
+}

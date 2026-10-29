@@ -1,0 +1,59 @@
+{
+  "id": "K-FW-008",
+  "path": "frameworks/mlx-serving.md",
+  "category": "frameworks",
+  "title": "MLX 服务：惰性求值、编译与请求状态",
+  "summary": "MLX 的数组表达式可以延迟执行，服务循环必须明确计算何时提交、何时完成和何时释放状态。",
+  "revision": 3,
+  "status": "seed",
+  "tags": [
+    "MLX",
+    "lazy evaluation",
+    "惰性求值",
+    "explicit state",
+    "compile cache",
+    "stream dependency"
+  ],
+  "scope": {
+    "model_families": [],
+    "platforms": [
+      "metal"
+    ],
+    "runtimes": [
+      "mlx"
+    ],
+    "workloads": []
+  },
+  "source_ids": [
+    "S-MLX",
+    "S-MLX-MEM",
+    "S-MLX-EXEC"
+  ],
+  "related": [
+    "K-HW-007",
+    "K-ALG-008",
+    "K-SYS-004",
+    "K-SYS-012",
+    "K-SYS-015",
+    "K-FW-011",
+    "K-HW-013"
+  ],
+  "evidence": [],
+  "updated_at": "2026-10-27",
+  "sha256": "c308a8ac651460ede6b6e53d3413bea4c4a7707b757516faf8a752b35872b6c1",
+  "questions": [
+    "惰性求值把计算提交与完成分开后，服务循环必须在哪些点显式求值？",
+    "统一内存下数组的所有权与释放时机如何与 stream 依赖一起确定？",
+    "编译、形状与量化在 MLX 中怎样组合，变体数量由什么控制？",
+    "求值、stream 与释放为什么必须放在同一条时序上分析？",
+    "何时值得为固定形状特化，特化的代价落在哪里？"
+  ],
+  "symptoms": [
+    "内存占用在请求结束后不回落",
+    "首次请求延迟远高于稳态"
+  ],
+  "assumes": [
+    "Apple Silicon 统一内存平台",
+    "惰性求值的数组框架"
+  ]
+}

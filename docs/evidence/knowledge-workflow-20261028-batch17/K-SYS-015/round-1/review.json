@@ -1,0 +1,517 @@
+{
+  "entry_id": "K-SYS-015",
+  "body_sha256": "246273dc9a49f4562c30433b95511427fdc89c4e80b596f45889246feabe0d66",
+  "reviewer": "sol-reviewer:K-SYS-015:round-1",
+  "decision": "revise",
+  "documents": {
+    "AGENTS.md": "b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a",
+    "docs/knowledge-method.md": "69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb",
+    "docs/knowledge-review.md": "f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21",
+    "knowledge/system-semantics/host-runtime.md": "246273dc9a49f4562c30433b95511427fdc89c4e80b596f45889246feabe0d66",
+    "knowledge/sources/S-ASGI.md": "ca77c63e9a95b8be934ae485d89245f895dc7fa49fdf7fcce03b139346127ed9",
+    "knowledge/sources/S-CPU-TUNING.md": "46948047959d30284614764d498ea02e41e76a47bf55597fec93df61e14964fb",
+    "knowledge/sources/S-OTEL.md": "b68ba3b2833dc7f9f5ad7f49ae395fa70cc31b94252dd1741149e1fd1eca4068",
+    "knowledge/sources/S-PY-SUBPROCESS.md": "a466b22c1b51e2d1612328903406712c1e30d38770a6510d96a3937ff1bede32",
+    "knowledge/sources/S-LINUX-RESOURCES.md": "d829824442f5a9abd36c3caf63c5fd30da8da4f8839db88e33aa045b7baa05f0",
+    "knowledge/sources/S-TORCH-CUDA.md": "8ee61677a1e35d475d9bb122b2c7fa824ccf054acefbe2f12345d72c1fb1b00e",
+    "knowledge/engine-index/vllm-scheduler.md": "9e576ff7711ed5e448a4bedfe7ab69949a79bc3f61417bf258f7a3b56caf1fe5",
+    "references/S-ASGI/fulltext.txt": "ba273c91f3e7b8c32f863e8b57145798c3b5c9275073f758a41e1cb0a6f5bee3",
+    "references/S-OTEL/fulltext.txt": "f00d2f265bdd7aceff39c2d3c52f7cd3ab12b061e1f02cefaf84d6e12afa34a4",
+    "references/S-PY-SUBPROCESS/fulltext.txt": "c0e2a25feb2068a3f3bd2b0dae31f1f1e090e470631df574f92f4ceb935b37e5",
+    "tools/check_k_sys_015_full.py": "09c9e86b0d2eedc9629f2c8a46150bb6b4567c383a9fd60dffb82284212234fc"
+  },
+  "criteria": {
+    "definition": {
+      "assessment": "sufficient",
+      "reason": "动机、请求尝试、执行域、阶段票据、缓冲代次及逻辑与物理完成边界均有定义；CPU 时间与同时存活容量的量纲明确。具体状态推进缺陷归入 algorithm。",
+      "evidence": [
+        {
+          "path": "knowledge/system-semantics/host-runtime.md",
+          "quote": "主机运行时的核心问题不是“开几个线程”，而是把请求身份、阶段状态、缓冲所有权、队列容量和完成证据组织成一条可推进、可取消、可回收且可观测的路径。"
+        },
+        {
+          "path": "knowledge/system-semantics/host-runtime.md",
+          "quote": "逻辑取消、设备提交、设备完成、输出交付和物理回收是不同边界；主机取消不能倒转已发起的设备写入或网络发送。"
+        }
+      ]
+    },
+    "legality": {
+      "assessment": "partial",
+      "reason": "唯一写者、最后使用、代次传播及控制事件可达性的约束正确；但把所有设备提交和原生库调用移出事件循环写成合法条件，混淆了响应性要求与执行域划分选择。",
+      "evidence": [
+        {
+          "path": "knowledge/system-semantics/host-runtime.md",
+          "quote": "一个物理缓冲在同一时刻只有一个写者；进入 PUBLISHED 后才允许读者取得读权；最后一个写者或读者结束前不能回收或覆盖。"
+        },
+        {
+          "path": "knowledge/system-semantics/host-runtime.md",
+          "quote": "它的合法条件是每个回调不做长时间不可分割的 CPU 工作，并且设备提交、阻塞 I/O 和原生库调用不占用该循环。"
+        }
+      ]
+    },
+    "algorithm": {
+      "assessment": "partial",
+      "reason": "已交付准入、推进、取消、转移和关闭伪代码，但阶段间输出预留与有界入队没有闭合；缓冲缺少 RESERVED 到 FILLING 的合法转换，提交阶段与异步生产完成之间也缺少明确的发布和责任结算路径。当前算法不足以独立实现声明的保守运行时。",
+      "evidence": [
+        {
+          "path": "knowledge/system-semantics/host-runtime.md",
+          "quote": "所有容量检查和预留由一个状态拥有者原子完成；其他执行域只消费已发布的票，不自行扩大预算。"
+        },
+        {
+          "path": "knowledge/system-semantics/host-runtime.md",
+          "quote": "为下游阶段生成票并入队；输入引用按交接规则释放"
+        },
+        {
+          "path": "knowledge/system-semantics/host-runtime.md",
+          "quote": "要求 state=FILLING 且 writer=actor"
+        }
+      ]
+    },
+    "cost": {
+      "assessment": "sufficient",
+      "reason": "CPU 秒需求、配额与 cpuset 上界、串行排队估计和唯一物理驻留均有条件与单位；4.2/3.9 CPU 秒每秒以及48 MiB主项算例正确。复制、IPC、序列化、准备、协调、等待和进程副本成本已有解释，未把符号模型当作硬件性能。",
+      "evidence": [
+        {
+          "path": "knowledge/system-semantics/host-runtime.md",
+          "quote": "设阶段 j 每请求平均消耗 cⱼ 个 CPU 秒，分配 pⱼ 个有效核，到达率为 λ。"
+        },
+        {
+          "path": "knowledge/system-semantics/host-runtime.md",
+          "quote": "其中共享同一物理对象的多个句柄只计一次，复制副本分别计。"
+        },
+        {
+          "path": "knowledge/system-semantics/host-runtime.md",
+          "quote": "三类对象互不共享且同时达到上限时，主项合计为 48 MiB，尚未包含元数据、模态张量、IPC、pinned 缓冲和模型状态。"
+        }
+      ]
+    },
+    "adaptation": {
+      "assessment": "sufficient",
+      "reason": "配额不足、worker 增加、慢客户端、共享或复制、执行域拆分等变化均连接到应保留的身份与生命期约束，以及调整并发、准入、缓冲或通信路径的理由；不需要另加统一标题。",
+      "evidence": [
+        {
+          "path": "knowledge/system-semantics/host-runtime.md",
+          "quote": "暂停又会延长 KV 占用时间，因此网络背压也参与容量准入。"
+        },
+        {
+          "path": "knowledge/system-semantics/host-runtime.md",
+          "quote": "若 cpu.stat 节流增加，先收回并发或提高合法额度，不能把恶化归因于 kernel"
+        },
+        {
+          "path": "knowledge/system-semantics/host-runtime.md",
+          "quote": "改善单阶段吞吐却使模型饥饿、内存峰值或请求尾延迟恶化，说明资源划分仍需调整。"
+        }
+      ]
+    },
+    "diagnosis": {
+      "assessment": "partial",
+      "reason": "竞争解释、受控干预和反证后的修正充分，且真实设备边界声明清楚；但检查覆盖段要求故障模型由同一不变量判定器拒绝，ownership 负对照实际只断言错误状态已经产生，timeout 模型也直接编码预期结论。这部分验证声明尚未兑现。",
+      "evidence": [
+        {
+          "path": "knowledge/system-semantics/host-runtime.md",
+          "quote": "一次时间测量不能同时证明排队、CPU 服务、设备执行和网络交付四个原因；应改变一个可观察条件并保留反证。"
+        },
+        {
+          "path": "knowledge/system-semantics/host-runtime.md",
+          "quote": "故障模型必须被同一不变量判定器拒绝，不能只打印一个错误值。"
+        }
+      ]
+    }
+  },
+  "findings": [
+    {
+      "id": "K-SYS-015-R1-BOUNDED-HANDOFF",
+      "criterion": "algorithm",
+      "evidence": "正文要求“每个阶段的项数和字节数有明确上限”以及“不能先写入再检查”；STEP 第4步却直接“输出写入私有 RESERVED 缓冲”，第6步直接“为下游阶段生成票并入队；输入引用按交接规则释放”。未给出输出大小、输出容量及下游队列项的预留事务，也未给出下游已满的分支。ADMIT 仅描述本次输入的预留。",
+      "impact": "下游容量为1且已有一项时，上游完成后按第6步再入一项便超过硬上限；若实现者改成阻塞入队，则可能阻塞负责取消和完成的执行域。保留待交接输出时，其字节和所有权也没有明确记账位置。",
+      "blocking": true,
+      "required_revision": "补全阶段交接事务：明确何时预留私有输出及下游容量，如何更新和释放 items/bytes，以及预留失败后的可取消等待、拒绝或失败路径。只有交接成功才转移引用；待交接输出继续占预算并保留责任。用下游已满的实际推进轨迹检查容量不越界、控制仍可处理和失败不泄漏。"
+    },
+    {
+      "id": "K-SYS-015-R1-BUFFER-PROGRESSION",
+      "criterion": "algorithm",
+      "evidence": "TRANSFER 的 WRITE 为“置 state=RESERVED，writer=actor”，PUBLISH 要求“state=FILLING 且 writer=actor”，但全文没有定义 RESERVED→FILLING 操作。ADMIT 建立 RESERVED 输入后立即入队，STEP 未明确输入取得可读资格的事件；成功分支直接“私有输出从 FILLING 置 PUBLISHED”，同时说明“本步骤不等待设备完成”。",
+      "impact": "严格执行已给转换时，正常写入无法到达 PUBLISH 的前置状态。对异步生产，读者也无法从算法确定 PUBLISHED 表示已提交还是已完成，何时可以读取，以及输入引用释放后由谁保留设备最后使用责任。正文正确的不变量尚未落实为可推进路径。",
+      "blocking": true,
+      "required_revision": "补全首次取得、开始填充、生产完成、发布及最后使用结算的状态更新。明确主机同步阶段与异步提交阶段各自的完成含义；异步提交后保留使用票据，由匹配完成证书或明确的消费者依赖关系授权发布和读取。正常写入轨迹与延迟生产完成、取消后迟到完成应经过同一状态机检查。"
+    },
+    {
+      "id": "K-SYS-015-R1-NEGATIVE-CONTROL-ORACLE",
+      "criterion": "diagnosis",
+      "evidence": "正文称“故障模型必须被同一不变量判定器拒绝”。脚本 check_ownership 在 recycle_buf(u, unsafe=True) 后使用 require(u.epoch == 1 and u.readers.get('r1') == 0, 'unsafe recycle keeps stale reader')，随后断言 unsafe overwrite 的错误状态存在；没有把该轨迹交给正常路径共用的生命周期判定器拒绝。timeout_effect(kill) 直接返回 {'timeout': True, 'alive': not kill, 'returncode': None}，check_child_io 再断言该布尔值。",
+      "impact": "ownership 负对照证明测试构造了提前复用，却没有证明统一检查能够拒绝它；迟到释放被拒绝不能补救此前发生的覆盖。timeout 模型将终止效果直接作为答案，无法检出把发出 kill 当作已确认退出的机制错误。六项 OK 因而不足以支持当前验证声明。",
+      "blocking": true,
+      "required_revision": "将正常与故障轨迹送入同一独立生命周期不变量判定器，要求正常轨迹接受、提前复用轨迹因明确违例被拒绝。超时检查区分超时、终止请求与退出确认；若只保留当前布尔假设，应撤回其机制验证和清理成功结论。检查模型应覆盖修订后的实际状态转换，不能用 WRITING 合并状态掩盖正文缺失的转换。"
+    },
+    {
+      "id": "K-SYS-015-R1-EVENT-LOOP-LEGALITY",
+      "criterion": "legality",
+      "evidence": "正文写“它的合法条件是每个回调不做长时间不可分割的 CPU 工作，并且设备提交、阻塞 I/O 和原生库调用不占用该循环”，随后又写“设备提交线程可以单独设置”。",
+      "impact": "有界、非阻塞的设备提交或短原生调用可以在事件循环中执行，并保持控制事件可达和响应性。当前绝对条件把一种隔离方案升格为合法性要求，错误排除了这些候选，也与提交线程属于可选划分的表述不一致。",
+      "blocking": true,
+      "required_revision": "将要求改为回调执行时间、阻塞行为和控制事件处理能力必须满足声明的响应性预算；对可能阻塞或长时间执行的提交及原生调用说明何时需要移入其他执行域。保留专用提交线程作为有成本和适用条件的候选。"
+    }
+  ],
+  "limitations": [
+    "真实线程同步、cgroup 节流、NUMA、内核调度、DMA、网络交付、真实子进程退出和端到端 SLO 未测，正文已明确声明；这些边界本身不构成退回原因。",
+    "没有 Agent 使用效果的对照证据，不能由内容检查或符号模型推导知识改善了构建能力。",
+    "S-CPU-TUNING 仅提供来源说明，没有允许读取的教程 prose 原文；本次不声称独立核验其上游实现。",
+    "Linux 与 CUDA 原文仅核对所供片段。CUDA 片段未包含完整 streams 段落，相关细节的核对依赖所供来源说明，不能称为完整原文复核。",
+    "本调用未重新运行脚本；实际执行判断依据所供 actual_preflight。文件哈希采用要求的绑定值，未独立从本地文件重算；reader.html 的存在性和完整链接可达性未执行检查。"
+  ],
+  "checks": [
+    {
+      "script": "tools/check_k_sys_015_full.py",
+      "args": [],
+      "script_sha256": "09c9e86b0d2eedc9629f2c8a46150bb6b4567c383a9fd60dffb82284212234fc",
+      "execution_source": "supplied actual_preflight",
+      "backend": "remote_bwrap",
+      "returncode": 0,
+      "timed_out": false,
+      "elapsed_seconds": 0.06607052311301231,
+      "reported_checks": [
+        "budget",
+        "resident",
+        "control_queue",
+        "ownership",
+        "shutdown",
+        "child_io"
+      ],
+      "independently_rerun": false,
+      "assessment": "执行记录显示六项均输出 OK，stderr 为空；该事实不消除正文状态机缺口及负对照判定不足。作者说明其本人未执行，与后续协调执行记录不矛盾。"
+    }
+  ],
+  "no_checks_reason": "",
+  "reading_scope": {
+    "basis": "阅读本次消息提供的完整候选正文、完整检查脚本、实际执行记录及材料内容。以下范围均为所供提取文本的零起点半开字符区间；只将全文材料列入 documents。",
+    "full_documents": {
+      "AGENTS.md": [
+        [
+          0,
+          567
+        ]
+      ],
+      "docs/knowledge-method.md": [
+        [
+          0,
+          2251
+        ]
+      ],
+      "docs/knowledge-review.md": [
+        [
+          0,
+          3016
+        ]
+      ],
+      "knowledge/system-semantics/host-runtime.md": [
+        [
+          0,
+          10331
+        ]
+      ],
+      "knowledge/sources/S-ASGI.md": [
+        [
+          0,
+          491
+        ]
+      ],
+      "knowledge/sources/S-CPU-TUNING.md": [
+        [
+          0,
+          731
+        ]
+      ],
+      "knowledge/sources/S-OTEL.md": [
+        [
+          0,
+          520
+        ]
+      ],
+      "knowledge/sources/S-PY-SUBPROCESS.md": [
+        [
+          0,
+          509
+        ]
+      ],
+      "knowledge/sources/S-LINUX-RESOURCES.md": [
+        [
+          0,
+          949
+        ]
+      ],
+      "knowledge/sources/S-TORCH-CUDA.md": [
+        [
+          0,
+          1468
+        ]
+      ],
+      "knowledge/engine-index/vllm-scheduler.md": [
+        [
+          0,
+          2314
+        ]
+      ],
+      "references/S-ASGI/fulltext.txt": [
+        [
+          0,
+          23566
+        ]
+      ],
+      "references/S-OTEL/fulltext.txt": [
+        [
+          0,
+          8256
+        ]
+      ],
+      "references/S-PY-SUBPROCESS/fulltext.txt": [
+        [
+          0,
+          62026
+        ]
+      ]
+    },
+    "full_script": "candidate.test_script 提供的 tools/check_k_sys_015_full.py 全部代码。",
+    "excerpts": {
+      "knowledge/hardware/cpu-serving.md": [
+        [
+          12000,
+          14833
+        ]
+      ],
+      "knowledge/system-semantics/service-protocol.md": [
+        [
+          0,
+          2833
+        ]
+      ],
+      "knowledge/system-semantics/cancellation-resource-completion.md": [
+        [
+          0,
+          2833
+        ]
+      ],
+      "knowledge/system-semantics/request-batch-identity.md": [
+        [
+          16000,
+          18833
+        ]
+      ],
+      "knowledge/tools/trace-observability.md": [
+        [
+          0,
+          2833
+        ]
+      ],
+      "knowledge/frameworks/streams-allocator.md": [
+        [
+          0,
+          2833
+        ]
+      ],
+      "knowledge/algorithms/async-scheduling.md": [
+        [
+          8000,
+          10833
+        ]
+      ],
+      "knowledge/system-semantics/design-synthesis.md": [
+        [
+          12000,
+          14833
+        ]
+      ],
+      "knowledge/algorithms/iteration-batching.md": [
+        [
+          0,
+          2833
+        ]
+      ],
+      "knowledge/algorithms/cross-attention-cache.md": [
+        [
+          12000,
+          14833
+        ]
+      ],
+      "knowledge/frameworks/inference-eval.md": [
+        [
+          0,
+          2833
+        ]
+      ],
+      "knowledge/frameworks/mlx-serving.md": [
+        [
+          4000,
+          6833
+        ]
+      ],
+      "knowledge/hardware/memory-and-roofline.md": [
+        [
+          8000,
+          10833
+        ]
+      ],
+      "knowledge/models/encoder-decoder-streaming.md": [
+        [
+          4000,
+          4934
+        ],
+        [
+          12000,
+          13899
+        ]
+      ],
+      "knowledge/models/vision-language.md": [
+        [
+          12000,
+          14833
+        ]
+      ],
+      "knowledge/models/video-generation.md": [
+        [
+          12000,
+          14833
+        ]
+      ],
+      "knowledge/models/speech-generation.md": [
+        [
+          0,
+          2833
+        ]
+      ],
+      "knowledge/models/omni-multimodal.md": [
+        [
+          0,
+          772
+        ],
+        [
+          20000,
+          22061
+        ]
+      ],
+      "knowledge/system-semantics/tokenization-io.md": [
+        [
+          8000,
+          10833
+        ]
+      ],
+      "knowledge/tools/framework-profiler-scope.md": [
+        [
+          8000,
+          10833
+        ]
+      ],
+      "knowledge/workloads/metric-events.md": [
+        [
+          8000,
+          10833
+        ]
+      ],
+      "knowledge/workloads/slo-goodput.md": [
+        [
+          8000,
+          10833
+        ]
+      ],
+      "knowledge/workloads/capacity-planning.md": [
+        [
+          4000,
+          6833
+        ]
+      ],
+      "knowledge/hardware/cpu-linear-kernels.md": [
+        [
+          8000,
+          10833
+        ]
+      ],
+      "knowledge/hardware/storage-io.md": [
+        [
+          8000,
+          10833
+        ]
+      ],
+      "knowledge/system-semantics/deployment-environment.md": [
+        [
+          0,
+          2833
+        ]
+      ],
+      "knowledge/models/vision-inference.md": [
+        [
+          0,
+          2833
+        ]
+      ],
+      "knowledge/models/graph-inference.md": [
+        [
+          0,
+          2833
+        ]
+      ],
+      "knowledge/system-semantics/known-tensions.md": [
+        [
+          0,
+          2833
+        ]
+      ],
+      "references/S-LINUX-RESOURCES/fulltext.txt": [
+        [
+          0,
+          4000
+        ],
+        [
+          8000,
+          12000
+        ],
+        [
+          16000,
+          20000
+        ],
+        [
+          40000,
+          68000
+        ],
+        [
+          72000,
+          76000
+        ],
+        [
+          84000,
+          96000
+        ],
+        [
+          100000,
+          104000
+        ],
+        [
+          112000,
+          116466
+        ],
+        [
+          120000,
+          124000
+        ]
+      ],
+      "references/S-TORCH-CUDA/fulltext.txt": [
+        [
+          0,
+          4000
+        ],
+        [
+          8000,
+          12000
+        ],
+        [
+          16000,
+          72465
+        ],
+        [
+          76000,
+          80000
+        ]
+      ]
+    },
+    "author_scope_assessment": "作者 ledger 记录其收到旧正文全文、六份来源说明、ASGI/OTEL/subprocess 原文全文、Linux/CUDA 原文片段及相关章节指定范围；vllm-scheduler 为全文例外。作者 Linux 的112000段截至117852、CUDA 的16000段截至73851，比本审阅者收到的对应片段更长，未将审阅者范围套用于作者。S-CPU-TUNING 没有 prose 原文，上游源码未暴露。ledger 是材料供应记录，不证明认知阅读完成；本轮审查对象为246273dc绑定的新候选，不是作者供应记录中005342b6绑定的旧正文。"
+  },
+  "test_assessment": "预算检查使用 Fraction 与明确设定值核对4核、祖先2核及4.2/3.9 CPU秒每秒，算术正确；其 effective_cores 实际得到配置上界，不能证明竞争下的真实可用核数。驻留检查以物理id去重，对48 MiB及共享对象15字节与错误25字节提供有效算例，但没有时间事件扫描，不能证明任意轨迹的峰值。控制模型实际运行独立队列并轮询、独立队列不轮询、共享FIFO三个分支，能够区分所设循环等待；共享FIFO分支把cancel追加到已有数据之后，没有模拟合法有界入队失败。所有权正向检查覆盖双读者、读者未结束时拒绝回收、代次递增及迟到释放；故障分支却只确认unsafe回收和覆盖已发生，没有共用判定器拒绝错误轨迹，且以WRITING替代正文RESERVED/FILLING。关闭检查的can_free能拒绝尚有uses/readers的释放资格，重复完成不重复扣集合；未覆盖owners或实际完成证书验证。管道模型具有真实容量判断，能呈现不排空时阻塞，但timeout_effect只是直接编码alive=not kill，未验证终止请求到退出确认。脚本没有实现ADMIT/STEP及阶段间有界交接，因而无法发现本轮主要算法缺口。所供隔离执行确实返回0并报告六项OK；这些是有限符号模型结果，不是实际线程、子进程、设备或SLO结果。"
+}

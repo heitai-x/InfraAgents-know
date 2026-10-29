@@ -1,0 +1,70 @@
+{
+  "id": "K-ALG-015",
+  "path": "algorithms/parallelism.md",
+  "category": "algorithms",
+  "title": "推理并行：张量分解、流水、专家与上下文",
+  "summary": "并行策略改变张量归属和同步边界；选择依据是每阶段的计算、状态与通信分解。",
+  "revision": 3,
+  "status": "seed",
+  "tags": [
+    "TP",
+    "PP",
+    "DP",
+    "EP",
+    "CP",
+    "parallelism",
+    "并行",
+    "per-layer ledger",
+    "parallel groups",
+    "MLA MoE scenario"
+  ],
+  "scope": {
+    "model_families": [],
+    "platforms": [],
+    "runtimes": [],
+    "workloads": []
+  },
+  "source_ids": [
+    "S-NCCL-COLLECTIVE",
+    "S-CUDA-TOPOLOGY",
+    "S-MIXTRAL",
+    "S-DEEPSEEKV3"
+  ],
+  "related": [
+    "K-HW-002",
+    "K-MODEL-003",
+    "K-ALG-013",
+    "K-SYS-005",
+    "K-HW-014",
+    "K-ALG-019",
+    "K-MODEL-006",
+    "K-SYS-012",
+    "K-TOOLS-007",
+    "K-HW-008",
+    "K-MODEL-002",
+    "K-MODEL-009",
+    "K-MODEL-010",
+    "K-SYS-010",
+    "K-WORK-011"
+  ],
+  "evidence": [],
+  "updated_at": "2026-10-27",
+  "sha256": "161a883561e39371ea22a1430c385546c402db2f993d8a37c6f37e03e1e4bd17",
+  "questions": [
+    "按输出通道与按输入通道切分线性层各自需要什么通信，TP 在小 batch decode 下为何容易被启动延迟主导？",
+    "PP、DP、EP 和 CP 分别扩展哪一轴，各自的气泡、复制和热点代价由什么决定？",
+    "怎样按张量所有者逐层记录本地内容、归约流量和额外缓冲，才能比较不同组合策略？",
+    "多个并行组复用同一批设备时，如何从 rank 映射推出实际设备数而不是简单相乘？",
+    "非整除的 hidden、head、专家或词表维度在分片时允许哪些处理方式，padding 不能进入哪些计算？"
+  ],
+  "symptoms": [
+    "增加 TP 卡数后 decode 单步时间反而上升",
+    "某个 rank 因热点专家成为每层慢端",
+    "PP 下每卡状态占用更低但单请求 ITL 更差"
+  ],
+  "assumes": [
+    "多 GPU 且具有可测量的互联带宽和启动延迟",
+    "Transformer 结构可按通道、层、专家或序列切分",
+    "单请求的 token 仍需串行自回归"
+  ]
+}

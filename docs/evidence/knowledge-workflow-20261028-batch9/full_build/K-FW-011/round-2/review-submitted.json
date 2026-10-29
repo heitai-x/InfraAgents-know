@@ -1,0 +1,135 @@
+{
+  "entry_id": "K-FW-011",
+  "body_sha256": "1f556d7d85821ed9d3fc2e0868902909105476503f3e9bb40e2c862f40bfe5d8",
+  "reviewer": "sol-reviewer:K-FW-011:round-2",
+  "decision": "accept",
+  "documents": {
+    "AGENTS.md": "b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a",
+    "docs/knowledge-method.md": "69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb",
+    "docs/knowledge-review.md": "f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21",
+    "knowledge/frameworks/checkpoint-loading.md": "1f556d7d85821ed9d3fc2e0868902909105476503f3e9bb40e2c862f40bfe5d8",
+    "knowledge/sources/S-SERVERLESSLLM.md": "aff9202b72fffcdf3145d0f014888070d2e12995b04f9c259930ad90a806473d",
+    "knowledge/sources/S-TORCH-INFERENCE.md": "2114aca130a5c62a0b10baa52b7d59becea788c98dd5cd8221573b1a8d5178b3",
+    "knowledge/sources/S-TORCH-CUDA.md": "8ee61677a1e35d475d9bb122b2c7fa824ccf054acefbe2f12345d72c1fb1b00e",
+    "knowledge/frameworks/inference-eval.md": "9381e25cf021f5338aef4311ba5c95ca2255fead917335c292b79347acf6b4b9",
+    "knowledge/frameworks/cpu-quantized-kernels.md": "fcb634a208ad9c814cc9b3228aee7082ca77091c7a385b3d3d57618f14aba310",
+    "knowledge/engine-index/vllm-model-runner.md": "87d1433d4f64d939ff8f137d1c1d4092cfdf2b3d7ebdd011a0f344cc66564714",
+    "knowledge/workloads/measurement-comparability.md": "c3c5fbcd9a6b8b4f94954bda424488c83c3a741a2de339fea4f7aa83b4dcc215",
+    "knowledge/workloads/capacity-planning.md": "2a1fab417c30d8e6984c202d805f31863e0f00e248558c583609b5f9ba7e88c7",
+    "knowledge/algorithms/weight-expert-offload.md": "cb230fafeec2d39fa40228ad44dbb41d34c62673fbac2325b6e797f206bc0fde",
+    "knowledge/system-semantics/model-lifecycle.md": "bf15950cafcbb584f031cc3a1ea9eaf3331d2816819c6e468ae333d70a3c7c0e",
+    "references/S-SERVERLESSLLM/fulltext.txt": "8fb94782eb4bf30cd44f72b99bbf5adc5ee88c9ae831a29d0ad604fb99f3e4c3",
+    "references/S-TORCH-CUDA/fulltext.txt": "4756fc37be9c52d4128b5f4b46f996fddb8b136a9ef51183a6f0e1c7d49b18df",
+    "tools/check_k_fw_011_full.py": "ca604a9efff1576c73257276895d7d889b231e3a66e232468d8c3919f3756555"
+  },
+  "criteria": {
+    "definition": {
+      "assessment": "sufficient",
+      "reason": "完整定义制品输入、文件与偏移身份、目标表示、加载尝试和槽租约代次，并区分读取、张量就绪、模型验证与服务就绪。坐标置换和转置反例足以说明 shape 相同不能证明函数相同。",
+      "evidence": [
+        {
+          "path": "knowledge/frameworks/checkpoint-loading.md",
+          "quote": "一个源位置必须表示为 (a,f,o)：f 是清单内的文件或 shard 身份，o 是该文件中的字节偏移。"
+        },
+        {
+          "path": "knowledge/frameworks/checkpoint-loading.md",
+          "quote": "g 是本次加载尝试的代次，区别于制品版本 a；同一制品可被加载多次，每次尝试仍有自己的在途操作。"
+        }
+      ]
+    },
+    "legality": {
+      "assessment": "sufficient",
+      "reason": "清单完整性、物理格式范围、别名、轴与量化元数据映射、目标覆盖和 rank 相容性都有明确条件；按文件检查交叠，并明确严格清单合同与只读源交叠的物理安全性不同。F02 已修复，脚本的跨文件同偏移正例与同文件交叠反例对应实际规则。",
+      "evidence": [
+        {
+          "path": "knowledge/frameworks/checkpoint-loading.md",
+          "quote": "不同文件 offset=8 的载荷合法；同一文件中未声明共享的交叠按本章的严格清单合同拒绝。"
+        },
+        {
+          "path": "knowledge/frameworks/checkpoint-loading.md",
+          "quote": "跨文件批次必须展开为多个真实读取，不能对一个文件句柄提交跨文件范围。"
+        }
+      ]
+    },
+    "algorithm": {
+      "assessment": "sufficient",
+      "reason": "BuildLoadPlan 展开源到目标映射、覆盖和依赖检查；ExecuteLoadPlan 给出接纳、提交、匹配完成、回收、最终验证和原子发布。future 与 active 分开保护尚未提交的消费者和已提交的物理访问。等待与不可推进、失败与取消排空、无法证明结束时的隔离均有出口。F01 已修复。",
+      "evidence": [
+        {
+          "path": "knowledge/frameworks/checkpoint-loading.md",
+          "quote": "将 chunk 从 PENDING 移为 INFLIGHT"
+        },
+        {
+          "path": "knowledge/frameworks/checkpoint-loading.md",
+          "quote": "3 重复，直到所有 chunk 为 DONE 且 active 为空："
+        },
+        {
+          "path": "knowledge/frameworks/checkpoint-loading.md",
+          "quote": "此过程所有出口均返回，不再进入证书生成或成功发布分支"
+        }
+      ]
+    },
+    "cost": {
+      "assessment": "sufficient",
+      "reason": "D_h 已定义；容量采用同一统计域中的唯一物理存储，完整池、池内活跃对象、图池及额外 allocator 保留互斥计数。准备、转换与检查、实际链路流量、同步和版本并存均进入成本解释。有限流水公式包含首尾，多 rank 使用实际本地完成时间并限定独立资源前提。32 MiB、64 MiB、4 与 6、5.5 的设定计算一致。F03 已修复。",
+      "evidence": [
+        {
+          "path": "knowledge/frameworks/checkpoint-loading.md",
+          "quote": "D_h 是已物化且仍保留的主机目标布局副本"
+        },
+        {
+          "path": "knowledge/frameworks/checkpoint-loading.md",
+          "quote": "R_h^extra 仅表示尚未归入以上对象或池的分配器保留容量，不是 allocator 的总 reserved。"
+        },
+        {
+          "path": "knowledge/frameworks/checkpoint-loading.md",
+          "quote": "不能把每 rank 的读取、转换和传输总工作量直接相加替代 L_r。"
+        }
+      ]
+    },
+    "adaptation": {
+      "assessment": "sufficient",
+      "reason": "对加载频率、存储与传输瓶颈、块大小、缓存冷热、离线转换、执行产物依赖、别名更新和版本并存预算，分别解释保留条件、调整成本和放弃当前路径的原因。没有把某种 I/O、预打包或编译方式当作普遍要求。",
+      "evidence": [
+        {
+          "path": "knowledge/frameworks/checkpoint-loading.md",
+          "quote": "源存储变快后，瓶颈可能移到 CPU 转置、解包或元数据处理；PCIe 受限时增加读取线程可能只增加主机驻留和队列。"
+        },
+        {
+          "path": "knowledge/frameworks/checkpoint-loading.md",
+          "quote": "只读且表示相容时保留 tied weights；独立更新或不同目标表示出现时，改成明确物化或写时复制。"
+        }
+      ]
+    },
+    "diagnosis": {
+      "assessment": "sufficient",
+      "reason": "诊断表把竞争解释、受控干预与反证后的修改连起来。检查脚本具有不同方向的布局参考、独立时间推进模型和从公开事件重建责任的观察器；提前复用负对照实际重新取得并覆盖同一槽，观察到未结束访问重叠及载荷污染。不同槽并发正例通过，修复了旧检查的误报机制。F04 已修复。",
+      "evidence": [
+        {
+          "path": "knowledge/frameworks/checkpoint-loading.md",
+          "quote": "只观察“有两个在途块”无法区分这个错误与 b0、b1 的合法并发，必须按物理槽、lease 和实际未结束访问观察重叠。"
+        },
+        {
+          "path": "knowledge/frameworks/checkpoint-loading.md",
+          "quote": "负对照实际提前释放并重新申请同一槽、覆盖其内容，使旧消费者读到改变后的值；另检查提前发布和带未结束责任的清理。"
+        }
+      ]
+    }
+  },
+  "findings": [],
+  "limitations": [
+    "本次全文阅读与身份绑定依据任务提供的文本、摘要哈希及执行记录；工具仅提供枚举能力，没有可用的文件读取或 Python 执行接口。未重新计算磁盘哈希、检查链接目标存在性或独立重跑脚本，也未能读取本地技能文件。",
+    "S-TORCH-INFERENCE 仅有完整来源说明，没有原始说明正文；未将该说明算作原文阅读。其余来源核对限于所供全文提取，未检查 reader.html 图版或源码归档。",
+    "CPU 检查限于固定小端 int32、相容全视图别名、有限置换、唯一存储区间、独立整数时间流水及同步准备后两个异步读者的有限槽模型；不证明通用节点调度器、任意量化布局、跨分片复杂拼接或全部并发时序正确。",
+    "实际 checkpoint 完整性、目标设备数值与内存可见性、CUDA、直接 I/O、锁页、图捕获、共享链路性能、分布式恢复及 Agent 使用效果均未验证；正文对此声明清楚。"
+  ],
+  "checks": [
+    {
+      "script": "tools/check_k_fw_011_full.py",
+      "args": []
+    }
+  ],
+  "no_checks_reason": "",
+  "reading_scope": "完整阅读任务所供内容，未声称读取磁盘原件。全文及所供零基半开字符范围：AGENTS.md [0,567)；docs/knowledge-method.md [0,2251)；docs/knowledge-review.md [0,3016)；knowledge/frameworks/checkpoint-loading.md [0,14097)；knowledge/sources/S-SERVERLESSLLM.md [0,781)；knowledge/sources/S-TORCH-INFERENCE.md [0,727)；knowledge/sources/S-TORCH-CUDA.md [0,1468)；knowledge/frameworks/inference-eval.md [0,3779)；knowledge/frameworks/cpu-quantized-kernels.md [0,3369)；knowledge/engine-index/vllm-model-runner.md [0,2207)；knowledge/workloads/measurement-comparability.md [0,2988)；knowledge/workloads/capacity-planning.md [0,3442)；knowledge/algorithms/weight-expert-offload.md [0,3216)；knowledge/system-semantics/model-lifecycle.md [0,3556)；references/S-SERVERLESSLLM/fulltext.txt [0,89875)；references/S-TORCH-CUDA/fulltext.txt [0,80851)。完整阅读 candidate.test_script 中交付的全部脚本、author_notes、actual_preflight 及四项旧审查。相关章节仅阅读所供摘录：knowledge/models/prefill-decode-state.md [16000,19863)；knowledge/system-semantics/memory-allocators.md [0,3863)；knowledge/hardware/host-device-transfer.md [0,1378)、[4000,6485)；knowledge/frameworks/compile-dynamic-shapes.md [0,3863)；knowledge/frameworks/mlx-serving.md [4000,6228)、[12000,13635)；knowledge/frameworks/neuron-serving.md [0,2915)、[12000,12948)；knowledge/hardware/trainium-dataflow.md [0,1641)、[12000,14222)；knowledge/system-semantics/position-mask-cache.md [0,2504)、[12000,13359)；knowledge/system-semantics/tokenization-io.md [0,3863)；knowledge/system-semantics/design-synthesis.md [0,3863)；knowledge/tools/correctness-oracles.md [0,3863)；knowledge/algorithms/operator-primitives.md [4000,5929)、[8000,9934)；knowledge/hardware/storage-io.md [0,3863)；knowledge/system-semantics/storage-services.md [0,3863)；knowledge/system-semantics/deployment-environment.md [0,3863)。摘录文件未列入 documents。来源重点核对 ServerlessLLM §4.1、§4.2、§6.2、§7，以及 CUDA 文档的异步、streams、内存管理、锁页与图池语义；与本章独立推导及 2026-04-30 cutoff 的区分成立。",
+  "test_assessment": "独立检查了脚本逻辑和所附实际执行记录，没有把退出码代替语义判断。布局参考枚举源坐标并按目标坐标排序，被测路径则从目标坐标反查线性源地址；另有显式转置答案和忽略置换的真实错误输出。清单对照实际使用两个固定版本文件的相同 offset=8，并将范围改到同一文件以触发交叠拒绝。容量参考按 backing 求区间并集，另一检查按类别执行两两排斥；负对照重复计入完整池与活跃子区间并被拒绝。流水递推与逐整数时刻推进的阶段服务器分别计算，135 个设定组合一致，能够区分两块完成时间 4 与串行工作量 6。生命周期观察器不读取 Loader.free、Loader.live 或故障开关，而从申请、写入、提交、物理完成和释放事件重建所有权与责任。提前复用开关确实释放槽并允许随后提交重新取得该槽，覆盖存储；观察器检出提前释放、未结束访问重叠、提前覆盖和消费者读到被覆盖值四种证据，同时接受两个不同槽合法并发。成功、失败和取消均通过逐事件完成推进；缺失结束事件保留隔离责任，没有 pending.clear() 冒充排空。另覆盖最后一批排空、旧代次及旧 lease 重复事件、不推进、缺 rank、提前发布和提前失败清理。所附 remote_bwrap 记录绑定脚本 SHA-256 ca604a9efff1576c73257276895d7d889b231e3a66e232468d8c3919f3756555，returncode=0、stderr 为空，stdout 与上述断言和负对照相符；这是审阅的外部执行证据，本 reviewer 未再次执行。作者说明当时未运行与随后提供的 preflight 不冲突。该模型没有执行通用 future/active 节点图、真实异步设备访问或实际预热和 rank 验证；这些遗漏已限定为验证边界，不构成当前正文机制的未解决阻塞项。R1-F01 至 F04 及对应 workflow 修订要求均可关闭。"
+}

@@ -1,0 +1,309 @@
+{
+  "role": "reviewer",
+  "engine": "sol",
+  "requested_model": "gpt-6.1-sol",
+  "reasoning_effort": "high",
+  "prompt_sha256": "771cc6414c7e3f359693cf1918b47eeba6d303f694100106364508bd80fbaa5e",
+  "usage": [
+    {
+      "input_tokens": 786071,
+      "cached_input_tokens": 596608,
+      "cache_write_input_tokens": 0,
+      "output_tokens": 8750,
+      "reasoning_output_tokens": 3713
+    }
+  ],
+  "answer": "{\n  \"entry_id\": \"K-WORK-010\",\n  \"body_sha256\": \"7b5d9abfd3bf264f40d6d0a821ed4a8fb6a9a1a07091c6cf64cea4d77c934155\",\n  \"reviewer\": \"sol-reviewer:K-WORK-010:round-1\",\n  \"decision\": \"revise\",\n  \"documents\": {\n    \"AGENTS.md\": \"b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a\",\n    \"docs/knowledge-method.md\": \"69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb\",\n    \"docs/knowledge-review.md\": \"f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21\",\n    \"knowledge/workloads/session-workloads.md\": \"7b5d9abfd3bf264f40d6d0a821ed4a8fb6a9a1a07091c6cf64cea4d77c934155\",\n    \"knowledge/sources/S-SGLANG.md\": \"4fd6badbee1df40da422f2866f1536bbe4f5266856b8d97004072a21b9d0e2c9\",\n    \"knowledge/sources/S-ORCA.md\": \"920ef987a4a019bb4f0e0386e30bf1c1e3bc720d199ae4de22e462db4f41520a\",\n    \"knowledge/sources/S-VLLM-PREFIX.md\": \"9e3f16fdac245da8aa97deea55a820642b67e626329748c980eaa2fc0b7656f5\",\n    \"knowledge/sources/S-MLPERF-SCENARIOS.md\": \"e210de2929034d4a6e25a31ee72b81a184412a7e637c979210f91ae02a261b04\",\n    \"knowledge/engine-index/vllm-scheduler.md\": \"9e576ff7711ed5e448a4bedfe7ab69949a79bc3f61417bf258f7a3b56caf1fe5\",\n    \"references/S-SGLANG/fulltext.txt\": \"7dfb3a43ba73d9d9861c06311005edf12dfafa9f60a268fec327deb4d8e8770d\",\n    \"references/S-ORCA/fulltext.txt\": \"2119a53d77b4a933bab56d7e40b5304fa725561c412514459e56729ca6836794\",\n    \"references/S-VLLM-PREFIX/fulltext.txt\": \"0d6423dca458bb628af7d15961bdba92b0d501660f93690610a354ef68f07353\",\n    \"references/S-MLPERF-SCENARIOS/upstream/loadgen/README.md\": \"074479dbeb369205ccc8800450c647893b4901c247e0e4ee7f321f05254e9305\",\n    \"tools/check_k_work_010_full.py\": \"3fb3095fa8072a663508a35595960fe5540c720c5eda679331c93eee797270c3\"\n  },\n  \"criteria\": {\n    \"definition\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"动机、会话与尝试身份、输入构造、依赖事件和主要状态均有定义；回合长度与末 token 尚未形成 KV 的算例在声明的常见执行路径下成立。状态推进实现的缺陷另列 algorithm。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/workloads/session-workloads.md\",\n          \"quote\": \"后续请求的输入、到达时间与缓存身份可能取决于先前输出\"\n        },\n        {\n          \"path\": \"knowledge/workloads/session-workloads.md\",\n          \"quote\": \"重试增加 g，不增加逻辑请求；分支共享前缀不表示它们共享可写状态。\"\n        },\n        {\n          \"path\": \"knowledge/workloads/session-workloads.md\",\n          \"quote\": \"因为最后一个已采样回答 token 可能还没有自己的 KV。\"\n        }\n      ]\n    },\n    \"legality\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"明确区分计算等价、应用合同与版本化实现选择，覆盖依赖闭合、共享写隔离、缓存可达及 logits 恢复条件。SGLang、ORCA 和 vLLM 的主要机制归纳与所供原文相符；MLPerf 场景定义的原始证据核对范围另列 limitation。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/workloads/session-workloads.md\",\n          \"quote\": \"合法性条件包括：依赖图无环；每个必需祖先在所选事件上已提交；输入可由固定契约重建；分支写区与共享只读区隔离\"\n        },\n        {\n          \"path\": \"knowledge/workloads/session-workloads.md\",\n          \"quote\": \"若系统只保存 KV，则安全可跳过上限通常不超过 n−1，并按完整页向下取整\"\n        }\n      ]\n    },\n    \"algorithm\": {\n      \"assessment\": \"partial\",\n      \"reason\": \"伪代码具有输入输出、初始化和循环，但取消路径提前释放私有写页，依赖通知缺少幂等和终态保护，等待到期的后继事件及 FIRST 事件生产路径未闭合。这些是当前算法可导致错误或停滞的缺口，不能由末尾不变量抵消。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/workloads/session-workloads.md\",\n          \"quote\": \"释放 v 的私有写页；共享页仅减引用，不立即回收。\"\n        },\n        {\n          \"path\": \"knowledge/workloads/session-workloads.md\",\n          \"quote\": \"只有输出有效、身份匹配且 u 未取消时，才更新 v 的 deps；\"\n        },\n        {\n          \"path\": \"knowledge/workloads/session-workloads.md\",\n          \"quote\": \"依赖清零且等待到期时 state[v]=READY。\"\n        }\n      ]\n    },\n    \"cost\": {\n      \"assessment\": \"partial\",\n      \"reason\": \"回合新增计算位置、共享容量与分支读取的区别、join 等待和字节时间积分具有实质推导。但分支容量公式未定义 pages 的单位、对齐和 COW 范围，无法恢复所选算法的真实容量峰值。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/workloads/session-workloads.md\",\n          \"quote\": \"总新增 prefill 为 162。\"\n        },\n        {\n          \"path\": \"knowledge/workloads/session-workloads.md\",\n          \"quote\": \"每个分支在后缀计算中仍要读取共享前缀的 K/V，attention 读取量不会自动变成一份。\"\n        },\n        {\n          \"path\": \"knowledge/workloads/session-workloads.md\",\n          \"quote\": \"M_branch = pages(L) + Σ_j pages(T_j) + 输出与在途缓冲，\"\n        }\n      ]\n    },\n    \"adaptation\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"说明了模型、adapter、模板、工具版本和历史策略变化如何影响复用资格，并给出保留期与分支宽度的收益反转因素；没有把固定引擎选择写成普遍要求。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/workloads/session-workloads.md\",\n          \"quote\": \"模型或 adapter 改变会改变状态函数，不能仅按文本复用\"\n        },\n        {\n          \"path\": \"knowledge/workloads/session-workloads.md\",\n          \"quote\": \"缓存保留期变长会提高潜在命中，也会增加等待驻留。\"\n        }\n      ]\n    },\n    \"diagnosis\": {\n      \"assessment\": \"partial\",\n      \"reason\": \"正文提供了竞争解释和控制变量实验，且正确限制 CPU 检查的证明范围。但实际脚本未执行所声明的兄弟误取消负对照，依赖检查也不足以验证事件推进机制，作者对检查覆盖的判断需要修正。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/workloads/session-workloads.md\",\n          \"quote\": \"只改保留上限、只改分支宽度、只改 COW 策略，分别观察唯一物理页、阻塞原因、会话完成率和尾延迟\"\n        },\n        {\n          \"path\": \"knowledge/workloads/session-workloads.md\",\n          \"quote\": \"负对照至少包括忽略末 token 恢复、按分支重复计共享页、用均值乘等待时长、让未满足依赖的节点提前提交，以及取消一个分支时误取消兄弟。\"\n        }\n      ]\n    }\n  },\n  \"findings\": [\n    {\n      \"id\": \"K-WORK-010-R1-A01\",\n      \"criterion\": \"algorithm\",\n      \"evidence\": \"步骤 7 写明“释放 v 的私有写页；共享页仅减引用，不立即回收。”，随后又写“迟到完成只更新诊断，不覆盖终态。”；步骤 11 则声明“业务取消不等于物理访问结束”。\",\n      \"impact\": \"RUNNING 分支取消时，kernel 或复制操作仍可能写私有页。按步骤 7 释放并重新分配会使旧访问破坏新请求；若取消后的完成事件只记诊断，也没有明确路径结算实际访问责任。后文原则没有修复这个具体动作。\",\n      \"blocking\": true,\n      \"required_revision\": \"取消仅撤销业务提交资格和逻辑持有。将仍有读写责任的私有页转入待回收集合；继续处理匹配的物理完成，全部最后使用结束后才归还容量。共享页采用同样的物理资格判断，并明确重复完成不能重复结算。用运行中取消、旧写尚未结束、其他请求申请同页的轨迹检查此边界。\"\n    },\n    {\n      \"id\": \"K-WORK-010-R1-A02\",\n      \"criterion\": \"algorithm\",\n      \"evidence\": \"步骤 6 仅规定“记录 committed_event[u,e]”及“只有输出有效、身份匹配且 u 未取消时，才更新 v 的 deps”；其后直接规定“依赖清零且等待到期时 state[v]=READY。”。\",\n      \"impact\": \"没有说明同一依赖事件只结算一次，也没有在该路径检查 v 的终态和是否已经启动。重复通知可能提前清零依赖或重复调度；已取消后继也可能被后到的合格上游通知恢复成 READY。另将 u 当前是否取消作为唯一门槛，会错误排除取消前已合法提交、且正文要求继续存在的事件。\",\n      \"blocking\": true,\n      \"required_revision\": \"按边和事件身份保存已满足集合，只在首次合格事件上更新依赖；统一执行不可逆终态与启动资格检查。明确取消前已提交事件的有效性，以及迟到未提交候选的拒绝规则。成功发布时显式安装 output 和 COMMITTED 状态。检查重复通知、取消后继后上游完成，以及上游提交后再取消的轨迹。\"\n    },\n    {\n      \"id\": \"K-WORK-010-R1-A03\",\n      \"criterion\": \"algorithm\",\n      \"evidence\": \"正文给出“r_v = max(a_v, max_{(u,v,e)}(commit(u) + wait_e))。”；算法步骤 2 只明确“按外部计划给根节点设置 release[v]”，步骤 6 只检查“等待到期”，步骤 9 只说明“才记录 FULL_OUTPUT”。\",\n      \"impact\": \"非根节点的外部时间下界没有进入明确的就绪判定。依赖事件到达时若等待尚未到期，算法没有安排到期唤醒，队列可能耗尽而合法节点永久 BLOCKED。FIRST 边虽属于输入合同，但没有首内容事件的生产和发布路径，因此不能按声明事件重放。\",\n      \"blocking\": true,\n      \"required_revision\": \"为节点保存外部时间下界、依赖事件满足情况和最早就绪时间；条件未到期时登记实际唤醒事件，到期后统一重验。明确 FIRST、FULL、TOOL_OK 和质量事件的生产及消费接口，或明确收窄所选算法支持的事件类型。模型执行细节可明确委托到已有完整章节，并保留已知输入、全层状态完成与事件发布的接口边界。\"\n    },\n    {\n      \"id\": \"K-WORK-010-R1-C01\",\n      \"criterion\": \"cost\",\n      \"evidence\": \"“设共享前缀长 L，b 个分支的私有后缀分别为 T_j”之后给出“M_branch = pages(L) + Σ_j pages(T_j) + 输出与在途缓冲”，而算法要求“若需要写共享尾页，先取得私有页并复制有效槽”。\",\n      \"impact\": \"pages 未定义为页数还是字节，公式也未限定共享前缀按页对齐。固定逻辑页长为 4、L=3、两个分支各追加 4 个位置时，每个 COW 分支需要两个私有页；若原共享尾页仍被保护，峰值为 5 页。直接使用 ceil(L/4)+Σceil(|T_j|/4) 只有 3 页，会低估准入所需容量。\",\n      \"blocking\": true,\n      \"required_revision\": \"定义页长、每页字节和 pages 的含义；将当前公式限定到成立的布局条件，或改为实际物理分配对象的字节并集。展开未对齐前缀、COW 有效槽、源尾页最后使用结束前的过渡峰值及释放后的容量。相同内容的不同物理副本仍分别计容量。\"\n    },\n    {\n      \"id\": \"K-WORK-010-R1-D01\",\n      \"criterion\": \"diagnosis\",\n      \"evidence\": \"作者称“负对照覆盖……取消分支误伤兄弟”，但脚本只有正常调用“committed2, cancelled2 = replay(branch_nodes, {'B'})”；依赖参考使用“committed[d] <= committed[n]”，正向 replay 在该算例中可以把全部节点记为 t=0。\",\n      \"impact\": \"实际执行记录只能证明现有断言通过。脚本没有运行误取消兄弟的故障实现；仅比较非严格时间戳也无法区分同刻事件中的合法先后与提前提交。它未覆盖正文的事件类型、等待唤醒、重复通知和在途取消，因此不能支持作者所称完整依赖及取消检查覆盖。\",\n      \"blocking\": true,\n      \"required_revision\": \"修正作者检查说明，区分正常断言、算术错误对照和实际执行并被拒绝的故障模型。以独立事件序列及已提交证据集合审计推进，实际运行忽略依赖和误取消兄弟的变体，由同一审计器拒绝；同时覆盖本次修复涉及的时间门、重复事件及取消后物理责任。保留真实执行结果，不将未运行检查记为通过。\"\n    }\n  ],\n  \"limitations\": [\n    \"本次依据完整内嵌候选、检查脚本和所供材料进行语义复核；未读取本地工作区文件，未执行链接目标存在性检查，也未独立重跑 Python。\",\n    \"所供 actual_preflight 记录显示绑定脚本在 remote_bwrap 中实际执行、returncode=0、stderr 为空；这是提供的执行证据，不是本审阅者亲自执行的结果。\",\n    \"SGLang 的 fork/join、Radix 引用保护及离线 DFS 条件，ORCA 的迭代调度和 max_tokens 预留，以及 vLLM 的完整块身份与重复物理副本，均可从所供原文核对。所供 LoadGen README 只有指向 test_settings.h 的场景说明链接，没有直接展开 SingleStream、MultiStream 和 Poisson 定义；本次只能核对来源说明中的转述，不能声称已从该 README 独立验证这些定义。\",\n    \"未读取上游源码归档及三张省略的 LoadGen 图片。目标 GPU 数值、跨执行域可见性、真实缓存与 COW、网络工具延迟、质量收益及 Agent 使用效果仍未验证；这些设备和使用效果边界本身不构成阻塞项。\"\n  ],\n  \"checks\": [\n    {\n      \"script\": \"tools/check_k_work_010_full.py\",\n      \"args\": []\n    }\n  ],\n  \"no_checks_reason\": \"\",\n  \"reading_scope\": \"审阅者完整阅读本轮所供 AGENTS.md[0,567)、docs/knowledge-method.md[0,2251)、docs/knowledge-review.md[0,3016)、候选 knowledge/workloads/session-workloads.md[0,8305)、四份来源说明 S-SGLANG[0,472)、S-ORCA[0,1394)、S-VLLM-PREFIX[0,521)、S-MLPERF-SCENARIOS[0,823)、knowledge/engine-index/vllm-scheduler.md[0,2314)，以及所供 S-SGLANG、S-ORCA、S-VLLM-PREFIX 全文文本和 LoadGen README 完整内容；其包内范围标签分别为[0,80104)、[0,90276)、[0,13926)、[0,11382)，未另行验证提取长度。完整阅读 candidate.test_script 及 actual_preflight 的执行信息。相关章仅阅读所供摘录，均按零基半开提取字符范围记录：arrival-and-concurrency[0,4000)、[8000,9000)；input-distribution[0,5000)；prefix-cache-identity[0,5000)；tokenization-io[0,1025)、[8000,11975)；cancellation-resource-completion[0,5000)；iteration-batching[0,5000)；chunked-prefill[8000,11304)、[12000,13696)；omni-multimodal[12000,17000)；request-batch-identity[4000,5929)、[16000,19071)；design-synthesis[0,1000)、[12000,16000)；correctness-oracles[0,1000)、[8000,12000)；metric-events[4000,5000)、[8000,12000)；measurement-comparability[0,4000)、[12000,13000)；slo-goodput[0,5000)；capacity-planning[4000,8000)、[12000,13000)；branch-generation[4000,8000)、[12000,13000)。上述摘录文件均未列入 documents。作者材料范围与审阅者范围分别处理：作者台账记录旧正文全文[0,3583)、其他全文与相关章摘录的暴露范围；该台账支持作者获得这些材料，不证明其认知阅读完成，也不限制审阅者当前候选为旧正文。未将作者未运行检查的声明改写成作者执行通过。\",\n  \"test_assessment\": \"提供的实际执行输出与脚本相符：回合 prefill 为[120,21,21]、已计算边界249；错误末 token 假设得到160和250；物理集合并集为10而重复计数为20；等待平均驻留为14/5而错误均值乘积为3；闭环关系得到32而忽略思考时间为40。手工数学期望、集合并集及有理数积分为这些小算例提供了有效的局部参考，不能笼统称全部检查无效。但 turn_prefills 没有作者所称另一路逐逻辑位置状态重建，DAG replay 也没有独立事件级拓扑审计：正向算例全部时间可为0，非严格时间戳关系不能证明消费前证据已存在。commits_by_release 的错误时间表确实被 bad_dep 拒绝，其证明范围仅是所选时间表。兄弟取消只有正常路径断言，没有实际执行误取消兄弟的负对照。脚本未实现页布局/COW、事件去重、FIRST/FULL 区分、等待到期唤醒、终态保护、物理最后使用及容量重试；也未覆盖零或单 token 回答、非均匀回合、未对齐尾页、跨观察窗驻留和失败重试。预检退出0应如实保留为这些断言的执行结果，不能升级为 ReplaySessionDAG 完整性或设备正确性证明。\"\n}",
+  "exit_code": 0,
+  "status": "completed",
+  "timeout_seconds": 1800,
+  "response_path": "D:\\桌面\\xdb\\InfraAgents\\InfraAgents-know-astra-new\\InfraAgents-know\\docs\\evidence\\knowledge-workflow-20261028-batch17\\full_build\\K-WORK-010\\round-1\\reviewer-attempt-001\\answer.txt",
+  "record_path": "D:\\桌面\\xdb\\InfraAgents\\InfraAgents-know-astra-new\\InfraAgents-know\\docs\\evidence\\knowledge-workflow-20261028-batch17\\full_build\\K-WORK-010\\round-1\\reviewer-attempt-001\\record.json",
+  "tool_events": [
+    {
+      "type": "item.completed",
+      "item": {
+        "id": "item_1",
+        "type": "mcp_tool_call",
+        "server": "codex",
+        "tool": "list_mcp_resources",
+        "arguments": {},
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"resources\":[]}"
+            }
+          ],
+          "structured_content": null
+        },
+        "error": null,
+        "status": "completed"
+      }
+    },
+    {
+      "type": "item.completed",
+      "item": {
+        "id": "item_2",
+        "type": "mcp_tool_call",
+        "server": "codex",
+        "tool": "list_mcp_resource_templates",
+        "arguments": {},
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"resourceTemplates\":[]}"
+            }
+          ],
+          "structured_content": null
+        },
+        "error": null,
+        "status": "completed"
+      }
+    }
+  ],
+  "inventory_tool_events": [
+    {
+      "type": "item.completed",
+      "item": {
+        "id": "item_1",
+        "type": "mcp_tool_call",
+        "server": "codex",
+        "tool": "list_mcp_resources",
+        "arguments": {},
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"resources\":[]}"
+            }
+          ],
+          "structured_content": null
+        },
+        "error": null,
+        "status": "completed"
+      }
+    },
+    {
+      "type": "item.completed",
+      "item": {
+        "id": "item_2",
+        "type": "mcp_tool_call",
+        "server": "codex",
+        "tool": "list_mcp_resource_templates",
+        "arguments": {},
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"resourceTemplates\":[]}"
+            }
+          ],
+          "structured_content": null
+        },
+        "error": null,
+        "status": "completed"
+      }
+    }
+  ],
+  "rejected_tool_events": [],
+  "tool_policy": "metadata_inventory_only",
+  "tool_policy_version": "metadata-inventory-v1",
+  "tool_policy_scope": "Only empty-argument codex host plugin/skill-directory descriptors and empty template inventory; inventory is not knowledge evidence. All other tool events reject the call.",
+  "tool_policy_reason": "Production chapter construction allows observed generic capability discovery metadata; this does not claim a zero-tool comparison or external source reading.",
+  "malformed_event_lines": [],
+  "turn_completed": true,
+  "error_events": [],
+  "recovered_transport_events": [],
+  "terminal_error_events": [],
+  "transport_recovered": false,
+  "actual_model": null,
+  "identity_verified": null,
+  "identity_basis": "Explicit CLI model and isolated HTTP provider; CLI events do not expose server model identity.",
+  "provider": "eval-openai-http",
+  "max_output_tokens": null,
+  "cli_version": "codex-cli 0.164.0-alpha.11.1",
+  "cost_scope": "Codex token usage is reported; subscription charge is not exposed.",
+  "parsed": {
+    "entry_id": "K-WORK-010",
+    "body_sha256": "7b5d9abfd3bf264f40d6d0a821ed4a8fb6a9a1a07091c6cf64cea4d77c934155",
+    "reviewer": "sol-reviewer:K-WORK-010:round-1",
+    "decision": "revise",
+    "documents": {
+      "AGENTS.md": "b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a",
+      "docs/knowledge-method.md": "69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb",
+      "docs/knowledge-review.md": "f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21",
+      "knowledge/workloads/session-workloads.md": "7b5d9abfd3bf264f40d6d0a821ed4a8fb6a9a1a07091c6cf64cea4d77c934155",
+      "knowledge/sources/S-SGLANG.md": "4fd6badbee1df40da422f2866f1536bbe4f5266856b8d97004072a21b9d0e2c9",
+      "knowledge/sources/S-ORCA.md": "920ef987a4a019bb4f0e0386e30bf1c1e3bc720d199ae4de22e462db4f41520a",
+      "knowledge/sources/S-VLLM-PREFIX.md": "9e3f16fdac245da8aa97deea55a820642b67e626329748c980eaa2fc0b7656f5",
+      "knowledge/sources/S-MLPERF-SCENARIOS.md": "e210de2929034d4a6e25a31ee72b81a184412a7e637c979210f91ae02a261b04",
+      "knowledge/engine-index/vllm-scheduler.md": "9e576ff7711ed5e448a4bedfe7ab69949a79bc3f61417bf258f7a3b56caf1fe5",
+      "references/S-SGLANG/fulltext.txt": "7dfb3a43ba73d9d9861c06311005edf12dfafa9f60a268fec327deb4d8e8770d",
+      "references/S-ORCA/fulltext.txt": "2119a53d77b4a933bab56d7e40b5304fa725561c412514459e56729ca6836794",
+      "references/S-VLLM-PREFIX/fulltext.txt": "0d6423dca458bb628af7d15961bdba92b0d501660f93690610a354ef68f07353",
+      "references/S-MLPERF-SCENARIOS/upstream/loadgen/README.md": "074479dbeb369205ccc8800450c647893b4901c247e0e4ee7f321f05254e9305",
+      "tools/check_k_work_010_full.py": "3fb3095fa8072a663508a35595960fe5540c720c5eda679331c93eee797270c3"
+    },
+    "criteria": {
+      "definition": {
+        "assessment": "sufficient",
+        "reason": "动机、会话与尝试身份、输入构造、依赖事件和主要状态均有定义；回合长度与末 token 尚未形成 KV 的算例在声明的常见执行路径下成立。状态推进实现的缺陷另列 algorithm。",
+        "evidence": [
+          {
+            "path": "knowledge/workloads/session-workloads.md",
+            "quote": "后续请求的输入、到达时间与缓存身份可能取决于先前输出"
+          },
+          {
+            "path": "knowledge/workloads/session-workloads.md",
+            "quote": "重试增加 g，不增加逻辑请求；分支共享前缀不表示它们共享可写状态。"
+          },
+          {
+            "path": "knowledge/workloads/session-workloads.md",
+            "quote": "因为最后一个已采样回答 token 可能还没有自己的 KV。"
+          }
+        ]
+      },
+      "legality": {
+        "assessment": "sufficient",
+        "reason": "明确区分计算等价、应用合同与版本化实现选择，覆盖依赖闭合、共享写隔离、缓存可达及 logits 恢复条件。SGLang、ORCA 和 vLLM 的主要机制归纳与所供原文相符；MLPerf 场景定义的原始证据核对范围另列 limitation。",
+        "evidence": [
+          {
+            "path": "knowledge/workloads/session-workloads.md",
+            "quote": "合法性条件包括：依赖图无环；每个必需祖先在所选事件上已提交；输入可由固定契约重建；分支写区与共享只读区隔离"
+          },
+          {
+            "path": "knowledge/workloads/session-workloads.md",
+            "quote": "若系统只保存 KV，则安全可跳过上限通常不超过 n−1，并按完整页向下取整"
+          }
+        ]
+      },
+      "algorithm": {
+        "assessment": "partial",
+        "reason": "伪代码具有输入输出、初始化和循环，但取消路径提前释放私有写页，依赖通知缺少幂等和终态保护，等待到期的后继事件及 FIRST 事件生产路径未闭合。这些是当前算法可导致错误或停滞的缺口，不能由末尾不变量抵消。",
+        "evidence": [
+          {
+            "path": "knowledge/workloads/session-workloads.md",
+            "quote": "释放 v 的私有写页；共享页仅减引用，不立即回收。"
+          },
+          {
+            "path": "knowledge/workloads/session-workloads.md",
+            "quote": "只有输出有效、身份匹配且 u 未取消时，才更新 v 的 deps；"
+          },
+          {
+            "path": "knowledge/workloads/session-workloads.md",
+            "quote": "依赖清零且等待到期时 state[v]=READY。"
+          }
+        ]
+      },
+      "cost": {
+        "assessment": "partial",
+        "reason": "回合新增计算位置、共享容量与分支读取的区别、join 等待和字节时间积分具有实质推导。但分支容量公式未定义 pages 的单位、对齐和 COW 范围，无法恢复所选算法的真实容量峰值。",
+        "evidence": [
+          {
+            "path": "knowledge/workloads/session-workloads.md",
+            "quote": "总新增 prefill 为 162。"
+          },
+          {
+            "path": "knowledge/workloads/session-workloads.md",
+            "quote": "每个分支在后缀计算中仍要读取共享前缀的 K/V，attention 读取量不会自动变成一份。"
+          },
+          {
+            "path": "knowledge/workloads/session-workloads.md",
+            "quote": "M_branch = pages(L) + Σ_j pages(T_j) + 输出与在途缓冲，"
+          }
+        ]
+      },
+      "adaptation": {
+        "assessment": "sufficient",
+        "reason": "说明了模型、adapter、模板、工具版本和历史策略变化如何影响复用资格，并给出保留期与分支宽度的收益反转因素；没有把固定引擎选择写成普遍要求。",
+        "evidence": [
+          {
+            "path": "knowledge/workloads/session-workloads.md",
+            "quote": "模型或 adapter 改变会改变状态函数，不能仅按文本复用"
+          },
+          {
+            "path": "knowledge/workloads/session-workloads.md",
+            "quote": "缓存保留期变长会提高潜在命中，也会增加等待驻留。"
+          }
+        ]
+      },
+      "diagnosis": {
+        "assessment": "partial",
+        "reason": "正文提供了竞争解释和控制变量实验，且正确限制 CPU 检查的证明范围。但实际脚本未执行所声明的兄弟误取消负对照，依赖检查也不足以验证事件推进机制，作者对检查覆盖的判断需要修正。",
+        "evidence": [
+          {
+            "path": "knowledge/workloads/session-workloads.md",
+            "quote": "只改保留上限、只改分支宽度、只改 COW 策略，分别观察唯一物理页、阻塞原因、会话完成率和尾延迟"
+          },
+          {
+            "path": "knowledge/workloads/session-workloads.md",
+            "quote": "负对照至少包括忽略末 token 恢复、按分支重复计共享页、用均值乘等待时长、让未满足依赖的节点提前提交，以及取消一个分支时误取消兄弟。"
+          }
+        ]
+      }
+    },
+    "findings": [
+      {
+        "id": "K-WORK-010-R1-A01",
+        "criterion": "algorithm",
+        "evidence": "步骤 7 写明“释放 v 的私有写页；共享页仅减引用，不立即回收。”，随后又写“迟到完成只更新诊断，不覆盖终态。”；步骤 11 则声明“业务取消不等于物理访问结束”。",
+        "impact": "RUNNING 分支取消时，kernel 或复制操作仍可能写私有页。按步骤 7 释放并重新分配会使旧访问破坏新请求；若取消后的完成事件只记诊断，也没有明确路径结算实际访问责任。后文原则没有修复这个具体动作。",
+        "blocking": true,
+        "required_revision": "取消仅撤销业务提交资格和逻辑持有。将仍有读写责任的私有页转入待回收集合；继续处理匹配的物理完成，全部最后使用结束后才归还容量。共享页采用同样的物理资格判断，并明确重复完成不能重复结算。用运行中取消、旧写尚未结束、其他请求申请同页的轨迹检查此边界。"
+      },
+      {
+        "id": "K-WORK-010-R1-A02",
+        "criterion": "algorithm",
+        "evidence": "步骤 6 仅规定“记录 committed_event[u,e]”及“只有输出有效、身份匹配且 u 未取消时，才更新 v 的 deps”；其后直接规定“依赖清零且等待到期时 state[v]=READY。”。",
+        "impact": "没有说明同一依赖事件只结算一次，也没有在该路径检查 v 的终态和是否已经启动。重复通知可能提前清零依赖或重复调度；已取消后继也可能被后到的合格上游通知恢复成 READY。另将 u 当前是否取消作为唯一门槛，会错误排除取消前已合法提交、且正文要求继续存在的事件。",
+        "blocking": true,
+        "required_revision": "按边和事件身份保存已满足集合，只在首次合格事件上更新依赖；统一执行不可逆终态与启动资格检查。明确取消前已提交事件的有效性，以及迟到未提交候选的拒绝规则。成功发布时显式安装 output 和 COMMITTED 状态。检查重复通知、取消后继后上游完成，以及上游提交后再取消的轨迹。"
+      },
+      {
+        "id": "K-WORK-010-R1-A03",
+        "criterion": "algorithm",
+        "evidence": "正文给出“r_v = max(a_v, max_{(u,v,e)}(commit(u) + wait_e))。”；算法步骤 2 只明确“按外部计划给根节点设置 release[v]”，步骤 6 只检查“等待到期”，步骤 9 只说明“才记录 FULL_OUTPUT”。",
+        "impact": "非根节点的外部时间下界没有进入明确的就绪判定。依赖事件到达时若等待尚未到期，算法没有安排到期唤醒，队列可能耗尽而合法节点永久 BLOCKED。FIRST 边虽属于输入合同，但没有首内容事件的生产和发布路径，因此不能按声明事件重放。",
+        "blocking": true,
+        "required_revision": "为节点保存外部时间下界、依赖事件满足情况和最早就绪时间；条件未到期时登记实际唤醒事件，到期后统一重验。明确 FIRST、FULL、TOOL_OK 和质量事件的生产及消费接口，或明确收窄所选算法支持的事件类型。模型执行细节可明确委托到已有完整章节，并保留已知输入、全层状态完成与事件发布的接口边界。"
+      },
+      {
+        "id": "K-WORK-010-R1-C01",
+        "criterion": "cost",
+        "evidence": "“设共享前缀长 L，b 个分支的私有后缀分别为 T_j”之后给出“M_branch = pages(L) + Σ_j pages(T_j) + 输出与在途缓冲”，而算法要求“若需要写共享尾页，先取得私有页并复制有效槽”。",
+        "impact": "pages 未定义为页数还是字节，公式也未限定共享前缀按页对齐。固定逻辑页长为 4、L=3、两个分支各追加 4 个位置时，每个 COW 分支需要两个私有页；若原共享尾页仍被保护，峰值为 5 页。直接使用 ceil(L/4)+Σceil(|T_j|/4) 只有 3 页，会低估准入所需容量。",
+        "blocking": true,
+        "required_revision": "定义页长、每页字节和 pages 的含义；将当前公式限定到成立的布局条件，或改为实际物理分配对象的字节并集。展开未对齐前缀、COW 有效槽、源尾页最后使用结束前的过渡峰值及释放后的容量。相同内容的不同物理副本仍分别计容量。"
+      },
+      {
+        "id": "K-WORK-010-R1-D01",
+        "criterion": "diagnosis",
+        "evidence": "作者称“负对照覆盖……取消分支误伤兄弟”，但脚本只有正常调用“committed2, cancelled2 = replay(branch_nodes, {'B'})”；依赖参考使用“committed[d] <= committed[n]”，正向 replay 在该算例中可以把全部节点记为 t=0。",
+        "impact": "实际执行记录只能证明现有断言通过。脚本没有运行误取消兄弟的故障实现；仅比较非严格时间戳也无法区分同刻事件中的合法先后与提前提交。它未覆盖正文的事件类型、等待唤醒、重复通知和在途取消，因此不能支持作者所称完整依赖及取消检查覆盖。",
+        "blocking": true,
+        "required_revision": "修正作者检查说明，区分正常断言、算术错误对照和实际执行并被拒绝的故障模型。以独立事件序列及已提交证据集合审计推进，实际运行忽略依赖和误取消兄弟的变体，由同一审计器拒绝；同时覆盖本次修复涉及的时间门、重复事件及取消后物理责任。保留真实执行结果，不将未运行检查记为通过。"
+      }
+    ],
+    "limitations": [
+      "本次依据完整内嵌候选、检查脚本和所供材料进行语义复核；未读取本地工作区文件，未执行链接目标存在性检查，也未独立重跑 Python。",
+      "所供 actual_preflight 记录显示绑定脚本在 remote_bwrap 中实际执行、returncode=0、stderr 为空；这是提供的执行证据，不是本审阅者亲自执行的结果。",
+      "SGLang 的 fork/join、Radix 引用保护及离线 DFS 条件，ORCA 的迭代调度和 max_tokens 预留，以及 vLLM 的完整块身份与重复物理副本，均可从所供原文核对。所供 LoadGen README 只有指向 test_settings.h 的场景说明链接，没有直接展开 SingleStream、MultiStream 和 Poisson 定义；本次只能核对来源说明中的转述，不能声称已从该 README 独立验证这些定义。",
+      "未读取上游源码归档及三张省略的 LoadGen 图片。目标 GPU 数值、跨执行域可见性、真实缓存与 COW、网络工具延迟、质量收益及 Agent 使用效果仍未验证；这些设备和使用效果边界本身不构成阻塞项。"
+    ],
+    "checks": [
+      {
+        "script": "tools/check_k_work_010_full.py",
+        "args": []
+      }
+    ],
+    "no_checks_reason": "",
+    "reading_scope": "审阅者完整阅读本轮所供 AGENTS.md[0,567)、docs/knowledge-method.md[0,2251)、docs/knowledge-review.md[0,3016)、候选 knowledge/workloads/session-workloads.md[0,8305)、四份来源说明 S-SGLANG[0,472)、S-ORCA[0,1394)、S-VLLM-PREFIX[0,521)、S-MLPERF-SCENARIOS[0,823)、knowledge/engine-index/vllm-scheduler.md[0,2314)，以及所供 S-SGLANG、S-ORCA、S-VLLM-PREFIX 全文文本和 LoadGen README 完整内容；其包内范围标签分别为[0,80104)、[0,90276)、[0,13926)、[0,11382)，未另行验证提取长度。完整阅读 candidate.test_script 及 actual_preflight 的执行信息。相关章仅阅读所供摘录，均按零基半开提取字符范围记录：arrival-and-concurrency[0,4000)、[8000,9000)；input-distribution[0,5000)；prefix-cache-identity[0,5000)；tokenization-io[0,1025)、[8000,11975)；cancellation-resource-completion[0,5000)；iteration-batching[0,5000)；chunked-prefill[8000,11304)、[12000,13696)；omni-multimodal[12000,17000)；request-batch-identity[4000,5929)、[16000,19071)；design-synthesis[0,1000)、[12000,16000)；correctness-oracles[0,1000)、[8000,12000)；metric-events[4000,5000)、[8000,12000)；measurement-comparability[0,4000)、[12000,13000)；slo-goodput[0,5000)；capacity-planning[4000,8000)、[12000,13000)；branch-generation[4000,8000)、[12000,13000)。上述摘录文件均未列入 documents。作者材料范围与审阅者范围分别处理：作者台账记录旧正文全文[0,3583)、其他全文与相关章摘录的暴露范围；该台账支持作者获得这些材料，不证明其认知阅读完成，也不限制审阅者当前候选为旧正文。未将作者未运行检查的声明改写成作者执行通过。",
+    "test_assessment": "提供的实际执行输出与脚本相符：回合 prefill 为[120,21,21]、已计算边界249；错误末 token 假设得到160和250；物理集合并集为10而重复计数为20；等待平均驻留为14/5而错误均值乘积为3；闭环关系得到32而忽略思考时间为40。手工数学期望、集合并集及有理数积分为这些小算例提供了有效的局部参考，不能笼统称全部检查无效。但 turn_prefills 没有作者所称另一路逐逻辑位置状态重建，DAG replay 也没有独立事件级拓扑审计：正向算例全部时间可为0，非严格时间戳关系不能证明消费前证据已存在。commits_by_release 的错误时间表确实被 bad_dep 拒绝，其证明范围仅是所选时间表。兄弟取消只有正常路径断言，没有实际执行误取消兄弟的负对照。脚本未实现页布局/COW、事件去重、FIRST/FULL 区分、等待到期唤醒、终态保护、物理最后使用及容量重试；也未覆盖零或单 token 回答、非均匀回合、未对齐尾页、跨观察窗驻留和失败重试。预检退出0应如实保留为这些断言的执行结果，不能升级为 ReplaySessionDAG 完整性或设备正确性证明。"
+  },
+  "format_status": "strict_json",
+  "format_error": null,
+  "output_text": "{\n  \"entry_id\": \"K-WORK-010\",\n  \"body_sha256\": \"7b5d9abfd3bf264f40d6d0a821ed4a8fb6a9a1a07091c6cf64cea4d77c934155\",\n  \"reviewer\": \"sol-reviewer:K-WORK-010:round-1\",\n  \"decision\": \"revise\",\n  \"documents\": {\n    \"AGENTS.md\": \"b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a\",\n    \"docs/knowledge-method.md\": \"69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb\",\n    \"docs/knowledge-review.md\": \"f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21\",\n    \"knowledge/workloads/session-workloads.md\": \"7b5d9abfd3bf264f40d6d0a821ed4a8fb6a9a1a07091c6cf64cea4d77c934155\",\n    \"knowledge/sources/S-SGLANG.md\": \"4fd6badbee1df40da422f2866f1536bbe4f5266856b8d97004072a21b9d0e2c9\",\n    \"knowledge/sources/S-ORCA.md\": \"920ef987a4a019bb4f0e0386e30bf1c1e3bc720d199ae4de22e462db4f41520a\",\n    \"knowledge/sources/S-VLLM-PREFIX.md\": \"9e3f16fdac245da8aa97deea55a820642b67e626329748c980eaa2fc0b7656f5\",\n    \"knowledge/sources/S-MLPERF-SCENARIOS.md\": \"e210de2929034d4a6e25a31ee72b81a184412a7e637c979210f91ae02a261b04\",\n    \"knowledge/engine-index/vllm-scheduler.md\": \"9e576ff7711ed5e448a4bedfe7ab69949a79bc3f61417bf258f7a3b56caf1fe5\",\n    \"references/S-SGLANG/fulltext.txt\": \"7dfb3a43ba73d9d9861c06311005edf12dfafa9f60a268fec327deb4d8e8770d\",\n    \"references/S-ORCA/fulltext.txt\": \"2119a53d77b4a933bab56d7e40b5304fa725561c412514459e56729ca6836794\",\n    \"references/S-VLLM-PREFIX/fulltext.txt\": \"0d6423dca458bb628af7d15961bdba92b0d501660f93690610a354ef68f07353\",\n    \"references/S-MLPERF-SCENARIOS/upstream/loadgen/README.md\": \"074479dbeb369205ccc8800450c647893b4901c247e0e4ee7f321f05254e9305\",\n    \"tools/check_k_work_010_full.py\": \"3fb3095fa8072a663508a35595960fe5540c720c5eda679331c93eee797270c3\"\n  },\n  \"criteria\": {\n    \"definition\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"动机、会话与尝试身份、输入构造、依赖事件和主要状态均有定义；回合长度与末 token 尚未形成 KV 的算例在声明的常见执行路径下成立。状态推进实现的缺陷另列 algorithm。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/workloads/session-workloads.md\",\n          \"quote\": \"后续请求的输入、到达时间与缓存身份可能取决于先前输出\"\n        },\n        {\n          \"path\": \"knowledge/workloads/session-workloads.md\",\n          \"quote\": \"重试增加 g，不增加逻辑请求；分支共享前缀不表示它们共享可写状态。\"\n        },\n        {\n          \"path\": \"knowledge/workloads/session-workloads.md\",\n          \"quote\": \"因为最后一个已采样回答 token 可能还没有自己的 KV。\"\n        }\n      ]\n    },\n    \"legality\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"明确区分计算等价、应用合同与版本化实现选择，覆盖依赖闭合、共享写隔离、缓存可达及 logits 恢复条件。SGLang、ORCA 和 vLLM 的主要机制归纳与所供原文相符；MLPerf 场景定义的原始证据核对范围另列 limitation。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/workloads/session-workloads.md\",\n          \"quote\": \"合法性条件包括：依赖图无环；每个必需祖先在所选事件上已提交；输入可由固定契约重建；分支写区与共享只读区隔离\"\n        },\n        {\n          \"path\": \"knowledge/workloads/session-workloads.md\",\n          \"quote\": \"若系统只保存 KV，则安全可跳过上限通常不超过 n−1，并按完整页向下取整\"\n        }\n      ]\n    },\n    \"algorithm\": {\n      \"assessment\": \"partial\",\n      \"reason\": \"伪代码具有输入输出、初始化和循环，但取消路径提前释放私有写页，依赖通知缺少幂等和终态保护，等待到期的后继事件及 FIRST 事件生产路径未闭合。这些是当前算法可导致错误或停滞的缺口，不能由末尾不变量抵消。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/workloads/session-workloads.md\",\n          \"quote\": \"释放 v 的私有写页；共享页仅减引用，不立即回收。\"\n        },\n        {\n          \"path\": \"knowledge/workloads/session-workloads.md\",\n          \"quote\": \"只有输出有效、身份匹配且 u 未取消时，才更新 v 的 deps；\"\n        },\n        {\n          \"path\": \"knowledge/workloads/session-workloads.md\",\n          \"quote\": \"依赖清零且等待到期时 state[v]=READY。\"\n        }\n      ]\n    },\n    \"cost\": {\n      \"assessment\": \"partial\",\n      \"reason\": \"回合新增计算位置、共享容量与分支读取的区别、join 等待和字节时间积分具有实质推导。但分支容量公式未定义 pages 的单位、对齐和 COW 范围，无法恢复所选算法的真实容量峰值。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/workloads/session-workloads.md\",\n          \"quote\": \"总新增 prefill 为 162。\"\n        },\n        {\n          \"path\": \"knowledge/workloads/session-workloads.md\",\n          \"quote\": \"每个分支在后缀计算中仍要读取共享前缀的 K/V，attention 读取量不会自动变成一份。\"\n        },\n        {\n          \"path\": \"knowledge/workloads/session-workloads.md\",\n          \"quote\": \"M_branch = pages(L) + Σ_j pages(T_j) + 输出与在途缓冲，\"\n        }\n      ]\n    },\n    \"adaptation\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"说明了模型、adapter、模板、工具版本和历史策略变化如何影响复用资格，并给出保留期与分支宽度的收益反转因素；没有把固定引擎选择写成普遍要求。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/workloads/session-workloads.md\",\n          \"quote\": \"模型或 adapter 改变会改变状态函数，不能仅按文本复用\"\n        },\n        {\n          \"path\": \"knowledge/workloads/session-workloads.md\",\n          \"quote\": \"缓存保留期变长会提高潜在命中，也会增加等待驻留。\"\n        }\n      ]\n    },\n    \"diagnosis\": {\n      \"assessment\": \"partial\",\n      \"reason\": \"正文提供了竞争解释和控制变量实验，且正确限制 CPU 检查的证明范围。但实际脚本未执行所声明的兄弟误取消负对照，依赖检查也不足以验证事件推进机制，作者对检查覆盖的判断需要修正。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/workloads/session-workloads.md\",\n          \"quote\": \"只改保留上限、只改分支宽度、只改 COW 策略，分别观察唯一物理页、阻塞原因、会话完成率和尾延迟\"\n        },\n        {\n          \"path\": \"knowledge/workloads/session-workloads.md\",\n          \"quote\": \"负对照至少包括忽略末 token 恢复、按分支重复计共享页、用均值乘等待时长、让未满足依赖的节点提前提交，以及取消一个分支时误取消兄弟。\"\n        }\n      ]\n    }\n  },\n  \"findings\": [\n    {\n      \"id\": \"K-WORK-010-R1-A01\",\n      \"criterion\": \"algorithm\",\n      \"evidence\": \"步骤 7 写明“释放 v 的私有写页；共享页仅减引用，不立即回收。”，随后又写“迟到完成只更新诊断，不覆盖终态。”；步骤 11 则声明“业务取消不等于物理访问结束”。\",\n      \"impact\": \"RUNNING 分支取消时，kernel 或复制操作仍可能写私有页。按步骤 7 释放并重新分配会使旧访问破坏新请求；若取消后的完成事件只记诊断，也没有明确路径结算实际访问责任。后文原则没有修复这个具体动作。\",\n      \"blocking\": true,\n      \"required_revision\": \"取消仅撤销业务提交资格和逻辑持有。将仍有读写责任的私有页转入待回收集合；继续处理匹配的物理完成，全部最后使用结束后才归还容量。共享页采用同样的物理资格判断，并明确重复完成不能重复结算。用运行中取消、旧写尚未结束、其他请求申请同页的轨迹检查此边界。\"\n    },\n    {\n      \"id\": \"K-WORK-010-R1-A02\",\n      \"criterion\": \"algorithm\",\n      \"evidence\": \"步骤 6 仅规定“记录 committed_event[u,e]”及“只有输出有效、身份匹配且 u 未取消时，才更新 v 的 deps”；其后直接规定“依赖清零且等待到期时 state[v]=READY。”。\",\n      \"impact\": \"没有说明同一依赖事件只结算一次，也没有在该路径检查 v 的终态和是否已经启动。重复通知可能提前清零依赖或重复调度；已取消后继也可能被后到的合格上游通知恢复成 READY。另将 u 当前是否取消作为唯一门槛，会错误排除取消前已合法提交、且正文要求继续存在的事件。\",\n      \"blocking\": true,\n      \"required_revision\": \"按边和事件身份保存已满足集合，只在首次合格事件上更新依赖；统一执行不可逆终态与启动资格检查。明确取消前已提交事件的有效性，以及迟到未提交候选的拒绝规则。成功发布时显式安装 output 和 COMMITTED 状态。检查重复通知、取消后继后上游完成，以及上游提交后再取消的轨迹。\"\n    },\n    {\n      \"id\": \"K-WORK-010-R1-A03\",\n      \"criterion\": \"algorithm\",\n      \"evidence\": \"正文给出“r_v = max(a_v, max_{(u,v,e)}(commit(u) + wait_e))。”；算法步骤 2 只明确“按外部计划给根节点设置 release[v]”，步骤 6 只检查“等待到期”，步骤 9 只说明“才记录 FULL_OUTPUT”。\",\n      \"impact\": \"非根节点的外部时间下界没有进入明确的就绪判定。依赖事件到达时若等待尚未到期，算法没有安排到期唤醒，队列可能耗尽而合法节点永久 BLOCKED。FIRST 边虽属于输入合同，但没有首内容事件的生产和发布路径，因此不能按声明事件重放。\",\n      \"blocking\": true,\n      \"required_revision\": \"为节点保存外部时间下界、依赖事件满足情况和最早就绪时间；条件未到期时登记实际唤醒事件，到期后统一重验。明确 FIRST、FULL、TOOL_OK 和质量事件的生产及消费接口，或明确收窄所选算法支持的事件类型。模型执行细节可明确委托到已有完整章节，并保留已知输入、全层状态完成与事件发布的接口边界。\"\n    },\n    {\n      \"id\": \"K-WORK-010-R1-C01\",\n      \"criterion\": \"cost\",\n      \"evidence\": \"“设共享前缀长 L，b 个分支的私有后缀分别为 T_j”之后给出“M_branch = pages(L) + Σ_j pages(T_j) + 输出与在途缓冲”，而算法要求“若需要写共享尾页，先取得私有页并复制有效槽”。\",\n      \"impact\": \"pages 未定义为页数还是字节，公式也未限定共享前缀按页对齐。固定逻辑页长为 4、L=3、两个分支各追加 4 个位置时，每个 COW 分支需要两个私有页；若原共享尾页仍被保护，峰值为 5 页。直接使用 ceil(L/4)+Σceil(|T_j|/4) 只有 3 页，会低估准入所需容量。\",\n      \"blocking\": true,\n      \"required_revision\": \"定义页长、每页字节和 pages 的含义；将当前公式限定到成立的布局条件，或改为实际物理分配对象的字节并集。展开未对齐前缀、COW 有效槽、源尾页最后使用结束前的过渡峰值及释放后的容量。相同内容的不同物理副本仍分别计容量。\"\n    },\n    {\n      \"id\": \"K-WORK-010-R1-D01\",\n      \"criterion\": \"diagnosis\",\n      \"evidence\": \"作者称“负对照覆盖……取消分支误伤兄弟”，但脚本只有正常调用“committed2, cancelled2 = replay(branch_nodes, {'B'})”；依赖参考使用“committed[d] <= committed[n]”，正向 replay 在该算例中可以把全部节点记为 t=0。\",\n      \"impact\": \"实际执行记录只能证明现有断言通过。脚本没有运行误取消兄弟的故障实现；仅比较非严格时间戳也无法区分同刻事件中的合法先后与提前提交。它未覆盖正文的事件类型、等待唤醒、重复通知和在途取消，因此不能支持作者所称完整依赖及取消检查覆盖。\",\n      \"blocking\": true,\n      \"required_revision\": \"修正作者检查说明，区分正常断言、算术错误对照和实际执行并被拒绝的故障模型。以独立事件序列及已提交证据集合审计推进，实际运行忽略依赖和误取消兄弟的变体，由同一审计器拒绝；同时覆盖本次修复涉及的时间门、重复事件及取消后物理责任。保留真实执行结果，不将未运行检查记为通过。\"\n    }\n  ],\n  \"limitations\": [\n    \"本次依据完整内嵌候选、检查脚本和所供材料进行语义复核；未读取本地工作区文件，未执行链接目标存在性检查，也未独立重跑 Python。\",\n    \"所供 actual_preflight 记录显示绑定脚本在 remote_bwrap 中实际执行、returncode=0、stderr 为空；这是提供的执行证据，不是本审阅者亲自执行的结果。\",\n    \"SGLang 的 fork/join、Radix 引用保护及离线 DFS 条件，ORCA 的迭代调度和 max_tokens 预留，以及 vLLM 的完整块身份与重复物理副本，均可从所供原文核对。所供 LoadGen README 只有指向 test_settings.h 的场景说明链接，没有直接展开 SingleStream、MultiStream 和 Poisson 定义；本次只能核对来源说明中的转述，不能声称已从该 README 独立验证这些定义。\",\n    \"未读取上游源码归档及三张省略的 LoadGen 图片。目标 GPU 数值、跨执行域可见性、真实缓存与 COW、网络工具延迟、质量收益及 Agent 使用效果仍未验证；这些设备和使用效果边界本身不构成阻塞项。\"\n  ],\n  \"checks\": [\n    {\n      \"script\": \"tools/check_k_work_010_full.py\",\n      \"args\": []\n    }\n  ],\n  \"no_checks_reason\": \"\",\n  \"reading_scope\": \"审阅者完整阅读本轮所供 AGENTS.md[0,567)、docs/knowledge-method.md[0,2251)、docs/knowledge-review.md[0,3016)、候选 knowledge/workloads/session-workloads.md[0,8305)、四份来源说明 S-SGLANG[0,472)、S-ORCA[0,1394)、S-VLLM-PREFIX[0,521)、S-MLPERF-SCENARIOS[0,823)、knowledge/engine-index/vllm-scheduler.md[0,2314)，以及所供 S-SGLANG、S-ORCA、S-VLLM-PREFIX 全文文本和 LoadGen README 完整内容；其包内范围标签分别为[0,80104)、[0,90276)、[0,13926)、[0,11382)，未另行验证提取长度。完整阅读 candidate.test_script 及 actual_preflight 的执行信息。相关章仅阅读所供摘录，均按零基半开提取字符范围记录：arrival-and-concurrency[0,4000)、[8000,9000)；input-distribution[0,5000)；prefix-cache-identity[0,5000)；tokenization-io[0,1025)、[8000,11975)；cancellation-resource-completion[0,5000)；iteration-batching[0,5000)；chunked-prefill[8000,11304)、[12000,13696)；omni-multimodal[12000,17000)；request-batch-identity[4000,5929)、[16000,19071)；design-synthesis[0,1000)、[12000,16000)；correctness-oracles[0,1000)、[8000,12000)；metric-events[4000,5000)、[8000,12000)；measurement-comparability[0,4000)、[12000,13000)；slo-goodput[0,5000)；capacity-planning[4000,8000)、[12000,13000)；branch-generation[4000,8000)、[12000,13000)。上述摘录文件均未列入 documents。作者材料范围与审阅者范围分别处理：作者台账记录旧正文全文[0,3583)、其他全文与相关章摘录的暴露范围；该台账支持作者获得这些材料，不证明其认知阅读完成，也不限制审阅者当前候选为旧正文。未将作者未运行检查的声明改写成作者执行通过。\",\n  \"test_assessment\": \"提供的实际执行输出与脚本相符：回合 prefill 为[120,21,21]、已计算边界249；错误末 token 假设得到160和250；物理集合并集为10而重复计数为20；等待平均驻留为14/5而错误均值乘积为3；闭环关系得到32而忽略思考时间为40。手工数学期望、集合并集及有理数积分为这些小算例提供了有效的局部参考，不能笼统称全部检查无效。但 turn_prefills 没有作者所称另一路逐逻辑位置状态重建，DAG replay 也没有独立事件级拓扑审计：正向算例全部时间可为0，非严格时间戳关系不能证明消费前证据已存在。commits_by_release 的错误时间表确实被 bad_dep 拒绝，其证明范围仅是所选时间表。兄弟取消只有正常路径断言，没有实际执行误取消兄弟的负对照。脚本未实现页布局/COW、事件去重、FIRST/FULL 区分、等待到期唤醒、终态保护、物理最后使用及容量重试；也未覆盖零或单 token 回答、非均匀回合、未对齐尾页、跨观察窗驻留和失败重试。预检退出0应如实保留为这些断言的执行结果，不能升级为 ReplaySessionDAG 完整性或设备正确性证明。\"\n}",
+  "elapsed_seconds": 275.032
+}

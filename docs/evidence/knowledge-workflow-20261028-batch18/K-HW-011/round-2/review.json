@@ -1,0 +1,145 @@
+{
+  "entry_id": "K-HW-011",
+  "body_sha256": "3b3274f953a0444b35f2a7c216d62131f48a45b57c3dc119c2eb812496bac12d",
+  "reviewer": "sol-reviewer:K-HW-011:round-2",
+  "decision": "accept",
+  "documents": {
+    "AGENTS.md": "b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a",
+    "docs/knowledge-method.md": "69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb",
+    "docs/knowledge-review.md": "f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21",
+    "knowledge/hardware/gpu-kernel-pipelines.md": "3b3274f953a0444b35f2a7c216d62131f48a45b57c3dc119c2eb812496bac12d",
+    "knowledge/sources/S-FLASHATTENTION3.md": "1c03e7e0674d15ce246c297a814e946774d476c2de6fb073a29a47c323b56121",
+    "knowledge/sources/S-FLASH.md": "58fd332d0b00d7116d21660e8e2e8ee147d939a55859d6e624aea100e768ae39",
+    "knowledge/sources/S-CUDA-BEST.md": "4b752c1a26f66a195df62be354649f0a6880f733fb365e82e87bdd63bf71d45c",
+    "knowledge/sources/S-CUDA-ASYNC.md": "40df9287d0648a8ef55a046ceb1c18dd402619ede6e57ca33d3f90e4ace3da05",
+    "knowledge/sources/S-ROCM.md": "a781dedf1327b2478e84466832a80e9bb81605e10ec2535450f472d6dd1d0483",
+    "knowledge/sources/S-TORCH-NUMERIC.md": "cbe91153d9ff7bd2f596d1d6c4e15de1ad68571f3cbde23215891a8ec7f6fab4",
+    "knowledge/sources/S-CUDA-CAPABILITY.md": "b01baba1d2826b0682b2b58c6a0d23bf0f6e616a758e41c74b4688b55417f286",
+    "references/S-ROCM/fulltext.txt": "f5364f72aaaf3149705e29af60d62c448b0f60b6da9e69a470090c68236af29e",
+    "references/S-TORCH-NUMERIC/fulltext.txt": "bb6b2d8154a10f8f3b15e5ae4465cbc8d833067046964fc6b4d66dc036131b45",
+    "tools/check_k_hw_011_full.py": "a76bc9ef9548760281fb022f24bfd5b98c325465cc641e3cf1d99ddeee6af061"
+  },
+  "criteria": {
+    "definition": {
+      "assessment": "sufficient",
+      "reason": "说明布局、资源与完成依赖共同约束流水的动机；定义 GEMM 的形状、输入参数、输出、空工作及零归约，并区分逻辑、数学和执行状态。Attention 另有逐行统计量、尺度和空行契约，符号在后续更新中保持一致。",
+      "evidence": [
+        {
+          "path": "knowledge/hardware/gpu-kernel-pipelines.md",
+          "quote": "这里的基线只计算乘积，不读取旧 C；M=0 或 N=0 时没有输出工作，K=0 时有效输出为零。"
+        },
+        {
+          "path": "knowledge/hardware/gpu-kernel-pipelines.md",
+          "quote": "执行状态描述物理槽 s、代次 g、逻辑阶段 j、复制完成范围、可见性与读者集合。"
+        }
+      ]
+    },
+    "legality": {
+      "assessment": "sufficient",
+      "reason": "将输出唯一写者、归约覆盖、掩码、集体参与、发布与复用列为合法条件，将 tile、级数和平台指令组织作为条件化选择。WMMA 路径明确共享首址、行距和不透明 fragment 契约；异步操作和取消均保留物理最后访问义务。",
+      "evidence": [
+        {
+          "path": "knowledge/hardware/gpu-kernel-pipelines.md",
+          "quote": "消费者只在本代整槽输入完成并建立可见性后读取；槽只在全部最后读者结束后覆盖；旧代通知不得改变新代状态"
+        },
+        {
+          "path": "knowledge/hardware/gpu-kernel-pipelines.md",
+          "quote": "FP16 leading dimension 为 8 元素的倍数，FP32 为 4 元素的倍数；此处完整行还有至少 16 元素的存储。"
+        },
+        {
+          "path": "knowledge/hardware/gpu-kernel-pipelines.md",
+          "quote": "代次校验也只保护账务身份，不能使仍在途的旧物理写入变安全；上一代真实访问必须先排空。"
+        }
+      ]
+    },
+    "algorithm": {
+      "assessment": "sufficient",
+      "reason": "WMMA 和双 warp SIMT 路径贯通逻辑坐标、地址、协作装载、线程累加、片上交接和写回；槽协议覆盖初始化、部分复制、身份、最后读者、首尾及排空。Attention 流水明确下一块分数的来源、当前 PV 完成后才重标度 U。R1-002 的自报标签及常数取模缺陷已经修复。",
+      "evidence": [
+        {
+          "path": "knowledge/hardware/gpu-kernel-pipelines.md",
+          "quote": "若I与槽当前身份不一致：忽略通知，不改本代任何字段"
+        },
+        {
+          "path": "knowledge/hardware/gpu-kernel-pipelines.md",
+          "quote": "此时投递旧代 B 完成通知，本代身份、完成部分、copied、status、未结束读者和活跃读者必须逐字段保持不变；随后本代 B 的真实通知仍能发布 READY。"
+        },
+        {
+          "path": "knowledge/hardware/gpu-kernel-pipelines.md",
+          "quote": "等待当前PV完成；此时才可访问U或释放当前P/V"
+        }
+      ]
+    },
+    "cost": {
+      "assessment": "sufficient",
+      "reason": "独立复算 WMMA 输入为 512+512=1024 字节，独立输出暂存为 1024 字节，输入 d 槽时合计 1024d+1024，R1-001 关闭。SIMT 阶段工作、输入请求、共享逻辑交通和累加状态相互一致；区分容量、请求与实际事务，并计入准备、同步、片上通信和驻留。L/I/C 模型及整网格选择反转均声明假设和单位。",
+      "evidence": [
+        {
+          "path": "knowledge/hardware/gpu-kernel-pipelines.md",
+          "quote": "三个独立对象合计 2 KiB，尚未计额外对齐与同步对象。若只给输入扩展为 d 个槽、输出暂存仍为一个，共享主项为 1024d+1024 字节，双缓冲为 3 KiB。"
+        },
+        {
+          "path": "knowledge/hardware/gpu-kernel-pipelines.md",
+          "quote": "A 请求为 4MKGₙ、B 为 4KNGₘ、输出为 4MN；输入唯一持久字节为 4(MK+KN)。"
+        },
+        {
+          "path": "knowledge/hardware/gpu-kernel-pipelines.md",
+          "quote": "copy 等待已经包含在 kernel 关键路径时，不再作为额外同步重复相加。"
+        }
+      ]
+    },
+    "adaptation": {
+      "assessment": "sufficient",
+      "reason": "说明短归约、级数、tile、精度、平台、缓存和取消变化时保留的依赖与需要重算的成本；给出容量预算改变后两级与三级选择反转的可复算轨迹，并允许放弃不具备合法高效路径的配置。",
+      "evidence": [
+        {
+          "path": "knowledge/hardware/gpu-kernel-pipelines.md",
+          "quote": "预算提高到 9 KiB 后，三级也能容纳两个 CTA，同样假设下 4 CTA 为 60τ，优于两级 78τ。"
+        },
+        {
+          "path": "knowledge/hardware/gpu-kernel-pipelines.md",
+          "quote": "| dtype 改为 FP8 | 函数和输出语义 | 重验布局、尺度、累加、异常值与质量；无合法高效路径则改选 |"
+        },
+        {
+          "path": "knowledge/hardware/gpu-kernel-pipelines.md",
+          "quote": "| CUDA 转到 ROCm | 生产后消费、读完后覆盖 | 重做 wave、MFMA、LDS、寄存器和同步作用域映射 |"
+        }
+      ]
+    },
+    "diagnosis": {
+      "assessment": "sufficient",
+      "reason": "提供首尾、spill、驻留、未重叠及准备成本的竞争预测、干预和反证修正。R1-003 已明确双重反向缩放仍可通过凸包，改由独立统计参考拒绝；只错误缩放 U 的越界故障单独注入。正确性检查与设备性能归因的范围分开。",
+      "evidence": [
+        {
+          "path": "knowledge/hardware/gpu-kernel-pipelines.md",
+          "quote": "错误更新仍使用正权重并归一化，故凸包检查是必要但不充分条件，不能拒绝这种双重反向缩放；应由独立整行参考或逐前缀 m/ℓ/U 不变量拒绝。"
+        },
+        {
+          "path": "knowledge/hardware/gpu-kernel-pipelines.md",
+          "quote": "若新增长输入符合 T₃′=18+2.4J，J=64 为 171.6，则更大的固定项已不足以解释，必须调查稳态瓶颈。"
+        },
+        {
+          "path": "knowledge/hardware/gpu-kernel-pipelines.md",
+          "quote": "限制寄存器可能诱发 spill，不是隔离驻留的干净干预；改变 tile 也改变复用、任务数和算术强度。"
+        }
+      ]
+    }
+  },
+  "findings": [],
+  "limitations": [
+    "结论限于正文的机制解释、独立推导及所供 CPU 检查。未执行 CUDA/HIP kernel，不证明设备可见性、真实竞态、TMA、fragment 映射、低精度完整舍入、编译资源、spill、驻留、重叠或性能，也无模型质量和 Agent 使用效果证据。",
+    "槽检查采用 A/B 聚合完成和有限顺序事件，未穷举线程级交错、真实取消恢复或设备失败。Attention 检查消费给定分数与标量 V，没有执行 QK 点积或完整异步 Attention 实现。",
+    "CUDA 原文摘录未覆盖全部 WMMA、普通异步复制和规格表条款；相应核对依据完整来源说明及既有固定记录，不能声称本轮逐条重读完整原始契约。所供原文支持 TMA 区分、Hopper 共享容量与异步矩阵特性等已出现的条款。",
+    "共享 S-FLASHATTENTION3 说明仍保留未区分缩放对象的凸包误述；本章已独立纠正，作者交付说明已向协调者提出维护报告，但没有维护者收讫或共享说明修订证据。",
+    "未独立访问磁盘、重新计算文件哈希或检查相对链接目标存在性；文件身份使用任务提供的绑定，链接仅核对了文本中的路径关系。",
+    "作者阶段未执行修订 Python 文件；后续所供 actual_preflight 已绑定当前脚本并真实运行成功。本审阅没有另行重跑，也没有把作者的 V8 辅助检查扩充为 Python 或 GPU 验证。"
+  ],
+  "checks": [
+    {
+      "script": "tools/check_k_hw_011_full.py",
+      "args": []
+    }
+  ],
+  "reading_scope": "完整阅读本次提供的 AGENTS.md、docs/knowledge-method.md、docs/knowledge-review.md、候选正文 knowledge/hardware/gpu-kernel-pipelines.md（0:17685）、七份来源说明、完整检查脚本、author_notes 和 actual_preflight 记录；完整阅读所供 references/S-ROCM/fulltext.txt（0:32330）与 references/S-TORCH-NUMERIC/fulltext.txt（0:10998）提取文本，不代表检查图片或源码。相关章节仅阅读以下零基半开字符范围：knowledge/hardware/cuda-execution.md [0:1425,16000:19297]；knowledge/hardware/rocm-execution.md [0:1875,12000:14847]；knowledge/algorithms/attention-io.md [0:722,8000:12000]；knowledge/frameworks/triton-kernels.md [0:722,8000:12000]；knowledge/frameworks/streams-allocator.md [0:4722]；knowledge/hardware/memory-and-roofline.md [4000:8722]；knowledge/algorithms/quantization-contract.md [0:4000,8000:8722]；knowledge/algorithms/async-scheduling.md [4000:8000,12000:12722]；knowledge/frameworks/attention-backends.md [0:722,4000:8000]；knowledge/frameworks/nki-tiling.md [0:1653,12000:15069]；knowledge/hardware/precision-and-kernel-support.md [8000:12722]；knowledge/models/moe-routing.md [8000:12722]；knowledge/models/recurrent-hybrid-state.md [4000:8000,12000:12722]；knowledge/models/mla.md [8000:12722]；knowledge/models/sliding-window-attention.md [0:841,12000:15881]；knowledge/models/image-diffusion.md [4000:8722]；knowledge/tools/kernel-counter-replay.md [0:722,8000:12000]；knowledge/tools/framework-profiler-scope.md [8000:12722]。原文仅阅读以下摘录：references/S-FLASHATTENTION3/fulltext.txt [0:21833,24000:28000,36000:40000,56000:60000]；references/S-FLASH/fulltext.txt [0:20000,60000:64000,72000:76000,88000:89834,92000:96000]；references/S-CUDA-BEST/fulltext.txt [0:1834,8000:12000,52000:56000,64000:68000,76000:88000,112000:116000,172000:176000]；references/S-CUDA-ASYNC/fulltext.txt 与 references/S-CUDA-CAPABILITY/fulltext.txt 均为 [488000:492000,500000:504000,516000:524000,528000:536000,588000:589834,964000:968000,1064000:1068000]。上述摘录文件未列入 documents。另审阅作者材料范围账：其原章绑定为 4db609a35cae2c7bd05603e026fc76d3e1281111ca2dad54d1a319851b3b498a，不能与本次候选绑定混同；作者部分原文范围比本审阅所供范围更长，未将本审阅摘录范围倒推为作者曝光范围，范围账也不等同于认知阅读证明。",
+  "test_assessment": "静态检查了完整 Python 执行器、观察器、参考和负对照，并核对实际执行记录。SIMT 实际执行协作装载、lane 累加和写回，独立 dense_gemm 直接遍历原矩阵，以 fsum 求和；覆盖 11 个形状，包括 K=0/1/7/8/9/17、非整除 M/N 和空工作，并检查唯一写者、请求和乘积计数，漏末阶段进入同一观察器后被拒绝。bank 检查按每 bank 的不同字号集合区分广播与冲突，stride=9 变体实际改变 A 写入地址。槽执行器不生成检测标签；观察器在新代仅 A 完成的 FILLING 状态投递旧 B，比较完整快照，再用本代 B 验证推进；新代读者活动时另投递旧读完通知。删除复制身份防护、删除读完身份防护、首读者提前释放和部分复制提前发布分别触发同一快照观察器，修复了 R1-002。WMMA 的合法与非法参数均进入 wmma_contract，删除 ld 防护被相同判定观察器发现；它验证参数模型，不声称执行硬件接口。容量按独立对象逐字节枚举核对，旧输入双计数被拒绝，R1-001 关闭。时序递推与独立整数事件模拟比较 390 组有限条件，忽略槽复用的变体被拒绝；正文时间线和 78/120/60τ 条件化分波结果一致。Attention 使用 60 位 Decimal 对全部已处理可见项重新求 m、质量和加权和，每前缀比较；覆盖空块、全 mask、有限极端分数和相同最大值。双重反向缩放被独立统计参考拒绝，同时显式确认约 0.880797 仍在凸包内；仅 U 反向的独立故障产生约 6.508259，并检查越界，R1-003 关闭。所供 actual_preflight 使用 remote_bwrap、Python 3.12 和 -I -S -B -X utf8，script_sha256 为 a76bc9ef9548760281fb022f24bfd5b98c325465cc641e3cf1d99ddeee6af061，正文输入摘要与本次绑定一致，returncode=0、stderr 为空且未超时；因此修订脚本重新执行的要求已有当前记录支持。接受依据包含算法与负对照的独立审查，不仅是退出码。设备执行、完整异步 Attention 事件轨迹、低精度舍入和真实故障恢复仍属已声明边界，不记为 PASS。"
+}

@@ -1,0 +1,67 @@
+{
+  "id": "K-ALG-020",
+  "path": "algorithms/heterogeneous-execution.md",
+  "category": "algorithms",
+  "title": "CPU–GPU 计算放置：传数据、传结果与共同提交",
+  "summary": "CPU–GPU 分工比较冷权重搬运、CPU 计算与分片合并的完整关键路径；激活稀疏预测须有独立质量契约。",
+  "revision": 3,
+  "status": "seed",
+  "tags": [
+    "CPU GPU",
+    "异构计算",
+    "协同",
+    "计算放置",
+    "激活稀疏",
+    "PowerInfer",
+    "结果合并"
+  ],
+  "scope": {
+    "model_families": [],
+    "platforms": [],
+    "runtimes": [],
+    "workloads": []
+  },
+  "source_ids": [
+    "S-POWERINFER",
+    "S-FLEXGEN",
+    "S-CPU-TUNING",
+    "S-TORCH-NUMERIC"
+  ],
+  "related": [
+    "K-HW-010",
+    "K-HW-003",
+    "K-HW-013",
+    "K-ALG-018",
+    "K-ALG-019",
+    "K-ALG-008",
+    "K-SYS-004",
+    "K-ENGINE-003",
+    "K-HW-006",
+    "K-HW-007",
+    "K-MODEL-003",
+    "K-SYS-010",
+    "K-ALG-017",
+    "K-MODEL-015",
+    "K-MODEL-016"
+  ],
+  "evidence": [],
+  "updated_at": "2026-10-27",
+  "sha256": "8fd777e06b150eaba4e3288ccb188adbb975e37c28c77a72a9b6878a70e027f4",
+  "questions": [
+    "搬权重到 GPU、计算留在 CPU 和双方分工三种候选如何在同一函数下比较完整依赖路径？",
+    "按输出通道与按归约轴切分一层时，结果拼接和部分和合并各需要什么数值契约？",
+    "长历史 KV 已在主存时，交换 query 和结果为什么可能比搬整段历史更省，何时不成立？",
+    "热点神经元在 GPU、冷部分在 CPU 的路线依赖什么稀疏性前提，误预测如何影响函数？",
+    "CPU 与 GPU 结果共同提交时，完成顺序、空分片和迟到结果如何进入验证？"
+  ],
+  "symptoms": [
+    "GPU 空闲等待 CPU 冷部分完成，batch 增大后放置选择反转",
+    "CPU 计算与 tokenization、DMA 竞争主存带宽使两边都变慢",
+    "一轮中旧的 CPU 结果被拼接到新一轮 GPU 输出上"
+  ],
+  "assumes": [
+    "设备容量不足以容纳全部权重或 KV",
+    "主机与设备间链路带宽可测量",
+    "两侧执行同一数值契约"
+  ]
+}

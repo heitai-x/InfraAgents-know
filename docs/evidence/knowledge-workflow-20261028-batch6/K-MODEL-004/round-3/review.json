@@ -1,0 +1,135 @@
+{
+  "entry_id": "K-MODEL-004",
+  "body_sha256": "5783c56358962d2a76342003d5d252d9b55441e9ff70a776c4d9b250a7c24f15",
+  "reviewer": "sol-reviewer:K-MODEL-004:round-3",
+  "decision": "accept",
+  "documents": {
+    "AGENTS.md": "b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a",
+    "docs/knowledge-method.md": "69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb",
+    "docs/knowledge-review.md": "f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21",
+    "knowledge/models/recurrent-hybrid-state.md": "5783c56358962d2a76342003d5d252d9b55441e9ff70a776c4d9b250a7c24f15",
+    "knowledge/sources/S-MAMBA.md": "c549c121da3cfc3d5c5fa33ae151ce27f7440cbd2d2c911d545aaafca8f18b37",
+    "knowledge/sources/S-VLLM-HYBRID.md": "0b3b67b14c24f707211afc5bf40eb2af9c5c549d5170c2ff25bd3efe5e81c8c9",
+    "knowledge/sources/S-HF-CACHE.md": "1a4afcf0d800ba3f42836445874d620ae9f7ba8ab4c361caa505376cc471595c",
+    "knowledge/algorithms/speculation-budget.md": "91a6e60d5151fb5b1155d2ba0ddcb3ba1251e69f7caf79b0ec217c7bf9a74d0d",
+    "knowledge/algorithms/prefix-cache-identity.md": "98389e4a67eb746a52f39d11986256c857a00167f4c989f26dbd2d3f1b3275d9",
+    "knowledge/algorithms/tiered-residency.md": "eb3ebc6320d5a32481cf645605d159860dc6d1edb97f1e98afd89ddb24ee82af",
+    "knowledge/algorithms/branch-generation.md": "42157d4da17ab8ffd7a0aa2f5cd57a1cacdf1a989757261993f6671ae231de3a",
+    "knowledge/system-semantics/serving-recovery.md": "f551fa1f1e6213469c856a880839eefff504fb39f4dd692000b2df80a20a7f5e",
+    "references/S-MAMBA/fulltext.txt": "7dfe3ceff72ac596eac9dda408875752fdcb1ebf8e246959c387dec969025342",
+    "references/S-VLLM-HYBRID/fulltext.txt": "c82febf32c70bc2755f7678dfe63925a264fbe68cf44980ad8f63b891f76ecc0",
+    "references/S-HF-CACHE/fulltext.txt": "373837b8ac246d43867eb21de168cc59e5e6e78f5f3b9c27bee54740c4a635b4",
+    "tools/check_k_model_004_full.py": "79dbdc05d07d5f2ffd98e8c638b236d049e9fe89b2411f840a52113cd58c9d53"
+  },
+  "criteria": {
+    "definition": {
+      "assessment": "sufficient",
+      "reason": "说明了有限状态压缩历史的动机，给出实值对角选择性递推、ZOH 离散化及零点极限，明确 D、N、系数广播轴和 batch 独立性。模型状态、消费位置、logits、pending token 与会话提交边界分开定义；未将说明性块冒充真实 checkpoint。",
+      "evidence": [
+        {
+          "path": "knowledge/models/recurrent-hybrid-state.md",
+          "quote": "D 是 SSM 内部通道数，N 是每通道的状态维度；h 的形状为 D×N，v_t 是实际送入 SSM 的表示。"
+        },
+        {
+          "path": "knowledge/models/recurrent-hybrid-state.md",
+          "quote": "S(p) 的充分性针对“给定下一输入后继续计算”。"
+        }
+      ]
+    },
+    "legality": {
+      "assessment": "sufficient",
+      "reason": "扫描要求系数可由已知本层输入形成；实数结合律与浮点契约明确区分。恢复逐族核对共同位置、身份、窗口读取集合和输出就绪，覆盖空旧历史。私有候选、稳定迁移版本与最后物理使用条件明确，未把取消通知或代次核验当成访问已经排空。统一页和检查点策略均作为条件化选择。",
+      "evidence": [
+        {
+          "path": "knowledge/models/recurrent-hybrid-state.md",
+          "quote": "若系数还依赖尚未求出的旧 h，不能直接沿用这里的扫描算法。"
+        },
+        {
+          "path": "knowledge/models/recurrent-hybrid-state.md",
+          "quote": "取消和错误通知本身不证明 DMA 或 GPU 访问已经停止，旧访问排空前不能把页或暂存交给新请求。"
+        }
+      ]
+    },
+    "algorithm": {
+      "assessment": "sufficient",
+      "reason": "完整单步展开了归一化、双投影、卷积、选择性系数、离散化、状态更新、门控、输出投影和残差。树扫描的合成方向、上下行传播、包含式前缀、空输入和单步边界正确；分块传递 h 与卷积历史。层间输入按计算图推进，整请求共同发布；所链接异构状态章节的已供摘录进一步给出逐层混合重放。恢复、部分接受和迁移轨迹具有明确状态边界。",
+      "evidence": [
+        {
+          "path": "knowledge/models/recurrent-hybrid-state.md",
+          "quote": "Combine(earlier,later)＝(a_later a_earlier，a_later b_earlier＋b_later)。"
+        },
+        {
+          "path": "knowledge/models/recurrent-hybrid-state.md",
+          "quote": "网络层仍按计算图顺序执行：高层输入依赖低层输出，不能同时把不同层串进一个仿射扫描。"
+        },
+        {
+          "path": "knowledge/models/recurrent-hybrid-state.md",
+          "quote": "完整模型事务成功后共同发布；失败不把部分层或计划末位置发布为完成"
+        }
+      ]
+    },
+    "cost": {
+      "assessment": "sufficient",
+      "reason": "上一轮遗漏 D_lN_l 的问题已修复：递归读取计完整整层状态，卷积历史读取量也有明确范围。独立复算得到 h 读取 64 KiB、旧卷积历史读取 12 KiB、两者读取 76 KiB，完整 h 写回和环形历史新项写入后为 144 KiB，与正文及检查一致。投影 FLOPs、展开张量、扫描共享存储、快照容量和迁移载荷算例成立；计算、访存、通信、准备、同步、驻留分别解释，逻辑访问与设备事务、容量与交通、串行时间与关键路径未混算。该具体问题及其要求的全候选复核可关闭。",
+      "evidence": [
+        {
+          "path": "knowledge/models/recurrent-hybrid-state.md",
+          "quote": "M_read≈M_weight_read＋Σ_full B·L_l·c_l＋Σ_window B·min(L_l,W_l−1)·c_l＋Σ_rec B·(D_lN_l·s_h,l＋s_conv_read,l)＋M_metadata。"
+        },
+        {
+          "path": "knowledge/models/recurrent-hybrid-state.md",
+          "quote": "s_conv_read,l 定义为每请求该层一次推进读取的旧卷积历史字节数，不包括当前新输入、卷积权重和写回。"
+        },
+        {
+          "path": "knowledge/models/recurrent-hybrid-state.md",
+          "quote": "状态包容量 B_S、一次旧状态读取和一次读写合计是三个不同的量，不能互相替代。"
+        }
+      ]
+    },
+    "adaptation": {
+      "assessment": "sufficient",
+      "reason": "根据恢复频率、重放成本、容量、前缀复用、版本变化、D/N/精度和块长变化重新选择检查点与执行组织。解释了保留递推但放弃细粒度恢复、调整其他状态族保留，以及资源或数值条件不满足时放弃融合的原因。",
+      "evidence": [
+        {
+          "path": "knowledge/models/recurrent-hybrid-state.md",
+          "quote": "前缀复用少、版本切换频繁或状态包大时，可减少检查点、仅保存活状态，必要时从确定输入重算；这保留逐步递推，却放弃细粒度恢复收益。"
+        },
+        {
+          "path": "knowledge/models/recurrent-hybrid-state.md",
+          "quote": "数值合同、线程和同步限制不满足时，应放弃该融合组织。"
+        }
+      ]
+    },
+    "diagnosis": {
+      "assessment": "sufficient",
+      "reason": "针对扫描差异、分块边界、部分接受、恢复无输出及性能异常提出竞争解释、可控干预和反证后的修正。成本诊断先核对坐标与元素宽度，再区分重复访问、spill、计算和固定开销。实际检查具有独立展开参考、显式历史参考及能产生可观测差异的负对照，结论限定于算术和有限状态范围。",
+      "evidence": [
+        {
+          "path": "knowledge/models/recurrent-hybrid-state.md",
+          "quote": "用非零初态和不相同系数，对照乘积求和展开式及有理数算例；提高精度后仍有结构差异则撤回舍入解释"
+        },
+        {
+          "path": "knowledge/models/recurrent-hybrid-state.md",
+          "quote": "若修正逻辑账后设备交通仍偏大，查重复读取、事务及 spill；若交通已匹配而时间仍高，查计算、同步与固定开销"
+        }
+      ]
+    }
+  },
+  "findings": [],
+  "limitations": [
+    "检查使用小规模 CPU 算术和合成有限状态模型；其中 tanh 卷积激活、sigmoid 输出门及人工选择性系数不等同于正文说明性 SiLU 完整块，也不验证任何真实 checkpoint。",
+    "未执行真实多层混合引擎、batch 重排、无 logits 恢复规划、并发迁移、提交权或异步取消回收测试。正文对这些机制给出合法条件，当前结果不构成设备实现证明。",
+    "逻辑字节枚举不测量实际 HBM/DRAM 事务、缓存命中、spill、GPU 数值、跨 stream/NIC 可见性或性能；未证明知识对 Agent 的使用效果。",
+    "本次审查依据用户提供的绑定文本和隔离执行记录，没有自行重跑 Python、复算本地文件哈希或执行全库离线链接与结构检查。相对链接按所供路径核对，reader.html 的实际存在及渲染未独立验证。",
+    "来源阅读限于所供抽取文本；未读取原始 PDF 图片、上游源码归档或相关章节未暴露范围。来源结论按固定版本及 2026-04-30 cutoff 使用。"
+  ],
+  "checks": [
+    {
+      "script": "tools/check_k_model_004_full.py",
+      "args": []
+    }
+  ],
+  "no_checks_reason": "",
+  "reading_scope": "完整阅读所供 AGENTS.md [0,567)、docs/knowledge-method.md [0,2251)、docs/knowledge-review.md [0,3016)、候选正文 [0,14446)、S-MAMBA 来源说明 [0,487)、S-VLLM-HYBRID 来源说明 [0,568)、S-HF-CACHE 来源说明 [0,827)、speculation-budget.md [0,3904)、prefix-cache-identity.md [0,10003)、tiered-residency.md [0,4244)、branch-generation.md [0,3670)、serving-recovery.md [0,3834)。完整阅读所供三份原文抽取文本：references/S-MAMBA/fulltext.txt [0,135643)、references/S-VLLM-HYBRID/fulltext.txt [0,15489)、references/S-HF-CACHE/fulltext.txt [0,7977)；这些范围采用材料声明的零基半开抽取字符坐标，不代表读取 PDF 图片或上游代码。相关摘录仅阅读 heterogeneous-state-cache.md [0,8603) 与 [12000,14022)、gpu-kernel-pipelines.md [0,4547) 与 [8000,14078)、prefill-decode-state.md [0,6625) 与 [16000,20000)，故三者不列入 documents。完整审阅候选 test_script 所供 tools/check_k_model_004_full.py、author_notes 和 actual_preflight，包括脚本身份、实际 argv、stdout、stderr、返回码和执行范围；脚本未提供字符坐标。",
+  "test_assessment": "本审查独立检查了测试算法与所供真实执行记录，没有把作者声明当作通过依据。树扫描对照使用乘积求和闭式展开，不复用递推或扫描；Fraction 算例验证精确算术。完整投影历史参考不使用待测 ring 更新，能区分块间 h 与卷积历史漏传。恢复范围另与显式读取集合比较。成本参考逐请求、逐坐标、逐历史项枚举，并由 struct 格式独立确定存储宽度，对照维度聚合公式；其遗漏 D×N 负对照确实执行错误公式，直接针对上一轮机制故障。actual_preflight 绑定脚本 SHA256 79dbdc05d07d5f2ffd98e8c638b236d049e9fe89b2411f840a52113cd58c9d53，记录 remote_bwrap 下 Python 3.12 使用 -I -S -B -X utf8 执行，returncode=0、stderr 为空、未超时。输出报告扫描浮点最大差 1.110e-16、6 个精确算例；合成分块模型最大差 1.110e-16；重放全部边界及接受 0…4 后继续计算均符合参考。错误合成、重置 h、重置 ring、误用最终候选和部分回滚保留错误 ring 均产生非零差异。7128 个恢复集合比较通过；108 个字节案例中遗漏维度故障在64个非退化且非零 batch 案例被检出，大维度回归明确得到正确 h 读取65536字节、错误读取2字节及32768倍低估。单独的 faulty_empty_history_rule 是固定布尔演示，不能算实际故障实现注入；空历史规则的有效证据来自显式集合比较和合法恢复断言，整体检查并非同义复述。作者注明未运行当前 Python；协调者随后提供的当前脚本隔离运行补足了执行证据，两者未混同。未覆盖的完整 SiLU 块、真实多层引擎、无 logits 规划、并发生命周期与设备性能保留为 limitation，未记为 PASS。"
+}

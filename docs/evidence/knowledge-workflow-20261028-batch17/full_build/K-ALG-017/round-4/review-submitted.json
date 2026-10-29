@@ -1,0 +1,163 @@
+{
+  "entry_id": "K-ALG-017",
+  "body_sha256": "97be77c8a7b4c5cc614cb44e957d35e0ee6e897b1f3c1d75c654e282ae886fb0",
+  "reviewer": "sol-reviewer:K-ALG-017:round-4",
+  "decision": "revise",
+  "documents": {
+    "AGENTS.md": "b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a",
+    "docs/knowledge-method.md": "69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb",
+    "docs/knowledge-review.md": "f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21",
+    "knowledge/algorithms/tiered-residency.md": "97be77c8a7b4c5cc614cb44e957d35e0ee6e897b1f3c1d75c654e282ae886fb0",
+    "knowledge/sources/S-FLEXGEN.md": "17e4559a473711a2ee3eba92de0837f1babf4b3107bb58b748aecdb6382d711b",
+    "knowledge/sources/S-SERVERLESSLLM.md": "aff9202b72fffcdf3145d0f014888070d2e12995b04f9c259930ad90a806473d",
+    "knowledge/sources/S-PAGED.md": "50893a22385b0d577980153a9bc9c617acdcb2a9d7be0af655ad49421f06cc09",
+    "knowledge/sources/S-CUDA-ASYNC.md": "40df9287d0648a8ef55a046ceb1c18dd402619ede6e57ca33d3f90e4ace3da05",
+    "knowledge/system-semantics/memory-allocators.md": "2e7258787b94ad142c7c236541e8718803ad30b273d08e6c398dff673a1df838",
+    "knowledge/engine-index/vllm-kv-manager.md": "50b09c7a66c1282b7f6f7ac7ef1f265b953b908ae5fba883c9beec4732e1ab89",
+    "knowledge/engine-index/tensorrt-llm.md": "6ade1253f3747041bef4a816d82387c3771bff3459a153719cfbd571c2454c0b",
+    "knowledge/system-semantics/storage-services.md": "283ceab23fbbf5c27bbb4486b56c2123459a19a00229c5baae70d09c18062661",
+    "knowledge/models/recommendation-inference.md": "a36b0addea05174460d8f51179643665f98c51c6aa4a4d9dec235535948dd06d",
+    "tools/check_k_alg_017_full.py": "583bf26365fec766beeeeca808ae55fca276c5a9b4372c7c72c9ac4a63930167"
+  },
+  "criteria": {
+    "definition": {
+      "assessment": "sufficient",
+      "reason": "动机、完整计算身份、有效范围、恢复位置、物理生命期、逻辑持有和未结束访问均有明确含义；输入输出与状态事实可以核对。物理驻留量与使用责任集合虽共用字母 U，但下标和定义区分清楚。",
+      "evidence": [
+        {
+          "path": "knowledge/algorithms/tiered-residency.md",
+          "quote": "对象记为 O=(η,scope,r,κ)。"
+        },
+        {
+          "path": "knowledge/algorithms/tiered-residency.md",
+          "quote": "逻辑拥有者集合 L_x 表示请求、缓存目录或恢复策略仍需保留该副本；使用集合 U_x 表示已经取得启动资格、尚未证明最后访问结束的操作。"
+        }
+      ]
+    },
+    "legality": {
+      "assessment": "sufficient",
+      "reason": "明确区分范围合法性、版本冻结、表示相容、合法重建依据和最后访问保护，与淘汰排序、预取深度及整目标发布等可替换选择。来源事实与通用协议推导分开，所供来源说明及原文摘录支持正文实际采用的来源结论。",
+      "evidence": [
+        {
+          "path": "knowledge/algorithms/tiered-residency.md",
+          "quote": "淘汰最后一份有效状态前，必须证明还有满足合同的稳定副本，或保留了合法重建依据。"
+        },
+        {
+          "path": "knowledge/algorithms/tiered-residency.md",
+          "quote": "本章采用整目标完成后发布的保守协议。"
+        }
+      ]
+    },
+    "algorithm": {
+      "assessment": "partial",
+      "reason": "旧问题 K-ALG-017-r2-cancel-idle-reclamation 已修复：CANCEL 明确遍历受影响集合、立即 FREE、最后 WAKE，模型取消入口及两个对应变异与正文一致。但 START_STAGE 的全部未启动且放弃候选分支，没有把此前已置为 LOADING 的无主候选转入 RETIRING；其 FREE 因状态条件不成立而无法释放，仍存在无需等待设备却无后继事件的停滞路径。",
+      "evidence": [
+        {
+          "path": "knowledge/algorithms/tiered-residency.md",
+          "quote": "对 A 中每个对象立即尝试 FREE，不等待未来 END 或 READER_END"
+        },
+        {
+          "path": "knowledge/algorithms/tiered-residency.md",
+          "quote": "将目的副本置为 LOADING，保存不可变操作描述与目标范围"
+        },
+        {
+          "path": "knowledge/algorithms/tiered-residency.md",
+          "quote": "失败或重试；撤销放弃候选的持有，尝试 FREE，再执行 WAKE"
+        },
+        {
+          "path": "knowledge/algorithms/tiered-residency.md",
+          "quote": "仅当 state=RETIRING、L=空、U=空且无未知访问隔离时执行"
+        }
+      ]
+    },
+    "cost": {
+      "assessment": "sufficient",
+      "reason": "六类成本在同一候选与窗口内列账，区分唯一 backing、池内对象、在途峰值、共享链路服务量和关键路径。独立复算确认 KV 的 128 KiB/token、2.5 GiB 主项、625 ms 搬运项、204.8 token/s 上界及恢复成本换算正确；有限流水公式的资源与双槽假设明确，实测速率没有被当作硬上界。",
+      "evidence": [
+        {
+          "path": "knowledge/algorithms/tiered-residency.md",
+          "quote": "同一页的多个视图只计一次；两个真实副本分别计费。已计完整预分配池时，不再把池中 active 对象加一次。"
+        },
+        {
+          "path": "knowledge/algorithms/tiered-residency.md",
+          "quote": "T_L=t_m+t_c+(L−1)max(t_m,t_c)，L≥1；T_0=0。"
+        },
+        {
+          "path": "knowledge/algorithms/tiered-residency.md",
+          "quote": "β 若是声明的硬能力上界，D/β 才提供相应严格下界；以某次测得的有效速率代入通常只是条件化估计。"
+        }
+      ]
+    },
+    "adaptation": {
+      "assessment": "sufficient",
+      "reason": "对历史增长、重用变化、带宽与共享流量、版本和表示、取消排空及全驻留条件给出保留关系和调整依据；恢复与重算的成本反转具体，未把某个放置方案当成通用最优。",
+      "evidence": [
+        {
+          "path": "knowledge/algorithms/tiered-residency.md",
+          "quote": "若改为跨轮保留、改变计算放置或采用合法的小表示，原排除前提改变，必须重算。"
+        },
+        {
+          "path": "knowledge/algorithms/tiered-residency.md",
+          "quote": "错误预取增加流量和驻留，但只要真实需求仍被满足，就不必改变模型函数；为了省传输而跳过实际需要的专家、历史或权重，则改变了函数或质量契约。"
+        }
+      ]
+    },
+    "diagnosis": {
+      "assessment": "sufficient",
+      "reason": "竞争解释对应可控干预、独立观测与反证后的修正，尤其能区分真实排空、遗漏回收和遗漏唤醒。模型证据与设备及使用效果分开。START_STAGE 的缺口属于算法当前未闭合的失败分支，不否定这些诊断方法本身。",
+      "evidence": [
+        {
+          "path": "knowledge/algorithms/tiered-residency.md",
+          "quote": "先让生产完整 END，禁止启动读者，再取消最后 owner，之后不提供任何完成事件；仍占容量时查取消回收路径，不能归因于设备慢"
+        },
+        {
+          "path": "knowledge/algorithms/tiered-residency.md",
+          "quote": "注入一个完全未启动且不产生完成的拒绝，再比较部分接受；无在途责任时仍等待，应修状态推进"
+        }
+      ]
+    }
+  },
+  "findings": [
+    {
+      "id": "K-ALG-017-r4-unstarted-rejection-retirement",
+      "criterion": "algorithm",
+      "evidence": "START_STAGE 先执行“将目的副本置为 LOADING，保存不可变操作描述与目标范围”，再启动操作。随后全部未启动分支为“明确全部未启动：以未启动证据撤销本次使用责任”“失败或重试；撤销放弃候选的持有，尝试 FREE，再执行 WAKE”。此处没有调用 RETIRE，也没有明确置为 RETIRING；FREE 则要求“仅当 state=RETIRING、L=空、U=空且无未知访问隔离时执行”。现有 Machine.start 的拒绝检查都在登记 uses 和设置 LOADING 之前，未模拟登记后实际启动被明确全部拒绝的分支。",
+      "impact": "令目的候选占满设备池，进入 LOADING 后提交接口明确全部未启动，计划选择失败并放弃候选。按正文撤销 U 和最后一个 L 后，候选仍为 LOADING，因此 FREE 不释放，WAKE 也无法准入容量等待者。被拒绝的操作不会产生 END，正文也没有保证失败计划再次进入 START_STAGE 的开头清理分支，容量可以永久滞留。当前执行成功不能覆盖这条缺失转换。",
+      "blocking": true,
+      "required_revision": "在全部未启动且放弃候选的分支中，明确完成撤销逻辑持有、关闭入口并转入 RETIRING，再尝试 FREE 和 WAKE；若选择重试，则明确保留哪些预留与待办。给 CPU 模型增加登记责任并进入 LOADING 后收到全部未启动证据的路径，检验放弃后无需任何未来完成事件即可归还容量并推进等待者，并让遗漏该退休转换的缺陷路径被同一观察器检出。"
+    }
+  ],
+  "limitations": [
+    "审阅基于用户提供的完整候选、完整脚本、材料内容与实际预检记录；没有直接读取磁盘、重算文件哈希或重新执行 Python。",
+    "所供 actual_preflight 已绑定当前正文和脚本，返回码为 0、stderr 为空；作者说明中的未执行状态是作者阶段的记录，不能据此否认后来提供的预检，也不能把该预检称为本审阅者亲自运行。",
+    "原文核对仅覆盖 reviewer materials 中实际提供的摘录。作者材料账记录的来源范围与审阅者范围不同；该账证明材料供应范围，不证明认知阅读。",
+    "模型不验证真实 forward、压缩、多层设备原子发布、完整共享下载调度、未知接受状态恢复或持久化；提前释放负对照证明模型中的生命期保护失效，没有执行旧 DMA 的真实物理污染。",
+    "没有执行离线链接目标存在性检查。相对路径组织可静态解释，但未据此报告链接检查 PASS。",
+    "CPU 模型与设定算术不证明 GPU 可见性、真实排空、带宽、重叠、服务尾延迟或知识对 Agent 的使用效果。"
+  ],
+  "checks": [
+    {
+      "script": "tools/check_k_alg_017_full.py",
+      "args": [],
+      "execution_source": "用户提供的 actual_preflight",
+      "reviewer_executed": false,
+      "backend": "remote_bwrap",
+      "python_args": [
+        "-I",
+        "-S",
+        "-B",
+        "-X",
+        "utf8"
+      ],
+      "script_sha256": "583bf26365fec766beeeeca808ae55fca276c5a9b4372c7c72c9ac4a63930167",
+      "body_sha256": "97be77c8a7b4c5cc614cb44e957d35e0ee6e897b1f3c1d75c654e282ae886fb0",
+      "returncode": 0,
+      "timed_out": false,
+      "stderr": "",
+      "reported_result": "check_k_alg_017_full: PASS",
+      "assessment": "接受为当前绑定脚本已有实际执行的证据；其通过不覆盖 findings 中模型尚未实现的启动后全部拒绝分支。"
+    }
+  ],
+  "reading_scope": "完整阅读所供 AGENTS.md [0,567)、docs/knowledge-method.md [0,2251)、docs/knowledge-review.md [0,3016)、当前候选 knowledge/algorithms/tiered-residency.md [0,13635)、四份来源说明 S-FLEXGEN [0,989)、S-SERVERLESSLLM [0,781)、S-PAGED [0,2206)、S-CUDA-ASYNC [0,1610)，以及 memory-allocators.md [0,4191)、vllm-kv-manager.md [0,2189)、tensorrt-llm.md [0,2145)、storage-services.md [0,3922)、recommendation-inference.md [0,3902)。完整阅读 candidate.test_script、author_notes 和 actual_preflight。相关章节仅阅读所供摘录：storage-io [0,250)、[12000,16000)；kv-offload-prefetch [4000,4721)、[8000,11529)；weight-expert-offload [0,250)、[8000,12000)；heterogeneous-execution [8000,12250)；cancellation-resource-completion [0,4250)；capacity-planning [12000,16000)、[20000,20250)；async-scheduling [0,4000)、[8000,8250)；heterogeneous-state-cache [0,250)、[8000,12000)；cross-attention-cache [12000,16250)；cuda-graph-buffers [8000,12250)；host-device-transfer [0,4250)；cuda-execution [8000,8250)、[12000,16000)；recurrent-hybrid-state [8000,9804)、[12000,14446)；design-synthesis [0,250)、[12000,16000)；distributed-kv-store [4000,4250)、[8000,12000)。原始来源仅阅读 reviewer materials 实际提供的摘录：FlexGen [0,22420)、[24000,40000)、[60000,80000)；ServerlessLLM [0,28000)、[32000,58420)、[60000,64000)；PagedAttention [0,12000)、[16000,38420)、[40000,48000)、[52000,68000)；CUDA [16000,20000)、[208000,212000)、[280000,288000)、[312000,316000)、[456000,460000)、[644000,646421)、[688000,692000)、[744000,748000)、[772000,776000)、[808000,812000)、[948000,956000)、[1104000,1112000)。以上均为抽取文本零基半开字符范围；摘录未列入 documents，不声称读取完整原论文、指南或源码归档。",
+  "test_assessment": "检查具有实质独立参考：READY 内容对照逻辑坐标函数；物理保护从未终结操作和读者表重建，而非只信 copies.uses；容量事件扫描对照逐时刻枚举；流水递推对照闭式公式；成本以 Fraction 和 KV 坐标枚举核对。取消观察器不补发 gc、wake 或完成事件，直接要求旧生命期释放和唯一等待者准入；cancel_no_gc 与 cancel_no_wake 分别进入实际缺陷分支，只捕获 CheckError 并匹配原因，event_index 避免以 ValueError 意外中止。结合提供的真实执行记录，可以关闭旧 CANCEL finding。其他负对照涵盖提前发布、在途提前释放和共享视图重复计费，虽覆盖深度不同，但不构成纯粹自证。主要遗漏是 START_STAGE 登记 U、置 LOADING 后启动接口明确全部拒绝的路径：Machine.start 目前只会在登记前拒绝或直接成功，finish 的失败分支则以已接受操作取得最后访问证据为前提，不能替代这个无未来完成事件的启动拒绝案例。多层 forward、设备原子发布和真实异步行为未测试，正文已声明这些边界。"
+}

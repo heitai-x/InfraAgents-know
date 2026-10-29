@@ -1,0 +1,72 @@
+{
+  "entries": [
+    {
+      "id": "K-MODEL-011",
+      "candidate": {
+        "path": "docs/evidence/knowledge-workflow-20261028-batch13/full_build/K-MODEL-011/round-3/candidate.json",
+        "sha256": "d32d305b11845c449745c41a1b984862b0578a8edc2683cd55261af6456bb6ed"
+      },
+      "review": {
+        "path": "docs/evidence/knowledge-workflow-20261028-batch13/full_build/K-MODEL-011/round-3/review-submitted.json",
+        "sha256": "72ae820e44dd816dc303c2cf316dc6af95975ed01c41029c0a653eca88b5773b"
+      },
+      "failure": {
+        "path": "docs/evidence/knowledge-workflow-20261028-batch13/full_build/K-MODEL-011/round-3/failure.json",
+        "sha256": "119fb252bd108e2c797832f3de7eccb643844262eea8def055273bf6308435c3"
+      },
+      "original_findings": [
+        {
+          "id": "K-MODEL-011-ALG-TALKER-RESULT",
+          "criterion": "algorithm",
+          "evidence": "TalkerStep 声明“输出：COMPUTED、SELECTED、EOS、等待或明确失败”；AdvanceSpeech 在未就绪分支却仅写“EOS 未知且条件与 code ring 额度允许时，执行一个 TalkerStep 后继续；”。TalkerStep 第 4 步先保存并追加 y，第 6 步才“拒绝无解释的半帧、越界 code 和已提交前缀回退”；调用方没有接收返回值、传播失败或更新 phase 的步骤。",
+          "impact": "当 EOS 在必需 codebook 尚未齐备时被判为 FAILED_INCOMPLETE_FRAME，外层仍可能保持 RUN、eos_known=false，并再次调用 TalkerStep，消费刚追加的结束标志或继续生成。失败可能被预算暂停掩盖。取消和条件等待返回也没有明确的外层处理路径。Python 模型通过不能排除此错误，因为它通过 feed/seal 外部注入 code 与 EOS，没有执行该调用链。",
+          "blocking": true,
+          "required_revision": "在 AdvanceSpeech 显式接收并分派 TalkerStep 结果：COMPUTED/SELECTED 后重新判断依赖；EOS 后重新判断最终边界；等待返回真实等待原因；CANCELLED 撤销资格并进入对应终态；明确失败立即保存原因、进入 FAILED，禁止继续消费或选择。说明失败时已追加 token 和暂定 code 的隔离。增加针对该调用链的回归：半帧 EOS 返回失败后不得再调用 TalkerStep、发布 DATA 或 END；移除结果分派的负对照须被同一判据检出。"
+        }
+      ],
+      "action": "targeted_repair",
+      "additional_rounds": 1,
+      "manager_notes": [
+        "本轮是针对最后保留的 round-3 完整候选的局部修复。保留已成立的多层 Talker、块几何、EOS/flush、flow/vocoder、背压与成本推导；不要退回较浅的已登记旧正文重写。previous_attempts 中该候选和原审查是准确修订基线。",
+        "原 review-submitted.json 的 K-MODEL-011-ALG-TALKER-RESULT 是真实语义问题，虽因额外 inline 检查声明导致合同拒绝，不能遗漏此 finding。AdvanceSpeech 必须显式捕获 TalkerStep 结果，并在再次循环或预算判断之前分派：COMPUTED/SELECTED 重查依赖，EOS 重查最终边界，WAIT 返回对应真实原因，CANCELLED 撤销资格并进入终态，FAILED 立即保存原因并进入 FAILED。",
+        "说明 TalkerStep 已暂存的 token/code 在半帧 EOS 等失败后的隔离边界：不得继续被推进或发布；已经合法提交的前缀不回写，物理责任按既有最后使用规则结算。不要只在说明段落补一句而保留伪代码中的无条件继续。",
+        "检查必须走真实的 TalkerStep 返回值→AdvanceSpeech 分派调用链，不能由 feed/seal 外部注入绕过缺口。最小回归：第一步返回 FAILED_INCOMPLETE_FRAME 后，不得再调用 TalkerStep，不得发布新的 DATA 或 END；即使该步耗尽时间片，也必须返回 FAILED 而非 PAUSED。再覆盖成功 EOS、等待和取消。故意去掉分派的负对照要由同一独立终态/事件判据拒绝。",
+        "只交付本章指定 Python 检查；作者自己的 JS/V8 过程和工具限制放 author_notes，正文保留稳定覆盖与未测边界。不要预写执行成功，不增加或复制 inline 检查配方。"
+      ]
+    },
+    {
+      "id": "K-SYS-006",
+      "candidate": {
+        "path": "docs/evidence/knowledge-workflow-20261028-batch13/full_build/K-SYS-006/round-3/candidate.json",
+        "sha256": "8b4fe95b4d4046868f3d9fad47c5a1f7730a14af14949358f42362426cca7ec6"
+      },
+      "review": {
+        "path": "docs/evidence/knowledge-workflow-20261028-batch13/full_build/K-SYS-006/round-3/review-submitted.json",
+        "sha256": "c4080579ec645633837b403675e2aed64424c76f7493da25fdbc13382b633f0e"
+      },
+      "failure": {
+        "path": "docs/evidence/knowledge-workflow-20261028-batch13/full_build/K-SYS-006/round-3/failure.json",
+        "sha256": "c904a87fab226a0222765ca0a4e50b7f41bef41053e406edb45168538a31d31f"
+      },
+      "original_findings": [
+        {
+          "id": "K-SYS-006-R3-TRANSFER-UNRESOLVED",
+          "criterion": "algorithm",
+          "evidence": "正文将 heldout_changed 定义为“已在改变条件上执行未参与选择的保留评价”，将 heldout_conflict 定义为“该评价按预定规则反驳迁移预测”；P13 仅检查 changed_reference、changed_control_rejected 和 mechanism，随后 P14 返回 TRANSFERABLE。与此同时，正文明确写道“区间包含零表示尚不足以区分方向，不等于证明相等。”",
+          "impact": "设 P 为改变条件后 A 的平均延迟低于 B，原范围已取得充分支持。改变条件上的 16 个独立配对区组给出均值差 0 ms、样本标准差 4 ms，采用临界值 2.131 得到区间 [-2.131,2.131] ms。评价已执行、测量参考独立且负对照有效，但结果既不支持负方向，也未按预定区间规则反驳负方向。按现有谓词可令 heldout_changed=true、heldout_conflict=false，其余晋升前提均成立，P14 就授予 TRANSFERABLE。审阅者实际执行的 JavaScript 内存探针确认了这条路径。参考正确和负对照有效不能补足收益方向尚未区分的问题。",
+          "blocking": true,
+          "required_revision": "在迁移分支分别保留评价已执行、支持预测、反驳预测和未区分的语义。保留现有冲突处理优先级，但只有结果满足 P 的预声明判定条件时才授予 TRANSFERABLE；未区分时停在 CHECKED 并说明下一检查。同步修改表格、谓词、伪代码和声明式证书，加入上述区间跨界反例及对应的支持、反驳对照，确认实际晋升函数不会把未区分结果晋升。"
+        }
+      ],
+      "action": "targeted_repair",
+      "additional_rounds": 1,
+      "manager_notes": [
+        "以最后保留的 round-3 完整候选为基线定点修改，保留现有 MECH/OBS/TRANSFER/BUILD_EFFECT 分类、原范围检查、冲突优先级、使用路径和成本/诊断说明。此次不重开已经澄清的作者全文读取范围问题：作者与审阅者实际材料范围不同，当前执行器已经分别提供范围证据。",
+        "修复 K-SYS-006-R3-TRANSFER-UNRESOLVED：评价已执行、结果支持预声明预测、结果反驳预测、结果尚未区分必须具有不同语义。已执行且未反驳不等于支持。同步修改晋升条件表、输入谓词、TRANSFER 伪代码和声明式证书，只有确实支持 P 且其余门槛成立才授予 TRANSFERABLE；未区分保留 CHECKED 并给下一实验方向。",
+        "保留冲突处理优先级；若用多个布尔量，明确矛盾组合和未评价时的消费规则，或用互斥结果状态避免歧义。不能为了修复未区分就使已存在的反驳证据被其他未完成门槛静默遮蔽。支持的判据服从具体预声明命题，不将某一个方向的 CI 规则泛化为所有命题。",
+        "保留并实际测试最小反例：16 个配对区组，均值差 0 ms，样本标准差 4 ms，临界值 2.131，区间 [-2.131,2.131] ms；对 A 更快的命题尚未区分，不能晋升。增加明确支持和反驳对照、未评价分支，以及只漏支持门槛的故障版本；判定要进入真正的晋升函数及独立声明式参考，而非仅断言手工标签。",
+        "这些检查只是条件逻辑/区间算术模型，不证明区间覆盖率或实际知识收益。保持该限制；工具能力和执行进度只写 author_notes，不进入长期正文。"
+      ]
+    }
+  ]
+}

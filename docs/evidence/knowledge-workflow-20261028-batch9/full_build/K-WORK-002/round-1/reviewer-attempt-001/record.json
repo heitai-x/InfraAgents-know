@@ -1,0 +1,247 @@
+{
+  "role": "reviewer",
+  "engine": "sol",
+  "requested_model": "gpt-6.1-sol",
+  "reasoning_effort": "high",
+  "prompt_sha256": "34c5da5919b035e6a4485daf29fcad5463e6f52971975890d00cbfb91df6fd9a",
+  "usage": [
+    {
+      "input_tokens": 378004,
+      "cached_input_tokens": 259200,
+      "cache_write_input_tokens": 0,
+      "output_tokens": 7059,
+      "reasoning_output_tokens": 1645
+    }
+  ],
+  "answer": "{\n  \"entry_id\": \"K-WORK-002\",\n  \"body_sha256\": \"c3b85666988de857d1f3efa6995631c36d2653d599c67b58907dbc77afe73213\",\n  \"reviewer\": \"sol-reviewer:K-WORK-002:round-1\",\n  \"decision\": \"revise\",\n  \"documents\": {\n    \"AGENTS.md\": \"b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a\",\n    \"docs/knowledge-method.md\": \"69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb\",\n    \"docs/knowledge-review.md\": \"f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21\",\n    \"knowledge/workloads/arrival-and-concurrency.md\": \"c3b85666988de857d1f3efa6995631c36d2653d599c67b58907dbc77afe73213\",\n    \"knowledge/sources/S-MLPERF-LLM.md\": \"d0a591089c57e5e6d0051cdd73ce4ffc1bbfe60657470732921e25710f936cf0\",\n    \"knowledge/sources/S-MLPERF-SCENARIOS.md\": \"e210de2929034d4a6e25a31ee72b81a184412a7e637c979210f91ae02a261b04\",\n    \"knowledge/sources/S-GENAI-PERF.md\": \"1db17462a3ae4cd41dcb58a78f3f9fa9e71ff3a51614e56855be07bcb95618e0\",\n    \"knowledge/workloads/slo-goodput.md\": \"5aa9b71cddb7d896ffa1fe6d78ac61cf0bb92d76279ae4d563f1110ed9dbedb4\",\n    \"knowledge/workloads/capacity-planning.md\": \"2a1fab417c30d8e6984c202d805f31863e0f00e248558c583609b5f9ba7e88c7\",\n    \"knowledge/workloads/session-workloads.md\": \"0269e1987e1107d0cf0135cb32aa759c67d5266cfa09fb1402f97704c4ab4d78\",\n    \"knowledge/tools/statistical-experiments.md\": \"908b3588a6fa20bb1f2aed9f5db51c4b462953d79f8944cdbcfea7141c74644f\",\n    \"knowledge/workloads/measurement-comparability.md\": \"c3c5fbcd9a6b8b4f94954bda424488c83c3a741a2de339fea4f7aa83b4dcc215\",\n    \"references/S-MLPERF-LLM/upstream/language/llama2-70b/README.md\": \"f7eee4fb707a5035e7c8f8fe01f351a4620ea1ab904ca8086fcd9043eabb6b5e\",\n    \"references/S-MLPERF-LLM/upstream/loadgen/README.md\": \"074479dbeb369205ccc8800450c647893b4901c247e0e4ee7f321f05254e9305\",\n    \"references/S-MLPERF-SCENARIOS/upstream/loadgen/README.md\": \"074479dbeb369205ccc8800450c647893b4901c247e0e4ee7f321f05254e9305\",\n    \"references/S-GENAI-PERF/fulltext.txt\": \"357d6fcaafc41f2954ea87da567cd2b41ec8a146f8e4f19cb976acf39f539ddc\",\n    \"tools/check_k_work_002_full.py\": \"9aaa401662e7de03c480a68fcbc2c53d031913b8b9130dffa1ca78c09f50ccc8\"\n  },\n  \"criteria\": {\n    \"definition\": {\n      \"assessment\": \"partial\",\n      \"reason\": \"到达、并发、身份、时间边界和主要排队公式已有实质解释，数值例子的单位基本一致；但 Little 关系对完成率的禁用表述过强，有限窗口使用已完成请求均值时的偏差方向也没有成立保证。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/workloads/arrival-and-concurrency.md\",\n          \"quote\": \"到达过程描述请求在什么时刻进入考察范围；并发描述同时有多少请求处于某个状态。\"\n        },\n        {\n          \"path\": \"knowledge/workloads/arrival-and-concurrency.md\",\n          \"quote\": \"用 p99 延迟替代 W、用完成吞吐替代 λ、或把排队等待与服务时间混成另一个分母，都会破坏这个关系。\"\n        },\n        {\n          \"path\": \"knowledge/workloads/arrival-and-concurrency.md\",\n          \"quote\": \"只用已完成请求的 W̄ 会把 L̄ 算小。\"\n        }\n      ]\n    },\n    \"legality\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"明确了观测合法条件、统一人口与完成边界，以及 M/M/1、M/G/1、流体模型的适用前提；区分稳定性必要条件与 SLO 保证。来源事实与独立推导分开，未把算例或固定文档当作目标服务性能证明。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/workloads/arrival-and-concurrency.md\",\n          \"quote\": \"合法观测至少要求：计划的到达模型、逻辑请求与尝试的身份、拒绝和重试规则、队列纪律、完成边界、窗口起止以及失败/取消/未完成的处理方式都已声明。\"\n        },\n        {\n          \"path\": \"knowledge/workloads/arrival-and-concurrency.md\",\n          \"quote\": \"这些式子要求到达为 Poisson、服务时间为指数分布；它们不是任意推理服务的通用公式。\"\n        },\n        {\n          \"path\": \"knowledge/workloads/arrival-and-concurrency.md\",\n          \"quote\": \"这只是稳定性门槛，不保证尾延迟或联合 SLO。\"\n        }\n      ]\n    },\n    \"algorithm\": {\n      \"assessment\": \"partial\",\n      \"reason\": \"已有输入输出、事件顺序、重复通知和窗口冻结要求，但核心审计算法未落实独立准入事件、阻塞后的恢复推进及取消后的终态保持；按现有步骤无法保证其承诺的时间轴和分状态计数。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/workloads/arrival-and-concurrency.md\",\n          \"quote\": \"按时间顺序处理 PLAN、SEND、ADMIT、START、FINISH、CANCEL、TIMEOUT\"\n        },\n        {\n          \"path\": \"knowledge/workloads/arrival-and-concurrency.md\",\n          \"quote\": \"若生成器无空闲槽，记录 generator_backlog，不修改 planned\"\n        },\n        {\n          \"path\": \"knowledge/workloads/arrival-and-concurrency.md\",\n          \"quote\": \"记录 finish；按结果进入 COMPLETED 或 FAILED\"\n        },\n        {\n          \"path\": \"knowledge/workloads/arrival-and-concurrency.md\",\n          \"quote\": \"记录事件；在途工作仍等待完成或排空，不能提前复用其缓冲\"\n        }\n      ]\n    },\n    \"cost\": {\n      \"assessment\": \"partial\",\n      \"reason\": \"六类成本覆盖了生成、服务、观测与取消后驻留，也指出重叠时间不能直接相加；但生成器发送率上界混用了发送槽位、CPU 工作量和连接占用时间，没有建立同一种资源的供需关系，可能产生错误容量判断。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/workloads/arrival-and-concurrency.md\",\n          \"quote\": \"每次发送平均消耗 G_g 个生成器 CPU 秒或连接占用秒，则其可持续尝试率有一个约 C_g/G_g 的上界\"\n        },\n        {\n          \"path\": \"knowledge/workloads/arrival-and-concurrency.md\",\n          \"quote\": \"到达与并发分析要分别列出六类成本，不能用一个平均延迟相加。\"\n        },\n        {\n          \"path\": \"knowledge/workloads/arrival-and-concurrency.md\",\n          \"quote\": \"排队中的请求可能已经占用请求表、输出缓冲或预留 KV，不能因为尚未开始计算就当作零成本。\"\n        }\n      ]\n    },\n    \"adaptation\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"具体说明了到达均值、方差、闭环反馈、服务分布、准入重试、batch/cache、客户端资源和 trace 变化后需要重算的对象，并给出放弃旧压力或容量结论的条件。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/workloads/arrival-and-concurrency.md\",\n          \"quote\": \"重算峰值积压与排空；平均 λ 相同不足以保留旧尾延迟结论\"\n        },\n        {\n          \"path\": \"knowledge/workloads/arrival-and-concurrency.md\",\n          \"quote\": \"检查 generator_backlog；生成器饱和时放弃原压力声明\"\n        },\n        {\n          \"path\": \"knowledge/workloads/arrival-and-concurrency.md\",\n          \"quote\": \"条件变化后，先判断原结论依赖的是哪条反馈、哪组服务时间假设和哪个容量边界，再决定保留、调整还是放弃。\"\n        }\n      ]\n    },\n    \"diagnosis\": {\n      \"assessment\": \"partial\",\n      \"reason\": \"竞争解释、干预预测和不确定结果的处理已有充分文字展开；但随章检查对流体递推的描述与实际实现不符，状态核算只检查预设整数，负对照未进入事件审计路径，不能检出本章核心状态机制的错误。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/workloads/arrival-and-concurrency.md\",\n          \"quote\": \"对比 planned 与 actual_send；若迟发在发送前增长，先查生成器；若发送准时但队列增长，查服务和准入\"\n        },\n        {\n          \"path\": \"knowledge/workloads/arrival-and-concurrency.md\",\n          \"quote\": \"如果差异落在测量不确定性内，结论是未区分，而不是按一次运行排序。\"\n        },\n        {\n          \"path\": \"knowledge/workloads/arrival-and-concurrency.md\",\n          \"quote\": \"随章检查脚本以独立区间积分核对 Little 面积，以流体递推核对突发积压和排空\"\n        }\n      ]\n    }\n  },\n  \"findings\": [\n    {\n      \"id\": \"K-WORK-002-LITTLE-BOUNDARY\",\n      \"criterion\": \"definition\",\n      \"evidence\": \"正文：“用 p99 延迟替代 W、用完成吞吐替代 λ、或把排队等待与服务时间混成另一个分母，都会破坏这个关系。”以及“只用已完成请求的 W̄ 会把 L̄ 算小。”\",\n      \"impact\": \"在稳定、流量守恒且所有离开均为完成的同一人口中，长期完成率等于到达率，可以用于 Little 关系。有限窗口的偏差方向则取决于计数与人口：窗口 [0,10]，请求 A 在 0 到达、9 完成，请求 B 在 9.9 到达、10.9 完成，真实面积为 9.1、L̄=0.91；若采用全部到达率 2/10 和已完成请求平均停留 9，乘积为 1.8，反而高估。当前绝对表述会误导有效观测的选择与删失诊断。\",\n      \"blocking\": true,\n      \"required_revision\": \"将完成率的限制改为人口、边界、稳定性与流量守恒条件；说明成功完成率不能自动代替包含其他离开事件的流率。对有限窗口给出每个请求与窗口交集的停留面积，明确已完成均值不能直接代入且偏差方向不固定，并加入能区分上述情况的核对。\"\n    },\n    {\n      \"id\": \"K-WORK-002-EVENT-PROGRESSION\",\n      \"criterion\": \"algorithm\",\n      \"evidence\": \"正文列出“按时间顺序处理 PLAN、SEND、ADMIT、START、FINISH、CANCEL、TIMEOUT”，但 SEND 分支直接写“准入则记录 admit，进入 QUEUED”；PLAN 分支仅写“若依赖未满足，保持 PLANNED 并记录阻塞原因”和“若生成器无空闲槽，记录 generator_backlog，不修改 planned”。状态表又将“READY/SENT”统一定义为“已实际发出”。\",\n      \"impact\": \"算法没有独立 ADMIT 处理及真实准入时间的来源，不能恢复发送与准入之间的等待。依赖满足、生成器槽释放后也没有唤醒阻塞请求的步骤，槽位何时取得和归还未定义；合法请求可能永久停在 PLANNED。READY 同时表示待发送和已经发送，进一步破坏 attempted 与 backlog 的区分。\",\n      \"blocking\": true,\n      \"required_revision\": \"区分 READY 与 SENT；由 SEND 只记录实际发送，由真实准入/拒绝事件更新 aᵢ 和队列。说明事件来自观测还是由模型产生，补齐依赖满足、生成器槽取得与释放、阻塞队列唤醒和服务资源释放后的推进规则。用一条发生迟发且 sᵢ<aᵢ 的轨迹核对时间戳、状态和计数。\"\n    },\n    {\n      \"id\": \"K-WORK-002-CANCEL-TERMINAL\",\n      \"criterion\": \"algorithm\",\n      \"evidence\": \"状态表规定“CANCELLED/TIMED_OUT | 业务或时限终止 | 终态，但仍可能在排空”；取消分支写“停止未来提交和业务结果发布”，而 FINISH 分支无条件写“记录 finish；按结果进入 COMPLETED 或 FAILED”。最终报告列表为“planned、attempted、admitted、completed、failed、rejected、remaining”，未列取消和超时。\",\n      \"impact\": \"RUNNING 请求取消后收到有效物理完成通知，仍会按现有 FINISH 步骤变成 COMPLETED/FAILED，取消终态可能被覆盖或重复计数；QUEUED 取消也没有移出可启动集合的操作。业务终态和物理排空尚未形成两套可核对状态，无法判断 remaining 是否与已取消请求重叠。\",\n      \"blocking\": true,\n      \"required_revision\": \"明确取消/超时的幂等终态更新、排队移除及计数；FINISH 对已取消请求仅清理物理在途责任，不增加业务成功或覆盖终态。定义逻辑 remaining 与物理 draining 的区别及互斥计数恒等式，并把取消、超时纳入报告。回收条件须明确等待全部相关物理最后使用结束。\"\n    },\n    {\n      \"id\": \"K-WORK-002-GENERATOR-RESOURCE-UNITS\",\n      \"criterion\": \"cost\",\n      \"evidence\": \"正文：“设生成器有 C_g 个可同时发送的槽位，每次发送平均消耗 G_g 个生成器 CPU 秒或连接占用秒，则其可持续尝试率有一个约 C_g/G_g 的上界”。\",\n      \"impact\": \"CPU 秒是各线程 CPU 工作量之和，连接占用秒是槽位持有的墙钟时间，两者不能共享一个槽位分子。例如一个发送槽内每次工作由 10 个 CPU 并行执行 0.1 秒，共耗 1 CPU 秒，忽略其他成本时可达 10 次/秒；按 C_g=1、G_g=1 CPU 秒却得到 1 次/秒的错误上界。\",\n      \"blocking\": true,\n      \"required_revision\": \"分别定义 CPU 可用份额 P_g（CPU 秒/秒）、每尝试 CPU 需求 d_cpu（CPU 秒/尝试）、连接或发送槽数量 C_g、对应槽持有时间 d_slot（槽秒/尝试）。分别检查尝试率不超过 P_g/d_cpu 和 C_g/d_slot，再结合网络等资源约束；说明这些平均必要条件不证明计划时刻可兑现。\"\n    },\n    {\n      \"id\": \"K-WORK-002-CHECK-MECHANISM\",\n      \"criterion\": \"diagnosis\",\n      \"evidence\": \"正文声称“以流体递推核对突发积压和排空”；脚本实际为“b = (lam_b - mu) * tau”和“return b, b / (mu - lam0)”。test_accounting_identity 直接赋值 attempts=100、admitted=80 等整数，再检查“require(bad_total != attempts, 'negative control dropped rejection not detected')”。\",\n      \"impact\": \"突发检查没有独立流体递推；状态检查没有消费任何事件或算法输出。预设错误数与正确数不同，只证明这些常数不相等。即使审计算法把发送当准入、取消后计为完成或永不唤醒 backlog，这组检查仍全部通过。实际执行成功不能支撑其状态机制验证范围。\",\n      \"blocking\": true,\n      \"required_revision\": \"使声称验证的机制进入检查路径：以独立逐区间流体守恒参考核对突发公式；从有身份的事件轨迹导出状态计数与窗口面积，再与独立人口/区间清单比较。对取消后计成功、遗漏拒绝或错用准入时间等具体缺陷注入错误轨迹或变异实现，确认同一检查器实际拒绝。覆盖本章已讨论的窗口末未完成和窗口初已有请求，并据实际检查修正文中范围描述。\"\n    }\n  ],\n  \"limitations\": [\n    \"未提供或核验真实服务、网络、CPU/GPU 性能、时钟对齐、同步可见性或 Agent 使用效果；正文对此划定的验证边界可以保留，不因缺少设备结果判为缺陷。\",\n    \"本次依据用户提供的固定文本、脚本全文与 actual_preflight 执行记录进行复核，没有独立访问磁盘、重算文件哈希或重新执行脚本；documents 保留所供证据绑定值。\",\n    \"LoadGen 场景细节依据所供 S-MLPERF-SCENARIOS 来源说明；所供 README 指向 test_settings.h，但未包含其具体场景注释。本次未声称直接核验该实现文件或正式评测规则。\",\n    \"未提供的图片、源码归档、reader.html 及其他链接目标未读取，离线链接可达性未独立检查。\",\n    \"可用工具未提供读取本地 SKILL.md 的能力，因此未能读取所提及技能文件；审查依据为用户完整提供的方法、审查标准与材料。\"\n  ],\n  \"checks\": [\n    {\n      \"script\": \"tools/check_k_work_002_full.py\",\n      \"args\": [],\n      \"execution_source\": \"用户提供的 actual_preflight；非本审阅者重新执行\",\n      \"script_sha256\": \"9aaa401662e7de03c480a68fcbc2c53d031913b8b9130dffa1ca78c09f50ccc8\",\n      \"returncode\": 0,\n      \"observed_scope\": \"所供记录显示隔离 Python 3.12 执行完成，stderr 为空，报告 Little 面积、突发、闭环反馈、遗漏计数和整数恒等式通过；不代表完整事件算法通过验证。\"\n    }\n  ],\n  \"no_checks_reason\": \"\",\n  \"reading_scope\": \"完整阅读所供全文：AGENTS.md [0,567)、docs/knowledge-method.md [0,2251)、docs/knowledge-review.md [0,3016)、knowledge/workloads/arrival-and-concurrency.md [0,8725)、knowledge/sources/S-MLPERF-LLM.md [0,702)、knowledge/sources/S-MLPERF-SCENARIOS.md [0,823)、knowledge/sources/S-GENAI-PERF.md [0,506)、knowledge/workloads/slo-goodput.md [0,2616)、knowledge/workloads/capacity-planning.md [0,3442)、knowledge/workloads/session-workloads.md [0,3583)、knowledge/tools/statistical-experiments.md [0,4269)、knowledge/workloads/measurement-comparability.md [0,2988)、references/S-MLPERF-LLM/upstream/language/llama2-70b/README.md [0,12270)、references/S-MLPERF-LLM/upstream/loadgen/README.md [0,11382)、references/S-MLPERF-SCENARIOS/upstream/loadgen/README.md [0,11382)、references/S-GENAI-PERF/fulltext.txt [0,46825)。范围单位均为所供抽取文本中零基半开字符区间。完整阅读 candidate.test_script 对应的脚本全文，以及 author_notes 和 actual_preflight 执行记录。仅阅读摘录：knowledge/algorithms/iteration-batching.md [0,11471)、[12000,12671)；knowledge/hardware/cpu-serving.md [0,4962)、[8000,15180)。这两个摘录文件未列入 documents，不声称读过未提供部分。\",\n  \"test_assessment\": \"独立核算确认全完成 FCFS 例的完成时刻为 1、3、4、5，面积 13，L=2.6、λ=0.8、W=3.25；脚本的逐区间人数积分与按请求停留求和是两条有意义的核算路径。突发 120 请求与 3 秒排空、闭环 32/10 请求每秒、计划 12 与发送 3 的算术结果也正确。所供执行记录与脚本输出一致，作者说明其未在作者侧执行，而协调者提供隔离执行，两者不矛盾。但突发函数直接重述公式，没有文中声称的独立递推；闭环和计数测试主要是固定算术。五个所谓负对照检查的是人工构造错误值与正确值不等，没有将错误送入统一事件审计器，不足以证明其能检测本章状态机制缺陷。现有边界覆盖空轨迹、无突发积压和无法排空，未覆盖窗口初已有请求、窗口末未完成的完整核算、延迟准入、依赖/槽位唤醒、取消后迟到完成及重复事件的真实状态更新。尤其 interval_area 的积分点没有裁剪到窗口起点，含负到达时可能累计窗口前面积，其当前测试不能验证正文所说的非空初始窗口。结论仅承认所供算术检查实际成功，不将未执行的事件、链接或设备检查记为 PASS。\"\n}",
+  "exit_code": 0,
+  "status": "completed",
+  "timeout_seconds": 1800,
+  "response_path": "D:\\桌面\\xdb\\InfraAgents\\InfraAgents-know-astra-new\\InfraAgents-know\\docs\\evidence\\knowledge-workflow-20261028-batch9\\full_build\\K-WORK-002\\round-1\\reviewer-attempt-001\\answer.txt",
+  "record_path": "D:\\桌面\\xdb\\InfraAgents\\InfraAgents-know-astra-new\\InfraAgents-know\\docs\\evidence\\knowledge-workflow-20261028-batch9\\full_build\\K-WORK-002\\round-1\\reviewer-attempt-001\\record.json",
+  "tool_events": [],
+  "inventory_tool_events": [],
+  "rejected_tool_events": [],
+  "tool_policy": "metadata_inventory_only",
+  "tool_policy_version": "metadata-inventory-v1",
+  "tool_policy_scope": "Only empty-argument codex host plugin/skill-directory descriptors and empty template inventory; inventory is not knowledge evidence. All other tool events reject the call.",
+  "tool_policy_reason": "Production chapter construction allows observed generic capability discovery metadata; this does not claim a zero-tool comparison or external source reading.",
+  "malformed_event_lines": [],
+  "turn_completed": true,
+  "error_events": [],
+  "recovered_transport_events": [],
+  "terminal_error_events": [],
+  "transport_recovered": false,
+  "actual_model": null,
+  "identity_verified": null,
+  "identity_basis": "Explicit CLI model and isolated HTTP provider; CLI events do not expose server model identity.",
+  "provider": "eval-openai-http",
+  "max_output_tokens": null,
+  "cli_version": "codex-cli 0.164.0-alpha.11.1",
+  "cost_scope": "Codex token usage is reported; subscription charge is not exposed.",
+  "parsed": {
+    "entry_id": "K-WORK-002",
+    "body_sha256": "c3b85666988de857d1f3efa6995631c36d2653d599c67b58907dbc77afe73213",
+    "reviewer": "sol-reviewer:K-WORK-002:round-1",
+    "decision": "revise",
+    "documents": {
+      "AGENTS.md": "b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a",
+      "docs/knowledge-method.md": "69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb",
+      "docs/knowledge-review.md": "f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21",
+      "knowledge/workloads/arrival-and-concurrency.md": "c3b85666988de857d1f3efa6995631c36d2653d599c67b58907dbc77afe73213",
+      "knowledge/sources/S-MLPERF-LLM.md": "d0a591089c57e5e6d0051cdd73ce4ffc1bbfe60657470732921e25710f936cf0",
+      "knowledge/sources/S-MLPERF-SCENARIOS.md": "e210de2929034d4a6e25a31ee72b81a184412a7e637c979210f91ae02a261b04",
+      "knowledge/sources/S-GENAI-PERF.md": "1db17462a3ae4cd41dcb58a78f3f9fa9e71ff3a51614e56855be07bcb95618e0",
+      "knowledge/workloads/slo-goodput.md": "5aa9b71cddb7d896ffa1fe6d78ac61cf0bb92d76279ae4d563f1110ed9dbedb4",
+      "knowledge/workloads/capacity-planning.md": "2a1fab417c30d8e6984c202d805f31863e0f00e248558c583609b5f9ba7e88c7",
+      "knowledge/workloads/session-workloads.md": "0269e1987e1107d0cf0135cb32aa759c67d5266cfa09fb1402f97704c4ab4d78",
+      "knowledge/tools/statistical-experiments.md": "908b3588a6fa20bb1f2aed9f5db51c4b462953d79f8944cdbcfea7141c74644f",
+      "knowledge/workloads/measurement-comparability.md": "c3c5fbcd9a6b8b4f94954bda424488c83c3a741a2de339fea4f7aa83b4dcc215",
+      "references/S-MLPERF-LLM/upstream/language/llama2-70b/README.md": "f7eee4fb707a5035e7c8f8fe01f351a4620ea1ab904ca8086fcd9043eabb6b5e",
+      "references/S-MLPERF-LLM/upstream/loadgen/README.md": "074479dbeb369205ccc8800450c647893b4901c247e0e4ee7f321f05254e9305",
+      "references/S-MLPERF-SCENARIOS/upstream/loadgen/README.md": "074479dbeb369205ccc8800450c647893b4901c247e0e4ee7f321f05254e9305",
+      "references/S-GENAI-PERF/fulltext.txt": "357d6fcaafc41f2954ea87da567cd2b41ec8a146f8e4f19cb976acf39f539ddc",
+      "tools/check_k_work_002_full.py": "9aaa401662e7de03c480a68fcbc2c53d031913b8b9130dffa1ca78c09f50ccc8"
+    },
+    "criteria": {
+      "definition": {
+        "assessment": "partial",
+        "reason": "到达、并发、身份、时间边界和主要排队公式已有实质解释，数值例子的单位基本一致；但 Little 关系对完成率的禁用表述过强，有限窗口使用已完成请求均值时的偏差方向也没有成立保证。",
+        "evidence": [
+          {
+            "path": "knowledge/workloads/arrival-and-concurrency.md",
+            "quote": "到达过程描述请求在什么时刻进入考察范围；并发描述同时有多少请求处于某个状态。"
+          },
+          {
+            "path": "knowledge/workloads/arrival-and-concurrency.md",
+            "quote": "用 p99 延迟替代 W、用完成吞吐替代 λ、或把排队等待与服务时间混成另一个分母，都会破坏这个关系。"
+          },
+          {
+            "path": "knowledge/workloads/arrival-and-concurrency.md",
+            "quote": "只用已完成请求的 W̄ 会把 L̄ 算小。"
+          }
+        ]
+      },
+      "legality": {
+        "assessment": "sufficient",
+        "reason": "明确了观测合法条件、统一人口与完成边界，以及 M/M/1、M/G/1、流体模型的适用前提；区分稳定性必要条件与 SLO 保证。来源事实与独立推导分开，未把算例或固定文档当作目标服务性能证明。",
+        "evidence": [
+          {
+            "path": "knowledge/workloads/arrival-and-concurrency.md",
+            "quote": "合法观测至少要求：计划的到达模型、逻辑请求与尝试的身份、拒绝和重试规则、队列纪律、完成边界、窗口起止以及失败/取消/未完成的处理方式都已声明。"
+          },
+          {
+            "path": "knowledge/workloads/arrival-and-concurrency.md",
+            "quote": "这些式子要求到达为 Poisson、服务时间为指数分布；它们不是任意推理服务的通用公式。"
+          },
+          {
+            "path": "knowledge/workloads/arrival-and-concurrency.md",
+            "quote": "这只是稳定性门槛，不保证尾延迟或联合 SLO。"
+          }
+        ]
+      },
+      "algorithm": {
+        "assessment": "partial",
+        "reason": "已有输入输出、事件顺序、重复通知和窗口冻结要求，但核心审计算法未落实独立准入事件、阻塞后的恢复推进及取消后的终态保持；按现有步骤无法保证其承诺的时间轴和分状态计数。",
+        "evidence": [
+          {
+            "path": "knowledge/workloads/arrival-and-concurrency.md",
+            "quote": "按时间顺序处理 PLAN、SEND、ADMIT、START、FINISH、CANCEL、TIMEOUT"
+          },
+          {
+            "path": "knowledge/workloads/arrival-and-concurrency.md",
+            "quote": "若生成器无空闲槽，记录 generator_backlog，不修改 planned"
+          },
+          {
+            "path": "knowledge/workloads/arrival-and-concurrency.md",
+            "quote": "记录 finish；按结果进入 COMPLETED 或 FAILED"
+          },
+          {
+            "path": "knowledge/workloads/arrival-and-concurrency.md",
+            "quote": "记录事件；在途工作仍等待完成或排空，不能提前复用其缓冲"
+          }
+        ]
+      },
+      "cost": {
+        "assessment": "partial",
+        "reason": "六类成本覆盖了生成、服务、观测与取消后驻留，也指出重叠时间不能直接相加；但生成器发送率上界混用了发送槽位、CPU 工作量和连接占用时间，没有建立同一种资源的供需关系，可能产生错误容量判断。",
+        "evidence": [
+          {
+            "path": "knowledge/workloads/arrival-and-concurrency.md",
+            "quote": "每次发送平均消耗 G_g 个生成器 CPU 秒或连接占用秒，则其可持续尝试率有一个约 C_g/G_g 的上界"
+          },
+          {
+            "path": "knowledge/workloads/arrival-and-concurrency.md",
+            "quote": "到达与并发分析要分别列出六类成本，不能用一个平均延迟相加。"
+          },
+          {
+            "path": "knowledge/workloads/arrival-and-concurrency.md",
+            "quote": "排队中的请求可能已经占用请求表、输出缓冲或预留 KV，不能因为尚未开始计算就当作零成本。"
+          }
+        ]
+      },
+      "adaptation": {
+        "assessment": "sufficient",
+        "reason": "具体说明了到达均值、方差、闭环反馈、服务分布、准入重试、batch/cache、客户端资源和 trace 变化后需要重算的对象，并给出放弃旧压力或容量结论的条件。",
+        "evidence": [
+          {
+            "path": "knowledge/workloads/arrival-and-concurrency.md",
+            "quote": "重算峰值积压与排空；平均 λ 相同不足以保留旧尾延迟结论"
+          },
+          {
+            "path": "knowledge/workloads/arrival-and-concurrency.md",
+            "quote": "检查 generator_backlog；生成器饱和时放弃原压力声明"
+          },
+          {
+            "path": "knowledge/workloads/arrival-and-concurrency.md",
+            "quote": "条件变化后，先判断原结论依赖的是哪条反馈、哪组服务时间假设和哪个容量边界，再决定保留、调整还是放弃。"
+          }
+        ]
+      },
+      "diagnosis": {
+        "assessment": "partial",
+        "reason": "竞争解释、干预预测和不确定结果的处理已有充分文字展开；但随章检查对流体递推的描述与实际实现不符，状态核算只检查预设整数，负对照未进入事件审计路径，不能检出本章核心状态机制的错误。",
+        "evidence": [
+          {
+            "path": "knowledge/workloads/arrival-and-concurrency.md",
+            "quote": "对比 planned 与 actual_send；若迟发在发送前增长，先查生成器；若发送准时但队列增长，查服务和准入"
+          },
+          {
+            "path": "knowledge/workloads/arrival-and-concurrency.md",
+            "quote": "如果差异落在测量不确定性内，结论是未区分，而不是按一次运行排序。"
+          },
+          {
+            "path": "knowledge/workloads/arrival-and-concurrency.md",
+            "quote": "随章检查脚本以独立区间积分核对 Little 面积，以流体递推核对突发积压和排空"
+          }
+        ]
+      }
+    },
+    "findings": [
+      {
+        "id": "K-WORK-002-LITTLE-BOUNDARY",
+        "criterion": "definition",
+        "evidence": "正文：“用 p99 延迟替代 W、用完成吞吐替代 λ、或把排队等待与服务时间混成另一个分母，都会破坏这个关系。”以及“只用已完成请求的 W̄ 会把 L̄ 算小。”",
+        "impact": "在稳定、流量守恒且所有离开均为完成的同一人口中，长期完成率等于到达率，可以用于 Little 关系。有限窗口的偏差方向则取决于计数与人口：窗口 [0,10]，请求 A 在 0 到达、9 完成，请求 B 在 9.9 到达、10.9 完成，真实面积为 9.1、L̄=0.91；若采用全部到达率 2/10 和已完成请求平均停留 9，乘积为 1.8，反而高估。当前绝对表述会误导有效观测的选择与删失诊断。",
+        "blocking": true,
+        "required_revision": "将完成率的限制改为人口、边界、稳定性与流量守恒条件；说明成功完成率不能自动代替包含其他离开事件的流率。对有限窗口给出每个请求与窗口交集的停留面积，明确已完成均值不能直接代入且偏差方向不固定，并加入能区分上述情况的核对。"
+      },
+      {
+        "id": "K-WORK-002-EVENT-PROGRESSION",
+        "criterion": "algorithm",
+        "evidence": "正文列出“按时间顺序处理 PLAN、SEND、ADMIT、START、FINISH、CANCEL、TIMEOUT”，但 SEND 分支直接写“准入则记录 admit，进入 QUEUED”；PLAN 分支仅写“若依赖未满足，保持 PLANNED 并记录阻塞原因”和“若生成器无空闲槽，记录 generator_backlog，不修改 planned”。状态表又将“READY/SENT”统一定义为“已实际发出”。",
+        "impact": "算法没有独立 ADMIT 处理及真实准入时间的来源，不能恢复发送与准入之间的等待。依赖满足、生成器槽释放后也没有唤醒阻塞请求的步骤，槽位何时取得和归还未定义；合法请求可能永久停在 PLANNED。READY 同时表示待发送和已经发送，进一步破坏 attempted 与 backlog 的区分。",
+        "blocking": true,
+        "required_revision": "区分 READY 与 SENT；由 SEND 只记录实际发送，由真实准入/拒绝事件更新 aᵢ 和队列。说明事件来自观测还是由模型产生，补齐依赖满足、生成器槽取得与释放、阻塞队列唤醒和服务资源释放后的推进规则。用一条发生迟发且 sᵢ<aᵢ 的轨迹核对时间戳、状态和计数。"
+      },
+      {
+        "id": "K-WORK-002-CANCEL-TERMINAL",
+        "criterion": "algorithm",
+        "evidence": "状态表规定“CANCELLED/TIMED_OUT | 业务或时限终止 | 终态，但仍可能在排空”；取消分支写“停止未来提交和业务结果发布”，而 FINISH 分支无条件写“记录 finish；按结果进入 COMPLETED 或 FAILED”。最终报告列表为“planned、attempted、admitted、completed、failed、rejected、remaining”，未列取消和超时。",
+        "impact": "RUNNING 请求取消后收到有效物理完成通知，仍会按现有 FINISH 步骤变成 COMPLETED/FAILED，取消终态可能被覆盖或重复计数；QUEUED 取消也没有移出可启动集合的操作。业务终态和物理排空尚未形成两套可核对状态，无法判断 remaining 是否与已取消请求重叠。",
+        "blocking": true,
+        "required_revision": "明确取消/超时的幂等终态更新、排队移除及计数；FINISH 对已取消请求仅清理物理在途责任，不增加业务成功或覆盖终态。定义逻辑 remaining 与物理 draining 的区别及互斥计数恒等式，并把取消、超时纳入报告。回收条件须明确等待全部相关物理最后使用结束。"
+      },
+      {
+        "id": "K-WORK-002-GENERATOR-RESOURCE-UNITS",
+        "criterion": "cost",
+        "evidence": "正文：“设生成器有 C_g 个可同时发送的槽位，每次发送平均消耗 G_g 个生成器 CPU 秒或连接占用秒，则其可持续尝试率有一个约 C_g/G_g 的上界”。",
+        "impact": "CPU 秒是各线程 CPU 工作量之和，连接占用秒是槽位持有的墙钟时间，两者不能共享一个槽位分子。例如一个发送槽内每次工作由 10 个 CPU 并行执行 0.1 秒，共耗 1 CPU 秒，忽略其他成本时可达 10 次/秒；按 C_g=1、G_g=1 CPU 秒却得到 1 次/秒的错误上界。",
+        "blocking": true,
+        "required_revision": "分别定义 CPU 可用份额 P_g（CPU 秒/秒）、每尝试 CPU 需求 d_cpu（CPU 秒/尝试）、连接或发送槽数量 C_g、对应槽持有时间 d_slot（槽秒/尝试）。分别检查尝试率不超过 P_g/d_cpu 和 C_g/d_slot，再结合网络等资源约束；说明这些平均必要条件不证明计划时刻可兑现。"
+      },
+      {
+        "id": "K-WORK-002-CHECK-MECHANISM",
+        "criterion": "diagnosis",
+        "evidence": "正文声称“以流体递推核对突发积压和排空”；脚本实际为“b = (lam_b - mu) * tau”和“return b, b / (mu - lam0)”。test_accounting_identity 直接赋值 attempts=100、admitted=80 等整数，再检查“require(bad_total != attempts, 'negative control dropped rejection not detected')”。",
+        "impact": "突发检查没有独立流体递推；状态检查没有消费任何事件或算法输出。预设错误数与正确数不同，只证明这些常数不相等。即使审计算法把发送当准入、取消后计为完成或永不唤醒 backlog，这组检查仍全部通过。实际执行成功不能支撑其状态机制验证范围。",
+        "blocking": true,
+        "required_revision": "使声称验证的机制进入检查路径：以独立逐区间流体守恒参考核对突发公式；从有身份的事件轨迹导出状态计数与窗口面积，再与独立人口/区间清单比较。对取消后计成功、遗漏拒绝或错用准入时间等具体缺陷注入错误轨迹或变异实现，确认同一检查器实际拒绝。覆盖本章已讨论的窗口末未完成和窗口初已有请求，并据实际检查修正文中范围描述。"
+      }
+    ],
+    "limitations": [
+      "未提供或核验真实服务、网络、CPU/GPU 性能、时钟对齐、同步可见性或 Agent 使用效果；正文对此划定的验证边界可以保留，不因缺少设备结果判为缺陷。",
+      "本次依据用户提供的固定文本、脚本全文与 actual_preflight 执行记录进行复核，没有独立访问磁盘、重算文件哈希或重新执行脚本；documents 保留所供证据绑定值。",
+      "LoadGen 场景细节依据所供 S-MLPERF-SCENARIOS 来源说明；所供 README 指向 test_settings.h，但未包含其具体场景注释。本次未声称直接核验该实现文件或正式评测规则。",
+      "未提供的图片、源码归档、reader.html 及其他链接目标未读取，离线链接可达性未独立检查。",
+      "可用工具未提供读取本地 SKILL.md 的能力，因此未能读取所提及技能文件；审查依据为用户完整提供的方法、审查标准与材料。"
+    ],
+    "checks": [
+      {
+        "script": "tools/check_k_work_002_full.py",
+        "args": [],
+        "execution_source": "用户提供的 actual_preflight；非本审阅者重新执行",
+        "script_sha256": "9aaa401662e7de03c480a68fcbc2c53d031913b8b9130dffa1ca78c09f50ccc8",
+        "returncode": 0,
+        "observed_scope": "所供记录显示隔离 Python 3.12 执行完成，stderr 为空，报告 Little 面积、突发、闭环反馈、遗漏计数和整数恒等式通过；不代表完整事件算法通过验证。"
+      }
+    ],
+    "no_checks_reason": "",
+    "reading_scope": "完整阅读所供全文：AGENTS.md [0,567)、docs/knowledge-method.md [0,2251)、docs/knowledge-review.md [0,3016)、knowledge/workloads/arrival-and-concurrency.md [0,8725)、knowledge/sources/S-MLPERF-LLM.md [0,702)、knowledge/sources/S-MLPERF-SCENARIOS.md [0,823)、knowledge/sources/S-GENAI-PERF.md [0,506)、knowledge/workloads/slo-goodput.md [0,2616)、knowledge/workloads/capacity-planning.md [0,3442)、knowledge/workloads/session-workloads.md [0,3583)、knowledge/tools/statistical-experiments.md [0,4269)、knowledge/workloads/measurement-comparability.md [0,2988)、references/S-MLPERF-LLM/upstream/language/llama2-70b/README.md [0,12270)、references/S-MLPERF-LLM/upstream/loadgen/README.md [0,11382)、references/S-MLPERF-SCENARIOS/upstream/loadgen/README.md [0,11382)、references/S-GENAI-PERF/fulltext.txt [0,46825)。范围单位均为所供抽取文本中零基半开字符区间。完整阅读 candidate.test_script 对应的脚本全文，以及 author_notes 和 actual_preflight 执行记录。仅阅读摘录：knowledge/algorithms/iteration-batching.md [0,11471)、[12000,12671)；knowledge/hardware/cpu-serving.md [0,4962)、[8000,15180)。这两个摘录文件未列入 documents，不声称读过未提供部分。",
+    "test_assessment": "独立核算确认全完成 FCFS 例的完成时刻为 1、3、4、5，面积 13，L=2.6、λ=0.8、W=3.25；脚本的逐区间人数积分与按请求停留求和是两条有意义的核算路径。突发 120 请求与 3 秒排空、闭环 32/10 请求每秒、计划 12 与发送 3 的算术结果也正确。所供执行记录与脚本输出一致，作者说明其未在作者侧执行，而协调者提供隔离执行，两者不矛盾。但突发函数直接重述公式，没有文中声称的独立递推；闭环和计数测试主要是固定算术。五个所谓负对照检查的是人工构造错误值与正确值不等，没有将错误送入统一事件审计器，不足以证明其能检测本章状态机制缺陷。现有边界覆盖空轨迹、无突发积压和无法排空，未覆盖窗口初已有请求、窗口末未完成的完整核算、延迟准入、依赖/槽位唤醒、取消后迟到完成及重复事件的真实状态更新。尤其 interval_area 的积分点没有裁剪到窗口起点，含负到达时可能累计窗口前面积，其当前测试不能验证正文所说的非空初始窗口。结论仅承认所供算术检查实际成功，不将未执行的事件、链接或设备检查记为 PASS。"
+  },
+  "format_status": "strict_json",
+  "format_error": null,
+  "output_text": "{\n  \"entry_id\": \"K-WORK-002\",\n  \"body_sha256\": \"c3b85666988de857d1f3efa6995631c36d2653d599c67b58907dbc77afe73213\",\n  \"reviewer\": \"sol-reviewer:K-WORK-002:round-1\",\n  \"decision\": \"revise\",\n  \"documents\": {\n    \"AGENTS.md\": \"b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a\",\n    \"docs/knowledge-method.md\": \"69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb\",\n    \"docs/knowledge-review.md\": \"f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21\",\n    \"knowledge/workloads/arrival-and-concurrency.md\": \"c3b85666988de857d1f3efa6995631c36d2653d599c67b58907dbc77afe73213\",\n    \"knowledge/sources/S-MLPERF-LLM.md\": \"d0a591089c57e5e6d0051cdd73ce4ffc1bbfe60657470732921e25710f936cf0\",\n    \"knowledge/sources/S-MLPERF-SCENARIOS.md\": \"e210de2929034d4a6e25a31ee72b81a184412a7e637c979210f91ae02a261b04\",\n    \"knowledge/sources/S-GENAI-PERF.md\": \"1db17462a3ae4cd41dcb58a78f3f9fa9e71ff3a51614e56855be07bcb95618e0\",\n    \"knowledge/workloads/slo-goodput.md\": \"5aa9b71cddb7d896ffa1fe6d78ac61cf0bb92d76279ae4d563f1110ed9dbedb4\",\n    \"knowledge/workloads/capacity-planning.md\": \"2a1fab417c30d8e6984c202d805f31863e0f00e248558c583609b5f9ba7e88c7\",\n    \"knowledge/workloads/session-workloads.md\": \"0269e1987e1107d0cf0135cb32aa759c67d5266cfa09fb1402f97704c4ab4d78\",\n    \"knowledge/tools/statistical-experiments.md\": \"908b3588a6fa20bb1f2aed9f5db51c4b462953d79f8944cdbcfea7141c74644f\",\n    \"knowledge/workloads/measurement-comparability.md\": \"c3c5fbcd9a6b8b4f94954bda424488c83c3a741a2de339fea4f7aa83b4dcc215\",\n    \"references/S-MLPERF-LLM/upstream/language/llama2-70b/README.md\": \"f7eee4fb707a5035e7c8f8fe01f351a4620ea1ab904ca8086fcd9043eabb6b5e\",\n    \"references/S-MLPERF-LLM/upstream/loadgen/README.md\": \"074479dbeb369205ccc8800450c647893b4901c247e0e4ee7f321f05254e9305\",\n    \"references/S-MLPERF-SCENARIOS/upstream/loadgen/README.md\": \"074479dbeb369205ccc8800450c647893b4901c247e0e4ee7f321f05254e9305\",\n    \"references/S-GENAI-PERF/fulltext.txt\": \"357d6fcaafc41f2954ea87da567cd2b41ec8a146f8e4f19cb976acf39f539ddc\",\n    \"tools/check_k_work_002_full.py\": \"9aaa401662e7de03c480a68fcbc2c53d031913b8b9130dffa1ca78c09f50ccc8\"\n  },\n  \"criteria\": {\n    \"definition\": {\n      \"assessment\": \"partial\",\n      \"reason\": \"到达、并发、身份、时间边界和主要排队公式已有实质解释，数值例子的单位基本一致；但 Little 关系对完成率的禁用表述过强，有限窗口使用已完成请求均值时的偏差方向也没有成立保证。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/workloads/arrival-and-concurrency.md\",\n          \"quote\": \"到达过程描述请求在什么时刻进入考察范围；并发描述同时有多少请求处于某个状态。\"\n        },\n        {\n          \"path\": \"knowledge/workloads/arrival-and-concurrency.md\",\n          \"quote\": \"用 p99 延迟替代 W、用完成吞吐替代 λ、或把排队等待与服务时间混成另一个分母，都会破坏这个关系。\"\n        },\n        {\n          \"path\": \"knowledge/workloads/arrival-and-concurrency.md\",\n          \"quote\": \"只用已完成请求的 W̄ 会把 L̄ 算小。\"\n        }\n      ]\n    },\n    \"legality\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"明确了观测合法条件、统一人口与完成边界，以及 M/M/1、M/G/1、流体模型的适用前提；区分稳定性必要条件与 SLO 保证。来源事实与独立推导分开，未把算例或固定文档当作目标服务性能证明。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/workloads/arrival-and-concurrency.md\",\n          \"quote\": \"合法观测至少要求：计划的到达模型、逻辑请求与尝试的身份、拒绝和重试规则、队列纪律、完成边界、窗口起止以及失败/取消/未完成的处理方式都已声明。\"\n        },\n        {\n          \"path\": \"knowledge/workloads/arrival-and-concurrency.md\",\n          \"quote\": \"这些式子要求到达为 Poisson、服务时间为指数分布；它们不是任意推理服务的通用公式。\"\n        },\n        {\n          \"path\": \"knowledge/workloads/arrival-and-concurrency.md\",\n          \"quote\": \"这只是稳定性门槛，不保证尾延迟或联合 SLO。\"\n        }\n      ]\n    },\n    \"algorithm\": {\n      \"assessment\": \"partial\",\n      \"reason\": \"已有输入输出、事件顺序、重复通知和窗口冻结要求，但核心审计算法未落实独立准入事件、阻塞后的恢复推进及取消后的终态保持；按现有步骤无法保证其承诺的时间轴和分状态计数。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/workloads/arrival-and-concurrency.md\",\n          \"quote\": \"按时间顺序处理 PLAN、SEND、ADMIT、START、FINISH、CANCEL、TIMEOUT\"\n        },\n        {\n          \"path\": \"knowledge/workloads/arrival-and-concurrency.md\",\n          \"quote\": \"若生成器无空闲槽，记录 generator_backlog，不修改 planned\"\n        },\n        {\n          \"path\": \"knowledge/workloads/arrival-and-concurrency.md\",\n          \"quote\": \"记录 finish；按结果进入 COMPLETED 或 FAILED\"\n        },\n        {\n          \"path\": \"knowledge/workloads/arrival-and-concurrency.md\",\n          \"quote\": \"记录事件；在途工作仍等待完成或排空，不能提前复用其缓冲\"\n        }\n      ]\n    },\n    \"cost\": {\n      \"assessment\": \"partial\",\n      \"reason\": \"六类成本覆盖了生成、服务、观测与取消后驻留，也指出重叠时间不能直接相加；但生成器发送率上界混用了发送槽位、CPU 工作量和连接占用时间，没有建立同一种资源的供需关系，可能产生错误容量判断。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/workloads/arrival-and-concurrency.md\",\n          \"quote\": \"每次发送平均消耗 G_g 个生成器 CPU 秒或连接占用秒，则其可持续尝试率有一个约 C_g/G_g 的上界\"\n        },\n        {\n          \"path\": \"knowledge/workloads/arrival-and-concurrency.md\",\n          \"quote\": \"到达与并发分析要分别列出六类成本，不能用一个平均延迟相加。\"\n        },\n        {\n          \"path\": \"knowledge/workloads/arrival-and-concurrency.md\",\n          \"quote\": \"排队中的请求可能已经占用请求表、输出缓冲或预留 KV，不能因为尚未开始计算就当作零成本。\"\n        }\n      ]\n    },\n    \"adaptation\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"具体说明了到达均值、方差、闭环反馈、服务分布、准入重试、batch/cache、客户端资源和 trace 变化后需要重算的对象，并给出放弃旧压力或容量结论的条件。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/workloads/arrival-and-concurrency.md\",\n          \"quote\": \"重算峰值积压与排空；平均 λ 相同不足以保留旧尾延迟结论\"\n        },\n        {\n          \"path\": \"knowledge/workloads/arrival-and-concurrency.md\",\n          \"quote\": \"检查 generator_backlog；生成器饱和时放弃原压力声明\"\n        },\n        {\n          \"path\": \"knowledge/workloads/arrival-and-concurrency.md\",\n          \"quote\": \"条件变化后，先判断原结论依赖的是哪条反馈、哪组服务时间假设和哪个容量边界，再决定保留、调整还是放弃。\"\n        }\n      ]\n    },\n    \"diagnosis\": {\n      \"assessment\": \"partial\",\n      \"reason\": \"竞争解释、干预预测和不确定结果的处理已有充分文字展开；但随章检查对流体递推的描述与实际实现不符，状态核算只检查预设整数，负对照未进入事件审计路径，不能检出本章核心状态机制的错误。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/workloads/arrival-and-concurrency.md\",\n          \"quote\": \"对比 planned 与 actual_send；若迟发在发送前增长，先查生成器；若发送准时但队列增长，查服务和准入\"\n        },\n        {\n          \"path\": \"knowledge/workloads/arrival-and-concurrency.md\",\n          \"quote\": \"如果差异落在测量不确定性内，结论是未区分，而不是按一次运行排序。\"\n        },\n        {\n          \"path\": \"knowledge/workloads/arrival-and-concurrency.md\",\n          \"quote\": \"随章检查脚本以独立区间积分核对 Little 面积，以流体递推核对突发积压和排空\"\n        }\n      ]\n    }\n  },\n  \"findings\": [\n    {\n      \"id\": \"K-WORK-002-LITTLE-BOUNDARY\",\n      \"criterion\": \"definition\",\n      \"evidence\": \"正文：“用 p99 延迟替代 W、用完成吞吐替代 λ、或把排队等待与服务时间混成另一个分母，都会破坏这个关系。”以及“只用已完成请求的 W̄ 会把 L̄ 算小。”\",\n      \"impact\": \"在稳定、流量守恒且所有离开均为完成的同一人口中，长期完成率等于到达率，可以用于 Little 关系。有限窗口的偏差方向则取决于计数与人口：窗口 [0,10]，请求 A 在 0 到达、9 完成，请求 B 在 9.9 到达、10.9 完成，真实面积为 9.1、L̄=0.91；若采用全部到达率 2/10 和已完成请求平均停留 9，乘积为 1.8，反而高估。当前绝对表述会误导有效观测的选择与删失诊断。\",\n      \"blocking\": true,\n      \"required_revision\": \"将完成率的限制改为人口、边界、稳定性与流量守恒条件；说明成功完成率不能自动代替包含其他离开事件的流率。对有限窗口给出每个请求与窗口交集的停留面积，明确已完成均值不能直接代入且偏差方向不固定，并加入能区分上述情况的核对。\"\n    },\n    {\n      \"id\": \"K-WORK-002-EVENT-PROGRESSION\",\n      \"criterion\": \"algorithm\",\n      \"evidence\": \"正文列出“按时间顺序处理 PLAN、SEND、ADMIT、START、FINISH、CANCEL、TIMEOUT”，但 SEND 分支直接写“准入则记录 admit，进入 QUEUED”；PLAN 分支仅写“若依赖未满足，保持 PLANNED 并记录阻塞原因”和“若生成器无空闲槽，记录 generator_backlog，不修改 planned”。状态表又将“READY/SENT”统一定义为“已实际发出”。\",\n      \"impact\": \"算法没有独立 ADMIT 处理及真实准入时间的来源，不能恢复发送与准入之间的等待。依赖满足、生成器槽释放后也没有唤醒阻塞请求的步骤，槽位何时取得和归还未定义；合法请求可能永久停在 PLANNED。READY 同时表示待发送和已经发送，进一步破坏 attempted 与 backlog 的区分。\",\n      \"blocking\": true,\n      \"required_revision\": \"区分 READY 与 SENT；由 SEND 只记录实际发送，由真实准入/拒绝事件更新 aᵢ 和队列。说明事件来自观测还是由模型产生，补齐依赖满足、生成器槽取得与释放、阻塞队列唤醒和服务资源释放后的推进规则。用一条发生迟发且 sᵢ<aᵢ 的轨迹核对时间戳、状态和计数。\"\n    },\n    {\n      \"id\": \"K-WORK-002-CANCEL-TERMINAL\",\n      \"criterion\": \"algorithm\",\n      \"evidence\": \"状态表规定“CANCELLED/TIMED_OUT | 业务或时限终止 | 终态，但仍可能在排空”；取消分支写“停止未来提交和业务结果发布”，而 FINISH 分支无条件写“记录 finish；按结果进入 COMPLETED 或 FAILED”。最终报告列表为“planned、attempted、admitted、completed、failed、rejected、remaining”，未列取消和超时。\",\n      \"impact\": \"RUNNING 请求取消后收到有效物理完成通知，仍会按现有 FINISH 步骤变成 COMPLETED/FAILED，取消终态可能被覆盖或重复计数；QUEUED 取消也没有移出可启动集合的操作。业务终态和物理排空尚未形成两套可核对状态，无法判断 remaining 是否与已取消请求重叠。\",\n      \"blocking\": true,\n      \"required_revision\": \"明确取消/超时的幂等终态更新、排队移除及计数；FINISH 对已取消请求仅清理物理在途责任，不增加业务成功或覆盖终态。定义逻辑 remaining 与物理 draining 的区别及互斥计数恒等式，并把取消、超时纳入报告。回收条件须明确等待全部相关物理最后使用结束。\"\n    },\n    {\n      \"id\": \"K-WORK-002-GENERATOR-RESOURCE-UNITS\",\n      \"criterion\": \"cost\",\n      \"evidence\": \"正文：“设生成器有 C_g 个可同时发送的槽位，每次发送平均消耗 G_g 个生成器 CPU 秒或连接占用秒，则其可持续尝试率有一个约 C_g/G_g 的上界”。\",\n      \"impact\": \"CPU 秒是各线程 CPU 工作量之和，连接占用秒是槽位持有的墙钟时间，两者不能共享一个槽位分子。例如一个发送槽内每次工作由 10 个 CPU 并行执行 0.1 秒，共耗 1 CPU 秒，忽略其他成本时可达 10 次/秒；按 C_g=1、G_g=1 CPU 秒却得到 1 次/秒的错误上界。\",\n      \"blocking\": true,\n      \"required_revision\": \"分别定义 CPU 可用份额 P_g（CPU 秒/秒）、每尝试 CPU 需求 d_cpu（CPU 秒/尝试）、连接或发送槽数量 C_g、对应槽持有时间 d_slot（槽秒/尝试）。分别检查尝试率不超过 P_g/d_cpu 和 C_g/d_slot，再结合网络等资源约束；说明这些平均必要条件不证明计划时刻可兑现。\"\n    },\n    {\n      \"id\": \"K-WORK-002-CHECK-MECHANISM\",\n      \"criterion\": \"diagnosis\",\n      \"evidence\": \"正文声称“以流体递推核对突发积压和排空”；脚本实际为“b = (lam_b - mu) * tau”和“return b, b / (mu - lam0)”。test_accounting_identity 直接赋值 attempts=100、admitted=80 等整数，再检查“require(bad_total != attempts, 'negative control dropped rejection not detected')”。\",\n      \"impact\": \"突发检查没有独立流体递推；状态检查没有消费任何事件或算法输出。预设错误数与正确数不同，只证明这些常数不相等。即使审计算法把发送当准入、取消后计为完成或永不唤醒 backlog，这组检查仍全部通过。实际执行成功不能支撑其状态机制验证范围。\",\n      \"blocking\": true,\n      \"required_revision\": \"使声称验证的机制进入检查路径：以独立逐区间流体守恒参考核对突发公式；从有身份的事件轨迹导出状态计数与窗口面积，再与独立人口/区间清单比较。对取消后计成功、遗漏拒绝或错用准入时间等具体缺陷注入错误轨迹或变异实现，确认同一检查器实际拒绝。覆盖本章已讨论的窗口末未完成和窗口初已有请求，并据实际检查修正文中范围描述。\"\n    }\n  ],\n  \"limitations\": [\n    \"未提供或核验真实服务、网络、CPU/GPU 性能、时钟对齐、同步可见性或 Agent 使用效果；正文对此划定的验证边界可以保留，不因缺少设备结果判为缺陷。\",\n    \"本次依据用户提供的固定文本、脚本全文与 actual_preflight 执行记录进行复核，没有独立访问磁盘、重算文件哈希或重新执行脚本；documents 保留所供证据绑定值。\",\n    \"LoadGen 场景细节依据所供 S-MLPERF-SCENARIOS 来源说明；所供 README 指向 test_settings.h，但未包含其具体场景注释。本次未声称直接核验该实现文件或正式评测规则。\",\n    \"未提供的图片、源码归档、reader.html 及其他链接目标未读取，离线链接可达性未独立检查。\",\n    \"可用工具未提供读取本地 SKILL.md 的能力，因此未能读取所提及技能文件；审查依据为用户完整提供的方法、审查标准与材料。\"\n  ],\n  \"checks\": [\n    {\n      \"script\": \"tools/check_k_work_002_full.py\",\n      \"args\": [],\n      \"execution_source\": \"用户提供的 actual_preflight；非本审阅者重新执行\",\n      \"script_sha256\": \"9aaa401662e7de03c480a68fcbc2c53d031913b8b9130dffa1ca78c09f50ccc8\",\n      \"returncode\": 0,\n      \"observed_scope\": \"所供记录显示隔离 Python 3.12 执行完成，stderr 为空，报告 Little 面积、突发、闭环反馈、遗漏计数和整数恒等式通过；不代表完整事件算法通过验证。\"\n    }\n  ],\n  \"no_checks_reason\": \"\",\n  \"reading_scope\": \"完整阅读所供全文：AGENTS.md [0,567)、docs/knowledge-method.md [0,2251)、docs/knowledge-review.md [0,3016)、knowledge/workloads/arrival-and-concurrency.md [0,8725)、knowledge/sources/S-MLPERF-LLM.md [0,702)、knowledge/sources/S-MLPERF-SCENARIOS.md [0,823)、knowledge/sources/S-GENAI-PERF.md [0,506)、knowledge/workloads/slo-goodput.md [0,2616)、knowledge/workloads/capacity-planning.md [0,3442)、knowledge/workloads/session-workloads.md [0,3583)、knowledge/tools/statistical-experiments.md [0,4269)、knowledge/workloads/measurement-comparability.md [0,2988)、references/S-MLPERF-LLM/upstream/language/llama2-70b/README.md [0,12270)、references/S-MLPERF-LLM/upstream/loadgen/README.md [0,11382)、references/S-MLPERF-SCENARIOS/upstream/loadgen/README.md [0,11382)、references/S-GENAI-PERF/fulltext.txt [0,46825)。范围单位均为所供抽取文本中零基半开字符区间。完整阅读 candidate.test_script 对应的脚本全文，以及 author_notes 和 actual_preflight 执行记录。仅阅读摘录：knowledge/algorithms/iteration-batching.md [0,11471)、[12000,12671)；knowledge/hardware/cpu-serving.md [0,4962)、[8000,15180)。这两个摘录文件未列入 documents，不声称读过未提供部分。\",\n  \"test_assessment\": \"独立核算确认全完成 FCFS 例的完成时刻为 1、3、4、5，面积 13，L=2.6、λ=0.8、W=3.25；脚本的逐区间人数积分与按请求停留求和是两条有意义的核算路径。突发 120 请求与 3 秒排空、闭环 32/10 请求每秒、计划 12 与发送 3 的算术结果也正确。所供执行记录与脚本输出一致，作者说明其未在作者侧执行，而协调者提供隔离执行，两者不矛盾。但突发函数直接重述公式，没有文中声称的独立递推；闭环和计数测试主要是固定算术。五个所谓负对照检查的是人工构造错误值与正确值不等，没有将错误送入统一事件审计器，不足以证明其能检测本章状态机制缺陷。现有边界覆盖空轨迹、无突发积压和无法排空，未覆盖窗口初已有请求、窗口末未完成的完整核算、延迟准入、依赖/槽位唤醒、取消后迟到完成及重复事件的真实状态更新。尤其 interval_area 的积分点没有裁剪到窗口起点，含负到达时可能累计窗口前面积，其当前测试不能验证正文所说的非空初始窗口。结论仅承认所供算术检查实际成功，不将未执行的事件、链接或设备检查记为 PASS。\"\n}",
+  "elapsed_seconds": 218.75
+}

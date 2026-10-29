@@ -1,0 +1,127 @@
+{
+  "entry_id": "K-ALG-019",
+  "body_sha256": "45741ae4271010aa6cb0e088dd2d70cf2f185daa839f6d0eddbff3a6bf25dab5",
+  "reviewer": "sol-reviewer:K-ALG-019:round-3",
+  "decision": "accept",
+  "documents": {
+    "AGENTS.md": "b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a",
+    "docs/knowledge-method.md": "69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb",
+    "docs/knowledge-review.md": "f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21",
+    "knowledge/algorithms/weight-expert-offload.md": "45741ae4271010aa6cb0e088dd2d70cf2f185daa839f6d0eddbff3a6bf25dab5",
+    "knowledge/sources/S-FLEXGEN.md": "17e4559a473711a2ee3eba92de0837f1babf4b3107bb58b748aecdb6382d711b",
+    "knowledge/sources/S-POWERINFER.md": "2ddb8fae1189c3f837c9f5daaceab96dad85f6ffd8be5bb0ec3ff6a146c51f83",
+    "knowledge/sources/S-MIXTRAL.md": "25a14f727f542ddb8daf029bd89b5961836e63d7689633191ab4b00ee04d0ff7",
+    "knowledge/sources/S-CUDA-ASYNC.md": "40df9287d0648a8ef55a046ceb1c18dd402619ede6e57ca33d3f90e4ace3da05",
+    "knowledge/algorithms/tiered-residency.md": "eb3ebc6320d5a32481cf645605d159860dc6d1edb97f1e98afd89ddb24ee82af",
+    "knowledge/algorithms/heterogeneous-execution.md": "8fd777e06b150eaba4e3288ccb188adbb975e37c28c77a72a9b6878a70e027f4",
+    "knowledge/engine-index/tensorrt-llm.md": "6ade1253f3747041bef4a816d82387c3771bff3459a153719cfbd571c2454c0b",
+    "references/S-MIXTRAL/fulltext.txt": "07bf75eef2aad6afcf894396cc42c9aaf973784b3930b3da5c55086a6fcd9811",
+    "tools/check_k_alg_019_full.py": "ecddacd2a16842b9e8c0b3fa3d548ee6aa00caff6702be659fb9347c7acf8317"
+  },
+  "criteria": {
+    "definition": {
+      "assessment": "sufficient",
+      "reason": "完整区分容量卸载、模型路由稀疏与预测跳算；定义层边界、有效 token 行、门控函数及请求、权重、槽、调用和贡献身份。逐层输入与 KV 就绪、整步提交和自回归依赖相互一致。",
+      "evidence": [
+        {
+          "path": "knowledge/algorithms/weight-expert-offload.md",
+          "quote": "稠密层的边界记为 H_(l+1)=F_l(H_l,KV_l;W_l)。"
+        },
+        {
+          "path": "knowledge/algorithms/weight-expert-offload.md",
+          "quote": "输出是同一调用快照下的完整 hidden，或明确失败/取消；未完成的部分和不作为完整层发布。"
+        }
+      ]
+    },
+    "legality": {
+      "assessment": "sufficient",
+      "reason": "合法性绑定完整函数、冻结路由、版本、表示、数值契约及最小可执行空间；缓存和放置属于可替换选择。明确区分逻辑取消、物理最后使用和可复用条件，与所供来源及相关章节一致。",
+      "evidence": [
+        {
+          "path": "knowledge/algorithms/weight-expert-offload.md",
+          "quote": "缓存缺失不授权改选邻近专家、减少 k、删掉较小门控贡献或重新归一化剩余项。"
+        },
+        {
+          "path": "knowledge/algorithms/weight-expert-offload.md",
+          "quote": "已提交访问继续按原身份排空；结束证据缺失的对象保持隔离"
+        }
+      ]
+    },
+    "algorithm": {
+      "assessment": "sufficient",
+      "reason": "两段伪代码覆盖初始化、缓存命中与载入、层间数据依赖、专家分桶和 chunk、读权、结果映射、覆盖合并、发布及失败排空。单槽顺序推进避免要求全部专家同时驻留；版本轨迹解释了旧读者、独立输出消费者和迟到事件。",
+      "evidence": [
+        {
+          "path": "knowledge/algorithms/weight-expert-offload.md",
+          "quote": "原子核对 K 并取得权重读权，将桶移出待选择集合"
+        },
+        {
+          "path": "knowledge/algorithms/weight-expert-offload.md",
+          "quote": "仅当 eligible 且 Seen=Expected，shared/residual 也完成时发布结果"
+        }
+      ]
+    },
+    "cost": {
+      "assessment": "sufficient",
+      "reason": "本轮已修复访问与缺失混算：M W_off 仅用于每微批全部重载的基线，一般流量来自复制事件，按层 W_off 保留明确前提。4S/3S/6S 轨迹成立。另已核对专家并集推导、SwiGLU FLOPs 与权重强度、激活往返、唯一物理驻留、准备摊销、共享带宽和包含首尾的两槽递推，未把资源下界当完成时间。",
+      "evidence": [
+        {
+          "path": "knowledge/algorithms/weight-expert-offload.md",
+          "quote": "只有额外规定逐微批基线在每个微批都重新载入全部 C、无跨微批有效保留时，才有 D_row,forced=M W_off"
+        },
+        {
+          "path": "knowledge/algorithms/weight-expert-offload.md",
+          "quote": "令 Λ_H 是计量窗口内所有 H2D 权重复制事件构成的多重集合，则 D_H=Σ_(a∈Λ_H)bytes(a)。"
+        },
+        {
+          "path": "knowledge/algorithms/weight-expert-offload.md",
+          "quote": "READY 权重若位于预分配槽池内，计完整槽池后不再另加同一权重"
+        }
+      ]
+    },
+    "adaptation": {
+      "assessment": "sufficient",
+      "reason": "条件变化表将保留的函数与生命周期约束，连接到并集、缓存轨迹、状态峰值、链路、表示、预测和 CPU 工作量的重新计算，并给出减少卸载、调整并发、改放置或拒绝的依据。没有把论文特定配置或未来访问策略推广为通用最优。",
+      "evidence": [
+        {
+          "path": "knowledge/algorithms/weight-expert-offload.md",
+          "quote": "重放实际访问与槽事件，重算跨微批及跨轮命中；不继续套用 M W_off"
+        },
+        {
+          "path": "knowledge/algorithms/weight-expert-offload.md",
+          "quote": "最小完整工作单元仍装不下时改 CPU、合法分片或拒绝"
+        }
+      ]
+    },
+    "diagnosis": {
+      "assessment": "sufficient",
+      "reason": "竞争解释具有可控干预、独立观测和反证后的修正。检查脚本具有不同组织的参考、事件账本和实际检测的负对照，能够发现本轮原始计账缺陷；设备可见性和性能明确留在未测范围。",
+      "evidence": [
+        {
+          "path": "knowledge/algorithms/weight-expert-offload.md",
+          "quote": "分别启用保留、微批边界清空与按层执行；记录每次 hit、evict、copy 和字节"
+        },
+        {
+          "path": "knowledge/algorithms/weight-expert-offload.md",
+          "quote": "版本标签正确仍可能物理污染，补足最后读取门控；仅丢旧结果不足以修复"
+        }
+      ]
+    }
+  },
+  "findings": [],
+  "limitations": [
+    "结论限于所供全文、明确摘录和绑定脚本。未访问 reader.html 版面或源码归档；相对链接已按路径关系核对，未独立检查磁盘目标存在性。",
+    "检查验证确定性 CPU 算术和抽象槽事件，不证明真实 router、SwiGLU、量化解码、浮点误差、CUDA 可见性、实际 DMA 排空、HBM 事务或服务性能。",
+    "等大缓存状态枚举仅覆盖有限串行模型；非等大对象采用固定槽容量进行字节计账，未证明变长对象放置、异步预取或 deadline 策略最优。",
+    "未验证知识对 Agent 构建能力的使用效果。完整层或专家不能装入时，合法分片执行仍需另行证明。"
+  ],
+  "checks": [
+    {
+      "script": "tools/check_k_alg_019_full.py",
+      "args": []
+    }
+  ],
+  "no_checks_reason": "",
+  "reading_scope": "完整阅读任务内供应的 AGENTS.md [0,567)、docs/knowledge-method.md [0,2251)、docs/knowledge-review.md [0,3016)、候选正文 [0,15666)、四份来源说明 S-FLEXGEN [0,989)、S-POWERINFER [0,739)、S-MIXTRAL [0,459)、S-CUDA-ASYNC [0,1610)、tiered-residency.md [0,4244)、heterogeneous-execution.md [0,3935)、tensorrt-llm.md [0,2145)、Mixtral 全文提取 [0,32362)，以及完整候选 Python 脚本、author_notes 和 actual_preflight。相关章节仅阅读所供摘录：moe-routing.md [0,2625)、[8000,16000)；checkpoint-loading.md [0,8528)、[12000,14097)；parallelism.md [0,6625)、[8000,12000)；cpu-quantized-kernels.md [0,4000)、[8000,14625)；cuda-graph-buffers.md [0,4000)、[8000,14625)。原文摘录：FlexGen [0,44000)、[56000,67016)、[68000,85794)；PowerInfer [0,72000)、[76000,76810)；CUDA [36000,40000)、[204000,212000)、[300000,300811)、[436000,460000)、[464000,468000)、[472000,476000)、[484000,488000)、[492000,496000)、[504000,508000)、[516000,520000)、[548000,552000)、[580000,584000)、[604000,608000)。以上范围均为提取文本的零基半开字符区间；摘录不构成完整原文件阅读。documents 仅列完整供应文件及完整脚本。",
+  "test_assessment": "逐函数检查了脚本。dense() 现在只生成数值结果与访问轨迹；simulate_loads() 通过 Slot 的载入、就绪和读取操作产生事件，audit_loads() 用独立驻留表重放身份并累计 copy 字节。FIFO 队列参考核对一般及非等大对象轨迹，minimum_copies_reference() 枚举缓存状态核对等大对象策略，已不依赖预写的访问次数公式。覆盖跨微批保留、强制清空、跨轮保留、全驻留、单槽、空输入和短微批。visits_as_misses_fault() 将访问全部计为缺失，在实际事件账得到 28/21 字节的轨迹上产生错误计数并被拒绝；删除 copy 或篡改字节也被账本拒绝，负对照确实针对本轮计账机制。专家检查以逐 token 显式有理数公式对照分桶矩阵路径，并检测漏项、重复、旧调用、错版本、错 token 数值及取消发布；并集使用路由组合枚举；两槽递推使用逐时刻资源模拟。所供 actual_preflight 记录的脚本 SHA256 与本轮绑定值一致，remote_bwrap 实际执行返回码为 0、stderr 为空，stdout 报告 12 组专家次序、56 组并集、3279 组缓存、640 组稠密和 820 组流水检查及相应负对照。此为供应的实际执行证据，本 reviewer 未重新运行 Python，也未将作者自述的历史 JavaScript 执行当作独立 PASS。另在本 reviewer 的 functions.exec 中实际执行独立 JavaScript 缓存状态最小化和资源释放计算，复核得到三条路径 28/21/42 字节、单槽专家 4/2 次复制、流水完成时间 22，以及 31.25/39.0625 ms 的单位换算。稠密数值变换与缓存载入分别验证，未执行真实 Transformer/KV；其他设备与数值遗漏均与正文声明边界一致。K-ALG-019-r2-dense-miss-accounting 已关闭；完整候选复核未发现新的阻塞问题，campaign-K-ALG-019-r2 的重新评估要求已满足。"
+}

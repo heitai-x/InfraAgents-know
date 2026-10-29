@@ -1,0 +1,140 @@
+{
+  "entry_id": "K-ALG-024",
+  "body_sha256": "f179ed71f0de2ec4d2ae2acf80fed0fce8c4677ee48674d61d9db5a881854e55",
+  "reviewer": "sol-reviewer:K-ALG-024:round-2",
+  "decision": "accept",
+  "documents": {
+    "AGENTS.md": "b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a",
+    "docs/knowledge-method.md": "69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb",
+    "docs/knowledge-review.md": "f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21",
+    "knowledge/algorithms/branch-generation.md": "f179ed71f0de2ec4d2ae2acf80fed0fce8c4677ee48674d61d9db5a881854e55",
+    "knowledge/sources/S-EAGLE.md": "5781850aa1d8dd5a43cb5c971d595431cca204d90ebb0004357062e36de1fa8c",
+    "knowledge/sources/S-SPEC.md": "a637c44fe62f12685aed5d022d23eabf949083343dbce9656b0a149e742bfd90",
+    "knowledge/sources/S-PAGED.md": "50893a22385b0d577980153a9bc9c617acdcb2a9d7be0af655ad49421f06cc09",
+    "knowledge/sources/S-TORCH-REPRO.md": "05f2b5b9819f01363fadadf41987482edfebb130bc134c36c44a00138fd5eb28",
+    "knowledge/sources/S-SGLANG.md": "4fd6badbee1df40da422f2866f1536bbe4f5266856b8d97004072a21b9d0e2c9",
+    "knowledge/algorithms/speculation-budget.md": "91a6e60d5151fb5b1155d2ba0ddcb3ba1251e69f7caf79b0ec217c7bf9a74d0d",
+    "knowledge/algorithms/batched-sampling.md": "eedef73ece886112211c643f263add7644e5bd2018f2043c1716a172368aa6f2",
+    "knowledge/system-semantics/request-batch-identity.md": "4bb364464c1ccab29bf079263a4e80d9d352e1477040fdcaf150a36294e37443",
+    "knowledge/workloads/session-workloads.md": "0269e1987e1107d0cf0135cb32aa759c67d5266cfa09fb1402f97704c4ab4d78",
+    "knowledge/engine-index/vllm-model-runner.md": "87d1433d4f64d939ff8f137d1c1d4092cfdf2b3d7ebdd011a0f344cc66564714",
+    "references/S-EAGLE/fulltext.txt": "509e09a8a7d28806b4154100599a018a8535fd4cccbd56129efa10ea90436df2",
+    "references/S-SPEC/fulltext.txt": "66ebddbde83df97b2389d7e0e98c844435478aedeec56d024bf52b8cc0d94cec",
+    "references/S-TORCH-REPRO/fulltext.txt": "4f6b1deb38f7f174a2e340674680aaa0484e02a1d18cccd1bb94618df512cc2a",
+    "tools/check_k_alg_024_full.py": "ea5bba1e5112403e32b67c5a64d4fd304530193147ba5b11ec517f080d6c9305"
+  },
+  "criteria": {
+    "definition": {
+      "assessment": "sufficient",
+      "reason": "区分三种输出契约，定义实际目标分布、分支身份和已选择、已计算、已发布三个边界。明确 logits 预测下一事件与当前 token 自身 KV 的偏移，EOS 与普通长度分别处理。",
+      "evidence": [
+        {
+          "path": "knowledge/algorithms/branch-generation.md",
+          "quote": "刚采样出的普通 token 可以推进 n_b，却尚未作为模型输入计算，此时通常 k_b=n_b−1。"
+        },
+        {
+          "path": "knowledge/algorithms/branch-generation.md",
+          "quote": "节点 token 的概率来自父前缀分布 p_par(n)(τ(n))，而节点自身计算得到的 p_n 用于预测其后续 token。"
+        }
+      ]
+    },
+    "legality": {
+      "assessment": "sufficient",
+      "reason": "将父路径可见性、只读共享、身份映射、共同发布和物理排空作为合法条件；将双集合 beam、固定排序键、随机消耗规则和单提案树验证明确作为方案选择。实际 Q 的归一化与独立验证抽取条件足以支持接受/剩余质量推导，与 S-SPEC 相符。",
+      "evidence": [
+        {
+          "path": "knowledge/algorithms/branch-generation.md",
+          "quote": "回收同时满足逻辑所有者消失与物理使用结束。"
+        },
+        {
+          "path": "knowledge/algorithms/branch-generation.md",
+          "quote": "它可以由草稿概率在选定支撑上截断后重新归一化得到，但必须保存这个实际 Q_n；不能仍用截断前的 q 计算接受比。"
+        },
+        {
+          "path": "knowledge/algorithms/branch-generation.md",
+          "quote": "本节明确选择一种双集合 beam：活跃集 A 最多保留 K 条，完成集 F 另外最多保留 K 条；EOS 不占活跃槽。"
+        }
+      ]
+    },
+    "algorithm": {
+      "assessment": "sufficient",
+      "reason": "四份伪代码贯通初始化、跨轮完成集、逐层候选前向、验证交付与共同提交。逐层说明投影、合法 attention 集合和层间依赖，覆盖式递归状态另给父快照关系并链接已供完整单步算法。组合轨迹正确保留 bonus pending，发布前失败与发布后回收采用不同处理。",
+      "evidence": [
+        {
+          "path": "knowledge/algorithms/branch-generation.md",
+          "quote": "这里旧完成结果、入口处已达到长度限制的结果、普通扩展刚达到限制的结果和本轮 EOS 全部进入同一个 F_work，再统一去重、排序和截取。"
+        },
+        {
+          "path": "knowledge/algorithms/branch-generation.md",
+          "quote": "同一层所有候选的 K/V 都由该层输入独立投影产生，所以 Transformer 可以沿网络层执行一次树前向；祖先的同层 attention 输出不是后代同层投影的输入。"
+        },
+        {
+          "path": "knowledge/algorithms/branch-generation.md",
+          "quote": "若步骤 1…11 失败：不发布，Old 及其 RNG/grammar/score 保持不变"
+        }
+      ]
+    },
+    "cost": {
+      "assessment": "sufficient",
+      "reason": "计算、访存、通信、准备、同步及驻留均有机制对应。独立复算确认 520/136 MiB、1040/272 页、非对齐旧根保留时五页及有效尾部复制的 5S 逻辑交通。树合法 query-key 对数包含自身，期望产出和时间收益式声明串行、接受率及资源假设，未把容量节省直接换成 DRAM 或延迟收益。",
+      "evidence": [
+        {
+          "path": "knowledge/algorithms/branch-generation.md",
+          "quote": "共享容量、逻辑读取、实际 DRAM 事务与墙钟时间是不同的量。"
+        },
+        {
+          "path": "knowledge/algorithms/branch-generation.md",
+          "quote": "q+1+Σ_{b:e_b>0} ceil((r+e_b)/P)。"
+        },
+        {
+          "path": "knowledge/algorithms/branch-generation.md",
+          "quote": "该串行相加只用于这些阶段实际串行的模型；允许重叠时应按依赖图求关键路径，并考虑共享计算、HBM 和链路竞争。"
+        }
+      ]
+    },
+    "adaptation": {
+      "assessment": "sufficient",
+      "reason": "说明前缀、尾长、COW、batch 饱和与接受长度变化如何改变共享和投机选择；模型、表示及约束变化后重新核验状态和概率资格。明确搜索参数变化属于语义变化，不能作为无条件性能优化。",
+      "evidence": [
+        {
+          "path": "knowledge/algorithms/branch-generation.md",
+          "quote": "目标 batch 已饱和、接受长度下降或草稿争用同一资源时，缩减树宽深，必要时关闭投机。"
+        },
+        {
+          "path": "knowledge/algorithms/branch-generation.md",
+          "quote": "grammar 或截断配置改变后，重建路径 grammar 与实际 p/Q；支撑不同本身可由剩余分布处理，但旧前缀身份和错误概率不能靠接受比修复。"
+        }
+      ]
+    },
+    "diagnosis": {
+      "assessment": "sufficient",
+      "reason": "区分累计评分、可见性、位置、提交边界、随机交接及完成集错误，并给出能改变实际执行结果的负对照。性能诊断固定工作量、分离消费与准备、再放开准入，具有不同预测和反证后的修正方向。当前脚本支持其中声明的有限 CPU 机制范围。",
+      "evidence": [
+        {
+          "path": "knowledge/algorithms/branch-generation.md",
+          "quote": "负对照真的消费 T 并提前发布其 KV，或者交付 B,E 的状态；让同一个独立重放检查器拒绝。"
+        },
+        {
+          "path": "knowledge/algorithms/branch-generation.md",
+          "quote": "如果只在放开准入后出现差距，支持容量/排队解释；固定请求后仍慢，则继续查计算和关键路径。"
+        }
+      ]
+    }
+  },
+  "findings": [],
+  "limitations": [
+    "实际执行证据来自所供 actual_preflight；本审阅 invocation 未另行启动 Python，也未进行本地文件哈希或链接存在性检查。",
+    "检查限于两层标量 attention、有限前缀概率表和合成页对象；不验证真实 checkpoint、递归模型、完整 grammar 编译器、GPU 数值或设备可见性。",
+    "提交检查验证单轮逻辑状态交接及发布前失败保护，未执行真实异步页池的取消、最后使用者排空或资源复用。",
+    "随机检查说明有限独立抽取与重复随机位置的差异，不证明具体 PRNG、子流导出质量或生产调度器的随机分配；脚本未建模草稿 RNG 的独立交付字段。",
+    "未测量 DRAM/互连事务、吞吐或 Agent 使用效果；S-PAGED 与 S-SGLANG 原文仅按提供摘录核对。"
+  ],
+  "checks": [
+    {
+      "script": "tools/check_k_alg_024_full.py",
+      "args": []
+    }
+  ],
+  "reading_scope": "完整阅读所供文件：AGENTS.md [0,567)；docs/knowledge-method.md [0,2251)；docs/knowledge-review.md [0,3016)；knowledge/algorithms/branch-generation.md [0,16706)；五份来源说明 S-EAGLE [0,706)、S-SPEC [0,518)、S-PAGED [0,2206)、S-TORCH-REPRO [0,501)、S-SGLANG [0,472)；相关完整章节 speculation-budget.md [0,3904)、batched-sampling.md [0,2567)、request-batch-identity.md [0,2669)、session-workloads.md [0,3583)、vllm-model-runner.md [0,2207)；完整抽取原文 references/S-EAGLE/fulltext.txt [0,47854)、references/S-SPEC/fulltext.txt [0,47353)、references/S-TORCH-REPRO/fulltext.txt [0,7936)。完整检查用户交付的 tools/check_k_alg_024_full.py 脚本文本、author_notes 和 actual_preflight 执行记录。仅阅读摘录：structured-output.md [0,5621)、[8000,11823)；paged-kv-capacity.md [0,4000)、[8000,10019)、[12000,15425)；heterogeneous-state-cache.md [0,3422)、[8000,14022)；recurrent-hybrid-state.md [0,4000)、[8000,10998)、[12000,14446)；references/S-PAGED/fulltext.txt [0,13120)、[16000,80000)；references/S-SGLANG/fulltext.txt [0,77120)。范围为材料声明的抽取文本零基半开字符区间；未将摘录列入 documents，未读取源码归档、完整 PDF 或 reader.html。",
+  "test_assessment": "明确批准 assigned check 在正文声明的确定性 CPU 逻辑范围内通过，关闭 campaign-K-ALG-024-r1 所要求的本轮检查批准问题。依据是独立审查脚本机制以及提供的真实 remote_bwrap 执行记录：执行 Python 3.12，参数为 -I -S -B -X utf8，脚本哈希与绑定一致，returncode=0、stderr 为空、未超时，输出报告检测到 15 项负对照，其中一项是非法宽度入口检查。此执行属于协调侧证据；作者此前 JavaScript 核算没有被冒记为 Python 运行。beam 参考从完整条件路径重新计算概率，覆盖旧完成、新 EOS、入口及扩展 LIMIT、跨轮宽度和零上限；错误完成集实现实际丢弃旧项并被同一参考拒绝。树参考沿独立完整因果路径执行两层前向，核对各层 KV 与 logits，并检查物理行重排；兄弟可见性和展平位置错误实际改变模型计算。提交参考从所选逻辑 token 独立重放 KV，重算目标概率与 grammar 摘要，并核对明确预期的随机游标；提前消费 bonus、交付错误分支、旧 RNG、错误评分和旧 grammar 均被检测。精确有理数质量检查覆盖反向偏置、Q 零项、p=Q 和不相交支撑；页账使用显式唯一对象集合与公式交叉检查。参考与被测路径共享基础算术函数及固定概率表，因此结论针对可见集合、映射、状态边界和质量守恒，不证明通用算子或真实模型正确。grammar 是计数/校验和替身，随机联合分布检查是有限枚举，页账未模拟异步物理事件；这些遗漏与正文验证边界一致，不构成当前六项标准的阻塞缺口。"
+}

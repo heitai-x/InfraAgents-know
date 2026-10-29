@@ -1,0 +1,163 @@
+{
+  "entry_id": "K-WORK-002",
+  "body_sha256": "7d90b609f04b6d9e132e8a3adbc7ce96c812071af4a3166073a10aa6fe4ef0ef",
+  "reviewer": "sol-reviewer:K-WORK-002:round-2",
+  "decision": "accept",
+  "documents": {
+    "AGENTS.md": "b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a",
+    "docs/knowledge-method.md": "69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb",
+    "docs/knowledge-review.md": "f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21",
+    "knowledge/workloads/arrival-and-concurrency.md": "7d90b609f04b6d9e132e8a3adbc7ce96c812071af4a3166073a10aa6fe4ef0ef",
+    "knowledge/sources/S-MLPERF-LLM.md": "d0a591089c57e5e6d0051cdd73ce4ffc1bbfe60657470732921e25710f936cf0",
+    "knowledge/sources/S-MLPERF-SCENARIOS.md": "e210de2929034d4a6e25a31ee72b81a184412a7e637c979210f91ae02a261b04",
+    "knowledge/sources/S-GENAI-PERF.md": "1db17462a3ae4cd41dcb58a78f3f9fa9e71ff3a51614e56855be07bcb95618e0",
+    "knowledge/workloads/slo-goodput.md": "5aa9b71cddb7d896ffa1fe6d78ac61cf0bb92d76279ae4d563f1110ed9dbedb4",
+    "knowledge/workloads/capacity-planning.md": "2a1fab417c30d8e6984c202d805f31863e0f00e248558c583609b5f9ba7e88c7",
+    "knowledge/workloads/session-workloads.md": "0269e1987e1107d0cf0135cb32aa759c67d5266cfa09fb1402f97704c4ab4d78",
+    "knowledge/tools/statistical-experiments.md": "908b3588a6fa20bb1f2aed9f5db51c4b462953d79f8944cdbcfea7141c74644f",
+    "knowledge/workloads/measurement-comparability.md": "c3c5fbcd9a6b8b4f94954bda424488c83c3a741a2de339fea4f7aa83b4dcc215",
+    "references/S-MLPERF-LLM/upstream/language/llama2-70b/README.md": "f7eee4fb707a5035e7c8f8fe01f351a4620ea1ab904ca8086fcd9043eabb6b5e",
+    "references/S-MLPERF-LLM/upstream/loadgen/README.md": "074479dbeb369205ccc8800450c647893b4901c247e0e4ee7f321f05254e9305",
+    "references/S-MLPERF-SCENARIOS/upstream/loadgen/README.md": "074479dbeb369205ccc8800450c647893b4901c247e0e4ee7f321f05254e9305",
+    "references/S-GENAI-PERF/fulltext.txt": "357d6fcaafc41f2954ea87da567cd2b41ec8a146f8e4f19cb976acf39f539ddc",
+    "tools/check_k_work_002_full.py": "22293c1aa1a80e0a335cd9c6d966f6e599c49424864c702223aacfa209c5d14a"
+  },
+  "criteria": {
+    "definition": {
+      "assessment": "sufficient",
+      "reason": "明确区分计划、依赖就绪、实际发送、准入、业务结束及物理最后使用，给出身份、输入输出和双状态账。闭环关系、Little 长期条件与有限窗口交集分别说明，未混用均值、百分位或成功人口。",
+      "evidence": [
+        {
+          "path": "knowledge/workloads/arrival-and-concurrency.md",
+          "quote": "只有 sᵢ−rᵢ 才能归入就绪后的迟发。"
+        },
+        {
+          "path": "knowledge/workloads/arrival-and-concurrency.md",
+          "quote": "如果人口包含失败、取消和超时，成功完成率就不能自动替代全部离开率。"
+        },
+        {
+          "path": "knowledge/workloads/arrival-and-concurrency.md",
+          "quote": "hᵢ=max(0,min(ℓᵢ,v)−max(eᵢ,u))。"
+        }
+      ]
+    },
+    "legality": {
+      "assessment": "sufficient",
+      "reason": "将完成边界、时钟映射、回收条件和队列模型假设作为合法性条件，将负载模式、队列策略及模型选择作为条件化方案。M/M/1、M/G/1 和流体公式与声明假设一致。来源事实限于固定版本；场景细节明确依赖已供来源说明，没有冒称从 LoadGen README 独立确认场景实现。",
+      "evidence": [
+        {
+          "path": "knowledge/workloads/arrival-and-concurrency.md",
+          "quote": "跨主机时间差需要时钟映射与误差范围；无法对齐时，不能把不同机器的时间戳直接相减。"
+        },
+        {
+          "path": "knowledge/workloads/arrival-and-concurrency.md",
+          "quote": "对单服务台、工作守恒、无限队列、先来先服务、独立到达与独立同分布服务时间"
+        },
+        {
+          "path": "knowledge/workloads/arrival-and-concurrency.md",
+          "quote": "此时不能把模型公式直接作为真实尾部预测，也不能无证明地称其为下界。"
+        }
+      ]
+    },
+    "algorithm": {
+      "assessment": "sufficient",
+      "reason": "伪代码贯通初始化、依赖唤醒、发送、独立准入决定、服务推进、取消、物理清理和窗口冻结；声明进展所需条件。七请求轨迹能够恢复发送 FIFO、服务占用和重复通知处理。取消只撤销业务提交权，回收等待全部物理最后使用。本文机制是请求级事件审计，不承担多层模型前向或采样算法。",
+      "evidence": [
+        {
+          "path": "knowledge/workloads/arrival-and-concurrency.md",
+          "quote": "按凭据至多归还一次槽；立即重新推进就绪 FIFO"
+        },
+        {
+          "path": "knowledge/workloads/arrival-and-concurrency.md",
+          "quote": "业务已取消/超时：保持原终态；迟到准入仍记入准入账并请求清理"
+        },
+        {
+          "path": "knowledge/workloads/arrival-and-concurrency.md",
+          "quote": "仅当逻辑拥有权撤销、全部已提交访问结束、最后消费者退出时回收对象"
+        },
+        {
+          "path": "knowledge/workloads/arrival-and-concurrency.md",
+          "quote": "A 在 2 取消，但服务台到 3.5 才释放；B 在 2.5 排队取消后不再启动。"
+        }
+      ]
+    },
+    "cost": {
+      "assessment": "sufficient",
+      "reason": "六类成本具有具体对象和避免重复计算的条件。CPU 秒、槽秒和链路字节分别建立供需约束；条件化驻留以对象生命期积分，正确算得 7.5 MiB·秒、平均 1.25 MiB、峰值 2 MiB。复杂度描述针对可采用反向边和累计计数的实现；参考脚本中的全表扫描不作为这些复杂度的实现证明。",
+      "evidence": [
+        {
+          "path": "knowledge/workloads/arrival-and-concurrency.md",
+          "quote": "λ_attempt·d_cpu≤Pg，λ_attempt·d_slot≤Cg，λ_attempt·D≤B。"
+        },
+        {
+          "path": "knowledge/workloads/arrival-and-concurrency.md",
+          "quote": "大小与停留时间相关时不能把两个均值直接相乘。共享缓存应按唯一物理对象生命期计算。"
+        },
+        {
+          "path": "knowledge/workloads/arrival-and-concurrency.md",
+          "quote": "则驻留面积为 5.5＋2=7.5 MiB·秒，平均 1.25 MiB，峰值 2 MiB。"
+        },
+        {
+          "path": "knowledge/workloads/arrival-and-concurrency.md",
+          "quote": "回调延迟不自动等于设备执行；重叠段按关键路径计时"
+        }
+      ]
+    },
+    "adaptation": {
+      "assessment": "sufficient",
+      "reason": "逐项说明到达方差、闭环反馈、长度、准入、取消、重试、缓存、资源和窗口变化后保留的不变量及需要重算或放弃的预测。残余积压示例说明突发间隔改变如何累积压力，避免将旧吞吐或固定服务率无条件迁移。",
+      "evidence": [
+        {
+          "path": "knowledge/workloads/arrival-and-concurrency.md",
+          "quote": "重算残余积压和排空；放弃只凭平均 λ 的尾部判断"
+        },
+        {
+          "path": "knowledge/workloads/arrival-and-concurrency.md",
+          "quote": "重测 R(N)，不能把旧闭环吞吐迁移为开放容量"
+        },
+        {
+          "path": "knowledge/workloads/arrival-and-concurrency.md",
+          "quote": "重建服务曲面；放弃固定 μ 或独立服务时间假设"
+        }
+      ]
+    },
+    "diagnosis": {
+      "assessment": "sufficient",
+      "reason": "针对吞吐平台、尾延迟、取消收益、低利用率和幸存者筛选给出竞争解释、受控干预及撤回结论的条件。检查具有独立时间线、区间参考和已检测的负对照，实际执行记录与作者未运行 Python 的声明相容；没有把离线模型提升为设备或 SLO 证明。",
+      "evidence": [
+        {
+          "path": "knowledge/workloads/arrival-and-concurrency.md",
+          "quote": "若 s−r 显著下降且实际压力提高，原点先受生成器限制；发送准时而准入后队列增长则转向服务解释"
+        },
+        {
+          "path": "knowledge/workloads/arrival-and-concurrency.md",
+          "quote": "积压若随突发对齐支持到达解释，服务量同时改变则撤回单因素结论"
+        },
+        {
+          "path": "knowledge/workloads/arrival-and-concurrency.md",
+          "quote": "差异落在独立重复的不确定范围内时，结论是未区分。"
+        },
+        {
+          "path": "knowledge/workloads/arrival-and-concurrency.md",
+          "quote": "检查通过只支持这些模型机制，不证明真实发送器、线程可见性、网络、GPU、时钟映射或端到端 SLO。"
+        }
+      ]
+    }
+  },
+  "findings": [],
+  "limitations": [
+    "检查限于单发送槽、单服务台、单父依赖、每尝试一次非抢占执行及即时模型结果提交；未验证多资源最后使用、跨生命期对象复用、输出消费者、重试和不确定发送协议。",
+    "未执行真实发送器、线程同步、网络、CPU/GPU 服务、时钟映射或端到端 SLO 实验，也未证明知识改善 Agent 构建效果。",
+    "具体 MLPerf 场景语义依据已供来源说明；未独立阅读场景头文件或源码归档。图片、reader.html 及其磁盘可达性不在本次核验范围。",
+    "文件身份使用所供绑定哈希及执行记录；本审阅未重新读取磁盘计算哈希，也未重新运行 Python。"
+  ],
+  "checks": [
+    {
+      "script": "tools/check_k_work_002_full.py",
+      "args": []
+    }
+  ],
+  "no_checks_reason": "",
+  "reading_scope": "完整阅读所供文本，范围均为提取文本中从零开始的半开字符区间：AGENTS.md [0,567)；docs/knowledge-method.md [0,2251)；docs/knowledge-review.md [0,3016)；knowledge/workloads/arrival-and-concurrency.md [0,13114)；knowledge/sources/S-MLPERF-LLM.md [0,702)；knowledge/sources/S-MLPERF-SCENARIOS.md [0,823)；knowledge/sources/S-GENAI-PERF.md [0,506)；knowledge/workloads/slo-goodput.md [0,2616)；knowledge/workloads/capacity-planning.md [0,3442)；knowledge/workloads/session-workloads.md [0,3583)；knowledge/tools/statistical-experiments.md [0,4269)；knowledge/workloads/measurement-comparability.md [0,2988)；references/S-MLPERF-LLM/upstream/language/llama2-70b/README.md [0,12270)；两个所供 LoadGen README 各 [0,11382)；references/S-GENAI-PERF/fulltext.txt [0,46825)。相关摘录仅阅读 knowledge/algorithms/iteration-batching.md [0,11471)、[12000,12671)，knowledge/hardware/cpu-serving.md [0,4962)、[8000,15180)，两者未列入 documents。另完整阅读 candidate.test_script，从导入语句至 main 调用，以及 author_notes 和 actual_preflight 的输出、退出码、脚本哈希与隔离执行参数。未读取未提供的源码、图像或链接目标。",
+  "test_assessment": "明确批准 assigned check：tools/check_k_work_002_full.py，脚本参数为空。campaign-K-WORK-002-r1 要求的独立审阅者明确批准在本记录中完成，该 artifact_contract 问题关闭。审阅不是依据退出码直接接受：已逐分支检查 simulate、audit、verify 和流体参考算法，并独立复算组合轨迹。手工给定 expected 时间线独立于事件生成器；audit 在事件前积分，verify 另由逐请求区间交集及中点扫描核对面积和驻留峰值；业务人口与准入决定分别守恒。所得逻辑面积 5.5、物理面积 6、排空面积 2 请求·秒及条件化驻留 7.5 MiB·秒与正文一致。流体参考通过逐步到达、实际服务和余额守恒复算积压 120、排空 3 秒以及重复突发余额 80、200；两个删失反例分别产生高估和低估。所供 actual_preflight 记录脚本 SHA256 与绑定一致，实际使用 Python 3.12 在 remote_bwrap 中执行，returncode=0、stderr 为空、未超时。stdout 实际记录五个事件缺陷和一个流体缺陷均被拒绝：取消后成功由终态不可覆盖不变量检出，其余事件变异由独立业务状态或时间戳参考检出，流体变异由服务守恒参考检出。这些检测针对本章的取消、准入、唤醒、物理完成及积压机制，不是仅检查程序能否退出。空人口、零时长失败、同时到达、窗口初在途、窗口末未完成和重复完成得到覆盖。参考脚本没有覆盖一般多父依赖、多资源回收、迟到准入协议、发送失败、跨代对象复用、流式消费者或动态组批；这些是已声明模型边界，不据此否定正文请求级机制。作者仅声称执行 V8 复算、未执行 Python；协调者提供的 Python 实际执行记录补足运行证据，本审阅没有将作者侧未执行检查记为 PASS，也没有声称自行重跑。"
+}

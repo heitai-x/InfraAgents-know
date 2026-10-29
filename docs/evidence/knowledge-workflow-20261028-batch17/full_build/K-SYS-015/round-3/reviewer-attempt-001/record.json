@@ -1,0 +1,543 @@
+{
+  "role": "reviewer",
+  "engine": "sol",
+  "requested_model": "gpt-6.1-sol",
+  "reasoning_effort": "high",
+  "prompt_sha256": "d722e132d1ba1aed4b774e764391dc65212f5a67d340afb69bebf6c676353503",
+  "usage": [
+    {
+      "input_tokens": 229582,
+      "cached_input_tokens": 7552,
+      "cache_write_input_tokens": 0,
+      "output_tokens": 5221,
+      "reasoning_output_tokens": 719
+    }
+  ],
+  "answer": "{\n  \"entry_id\": \"K-SYS-015\",\n  \"body_sha256\": \"3fc7488ffbe227f04e7264f30b4e80fecec80dc0a3328d0f442b8941f097ce92\",\n  \"reviewer\": \"sol-reviewer:K-SYS-015:round-3\",\n  \"decision\": \"accept\",\n  \"documents\": {\n    \"AGENTS.md\": \"b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a\",\n    \"docs/knowledge-method.md\": \"69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb\",\n    \"docs/knowledge-review.md\": \"f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21\",\n    \"knowledge/system-semantics/host-runtime.md\": \"3fc7488ffbe227f04e7264f30b4e80fecec80dc0a3328d0f442b8941f097ce92\",\n    \"knowledge/sources/S-ASGI.md\": \"ca77c63e9a95b8be934ae485d89245f895dc7fa49fdf7fcce03b139346127ed9\",\n    \"knowledge/sources/S-CPU-TUNING.md\": \"46948047959d30284614764d498ea02e41e76a47bf55597fec93df61e14964fb\",\n    \"knowledge/sources/S-OTEL.md\": \"b68ba3b2833dc7f9f5ad7f49ae395fa70cc31b94252dd1741149e1fd1eca4068\",\n    \"knowledge/sources/S-PY-SUBPROCESS.md\": \"a466b22c1b51e2d1612328903406712c1e30d38770a6510d96a3937ff1bede32\",\n    \"knowledge/sources/S-LINUX-RESOURCES.md\": \"d829824442f5a9abd36c3caf63c5fd30da8da4f8839db88e33aa045b7baa05f0\",\n    \"knowledge/sources/S-TORCH-CUDA.md\": \"8ee61677a1e35d475d9bb122b2c7fa824ccf054acefbe2f12345d72c1fb1b00e\",\n    \"knowledge/engine-index/vllm-scheduler.md\": \"9e576ff7711ed5e448a4bedfe7ab69949a79bc3f61417bf258f7a3b56caf1fe5\",\n    \"references/S-ASGI/fulltext.txt\": \"ba273c91f3e7b8c32f863e8b57145798c3b5c9275073f758a41e1cb0a6f5bee3\",\n    \"references/S-OTEL/fulltext.txt\": \"f00d2f265bdd7aceff39c2d3c52f7cd3ab12b061e1f02cefaf84d6e12afa34a4\",\n    \"references/S-PY-SUBPROCESS/fulltext.txt\": \"c0e2a25feb2068a3f3bd2b0dae31f1f1e090e470631df574f92f4ceb935b37e5\",\n    \"tools/check_k_sys_015_full.py\": \"2bf413b70e0044ce16bcda18516986c8668f49b69cd25d301467e485c6b05751\"\n  },\n  \"criteria\": {\n    \"definition\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"明确主机协调问题、请求尝试与物理分配身份、阶段状态、业务资格及访问责任；入口、私有输出和物理容量分别定义。R 与未结束 READ 的对应关系消除了本轮问题中的授权歧义。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/system-semantics/host-runtime.md\",\n          \"quote\": \"请求尝试 g 与物理槽代次 epoch 不同：前者决定业务结果归属，后者决定哪次分配仍受保护。\"\n        },\n        {\n          \"path\": \"knowledge/system-semantics/host-runtime.md\",\n          \"quote\": \"因此在一次拥有者事务结束的稳定边界，R 恰好是 U 中 READ 项的键集合。\"\n        }\n      ]\n    },\n    \"legality\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"将容量先行预留、最后访问后复用、匹配身份结算和控制可运行性列为约束；将串行拥有者、完成后发布、不可变对象及输出预留时机明确作为保守选择。响应预算说明了上界假设，未把异步名称或线程数量当作保证。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/system-semantics/host-runtime.md\",\n          \"quote\": \"没有相应上界时，该式只能作为预算模型，不能声称已经保证取消时延。\"\n        },\n        {\n          \"path\": \"knowledge/system-semantics/host-runtime.md\",\n          \"quote\": \"异步操作若不能限制写入范围，就必须在提交前取得完整可信上界，否则该候选不可用。\"\n        },\n        {\n          \"path\": \"knowledge/system-semantics/host-runtime.md\",\n          \"quote\": \"已发布对象不可变是本方案的选择；需要 UPDATE 或原地追加时，应另证明访问范围、先后关系和失败后有效内容。\"\n        }\n      ]\n    },\n    \"algorithm\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"准入、输出预留、生产、完成、发布、交接、取消和回收形成完整路径。STEP 明确分别提交 READ/WRITE 证书，ON_DONE 从登记模式分派，SETTLE_READ 原子结算 U/R，RELEASE_READ 仅为适配入口。同步完成与取消后的迟到完成均有展开；重复、旧代、不完整和失败证书的责任变化明确。R2 的 READ-COMPLETION-ROUTING 问题关闭。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/system-semantics/host-runtime.md\",\n          \"quote\": \"7 把输入 READ、输出 WRITE 及其他使用的证书分别交给 ON_DONE\"\n        },\n        {\n          \"path\": \"knowledge/system-semantics/host-runtime.md\",\n          \"quote\": \"原子移除 U 中该 READ 与 R 中同一个 key 的读取授权\"\n        },\n        {\n          \"path\": \"knowledge/system-semantics/host-runtime.md\",\n          \"quote\": \"若主状态为 RETIRING：保持 RETIRING，不接受新使用\"\n        },\n        {\n          \"path\": \"knowledge/system-semantics/host-runtime.md\",\n          \"quote\": \"只接受已登记为 READ 的使用；转交 ON_DONE，执行相同验证和原子结算\"\n        }\n      ]\n    },\n    \"cost\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"六类成本在同一方案下列账，区分 CPU 服务、等待、通信、物理容量和阶段 credit。配额比值量纲正确，4.2/3.9 CPU 秒每秒及 48 MiB 算例正确；交接不增加副本时 M 不变。证书通知延迟按容量乘时间计驻留积分，未计为同长 CPU 服务。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/system-semantics/host-runtime.md\",\n          \"quote\": \"阶段 credit 是局部责任预算，与全局物理账分别检查，不能把两者相加当成实际内存。\"\n        },\n        {\n          \"path\": \"knowledge/system-semantics/host-runtime.md\",\n          \"quote\": \"处理一份覆盖 m 项使用的证书仍需 O(m) 核对。\"\n        },\n        {\n          \"path\": \"knowledge/system-semantics/host-runtime.md\",\n          \"quote\": \"该延迟在无其他持有者的设定下增加 bδ 的驻留积分，并延长一个入口 credit 的占用 δ\"\n        }\n      ]\n    },\n    \"adaptation\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"说明输入、输出上界、配额、下游速度、复制方式、同步性及读者数量变化时保留哪些身份与生命期规则、重算哪些预算，以及何时分片、拆域或放弃增加并发。未将增加 worker 或缓冲视为无条件改善。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/system-semantics/host-runtime.md\",\n          \"quote\": \"同步调用改成异步调用时，保留统一 ON_DONE 结算协议，调整证书产生时刻和覆盖域，不能再以提交返回代替输入读取结束。\"\n        },\n        {\n          \"path\": \"knowledge/system-semantics/host-runtime.md\",\n          \"quote\": \"设备已饱和而主机充足时，继续增加域与在途槽可能只增加驻留和尾延迟。\"\n        }\n      ]\n    },\n    \"diagnosis\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"提供竞争解释、可控干预、观测身份与反证后的修正。针对授权泄漏，实验要求完整 READ 证书仅走 ON_DONE，区分真实未结束访问、合法持有及软件残留；故障变体实际产生残留状态，由正常轨迹共用的历史审计器检出。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/system-semantics/host-runtime.md\",\n          \"quote\": \"让输入 READ 的完整证书只走 ON_DONE，分别测试正常结束与取消后迟到完成，核对 R 与历史未结束读取集合\"\n        },\n        {\n          \"path\": \"knowledge/system-semantics/host-runtime.md\",\n          \"quote\": \"遗漏读取授权结算的故障变体实际执行 done、移除 U，却保留 R。\"\n        },\n        {\n          \"path\": \"knowledge/system-semantics/host-runtime.md\",\n          \"quote\": \"trace/span 提供关联，不能代替资源责任或同步证据。\"\n        }\n      ]\n    }\n  },\n  \"findings\": [],\n  \"limitations\": [\n    \"结论限于所供正文、材料范围、完整脚本和执行记录。本审阅未自行运行 Python、重新计算文件哈希或检查磁盘链接存在性；不将这些事项记为 PASS。\",\n    \"生命周期检查固定一个请求尝试和存储槽，变化 epoch、uid、模式及整项结束证据；不验证真实身份解析、访问范围证明、证书真实性或平台完成适配器。入口 credit 使用一对象一入口模型。\",\n    \"阶段容量模型假定交接时访问已结束，与异步生命周期模型分别验证，未构成完整引擎集成检查。物理容量不足分支的外部占用快照明确排除于封闭对象账审计。\",\n    \"控制 tick 的符号可达性不证明真实线程调度公平性或取消时延；检查未证明锁、原子性、内存序、cgroup 节流、NUMA、分配器、DMA、设备可见性、网络交付或端到端 SLO。\",\n    \"子进程退出由环境事件提供，未启动真实子进程，不能证明终止信号生效、后代退出或外部访问排空。\",\n    \"S-CPU-TUNING 仅有机制说明；Linux、CUDA 原文及多数相关章节仅按所供摘录核对。未读取上游源码归档，未独立核验提交日期与归档 provenance，也没有 Agent 使用效果证据。\"\n  ],\n  \"checks\": [\n    {\n      \"script\": \"tools/check_k_sys_015_full.py\",\n      \"args\": [],\n      \"execution_source\": \"用户提供的 actual_preflight；本审阅检查脚本逻辑与该实际执行记录，未自行重跑\",\n      \"script_sha256\": \"2bf413b70e0044ce16bcda18516986c8668f49b69cd25d301467e485c6b05751\",\n      \"interpreter\": \"Python 3.12\",\n      \"interpreter_args\": [\n        \"-I\",\n        \"-S\",\n        \"-B\",\n        \"-X\",\n        \"utf8\"\n      ],\n      \"backend\": \"remote_bwrap\",\n      \"returncode\": 0,\n      \"timed_out\": false,\n      \"stderr\": \"\",\n      \"result\": \"所供执行记录绑定当前脚本及正文哈希。四组检查完成；16 种读取完成排列组合通过。正常与取消两种遗漏 R 结算变体均被同一审计器拒绝为 READ_AUTHORIZATION_RESIDUE:done，并保留 readers=['input']、entry_credit=[1,4]、recyclable=false。\"\n    }\n  ],\n  \"reading_scope\": {\n    \"basis\": \"阅读用户消息提供的完整候选、完整测试脚本、作者说明、待处理问题、author_material_scopes、actual_preflight 和 materials。以下范围采用 materials 的零基、半开 extracted-character 坐标；未以摘录推断全文阅读。documents 仅列完整提供并阅读的文件。\",\n    \"full\": {\n      \"AGENTS.md\": [[0, 567]],\n      \"docs/knowledge-method.md\": [[0, 2251]],\n      \"docs/knowledge-review.md\": [[0, 3016]],\n      \"knowledge/system-semantics/host-runtime.md\": [[0, 17396]],\n      \"knowledge/sources/S-ASGI.md\": [[0, 491]],\n      \"knowledge/sources/S-CPU-TUNING.md\": [[0, 731]],\n      \"knowledge/sources/S-OTEL.md\": [[0, 520]],\n      \"knowledge/sources/S-PY-SUBPROCESS.md\": [[0, 509]],\n      \"knowledge/sources/S-LINUX-RESOURCES.md\": [[0, 949]],\n      \"knowledge/sources/S-TORCH-CUDA.md\": [[0, 1468]],\n      \"knowledge/engine-index/vllm-scheduler.md\": [[0, 2314]],\n      \"references/S-ASGI/fulltext.txt\": [[0, 23566]],\n      \"references/S-OTEL/fulltext.txt\": [[0, 8256]],\n      \"references/S-PY-SUBPROCESS/fulltext.txt\": [[0, 62026]]\n    },\n    \"full_without_supplied_character_coordinates\": [\n      \"tools/check_k_sys_015_full.py：candidate.test_script 全文\"\n    ],\n    \"excerpts\": {\n      \"knowledge/hardware/cpu-serving.md\": [[12000, 14833]],\n      \"knowledge/system-semantics/service-protocol.md\": [[0, 2833]],\n      \"knowledge/system-semantics/cancellation-resource-completion.md\": [[0, 2833]],\n      \"knowledge/system-semantics/request-batch-identity.md\": [[16000, 18833]],\n      \"knowledge/tools/trace-observability.md\": [[0, 2833]],\n      \"knowledge/frameworks/streams-allocator.md\": [[0, 2833]],\n      \"knowledge/algorithms/async-scheduling.md\": [[8000, 10833]],\n      \"knowledge/system-semantics/design-synthesis.md\": [[12000, 14833]],\n      \"knowledge/algorithms/iteration-batching.md\": [[0, 2833]],\n      \"knowledge/algorithms/cross-attention-cache.md\": [[12000, 14833]],\n      \"knowledge/frameworks/inference-eval.md\": [[0, 2833]],\n      \"knowledge/frameworks/mlx-serving.md\": [[4000, 6833]],\n      \"knowledge/hardware/memory-and-roofline.md\": [[8000, 10833]],\n      \"knowledge/models/encoder-decoder-streaming.md\": [[4000, 4934], [12000, 13899]],\n      \"knowledge/models/vision-language.md\": [[12000, 14833]],\n      \"knowledge/models/video-generation.md\": [[12000, 14833]],\n      \"knowledge/models/speech-generation.md\": [[0, 2833]],\n      \"knowledge/models/omni-multimodal.md\": [[0, 772], [20000, 22061]],\n      \"knowledge/system-semantics/tokenization-io.md\": [[8000, 10833]],\n      \"knowledge/tools/framework-profiler-scope.md\": [[8000, 10833]],\n      \"knowledge/workloads/metric-events.md\": [[8000, 10833]],\n      \"knowledge/workloads/slo-goodput.md\": [[8000, 10833]],\n      \"knowledge/workloads/capacity-planning.md\": [[4000, 6833]],\n      \"knowledge/hardware/cpu-linear-kernels.md\": [[8000, 10833]],\n      \"knowledge/hardware/storage-io.md\": [[8000, 10833]],\n      \"knowledge/system-semantics/deployment-environment.md\": [[0, 2833]],\n      \"knowledge/models/vision-inference.md\": [[0, 2833]],\n      \"knowledge/models/graph-inference.md\": [[0, 2833]],\n      \"knowledge/system-semantics/known-tensions.md\": [[0, 2833]],\n      \"references/S-LINUX-RESOURCES/fulltext.txt\": [[0, 4000], [8000, 12000], [16000, 20000], [40000, 68000], [72000, 76000], [84000, 96000], [100000, 100933], [112000, 116000], [120000, 124000]],\n      \"references/S-TORCH-CUDA/fulltext.txt\": [[0, 4000], [8000, 12000], [16000, 48933], [52000, 72000], [76000, 80000]]\n    },\n    \"author_scope_assessment\": \"作者材料账与本审阅范围分别处理。作者账中的旧正文哈希 005342b6131acdd072d5cf35456a5b01e5630f764b614e7090639fde01a5b36a 不是当前候选；作者接收的 Linux/CUDA 摘录范围也大于本审阅范围。账本说明材料暴露范围，不证明认知阅读。当前候选没有把 S-CPU-TUNING 说明或 Linux/CUDA 摘录声称为作者完整原文阅读，未发现据此扩大的来源事实主张。\"\n  },\n  \"test_assessment\": \"审阅了完整 reducer、历史参考、负对照及执行输出。audit_buffer 不调用 _on_done 或 _settle_read，而从 issued 登记历史减去 receipts 完整证据重建未结束责任，逐快照比较 U、R、writer、phase、隔离及 credit；因此遗漏授权结算会在 done 后直接被独立关系检出。故障变体实际执行完成路径并删除 U、保留 R，未主动以预定异常代替错误状态；正常和取消变体均在所供新哈希执行记录中被同一检查器检出。正向覆盖同步 done、退休及取消后迟到完成、双读者顺序、done/release 路由、证据不足、失败但访问结束、重复、未知、旧代同 uid 和零容量。阶段审计从对象归属重新计算三种账，负对照检出零字节超项、漏输出字节和孤儿对象；子进程审计区分终止请求与独立退出事件；算术用 Fraction 和逐字节集合核对。测试不是仅凭退出码认可的同义复述。作者阶段未执行新 Python 的说明与随后提供的 actual_preflight 分属不同执行主体；本轮重跑证据由后者补足，不能倒写为作者已运行。平台证据、真实范围校验、多入口共享及完整引擎集成等未覆盖部分已明确限制，未发现需要继续阻断接受的当前语义缺口。\"\n}",
+  "exit_code": 0,
+  "status": "completed",
+  "timeout_seconds": 1800,
+  "response_path": "D:\\桌面\\xdb\\InfraAgents\\InfraAgents-know-astra-new\\InfraAgents-know\\docs\\evidence\\knowledge-workflow-20261028-batch17\\full_build\\K-SYS-015\\round-3\\reviewer-attempt-001\\answer.txt",
+  "record_path": "D:\\桌面\\xdb\\InfraAgents\\InfraAgents-know-astra-new\\InfraAgents-know\\docs\\evidence\\knowledge-workflow-20261028-batch17\\full_build\\K-SYS-015\\round-3\\reviewer-attempt-001\\record.json",
+  "tool_events": [],
+  "inventory_tool_events": [],
+  "rejected_tool_events": [],
+  "tool_policy": "metadata_inventory_only",
+  "tool_policy_version": "metadata-inventory-v1",
+  "tool_policy_scope": "Only empty-argument codex host plugin/skill-directory descriptors and empty template inventory; inventory is not knowledge evidence. All other tool events reject the call.",
+  "tool_policy_reason": "Production chapter construction allows observed generic capability discovery metadata; this does not claim a zero-tool comparison or external source reading.",
+  "malformed_event_lines": [],
+  "turn_completed": true,
+  "error_events": [],
+  "recovered_transport_events": [],
+  "terminal_error_events": [],
+  "transport_recovered": false,
+  "actual_model": null,
+  "identity_verified": null,
+  "identity_basis": "Explicit CLI model and isolated HTTP provider; CLI events do not expose server model identity.",
+  "provider": "eval-openai-http",
+  "max_output_tokens": null,
+  "cli_version": "codex-cli 0.164.0-alpha.11.1",
+  "cost_scope": "Codex token usage is reported; subscription charge is not exposed.",
+  "parsed": {
+    "entry_id": "K-SYS-015",
+    "body_sha256": "3fc7488ffbe227f04e7264f30b4e80fecec80dc0a3328d0f442b8941f097ce92",
+    "reviewer": "sol-reviewer:K-SYS-015:round-3",
+    "decision": "accept",
+    "documents": {
+      "AGENTS.md": "b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a",
+      "docs/knowledge-method.md": "69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb",
+      "docs/knowledge-review.md": "f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21",
+      "knowledge/system-semantics/host-runtime.md": "3fc7488ffbe227f04e7264f30b4e80fecec80dc0a3328d0f442b8941f097ce92",
+      "knowledge/sources/S-ASGI.md": "ca77c63e9a95b8be934ae485d89245f895dc7fa49fdf7fcce03b139346127ed9",
+      "knowledge/sources/S-CPU-TUNING.md": "46948047959d30284614764d498ea02e41e76a47bf55597fec93df61e14964fb",
+      "knowledge/sources/S-OTEL.md": "b68ba3b2833dc7f9f5ad7f49ae395fa70cc31b94252dd1741149e1fd1eca4068",
+      "knowledge/sources/S-PY-SUBPROCESS.md": "a466b22c1b51e2d1612328903406712c1e30d38770a6510d96a3937ff1bede32",
+      "knowledge/sources/S-LINUX-RESOURCES.md": "d829824442f5a9abd36c3caf63c5fd30da8da4f8839db88e33aa045b7baa05f0",
+      "knowledge/sources/S-TORCH-CUDA.md": "8ee61677a1e35d475d9bb122b2c7fa824ccf054acefbe2f12345d72c1fb1b00e",
+      "knowledge/engine-index/vllm-scheduler.md": "9e576ff7711ed5e448a4bedfe7ab69949a79bc3f61417bf258f7a3b56caf1fe5",
+      "references/S-ASGI/fulltext.txt": "ba273c91f3e7b8c32f863e8b57145798c3b5c9275073f758a41e1cb0a6f5bee3",
+      "references/S-OTEL/fulltext.txt": "f00d2f265bdd7aceff39c2d3c52f7cd3ab12b061e1f02cefaf84d6e12afa34a4",
+      "references/S-PY-SUBPROCESS/fulltext.txt": "c0e2a25feb2068a3f3bd2b0dae31f1f1e090e470631df574f92f4ceb935b37e5",
+      "tools/check_k_sys_015_full.py": "2bf413b70e0044ce16bcda18516986c8668f49b69cd25d301467e485c6b05751"
+    },
+    "criteria": {
+      "definition": {
+        "assessment": "sufficient",
+        "reason": "明确主机协调问题、请求尝试与物理分配身份、阶段状态、业务资格及访问责任；入口、私有输出和物理容量分别定义。R 与未结束 READ 的对应关系消除了本轮问题中的授权歧义。",
+        "evidence": [
+          {
+            "path": "knowledge/system-semantics/host-runtime.md",
+            "quote": "请求尝试 g 与物理槽代次 epoch 不同：前者决定业务结果归属，后者决定哪次分配仍受保护。"
+          },
+          {
+            "path": "knowledge/system-semantics/host-runtime.md",
+            "quote": "因此在一次拥有者事务结束的稳定边界，R 恰好是 U 中 READ 项的键集合。"
+          }
+        ]
+      },
+      "legality": {
+        "assessment": "sufficient",
+        "reason": "将容量先行预留、最后访问后复用、匹配身份结算和控制可运行性列为约束；将串行拥有者、完成后发布、不可变对象及输出预留时机明确作为保守选择。响应预算说明了上界假设，未把异步名称或线程数量当作保证。",
+        "evidence": [
+          {
+            "path": "knowledge/system-semantics/host-runtime.md",
+            "quote": "没有相应上界时，该式只能作为预算模型，不能声称已经保证取消时延。"
+          },
+          {
+            "path": "knowledge/system-semantics/host-runtime.md",
+            "quote": "异步操作若不能限制写入范围，就必须在提交前取得完整可信上界，否则该候选不可用。"
+          },
+          {
+            "path": "knowledge/system-semantics/host-runtime.md",
+            "quote": "已发布对象不可变是本方案的选择；需要 UPDATE 或原地追加时，应另证明访问范围、先后关系和失败后有效内容。"
+          }
+        ]
+      },
+      "algorithm": {
+        "assessment": "sufficient",
+        "reason": "准入、输出预留、生产、完成、发布、交接、取消和回收形成完整路径。STEP 明确分别提交 READ/WRITE 证书，ON_DONE 从登记模式分派，SETTLE_READ 原子结算 U/R，RELEASE_READ 仅为适配入口。同步完成与取消后的迟到完成均有展开；重复、旧代、不完整和失败证书的责任变化明确。R2 的 READ-COMPLETION-ROUTING 问题关闭。",
+        "evidence": [
+          {
+            "path": "knowledge/system-semantics/host-runtime.md",
+            "quote": "7 把输入 READ、输出 WRITE 及其他使用的证书分别交给 ON_DONE"
+          },
+          {
+            "path": "knowledge/system-semantics/host-runtime.md",
+            "quote": "原子移除 U 中该 READ 与 R 中同一个 key 的读取授权"
+          },
+          {
+            "path": "knowledge/system-semantics/host-runtime.md",
+            "quote": "若主状态为 RETIRING：保持 RETIRING，不接受新使用"
+          },
+          {
+            "path": "knowledge/system-semantics/host-runtime.md",
+            "quote": "只接受已登记为 READ 的使用；转交 ON_DONE，执行相同验证和原子结算"
+          }
+        ]
+      },
+      "cost": {
+        "assessment": "sufficient",
+        "reason": "六类成本在同一方案下列账，区分 CPU 服务、等待、通信、物理容量和阶段 credit。配额比值量纲正确，4.2/3.9 CPU 秒每秒及 48 MiB 算例正确；交接不增加副本时 M 不变。证书通知延迟按容量乘时间计驻留积分，未计为同长 CPU 服务。",
+        "evidence": [
+          {
+            "path": "knowledge/system-semantics/host-runtime.md",
+            "quote": "阶段 credit 是局部责任预算，与全局物理账分别检查，不能把两者相加当成实际内存。"
+          },
+          {
+            "path": "knowledge/system-semantics/host-runtime.md",
+            "quote": "处理一份覆盖 m 项使用的证书仍需 O(m) 核对。"
+          },
+          {
+            "path": "knowledge/system-semantics/host-runtime.md",
+            "quote": "该延迟在无其他持有者的设定下增加 bδ 的驻留积分，并延长一个入口 credit 的占用 δ"
+          }
+        ]
+      },
+      "adaptation": {
+        "assessment": "sufficient",
+        "reason": "说明输入、输出上界、配额、下游速度、复制方式、同步性及读者数量变化时保留哪些身份与生命期规则、重算哪些预算，以及何时分片、拆域或放弃增加并发。未将增加 worker 或缓冲视为无条件改善。",
+        "evidence": [
+          {
+            "path": "knowledge/system-semantics/host-runtime.md",
+            "quote": "同步调用改成异步调用时，保留统一 ON_DONE 结算协议，调整证书产生时刻和覆盖域，不能再以提交返回代替输入读取结束。"
+          },
+          {
+            "path": "knowledge/system-semantics/host-runtime.md",
+            "quote": "设备已饱和而主机充足时，继续增加域与在途槽可能只增加驻留和尾延迟。"
+          }
+        ]
+      },
+      "diagnosis": {
+        "assessment": "sufficient",
+        "reason": "提供竞争解释、可控干预、观测身份与反证后的修正。针对授权泄漏，实验要求完整 READ 证书仅走 ON_DONE，区分真实未结束访问、合法持有及软件残留；故障变体实际产生残留状态，由正常轨迹共用的历史审计器检出。",
+        "evidence": [
+          {
+            "path": "knowledge/system-semantics/host-runtime.md",
+            "quote": "让输入 READ 的完整证书只走 ON_DONE，分别测试正常结束与取消后迟到完成，核对 R 与历史未结束读取集合"
+          },
+          {
+            "path": "knowledge/system-semantics/host-runtime.md",
+            "quote": "遗漏读取授权结算的故障变体实际执行 done、移除 U，却保留 R。"
+          },
+          {
+            "path": "knowledge/system-semantics/host-runtime.md",
+            "quote": "trace/span 提供关联，不能代替资源责任或同步证据。"
+          }
+        ]
+      }
+    },
+    "findings": [],
+    "limitations": [
+      "结论限于所供正文、材料范围、完整脚本和执行记录。本审阅未自行运行 Python、重新计算文件哈希或检查磁盘链接存在性；不将这些事项记为 PASS。",
+      "生命周期检查固定一个请求尝试和存储槽，变化 epoch、uid、模式及整项结束证据；不验证真实身份解析、访问范围证明、证书真实性或平台完成适配器。入口 credit 使用一对象一入口模型。",
+      "阶段容量模型假定交接时访问已结束，与异步生命周期模型分别验证，未构成完整引擎集成检查。物理容量不足分支的外部占用快照明确排除于封闭对象账审计。",
+      "控制 tick 的符号可达性不证明真实线程调度公平性或取消时延；检查未证明锁、原子性、内存序、cgroup 节流、NUMA、分配器、DMA、设备可见性、网络交付或端到端 SLO。",
+      "子进程退出由环境事件提供，未启动真实子进程，不能证明终止信号生效、后代退出或外部访问排空。",
+      "S-CPU-TUNING 仅有机制说明；Linux、CUDA 原文及多数相关章节仅按所供摘录核对。未读取上游源码归档，未独立核验提交日期与归档 provenance，也没有 Agent 使用效果证据。"
+    ],
+    "checks": [
+      {
+        "script": "tools/check_k_sys_015_full.py",
+        "args": [],
+        "execution_source": "用户提供的 actual_preflight；本审阅检查脚本逻辑与该实际执行记录，未自行重跑",
+        "script_sha256": "2bf413b70e0044ce16bcda18516986c8668f49b69cd25d301467e485c6b05751",
+        "interpreter": "Python 3.12",
+        "interpreter_args": [
+          "-I",
+          "-S",
+          "-B",
+          "-X",
+          "utf8"
+        ],
+        "backend": "remote_bwrap",
+        "returncode": 0,
+        "timed_out": false,
+        "stderr": "",
+        "result": "所供执行记录绑定当前脚本及正文哈希。四组检查完成；16 种读取完成排列组合通过。正常与取消两种遗漏 R 结算变体均被同一审计器拒绝为 READ_AUTHORIZATION_RESIDUE:done，并保留 readers=['input']、entry_credit=[1,4]、recyclable=false。"
+      }
+    ],
+    "reading_scope": {
+      "basis": "阅读用户消息提供的完整候选、完整测试脚本、作者说明、待处理问题、author_material_scopes、actual_preflight 和 materials。以下范围采用 materials 的零基、半开 extracted-character 坐标；未以摘录推断全文阅读。documents 仅列完整提供并阅读的文件。",
+      "full": {
+        "AGENTS.md": [
+          [
+            0,
+            567
+          ]
+        ],
+        "docs/knowledge-method.md": [
+          [
+            0,
+            2251
+          ]
+        ],
+        "docs/knowledge-review.md": [
+          [
+            0,
+            3016
+          ]
+        ],
+        "knowledge/system-semantics/host-runtime.md": [
+          [
+            0,
+            17396
+          ]
+        ],
+        "knowledge/sources/S-ASGI.md": [
+          [
+            0,
+            491
+          ]
+        ],
+        "knowledge/sources/S-CPU-TUNING.md": [
+          [
+            0,
+            731
+          ]
+        ],
+        "knowledge/sources/S-OTEL.md": [
+          [
+            0,
+            520
+          ]
+        ],
+        "knowledge/sources/S-PY-SUBPROCESS.md": [
+          [
+            0,
+            509
+          ]
+        ],
+        "knowledge/sources/S-LINUX-RESOURCES.md": [
+          [
+            0,
+            949
+          ]
+        ],
+        "knowledge/sources/S-TORCH-CUDA.md": [
+          [
+            0,
+            1468
+          ]
+        ],
+        "knowledge/engine-index/vllm-scheduler.md": [
+          [
+            0,
+            2314
+          ]
+        ],
+        "references/S-ASGI/fulltext.txt": [
+          [
+            0,
+            23566
+          ]
+        ],
+        "references/S-OTEL/fulltext.txt": [
+          [
+            0,
+            8256
+          ]
+        ],
+        "references/S-PY-SUBPROCESS/fulltext.txt": [
+          [
+            0,
+            62026
+          ]
+        ]
+      },
+      "full_without_supplied_character_coordinates": [
+        "tools/check_k_sys_015_full.py：candidate.test_script 全文"
+      ],
+      "excerpts": {
+        "knowledge/hardware/cpu-serving.md": [
+          [
+            12000,
+            14833
+          ]
+        ],
+        "knowledge/system-semantics/service-protocol.md": [
+          [
+            0,
+            2833
+          ]
+        ],
+        "knowledge/system-semantics/cancellation-resource-completion.md": [
+          [
+            0,
+            2833
+          ]
+        ],
+        "knowledge/system-semantics/request-batch-identity.md": [
+          [
+            16000,
+            18833
+          ]
+        ],
+        "knowledge/tools/trace-observability.md": [
+          [
+            0,
+            2833
+          ]
+        ],
+        "knowledge/frameworks/streams-allocator.md": [
+          [
+            0,
+            2833
+          ]
+        ],
+        "knowledge/algorithms/async-scheduling.md": [
+          [
+            8000,
+            10833
+          ]
+        ],
+        "knowledge/system-semantics/design-synthesis.md": [
+          [
+            12000,
+            14833
+          ]
+        ],
+        "knowledge/algorithms/iteration-batching.md": [
+          [
+            0,
+            2833
+          ]
+        ],
+        "knowledge/algorithms/cross-attention-cache.md": [
+          [
+            12000,
+            14833
+          ]
+        ],
+        "knowledge/frameworks/inference-eval.md": [
+          [
+            0,
+            2833
+          ]
+        ],
+        "knowledge/frameworks/mlx-serving.md": [
+          [
+            4000,
+            6833
+          ]
+        ],
+        "knowledge/hardware/memory-and-roofline.md": [
+          [
+            8000,
+            10833
+          ]
+        ],
+        "knowledge/models/encoder-decoder-streaming.md": [
+          [
+            4000,
+            4934
+          ],
+          [
+            12000,
+            13899
+          ]
+        ],
+        "knowledge/models/vision-language.md": [
+          [
+            12000,
+            14833
+          ]
+        ],
+        "knowledge/models/video-generation.md": [
+          [
+            12000,
+            14833
+          ]
+        ],
+        "knowledge/models/speech-generation.md": [
+          [
+            0,
+            2833
+          ]
+        ],
+        "knowledge/models/omni-multimodal.md": [
+          [
+            0,
+            772
+          ],
+          [
+            20000,
+            22061
+          ]
+        ],
+        "knowledge/system-semantics/tokenization-io.md": [
+          [
+            8000,
+            10833
+          ]
+        ],
+        "knowledge/tools/framework-profiler-scope.md": [
+          [
+            8000,
+            10833
+          ]
+        ],
+        "knowledge/workloads/metric-events.md": [
+          [
+            8000,
+            10833
+          ]
+        ],
+        "knowledge/workloads/slo-goodput.md": [
+          [
+            8000,
+            10833
+          ]
+        ],
+        "knowledge/workloads/capacity-planning.md": [
+          [
+            4000,
+            6833
+          ]
+        ],
+        "knowledge/hardware/cpu-linear-kernels.md": [
+          [
+            8000,
+            10833
+          ]
+        ],
+        "knowledge/hardware/storage-io.md": [
+          [
+            8000,
+            10833
+          ]
+        ],
+        "knowledge/system-semantics/deployment-environment.md": [
+          [
+            0,
+            2833
+          ]
+        ],
+        "knowledge/models/vision-inference.md": [
+          [
+            0,
+            2833
+          ]
+        ],
+        "knowledge/models/graph-inference.md": [
+          [
+            0,
+            2833
+          ]
+        ],
+        "knowledge/system-semantics/known-tensions.md": [
+          [
+            0,
+            2833
+          ]
+        ],
+        "references/S-LINUX-RESOURCES/fulltext.txt": [
+          [
+            0,
+            4000
+          ],
+          [
+            8000,
+            12000
+          ],
+          [
+            16000,
+            20000
+          ],
+          [
+            40000,
+            68000
+          ],
+          [
+            72000,
+            76000
+          ],
+          [
+            84000,
+            96000
+          ],
+          [
+            100000,
+            100933
+          ],
+          [
+            112000,
+            116000
+          ],
+          [
+            120000,
+            124000
+          ]
+        ],
+        "references/S-TORCH-CUDA/fulltext.txt": [
+          [
+            0,
+            4000
+          ],
+          [
+            8000,
+            12000
+          ],
+          [
+            16000,
+            48933
+          ],
+          [
+            52000,
+            72000
+          ],
+          [
+            76000,
+            80000
+          ]
+        ]
+      },
+      "author_scope_assessment": "作者材料账与本审阅范围分别处理。作者账中的旧正文哈希 005342b6131acdd072d5cf35456a5b01e5630f764b614e7090639fde01a5b36a 不是当前候选；作者接收的 Linux/CUDA 摘录范围也大于本审阅范围。账本说明材料暴露范围，不证明认知阅读。当前候选没有把 S-CPU-TUNING 说明或 Linux/CUDA 摘录声称为作者完整原文阅读，未发现据此扩大的来源事实主张。"
+    },
+    "test_assessment": "审阅了完整 reducer、历史参考、负对照及执行输出。audit_buffer 不调用 _on_done 或 _settle_read，而从 issued 登记历史减去 receipts 完整证据重建未结束责任，逐快照比较 U、R、writer、phase、隔离及 credit；因此遗漏授权结算会在 done 后直接被独立关系检出。故障变体实际执行完成路径并删除 U、保留 R，未主动以预定异常代替错误状态；正常和取消变体均在所供新哈希执行记录中被同一检查器检出。正向覆盖同步 done、退休及取消后迟到完成、双读者顺序、done/release 路由、证据不足、失败但访问结束、重复、未知、旧代同 uid 和零容量。阶段审计从对象归属重新计算三种账，负对照检出零字节超项、漏输出字节和孤儿对象；子进程审计区分终止请求与独立退出事件；算术用 Fraction 和逐字节集合核对。测试不是仅凭退出码认可的同义复述。作者阶段未执行新 Python 的说明与随后提供的 actual_preflight 分属不同执行主体；本轮重跑证据由后者补足，不能倒写为作者已运行。平台证据、真实范围校验、多入口共享及完整引擎集成等未覆盖部分已明确限制，未发现需要继续阻断接受的当前语义缺口。"
+  },
+  "format_status": "strict_json",
+  "format_error": null,
+  "output_text": "{\n  \"entry_id\": \"K-SYS-015\",\n  \"body_sha256\": \"3fc7488ffbe227f04e7264f30b4e80fecec80dc0a3328d0f442b8941f097ce92\",\n  \"reviewer\": \"sol-reviewer:K-SYS-015:round-3\",\n  \"decision\": \"accept\",\n  \"documents\": {\n    \"AGENTS.md\": \"b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a\",\n    \"docs/knowledge-method.md\": \"69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb\",\n    \"docs/knowledge-review.md\": \"f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21\",\n    \"knowledge/system-semantics/host-runtime.md\": \"3fc7488ffbe227f04e7264f30b4e80fecec80dc0a3328d0f442b8941f097ce92\",\n    \"knowledge/sources/S-ASGI.md\": \"ca77c63e9a95b8be934ae485d89245f895dc7fa49fdf7fcce03b139346127ed9\",\n    \"knowledge/sources/S-CPU-TUNING.md\": \"46948047959d30284614764d498ea02e41e76a47bf55597fec93df61e14964fb\",\n    \"knowledge/sources/S-OTEL.md\": \"b68ba3b2833dc7f9f5ad7f49ae395fa70cc31b94252dd1741149e1fd1eca4068\",\n    \"knowledge/sources/S-PY-SUBPROCESS.md\": \"a466b22c1b51e2d1612328903406712c1e30d38770a6510d96a3937ff1bede32\",\n    \"knowledge/sources/S-LINUX-RESOURCES.md\": \"d829824442f5a9abd36c3caf63c5fd30da8da4f8839db88e33aa045b7baa05f0\",\n    \"knowledge/sources/S-TORCH-CUDA.md\": \"8ee61677a1e35d475d9bb122b2c7fa824ccf054acefbe2f12345d72c1fb1b00e\",\n    \"knowledge/engine-index/vllm-scheduler.md\": \"9e576ff7711ed5e448a4bedfe7ab69949a79bc3f61417bf258f7a3b56caf1fe5\",\n    \"references/S-ASGI/fulltext.txt\": \"ba273c91f3e7b8c32f863e8b57145798c3b5c9275073f758a41e1cb0a6f5bee3\",\n    \"references/S-OTEL/fulltext.txt\": \"f00d2f265bdd7aceff39c2d3c52f7cd3ab12b061e1f02cefaf84d6e12afa34a4\",\n    \"references/S-PY-SUBPROCESS/fulltext.txt\": \"c0e2a25feb2068a3f3bd2b0dae31f1f1e090e470631df574f92f4ceb935b37e5\",\n    \"tools/check_k_sys_015_full.py\": \"2bf413b70e0044ce16bcda18516986c8668f49b69cd25d301467e485c6b05751\"\n  },\n  \"criteria\": {\n    \"definition\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"明确主机协调问题、请求尝试与物理分配身份、阶段状态、业务资格及访问责任；入口、私有输出和物理容量分别定义。R 与未结束 READ 的对应关系消除了本轮问题中的授权歧义。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/system-semantics/host-runtime.md\",\n          \"quote\": \"请求尝试 g 与物理槽代次 epoch 不同：前者决定业务结果归属，后者决定哪次分配仍受保护。\"\n        },\n        {\n          \"path\": \"knowledge/system-semantics/host-runtime.md\",\n          \"quote\": \"因此在一次拥有者事务结束的稳定边界，R 恰好是 U 中 READ 项的键集合。\"\n        }\n      ]\n    },\n    \"legality\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"将容量先行预留、最后访问后复用、匹配身份结算和控制可运行性列为约束；将串行拥有者、完成后发布、不可变对象及输出预留时机明确作为保守选择。响应预算说明了上界假设，未把异步名称或线程数量当作保证。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/system-semantics/host-runtime.md\",\n          \"quote\": \"没有相应上界时，该式只能作为预算模型，不能声称已经保证取消时延。\"\n        },\n        {\n          \"path\": \"knowledge/system-semantics/host-runtime.md\",\n          \"quote\": \"异步操作若不能限制写入范围，就必须在提交前取得完整可信上界，否则该候选不可用。\"\n        },\n        {\n          \"path\": \"knowledge/system-semantics/host-runtime.md\",\n          \"quote\": \"已发布对象不可变是本方案的选择；需要 UPDATE 或原地追加时，应另证明访问范围、先后关系和失败后有效内容。\"\n        }\n      ]\n    },\n    \"algorithm\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"准入、输出预留、生产、完成、发布、交接、取消和回收形成完整路径。STEP 明确分别提交 READ/WRITE 证书，ON_DONE 从登记模式分派，SETTLE_READ 原子结算 U/R，RELEASE_READ 仅为适配入口。同步完成与取消后的迟到完成均有展开；重复、旧代、不完整和失败证书的责任变化明确。R2 的 READ-COMPLETION-ROUTING 问题关闭。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/system-semantics/host-runtime.md\",\n          \"quote\": \"7 把输入 READ、输出 WRITE 及其他使用的证书分别交给 ON_DONE\"\n        },\n        {\n          \"path\": \"knowledge/system-semantics/host-runtime.md\",\n          \"quote\": \"原子移除 U 中该 READ 与 R 中同一个 key 的读取授权\"\n        },\n        {\n          \"path\": \"knowledge/system-semantics/host-runtime.md\",\n          \"quote\": \"若主状态为 RETIRING：保持 RETIRING，不接受新使用\"\n        },\n        {\n          \"path\": \"knowledge/system-semantics/host-runtime.md\",\n          \"quote\": \"只接受已登记为 READ 的使用；转交 ON_DONE，执行相同验证和原子结算\"\n        }\n      ]\n    },\n    \"cost\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"六类成本在同一方案下列账，区分 CPU 服务、等待、通信、物理容量和阶段 credit。配额比值量纲正确，4.2/3.9 CPU 秒每秒及 48 MiB 算例正确；交接不增加副本时 M 不变。证书通知延迟按容量乘时间计驻留积分，未计为同长 CPU 服务。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/system-semantics/host-runtime.md\",\n          \"quote\": \"阶段 credit 是局部责任预算，与全局物理账分别检查，不能把两者相加当成实际内存。\"\n        },\n        {\n          \"path\": \"knowledge/system-semantics/host-runtime.md\",\n          \"quote\": \"处理一份覆盖 m 项使用的证书仍需 O(m) 核对。\"\n        },\n        {\n          \"path\": \"knowledge/system-semantics/host-runtime.md\",\n          \"quote\": \"该延迟在无其他持有者的设定下增加 bδ 的驻留积分，并延长一个入口 credit 的占用 δ\"\n        }\n      ]\n    },\n    \"adaptation\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"说明输入、输出上界、配额、下游速度、复制方式、同步性及读者数量变化时保留哪些身份与生命期规则、重算哪些预算，以及何时分片、拆域或放弃增加并发。未将增加 worker 或缓冲视为无条件改善。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/system-semantics/host-runtime.md\",\n          \"quote\": \"同步调用改成异步调用时，保留统一 ON_DONE 结算协议，调整证书产生时刻和覆盖域，不能再以提交返回代替输入读取结束。\"\n        },\n        {\n          \"path\": \"knowledge/system-semantics/host-runtime.md\",\n          \"quote\": \"设备已饱和而主机充足时，继续增加域与在途槽可能只增加驻留和尾延迟。\"\n        }\n      ]\n    },\n    \"diagnosis\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"提供竞争解释、可控干预、观测身份与反证后的修正。针对授权泄漏，实验要求完整 READ 证书仅走 ON_DONE，区分真实未结束访问、合法持有及软件残留；故障变体实际产生残留状态，由正常轨迹共用的历史审计器检出。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/system-semantics/host-runtime.md\",\n          \"quote\": \"让输入 READ 的完整证书只走 ON_DONE，分别测试正常结束与取消后迟到完成，核对 R 与历史未结束读取集合\"\n        },\n        {\n          \"path\": \"knowledge/system-semantics/host-runtime.md\",\n          \"quote\": \"遗漏读取授权结算的故障变体实际执行 done、移除 U，却保留 R。\"\n        },\n        {\n          \"path\": \"knowledge/system-semantics/host-runtime.md\",\n          \"quote\": \"trace/span 提供关联，不能代替资源责任或同步证据。\"\n        }\n      ]\n    }\n  },\n  \"findings\": [],\n  \"limitations\": [\n    \"结论限于所供正文、材料范围、完整脚本和执行记录。本审阅未自行运行 Python、重新计算文件哈希或检查磁盘链接存在性；不将这些事项记为 PASS。\",\n    \"生命周期检查固定一个请求尝试和存储槽，变化 epoch、uid、模式及整项结束证据；不验证真实身份解析、访问范围证明、证书真实性或平台完成适配器。入口 credit 使用一对象一入口模型。\",\n    \"阶段容量模型假定交接时访问已结束，与异步生命周期模型分别验证，未构成完整引擎集成检查。物理容量不足分支的外部占用快照明确排除于封闭对象账审计。\",\n    \"控制 tick 的符号可达性不证明真实线程调度公平性或取消时延；检查未证明锁、原子性、内存序、cgroup 节流、NUMA、分配器、DMA、设备可见性、网络交付或端到端 SLO。\",\n    \"子进程退出由环境事件提供，未启动真实子进程，不能证明终止信号生效、后代退出或外部访问排空。\",\n    \"S-CPU-TUNING 仅有机制说明；Linux、CUDA 原文及多数相关章节仅按所供摘录核对。未读取上游源码归档，未独立核验提交日期与归档 provenance，也没有 Agent 使用效果证据。\"\n  ],\n  \"checks\": [\n    {\n      \"script\": \"tools/check_k_sys_015_full.py\",\n      \"args\": [],\n      \"execution_source\": \"用户提供的 actual_preflight；本审阅检查脚本逻辑与该实际执行记录，未自行重跑\",\n      \"script_sha256\": \"2bf413b70e0044ce16bcda18516986c8668f49b69cd25d301467e485c6b05751\",\n      \"interpreter\": \"Python 3.12\",\n      \"interpreter_args\": [\n        \"-I\",\n        \"-S\",\n        \"-B\",\n        \"-X\",\n        \"utf8\"\n      ],\n      \"backend\": \"remote_bwrap\",\n      \"returncode\": 0,\n      \"timed_out\": false,\n      \"stderr\": \"\",\n      \"result\": \"所供执行记录绑定当前脚本及正文哈希。四组检查完成；16 种读取完成排列组合通过。正常与取消两种遗漏 R 结算变体均被同一审计器拒绝为 READ_AUTHORIZATION_RESIDUE:done，并保留 readers=['input']、entry_credit=[1,4]、recyclable=false。\"\n    }\n  ],\n  \"reading_scope\": {\n    \"basis\": \"阅读用户消息提供的完整候选、完整测试脚本、作者说明、待处理问题、author_material_scopes、actual_preflight 和 materials。以下范围采用 materials 的零基、半开 extracted-character 坐标；未以摘录推断全文阅读。documents 仅列完整提供并阅读的文件。\",\n    \"full\": {\n      \"AGENTS.md\": [[0, 567]],\n      \"docs/knowledge-method.md\": [[0, 2251]],\n      \"docs/knowledge-review.md\": [[0, 3016]],\n      \"knowledge/system-semantics/host-runtime.md\": [[0, 17396]],\n      \"knowledge/sources/S-ASGI.md\": [[0, 491]],\n      \"knowledge/sources/S-CPU-TUNING.md\": [[0, 731]],\n      \"knowledge/sources/S-OTEL.md\": [[0, 520]],\n      \"knowledge/sources/S-PY-SUBPROCESS.md\": [[0, 509]],\n      \"knowledge/sources/S-LINUX-RESOURCES.md\": [[0, 949]],\n      \"knowledge/sources/S-TORCH-CUDA.md\": [[0, 1468]],\n      \"knowledge/engine-index/vllm-scheduler.md\": [[0, 2314]],\n      \"references/S-ASGI/fulltext.txt\": [[0, 23566]],\n      \"references/S-OTEL/fulltext.txt\": [[0, 8256]],\n      \"references/S-PY-SUBPROCESS/fulltext.txt\": [[0, 62026]]\n    },\n    \"full_without_supplied_character_coordinates\": [\n      \"tools/check_k_sys_015_full.py：candidate.test_script 全文\"\n    ],\n    \"excerpts\": {\n      \"knowledge/hardware/cpu-serving.md\": [[12000, 14833]],\n      \"knowledge/system-semantics/service-protocol.md\": [[0, 2833]],\n      \"knowledge/system-semantics/cancellation-resource-completion.md\": [[0, 2833]],\n      \"knowledge/system-semantics/request-batch-identity.md\": [[16000, 18833]],\n      \"knowledge/tools/trace-observability.md\": [[0, 2833]],\n      \"knowledge/frameworks/streams-allocator.md\": [[0, 2833]],\n      \"knowledge/algorithms/async-scheduling.md\": [[8000, 10833]],\n      \"knowledge/system-semantics/design-synthesis.md\": [[12000, 14833]],\n      \"knowledge/algorithms/iteration-batching.md\": [[0, 2833]],\n      \"knowledge/algorithms/cross-attention-cache.md\": [[12000, 14833]],\n      \"knowledge/frameworks/inference-eval.md\": [[0, 2833]],\n      \"knowledge/frameworks/mlx-serving.md\": [[4000, 6833]],\n      \"knowledge/hardware/memory-and-roofline.md\": [[8000, 10833]],\n      \"knowledge/models/encoder-decoder-streaming.md\": [[4000, 4934], [12000, 13899]],\n      \"knowledge/models/vision-language.md\": [[12000, 14833]],\n      \"knowledge/models/video-generation.md\": [[12000, 14833]],\n      \"knowledge/models/speech-generation.md\": [[0, 2833]],\n      \"knowledge/models/omni-multimodal.md\": [[0, 772], [20000, 22061]],\n      \"knowledge/system-semantics/tokenization-io.md\": [[8000, 10833]],\n      \"knowledge/tools/framework-profiler-scope.md\": [[8000, 10833]],\n      \"knowledge/workloads/metric-events.md\": [[8000, 10833]],\n      \"knowledge/workloads/slo-goodput.md\": [[8000, 10833]],\n      \"knowledge/workloads/capacity-planning.md\": [[4000, 6833]],\n      \"knowledge/hardware/cpu-linear-kernels.md\": [[8000, 10833]],\n      \"knowledge/hardware/storage-io.md\": [[8000, 10833]],\n      \"knowledge/system-semantics/deployment-environment.md\": [[0, 2833]],\n      \"knowledge/models/vision-inference.md\": [[0, 2833]],\n      \"knowledge/models/graph-inference.md\": [[0, 2833]],\n      \"knowledge/system-semantics/known-tensions.md\": [[0, 2833]],\n      \"references/S-LINUX-RESOURCES/fulltext.txt\": [[0, 4000], [8000, 12000], [16000, 20000], [40000, 68000], [72000, 76000], [84000, 96000], [100000, 100933], [112000, 116000], [120000, 124000]],\n      \"references/S-TORCH-CUDA/fulltext.txt\": [[0, 4000], [8000, 12000], [16000, 48933], [52000, 72000], [76000, 80000]]\n    },\n    \"author_scope_assessment\": \"作者材料账与本审阅范围分别处理。作者账中的旧正文哈希 005342b6131acdd072d5cf35456a5b01e5630f764b614e7090639fde01a5b36a 不是当前候选；作者接收的 Linux/CUDA 摘录范围也大于本审阅范围。账本说明材料暴露范围，不证明认知阅读。当前候选没有把 S-CPU-TUNING 说明或 Linux/CUDA 摘录声称为作者完整原文阅读，未发现据此扩大的来源事实主张。\"\n  },\n  \"test_assessment\": \"审阅了完整 reducer、历史参考、负对照及执行输出。audit_buffer 不调用 _on_done 或 _settle_read，而从 issued 登记历史减去 receipts 完整证据重建未结束责任，逐快照比较 U、R、writer、phase、隔离及 credit；因此遗漏授权结算会在 done 后直接被独立关系检出。故障变体实际执行完成路径并删除 U、保留 R，未主动以预定异常代替错误状态；正常和取消变体均在所供新哈希执行记录中被同一检查器检出。正向覆盖同步 done、退休及取消后迟到完成、双读者顺序、done/release 路由、证据不足、失败但访问结束、重复、未知、旧代同 uid 和零容量。阶段审计从对象归属重新计算三种账，负对照检出零字节超项、漏输出字节和孤儿对象；子进程审计区分终止请求与独立退出事件；算术用 Fraction 和逐字节集合核对。测试不是仅凭退出码认可的同义复述。作者阶段未执行新 Python 的说明与随后提供的 actual_preflight 分属不同执行主体；本轮重跑证据由后者补足，不能倒写为作者已运行。平台证据、真实范围校验、多入口共享及完整引擎集成等未覆盖部分已明确限制，未发现需要继续阻断接受的当前语义缺口。\"\n}",
+  "elapsed_seconds": 110.359
+}

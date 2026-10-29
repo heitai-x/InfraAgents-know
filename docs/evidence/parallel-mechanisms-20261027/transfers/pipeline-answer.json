@@ -1,0 +1,211 @@
+{
+  "status": "PASS",
+  "phase": "initial_answer_before_counterevidence",
+  "date": "2026-10-28",
+  "shared_per_stage_bytes": 640,
+  "accumulator_bytes": 768,
+  "cta_times": {
+    "1": 44,
+    "2": 26,
+    "3": 23
+  },
+  "events": {
+    "1": [
+      {
+        "j": 0,
+        "slot": 0,
+        "generation": 0,
+        "s": 0,
+        "f": 7,
+        "b": 7,
+        "e": 11
+      },
+      {
+        "j": 1,
+        "slot": 0,
+        "generation": 1,
+        "s": 11,
+        "f": 18,
+        "b": 18,
+        "e": 22
+      },
+      {
+        "j": 2,
+        "slot": 0,
+        "generation": 2,
+        "s": 22,
+        "f": 29,
+        "b": 29,
+        "e": 33
+      },
+      {
+        "j": 3,
+        "slot": 0,
+        "generation": 3,
+        "s": 33,
+        "f": 40,
+        "b": 40,
+        "e": 44
+      }
+    ],
+    "2": [
+      {
+        "j": 0,
+        "slot": 0,
+        "generation": 0,
+        "s": 0,
+        "f": 7,
+        "b": 7,
+        "e": 11
+      },
+      {
+        "j": 1,
+        "slot": 1,
+        "generation": 0,
+        "s": 2,
+        "f": 9,
+        "b": 11,
+        "e": 15
+      },
+      {
+        "j": 2,
+        "slot": 0,
+        "generation": 1,
+        "s": 11,
+        "f": 18,
+        "b": 18,
+        "e": 22
+      },
+      {
+        "j": 3,
+        "slot": 1,
+        "generation": 1,
+        "s": 15,
+        "f": 22,
+        "b": 22,
+        "e": 26
+      }
+    ],
+    "3": [
+      {
+        "j": 0,
+        "slot": 0,
+        "generation": 0,
+        "s": 0,
+        "f": 7,
+        "b": 7,
+        "e": 11
+      },
+      {
+        "j": 1,
+        "slot": 1,
+        "generation": 0,
+        "s": 2,
+        "f": 9,
+        "b": 11,
+        "e": 15
+      },
+      {
+        "j": 2,
+        "slot": 2,
+        "generation": 0,
+        "s": 4,
+        "f": 11,
+        "b": 15,
+        "e": 19
+      },
+      {
+        "j": 3,
+        "slot": 0,
+        "generation": 1,
+        "s": 11,
+        "f": 18,
+        "b": 19,
+        "e": 23
+      }
+    ]
+  },
+  "boundary_times": {
+    "0": {
+      "1": 0,
+      "2": 0,
+      "3": 0
+    },
+    "1": {
+      "1": 11,
+      "2": 11,
+      "3": 11
+    },
+    "2": {
+      "1": 22,
+      "2": 15,
+      "3": 15
+    }
+  },
+  "grid": {
+    "2048": {
+      "residency": {
+        "1": 2,
+        "2": 1,
+        "3": 1
+      },
+      "times": {
+        "1": 88,
+        "2": 104,
+        "3": 92
+      }
+    },
+    "4096": {
+      "residency": {
+        "1": 2,
+        "2": 2,
+        "3": 2
+      },
+      "times": {
+        "1": 88,
+        "2": 52,
+        "3": 46
+      }
+    }
+  },
+  "mapping_cases": 96,
+  "hypotheses": [
+    {
+      "name": "fill_drain",
+      "prediction": "Fixed extra cost is amortized for longer K; long-stage slope should not worsen if this is the only cause.",
+      "intervention": "Sweep stages at fixed tile, compiler path and timing boundary; fit intercept and slope."
+    },
+    {
+      "name": "residency",
+      "prediction": "Single CTA can improve while the grid gets slower near a resource threshold.",
+      "intervention": "Record actual allocated resources and active CTAs; compare one CTA with many, and vary an isolated capacity budget."
+    },
+    {
+      "name": "spill",
+      "prediction": "Additional local-memory traffic persists per stage and may worsen the long-stage slope.",
+      "intervention": "Inspect generated program/local traffic; shorten unrelated live ranges while recording all changed resources."
+    },
+    {
+      "name": "unrealized_overlap",
+      "prediction": "Async source expressions do not shorten actual exposed copy/compute gaps.",
+      "intervention": "Inspect generated instructions and hardware timelines with the same logical work."
+    },
+    {
+      "name": "preparation_or_contention",
+      "prediction": "Full-call cost or multi-CTA copy/compute rates differ despite the single-CTA model.",
+      "intervention": "Separate preparation from kernel and measure L/I/C as a function of residency."
+    }
+  ],
+  "documents": {
+    "knowledge/hardware/gpu-kernel-pipelines.md": "4db609a35cae2c7bd05603e026fc76d3e1281111ca2dad54d1a319851b3b498a",
+    "knowledge/sources/S-CUDA-BEST.md": "4b752c1a26f66a195df62be354649f0a6880f733fb365e82e87bdd63bf71d45c",
+    "knowledge/sources/S-CUDA-ASYNC.md": "40df9287d0648a8ef55a046ceb1c18dd402619ede6e57ca33d3f90e4ace3da05",
+    "docs/evidence/parallel-mechanisms-20261027/tasks/pipeline-transfer.md": "313520e0c692a81dcade4afad4d7f5d8d279bfa7c46af79b75ddf38111739495"
+  },
+  "scope": "Cross-agent reading and independent changed-shape CPU exercise with inherited parent context; no OS isolation, fixed budget, GPU execution or controlled knowledge-gain estimate.",
+  "limits": [
+    "Python scalar operations do not prove FP32 SIMT rounding or compiled instruction correctness.",
+    "The declared event recurrence and nonoverlapping wave model are synthetic assumptions, not measured GPU behavior.",
+    "No author-side checker, report, other answer, or upstream implementation was read/imported."
+  ]
+}

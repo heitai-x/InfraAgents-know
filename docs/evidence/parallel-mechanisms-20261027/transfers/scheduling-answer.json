@@ -1,0 +1,140 @@
+{
+  "rejected": {
+    "Q": 5,
+    "pairs": 20,
+    "time_us": 40.0,
+    "incremental_pages": 2
+  },
+  "legal_candidates": [
+    {
+      "alloc": {
+        "A": 2,
+        "B": 1,
+        "C": 0
+      },
+      "Q": 3,
+      "pairs": 17,
+      "time_us": 34.5,
+      "incremental_pages": 1
+    },
+    {
+      "alloc": {
+        "A": 1,
+        "B": 1,
+        "C": 1
+      },
+      "Q": 3,
+      "pairs": 13,
+      "time_us": 32.5,
+      "incremental_pages": 2
+    },
+    {
+      "alloc": {
+        "A": 2,
+        "B": 0,
+        "C": 2
+      },
+      "Q": 4,
+      "pairs": 12,
+      "time_us": 34.0,
+      "incremental_pages": 2
+    },
+    {
+      "alloc": {
+        "A": 0,
+        "B": 1,
+        "C": 2
+      },
+      "Q": 3,
+      "pairs": 11,
+      "time_us": 31.5,
+      "incremental_pages": 1
+    }
+  ],
+  "selected_rows": [
+    {
+      "request": "A",
+      "position": 3,
+      "sample": false
+    },
+    {
+      "request": "A",
+      "position": 4,
+      "sample": true
+    },
+    {
+      "request": "B",
+      "position": 7,
+      "sample": true
+    }
+  ],
+  "A_after": {
+    "n": 6,
+    "k": 5
+  },
+  "hypotheses": [
+    {
+      "cause": "different causal histories and pairs",
+      "prediction": "same Q can have different GPU intervals even with no CPU preparation change",
+      "intervention": "prebuild equivalent views, preserve each history, time device intervals with identical Q"
+    },
+    {
+      "cause": "different layout/kernel/graph bucket and padding efficiency",
+      "prediction": "device-only difference persists; instructions or padded work differs",
+      "intervention": "record dispatch and valid/padded work, compare compatible fixed paths with correct outputs"
+    },
+    {
+      "cause": "CPU metadata or page-allocation work",
+      "prediction": "host preparation or device starvation increases, prebuilt views reduce it",
+      "intervention": "separate host intervals, submit gaps, device work and output delivery"
+    },
+    {
+      "cause": "contention or service waiting",
+      "prediction": "device interval or admission wait depends on co-running work/readiness",
+      "intervention": "control offered load and concurrency, retain original work amount and event boundaries"
+    }
+  ],
+  "documents": {
+    "knowledge/algorithms/iteration-batching.md": "08f5ebb413f0a054e97302e5b080df44005de6c5704d0a24747085a5246e647a",
+    "knowledge/sources/S-ORCA.md": "920ef987a4a019bb4f0e0386e30bf1c1e3bc720d199ae4de22e462db4f41520a",
+    "knowledge/sources/S-SARATHI.md": "a4616b358fc59f97fd787e1eabbbca74d50c6f279bf3192d4c585f3ea80fb165",
+    "docs/evidence/parallel-mechanisms-20261027/tasks/scheduling-transfer.md": "c901333133aacda039905ffbea9ed3b5d9c41fa0f5550179c7f8ef7a086115c0"
+  },
+  "scope": "Independent first-stage cross-reading exercise by another author; shared parent context, no fixed budget/OS isolation, no controlled knowledge-gain conclusion; no upstream code or author checks/reports read.",
+  "date": "2026-10-28",
+  "status": "PASS",
+  "checks_passed": 25,
+  "checks": [
+    "rejected candidate arithmetic",
+    "Q and pages alone would admit a time-illegal candidate",
+    "four candidates meet all declared budgets",
+    "causal enumeration {'A': 2, 'B': 1, 'C': 2}",
+    "causal enumeration {'A': 2, 'B': 1, 'C': 0}",
+    "causal enumeration {'A': 1, 'B': 1, 'C': 1}",
+    "causal enumeration {'A': 2, 'B': 0, 'C': 2}",
+    "causal enumeration {'A': 0, 'B': 1, 'C': 2}",
+    "initial ownership/free pages",
+    "A adds one page while B needs no page",
+    "packed result rows retain original identity and sample boundary",
+    "cancel does not free in-flight B pages",
+    "cancel leaves original snapshot unchanged",
+    "physical completion is processed once",
+    "A sampled token is known but has no KV",
+    "old B has no business commit after cancellation",
+    "B pages become reusable only after completion",
+    "new B has a distinct lifetime and physical page generation",
+    "late duplicate completion is rejected",
+    "late completion cannot mutate new B or free its page",
+    "reused external name before old completion uses other free storage",
+    "old physical cleanup survives name reuse without committing to new B",
+    "joint A/C reservation failure is explicit",
+    "rollback restores request mapping and free capacity",
+    "same Q alone predicts different device time"
+  ],
+  "solution_sha256": "5bc7b9fa8512b24a267047cb5b943ae707d72aacdee1e842b60673378dfdb711",
+  "limits": [
+    "Synthetic time model; no GPU timing.",
+    "Toy sequential coordinator does not prove concurrent production engine correctness.",
+    "No claim of causal Agent benefit or general transfer success."
+  ]
+}

@@ -1,6 +1,6 @@
 # Astra 截止日前的 InfraAgents base 知识库
 
-当前修订版为 base-gpt-6-astra-2026-04-30-v2.2-r2，来源版本上限为 2026-04-30（包含该日）。当前108篇专题、114项固定来源全部保留；相对v2.2-r1修正4篇的流程化表达，并更新读取探针、时间审计与来源定位。121份活动专题旧修订和6篇撤回稿分别保留准确身份。本轮范围见 [修改与验证记录](../docs/evidence/knowledge-cleanup-20261027/review.md)；旧版本报告只证明当时被检查的内容。
+当前为 base-gpt-6-astra-2026-04-30-v2.3-draft29 构建草稿，含111篇、115项来源和387份活动历史。来源版本上限保持2026-04-30；编辑与独立推导使用真实日期。全库已登记问题、前提等导航字段，逐篇深度复核见[扩展状态](../docs/expansion-status.json)；当前深化分页、调度与GPU流水，见[本批模块](../docs/mechanism-expansion.md)。内容标准见[构建方法](../docs/knowledge-method.md)与[审查问题](../docs/knowledge-review.md)。
 
 [主题索引](INDEX.md)、[设计入口](DESIGN.md)、[诊断入口](DIAGNOSIS.md) 和 [覆盖矩阵](COVERAGE.md) 提供可选阅读路径。[系统组合](system-semantics/design-synthesis.md) 展示条件化例子；它们不要求所有Agent采用同一组件划分、研发顺序或方案集合。
 
@@ -9,3 +9,5 @@
 所有章节均为来源知识 seed，未声称在目标 Task 上实测有效。Evolution 仍可按既有规则提出章节增量，Diagnostician 独立核对，Runner 发布并保留历史。新实验使用真实日期，不能倒写成 base 事实。
 
 [来源登记](SOURCES.md) · [时间规则](../docs/23-time-bounded-knowledge.md) · [版本与编辑记录](../VERSION.json)。
+
+当前Attention修订的算法、硬件映射、组合状态和验证边界见[模块说明](../docs/attention-module.md)。

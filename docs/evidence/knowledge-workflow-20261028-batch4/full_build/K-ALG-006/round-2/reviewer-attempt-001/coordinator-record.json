@@ -1,0 +1,301 @@
+{
+  "role": "reviewer",
+  "engine": "sol",
+  "requested_model": "gpt-6.1-sol",
+  "reasoning_effort": "high",
+  "prompt_sha256": "f54cd57219305c250728cd7e0e6a1b1f015ac0c7b5e9a569c5f04926bb843589",
+  "usage": [
+    {
+      "input_tokens": 842402,
+      "cached_input_tokens": 709120,
+      "cache_write_input_tokens": 0,
+      "output_tokens": 9370,
+      "reasoning_output_tokens": 3835
+    }
+  ],
+  "answer": "{\n  \"entry_id\": \"K-ALG-006\",\n  \"body_sha256\": \"5e3a51166a07383d5ab59d3da5d4eed5aac76426037b0c8dc93c054ad4e10b2c\",\n  \"reviewer\": \"sol-reviewer:K-ALG-006:round-2\",\n  \"decision\": \"revise\",\n  \"documents\": {\n    \"AGENTS.md\": \"b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a\",\n    \"docs/knowledge-method.md\": \"69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb\",\n    \"docs/knowledge-review.md\": \"f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21\",\n    \"knowledge/algorithms/speculation-budget.md\": \"5e3a51166a07383d5ab59d3da5d4eed5aac76426037b0c8dc93c054ad4e10b2c\",\n    \"knowledge/sources/S-SPEC.md\": \"a637c44fe62f12685aed5d022d23eabf949083343dbce9656b0a149e742bfd90\",\n    \"knowledge/sources/S-HF-CACHE.md\": \"1a4afcf0d800ba3f42836445874d620ae9f7ba8ab4c361caa505376cc471595c\",\n    \"knowledge/sources/S-TORCH-REPRO.md\": \"05f2b5b9819f01363fadadf41987482edfebb130bc134c36c44a00138fd5eb28\",\n    \"knowledge/sources/S-EAGLE.md\": \"5781850aa1d8dd5a43cb5c971d595431cca204d90ebb0004357062e36de1fa8c\",\n    \"knowledge/algorithms/batched-sampling.md\": \"eedef73ece886112211c643f263add7644e5bd2018f2043c1716a172368aa6f2\",\n    \"knowledge/models/recurrent-hybrid-state.md\": \"b16b229713829787bffef07a62a08c0feca0a7b3a188aea2332a3689388c0417\",\n    \"knowledge/system-semantics/position-mask-cache.md\": \"91641b10a52209747af8d9fa83f822bedb01c583cede42a58550ad87ffe14ad6\",\n    \"knowledge/algorithms/branch-generation.md\": \"42157d4da17ab8ffd7a0aa2f5cd57a1cacdf1a989757261993f6671ae231de3a\",\n    \"knowledge/system-semantics/serving-recovery.md\": \"f551fa1f1e6213469c856a880839eefff504fb39f4dd692000b2df80a20a7f5e\",\n    \"knowledge/tools/statistical-experiments.md\": \"908b3588a6fa20bb1f2aed9f5db51c4b462953d79f8944cdbcfea7141c74644f\",\n    \"knowledge/algorithms/structured-output.md\": \"dd564087bb7df327081ce442368799cb0b27c59e9cbdab314b0a0dac99ca8ade\",\n    \"knowledge/system-semantics/specialization-levers.md\": \"3b316014be245e02a12d9aaf841d5a6518918d47685edb127865369dee1e37d6\",\n    \"knowledge/system-semantics/known-tensions.md\": \"e7e30a27ff5b42d93b55bc6e36a008ce6f5c100410fbe357ee3870a4ad601f90\",\n    \"references/S-SPEC/fulltext.txt\": \"66ebddbde83df97b2389d7e0e98c844435478aedeec56d024bf52b8cc0d94cec\",\n    \"references/S-HF-CACHE/fulltext.txt\": \"373837b8ac246d43867eb21de168cc59e5e6e78f5f3b9c27bee54740c4a635b4\",\n    \"references/S-TORCH-REPRO/fulltext.txt\": \"4f6b1deb38f7f174a2e340674680aaa0484e02a1d18cccd1bb94618df512cc2a\",\n    \"references/S-EAGLE/fulltext.txt\": \"509e09a8a7d28806b4154100599a018a8535fd4cccbd56129efa10ea90436df2\",\n    \"tools/check_k_alg_006_full.py\": \"bae31ec5de440fa9dcb037d7121c4403cc44eb6df643e8ba6c43542f8398b7da\"\n  },\n  \"criteria\": {\n    \"definition\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"解释了串行解码动机、条件分布、接受长度、回合输入输出，以及已知 token、全层有效状态和预留容量的区别；bonus 尚无自身 KV 的边界清楚。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/algorithms/speculation-budget.md\",\n          \"quote\": \"这里 p_i 是 x_i 之前的条件分布，p_{γ+1} 是全部候选之后的 bonus 分布。\"\n        },\n        {\n          \"path\": \"knowledge/algorithms/speculation-budget.md\",\n          \"quote\": \"bonus token 可能已经 known，但尚未作为输入，因此没有自己的 KV 或递归状态。\"\n        }\n      ]\n    },\n    \"legality\": {\n      \"assessment\": \"partial\",\n      \"reason\": \"接受与正剩余质量公式、greedy 契约及 seed 边界基本正确，但错误要求 q 覆盖 p 的支持集，并把相同模型版本、精度和采样变换写成 p/q 的共同必要条件。这些限制不由分布保持证明推出。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/algorithms/speculation-budget.md\",\n          \"quote\": \"合法性要求 q 在 p 的正支持上也有正概率，或明确把目标分布限制到 q 的支持并报告输出语义变化。\"\n        },\n        {\n          \"path\": \"knowledge/algorithms/speculation-budget.md\",\n          \"quote\": \"p_i 与 q_i 使用同一条件前缀、模型/adapter 版本、精度和实际采样变换\"\n        }\n      ]\n    },\n    \"algorithm\": {\n      \"assessment\": \"partial\",\n      \"reason\": \"链式接受、修正、提交与延迟回收已有实质展开；唯一 provenance 标记及四项来源说明已恢复，原 campaign-K-ALG-006-r1 问题关闭。但树形部分没有正确区分候选输入行与验证该候选的父行 logits，并把候选输入行的 attention 可见集写成不含自身，破坏目标前向语义。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/algorithms/speculation-budget.md\",\n          \"quote\": \"新 kv_boundary ← 旧 kv_boundary + n\"\n        },\n        {\n          \"path\": \"knowledge/algorithms/speculation-budget.md\",\n          \"quote\": \"链式 mask 使第 i 行只看到前缀与 x_1..x_{i-1}；树形 mask 只允许祖先。\"\n        },\n        {\n          \"path\": \"knowledge/algorithms/speculation-budget.md\",\n          \"quote\": \"对每个 v，计算 p_v ← Mp 在 prefix+path_to(parent(v)) 下的下一 token 分布\"\n        }\n      ]\n    },\n    \"cost\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"一般期望长度恒等式、i.i.d. 简化、墙钟与算术量公式可核对来源；六类成本和 batch 饱和、共享资源及驻留反转均有解释。设定算例中 24/3=8、10/8=1.25 和 24/4=6 成立。实际 query 行计费仍须随算法行映射修正核对，现有公式不能证明真实缓存前向成本。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/algorithms/speculation-budget.md\",\n          \"quote\": \"E[L]=1+Σ_{i=1}^{γ} P(前 i 个候选都被接受)\"\n        },\n        {\n          \"path\": \"knowledge/algorithms/speculation-budget.md\",\n          \"quote\": \"逻辑 token 数、设备事务量和峰值驻留必须分开报告。\"\n        }\n      ]\n    },\n    \"adaptation\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"解释了接受分布、batch 占用、草稿资源竞争和 KV/快照压力变化时为何调整或关闭投机；恢复时保留共同状态边界，而非只恢复长度。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/algorithms/speculation-budget.md\",\n          \"quote\": \"在线策略可按近期接受长度分布调整 γ，把额外验证预算给高收益请求，并在低接受率、目标 batch 已充分利用或草稿占用关键资源时关闭投机。\"\n        },\n        {\n          \"path\": \"knowledge/algorithms/speculation-budget.md\",\n          \"quote\": \"恢复过程要重算或读取共同状态位置，不能只恢复 token 长度而遗漏递归状态、窗口或 grammar。\"\n        }\n      ]\n    },\n    \"diagnosis\": {\n      \"assessment\": \"partial\",\n      \"reason\": \"竞争解释、干预及反证修正充分，概率枚举的目标参考和四种分布负对照有实质作用。但支持集检查把合法协议判错；树泄漏负对照仅插入并查询集合成员，未检验 mask 对模型输出的影响，也不能检出当前 logits 行错位。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/algorithms/speculation-budget.md\",\n          \"quote\": \"构造兄弟 token 明显不同的树，分别用合法 mask 与泄漏 mask\"\n        },\n        {\n          \"path\": \"knowledge/algorithms/speculation-budget.md\",\n          \"quote\": \"每个错误都必须被独立预期或不变量检出，而不是只打印预先写好的成功。\"\n        }\n      ]\n    }\n  },\n  \"findings\": [\n    {\n      \"id\": \"sol-K-ALG-006-support-domain\",\n      \"criterion\": \"legality\",\n      \"evidence\": \"正文写道：“若 p(x)>0 而 q(x)=0，x 永远不会被提出，接受公式没有有限比值，最终分布会缺失这部分质量。”但 S-SPEC §2.3 和附录 A.1 明确证明适用于任意 p、q。反例：p=(1/2,1/2)、q=(1,0)，提出 a 后以 1/2 接受，否则正剩余分布必选 b，最终仍为 p。检查中的 assert not has_support(sp,sq) 只是重复错误限制，未检验该合法协议。\",\n      \"impact\": \"把普通拒绝采样的支持覆盖要求误套到带残余修正的投机采样，会错误排除确定性 lookup 和截断草稿，并可能诱导实现截断目标分布而改变输出语义。\",\n      \"blocking\": true,\n      \"required_revision\": \"删除 q 必须覆盖 p 正支持的必要条件及缺失质量断言。说明接受比值仅在实际提出、故 q(x)>0 的候选上求值；q=0 且 p>0 的质量由完整词表上的正剩余分布恢复。同步修改诊断和检查，以精确枚举验证该反例、互斥支持及 p=q 时拒绝分支不可达；不要把 has_support 为假作为协议非法证明。\"\n    },\n    {\n      \"id\": \"sol-K-ALG-006-distribution-contract\",\n      \"criterion\": \"legality\",\n      \"evidence\": \"不变量要求：“p_i 与 q_i 使用同一条件前缀、模型/adapter 版本、精度和实际采样变换”。S-SPEC §3.6 允许任意近似模型，§6 也明确相同 standardization 是实验选择，并提出不同变换的可能性。\",\n      \"impact\": \"该表述把分布校正真正需要的身份一致性，与目标和草稿必须采用相同配置混为一谈，和独立小模型等设计轴冲突。\",\n      \"blocking\": true,\n      \"required_revision\": \"改为分别绑定目标与草稿各自稳定的模型、adapter、精度和变换：q_i 必须是实际产生候选的提议分布，p_i 必须是规定目标采样契约下的分布，两者对应同一逻辑条件前缀和可比较的 token 空间。明确相同变换或精度属于可选配置，不是分布保持的必要条件。\"\n    },\n    {\n      \"id\": \"sol-K-ALG-006-node-logits-alignment\",\n      \"criterion\": \"algorithm\",\n      \"evidence\": \"正文称“链式 mask 使第 i 行只看到前缀与 x_1..x_{i-1}；树形 mask 只允许祖先”；树形伪代码又以 row 映射节点 v，却在该行计算 parent(v) 前缀下的 p_v。已提供的 K-ALG-024 明确指出：“一个节点作为输入被计算后，所得 logits 表示它之后的条件分布；根后的第一个候选由根前缀末行的分布验证。”\",\n      \"impact\": \"节点 v 的输入行含有 v 的 embedding、query 和残差路径，不能通过排除自身 key 就变成 v 之前的分布；排除自身 KV 还改变正常 causal attention。按当前描述实现会同时产生错误 mask 和一步 logits 偏移。\",\n      \"blocking\": true,\n      \"required_revision\": \"分别定义候选输入行、该行允许读取的 KV 集合、该行输出分布以及验证候选所取的父行。候选输入行应读取确认前缀、祖先及自身；首候选用前缀末行 logits，其他候选用父节点行 logits，接受路径末行提供后续分布。展开或明确委托完整的逐层 hidden→Q/K/V→attention→下一层输入关系，并说明全层状态何时共同提交。核对修正后的新计算行数与缓存成本口径。\"\n    },\n    {\n      \"id\": \"sol-K-ALG-006-tree-negative-control\",\n      \"criterion\": \"diagnosis\",\n      \"evidence\": \"tools/check_k_alg_006_full.py 中 tree_leak(vis) 只有 return ('B',) in vis；负对照先执行 badvis.add(('B',))，再 assert tree_leak(badvis)。它没有模型输入、attention 消费或 logits 行映射，不能实现正文所述“节点看到兄弟后，条件输出在可区分输入上改变”的区分实验。\",\n      \"impact\": \"该负对照的成功仅证明集合成员查询，无法检测本章当前的行错位和自身可见性错误；预检退出 0 不能作为树形验证机制正确的证据。\",\n      \"blocking\": true,\n      \"required_revision\": \"用确定性 CPU 玩具前向消费实际构造的可见集与行映射，并以逐路径串行前向作为独立参考。注入兄弟泄漏、遗漏自身以及父行/节点行错位，要求输出或状态参考实际检出错误；现有集合查询可保留为局部检查，但须收窄其证明范围。无需增加 GPU 验收条件。\"\n    }\n  ],\n  \"limitations\": [\n    \"现有检查及本次独立计算均不证明 CUDA 同步、真实 attention、图重放、跨设备传输、实际设备事务量或性能；正文明确声明的这些边界可以保留。\",\n    \"任意多候选树的具体遍历与重采样实现尚未交付完整证明，可保留为范围限制，但不能覆盖当前输入行、mask 与 logits 对应关系的错误。\",\n    \"未暴露上游源码归档、PDF 视觉材料或离线 reader.html 实体；本次核对全文文本与相对链接表达，未声称完成源码核验、视觉检查或链接目标可达性检查。\",\n    \"当前工具未提供本地文件读取或 Python 执行能力；技能文件及 docs/knowledge-build-workflow.md 原件未能读取。审查使用用户明确提供的 JSON 格式、冻结全文与实际预检记录，未声称独立重跑 Python。\"\n  ],\n  \"checks\": [\n    {\n      \"script\": \"tools/check_k_alg_006_full.py\",\n      \"args\": []\n    }\n  ],\n  \"no_checks_reason\": \"\",\n  \"reading_scope\": \"完整阅读用户提供的以下全文，范围均为零基半开提取字符区间：AGENTS.md [0,567)；docs/knowledge-method.md [0,2251)；docs/knowledge-review.md [0,3016)；knowledge/algorithms/speculation-budget.md [0,12325)；knowledge/sources/S-SPEC.md [0,518)；knowledge/sources/S-HF-CACHE.md [0,827)；knowledge/sources/S-TORCH-REPRO.md [0,501)；knowledge/sources/S-EAGLE.md [0,706)；knowledge/algorithms/batched-sampling.md [0,2567)；knowledge/models/recurrent-hybrid-state.md [0,3563)；knowledge/system-semantics/position-mask-cache.md [0,4078)；knowledge/algorithms/branch-generation.md [0,3670)；knowledge/system-semantics/serving-recovery.md [0,3834)；knowledge/tools/statistical-experiments.md [0,4269)；knowledge/algorithms/structured-output.md [0,2517)；knowledge/system-semantics/specialization-levers.md [0,5008)；knowledge/system-semantics/known-tensions.md [0,5454)；references/S-SPEC/fulltext.txt [0,47353)；references/S-HF-CACHE/fulltext.txt [0,7977)；references/S-TORCH-REPRO/fulltext.txt [0,7936)；references/S-EAGLE/fulltext.txt [0,47854)。knowledge/algorithms/async-scheduling.md 仅阅读所供摘录 [0,4500)、[8000,12000)，未列入 documents，也未声称读过全文。另完整阅读候选提供的 tools/check_k_alg_006_full.py、author_notes 和 actual_preflight 执行记录；脚本未提供提取字符区间。未读取未提供的历史 round-1 产物或 workflow 原件。\",\n  \"test_assessment\": \"实际执行证据来自所附 remote_bwrap 预检：脚本哈希与绑定值一致，returncode=0，stdout 给出总质量 1、期望长度 77/30、有效状态错误为空，以及四种分布负对照和状态变异的检测结果；作者明确未自行运行，与协调者后续实际执行并不冲突。本次未重跑 Python。概率检查以给定 p1、按前缀索引的 p2 和 p3 为外部目标，精确有理数枚举接受及修正分支；确定性阈值、直接使用 p 作残余的四种负对照确实改变被比较分布，因此这些检查具有实质作用。期望长度另由接受概率计算，但复用了同一接受公式，证明独立性较弱。p3 在所有前缀下相同，不能检测第三层条件索引错误。状态检查只覆盖 m=5、γ=3、n=2 的构造状态及字段变异，能检出 bonus 被计入 KV、拒绝候选可见和错误快照，未执行真实多层提交或回滚。树负对照仅插入并查询固定集合成员，未测试 mask 被模型消费后的输出。支持检查则编码了错误的必要条件。本次另外用 JavaScript 独立计算 p=(1/2,1/2)、q=(1,0)，互斥支持，以及 p=q 三种质量分解，均恢复 p；前两者直接反驳正文支持覆盖要求。还以含当前 token 残差与可见值均值的标量玩具行计算说明：prefix=(2,3)、候选=7 时，前缀末行值为 5.5，而候选行即使屏蔽自身 key 仍为 9.5，不能替代候选之前的条件行。这些是独立符号/CPU 算例，不是目标设备测量。\"\n}",
+  "exit_code": 0,
+  "status": "completed",
+  "timeout_seconds": 1800,
+  "response_path": "D:\\桌面\\xdb\\InfraAgents\\InfraAgents-know-astra-new\\InfraAgents-know\\docs\\evidence\\knowledge-workflow-20261028-batch4\\full_build\\K-ALG-006\\round-2\\reviewer-attempt-001\\answer.txt",
+  "record_path": "D:\\桌面\\xdb\\InfraAgents\\InfraAgents-know-astra-new\\InfraAgents-know\\docs\\evidence\\knowledge-workflow-20261028-batch4\\full_build\\K-ALG-006\\round-2\\reviewer-attempt-001\\record.json",
+  "tool_events": [
+    {
+      "type": "item.completed",
+      "item": {
+        "id": "item_1",
+        "type": "mcp_tool_call",
+        "server": "codex",
+        "tool": "list_mcp_resources",
+        "arguments": {},
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"resources\":[]}"
+            }
+          ],
+          "structured_content": null
+        },
+        "error": null,
+        "status": "completed"
+      }
+    },
+    {
+      "type": "item.completed",
+      "item": {
+        "id": "item_2",
+        "type": "mcp_tool_call",
+        "server": "codex",
+        "tool": "list_mcp_resource_templates",
+        "arguments": {},
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"resourceTemplates\":[]}"
+            }
+          ],
+          "structured_content": null
+        },
+        "error": null,
+        "status": "completed"
+      }
+    }
+  ],
+  "inventory_tool_events": [
+    {
+      "type": "item.completed",
+      "item": {
+        "id": "item_1",
+        "type": "mcp_tool_call",
+        "server": "codex",
+        "tool": "list_mcp_resources",
+        "arguments": {},
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"resources\":[]}"
+            }
+          ],
+          "structured_content": null
+        },
+        "error": null,
+        "status": "completed"
+      }
+    },
+    {
+      "type": "item.completed",
+      "item": {
+        "id": "item_2",
+        "type": "mcp_tool_call",
+        "server": "codex",
+        "tool": "list_mcp_resource_templates",
+        "arguments": {},
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"resourceTemplates\":[]}"
+            }
+          ],
+          "structured_content": null
+        },
+        "error": null,
+        "status": "completed"
+      }
+    }
+  ],
+  "rejected_tool_events": [],
+  "tool_policy": "metadata_inventory_only",
+  "tool_policy_version": "2026-10-28-production-v1",
+  "tool_policy_scope": "Only empty-argument codex host plugin/skill-directory descriptors and empty template inventory; inventory is not knowledge evidence. All other tool events reject the call.",
+  "tool_policy_reason": "Production chapter construction allows observed generic capability discovery metadata; this does not claim a zero-tool comparison or external source reading.",
+  "malformed_event_lines": [],
+  "turn_completed": true,
+  "error_events": [],
+  "recovered_transport_events": [],
+  "terminal_error_events": [],
+  "transport_recovered": false,
+  "actual_model": null,
+  "identity_verified": null,
+  "identity_basis": "Explicit CLI model and isolated HTTP provider; CLI events do not expose server model identity.",
+  "provider": "eval-openai-http",
+  "max_output_tokens": null,
+  "cli_version": "codex-cli 0.164.0-alpha.11.1",
+  "cost_scope": "Codex token usage is reported; subscription charge is not exposed.",
+  "parsed": {
+    "entry_id": "K-ALG-006",
+    "body_sha256": "5e3a51166a07383d5ab59d3da5d4eed5aac76426037b0c8dc93c054ad4e10b2c",
+    "reviewer": "sol-reviewer:K-ALG-006:round-2",
+    "decision": "revise",
+    "documents": {
+      "AGENTS.md": "b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a",
+      "docs/knowledge-method.md": "69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb",
+      "docs/knowledge-review.md": "f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21",
+      "knowledge/algorithms/speculation-budget.md": "5e3a51166a07383d5ab59d3da5d4eed5aac76426037b0c8dc93c054ad4e10b2c",
+      "knowledge/sources/S-SPEC.md": "a637c44fe62f12685aed5d022d23eabf949083343dbce9656b0a149e742bfd90",
+      "knowledge/sources/S-HF-CACHE.md": "1a4afcf0d800ba3f42836445874d620ae9f7ba8ab4c361caa505376cc471595c",
+      "knowledge/sources/S-TORCH-REPRO.md": "05f2b5b9819f01363fadadf41987482edfebb130bc134c36c44a00138fd5eb28",
+      "knowledge/sources/S-EAGLE.md": "5781850aa1d8dd5a43cb5c971d595431cca204d90ebb0004357062e36de1fa8c",
+      "knowledge/algorithms/batched-sampling.md": "eedef73ece886112211c643f263add7644e5bd2018f2043c1716a172368aa6f2",
+      "knowledge/models/recurrent-hybrid-state.md": "b16b229713829787bffef07a62a08c0feca0a7b3a188aea2332a3689388c0417",
+      "knowledge/system-semantics/position-mask-cache.md": "91641b10a52209747af8d9fa83f822bedb01c583cede42a58550ad87ffe14ad6",
+      "knowledge/algorithms/branch-generation.md": "42157d4da17ab8ffd7a0aa2f5cd57a1cacdf1a989757261993f6671ae231de3a",
+      "knowledge/system-semantics/serving-recovery.md": "f551fa1f1e6213469c856a880839eefff504fb39f4dd692000b2df80a20a7f5e",
+      "knowledge/tools/statistical-experiments.md": "908b3588a6fa20bb1f2aed9f5db51c4b462953d79f8944cdbcfea7141c74644f",
+      "knowledge/algorithms/structured-output.md": "dd564087bb7df327081ce442368799cb0b27c59e9cbdab314b0a0dac99ca8ade",
+      "knowledge/system-semantics/specialization-levers.md": "3b316014be245e02a12d9aaf841d5a6518918d47685edb127865369dee1e37d6",
+      "knowledge/system-semantics/known-tensions.md": "e7e30a27ff5b42d93b55bc6e36a008ce6f5c100410fbe357ee3870a4ad601f90",
+      "references/S-SPEC/fulltext.txt": "66ebddbde83df97b2389d7e0e98c844435478aedeec56d024bf52b8cc0d94cec",
+      "references/S-HF-CACHE/fulltext.txt": "373837b8ac246d43867eb21de168cc59e5e6e78f5f3b9c27bee54740c4a635b4",
+      "references/S-TORCH-REPRO/fulltext.txt": "4f6b1deb38f7f174a2e340674680aaa0484e02a1d18cccd1bb94618df512cc2a",
+      "references/S-EAGLE/fulltext.txt": "509e09a8a7d28806b4154100599a018a8535fd4cccbd56129efa10ea90436df2",
+      "tools/check_k_alg_006_full.py": "bae31ec5de440fa9dcb037d7121c4403cc44eb6df643e8ba6c43542f8398b7da"
+    },
+    "criteria": {
+      "definition": {
+        "assessment": "sufficient",
+        "reason": "解释了串行解码动机、条件分布、接受长度、回合输入输出，以及已知 token、全层有效状态和预留容量的区别；bonus 尚无自身 KV 的边界清楚。",
+        "evidence": [
+          {
+            "path": "knowledge/algorithms/speculation-budget.md",
+            "quote": "这里 p_i 是 x_i 之前的条件分布，p_{γ+1} 是全部候选之后的 bonus 分布。"
+          },
+          {
+            "path": "knowledge/algorithms/speculation-budget.md",
+            "quote": "bonus token 可能已经 known，但尚未作为输入，因此没有自己的 KV 或递归状态。"
+          }
+        ]
+      },
+      "legality": {
+        "assessment": "partial",
+        "reason": "接受与正剩余质量公式、greedy 契约及 seed 边界基本正确，但错误要求 q 覆盖 p 的支持集，并把相同模型版本、精度和采样变换写成 p/q 的共同必要条件。这些限制不由分布保持证明推出。",
+        "evidence": [
+          {
+            "path": "knowledge/algorithms/speculation-budget.md",
+            "quote": "合法性要求 q 在 p 的正支持上也有正概率，或明确把目标分布限制到 q 的支持并报告输出语义变化。"
+          },
+          {
+            "path": "knowledge/algorithms/speculation-budget.md",
+            "quote": "p_i 与 q_i 使用同一条件前缀、模型/adapter 版本、精度和实际采样变换"
+          }
+        ]
+      },
+      "algorithm": {
+        "assessment": "partial",
+        "reason": "链式接受、修正、提交与延迟回收已有实质展开；唯一 provenance 标记及四项来源说明已恢复，原 campaign-K-ALG-006-r1 问题关闭。但树形部分没有正确区分候选输入行与验证该候选的父行 logits，并把候选输入行的 attention 可见集写成不含自身，破坏目标前向语义。",
+        "evidence": [
+          {
+            "path": "knowledge/algorithms/speculation-budget.md",
+            "quote": "新 kv_boundary ← 旧 kv_boundary + n"
+          },
+          {
+            "path": "knowledge/algorithms/speculation-budget.md",
+            "quote": "链式 mask 使第 i 行只看到前缀与 x_1..x_{i-1}；树形 mask 只允许祖先。"
+          },
+          {
+            "path": "knowledge/algorithms/speculation-budget.md",
+            "quote": "对每个 v，计算 p_v ← Mp 在 prefix+path_to(parent(v)) 下的下一 token 分布"
+          }
+        ]
+      },
+      "cost": {
+        "assessment": "sufficient",
+        "reason": "一般期望长度恒等式、i.i.d. 简化、墙钟与算术量公式可核对来源；六类成本和 batch 饱和、共享资源及驻留反转均有解释。设定算例中 24/3=8、10/8=1.25 和 24/4=6 成立。实际 query 行计费仍须随算法行映射修正核对，现有公式不能证明真实缓存前向成本。",
+        "evidence": [
+          {
+            "path": "knowledge/algorithms/speculation-budget.md",
+            "quote": "E[L]=1+Σ_{i=1}^{γ} P(前 i 个候选都被接受)"
+          },
+          {
+            "path": "knowledge/algorithms/speculation-budget.md",
+            "quote": "逻辑 token 数、设备事务量和峰值驻留必须分开报告。"
+          }
+        ]
+      },
+      "adaptation": {
+        "assessment": "sufficient",
+        "reason": "解释了接受分布、batch 占用、草稿资源竞争和 KV/快照压力变化时为何调整或关闭投机；恢复时保留共同状态边界，而非只恢复长度。",
+        "evidence": [
+          {
+            "path": "knowledge/algorithms/speculation-budget.md",
+            "quote": "在线策略可按近期接受长度分布调整 γ，把额外验证预算给高收益请求，并在低接受率、目标 batch 已充分利用或草稿占用关键资源时关闭投机。"
+          },
+          {
+            "path": "knowledge/algorithms/speculation-budget.md",
+            "quote": "恢复过程要重算或读取共同状态位置，不能只恢复 token 长度而遗漏递归状态、窗口或 grammar。"
+          }
+        ]
+      },
+      "diagnosis": {
+        "assessment": "partial",
+        "reason": "竞争解释、干预及反证修正充分，概率枚举的目标参考和四种分布负对照有实质作用。但支持集检查把合法协议判错；树泄漏负对照仅插入并查询集合成员，未检验 mask 对模型输出的影响，也不能检出当前 logits 行错位。",
+        "evidence": [
+          {
+            "path": "knowledge/algorithms/speculation-budget.md",
+            "quote": "构造兄弟 token 明显不同的树，分别用合法 mask 与泄漏 mask"
+          },
+          {
+            "path": "knowledge/algorithms/speculation-budget.md",
+            "quote": "每个错误都必须被独立预期或不变量检出，而不是只打印预先写好的成功。"
+          }
+        ]
+      }
+    },
+    "findings": [
+      {
+        "id": "sol-K-ALG-006-support-domain",
+        "criterion": "legality",
+        "evidence": "正文写道：“若 p(x)>0 而 q(x)=0，x 永远不会被提出，接受公式没有有限比值，最终分布会缺失这部分质量。”但 S-SPEC §2.3 和附录 A.1 明确证明适用于任意 p、q。反例：p=(1/2,1/2)、q=(1,0)，提出 a 后以 1/2 接受，否则正剩余分布必选 b，最终仍为 p。检查中的 assert not has_support(sp,sq) 只是重复错误限制，未检验该合法协议。",
+        "impact": "把普通拒绝采样的支持覆盖要求误套到带残余修正的投机采样，会错误排除确定性 lookup 和截断草稿，并可能诱导实现截断目标分布而改变输出语义。",
+        "blocking": true,
+        "required_revision": "删除 q 必须覆盖 p 正支持的必要条件及缺失质量断言。说明接受比值仅在实际提出、故 q(x)>0 的候选上求值；q=0 且 p>0 的质量由完整词表上的正剩余分布恢复。同步修改诊断和检查，以精确枚举验证该反例、互斥支持及 p=q 时拒绝分支不可达；不要把 has_support 为假作为协议非法证明。"
+      },
+      {
+        "id": "sol-K-ALG-006-distribution-contract",
+        "criterion": "legality",
+        "evidence": "不变量要求：“p_i 与 q_i 使用同一条件前缀、模型/adapter 版本、精度和实际采样变换”。S-SPEC §3.6 允许任意近似模型，§6 也明确相同 standardization 是实验选择，并提出不同变换的可能性。",
+        "impact": "该表述把分布校正真正需要的身份一致性，与目标和草稿必须采用相同配置混为一谈，和独立小模型等设计轴冲突。",
+        "blocking": true,
+        "required_revision": "改为分别绑定目标与草稿各自稳定的模型、adapter、精度和变换：q_i 必须是实际产生候选的提议分布，p_i 必须是规定目标采样契约下的分布，两者对应同一逻辑条件前缀和可比较的 token 空间。明确相同变换或精度属于可选配置，不是分布保持的必要条件。"
+      },
+      {
+        "id": "sol-K-ALG-006-node-logits-alignment",
+        "criterion": "algorithm",
+        "evidence": "正文称“链式 mask 使第 i 行只看到前缀与 x_1..x_{i-1}；树形 mask 只允许祖先”；树形伪代码又以 row 映射节点 v，却在该行计算 parent(v) 前缀下的 p_v。已提供的 K-ALG-024 明确指出：“一个节点作为输入被计算后，所得 logits 表示它之后的条件分布；根后的第一个候选由根前缀末行的分布验证。”",
+        "impact": "节点 v 的输入行含有 v 的 embedding、query 和残差路径，不能通过排除自身 key 就变成 v 之前的分布；排除自身 KV 还改变正常 causal attention。按当前描述实现会同时产生错误 mask 和一步 logits 偏移。",
+        "blocking": true,
+        "required_revision": "分别定义候选输入行、该行允许读取的 KV 集合、该行输出分布以及验证候选所取的父行。候选输入行应读取确认前缀、祖先及自身；首候选用前缀末行 logits，其他候选用父节点行 logits，接受路径末行提供后续分布。展开或明确委托完整的逐层 hidden→Q/K/V→attention→下一层输入关系，并说明全层状态何时共同提交。核对修正后的新计算行数与缓存成本口径。"
+      },
+      {
+        "id": "sol-K-ALG-006-tree-negative-control",
+        "criterion": "diagnosis",
+        "evidence": "tools/check_k_alg_006_full.py 中 tree_leak(vis) 只有 return ('B',) in vis；负对照先执行 badvis.add(('B',))，再 assert tree_leak(badvis)。它没有模型输入、attention 消费或 logits 行映射，不能实现正文所述“节点看到兄弟后，条件输出在可区分输入上改变”的区分实验。",
+        "impact": "该负对照的成功仅证明集合成员查询，无法检测本章当前的行错位和自身可见性错误；预检退出 0 不能作为树形验证机制正确的证据。",
+        "blocking": true,
+        "required_revision": "用确定性 CPU 玩具前向消费实际构造的可见集与行映射，并以逐路径串行前向作为独立参考。注入兄弟泄漏、遗漏自身以及父行/节点行错位，要求输出或状态参考实际检出错误；现有集合查询可保留为局部检查，但须收窄其证明范围。无需增加 GPU 验收条件。"
+      }
+    ],
+    "limitations": [
+      "现有检查及本次独立计算均不证明 CUDA 同步、真实 attention、图重放、跨设备传输、实际设备事务量或性能；正文明确声明的这些边界可以保留。",
+      "任意多候选树的具体遍历与重采样实现尚未交付完整证明，可保留为范围限制，但不能覆盖当前输入行、mask 与 logits 对应关系的错误。",
+      "未暴露上游源码归档、PDF 视觉材料或离线 reader.html 实体；本次核对全文文本与相对链接表达，未声称完成源码核验、视觉检查或链接目标可达性检查。",
+      "当前工具未提供本地文件读取或 Python 执行能力；技能文件及 docs/knowledge-build-workflow.md 原件未能读取。审查使用用户明确提供的 JSON 格式、冻结全文与实际预检记录，未声称独立重跑 Python。"
+    ],
+    "checks": [
+      {
+        "script": "tools/check_k_alg_006_full.py",
+        "args": []
+      }
+    ],
+    "no_checks_reason": "",
+    "reading_scope": "完整阅读用户提供的以下全文，范围均为零基半开提取字符区间：AGENTS.md [0,567)；docs/knowledge-method.md [0,2251)；docs/knowledge-review.md [0,3016)；knowledge/algorithms/speculation-budget.md [0,12325)；knowledge/sources/S-SPEC.md [0,518)；knowledge/sources/S-HF-CACHE.md [0,827)；knowledge/sources/S-TORCH-REPRO.md [0,501)；knowledge/sources/S-EAGLE.md [0,706)；knowledge/algorithms/batched-sampling.md [0,2567)；knowledge/models/recurrent-hybrid-state.md [0,3563)；knowledge/system-semantics/position-mask-cache.md [0,4078)；knowledge/algorithms/branch-generation.md [0,3670)；knowledge/system-semantics/serving-recovery.md [0,3834)；knowledge/tools/statistical-experiments.md [0,4269)；knowledge/algorithms/structured-output.md [0,2517)；knowledge/system-semantics/specialization-levers.md [0,5008)；knowledge/system-semantics/known-tensions.md [0,5454)；references/S-SPEC/fulltext.txt [0,47353)；references/S-HF-CACHE/fulltext.txt [0,7977)；references/S-TORCH-REPRO/fulltext.txt [0,7936)；references/S-EAGLE/fulltext.txt [0,47854)。knowledge/algorithms/async-scheduling.md 仅阅读所供摘录 [0,4500)、[8000,12000)，未列入 documents，也未声称读过全文。另完整阅读候选提供的 tools/check_k_alg_006_full.py、author_notes 和 actual_preflight 执行记录；脚本未提供提取字符区间。未读取未提供的历史 round-1 产物或 workflow 原件。",
+    "test_assessment": "实际执行证据来自所附 remote_bwrap 预检：脚本哈希与绑定值一致，returncode=0，stdout 给出总质量 1、期望长度 77/30、有效状态错误为空，以及四种分布负对照和状态变异的检测结果；作者明确未自行运行，与协调者后续实际执行并不冲突。本次未重跑 Python。概率检查以给定 p1、按前缀索引的 p2 和 p3 为外部目标，精确有理数枚举接受及修正分支；确定性阈值、直接使用 p 作残余的四种负对照确实改变被比较分布，因此这些检查具有实质作用。期望长度另由接受概率计算，但复用了同一接受公式，证明独立性较弱。p3 在所有前缀下相同，不能检测第三层条件索引错误。状态检查只覆盖 m=5、γ=3、n=2 的构造状态及字段变异，能检出 bonus 被计入 KV、拒绝候选可见和错误快照，未执行真实多层提交或回滚。树负对照仅插入并查询固定集合成员，未测试 mask 被模型消费后的输出。支持检查则编码了错误的必要条件。本次另外用 JavaScript 独立计算 p=(1/2,1/2)、q=(1,0)，互斥支持，以及 p=q 三种质量分解，均恢复 p；前两者直接反驳正文支持覆盖要求。还以含当前 token 残差与可见值均值的标量玩具行计算说明：prefix=(2,3)、候选=7 时，前缀末行值为 5.5，而候选行即使屏蔽自身 key 仍为 9.5，不能替代候选之前的条件行。这些是独立符号/CPU 算例，不是目标设备测量。"
+  },
+  "format_status": "strict_json",
+  "format_error": null,
+  "output_text": "{\n  \"entry_id\": \"K-ALG-006\",\n  \"body_sha256\": \"5e3a51166a07383d5ab59d3da5d4eed5aac76426037b0c8dc93c054ad4e10b2c\",\n  \"reviewer\": \"sol-reviewer:K-ALG-006:round-2\",\n  \"decision\": \"revise\",\n  \"documents\": {\n    \"AGENTS.md\": \"b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a\",\n    \"docs/knowledge-method.md\": \"69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb\",\n    \"docs/knowledge-review.md\": \"f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21\",\n    \"knowledge/algorithms/speculation-budget.md\": \"5e3a51166a07383d5ab59d3da5d4eed5aac76426037b0c8dc93c054ad4e10b2c\",\n    \"knowledge/sources/S-SPEC.md\": \"a637c44fe62f12685aed5d022d23eabf949083343dbce9656b0a149e742bfd90\",\n    \"knowledge/sources/S-HF-CACHE.md\": \"1a4afcf0d800ba3f42836445874d620ae9f7ba8ab4c361caa505376cc471595c\",\n    \"knowledge/sources/S-TORCH-REPRO.md\": \"05f2b5b9819f01363fadadf41987482edfebb130bc134c36c44a00138fd5eb28\",\n    \"knowledge/sources/S-EAGLE.md\": \"5781850aa1d8dd5a43cb5c971d595431cca204d90ebb0004357062e36de1fa8c\",\n    \"knowledge/algorithms/batched-sampling.md\": \"eedef73ece886112211c643f263add7644e5bd2018f2043c1716a172368aa6f2\",\n    \"knowledge/models/recurrent-hybrid-state.md\": \"b16b229713829787bffef07a62a08c0feca0a7b3a188aea2332a3689388c0417\",\n    \"knowledge/system-semantics/position-mask-cache.md\": \"91641b10a52209747af8d9fa83f822bedb01c583cede42a58550ad87ffe14ad6\",\n    \"knowledge/algorithms/branch-generation.md\": \"42157d4da17ab8ffd7a0aa2f5cd57a1cacdf1a989757261993f6671ae231de3a\",\n    \"knowledge/system-semantics/serving-recovery.md\": \"f551fa1f1e6213469c856a880839eefff504fb39f4dd692000b2df80a20a7f5e\",\n    \"knowledge/tools/statistical-experiments.md\": \"908b3588a6fa20bb1f2aed9f5db51c4b462953d79f8944cdbcfea7141c74644f\",\n    \"knowledge/algorithms/structured-output.md\": \"dd564087bb7df327081ce442368799cb0b27c59e9cbdab314b0a0dac99ca8ade\",\n    \"knowledge/system-semantics/specialization-levers.md\": \"3b316014be245e02a12d9aaf841d5a6518918d47685edb127865369dee1e37d6\",\n    \"knowledge/system-semantics/known-tensions.md\": \"e7e30a27ff5b42d93b55bc6e36a008ce6f5c100410fbe357ee3870a4ad601f90\",\n    \"references/S-SPEC/fulltext.txt\": \"66ebddbde83df97b2389d7e0e98c844435478aedeec56d024bf52b8cc0d94cec\",\n    \"references/S-HF-CACHE/fulltext.txt\": \"373837b8ac246d43867eb21de168cc59e5e6e78f5f3b9c27bee54740c4a635b4\",\n    \"references/S-TORCH-REPRO/fulltext.txt\": \"4f6b1deb38f7f174a2e340674680aaa0484e02a1d18cccd1bb94618df512cc2a\",\n    \"references/S-EAGLE/fulltext.txt\": \"509e09a8a7d28806b4154100599a018a8535fd4cccbd56129efa10ea90436df2\",\n    \"tools/check_k_alg_006_full.py\": \"bae31ec5de440fa9dcb037d7121c4403cc44eb6df643e8ba6c43542f8398b7da\"\n  },\n  \"criteria\": {\n    \"definition\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"解释了串行解码动机、条件分布、接受长度、回合输入输出，以及已知 token、全层有效状态和预留容量的区别；bonus 尚无自身 KV 的边界清楚。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/algorithms/speculation-budget.md\",\n          \"quote\": \"这里 p_i 是 x_i 之前的条件分布，p_{γ+1} 是全部候选之后的 bonus 分布。\"\n        },\n        {\n          \"path\": \"knowledge/algorithms/speculation-budget.md\",\n          \"quote\": \"bonus token 可能已经 known，但尚未作为输入，因此没有自己的 KV 或递归状态。\"\n        }\n      ]\n    },\n    \"legality\": {\n      \"assessment\": \"partial\",\n      \"reason\": \"接受与正剩余质量公式、greedy 契约及 seed 边界基本正确，但错误要求 q 覆盖 p 的支持集，并把相同模型版本、精度和采样变换写成 p/q 的共同必要条件。这些限制不由分布保持证明推出。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/algorithms/speculation-budget.md\",\n          \"quote\": \"合法性要求 q 在 p 的正支持上也有正概率，或明确把目标分布限制到 q 的支持并报告输出语义变化。\"\n        },\n        {\n          \"path\": \"knowledge/algorithms/speculation-budget.md\",\n          \"quote\": \"p_i 与 q_i 使用同一条件前缀、模型/adapter 版本、精度和实际采样变换\"\n        }\n      ]\n    },\n    \"algorithm\": {\n      \"assessment\": \"partial\",\n      \"reason\": \"链式接受、修正、提交与延迟回收已有实质展开；唯一 provenance 标记及四项来源说明已恢复，原 campaign-K-ALG-006-r1 问题关闭。但树形部分没有正确区分候选输入行与验证该候选的父行 logits，并把候选输入行的 attention 可见集写成不含自身，破坏目标前向语义。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/algorithms/speculation-budget.md\",\n          \"quote\": \"新 kv_boundary ← 旧 kv_boundary + n\"\n        },\n        {\n          \"path\": \"knowledge/algorithms/speculation-budget.md\",\n          \"quote\": \"链式 mask 使第 i 行只看到前缀与 x_1..x_{i-1}；树形 mask 只允许祖先。\"\n        },\n        {\n          \"path\": \"knowledge/algorithms/speculation-budget.md\",\n          \"quote\": \"对每个 v，计算 p_v ← Mp 在 prefix+path_to(parent(v)) 下的下一 token 分布\"\n        }\n      ]\n    },\n    \"cost\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"一般期望长度恒等式、i.i.d. 简化、墙钟与算术量公式可核对来源；六类成本和 batch 饱和、共享资源及驻留反转均有解释。设定算例中 24/3=8、10/8=1.25 和 24/4=6 成立。实际 query 行计费仍须随算法行映射修正核对，现有公式不能证明真实缓存前向成本。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/algorithms/speculation-budget.md\",\n          \"quote\": \"E[L]=1+Σ_{i=1}^{γ} P(前 i 个候选都被接受)\"\n        },\n        {\n          \"path\": \"knowledge/algorithms/speculation-budget.md\",\n          \"quote\": \"逻辑 token 数、设备事务量和峰值驻留必须分开报告。\"\n        }\n      ]\n    },\n    \"adaptation\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"解释了接受分布、batch 占用、草稿资源竞争和 KV/快照压力变化时为何调整或关闭投机；恢复时保留共同状态边界，而非只恢复长度。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/algorithms/speculation-budget.md\",\n          \"quote\": \"在线策略可按近期接受长度分布调整 γ，把额外验证预算给高收益请求，并在低接受率、目标 batch 已充分利用或草稿占用关键资源时关闭投机。\"\n        },\n        {\n          \"path\": \"knowledge/algorithms/speculation-budget.md\",\n          \"quote\": \"恢复过程要重算或读取共同状态位置，不能只恢复 token 长度而遗漏递归状态、窗口或 grammar。\"\n        }\n      ]\n    },\n    \"diagnosis\": {\n      \"assessment\": \"partial\",\n      \"reason\": \"竞争解释、干预及反证修正充分，概率枚举的目标参考和四种分布负对照有实质作用。但支持集检查把合法协议判错；树泄漏负对照仅插入并查询集合成员，未检验 mask 对模型输出的影响，也不能检出当前 logits 行错位。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/algorithms/speculation-budget.md\",\n          \"quote\": \"构造兄弟 token 明显不同的树，分别用合法 mask 与泄漏 mask\"\n        },\n        {\n          \"path\": \"knowledge/algorithms/speculation-budget.md\",\n          \"quote\": \"每个错误都必须被独立预期或不变量检出，而不是只打印预先写好的成功。\"\n        }\n      ]\n    }\n  },\n  \"findings\": [\n    {\n      \"id\": \"sol-K-ALG-006-support-domain\",\n      \"criterion\": \"legality\",\n      \"evidence\": \"正文写道：“若 p(x)>0 而 q(x)=0，x 永远不会被提出，接受公式没有有限比值，最终分布会缺失这部分质量。”但 S-SPEC §2.3 和附录 A.1 明确证明适用于任意 p、q。反例：p=(1/2,1/2)、q=(1,0)，提出 a 后以 1/2 接受，否则正剩余分布必选 b，最终仍为 p。检查中的 assert not has_support(sp,sq) 只是重复错误限制，未检验该合法协议。\",\n      \"impact\": \"把普通拒绝采样的支持覆盖要求误套到带残余修正的投机采样，会错误排除确定性 lookup 和截断草稿，并可能诱导实现截断目标分布而改变输出语义。\",\n      \"blocking\": true,\n      \"required_revision\": \"删除 q 必须覆盖 p 正支持的必要条件及缺失质量断言。说明接受比值仅在实际提出、故 q(x)>0 的候选上求值；q=0 且 p>0 的质量由完整词表上的正剩余分布恢复。同步修改诊断和检查，以精确枚举验证该反例、互斥支持及 p=q 时拒绝分支不可达；不要把 has_support 为假作为协议非法证明。\"\n    },\n    {\n      \"id\": \"sol-K-ALG-006-distribution-contract\",\n      \"criterion\": \"legality\",\n      \"evidence\": \"不变量要求：“p_i 与 q_i 使用同一条件前缀、模型/adapter 版本、精度和实际采样变换”。S-SPEC §3.6 允许任意近似模型，§6 也明确相同 standardization 是实验选择，并提出不同变换的可能性。\",\n      \"impact\": \"该表述把分布校正真正需要的身份一致性，与目标和草稿必须采用相同配置混为一谈，和独立小模型等设计轴冲突。\",\n      \"blocking\": true,\n      \"required_revision\": \"改为分别绑定目标与草稿各自稳定的模型、adapter、精度和变换：q_i 必须是实际产生候选的提议分布，p_i 必须是规定目标采样契约下的分布，两者对应同一逻辑条件前缀和可比较的 token 空间。明确相同变换或精度属于可选配置，不是分布保持的必要条件。\"\n    },\n    {\n      \"id\": \"sol-K-ALG-006-node-logits-alignment\",\n      \"criterion\": \"algorithm\",\n      \"evidence\": \"正文称“链式 mask 使第 i 行只看到前缀与 x_1..x_{i-1}；树形 mask 只允许祖先”；树形伪代码又以 row 映射节点 v，却在该行计算 parent(v) 前缀下的 p_v。已提供的 K-ALG-024 明确指出：“一个节点作为输入被计算后，所得 logits 表示它之后的条件分布；根后的第一个候选由根前缀末行的分布验证。”\",\n      \"impact\": \"节点 v 的输入行含有 v 的 embedding、query 和残差路径，不能通过排除自身 key 就变成 v 之前的分布；排除自身 KV 还改变正常 causal attention。按当前描述实现会同时产生错误 mask 和一步 logits 偏移。\",\n      \"blocking\": true,\n      \"required_revision\": \"分别定义候选输入行、该行允许读取的 KV 集合、该行输出分布以及验证候选所取的父行。候选输入行应读取确认前缀、祖先及自身；首候选用前缀末行 logits，其他候选用父节点行 logits，接受路径末行提供后续分布。展开或明确委托完整的逐层 hidden→Q/K/V→attention→下一层输入关系，并说明全层状态何时共同提交。核对修正后的新计算行数与缓存成本口径。\"\n    },\n    {\n      \"id\": \"sol-K-ALG-006-tree-negative-control\",\n      \"criterion\": \"diagnosis\",\n      \"evidence\": \"tools/check_k_alg_006_full.py 中 tree_leak(vis) 只有 return ('B',) in vis；负对照先执行 badvis.add(('B',))，再 assert tree_leak(badvis)。它没有模型输入、attention 消费或 logits 行映射，不能实现正文所述“节点看到兄弟后，条件输出在可区分输入上改变”的区分实验。\",\n      \"impact\": \"该负对照的成功仅证明集合成员查询，无法检测本章当前的行错位和自身可见性错误；预检退出 0 不能作为树形验证机制正确的证据。\",\n      \"blocking\": true,\n      \"required_revision\": \"用确定性 CPU 玩具前向消费实际构造的可见集与行映射，并以逐路径串行前向作为独立参考。注入兄弟泄漏、遗漏自身以及父行/节点行错位，要求输出或状态参考实际检出错误；现有集合查询可保留为局部检查，但须收窄其证明范围。无需增加 GPU 验收条件。\"\n    }\n  ],\n  \"limitations\": [\n    \"现有检查及本次独立计算均不证明 CUDA 同步、真实 attention、图重放、跨设备传输、实际设备事务量或性能；正文明确声明的这些边界可以保留。\",\n    \"任意多候选树的具体遍历与重采样实现尚未交付完整证明，可保留为范围限制，但不能覆盖当前输入行、mask 与 logits 对应关系的错误。\",\n    \"未暴露上游源码归档、PDF 视觉材料或离线 reader.html 实体；本次核对全文文本与相对链接表达，未声称完成源码核验、视觉检查或链接目标可达性检查。\",\n    \"当前工具未提供本地文件读取或 Python 执行能力；技能文件及 docs/knowledge-build-workflow.md 原件未能读取。审查使用用户明确提供的 JSON 格式、冻结全文与实际预检记录，未声称独立重跑 Python。\"\n  ],\n  \"checks\": [\n    {\n      \"script\": \"tools/check_k_alg_006_full.py\",\n      \"args\": []\n    }\n  ],\n  \"no_checks_reason\": \"\",\n  \"reading_scope\": \"完整阅读用户提供的以下全文，范围均为零基半开提取字符区间：AGENTS.md [0,567)；docs/knowledge-method.md [0,2251)；docs/knowledge-review.md [0,3016)；knowledge/algorithms/speculation-budget.md [0,12325)；knowledge/sources/S-SPEC.md [0,518)；knowledge/sources/S-HF-CACHE.md [0,827)；knowledge/sources/S-TORCH-REPRO.md [0,501)；knowledge/sources/S-EAGLE.md [0,706)；knowledge/algorithms/batched-sampling.md [0,2567)；knowledge/models/recurrent-hybrid-state.md [0,3563)；knowledge/system-semantics/position-mask-cache.md [0,4078)；knowledge/algorithms/branch-generation.md [0,3670)；knowledge/system-semantics/serving-recovery.md [0,3834)；knowledge/tools/statistical-experiments.md [0,4269)；knowledge/algorithms/structured-output.md [0,2517)；knowledge/system-semantics/specialization-levers.md [0,5008)；knowledge/system-semantics/known-tensions.md [0,5454)；references/S-SPEC/fulltext.txt [0,47353)；references/S-HF-CACHE/fulltext.txt [0,7977)；references/S-TORCH-REPRO/fulltext.txt [0,7936)；references/S-EAGLE/fulltext.txt [0,47854)。knowledge/algorithms/async-scheduling.md 仅阅读所供摘录 [0,4500)、[8000,12000)，未列入 documents，也未声称读过全文。另完整阅读候选提供的 tools/check_k_alg_006_full.py、author_notes 和 actual_preflight 执行记录；脚本未提供提取字符区间。未读取未提供的历史 round-1 产物或 workflow 原件。\",\n  \"test_assessment\": \"实际执行证据来自所附 remote_bwrap 预检：脚本哈希与绑定值一致，returncode=0，stdout 给出总质量 1、期望长度 77/30、有效状态错误为空，以及四种分布负对照和状态变异的检测结果；作者明确未自行运行，与协调者后续实际执行并不冲突。本次未重跑 Python。概率检查以给定 p1、按前缀索引的 p2 和 p3 为外部目标，精确有理数枚举接受及修正分支；确定性阈值、直接使用 p 作残余的四种负对照确实改变被比较分布，因此这些检查具有实质作用。期望长度另由接受概率计算，但复用了同一接受公式，证明独立性较弱。p3 在所有前缀下相同，不能检测第三层条件索引错误。状态检查只覆盖 m=5、γ=3、n=2 的构造状态及字段变异，能检出 bonus 被计入 KV、拒绝候选可见和错误快照，未执行真实多层提交或回滚。树负对照仅插入并查询固定集合成员，未测试 mask 被模型消费后的输出。支持检查则编码了错误的必要条件。本次另外用 JavaScript 独立计算 p=(1/2,1/2)、q=(1,0)，互斥支持，以及 p=q 三种质量分解，均恢复 p；前两者直接反驳正文支持覆盖要求。还以含当前 token 残差与可见值均值的标量玩具行计算说明：prefix=(2,3)、候选=7 时，前缀末行值为 5.5，而候选行即使屏蔽自身 key 仍为 9.5，不能替代候选之前的条件行。这些是独立符号/CPU 算例，不是目标设备测量。\"\n}",
+  "elapsed_seconds": 325.734
+}

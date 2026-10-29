@@ -1,0 +1,61 @@
+{
+  "id": "K-MODEL-003",
+  "path": "models/moe-routing.md",
+  "category": "models",
+  "title": "MoE：路由、Dispatch/Combine 与专家负载",
+  "summary": "MoE 的条件计算节省激活 FLOPs，但全部专家的驻留和路由后的不均衡决定真实服务成本。",
+  "revision": 4,
+  "status": "seed",
+  "tags": [
+    "MoE",
+    "routing",
+    "dispatch",
+    "combine",
+    "expert parallel",
+    "grouped GEMM",
+    "expert replicas",
+    "routing skew"
+  ],
+  "scope": {
+    "model_families": [
+      "moe"
+    ],
+    "platforms": [],
+    "runtimes": [],
+    "workloads": []
+  },
+  "source_ids": [
+    "S-MIXTRAL",
+    "S-MLA",
+    "S-NCCL-COLLECTIVE",
+    "S-DEEPSEEKV3"
+  ],
+  "related": [
+    "K-ALG-015",
+    "K-HW-002",
+    "K-WORK-003",
+    "K-ALG-019",
+    "K-ALG-020",
+    "K-HW-010",
+    "K-HW-011",
+    "K-SYS-012"
+  ],
+  "evidence": [],
+  "updated_at": "2026-10-27",
+  "sha256": "1983c63c143c20159af90e0b7d66d4adbb0c8ac471df67d1ca1176599ed30bbc",
+  "questions": [
+    "一次 MoE 层中路由、dispatch、专家计算与 combine 之间的数据关系是什么？",
+    "激活参数与驻留参数为何不同，服务成本由哪一个决定？",
+    "专家并行的通信形态随 batch 与路由分布怎样变化，慢端如何出现？",
+    "grouped GEMM 处理的是一组形状不同的矩阵，这对 kernel 与调度意味着什么？",
+    "专家副本改变放置而不改变函数，驻留、卸载与通信重叠如何共同选择？"
+  ],
+  "symptoms": [
+    "MoE 某些 batch 特别慢",
+    "每 token 稀疏但权重仍频繁加载"
+  ],
+  "assumes": [
+    "稀疏门控的专家混合层",
+    "专家总量超过单设备驻留"
+  ]
+}

@@ -1,0 +1,200 @@
+{
+  "entry_id": "K-ALG-012",
+  "body_sha256": "b3a1ad20a0bb94613302c45ca90ec14804bcfeaf4f471d6a89aeb522bae52489",
+  "reviewer": "sol-reviewer:K-ALG-012:round-1",
+  "decision": "revise",
+  "documents": {
+    "AGENTS.md": "b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a",
+    "docs/knowledge-method.md": "69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb",
+    "docs/knowledge-review.md": "f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21",
+    "knowledge/algorithms/structured-output.md": "b3a1ad20a0bb94613302c45ca90ec14804bcfeaf4f471d6a89aeb522bae52489",
+    "knowledge/sources/S-XGRAMMAR.md": "2f5ce127d3226f6dd1be7bd091216e8ad4ffa40138a84d1d9827489ce924c31c",
+    "knowledge/sources/S-FI-SAMPLE.md": "ed5a4b98c3c64499022096e8dfd65ff84a1b3d5f9d118783f950a59fc6ecde9c",
+    "knowledge/sources/S-CHAT.md": "ce1c32f9382e4ec5d94c6e269d84e910347d792bdb8327d6324436de2e39ab07",
+    "knowledge/algorithms/batched-sampling.md": "eedef73ece886112211c643f263add7644e5bd2018f2043c1716a172368aa6f2",
+    "knowledge/algorithms/speculation-budget.md": "91a6e60d5151fb5b1155d2ba0ddcb3ba1251e69f7caf79b0ec217c7bf9a74d0d",
+    "knowledge/system-semantics/tokenization-io.md": "1dea61a1f632805cb90873e747cb3079230a7b6bab76b17b4281662b82367565",
+    "knowledge/algorithms/branch-generation.md": "42157d4da17ab8ffd7a0aa2f5cd57a1cacdf1a989757261993f6671ae231de3a",
+    "knowledge/system-semantics/serving-recovery.md": "f551fa1f1e6213469c856a880839eefff504fb39f4dd692000b2df80a20a7f5e",
+    "knowledge/tools/correctness-oracles.md": "c2f88bc9746ac25586fc6700aaf0f5a8d043a1b1f4aee99dfdee02e1ef468aab",
+    "references/S-XGRAMMAR/fulltext.txt": "e7a169d0e89d2d09c964f2eedab3f8866f473bc3d942092d68263a8fa85a33fa",
+    "references/S-CHAT/fulltext.txt": "7e5e268a64c716d3e87ebb5c11989e16afab9f10589a2190e281a0800a255287",
+    "tools/check_k_alg_012_full.py": "1b8a7317f14e1e8420f1a4086b6c634f4b2e2b3c39e23a0e5816236c12805e49"
+  },
+  "criteria": {
+    "definition": {
+      "assessment": "sufficient",
+      "reason": "明确了字符或字节语言、固定 token 展开、非确定 PDA 配置集合、请求状态及合法质量归一化。PDA 定义与 XGrammar 附录 A 一致，基本约束分布也声明了零合法质量边界。",
+      "evidence": [
+        {
+          "path": "knowledge/algorithms/structured-output.md",
+          "quote": "给定 S，合法 token 集定义为 A(S)={v∈V : advance(S,σ(v)) 至少含一个仍可到达接受状态的配置}，并在 S 可接受时加入 EOS。"
+        },
+        {
+          "path": "knowledge/algorithms/structured-output.md",
+          "quote": "对请求保存已确认 token 序列 y、解析状态 S、生成代次 g 和缓存身份 κ。"
+        }
+      ]
+    },
+    "legality": {
+      "assessment": "partial",
+      "reason": "tokenizer 身份、模板受约束区间、schema 与语法的区别、并行配置取并集均有解释，且模板语义得到所供文档支持。但手算例子错误地补入左括号，诊断又把接受状态误当成只能终止，与 A(S) 定义冲突。",
+      "evidence": [
+        {
+          "path": "knowledge/algorithms/structured-output.md",
+          "quote": "实现必须显式记录受约束区间的起点。"
+        },
+        {
+          "path": "knowledge/algorithms/structured-output.md",
+          "quote": "在空前缀后，token a,b] 展开为 [a,b]，合法；token a,] 展开为 [a,]，不合法。"
+        },
+        {
+          "path": "knowledge/algorithms/structured-output.md",
+          "quote": "已有接受前缀只应允许 EOS"
+        }
+      ]
+    },
+    "algorithm": {
+      "assessment": "partial",
+      "reason": "预计算与运行时检查分离、多配置并集、自适应表示、persistent stack 和采样前同步基本忠实于 XGrammar。可是交付的生成循环先对 EOS 调用未定义的普通文本展开，而且没有给出 logits 的输入或逐步生产关系，尚不能按所写初始化、推进和完成。",
+      "evidence": [
+        {
+          "path": "knowledge/algorithms/structured-output.md",
+          "quote": "输入：请求 r，已确认受约束输出 y，语法 G，tokenizer 映射 σ，最大步数 M"
+        },
+        {
+          "path": "knowledge/algorithms/structured-output.md",
+          "quote": "v ← sample(p', 请求 r 的随机流)\n    S' ← advance(S, σ(v))"
+        },
+        {
+          "path": "knowledge/algorithms/structured-output.md",
+          "quote": "mask 只依赖已经确认的前缀 token，而当前前向也只依赖同一前缀；在采样前同步。"
+        }
+      ]
+    },
+    "cost": {
+      "assessment": "partial",
+      "reason": "已区分编译、在线检查、传输、驻留和同步，并正确限定论文数字不是本库实测。128k 按 131072 个 ID 计算时完整 bitset 为 16384 字节，算例成立。但运行时公式没有明确配置数量如何进入字符检查工作量，设备直接读 mask 也不足以推出免除主机到设备的数据移动。",
+      "evidence": [
+        {
+          "path": "knowledge/algorithms/structured-output.md",
+          "quote": "T_mask ≈ c_lookup + D·L̄·c_char + b·c_merge + c_sync"
+        },
+        {
+          "path": "knowledge/algorithms/structured-output.md",
+          "quote": "若采样核在设备上直接读 mask，则省去这次回传，但 mask 仍要在 CPU 或其他设备上生成。"
+        },
+        {
+          "path": "knowledge/algorithms/structured-output.md",
+          "quote": "这些是论文报告的数字，不是本库在目标硬件上的测量。"
+        }
+      ]
+    },
+    "adaptation": {
+      "assessment": "sufficient",
+      "reason": "针对 batch、语法复杂度、版本变化、投机收益及恢复给出了保留、调整或放弃条件。取消后的逻辑提交权与等待最后使用者完成后回收有明确区别；相关章节也区分了确认 token 与实际已计算 KV。",
+      "evidence": [
+        {
+          "path": "knowledge/algorithms/structured-output.md",
+          "quote": "若 CPU 成为瓶颈，应改为批量化、并行化或把部分工作移到设备，而不是假设批越大越能隐藏。"
+        },
+        {
+          "path": "knowledge/algorithms/structured-output.md",
+          "quote": "取消请求时要释放解析状态和设备 mask 缓冲，但在途执行仍可能持有引用，回收要等最后使用者完成。"
+        },
+        {
+          "path": "knowledge/algorithms/structured-output.md",
+          "quote": "若接受率下降或 grammar 使候选支持集过窄，应减少或关闭投机，而不是绕过约束。"
+        }
+      ]
+    },
+    "diagnosis": {
+      "assessment": "partial",
+      "reason": "竞争解释、有限语言独立参考、负对照和性能分项设计具有辨别力，未执行范围也声明清楚。不过终止边界实验采用了没有限定前缀无可扩展性的错误预测；现有脚本只检查 EOS 是否允许，没有检查接受状态是否仍允许普通 token，因此没有揭示该冲突。",
+      "evidence": [
+        {
+          "path": "knowledge/algorithms/structured-output.md",
+          "quote": "负对照应故意使用首字符启发式，并确认检查确实拒绝它；如果检查对错误实现也给通过，说明 oracle 没有辨别力。"
+        },
+        {
+          "path": "knowledge/algorithms/structured-output.md",
+          "quote": "第二类是空合法集和终止边界。已有接受前缀只应允许 EOS"
+        },
+        {
+          "path": "knowledge/algorithms/structured-output.md",
+          "quote": "上述有限语言检查是 CPU 逻辑验证；它不证明目标 GPU 上的 mask 传输、CPU/GPU 重叠或服务吞吐。"
+        }
+      ]
+    }
+  },
+  "findings": [
+    {
+      "id": "K-ALG-012-EOS-DISPATCH",
+      "criterion": "algorithm",
+      "evidence": "正文定义“EOS 是特殊终止 token，不属于普通文本展开。”；伪代码却执行“v ← sample(p', 请求 r 的随机流)”后立即执行“S' ← advance(S, σ(v))”，直到提交之后才判断“if v = EOS:”。",
+      "impact": "正常采到合法 EOS 时，算法先消费没有定义的 σ(EOS)，可能报错或错误地改变解析状态，无法依照所给算法完成请求。脚本的 eos_ok 只测试接受谓词，没有执行这条终止路径。",
+      "blocking": true,
+      "required_revision": "在普通 token 展开之前分派 EOS：核对当前状态可接受，记录终止并返回；仅对普通 token 执行 σ 和 advance。用实际步骤级检查覆盖采到 EOS 的完成路径。"
+    },
+    {
+      "id": "K-ALG-012-LOGITS-PRODUCTION",
+      "criterion": "algorithm",
+      "evidence": "伪代码输入为“请求 r，已确认受约束输出 y，语法 G，tokenizer 映射 σ，最大步数 M”，循环中消费“logits'[v] ← logits[v] if v ∈ C else -∞”，但没有定义 logits 输入、前向生产步骤或下一轮 logits 更新。",
+      "impact": "同一循环中解析状态和输出持续推进，模型条件分布却没有对应的生产事件；直接实现会遇到未定义输入，或反复使用旧前缀的 logits。前后关于重叠的文字没有补齐该数据依赖。",
+      "blocking": true,
+      "required_revision": "明确算法边界。若保留多步生成循环，说明初始 logits 及后续 logits 如何对应实际模型前缀产生，并区分刚采到的 token 与其尚未计算的 KV；若仅交付 grammar 采样单步，则显式输入当前前缀对应的 logits，移除多步循环，并把下一步模型推进委托到明确的已有解释。"
+    },
+    {
+      "id": "K-ALG-012-EXAMPLE-PREFIX",
+      "criterion": "legality",
+      "evidence": "正文写“在空前缀后，token a,b] 展开为 [a,b]，合法”；所供脚本实际检查的是“('[', 'a,b]')”，不是空前缀。",
+      "impact": "该语言的所有接受串均以左括号开始；空前缀追加 a,b] 不存在合法完成路径。例子凭空增加字符，违背固定 σ(v) 和合法集合定义，并与作者实际测试输入不一致。",
+      "blocking": true,
+      "required_revision": "将此处前缀修正为左括号，或明确重新定义实际 token 展开，保证手算轨迹与脚本及 σ 定义一致。"
+    },
+    {
+      "id": "K-ALG-012-ACCEPTING-EXTENSION",
+      "criterion": "legality",
+      "evidence": "诊断部分写“已有接受前缀只应允许 EOS”；定义部分则写“并在 S 可接受时加入 EOS”。",
+      "impact": "接受不意味着没有非空合法延伸。例如 L={a,ab} 中，前缀 a 已接受，但普通 token b 仍合法；JSON 数值或尾随空白也可能继续。按诊断中的断言实现或验收会错误屏蔽合法 token。",
+      "blocking": true,
+      "required_revision": "明确接受状态允许 EOS，同时继续按 A(S) 判断普通 token。只有当前接受前缀不存在非空合法延伸时才只能终止；将现有小语言中的结论限定于该条件，并检查一般情况下的预期。"
+    },
+    {
+      "id": "K-ALG-012-CONFIGURATION-WORK",
+      "criterion": "cost",
+      "evidence": "正文定义“依赖上下文候选数为 D，token 平均字节数为 L̄，并行栈数为 b”，随后给出“T_mask ≈ c_lookup + D·L̄·c_char + b·c_merge + c_sync”；算法对候选调用“advance(S, σ(v))”。",
+      "impact": "D 未说明是去重 token 数还是配置与 token 检查对数。若对应 D(S) 的去重候选，advance 必须处理多个配置，且中途可能继续分叉；b 不能只影响最终合并。当前表达不足以预测歧义或嵌套变化后的字符处理成本。",
+      "blocking": true,
+      "required_revision": "明确 D、L̄ 和 c_char 的计量对象。可用实际访问的配置转移数表示字符工作量，或按配置汇总依赖候选；同时说明 c_merge 随表示和集合长度变化的条件，避免把配置相关工作隐藏为固定常数。"
+    },
+    {
+      "id": "K-ALG-012-MASK-TRANSFER",
+      "criterion": "cost",
+      "evidence": "成本部分先写“若向设备传完整 bitset，每个请求每步约 ceil(|V|/8) 字节”，随后写“若采样核在设备上直接读 mask，则省去这次回传，但 mask 仍要在 CPU 或其他设备上生成。”",
+      "impact": "设备采样核直接读取 mask，并不能免除 CPU 生成结果到设备消费者的数据移动。显式复制需要传输；映射主机内存仍可能产生互连读取。该判断会漏记所述 CPU/GPU 重叠路径的通信成本。",
+      "blocking": true,
+      "required_revision": "按 mask 生产位置、存储位置和消费位置分别说明路径。区分免除显式复制与免除互连流量；只有满足设备侧生成、已有有效设备副本或相应共享内存条件时，才能作对应的节省判断。"
+    }
+  ],
+  "limitations": [
+    "结论基于完整提供的文本、脚本及 actual_preflight 记录；未独立读取本地磁盘字节或重新运行 Python 脚本。",
+    "S-FI-SAMPLE 仅提供机制说明，没有允许阅读的原始文档或设备实现。其设备内循环不在本次已核实范围内。",
+    "实际 Python 检查覆盖有限小语言和 CPU 逻辑，不覆盖完整 JSON、任意 CFG、生产引擎或目标设备行为；作者对此的范围声明可以保留。",
+    "cache 失效、迟到 mask、投机回滚、请求随机流重排、schema 校验、GPU 传输、重叠与服务吞吐没有实际测试证据；不将实验设计记为通过。",
+    "未提供 Agent 使用效果或统计采样实验，不据此推断知识使用收益或采样频率正确性。"
+  ],
+  "checks": [
+    {
+      "script": "tools/check_k_alg_012_full.py",
+      "args": [],
+      "evidence_basis": "提供的 actual_preflight 实际执行记录，非审阅者重新执行",
+      "script_sha256": "1b8a7317f14e1e8420f1a4086b6c634f4b2e2b3c39e23a0e5816236c12805e49",
+      "returncode": 0,
+      "result": "隔离环境执行完成；91 个接受串、282 个前缀、16 个 token 条目共 4512 次比较；282 次 EOS 谓词比较；首字符负对照产生 4035 次分歧；固定分布归一化及空合法集异常检查通过。这些结果不代表正文完整生成循环通过。"
+    }
+  ],
+  "no_checks_reason": "",
+  "reading_scope": "完整阅读了所供材料，以下坐标均采用提供方声明的提取文本零基半开字符范围：AGENTS.md [0,567)；docs/knowledge-method.md [0,2251)；docs/knowledge-review.md [0,3016)；knowledge/algorithms/structured-output.md [0,8236)；knowledge/sources/S-XGRAMMAR.md [0,454)；knowledge/sources/S-FI-SAMPLE.md [0,943)；knowledge/sources/S-CHAT.md [0,522)；knowledge/algorithms/batched-sampling.md [0,2567)；knowledge/algorithms/speculation-budget.md [0,3904)；knowledge/system-semantics/tokenization-io.md [0,3217)；knowledge/algorithms/branch-generation.md [0,3670)；knowledge/system-semantics/serving-recovery.md [0,3834)；knowledge/tools/correctness-oracles.md [0,5245)；references/S-XGRAMMAR/fulltext.txt [0,78203)；references/S-CHAT/fulltext.txt [0,12274)。上述材料均标为完整提取文本，没有以摘录冒充完整阅读。另完整阅读 candidate.test_script（从首行 shebang 至末尾 main() 调用，提供方未给字符坐标）、author_notes 和 actual_preflight。脚本身份由所供执行记录绑定。没有阅读 reader.html、原 PDF、源码归档或未提供的链接目标；全文文本阅读不等于这些其他载体的读取。",
+  "test_assessment": "参考实现有实质独立性：gen_W/F/V/E/S 显式构造有限接受语言，ref_legal 用字符串前缀关系判断；被测路径则用 PRODUCTIONS、epsilon_closure 和 advance 推进栈。两者共享语言规范，但不共享 PDA 转移实现，因而不是同一函数自比。该有限语法所有非终结符均可完成，因此在此域内以非空推进结果判断可延伸性成立，不能推广到含不可生成分支的任意 CFG。覆盖范围是全部枚举合法前缀乘所列 token 条目，16 项中左括号重复一次，实际为 15 个不同展开。跨规则与深度探针具有意义。首字符负对照忽略了前缀状态，属于较弱的错误模型，但定向断言 '[a' 加 ']]' 的确检出了完整 token 尾部越界，满足机制相关的负对照要求。EOS 检查仅比较接受谓词，没有执行正文的 EOS 分派与提交；概率检查使用独立硬编码分布，没有接入 grammar 生成循环；空集合检查只调用分布辅助函数。零合法概率质量、最大长度终止、逐步 logits 更新、编译 cache、表示合并和异步状态均未被执行检查覆盖。审阅者另用内存 JavaScript 独立构造有限接受串，复算得到 91 个接受串及 282 个前缀，确认空前缀加 a,b] 为非法、左括号前缀加同一 token 为合法，并核算 131072 位为 16384 字节；这不是 Python 脚本复跑。作者尚未执行的备注与后来提供的协调者执行记录应分别理解：现有记录证明该绑定脚本确实执行成功，但不能修复正文中未被它调用的算法错误。"
+}

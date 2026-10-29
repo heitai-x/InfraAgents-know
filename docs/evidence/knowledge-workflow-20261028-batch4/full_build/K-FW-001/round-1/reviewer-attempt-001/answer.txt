@@ -1,0 +1,162 @@
+{
+  "entry_id": "K-FW-001",
+  "body_sha256": "a1977b4f68d22cd1bc567e5dcd13d72e702a1b8a99189fbc29fe5fea57583931",
+  "reviewer": "sol-reviewer:K-FW-001:round-1",
+  "decision": "revise",
+  "documents": {
+    "AGENTS.md": "b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a",
+    "docs/knowledge-method.md": "69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb",
+    "docs/knowledge-review.md": "f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21",
+    "knowledge/frameworks/inference-eval.md": "a1977b4f68d22cd1bc567e5dcd13d72e702a1b8a99189fbc29fe5fea57583931",
+    "knowledge/sources/S-TORCH-INFERENCE.md": "2114aca130a5c62a0b10baa52b7d59becea788c98dd5cd8221573b1a8d5178b3",
+    "knowledge/sources/S-TORCH-CUDA.md": "8ee61677a1e35d475d9bb122b2c7fa824ccf054acefbe2f12345d72c1fb1b00e",
+    "knowledge/sources/S-TORCH-REPRO.md": "05f2b5b9819f01363fadadf41987482edfebb130bc134c36c44a00138fd5eb28",
+    "knowledge/sources/S-TORCH-DYNAMIC.md": "e25e5064d2a272b3121fc11bf72b817673bcac318e4f91cc4dc60f3896005c22",
+    "knowledge/sources/S-TORCH-NUMERIC.md": "cbe91153d9ff7bd2f596d1d6c4e15de1ad68571f3cbde23215891a8ec7f6fab4",
+    "knowledge/frameworks/numerical-reference.md": "a70beff4c73683f897d9c0c1fb291539051e20b2c31adfd90a3f6677c411596f",
+    "knowledge/frameworks/compile-dynamic-shapes.md": "6f9773875d24bbe32fd80e62cfba4e85f841ec1b65876b513c30d8d9f000b1ef",
+    "knowledge/system-semantics/position-mask-cache.md": "91641b10a52209747af8d9fa83f822bedb01c583cede42a58550ad87ffe14ad6",
+    "knowledge/frameworks/checkpoint-loading.md": "5205ab97f77cdb821e5a0c3f6685a99cfc12ccc8474f96c6de82375372cb59bf",
+    "knowledge/system-semantics/host-runtime.md": "005342b6131acdd072d5cf35456a5b01e5630f764b614e7090639fde01a5b36a",
+    "knowledge/tools/correctness-oracles.md": "c2f88bc9746ac25586fc6700aaf0f5a8d043a1b1f4aee99dfdee02e1ef468aab",
+    "knowledge/system-semantics/memory-allocators.md": "2e7258787b94ad142c7c236541e8718803ad30b273d08e6c398dff673a1df838",
+    "knowledge/hardware/cpu-serving.md": "0467a77e32d299364f1a04695ead407096bc28259f06bd063f60572cc715ca82",
+    "knowledge/tools/framework-profiler-scope.md": "4f46307c9d0e0daeaf3d8ebecf0f3e385ff7696d342af2a002c41eced70d93d1",
+    "references/S-TORCH-CUDA/fulltext.txt": "4756fc37be9c52d4128b5f4b46f996fddb8b136a9ef51183a6f0e1c7d49b18df",
+    "references/S-TORCH-REPRO/fulltext.txt": "4f6b1deb38f7f174a2e340674680aaa0484e02a1d18cccd1bb94618df512cc2a",
+    "references/S-TORCH-DYNAMIC/fulltext.txt": "716fbc028c09a8da746d5749c31019e150d51468acf50f752c6620b2fd26e0ff",
+    "references/S-TORCH-NUMERIC/fulltext.txt": "bb6b2d8154a10f8f3b15e5ae4465cbc8d833067046964fc6b4d66dc036131b45",
+    "tools/check_k_fw_001_full.py": "d6edce6bf818549bb40c8ad0998b56570181128c635732443dad7a37c1186e81"
+  },
+  "criteria": {
+    "definition": {
+      "assessment": "sufficient",
+      "reason": "说明了区分模块行为、微分记录、推理区域、数值策略和请求状态的动机，并定义前向输入、输出和主要状态。模块模式如何绑定到实际对象树仍需修复，列入 legality finding。",
+      "evidence": [
+        {
+          "path": "knowledge/frameworks/inference-eval.md",
+          "quote": "把一次前向抽象为 `y_q = f_{θ,T,P}(x_q; R_q)`。"
+        },
+        {
+          "path": "knowledge/frameworks/inference-eval.md",
+          "quote": "把“没有梯度”误当成“推理语义正确”，会漏掉随机层、统计量更新、线程上下文和共享状态隔离。"
+        }
+      ]
+    },
+    "legality": {
+      "assessment": "partial",
+      "reason": "正确区分 eval、关闭梯度、共享状态隔离及异步完成条件，但服务入口只验证根模块 training 标志，不能建立其声称的整个模型模式契约。根模块为 eval、子 Dropout 或 BatchNorm 为 train 的状态仍会通过。",
+      "evidence": [
+        {
+          "path": "knowledge/frameworks/inference-eval.md",
+          "quote": "require model.training = cfg.module_training"
+        },
+        {
+          "path": "knowledge/frameworks/inference-eval.md",
+          "quote": "负对照是故意让模型保持 train 但声称处于 eval：worker 起始检查必须拒绝"
+        }
+      ]
+    },
+    "algorithm": {
+      "assessment": "partial",
+      "reason": "嵌套模式保存恢复和 finally 路径有明确步骤，请求表也区分提交、完成与回收；但核心 autograd 跨界仍由未展开的 MaterializeForAutograd 承担。调用发生在 PopMode 之前，没有给出建立普通张量所需的上下文转换、分配来源和梯度连接契约，符号检查也未验证这些步骤。",
+      "evidence": [
+        {
+          "path": "knowledge/frameworks/inference-eval.md",
+          "quote": "z = MaterializeForAutograd(z, q)"
+        },
+        {
+          "path": "knowledge/frameworks/inference-eval.md",
+          "quote": "具体接口和允许的转换方式必须按实际框架版本核对，不能把“名字叫 materialize”当作自动合法。"
+        }
+      ]
+    },
+    "cost": {
+      "assessment": "partial",
+      "reason": "激活容量算例及同步关键路径的单位和算术正确，也说明了计算、流量、准备、事件和驻留的区别。但 B_saved 使用逻辑元素数，却无存储布局及别名假设地称为上界；小视图可能保留远大于其逻辑字节的底层存储，因此该式不能直接约束保存张量导致的物理驻留。",
+      "evidence": [
+        {
+          "path": "knowledge/frameworks/inference-eval.md",
+          "quote": "一个可检查的上界是"
+        },
+        {
+          "path": "knowledge/frameworks/inference-eval.md",
+          "quote": "`B_saved(q) = Σ_{a∈S_q} |a| · b_a + c_m · |S_q|`。"
+        },
+        {
+          "path": "knowledge/frameworks/inference-eval.md",
+          "quote": "这是明确设定的解析算例，不是设备实测"
+        }
+      ]
+    },
+    "adaptation": {
+      "assessment": "sufficient",
+      "reason": "明确讨论模式、shape、精度、并发与 stream 改变后应保留和调整的对象，并给出放弃 inference_mode 或共享可变状态方案的条件。这些选择原则成立；autograd 转换的具体实现缺口由 algorithm finding 处理。",
+      "evidence": [
+        {
+          "path": "knowledge/frameworks/inference-eval.md",
+          "quote": "若 `inference_mode` 的张量限制使后续视图、原地写或 autograd 路径无法合法实现，应改用 `no_grad` 或普通区域"
+        },
+        {
+          "path": "knowledge/frameworks/inference-eval.md",
+          "quote": "判断依据是参考函数、误差分布和任务质量，而不是 `eval` 这个名字。"
+        }
+      ]
+    },
+    "diagnosis": {
+      "assessment": "sufficient",
+      "reason": "模式、线程、同步、内存、随机流、数值和编译的实验分别提出竞争解释、受控改变及结果不符后的修正方向。正文提出的实验不能视为已执行；现有脚本只支持其中部分抽象不变量，具体范围见 test_assessment。",
+      "evidence": [
+        {
+          "path": "knowledge/frameworks/inference-eval.md",
+          "quote": "若输出改变，先修复选择语义，不能把结果差异归因给同步。"
+        },
+        {
+          "path": "knowledge/frameworks/inference-eval.md",
+          "quote": "固定 `T` 并关闭随机算子后仍变化，才支持更底层的非确定性解释。"
+        }
+      ]
+    }
+  },
+  "findings": [
+    {
+      "id": "K-FW-001-MODULE-MODE",
+      "criterion": "legality",
+      "evidence": "knowledge/frameworks/inference-eval.md 的入口条件为「require model.training = cfg.module_training」，而诊断要求「worker 起始检查必须拒绝」模型未处于约定模式的负对照。",
+      "impact": "PyTorch 各子模块分别持有 training 状态。根模块为 false、某个子模块为 true 时，当前条件通过，但该子模块仍可能执行 dropout 或更新批统计。入口检查不能证明正文所用的模型函数和状态突变条件。",
+      "blocking": true,
+      "required_revision": "说明 T 是相关模块的模式配置，或明确建立整个模型使用统一模式的前提。启动时设置并验证相关子模块，之后禁止未授权修改；入口可验证已建立的固定配置。补充能区分根标志正确但子模块模式错误的检查，不必禁止任务明确允许的混合模式。"
+    },
+    {
+      "id": "K-FW-001-AUTOGRAD-MATERIALIZE",
+      "criterion": "algorithm",
+      "evidence": "ServeOne 在「z = MaterializeForAutograd(z, q)」之后才通过 finally 执行「PopMode(worker_ctx, saved)」。脚本使用「check_consumer('inference', True, True)」宣告转换后可跨界，但 check_consumer 只读取 materialized 布尔值，没有转换操作或产物状态。",
+      "impact": "在仍启用 inference_mode 时新建普通复制结果，不能仅凭复制动作保证得到普通张量；所有权转移也不会自行改变 inference 张量属性。当前算法没有交付合法转换路径，测试则预设转换已经成功。此外，物化结果不能恢复已省略的模型前向微分图，归因等需要穿过模型的梯度不能靠此修补。",
+      "blocking": true,
+      "required_revision": "展开一种明确合法的转换路径：规定有效 inference 上下文、普通存储的创建位置、复制依赖、别名与生命周期，以及退出和异常恢复顺序；处理外层 inference 上下文仍生效的情况。区分仅对后处理求导与需要穿过模型求导，后者保留或重建所需记录路径。将 consumer 检查连接到实际转换产生的张量状态或有明确创建规则的抽象状态，以同一 oracle 拒绝仍产生 inference 张量的错误转换，不能只设置 materialized=True。"
+    },
+    {
+      "id": "K-FW-001-SAVED-STORAGE-BOUND",
+      "criterion": "cost",
+      "evidence": "正文以「张量 `a` 的元素数为 `|a|`」定义计量对象，并将「`B_saved(q) = Σ_{a∈S_q} |a| · b_a + c_m · |S_q|`。」称为「一个可检查的上界」。",
+      "impact": "逻辑元素字节不能无条件上界底层存储驻留。保存一个小切片可能使原本可释放的大存储继续存活，非连续视图也可能跨越更大的存储范围；反向关系中，多个保存张量又可能共享同一存储。现有算式与物理内存推论之间缺少必要条件，脚本的连续激活乘法检查无法发现这一问题。",
+      "blocking": true,
+      "required_revision": "将该式限定为列举张量的逻辑载荷估算，并明确不作为物理驻留或实际节省的上界；或者增加独立紧凑存储等充分假设。若要计算实际保留容量，应按被引用的底层存储及其同时存活范围计账，并避免共享存储重复计算。保留现有 64 MiB/768 MiB 算例时写清其布局和独立存储假设。"
+    }
+  ],
+  "limitations": [
+    "未执行目标 GPU 的数值、kernel、stream、allocator、吞吐或尾延迟检查；这些声明清楚的验证边界可以保留，不是本次阻断理由。",
+    "本次未重新执行脚本。已审阅用户提供的实际 preflight：returncode=0、stderr 为空、未超时，执行记录中的脚本摘要与绑定摘要相同；这仅证明该次概念检查按其断言通过。",
+    "S-TORCH-INFERENCE 只提供来源说明，未提供允许读取的完整原始文档或源码；没有声称完成其上游实现核验。",
+    "当前工具没有可用的文件读取或命令执行接口，资源列表亦为空；未独立复算本地哈希、检查链接目标或读取 docs/knowledge-build-workflow.md 及技能 SKILL.md。文档绑定使用用户给定值，JSON 使用用户完整提供的 schema。"
+  ],
+  "checks": [
+    {
+      "script": "tools/check_k_fw_001_full.py",
+      "args": []
+    }
+  ],
+  "no_checks_reason": "",
+  "reading_scope": "已完整阅读用户提供的候选正文、脚本、author_notes 和 actual_preflight。以下为完整供应抽取文本，范围均按 materials 的零起点、半开字符区间记录：AGENTS.md [0,567)；docs/knowledge-method.md [0,2251)；docs/knowledge-review.md [0,3016)；knowledge/frameworks/inference-eval.md [0,10113)；knowledge/sources/S-TORCH-INFERENCE.md [0,727)；knowledge/sources/S-TORCH-CUDA.md [0,1468)；knowledge/sources/S-TORCH-REPRO.md [0,501)；knowledge/sources/S-TORCH-DYNAMIC.md [0,550)；knowledge/sources/S-TORCH-NUMERIC.md [0,532)；knowledge/frameworks/numerical-reference.md [0,3374)；knowledge/frameworks/compile-dynamic-shapes.md [0,4495)；knowledge/system-semantics/position-mask-cache.md [0,4078)；knowledge/frameworks/checkpoint-loading.md [0,3354)；knowledge/system-semantics/host-runtime.md [0,7559)；knowledge/tools/correctness-oracles.md [0,5245)；knowledge/system-semantics/memory-allocators.md [0,4191)；knowledge/hardware/cpu-serving.md [0,3694)；knowledge/tools/framework-profiler-scope.md [0,4833)；references/S-TORCH-CUDA/fulltext.txt [0,80851)；references/S-TORCH-REPRO/fulltext.txt [0,7936)；references/S-TORCH-DYNAMIC/fulltext.txt [0,11742)；references/S-TORCH-NUMERIC/fulltext.txt [0,10998)。tools/check_k_fw_001_full.py 阅读用户 candidate.test_script 所供全文，从文件头到 sys.exit(main())。knowledge/algorithms/operator-primitives.md 仅阅读供应片段 [0,2566) 和 [4000,9934)，不列入 documents，也不声称整章阅读。上述原文范围仅代表供应的抽取文件，不代表完整 PyTorch 仓库或源码归档。docs/knowledge-build-workflow.md 与技能文件未供应且无法通过当前工具读取。",
+  "test_assessment": "作者明确表示作者侧未执行；用户提供的协调者 preflight 则实际执行了绑定脚本并返回 PASS，两者不矛盾。脚本仅导入 sys，没有 PyTorch、小模型前向或设备操作。模式检查以显式的前后状态不变量作为 oracle，覆盖 inference/no_grad 嵌套、恢复、禁止 record 的服务设计规则和 training 不应改变；它没有验证真实线程局部状态、异常 finally 恢复、全部初始模式组合或模块树模式。禁止 record 是这里选定的服务规则，不能据此宣称 PyTorch 相应上下文必然抛错。激活检查验证连续设定下的字节算术及空集合，64 MiB×12 加 192 字节元数据得到 805306560 字节，与执行输出一致；没有覆盖视图保留存储或共享存储。请求 RNG 的单独/交错关系是有效的调度不变性检查，全局 RNG 负对照确实产生不同序列；重复调用与自身比较的断言本身不能额外建立随机分布正确性。错误 guard、错误 pop、错误 consumer、遗漏 dtype 字节和全局 RNG 的结果均有针对性观察，但 consumer 的合法分支直接信任 materialized=True，既没有独立张量语义参考，也没有转换算法；错误 consumer 的接受现象不能证明任何实际物化机制已被检验。正文所提模式矩阵、设备同步干预、真实内存观测、权重转置、编译变体和数值策略实验均未由此脚本执行，不能记为 PASS。需要修复的是物化机制及其判别检查，不能用现有进程成功替代；未测设备效果继续保留为 limitation。"
+}

@@ -1,0 +1,294 @@
+{
+  "role": "reviewer",
+  "engine": "sol",
+  "requested_model": "gpt-6.1-sol",
+  "reasoning_effort": "high",
+  "prompt_sha256": "22cf161a84f8bb76a8bc8d13909e9644a36db5838570e27b209859cf914df16b",
+  "usage": [
+    {
+      "input_tokens": 417246,
+      "cached_input_tokens": 319872,
+      "cache_write_input_tokens": 0,
+      "output_tokens": 6624,
+      "reasoning_output_tokens": 2199
+    }
+  ],
+  "answer": "{\n  \"entry_id\": \"K-HW-007\",\n  \"body_sha256\": \"b01c25784f71a01ec40542e0ae02b01514b202dfdee7a8239eb870a0c2d4550a\",\n  \"reviewer\": \"sol-reviewer:K-HW-007:round-1\",\n  \"decision\": \"revise\",\n  \"documents\": {\n    \"AGENTS.md\": \"b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a\",\n    \"docs/knowledge-method.md\": \"69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb\",\n    \"docs/knowledge-review.md\": \"f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21\",\n    \"knowledge/hardware/metal-unified-memory.md\": \"b01c25784f71a01ec40542e0ae02b01514b202dfdee7a8239eb870a0c2d4550a\",\n    \"knowledge/sources/S-MLX-MEM.md\": \"1d65e19c9f1394965bdf43eb8e6049a56dcdbe06af5602af386d4608845192d0\",\n    \"knowledge/sources/S-MLX.md\": \"7ee538d3fc5d3e2167c4f395180e9f63c984f75be9aeb3f419c902b2255cd9c9\",\n    \"knowledge/frameworks/mlx-serving.md\": \"f16f8287e7fd632c26f479dc90c88d0c4468852e86eac1a654ac0914a0958d4e\",\n    \"knowledge/hardware/memory-and-roofline.md\": \"7d0e6ef2eda6c43f6023bb4322438d512179e88ec2df3307621b8882f28da64b\",\n    \"knowledge/workloads/metric-events.md\": \"c21db7895f35f10ebe16fe4fc795de05ea48de02cd90339712f9a4a49252d1bb\",\n    \"knowledge/hardware/shared-memory-paths.md\": \"9471f29d33a5821b00e11b6d08fb69fe31288087d558f05c5f9234350efe8b0d\",\n    \"knowledge/algorithms/heterogeneous-execution.md\": \"8fd777e06b150eaba4e3288ccb188adbb975e37c28c77a72a9b6878a70e027f4\",\n    \"knowledge/system-semantics/memory-allocators.md\": \"2e7258787b94ad142c7c236541e8718803ad30b273d08e6c398dff673a1df838\",\n    \"references/S-MLX-MEM/fulltext.txt\": \"472f16846acae9c84a7daca168b900903579e71b5c05aa2376229f79a0d70f64\",\n    \"references/S-MLX/fulltext.txt\": \"070faaf48ca988d2b78a568a649a2e7e0a05ed5577740aa14e1b0a730e52e438\",\n    \"tools/check_k_hw_007_full.py\": \"f72e0c27203803b8b09ef0ea0027a887e5797ab51962fae244f912418eb4c369\"\n  },\n  \"criteria\": {\n    \"definition\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"明确解释统一物理内存仍有读取、容量和同步成本，定义物理身份、视图、生命期、请求已知输入与全层KV边界，并区分驻留积分和延迟。成本节对M_peak的后续改义另列为成本问题。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/hardware/metal-unified-memory.md\",\n          \"quote\": \"Live(t) 按物理身份 p 去重。逻辑数组是视图\"\n        },\n        {\n          \"path\": \"knowledge/hardware/metal-unified-memory.md\",\n          \"quote\": \"token 已经追加到 x 不等于它的 KV 已经完成。\"\n        }\n      ]\n    },\n    \"legality\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"合法性原则区分共享访问能力与设备选择，涵盖物理范围冲突、生产消费顺序、外部访问可见性、算子支持和容量准入。来源原文支持共享池和受跟踪依赖；正文没有把它们扩张成任意外部访问保证。交互步未落实这些原则的问题见算法项。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/hardware/metal-unified-memory.md\",\n          \"quote\": \"通过原生指针、外部库或其他进程读写时，需要显式同步、复制或序列化，并单独验证可见性。\"\n        },\n        {\n          \"path\": \"knowledge/hardware/metal-unified-memory.md\",\n          \"quote\": \"目标设备实际支持该算子、dtype 和布局。\"\n        }\n      ]\n    },\n    \"algorithm\": {\n      \"assessment\": \"partial\",\n      \"reason\": \"根闭包和物理最后使用边界解释正确，但交互步没有交付输入到逐层KV和末行logits的构造路径、完整命中后的推进分支及明确采样条件；发布根又被安排在采样和资格复核之前，不能形成所声明的事务。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/hardware/metal-unified-memory.md\",\n          \"quote\": \"b_r=r.k；e_r=min(r.n, b_r+q_r)\"\n        },\n        {\n          \"path\": \"knowledge/hardware/metal-unified-memory.md\",\n          \"quote\": \"新增 KV 的全层写入、所需 logits、采样随机状态、请求状态发布、响应记录\"\n        },\n        {\n          \"path\": \"knowledge/hardware/metal-unified-memory.md\",\n          \"quote\": \"若需要采样：token, rho_next=SAMPLE(logits, rho)\"\n        }\n      ]\n    },\n    \"cost\": {\n      \"assessment\": \"partial\",\n      \"reason\": \"KV有效载荷、设定容量和共享带宽算术正确，准备、同步、重叠和驻留也有说明。但M_peak是否包含预留前后不一致，可能重复准入计账；将读取简式同时用于decode和prefill时，缺少跨查询累计读取次数的定义。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/hardware/metal-unified-memory.md\",\n          \"quote\": \"M_peak ≈ max_t |W ∪ KV_committed ∪ delta_live ∪ workspace ∪ graph ∪ compile ∪ queues ∪ retained| + C_reserve。\"\n        },\n        {\n          \"path\": \"knowledge/hardware/metal-unified-memory.md\",\n          \"quote\": \"Q_step ≈ Q_W + b_kv Σ_r n_r + b_kv Σ_r Δn_r + Q_CPU + Q_other。\"\n        }\n      ]\n    },\n    \"adaptation\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"按CPU/GPU并发、上下文、batch、布局转换、图粒度、内存压力和量化解释保留条件、调整候选及反转信号，没有把来源中的单个加速比例外推为通用选择。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/hardware/metal-unified-memory.md\",\n          \"quote\": \"转换副本与流量超过收益，或转换改变了数值契约\"\n        },\n        {\n          \"path\": \"knowledge/hardware/metal-unified-memory.md\",\n          \"quote\": \"固定屏障主导或图元数据/驻留主导；只测单个算子不足以判断\"\n        }\n      ]\n    },\n    \"diagnosis\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"给出竞争解释、控制条件、干预方向和反证后的修正，明确区分预测与已执行实验。模型检查对其局部算术和闭包问题有有效负对照，但不能验证存在缺口的完整交互协议。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/hardware/metal-unified-memory.md\",\n          \"quote\": \"区分竞争解释时，先固定模型、输入、输出根和测量事件，再改变一个条件。\"\n        },\n        {\n          \"path\": \"knowledge/hardware/metal-unified-memory.md\",\n          \"quote\": \"表中的预测是模型预测，不是本轮已经得到的实验结果。\"\n        }\n      ]\n    }\n  },\n  \"findings\": [\n    {\n      \"id\": \"K-HW-007-R1-A01\",\n      \"criterion\": \"algorithm\",\n      \"evidence\": \"knowledge/hardware/metal-unified-memory.md：步骤1为“b_r=r.k；e_r=min(r.n, b_r+q_r)”，步骤3仅写“建立图 G_r”，步骤6为“若需要采样：token, rho_next=SAMPLE(logits, rho)”。请求状态没有末行logits及其前缀身份，正文也未明确委托K-FW-008的PREPARE和提交协议。\",\n      \"impact\": \"无法由本章恢复哪些已知token进入各层、各层KV如何产生以及何时有合法末行logits。合法状态k=n但无缓存logits时区间为空，没有生成后继结果的路径；e<n时也没有明确禁止从中间前缀采样。采样后的token追加、n增长而k保持e的关系没有落实到更新语句。\",\n      \"blocking\": true,\n      \"required_revision\": \"将模型准备明确委托到已链接K-FW-008的具体完整算法，并说明本章如何消费其结果，或在本章展开等价路径。明确q≥1、已知输入区间、逐层状态、e<n仅推进prefill、e=n才允许采样、k=n时兼容logits复用或安全重算，以及token追加后的n/k/RNG更新。无需新增统一标题或固定数量算例。\"\n    },\n    {\n      \"id\": \"K-HW-007-R1-A02\",\n      \"criterion\": \"algorithm\",\n      \"evidence\": \"knowledge/hardware/metal-unified-memory.md：步骤4将“采样随机状态、请求状态发布、响应记录”列为根，并要求“每个改变已提交状态的副作用必须是根或由根覆盖”；步骤5“等待全部根完成”；步骤6才执行“token, rho_next=SAMPLE(logits, rho)”和资格复核后的原子提交。\",\n      \"impact\": \"新的采样状态和响应内容在采样前尚不存在；若发布根具有正文所述副作用，它们会在提交资格检查前执行，取消或失败后的“不安装未提交候选”无法成立。若这些根只是私有候选，正文又没有说明该含义和最终安装边界。图写入也未被约束为私有增量，无法保证失败时旧KV保持不变。\",\n      \"blocking\": true,\n      \"required_revision\": \"区分设备结果根、私有候选和业务发布。采用主机采样时先完成全层KV及logits，再采样形成token/rho_next；采用设备采样时将其依赖明确放入图并等待相应根。所有写入须隔离于旧已提交状态，最终由同一状态拥有者在资格复核后安装token、KV、RNG和响应记录；输出交付发生在提交之后。保留现有最后使用结束后才能回收的要求。\"\n    },\n    {\n      \"id\": \"K-HW-007-R1-C01\",\n      \"criterion\": \"cost\",\n      \"evidence\": \"knowledge/hardware/metal-unified-memory.md：最初定义“M_peak = max_t C(t)”，合法性要求“M_peak 加上为系统、其他应用和在途转换预留的字节不能超过可用预算”，容量节却改写为“M_peak ≈ max_t |W ∪ KV_committed ∪ delta_live ∪ workspace ∪ graph ∪ compile ∪ queues ∪ retained| + C_reserve。”\",\n      \"impact\": \"M_peak从实际对象峰值变为包含预留的准入需求。按后面的定义代入前面的准入条件会再次加预留；正文所称三请求15.75 GiB可行，也可能被同一组公式错误计算为16.75 GiB而拒绝。\",\n      \"blocking\": true,\n      \"required_revision\": \"保持M_peak始终表示唯一物理对象的占用峰值，另定义含预留的准入需求并只加一次C_reserve，或一致修改全部定义和条件。明确并集作用于物理对象集合，竖线表示其字节测度；保留现有不同对象及包含关系的去重规则。\"\n    },\n    {\n      \"id\": \"K-HW-007-R1-C02\",\n      \"criterion\": \"cost\",\n      \"evidence\": \"knowledge/hardware/metal-unified-memory.md：“对一次 decode 或一段 prefill，若每个请求的逻辑历史读取为 n_r 个位置”，随后给出“Q_step ≈ Q_W + b_kv Σ_r n_r + b_kv Σ_r Δn_r + Q_CPU + Q_other。”\",\n      \"impact\": \"未明确n_r是历史长度还是跨全部查询累计的逻辑位置访问次数。若按历史长度使用，prefill片段中多个查询对旧历史的重复读取及片内因果读取被遗漏。例如处理[b,e)=[2,4)时，逐查询逻辑读取为3+4=7个位置，不能仅按旧历史长度2计读取，再加两个位置的写入。正文目前不足以支持其声明的prefill成本口径。\",\n      \"blocking\": true,\n      \"required_revision\": \"将该简式明确限于单查询decode，或定义累计读取量，例如逐请求Σ_{t=b_r}^{e_r−1}(t+1)，并另计(e_r−b_r)个位置的写入。若选择不同分块或融合口径，说明复用假设、Q_W对应的实际权重遍历次数，以及逻辑读取与共享内存事务之间的转换条件；可直接引用K-FW-008已有推导。\"\n    }\n  ],\n  \"limitations\": [\n    \"真实MLX/Metal执行、设备数值、stream可见性、可持续带宽、内存压缩或换出、服务延迟及Agent使用效果均未验证；正文将这些保留为边界是合理的。\",\n    \"M1 Max的2.8 ms与1.4 ms已与所供Unified Memory原文核对，仅是该来源示例的报告，不能证明服务收益。\",\n    \"本轮工具未提供文件读取或命令执行入口，也没有可用资源。因此未能读取本地infraagents-knowledge-build/SKILL.md、重新计算文件哈希、检查本地链接目标或自行复跑脚本；documents保留用户要求的绑定值，结论基于所供完整文本和实际执行记录。\",\n    \"读取的是所供两个fulltext.txt的完整提取文本，不代表读取整个上游仓库、源码归档、reader.html或未提供的其他来源原文。\"\n  ],\n  \"checks\": [\n    {\n      \"script\": \"tools/check_k_hw_007_full.py\",\n      \"args\": []\n    }\n  ],\n  \"no_checks_reason\": \"\",\n  \"reading_scope\": \"完整阅读用户所供材料，以下范围均为提取文本中零基、半开字符区间：AGENTS.md [0,567)；docs/knowledge-method.md [0,2251)；docs/knowledge-review.md [0,3016)；knowledge/hardware/metal-unified-memory.md [0,10451)；knowledge/sources/S-MLX-MEM.md [0,495)；knowledge/sources/S-MLX.md [0,470)；knowledge/frameworks/mlx-serving.md [0,13635)；knowledge/hardware/memory-and-roofline.md [0,13210)；knowledge/workloads/metric-events.md [0,2891)；knowledge/hardware/shared-memory-paths.md [0,3129)；knowledge/algorithms/heterogeneous-execution.md [0,3935)；knowledge/system-semantics/memory-allocators.md [0,4191)；references/S-MLX-MEM/fulltext.txt [0,2656)；references/S-MLX/fulltext.txt [0,4768)。这些均标为full且所供范围覆盖完整提取文本。另完整阅读candidate.test_script，从#!/usr/bin/env python3至main()调用；该项未提供字符范围。完整检查author_notes及actual_preflight的stdout、stderr和execution记录。没有把相关章所引用但未提供的原始资料计为已读。\",\n  \"test_assessment\": \"作者明确声明未执行脚本，未冒称通过；协调者提供的actual_preflight记录显示绑定脚本在remote_bwrap隔离环境中以Python 3.12执行，returncode=0、无超时、stderr为空。该结果是所供实际执行记录，不是本审阅者重新运行。独立核算与输出一致：物理别名峰值140、错误持有量求和240；每token KV为131072 byte，遗漏K/V因子得到65536；合并共享流量下界29/400秒，错误取设备最大值为7/100秒；含预留容量16.25 GiB，三请求15.75 GiB。事件扫描与逐时刻集合参考使用不同实现，覆盖重叠别名、同刻结束与开始、零长度区间和同键大小冲突；图闭包使用显式预期集合，覆盖loss不包含更新、token不包含独立发布、空根和未知根。五类负对照实际参与断言并得到与参考不同的结果，能够检出相应局部错误，不能笼统判为无效或同义反复。但脚本没有执行UNIFIED_INTERACTIVE_STEP，没有逐层模型参考、分块推进、满KV无logits、采样前后状态、私有写隔离、发布资格或取消后迟到完成轨迹。服务图中的token本身已作为预先存在的节点，不能验证正文先等待采样状态和响应根、后执行SAMPLE的时序。准入函数始终只加一次reserve，也不能检出正文M_peak定义漂移；读取成本检查仅覆盖单次合并字节，没有覆盖prefill跨查询累计读取。因此该PASS只支持列出的CPU模型，不能抵消本次算法与成本阻断项。\"\n}",
+  "exit_code": 0,
+  "status": "completed",
+  "timeout_seconds": 1800,
+  "response_path": "D:\\桌面\\xdb\\InfraAgents\\InfraAgents-know-astra-new\\InfraAgents-know\\docs\\evidence\\knowledge-workflow-20261028-batch7\\full_build\\K-HW-007\\round-1\\reviewer-attempt-001\\answer.txt",
+  "record_path": "D:\\桌面\\xdb\\InfraAgents\\InfraAgents-know-astra-new\\InfraAgents-know\\docs\\evidence\\knowledge-workflow-20261028-batch7\\full_build\\K-HW-007\\round-1\\reviewer-attempt-001\\record.json",
+  "tool_events": [
+    {
+      "type": "item.completed",
+      "item": {
+        "id": "item_1",
+        "type": "mcp_tool_call",
+        "server": "codex",
+        "tool": "list_mcp_resources",
+        "arguments": {},
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"resources\":[]}"
+            }
+          ],
+          "structured_content": null
+        },
+        "error": null,
+        "status": "completed"
+      }
+    },
+    {
+      "type": "item.completed",
+      "item": {
+        "id": "item_2",
+        "type": "mcp_tool_call",
+        "server": "codex",
+        "tool": "list_mcp_resource_templates",
+        "arguments": {},
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"resourceTemplates\":[]}"
+            }
+          ],
+          "structured_content": null
+        },
+        "error": null,
+        "status": "completed"
+      }
+    }
+  ],
+  "inventory_tool_events": [
+    {
+      "type": "item.completed",
+      "item": {
+        "id": "item_1",
+        "type": "mcp_tool_call",
+        "server": "codex",
+        "tool": "list_mcp_resources",
+        "arguments": {},
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"resources\":[]}"
+            }
+          ],
+          "structured_content": null
+        },
+        "error": null,
+        "status": "completed"
+      }
+    },
+    {
+      "type": "item.completed",
+      "item": {
+        "id": "item_2",
+        "type": "mcp_tool_call",
+        "server": "codex",
+        "tool": "list_mcp_resource_templates",
+        "arguments": {},
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"resourceTemplates\":[]}"
+            }
+          ],
+          "structured_content": null
+        },
+        "error": null,
+        "status": "completed"
+      }
+    }
+  ],
+  "rejected_tool_events": [],
+  "tool_policy": "metadata_inventory_only",
+  "tool_policy_version": "metadata-inventory-v1",
+  "tool_policy_scope": "Only empty-argument codex host plugin/skill-directory descriptors and empty template inventory; inventory is not knowledge evidence. All other tool events reject the call.",
+  "tool_policy_reason": "Production chapter construction allows observed generic capability discovery metadata; this does not claim a zero-tool comparison or external source reading.",
+  "malformed_event_lines": [],
+  "turn_completed": true,
+  "error_events": [],
+  "recovered_transport_events": [],
+  "terminal_error_events": [],
+  "transport_recovered": false,
+  "actual_model": null,
+  "identity_verified": null,
+  "identity_basis": "Explicit CLI model and isolated HTTP provider; CLI events do not expose server model identity.",
+  "provider": "eval-openai-http",
+  "max_output_tokens": null,
+  "cli_version": "codex-cli 0.164.0-alpha.11.1",
+  "cost_scope": "Codex token usage is reported; subscription charge is not exposed.",
+  "parsed": {
+    "entry_id": "K-HW-007",
+    "body_sha256": "b01c25784f71a01ec40542e0ae02b01514b202dfdee7a8239eb870a0c2d4550a",
+    "reviewer": "sol-reviewer:K-HW-007:round-1",
+    "decision": "revise",
+    "documents": {
+      "AGENTS.md": "b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a",
+      "docs/knowledge-method.md": "69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb",
+      "docs/knowledge-review.md": "f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21",
+      "knowledge/hardware/metal-unified-memory.md": "b01c25784f71a01ec40542e0ae02b01514b202dfdee7a8239eb870a0c2d4550a",
+      "knowledge/sources/S-MLX-MEM.md": "1d65e19c9f1394965bdf43eb8e6049a56dcdbe06af5602af386d4608845192d0",
+      "knowledge/sources/S-MLX.md": "7ee538d3fc5d3e2167c4f395180e9f63c984f75be9aeb3f419c902b2255cd9c9",
+      "knowledge/frameworks/mlx-serving.md": "f16f8287e7fd632c26f479dc90c88d0c4468852e86eac1a654ac0914a0958d4e",
+      "knowledge/hardware/memory-and-roofline.md": "7d0e6ef2eda6c43f6023bb4322438d512179e88ec2df3307621b8882f28da64b",
+      "knowledge/workloads/metric-events.md": "c21db7895f35f10ebe16fe4fc795de05ea48de02cd90339712f9a4a49252d1bb",
+      "knowledge/hardware/shared-memory-paths.md": "9471f29d33a5821b00e11b6d08fb69fe31288087d558f05c5f9234350efe8b0d",
+      "knowledge/algorithms/heterogeneous-execution.md": "8fd777e06b150eaba4e3288ccb188adbb975e37c28c77a72a9b6878a70e027f4",
+      "knowledge/system-semantics/memory-allocators.md": "2e7258787b94ad142c7c236541e8718803ad30b273d08e6c398dff673a1df838",
+      "references/S-MLX-MEM/fulltext.txt": "472f16846acae9c84a7daca168b900903579e71b5c05aa2376229f79a0d70f64",
+      "references/S-MLX/fulltext.txt": "070faaf48ca988d2b78a568a649a2e7e0a05ed5577740aa14e1b0a730e52e438",
+      "tools/check_k_hw_007_full.py": "f72e0c27203803b8b09ef0ea0027a887e5797ab51962fae244f912418eb4c369"
+    },
+    "criteria": {
+      "definition": {
+        "assessment": "sufficient",
+        "reason": "明确解释统一物理内存仍有读取、容量和同步成本，定义物理身份、视图、生命期、请求已知输入与全层KV边界，并区分驻留积分和延迟。成本节对M_peak的后续改义另列为成本问题。",
+        "evidence": [
+          {
+            "path": "knowledge/hardware/metal-unified-memory.md",
+            "quote": "Live(t) 按物理身份 p 去重。逻辑数组是视图"
+          },
+          {
+            "path": "knowledge/hardware/metal-unified-memory.md",
+            "quote": "token 已经追加到 x 不等于它的 KV 已经完成。"
+          }
+        ]
+      },
+      "legality": {
+        "assessment": "sufficient",
+        "reason": "合法性原则区分共享访问能力与设备选择，涵盖物理范围冲突、生产消费顺序、外部访问可见性、算子支持和容量准入。来源原文支持共享池和受跟踪依赖；正文没有把它们扩张成任意外部访问保证。交互步未落实这些原则的问题见算法项。",
+        "evidence": [
+          {
+            "path": "knowledge/hardware/metal-unified-memory.md",
+            "quote": "通过原生指针、外部库或其他进程读写时，需要显式同步、复制或序列化，并单独验证可见性。"
+          },
+          {
+            "path": "knowledge/hardware/metal-unified-memory.md",
+            "quote": "目标设备实际支持该算子、dtype 和布局。"
+          }
+        ]
+      },
+      "algorithm": {
+        "assessment": "partial",
+        "reason": "根闭包和物理最后使用边界解释正确，但交互步没有交付输入到逐层KV和末行logits的构造路径、完整命中后的推进分支及明确采样条件；发布根又被安排在采样和资格复核之前，不能形成所声明的事务。",
+        "evidence": [
+          {
+            "path": "knowledge/hardware/metal-unified-memory.md",
+            "quote": "b_r=r.k；e_r=min(r.n, b_r+q_r)"
+          },
+          {
+            "path": "knowledge/hardware/metal-unified-memory.md",
+            "quote": "新增 KV 的全层写入、所需 logits、采样随机状态、请求状态发布、响应记录"
+          },
+          {
+            "path": "knowledge/hardware/metal-unified-memory.md",
+            "quote": "若需要采样：token, rho_next=SAMPLE(logits, rho)"
+          }
+        ]
+      },
+      "cost": {
+        "assessment": "partial",
+        "reason": "KV有效载荷、设定容量和共享带宽算术正确，准备、同步、重叠和驻留也有说明。但M_peak是否包含预留前后不一致，可能重复准入计账；将读取简式同时用于decode和prefill时，缺少跨查询累计读取次数的定义。",
+        "evidence": [
+          {
+            "path": "knowledge/hardware/metal-unified-memory.md",
+            "quote": "M_peak ≈ max_t |W ∪ KV_committed ∪ delta_live ∪ workspace ∪ graph ∪ compile ∪ queues ∪ retained| + C_reserve。"
+          },
+          {
+            "path": "knowledge/hardware/metal-unified-memory.md",
+            "quote": "Q_step ≈ Q_W + b_kv Σ_r n_r + b_kv Σ_r Δn_r + Q_CPU + Q_other。"
+          }
+        ]
+      },
+      "adaptation": {
+        "assessment": "sufficient",
+        "reason": "按CPU/GPU并发、上下文、batch、布局转换、图粒度、内存压力和量化解释保留条件、调整候选及反转信号，没有把来源中的单个加速比例外推为通用选择。",
+        "evidence": [
+          {
+            "path": "knowledge/hardware/metal-unified-memory.md",
+            "quote": "转换副本与流量超过收益，或转换改变了数值契约"
+          },
+          {
+            "path": "knowledge/hardware/metal-unified-memory.md",
+            "quote": "固定屏障主导或图元数据/驻留主导；只测单个算子不足以判断"
+          }
+        ]
+      },
+      "diagnosis": {
+        "assessment": "sufficient",
+        "reason": "给出竞争解释、控制条件、干预方向和反证后的修正，明确区分预测与已执行实验。模型检查对其局部算术和闭包问题有有效负对照，但不能验证存在缺口的完整交互协议。",
+        "evidence": [
+          {
+            "path": "knowledge/hardware/metal-unified-memory.md",
+            "quote": "区分竞争解释时，先固定模型、输入、输出根和测量事件，再改变一个条件。"
+          },
+          {
+            "path": "knowledge/hardware/metal-unified-memory.md",
+            "quote": "表中的预测是模型预测，不是本轮已经得到的实验结果。"
+          }
+        ]
+      }
+    },
+    "findings": [
+      {
+        "id": "K-HW-007-R1-A01",
+        "criterion": "algorithm",
+        "evidence": "knowledge/hardware/metal-unified-memory.md：步骤1为“b_r=r.k；e_r=min(r.n, b_r+q_r)”，步骤3仅写“建立图 G_r”，步骤6为“若需要采样：token, rho_next=SAMPLE(logits, rho)”。请求状态没有末行logits及其前缀身份，正文也未明确委托K-FW-008的PREPARE和提交协议。",
+        "impact": "无法由本章恢复哪些已知token进入各层、各层KV如何产生以及何时有合法末行logits。合法状态k=n但无缓存logits时区间为空，没有生成后继结果的路径；e<n时也没有明确禁止从中间前缀采样。采样后的token追加、n增长而k保持e的关系没有落实到更新语句。",
+        "blocking": true,
+        "required_revision": "将模型准备明确委托到已链接K-FW-008的具体完整算法，并说明本章如何消费其结果，或在本章展开等价路径。明确q≥1、已知输入区间、逐层状态、e<n仅推进prefill、e=n才允许采样、k=n时兼容logits复用或安全重算，以及token追加后的n/k/RNG更新。无需新增统一标题或固定数量算例。"
+      },
+      {
+        "id": "K-HW-007-R1-A02",
+        "criterion": "algorithm",
+        "evidence": "knowledge/hardware/metal-unified-memory.md：步骤4将“采样随机状态、请求状态发布、响应记录”列为根，并要求“每个改变已提交状态的副作用必须是根或由根覆盖”；步骤5“等待全部根完成”；步骤6才执行“token, rho_next=SAMPLE(logits, rho)”和资格复核后的原子提交。",
+        "impact": "新的采样状态和响应内容在采样前尚不存在；若发布根具有正文所述副作用，它们会在提交资格检查前执行，取消或失败后的“不安装未提交候选”无法成立。若这些根只是私有候选，正文又没有说明该含义和最终安装边界。图写入也未被约束为私有增量，无法保证失败时旧KV保持不变。",
+        "blocking": true,
+        "required_revision": "区分设备结果根、私有候选和业务发布。采用主机采样时先完成全层KV及logits，再采样形成token/rho_next；采用设备采样时将其依赖明确放入图并等待相应根。所有写入须隔离于旧已提交状态，最终由同一状态拥有者在资格复核后安装token、KV、RNG和响应记录；输出交付发生在提交之后。保留现有最后使用结束后才能回收的要求。"
+      },
+      {
+        "id": "K-HW-007-R1-C01",
+        "criterion": "cost",
+        "evidence": "knowledge/hardware/metal-unified-memory.md：最初定义“M_peak = max_t C(t)”，合法性要求“M_peak 加上为系统、其他应用和在途转换预留的字节不能超过可用预算”，容量节却改写为“M_peak ≈ max_t |W ∪ KV_committed ∪ delta_live ∪ workspace ∪ graph ∪ compile ∪ queues ∪ retained| + C_reserve。”",
+        "impact": "M_peak从实际对象峰值变为包含预留的准入需求。按后面的定义代入前面的准入条件会再次加预留；正文所称三请求15.75 GiB可行，也可能被同一组公式错误计算为16.75 GiB而拒绝。",
+        "blocking": true,
+        "required_revision": "保持M_peak始终表示唯一物理对象的占用峰值，另定义含预留的准入需求并只加一次C_reserve，或一致修改全部定义和条件。明确并集作用于物理对象集合，竖线表示其字节测度；保留现有不同对象及包含关系的去重规则。"
+      },
+      {
+        "id": "K-HW-007-R1-C02",
+        "criterion": "cost",
+        "evidence": "knowledge/hardware/metal-unified-memory.md：“对一次 decode 或一段 prefill，若每个请求的逻辑历史读取为 n_r 个位置”，随后给出“Q_step ≈ Q_W + b_kv Σ_r n_r + b_kv Σ_r Δn_r + Q_CPU + Q_other。”",
+        "impact": "未明确n_r是历史长度还是跨全部查询累计的逻辑位置访问次数。若按历史长度使用，prefill片段中多个查询对旧历史的重复读取及片内因果读取被遗漏。例如处理[b,e)=[2,4)时，逐查询逻辑读取为3+4=7个位置，不能仅按旧历史长度2计读取，再加两个位置的写入。正文目前不足以支持其声明的prefill成本口径。",
+        "blocking": true,
+        "required_revision": "将该简式明确限于单查询decode，或定义累计读取量，例如逐请求Σ_{t=b_r}^{e_r−1}(t+1)，并另计(e_r−b_r)个位置的写入。若选择不同分块或融合口径，说明复用假设、Q_W对应的实际权重遍历次数，以及逻辑读取与共享内存事务之间的转换条件；可直接引用K-FW-008已有推导。"
+      }
+    ],
+    "limitations": [
+      "真实MLX/Metal执行、设备数值、stream可见性、可持续带宽、内存压缩或换出、服务延迟及Agent使用效果均未验证；正文将这些保留为边界是合理的。",
+      "M1 Max的2.8 ms与1.4 ms已与所供Unified Memory原文核对，仅是该来源示例的报告，不能证明服务收益。",
+      "本轮工具未提供文件读取或命令执行入口，也没有可用资源。因此未能读取本地infraagents-knowledge-build/SKILL.md、重新计算文件哈希、检查本地链接目标或自行复跑脚本；documents保留用户要求的绑定值，结论基于所供完整文本和实际执行记录。",
+      "读取的是所供两个fulltext.txt的完整提取文本，不代表读取整个上游仓库、源码归档、reader.html或未提供的其他来源原文。"
+    ],
+    "checks": [
+      {
+        "script": "tools/check_k_hw_007_full.py",
+        "args": []
+      }
+    ],
+    "no_checks_reason": "",
+    "reading_scope": "完整阅读用户所供材料，以下范围均为提取文本中零基、半开字符区间：AGENTS.md [0,567)；docs/knowledge-method.md [0,2251)；docs/knowledge-review.md [0,3016)；knowledge/hardware/metal-unified-memory.md [0,10451)；knowledge/sources/S-MLX-MEM.md [0,495)；knowledge/sources/S-MLX.md [0,470)；knowledge/frameworks/mlx-serving.md [0,13635)；knowledge/hardware/memory-and-roofline.md [0,13210)；knowledge/workloads/metric-events.md [0,2891)；knowledge/hardware/shared-memory-paths.md [0,3129)；knowledge/algorithms/heterogeneous-execution.md [0,3935)；knowledge/system-semantics/memory-allocators.md [0,4191)；references/S-MLX-MEM/fulltext.txt [0,2656)；references/S-MLX/fulltext.txt [0,4768)。这些均标为full且所供范围覆盖完整提取文本。另完整阅读candidate.test_script，从#!/usr/bin/env python3至main()调用；该项未提供字符范围。完整检查author_notes及actual_preflight的stdout、stderr和execution记录。没有把相关章所引用但未提供的原始资料计为已读。",
+    "test_assessment": "作者明确声明未执行脚本，未冒称通过；协调者提供的actual_preflight记录显示绑定脚本在remote_bwrap隔离环境中以Python 3.12执行，returncode=0、无超时、stderr为空。该结果是所供实际执行记录，不是本审阅者重新运行。独立核算与输出一致：物理别名峰值140、错误持有量求和240；每token KV为131072 byte，遗漏K/V因子得到65536；合并共享流量下界29/400秒，错误取设备最大值为7/100秒；含预留容量16.25 GiB，三请求15.75 GiB。事件扫描与逐时刻集合参考使用不同实现，覆盖重叠别名、同刻结束与开始、零长度区间和同键大小冲突；图闭包使用显式预期集合，覆盖loss不包含更新、token不包含独立发布、空根和未知根。五类负对照实际参与断言并得到与参考不同的结果，能够检出相应局部错误，不能笼统判为无效或同义反复。但脚本没有执行UNIFIED_INTERACTIVE_STEP，没有逐层模型参考、分块推进、满KV无logits、采样前后状态、私有写隔离、发布资格或取消后迟到完成轨迹。服务图中的token本身已作为预先存在的节点，不能验证正文先等待采样状态和响应根、后执行SAMPLE的时序。准入函数始终只加一次reserve，也不能检出正文M_peak定义漂移；读取成本检查仅覆盖单次合并字节，没有覆盖prefill跨查询累计读取。因此该PASS只支持列出的CPU模型，不能抵消本次算法与成本阻断项。"
+  },
+  "format_status": "strict_json",
+  "format_error": null,
+  "output_text": "{\n  \"entry_id\": \"K-HW-007\",\n  \"body_sha256\": \"b01c25784f71a01ec40542e0ae02b01514b202dfdee7a8239eb870a0c2d4550a\",\n  \"reviewer\": \"sol-reviewer:K-HW-007:round-1\",\n  \"decision\": \"revise\",\n  \"documents\": {\n    \"AGENTS.md\": \"b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a\",\n    \"docs/knowledge-method.md\": \"69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb\",\n    \"docs/knowledge-review.md\": \"f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21\",\n    \"knowledge/hardware/metal-unified-memory.md\": \"b01c25784f71a01ec40542e0ae02b01514b202dfdee7a8239eb870a0c2d4550a\",\n    \"knowledge/sources/S-MLX-MEM.md\": \"1d65e19c9f1394965bdf43eb8e6049a56dcdbe06af5602af386d4608845192d0\",\n    \"knowledge/sources/S-MLX.md\": \"7ee538d3fc5d3e2167c4f395180e9f63c984f75be9aeb3f419c902b2255cd9c9\",\n    \"knowledge/frameworks/mlx-serving.md\": \"f16f8287e7fd632c26f479dc90c88d0c4468852e86eac1a654ac0914a0958d4e\",\n    \"knowledge/hardware/memory-and-roofline.md\": \"7d0e6ef2eda6c43f6023bb4322438d512179e88ec2df3307621b8882f28da64b\",\n    \"knowledge/workloads/metric-events.md\": \"c21db7895f35f10ebe16fe4fc795de05ea48de02cd90339712f9a4a49252d1bb\",\n    \"knowledge/hardware/shared-memory-paths.md\": \"9471f29d33a5821b00e11b6d08fb69fe31288087d558f05c5f9234350efe8b0d\",\n    \"knowledge/algorithms/heterogeneous-execution.md\": \"8fd777e06b150eaba4e3288ccb188adbb975e37c28c77a72a9b6878a70e027f4\",\n    \"knowledge/system-semantics/memory-allocators.md\": \"2e7258787b94ad142c7c236541e8718803ad30b273d08e6c398dff673a1df838\",\n    \"references/S-MLX-MEM/fulltext.txt\": \"472f16846acae9c84a7daca168b900903579e71b5c05aa2376229f79a0d70f64\",\n    \"references/S-MLX/fulltext.txt\": \"070faaf48ca988d2b78a568a649a2e7e0a05ed5577740aa14e1b0a730e52e438\",\n    \"tools/check_k_hw_007_full.py\": \"f72e0c27203803b8b09ef0ea0027a887e5797ab51962fae244f912418eb4c369\"\n  },\n  \"criteria\": {\n    \"definition\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"明确解释统一物理内存仍有读取、容量和同步成本，定义物理身份、视图、生命期、请求已知输入与全层KV边界，并区分驻留积分和延迟。成本节对M_peak的后续改义另列为成本问题。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/hardware/metal-unified-memory.md\",\n          \"quote\": \"Live(t) 按物理身份 p 去重。逻辑数组是视图\"\n        },\n        {\n          \"path\": \"knowledge/hardware/metal-unified-memory.md\",\n          \"quote\": \"token 已经追加到 x 不等于它的 KV 已经完成。\"\n        }\n      ]\n    },\n    \"legality\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"合法性原则区分共享访问能力与设备选择，涵盖物理范围冲突、生产消费顺序、外部访问可见性、算子支持和容量准入。来源原文支持共享池和受跟踪依赖；正文没有把它们扩张成任意外部访问保证。交互步未落实这些原则的问题见算法项。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/hardware/metal-unified-memory.md\",\n          \"quote\": \"通过原生指针、外部库或其他进程读写时，需要显式同步、复制或序列化，并单独验证可见性。\"\n        },\n        {\n          \"path\": \"knowledge/hardware/metal-unified-memory.md\",\n          \"quote\": \"目标设备实际支持该算子、dtype 和布局。\"\n        }\n      ]\n    },\n    \"algorithm\": {\n      \"assessment\": \"partial\",\n      \"reason\": \"根闭包和物理最后使用边界解释正确，但交互步没有交付输入到逐层KV和末行logits的构造路径、完整命中后的推进分支及明确采样条件；发布根又被安排在采样和资格复核之前，不能形成所声明的事务。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/hardware/metal-unified-memory.md\",\n          \"quote\": \"b_r=r.k；e_r=min(r.n, b_r+q_r)\"\n        },\n        {\n          \"path\": \"knowledge/hardware/metal-unified-memory.md\",\n          \"quote\": \"新增 KV 的全层写入、所需 logits、采样随机状态、请求状态发布、响应记录\"\n        },\n        {\n          \"path\": \"knowledge/hardware/metal-unified-memory.md\",\n          \"quote\": \"若需要采样：token, rho_next=SAMPLE(logits, rho)\"\n        }\n      ]\n    },\n    \"cost\": {\n      \"assessment\": \"partial\",\n      \"reason\": \"KV有效载荷、设定容量和共享带宽算术正确，准备、同步、重叠和驻留也有说明。但M_peak是否包含预留前后不一致，可能重复准入计账；将读取简式同时用于decode和prefill时，缺少跨查询累计读取次数的定义。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/hardware/metal-unified-memory.md\",\n          \"quote\": \"M_peak ≈ max_t |W ∪ KV_committed ∪ delta_live ∪ workspace ∪ graph ∪ compile ∪ queues ∪ retained| + C_reserve。\"\n        },\n        {\n          \"path\": \"knowledge/hardware/metal-unified-memory.md\",\n          \"quote\": \"Q_step ≈ Q_W + b_kv Σ_r n_r + b_kv Σ_r Δn_r + Q_CPU + Q_other。\"\n        }\n      ]\n    },\n    \"adaptation\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"按CPU/GPU并发、上下文、batch、布局转换、图粒度、内存压力和量化解释保留条件、调整候选及反转信号，没有把来源中的单个加速比例外推为通用选择。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/hardware/metal-unified-memory.md\",\n          \"quote\": \"转换副本与流量超过收益，或转换改变了数值契约\"\n        },\n        {\n          \"path\": \"knowledge/hardware/metal-unified-memory.md\",\n          \"quote\": \"固定屏障主导或图元数据/驻留主导；只测单个算子不足以判断\"\n        }\n      ]\n    },\n    \"diagnosis\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"给出竞争解释、控制条件、干预方向和反证后的修正，明确区分预测与已执行实验。模型检查对其局部算术和闭包问题有有效负对照，但不能验证存在缺口的完整交互协议。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/hardware/metal-unified-memory.md\",\n          \"quote\": \"区分竞争解释时，先固定模型、输入、输出根和测量事件，再改变一个条件。\"\n        },\n        {\n          \"path\": \"knowledge/hardware/metal-unified-memory.md\",\n          \"quote\": \"表中的预测是模型预测，不是本轮已经得到的实验结果。\"\n        }\n      ]\n    }\n  },\n  \"findings\": [\n    {\n      \"id\": \"K-HW-007-R1-A01\",\n      \"criterion\": \"algorithm\",\n      \"evidence\": \"knowledge/hardware/metal-unified-memory.md：步骤1为“b_r=r.k；e_r=min(r.n, b_r+q_r)”，步骤3仅写“建立图 G_r”，步骤6为“若需要采样：token, rho_next=SAMPLE(logits, rho)”。请求状态没有末行logits及其前缀身份，正文也未明确委托K-FW-008的PREPARE和提交协议。\",\n      \"impact\": \"无法由本章恢复哪些已知token进入各层、各层KV如何产生以及何时有合法末行logits。合法状态k=n但无缓存logits时区间为空，没有生成后继结果的路径；e<n时也没有明确禁止从中间前缀采样。采样后的token追加、n增长而k保持e的关系没有落实到更新语句。\",\n      \"blocking\": true,\n      \"required_revision\": \"将模型准备明确委托到已链接K-FW-008的具体完整算法，并说明本章如何消费其结果，或在本章展开等价路径。明确q≥1、已知输入区间、逐层状态、e<n仅推进prefill、e=n才允许采样、k=n时兼容logits复用或安全重算，以及token追加后的n/k/RNG更新。无需新增统一标题或固定数量算例。\"\n    },\n    {\n      \"id\": \"K-HW-007-R1-A02\",\n      \"criterion\": \"algorithm\",\n      \"evidence\": \"knowledge/hardware/metal-unified-memory.md：步骤4将“采样随机状态、请求状态发布、响应记录”列为根，并要求“每个改变已提交状态的副作用必须是根或由根覆盖”；步骤5“等待全部根完成”；步骤6才执行“token, rho_next=SAMPLE(logits, rho)”和资格复核后的原子提交。\",\n      \"impact\": \"新的采样状态和响应内容在采样前尚不存在；若发布根具有正文所述副作用，它们会在提交资格检查前执行，取消或失败后的“不安装未提交候选”无法成立。若这些根只是私有候选，正文又没有说明该含义和最终安装边界。图写入也未被约束为私有增量，无法保证失败时旧KV保持不变。\",\n      \"blocking\": true,\n      \"required_revision\": \"区分设备结果根、私有候选和业务发布。采用主机采样时先完成全层KV及logits，再采样形成token/rho_next；采用设备采样时将其依赖明确放入图并等待相应根。所有写入须隔离于旧已提交状态，最终由同一状态拥有者在资格复核后安装token、KV、RNG和响应记录；输出交付发生在提交之后。保留现有最后使用结束后才能回收的要求。\"\n    },\n    {\n      \"id\": \"K-HW-007-R1-C01\",\n      \"criterion\": \"cost\",\n      \"evidence\": \"knowledge/hardware/metal-unified-memory.md：最初定义“M_peak = max_t C(t)”，合法性要求“M_peak 加上为系统、其他应用和在途转换预留的字节不能超过可用预算”，容量节却改写为“M_peak ≈ max_t |W ∪ KV_committed ∪ delta_live ∪ workspace ∪ graph ∪ compile ∪ queues ∪ retained| + C_reserve。”\",\n      \"impact\": \"M_peak从实际对象峰值变为包含预留的准入需求。按后面的定义代入前面的准入条件会再次加预留；正文所称三请求15.75 GiB可行，也可能被同一组公式错误计算为16.75 GiB而拒绝。\",\n      \"blocking\": true,\n      \"required_revision\": \"保持M_peak始终表示唯一物理对象的占用峰值，另定义含预留的准入需求并只加一次C_reserve，或一致修改全部定义和条件。明确并集作用于物理对象集合，竖线表示其字节测度；保留现有不同对象及包含关系的去重规则。\"\n    },\n    {\n      \"id\": \"K-HW-007-R1-C02\",\n      \"criterion\": \"cost\",\n      \"evidence\": \"knowledge/hardware/metal-unified-memory.md：“对一次 decode 或一段 prefill，若每个请求的逻辑历史读取为 n_r 个位置”，随后给出“Q_step ≈ Q_W + b_kv Σ_r n_r + b_kv Σ_r Δn_r + Q_CPU + Q_other。”\",\n      \"impact\": \"未明确n_r是历史长度还是跨全部查询累计的逻辑位置访问次数。若按历史长度使用，prefill片段中多个查询对旧历史的重复读取及片内因果读取被遗漏。例如处理[b,e)=[2,4)时，逐查询逻辑读取为3+4=7个位置，不能仅按旧历史长度2计读取，再加两个位置的写入。正文目前不足以支持其声明的prefill成本口径。\",\n      \"blocking\": true,\n      \"required_revision\": \"将该简式明确限于单查询decode，或定义累计读取量，例如逐请求Σ_{t=b_r}^{e_r−1}(t+1)，并另计(e_r−b_r)个位置的写入。若选择不同分块或融合口径，说明复用假设、Q_W对应的实际权重遍历次数，以及逻辑读取与共享内存事务之间的转换条件；可直接引用K-FW-008已有推导。\"\n    }\n  ],\n  \"limitations\": [\n    \"真实MLX/Metal执行、设备数值、stream可见性、可持续带宽、内存压缩或换出、服务延迟及Agent使用效果均未验证；正文将这些保留为边界是合理的。\",\n    \"M1 Max的2.8 ms与1.4 ms已与所供Unified Memory原文核对，仅是该来源示例的报告，不能证明服务收益。\",\n    \"本轮工具未提供文件读取或命令执行入口，也没有可用资源。因此未能读取本地infraagents-knowledge-build/SKILL.md、重新计算文件哈希、检查本地链接目标或自行复跑脚本；documents保留用户要求的绑定值，结论基于所供完整文本和实际执行记录。\",\n    \"读取的是所供两个fulltext.txt的完整提取文本，不代表读取整个上游仓库、源码归档、reader.html或未提供的其他来源原文。\"\n  ],\n  \"checks\": [\n    {\n      \"script\": \"tools/check_k_hw_007_full.py\",\n      \"args\": []\n    }\n  ],\n  \"no_checks_reason\": \"\",\n  \"reading_scope\": \"完整阅读用户所供材料，以下范围均为提取文本中零基、半开字符区间：AGENTS.md [0,567)；docs/knowledge-method.md [0,2251)；docs/knowledge-review.md [0,3016)；knowledge/hardware/metal-unified-memory.md [0,10451)；knowledge/sources/S-MLX-MEM.md [0,495)；knowledge/sources/S-MLX.md [0,470)；knowledge/frameworks/mlx-serving.md [0,13635)；knowledge/hardware/memory-and-roofline.md [0,13210)；knowledge/workloads/metric-events.md [0,2891)；knowledge/hardware/shared-memory-paths.md [0,3129)；knowledge/algorithms/heterogeneous-execution.md [0,3935)；knowledge/system-semantics/memory-allocators.md [0,4191)；references/S-MLX-MEM/fulltext.txt [0,2656)；references/S-MLX/fulltext.txt [0,4768)。这些均标为full且所供范围覆盖完整提取文本。另完整阅读candidate.test_script，从#!/usr/bin/env python3至main()调用；该项未提供字符范围。完整检查author_notes及actual_preflight的stdout、stderr和execution记录。没有把相关章所引用但未提供的原始资料计为已读。\",\n  \"test_assessment\": \"作者明确声明未执行脚本，未冒称通过；协调者提供的actual_preflight记录显示绑定脚本在remote_bwrap隔离环境中以Python 3.12执行，returncode=0、无超时、stderr为空。该结果是所供实际执行记录，不是本审阅者重新运行。独立核算与输出一致：物理别名峰值140、错误持有量求和240；每token KV为131072 byte，遗漏K/V因子得到65536；合并共享流量下界29/400秒，错误取设备最大值为7/100秒；含预留容量16.25 GiB，三请求15.75 GiB。事件扫描与逐时刻集合参考使用不同实现，覆盖重叠别名、同刻结束与开始、零长度区间和同键大小冲突；图闭包使用显式预期集合，覆盖loss不包含更新、token不包含独立发布、空根和未知根。五类负对照实际参与断言并得到与参考不同的结果，能够检出相应局部错误，不能笼统判为无效或同义反复。但脚本没有执行UNIFIED_INTERACTIVE_STEP，没有逐层模型参考、分块推进、满KV无logits、采样前后状态、私有写隔离、发布资格或取消后迟到完成轨迹。服务图中的token本身已作为预先存在的节点，不能验证正文先等待采样状态和响应根、后执行SAMPLE的时序。准入函数始终只加一次reserve，也不能检出正文M_peak定义漂移；读取成本检查仅覆盖单次合并字节，没有覆盖prefill跨查询累计读取。因此该PASS只支持列出的CPU模型，不能抵消本次算法与成本阻断项。\"\n}",
+  "elapsed_seconds": 202.875
+}

@@ -1,71 +1,317 @@
 # K-MODEL-009：图像扩散：迭代求解、条件复用与 CFG
 
-扩散服务围绕不断变化的 latent 做多步求解；可复用对象由每步依赖决定，不能沿用自回归 KV 的全部规则。
+图像扩散服务维护一个随求解步变化的 latent，每一步先完成网络预测，再把条件分支、scheduler 方程和随机状态组合成下一状态。固定文本表示可能复用，图像 self-attention 的 K/V 通常随 latent 改变；减少步数、跨步激活缓存和 VAE 分块分别影响求解误差、网络工作量和解码峰值，必须按各自前提比较。
 
-## 状态和执行链
+本章区分实际 latent 网格、patch token 数和逐层 hidden 宽度。预测通信与 solver 历史按实际 latent 形状计量，attention 按 token 几何计量，源投影还要保留条件表示的源宽。三个轴不能互相替代。
 
-文本条件先编码，初始噪声 latent 进入多个时间步的去噪网络，scheduler 根据网络预测与当前 latent 计算下一 latent，最后由 VAE 解码。模型可能预测噪声、速度或其他参数化量；scheduler 的更新方程必须与预测类型和时间步设置相容。
+## 从生成目标到请求状态
 
-去噪网络每一步的 self-attention 输入随 latent 改变，因此其历史 K/V 通常不能像 decoder 前缀一样跨步无条件复用。固定文本 encoder 输出可以复用；由固定文本和固定投影形成的 cross K/V 在结构允许时也可复用。任何跨步近似激活复用都引入另一个质量/成本方案。
+设像素图像为 x∈R^{H×W×3}，编码器 Enc 把图像压缩成 latent z，解码器 Dec 将其还原。扩散在模型规定的 latent 数值空间中进行；实际形状记为 h_l×w_l×c_z。h_l、w_l 由 VAE、边界和裁剪策略决定，不应对任意输入都直接写成 H/f、W/f。latent 的缩放、偏移及解码前的逆变换属于 checkpoint 契约；形状相同而尺度不同，也会改变信噪比和生成函数。纯文本生成从初始噪声出发，通常不执行图像编码器；图生图等任务才需要输入图像的编码路径。
 
-## CFG 的计算形态
+前向加噪关系写成 xₜ＝√aₜ x₀＋√(1−aₜ)ε，其中 aₜ 是累计 alpha，ε 为标准高斯噪声。噪声预测的训练目标可写成 E∥ε−εθ(xₜ,t,c)∥²。网络也可以预测 x₀ 或速度 v，但这三种输出需要不同换算，不能只靠 shape 选择 scheduler 公式。
 
-classifier-free guidance 的常见形式是 ε̂＝εᵤ＋w(ε𝒸−εᵤ)，其中有条件与无条件两条预测共享当前 latent。两条可沿 batch 维合并执行，减少调度开销却增加峰值激活；分开执行减小峰值却增加时间。某些模型采用蒸馏或不同 guidance 机制，不能按此公式给所有模型固定乘 2。
+请求最终交付的是解码图像；中间 latent 和预览图有不同的完成语义。请求状态至少包含当前 latent、所选时间表及位置、prediction_type、scheduler 配置、条件、guidance、随机状态，以及多步 solver 的历史预测。
 
-DiT 将 latent 切成 patch tokens。空间边长扩大使 token 数和 attention 工作快速增长；VAE 压缩、patch size、分辨率和 batch 共同决定内存。固定分辨率与固定步数的请求更易采用编译/图执行，混合分辨率与不同 scheduler 步数需要分桶或阶段调度。
+| 对象 | 内容身份与依赖 | 生存期和消费者 |
+|---|---|---|
+| 权重 | checkpoint、精度、布局及条件结构 | 跨请求常驻，每次网络前向读取 |
+| 条件表示 E | prompt、processor/tokenizer、encoder 版本、数值格式 | 可跨步复用，CFG 两分支各有条件 |
+| cross K/V | E、对应层投影权重、位置处理和格式 | 依赖不变时只读复用 |
+| 当前 xₜ | 本请求、当前实际时间步的 h_l×w_l×c_z 状态 | 网络、solver、预览或异步拷贝读取 |
+| 时间位置 k | 所选时间表中的位置 | 每次成功提交更新后推进 |
+| RNG 状态 | 初始噪声和各步随机项的来源 | 请求私有，失败重试须保持轨迹 |
+| 历史预测 | 所选多步 solver 要求的旧预测 | 按逻辑 latent 形状保存 |
+| VAE 工作区 | tile、halo、中间激活和输出缓冲 | 解码阶段，可能与其他请求重叠 |
 
-## 步数、质量和缓存的共同目标
+预览读取 xₜ 时，要在覆盖前完成，或取得独立副本。逻辑请求结束不代表所有物理读者已结束；缓冲复用仍受异步完成约束。模型权重、固定条件、逐步状态和工作区也不能在容量账中按共享引用重复计数。
 
-总耗时可近似为条件编码＋Σ各步去噪/更新＋VAE 解码。减少步数同时减少多次网络执行，却改变数值求解和质量；不能把它当成纯实现等价优化。seed、初始噪声、scheduler、步数、guidance 和解码设置一起定义比较条件。
+## Scheduler 的预测与时间契约
 
-输出是一张图而非 token 流，用户目标可能是整图延迟、图像吞吐、分辨率或质量。中间预览图的交付是附加服务语义，会增加解码与网络成本。VAE tiling 能降低峰值空间，但 tile overlap 与拼接也会影响边界质量，应从感受野解释其处理。
+### 三种预测表示怎样换算
 
-## Scheduler 是数值执行契约
+给定同一个 xₜ 和 0＜aₜ＜1，网络原始输出 raw 按 checkpoint 声明解释：
 
-以固定 Diffusers 源码中的 DDIM 为可检查例。记 aₜ 为累计 alpha，xₜ 为当前 latent，模型预测噪声 ε。无额外截断时，预测原样本为 x̂₀=(xₜ−√(1−aₜ)ε)/√aₜ；到所选前一时点 s 的更新为 xₛ=√aₛx̂₀+√(1−aₛ−σ²)ε+σz，其中 σ 由 eta 与 aₜ/aₛ 决定。s 属于 scheduler 的时间步安排，不能把循环序号或简单 t−1 直接代入。
+- epsilon：x̂₀＝(xₜ−√(1−aₜ)raw)/√aₜ，ε̂＝raw。
+- x₀：x̂₀＝raw，ε̂＝(xₜ−√aₜ x̂₀)/√(1−aₜ)。
+- v：x̂₀＝√aₜ xₜ−√(1−aₜ)raw，ε̂＝√aₜ raw＋√(1−aₜ)xₜ。
 
-若模型输出预测原样本或 v，源码采用不同换算；以 v 为例，x̂₀=√aₜxₜ−√(1−aₜ)v，ε=√aₜv+√(1−aₜ)xₜ。若应用 clipping 或 thresholding，是否重算 ε 也是明确定义的分支。该版本特别提醒动态 thresholding 不适用于其所述 latent-space 扩散情形。模型输出 shape 对得上，不代表 prediction_type、缩放、时间步与输出含义相容。
+这里 v＝√aₜ ε−√(1−aₜ)x₀。将它代入后两式，应分别恢复 x₀ 和 ε；把 ε̂ 的第二项写成负号，即使输出形状完全相同，也会破坏前向重建。
 
-请求状态至少包括当前 latent、实际时间步位置、scheduler 配置、条件、guidance、随机生成器或每步噪声；使用多步求解器时，还需其历史预测。切换 batch 或暂停恢复必须按请求保留这些对象。让两个请求共享可变 scheduler 进度或随机流，可能使单请求参考通过而混合服务错误。
+aₜ＝0 或 1 需要单独处理分母和端点语义。本章推进算法只在 0＜aₜ＜aₛ≤1 的当前/目标 alpha 对上执行，因此当前点不触及这些除零端点。
 
-## 固定条件复用与跨步近似
+裁剪或 thresholding 是 scheduler 的显式策略：先修改 x̂₀ 后，是否从修改后的 x̂₀ 重算 ε̂，会改变方向项。不能把这两条路径当成同一个函数。原正文所据固定 Diffusers 材料还提醒，其所述动态 thresholding 不适合 latent-space 扩散，不能从像素空间经验直接迁移。采用额外阈值策略时，应另查模型及 scheduler 的适用范围。
 
-固定文本与固定投影产生的 cross K/V 可以复用，但 timestep 调制、图像 latent self-attention 和随 latent 改变的中间激活通常不是固定对象。跨步复用 attention/FFN 输出、跳过部分 unconditional 计算或减少去噪步数，均需作为独立近似候选登记。
+### DDIM 方差与有限支持域
 
-Wan 固定报告利用跨步 attention 与后期 CFG 相似性，按验证集选择缓存步并做补偿；其“lossless”措辞对应作者报告的评估条件，不构成数值恒等或所有 prompt 的质量保证。知识库在选择这类方法时，应保留未缓存参考、早/中/晚时间步、强 guidance、不同分辨率和稀有构图的质量对照，防止误差沿迭代累积。
+设当前时间点为 t，目标时间点为 s，反向推进满足 0＜aₜ＜aₛ≤1。DDIM 的一个更新为
 
-CFG 两分支可以顺序运行、沿 batch 合并，或分设备执行后合成。分设备需要每步保持相同 latent 和时间条件，并传回合成所需预测；这不免除同步。DiT 的 tensor/context parallel 则切分单分支计算，两者的通信与内存不同。按 checkpoint 的条件方式检查是否确实存在可缓存 cross 投影：原始 DiT 论文同时研究 in-context、cross-attention、adaLN 等条件方式，不能给所有 DiT 假定同一 cross KV。
+σ²＝η²·(1−aₛ)/(1−aₜ)·(1−aₜ/aₛ)，
 
-## 场景：24 GiB 预算的图像生成
+xₛ＝√aₛ x̂₀＋√(1−aₛ−σ²)ε̂＋√σ² z。
 
-以下为结构与时间设定。任务输出 1024×1024 图像，latent 空间压缩 8 倍、patch 边长 2，去噪 token 数为 64×64=4096；hidden 设 1536、16 heads、BF16。单份 hidden 为 12 MiB，显式完整 attention scores 为每 head 32 MiB、合计 512 MiB。分块 attention 可避免完整分数落存储，但其他激活、FFN、CFG 和 VAE 工作区仍需计算。
+z 与 latent 同形，为本步指定或生成的标准高斯噪声。σ² 是新增噪声方差，1−aₛ−σ² 是方向项系数的平方，两者必须分别核对。
 
-设权重常驻 8 GiB，单 CFG 分支峰值 workspace 为 6 GiB，设备可用 24 GiB。候选 A 顺序执行两分支，主项 14 GiB；B 合并两分支，按两份 workspace 的保守设定为 20 GiB。实际共享或额外 workspace 需测量。候选 C 在 B 上引入跨步缓存或更少求解步，属于质量可能变化的路径，不能与 A/B 的实现等价比较混在一起。
+本章参考算法明确支持有限 eta∈[0,1]，在初始化时拒绝负数、NaN、无穷和超上限值。这是本算法选择的支持域，不是所有 DDIM 实现的通用接口限制。在合法 alpha 顺序下，令 q＝(1−aₜ/aₛ)/(1−aₜ)，则 0≤q≤1，故 σ²＝η²(1−aₛ)q≤1−aₛ。仍应检查实际浮点计算的被开方数；只允许将容差内的负舍入误差截到零，不能截掉实质错误。
 
-设条件编码 40 ms，单分支去噪 30 ms，合并双分支 45 ms，scheduler 每步 1 ms，30 步，最终 VAE 120 ms，则 A 为 40+30×61+120=1990 ms，B 为 40+30×46+120=1540 ms。数字仅用于复算选择：B 节省调用和更好聚批的假设若不成立，收益消失；若高分辨率或其他请求使 20 GiB 超预算，A 即使较慢也可能是合法选择。
+反例：aₜ＝0.5、aₛ＝0.8、eta＝−0.4 时，平方表达式仍产生非负 σ²，但输入已超出本算法支持域。若绕过域验证，再根据 eta＞0 决定是否加噪，就会把非零方差更新执行成另一条路径。
 
-验证固定初始 latent、条件、scheduler、guidance 和每步噪声，先比较逐步预测、更新后 latent 与最终图像；对 C 再用预先保留的 prompt/seed 集合评估质量、构图与分辨率，不挑选最好看的样本。首轮编译、稳态、排队和 VAE 分开报告。VAE 切块必须检查卷积 halo、归一化/attention 的全局依赖及拼接；只有覆盖全部依赖时才可主张等价，overlap 不能普遍保证无缝或无误差。
+一个独立算例是 aₜ＝1/2、aₛ＝4/5。条件高斯的基准后验方差为 3/20；eta＝2/5 时，σ²＝(4/25)(3/20)＝3/125＝0.024，方向方差为 1/5−3/125＝22/125＝0.176。因此固定 x̂₀、ε̂，两个噪声 z₁、z₂ 的下一状态之差必须是 √0.024·(z₂−z₁)。这个参考不应读取被测方差函数的返回值；否则“方差恒零”也可能通过自我抵消的断言。
+
+eta＝0 时本步不新增随机噪声，但仍受初始噪声和网络数值路径影响。aₛ＝1 时 σ² 和方向方差都为零，下一状态为 x̂₀。
+
+### 时间表与末步边界
+
+s 必须来自所选 scheduler 的真实离散时间策略。固定 S-DIFFUSERS 说明中的归档实现按训练步数与推理步数的整数比确定回退步距；不能未经核对将任意自定义相邻列表替换进去。
+
+本章用边界序列 τ[0..M] 表达已经构造完成的 M 次更新，每次取 t＝τ[k]、s＝τ[k+1]。它必须与目标 scheduler 的回退策略及最终 alpha 规则一致。最后一个边界可以是由配置定义的虚拟干净端，其 alpha 单独提供，不能对训练数组作越界索引。M 次网络预测和 M 次更新需要 M+1 个状态边界；不要把边界数误报为求解步数。
+
+若没有到 a＝1 的末步，返回的是最后边界的 latent，不能声称数学上已经得到精确 x₀。单一边界意味着零次更新，不等于完成一次 DDIM 步。
+
+## CFG 与可复用对象
+
+classifier-free guidance 的常见组合为 raw_g＝raw_u＋w(raw_c−raw_u)。两分支读取同一 xₜ 和实际时间步，分别使用条件和 null 条件。w＝0 退化为无条件，w＝1 退化为有条件；更大 w 不保证质量单调提高。
+
+该形式要求 checkpoint 支持训练时的条件丢弃或 null 条件，并采用相容的 guidance 约定。蒸馏 guidance、内嵌 guidance、预测方差或只对部分通道 guidance 的模型需要专门处理。原始 DiT 的附录就报告过仅对部分 latent 通道使用 guidance 的实验，不能把全通道线性组合当成其所有设置的精确复现。
+
+对 epsilon、x₀、v 的线性参数化，在同一 xₜ、aₜ 上，先组合 raw 再换算，与先换成共同表示再组合在实数算术中等价。裁剪、非线性重标定、预测方差和模型特有的通道策略会改变这一结论。
+
+CFG 可以顺序执行两分支、沿 batch 合并，或分设备执行后合成。合批可能节省权重读取与启动，但增加峰值激活；顺序执行可以复用工作区。浮点归约顺序和 kernel 选择可能改变，不能普遍保证逐位相同。跨请求合批还要逐请求保存时间位置、条件和 RNG；相同 shape 不足以证明可以共用可变 scheduler 状态。
+
+采用 token 为行的表示时，固定源 E∈R^{S×d_e} 的 cross 投影为 K_c＝E W_Kc、V_c＝E W_Vc。只要源、投影权重、位置处理和格式不变，K_c、V_c 就不依赖去噪步。每步的 Q、QKᵀ、softmax、PV 仍然需要执行。图像 self K/V 来自当前 hidden，不能因为文本固定就跨步保留。
+
+这个结论也不能套到所有 DiT。原始 DiT 比较 in-context、cross-attention、adaLN 和 adaLN-Zero；其 cross 变体把时间步和类别嵌入组成长度二的源序列，因此源会随 t 改变；纯 adaLN 变体没有可缓存的 cross K/V。论文报告 cross 变体约增加 15% GFLOPs，adaLN 方式在其比较中计算更省，adaLN-Zero 的质量更好。这些是该论文实验范围内的结论。
+
+跨步复用 attention/FFN 输出依赖近似相似性，而非固定源的函数恒等。Wan 的固定报告按验证集选择 attention 缓存步，并利用后期条件/无条件预测相似性及残差补偿，报告约 1.62× 推理加速。其“lossless”指作者的评估条件；Wan 使用 flow matching，本章 DDIM 方程不能直接用来推进其速度场。迁移到图像任务时，缓存、跳过 unconditional 和减少步数应分别保留未缓存参考及质量评估。
+
+## 参考去噪器的逐层算法
+
+为使网络预测可重建，下面定义一个教学用参考结构 Dθ：latent patch 嵌入，逐层 self-attention，时间 adaLN 调制，可选固定文本 cross-attention，逐 token FFN，最后还原空间预测。这是由来源机制组织的独立参考结构，不声称等于某个已发表 checkpoint；接入实际模型时要替换为其真实层序、归一化、激活、位置和通道策略。
+
+定义 patch 边长 p，H_p＝⌈h_l/p⌉，W_p＝⌈w_l/p⌉，token 数 T＝H_p W_p。逻辑 latent 空间点数 n_z＝h_l w_l。整除时 n_z＝p²T。非整除时需要显式 padding 到 H_p p×W_p p，并在输出裁回逻辑网格；模型未训练支持该边界时，这是一条需要质量验证的近似路径，不能静默视为精确布局变换。
+
+全部 token 矩阵采用“token 为行、通道为列”。W_in 为 (p²c_z)×d，W_out 为 d×(p²c_pred)。self 的四个投影为 d×d；cross 的 Q/输出投影为 d×d，K/V 投影为 d_e×d。普通两层 FFN 的 W_1 为 d×d_ff，W_2 为 d_ff×d。因而 U W_1 为 T×d_ff，GELU(U W_1)W_2 为 T×d，能够逐元素加回残差。
+
+令 head 数为 H_h，d＝H_h d_h。Q/K/V 投影后拆成 H_h 个矩阵，每个 self head 是 T×d_h，每个 cross K/V head 是 S×d_h；softmax 沿合法 key 轴逐 query 归一化，不能跨 token 或 head 混算。mask 用零表示允许、负无穷表示禁止，必须保证每行至少有一个合法 key，或采用模型明确规定的空行语义。图像全局 self-attention 通常没有自回归因果 mask。
+
+这里 AdaNorm(X,γ,β)＝(1＋γ)⊙LN(X)＋β，γ、β、gate 为长度 d 的行向量，沿 token 轴广播。LN 对每行的 d 个通道计算均值与方差，并加固定正数稳定项。TimeEmbed 使用固定频率的 sin/cos 编码，经固定两层 MLP 形成时间向量；各层 Mod 是该向量到调制参数的固定映射。GELU 在参考算法中逐元素执行；真实 checkpoint 采用 tanh 近似、门控 FFN 或其他激活时，按其函数替换并重算成本。
+
+```pseudocode
+算法 1：参考去噪器 Dθ，一次完整前向
+输入：z（h_l×w_l×c_z），实际时间步 t，条件 E（S×d_e），参数 θ，
+      可选只读 cache（每个 cross 层的 K_c、V_c 及依赖身份）
+输出：raw（h_l×w_l×c_pred）
+要求：p 为正整数，d＝H_h·d_h；所有投影符合正文行布局
+
+H_p ← ceil(h_l/p)；W_p ← ceil(w_l/p)；T ← H_p·W_p
+z_pad ← 按模型允许的边界策略补到 H_p·p × W_p·p
+X ← 空 T×d
+for i ← 0 到 H_p−1：
+    for j ← 0 到 W_p−1：
+        r ← i·W_p+j
+        v ← Flatten(z_pad[i·p:(i+1)·p, j·p:(j+1)·p, :])  # 一行 p²c_z
+        X[r,:] ← v·W_in + Pos[i,j,:]
+emb_t ← TimeEmbed(t)
+for l ← 1 到 N_l：
+    γ1,β1,g1,γ2,β2,g2,γ3,β3,g3 ← Mod_l(emb_t)
+    U ← AdaNorm(X,γ1,β1)                            # T×d
+    Q,K,V ← U·W_Q^l, U·W_K^l, U·W_V^l
+    对每个 head h：
+        P_h ← RowSoftmax(Q_h·K_hᵀ/√d_h + mask_h)    # T×T
+        A_h ← P_h·V_h                               # T×d_h
+    A ← ConcatHeads(A_h)                            # T×d
+    X ← X + g1 ⊙ (A·W_O^l)                         # T×d
+    若 l 属于 CrossLayers：
+        U ← AdaNorm(X,γ2,β2)
+        Q_c ← SplitHeads(U·W_Qc^l)
+        若 cache 的源、权重、位置和格式身份全部有效：
+            K_c,V_c ← 读取该层缓存并拆 head
+        否则：
+            K_c,V_c ← SplitHeads(E·W_Kc^l), SplitHeads(E·W_Vc^l)
+        对每个 head h：
+            P_ch ← RowSoftmax(Q_ch·K_chᵀ/√d_h + mask_ch)  # T×S
+            C_h ← P_ch·V_ch                               # T×d_h
+        C ← ConcatHeads(C_h)
+        X ← X + g2 ⊙ (C·W_Oc^l)                    # T×d
+    U ← AdaNorm(X,γ3,β3)
+    F ← GELU(U·W_1^l)·W_2^l                       # T×d_ff → T×d
+    X ← X + g3 ⊙ F                                # T×d
+X ← FinalAdaNorm(X,emb_t)
+Y ← X·W_out                                        # T×(p²c_pred)
+raw_pad ← 按原 patch 坐标重排 Y
+raw ← Crop(raw_pad,h_l,w_l)
+返回 raw
+```
+
+对比反例：T＝4096、d＝1536 时，若把列向量权重 W_1∈R^{d_ff×1536} 左乘整个 U∈R^{4096×1536}，内轴不匹配。即使碰巧 T＝d，也不能据此接受，因为矩阵乘法会混淆 token 轴和通道轴。验证应同时使用 T≠d 的形状和逐 token 标量参考。
+
+每层 self K/V、attention 输出、FFN 中间量及时间调制都是本次前向临时量；固定条件 cross K/V 是有条件的跨步对象。只在全部层、最终投影和空间恢复完成后，raw 才能交给 scheduler。层内残差更新不会推进请求的时间位置。
+
+若 c_pred＝2c_z，输出可能包含噪声/均值及方差参数，需要按 checkpoint 拆分；不能将全部通道直接送入只接受 c_z 通道的 DDIM 更新。下面算法 2 限定输入已适配为单一 epsilon/x₀/v 预测，且 c_pred＝c_z。
+
+## 单请求推进与组合状态提交
+
+算法 2 使用已构造好的 M 次更新边界。为突出数学契约，参考路径直接把当前 latent 作为网络输入；实际 pipeline 如需 scheduler 特定输入缩放，必须在网络入口按其规则执行，预测换算仍引用对应的原当前状态。
+
+```pseudocode
+算法 2：单请求 CFG + DDIM 推进
+输入：Dθ，prediction_type，边界 τ[0..M] 与其累计 alpha，x_init，
+      条件 c，checkpoint 的 null 条件，有限 guidance w，eta，随机状态
+输出：末边界 latent；按 VAE 契约解码后得到交付图像
+要求：M≥1；边界及末端策略与 scheduler 相容；eta 有限且在 [0,1]
+      每对 alpha 满足 0＜a_t＜a_s≤1；预测通道已适配为 c_z
+
+C_c ← EncodeCondition(c)
+C_u ← EncodeOrLoadNullCondition(checkpoint)
+cache_c,cache_u ← 结构允许时，各自构造并发布完整的固定条件 cross K/V
+state ← (x_init, k=0, 请求私有 RNG 状态)
+while k＜M：
+    t,s ← τ[k],τ[k+1]
+    a_t,a_s ← 当前与目标边界的 alpha
+    保留本次更新前的 RNG 状态或本步指定噪声
+    若 w=0：raw_g ← Dθ(x,t,C_u,cache_u)
+    否则若 w=1：raw_g ← Dθ(x,t,C_c,cache_c)
+    否则：
+        raw_u ← Dθ(x,t,C_u,cache_u)
+        raw_c ← Dθ(x,t,C_c,cache_c)              # 两次均读取同一个 x 和 t
+        raw_g ← raw_u + w·(raw_c−raw_u)
+    x0_hat,eps_hat ← 按 prediction_type 的正文公式换算 raw_g
+    若配置要求裁剪：
+        x0_hat ← 按明确裁剪策略修改
+        若配置要求重算 eps：eps_hat ← (x−√a_t·x0_hat)/√(1−a_t)
+    σ² ← eta²·(1−a_s)/(1−a_t)·(1−a_t/a_s)
+    direction_var ← 1−a_s−σ²
+    检查方差、方向被开方数及所有状态有限
+    z ← 若 σ²＞0 则消费本请求本步高斯噪声，否则为零
+    x_next ← √a_s·x0_hat + √direction_var·eps_hat + √σ²·z
+    等待本步生产者完成并验证 x_next 可供后继消费
+    提交 (x←x_next, k←k+1, 新 RNG 状态) 为一致的请求状态
+    旧 x 缓冲只在其全部已提交读者完成后复用
+    若本步失败：保留旧提交状态；重试恢复旧 RNG 或重用同一本步噪声
+返回 x
+```
+
+提交边界把 latent、时间位置和随机状态绑定起来。若噪声已消费而更新失败，只恢复 latent 不恢复 RNG，会改变重试轨迹。缓存构建也应先完整产生再发布，不能让 attention 读取半成品。
+
+一个具体交界是分设备 CFG：设备 A 计算 raw_u，设备 B 计算 raw_c；两者都绑定请求、步位置、latent 身份与条件版本。合成端等两个预测完成后计算 raw_g 和 x_next，再把下一状态交给需要继续计算的设备。A 的旧步结果不能与 B 的新步结果合成；即使消息 shape 相同也不合法。旧 x 若仍被预览或传输读取，提交新状态可以使用另一缓冲，旧缓冲要延后回收。
+
+跨请求聚批只能改变物理执行组织。每个请求仍有独立 x、k、条件及 RNG。网络支持每样本时间参数时可以处理不同时间点；静态图把时间点特化成常量时，则必须分桶或更新其受支持的输入。取消后停止提交新步，已提交的计算、传输和读者按完成关系排空，不将其缓冲立刻交给新请求。
+
+## 按真实几何推导成本
+
+### latent 状态与 patch 工作区
+
+一份逻辑 latent 或单一预测的容量为 B_z＝h_l w_l c_z b，b 为每元素字节。整除时也可写成 p²T c_z b；非整除时 padding 工作副本为 B_pad＝(H_p p)(W_p p)c_z b，裁回后仍是 B_z。solver 保存 r 份逻辑预测时主项为 rB_z；保存双通道输出或 padding 全体时，须按实际通道和形状重算。
+
+1024×1024 图像、VAE 每边压缩 8、实际 latent 为 128×128×4、p＝2 时，T＝64²＝4096。BF16 的单份预测为 128×128×4×2＝131072 字节，即 128 KiB。错误的 T c_z b 只有 32 KiB，遗漏 p²。固定实际 latent 网格，仅改变整除的 p，B_z 必须不变；改变 p 是模型候选比较时，网络权重和质量仍可能变化。
+
+单份 hidden 为 T d b；显式 self scores 每层每分支为 H_h T²b。以 d＝1536、H_h＝16、b＝2 为例，hidden 为 12 MiB，scores 为 512 MiB。这个容量不是所有层同时存活的总和；融合/分块 attention 可以避免完整 scores 落存储，但仍需 QKV、输出统计、FFN 和其他暂存。
+
+### 投影、attention 与 FFN 的计算
+
+下列为单分支单层 MAC，忽略 bias、归一化、softmax、激活和融合；一个乘加按两 FLOPs 换算：
+
+| 部分 | MAC | 轴与前提 |
+|---|---:|---|
+| self Q/K/V/输出投影 | 4T d² | 四个 d×d 投影 |
+| self QK 与 PV | 2T²d | 标准多头，总宽 d |
+| 普通两层 FFN | 2T d d_ff | W_1 为 d×d_ff，W_2 为 d_ff×d |
+| cross Q 与输出投影 | 2T d² | query/输出均为总宽 d |
+| cross K、V 源投影 | 每份 S d_e d，共 2S d_e d | E 为 S×d_e，权重为 d_e×d |
+| cross QK 与 PV | 2T S d | 源长度 S，目标长度 T |
+
+因此 cross 层主项为 2T d²＋2S d_e d＋2T S d。只有 d_e＝d 时，K/V 每份才可简写成 S d²。S＝77、d_e＝768、d＝1536 时，每份源投影为 90,832,896 MAC；误用 S d² 会得到 181,665,792 MAC，恰好高估两倍。
+
+对固定条件、固定投影的 M 次调用，每层每分支缓存 K/V 后，源投影从 M·2S d_e d 降到一次 2S d_e d，省下 (M−1)·2S d_e d；不是省下 cross attention 的全部计算。M＝30 的上述设定节省 5,268,307,968 MAC，每层每分支 K+V 缓存容量为 2Sdb＝473088 字节，即 462 KiB。缓存输出宽度由 d 决定，首次投影工作量同时由 d_e 决定，二者不能混用。
+
+完整网络还要加逐 patch 输入投影 T(p²c_z)d、输出投影 Td(p²c_pred)、时间调制和其他层。原始 UNet 有不同分辨率的卷积和 attention 网格，应逐层求和，不能直接把统一 T 的参考 Transformer 账本当成 UNet 总成本。
+
+### 访存、通信、同步与驻留
+
+权重参数量 P、每元素 b_w 时，若一次前向从设备主存流式读取全部权重，逻辑主项为 P b_w。顺序 CFG 可能读两遍，合批可能提高同一次权重加载的复用，但真实 HBM 事务取决于 kernel、L2 和融合。不能从调用次数直接证明权重流量减半。
+
+固定条件若保留 E 及 N_c 个 cross 层的 K/V，容量约为 S d_e b＋2N_c Sdb。条件缓存每步仍被读取；若从主存或远端反复换入，传输成本可能抵消投影节约。复用次数少、源短或并发驻留紧张时，可以只保留 E，按层重投影。缓存身份须覆盖实际投影依赖，换 prompt、encoder、adapter、位置处理或格式后要失效。
+
+分设备 CFG 在合成端已有一个分支预测时，至少要获得另一分支的一份 B_z。若第三处合成，则可能接收两份预测；若两个计算设备都要继续，还要分发下一 latent。每步有预测完成、合成和下一步读取的依赖，128 KiB 的字节量不大也可能被通信启动和同步延迟支配。单分支 TP/CP 则引入逐层 hidden、归约或远端 K/V 通信，其频率与 CFG 每步交换不同，见相关并行章节。
+
+峰值应按同一时刻存活对象计算：权重、条件、当前/下一 latent、raw、solver 历史、网络工作区、通信/预览缓冲和运行时保留池。顺序分支的工作区可以复用，并发分支不能据顺序规划复用；不能把 allocator 预留池和池中活跃对象再加一次。
+
+文本编码、加载、编译、autotune、打包和图捕获属于准备成本，按真实复用次数摊销。scheduler 的点运算通常较小，却在两次网络预测与下一步之间形成依赖。可重叠的计算、传输和准备需要按关键路径计时，不能把全部独占耗时相加，也不能省略共享带宽竞争。
+
+### VAE 分块的额外成本
+
+VAE tiling 用小块工作区降低峰值。设每块有效输出 h_t×w_t，所需输入 halo 半径为 ρ，在相同空间尺度、stride＝1 的局部卷积模型中，输入读取面积约为 (h_t＋2ρ)(w_t＋2ρ)，相对有效面积的放大约为 (1＋2ρ/h_t)(1＋2ρ/w_t)。真实解码器包含上采样和多层依赖时，必须逐层换算坐标与感受野，不能拿这个简式代替完整网络分析。
+
+对一维 valid 卷积 y[i]＝Σ_{j=0}^{K−1}w[j]x[i+j]，输出 tile [start,stop) 的最小输入范围是 [start,stop+K−1)。右端少一个输入，最后一个输出就缺依赖；多读任意 overlap 并不是正确性的定义。真实 VAE 若有全局 attention、空间归一化或全图统计，即使卷积 halo 完整，独立 tile 也可能改变函数。拼接和融合还要保证每个输出位置恰好交付一次。
+
+## 场景：24 GiB 预算下选择 CFG 组织
+
+以下都是结构与时间设定，不是设备实测。采用前述 1024×1024、128×128×4 latent、p＝2、d＝1536、16 heads、BF16 的几何。权重常驻设为 8 GiB，单分支非权重峰值预算设为 6 GiB，其中已包含该候选的条件、latent、raw 和工作区；设备可用容量为 24 GiB。
+
+候选 A 顺序两分支，复用工作区，主项为 8＋6＝14 GiB。候选 B 合批两分支，按非权重预算翻倍的保守设定为 8＋12＝20 GiB。真实共享、额外 kernel workspace、通信和其他请求仍需核对，不能把 20 GiB 当成通用峰值保证。候选 C 再加入跨步激活复用或减少步数，具有独立质量边界。
+
+设条件编码 40 ms，单分支前向 30 ms，合批前向 45 ms，scheduler 每次更新 1 ms，共 M＝30 次更新，VAE 解码 120 ms。串行关键路径下，A 为 40＋30×(60＋1)＋120＝1990 ms，B 为 40＋30×(45＋1)＋120＝1540 ms，差 450 ms。这里 30 次更新对应 31 个状态边界。
+
+若合批前向变为 60 ms，两者每步都是 61 ms；再慢则 B 可能落后。若容量压缩到不足 20 GiB，A 即使更慢也可能是可行方案。若一次前向确实流式读取 8 GiB 权重，在有效 1 TiB/s 下仅该项就至少约 7.8 ms；这只是特定流量假设的带宽下界，不包含计算、激活、同步和 VAE，也不能当成测得时间。
+
+完整比较固定 checkpoint、实际 latent 网格、p、预测类型、时间表、guidance、初始 latent 和每步噪声。A/B 先比较逐层或逐步张量，再比较最终图像；C 在同一保留 prompt/seed 集合上独立评估构图、细节、强 guidance 和分辨率。冷启动、稳态、排队和 VAE 分开报告；只有质量和服务目标同时满足的图像才计入有效产出。
+
+## 条件改变时哪些结论仍成立
+
+| 变化 | 可以保留 | 必须调整或放弃的假设 |
+|---|---|---|
+| 分辨率变化 | 相容 checkpoint 的预测和 solver 语义 | h_l、w_l、B_z、T 和 T² 项变化，重新核对位置、形状支持、桶及峰值 |
+| patch 变小 | 扩散语义的分析方法 | 普通 DiT 的输入/输出投影随 p 改形；这是不同模型候选或明确支持可变 patch 的机制，须核对权重、位置、还原和质量 |
+| 条件源宽 d_e 改变 | 目标 attention 宽度 d 的定义 | 投影权重相容性、2S d_e d 工作量及 E 容量改变；不能沿用 d_e＝d 简式 |
+| 步数减少 | 每个选中边界仍需合法 | 调用数和求解轨迹改变，重新评估质量；不是实现等价优化 |
+| CFG 合批 | 同一请求两分支共享 xₜ、t | 工作区生存期、kernel、浮点差异和权重复用程度改变 |
+| 容量约束变成带宽约束 | scheduler 数学 | 顺序方案的容量优势可能让位于合批复用，需重算真实流量和时间 |
+| prompt 或条件版本变化 | 固定依赖才能复用的规则 | E 和 cross K/V 失效；不能只看源长度相同 |
+| 时间步进入源表示 | cross 的投影公式 | K/V 随 t 变化，放弃跨步固定缓存，或只复用经证明固定的子图 |
+| 编译或图执行 | 原函数及请求身份 | guard、shape、stride、地址和特化时间常量需相容；不同形状可能触发新变体 |
+| VAE 分块 | 降低局部峰值的目标 | 感受野、全局统计及拼接需重验；依赖未覆盖时按近似方案处理 |
+
+调度重组通常可以保留每请求数学，但不能合并请求的可变状态。模型结构、预测参数化或条件方式变化时，应从依赖重新判断缓存和更新是否合法。
+
+## 用区分实验定位错误
+
+先用便宜的代数和形状检查隔离机制，再用真实张量、图像和设备测量验证。单一最终图像或总时间可能同时受到步数、随机流、CFG、缓存和 VAE 影响，不能直接决定原因。
+
+| 观察 | 竞争解释 | 区分实验与预期 | 反证后的修正 |
+|---|---|---|---|
+| FFN 不能加回残差，或 T＝d 时才运行 | 行列布局混用；投影参数不相容 | 使用 T≠d、d_ff≠d 的输入，逐 token 标量参考对照 T×d 输出，再重排 token 行检查同样重排输出 | 形状过关但逐 token 不符时，查 token 混合、转置及广播，不能只补 reshape |
+| 非零 eta 仍不受 z 影响 | 方差恒零；随机项漏加；每次用了同一噪声 | 固定 aₜ＝0.5、aₛ＝0.8、eta＝0.4、x̂₀、ε̂，指定两组 z；独立参考要求方差 0.024、方向方差 0.176，差值为 √0.024Δz | 方差对而差值错则查加噪路径；方差错先查系数，不能只验证被开方数非负 |
+| 条件缓存收益预测失准 | 漏掉 d_e；缓存未命中；传输覆盖投影节省 | 固定 T、S、d，改变相容的源宽候选，分别统计源投影、缓存读入及每步 attention | 源投影按 d_e 变化但总时间不变时，调查其他瓶颈；不能继续把全部收益归因源投影 |
+| 合批 B 更快 | 权重复用/启动减少；输入或步数变小 | 同几何同质量比较单分支、顺序双分支、合批双分支，核对实际事务与调用时间 | 若仅启动减少，缩小权重复用解释；若输入不同，撤回等价比较 |
+| 跨步缓存 C 更快但质量变差 | 激活近似误差；步数或噪声改变；VAE 分块 | 做缓存开/关与原/少步数的交叉比较，固定随机轨迹，并单独关闭 VAE tiling | 误差只在解码边界时优先查 VAE；仅减少步数的收益不能记给缓存 |
+| VAE 出现接缝或整体偏色 | halo 不足；全局统计改变；漏块/重块 | 全图与分块逐位置对照，扫描合法 tile 和 halo；分别比较内部与边界 | 只增加 halo 不能修复内部整体偏移时，检查归一化和全局 attention |
+| 单请求正确、混合批错误 | 时间位置串用；条件缓存串用；RNG 共享；迟到结果 | 交错不同 prompt、时间点、取消和槽位重用，比较每请求逐步参考及提交身份 | 先定位首次分歧的状态归属，不能只靠固定 batch 的通过记录 |
+
+独立 stdlib 检查采用 CPU 标量/小矩阵模型：三类预测以已知 x₀、ε 和前向构造作参考；FFN 用逐 token 标量循环对照矩阵路径；cross 投影成本用小规模乘加计数及固定大算例核对；DDIM 用独立有理数参考核对方差、完整状态及噪声差值；VAE 仅用一维局部卷积说明依赖覆盖。
+
+负对照必须由同一验证器经历“正确实现接受 → 缺陷拒绝 → 恢复后接受”。DDIM 缺陷保留 eta/alpha 域验证，只把合法输入方差置零，以排除“仅因非法输入拒绝”的假通过。其他负对照包括左乘整个 token 矩阵、源宽误写成目标宽、错误 v 符号、t−1 代替选定边界、漏 p² 和少读一个必需卷积输入。
+
+验证器拒绝使用专用 Mismatch，非法输入用 DomainError，检查框架失败用 HarnessError；负对照只捕获相应拒绝，缺陷被接受或正确实现被拒绝均继续传播为失败。不能在检查末尾无条件抛异常来冒充检错，也不能用被测方差生成它自己的期望结果。
+
+这些检查不能证明真实去噪网络、GPU 浮点、HBM 事务、异步可见性、性能重叠、真实 VAE 或图像质量。设备和质量结论仍需目标 checkpoint、目标 backend 和保留评估集上的独立结果。
 
 <!-- infraagents:provenance -->
 
 ## 来源与推导
 
-- [S-LDM：High-Resolution Image Synthesis with Latent Diffusion Models](../sources/S-LDM.md)：Latent Diffusion 把去噪计算放在编码器形成的潜空间，通过条件机制引导生成，并最终解码到像素空间。
+- [S-LDM：High-Resolution Image Synthesis with Latent Diffusion Models](../sources/S-LDM.md)：LDM 将图像通过编码器压到潜空间，在潜空间迭代去噪后解码；论文 §3.3 的 cross-attention 由当前 latent 特征生成 Q，由条件表示生成 K/V。附录还说明文本条件编码器没有再以时间步为条件。这支持按依赖区分固定条件和逐步图像状态；实际缓存仍要求权重、位置和格式不变。
   [完整原文](../../references/S-LDM/reader.html) · [全文文本](../../references/S-LDM/fulltext.txt)
 
-- [S-DIT：Scalable Diffusion Models with Transformers](../sources/S-DIT.md)：DiT 使用 Transformer 处理潜空间 patch，去噪计算的 token 几何由 latent 网格和 patch 化决定。
+- [S-DIT：Scalable Diffusion Models with Transformers](../sources/S-DIT.md)：DiT 将 latent 划为 patch，输入逐 patch 线性嵌入，输出将每个 token 解码为 p×p×2C 并还原空间；论文比较 in-context、cross-attention、adaLN 和 adaLN-Zero。cross 变体的源包含时间步和类别，不能按固定文本源缓存；patch 改变也不是普通 checkpoint 的纯执行布局变化。附录的部分通道 CFG 提醒读者核对模型的真实 guidance 范围。
   [完整原文](../../references/S-DIT/reader.html) · [全文文本](../../references/S-DIT/fulltext.txt)
 
-- [S-DIFFUSERS：Diffusers — Scheduler 与 DDIM（固定历史源码）](../sources/S-DIFFUSERS.md)：Diffusers 的固定 scheduler 源码定义 scheduler 配置、模型预测与时间步更新；DDIM 文件给出 latent 更新及 prediction_type 的不同分支。当前材料不把后续版本的默认参数当作通用规则。
-  [完整原文](../../references/S-DIFFUSERS/reader.html) · [全文文本](../../references/S-DIFFUSERS/fulltext.txt)
+- [S-DIFFUSERS：Diffusers — Scheduler 与 DDIM（固定历史源码）](../sources/S-DIFFUSERS.md)：所供作者核验后的算法说明给出 epsilon、原样本与 v 到共同 x̂₀/ε̂ 的换算，DDIM 方差和更新，裁剪后的重算分支，以及归档实现按训练/推理步数整数比回退的策略。本章没有直接阅读源码归档，也不把任意自定义时间表或后续默认值归给该版本。有限 eta∈[0,1] 是本章参考算法的显式支持域。
+  [算法与机制说明](../sources/S-DIFFUSERS.md)
 
-正文中的公式展开、容量算例与组合设计是基于这些来源的推导；设定算例不冒充实测。来源版本受 2026-04-30 上限约束，编辑日期 2026-10-22 不作为事实发布日期。此独立 base 版本内的章节修订号从 1 开始，原章节身份与版本映射保存在版本清单。
-
-
+正文中的轴约定、参考去噪器、方差算例、条件化 MAC、容量与组合时序是基于来源机制的独立推导；设定数字不冒充实测。参考去噪器并非声称某个来源 checkpoint 同时采用所列全部子结构。来源版本受 2026-04-30 上限约束，编辑日期 2026-10-22 不作为事实发布日期。此独立 base 版本内的章节修订号从 1 开始，原章节身份与版本映射保存在版本清单。
 
 ### 本次扩写补充来源
 
-- [S-WAN：Wan: Open and Advanced Large-Scale Video Generative Models](../sources/S-WAN.md)：Wan 的视频生成报告涉及时空建模和视频潜空间/解码结构；输出帧与压缩潜表示具有不同的时间和空间粒度。
+- [S-WAN：Wan: Open and Advanced Large-Scale Video Generative Models](../sources/S-WAN.md)：所供摘录 §4.2 说明 flow matching、文本 cross-attention 和时间调制，§4.4.2 说明按验证集选择 attention/CFG 缓存步与残差补偿，报告 Wan 14B 文本到视频推理约 1.62× 加速。其“lossless”仅对应作者的评估条件；视频和图像的几何、采样方程及质量边界需分别核对，不把视频报告写成图像部署实测，也不声称读取未供给区间。
   [完整原文](../../references/S-WAN/reader.html) · [全文文本](../../references/S-WAN/fulltext.txt)
 
 ## 延伸阅读
@@ -74,3 +320,6 @@ CFG 两分支可以顺序运行、沿 batch 合并，或分设备执行后合成
 - [交叉注意力缓存：固定源、独立几何与可见性](../algorithms/cross-attention-cache.md)。
 - [编译与动态形状：Guard、分桶和变体成本](../frameworks/compile-dynamic-shapes.md)。
 - [Goodput：联合 SLO、拒绝和容量前沿](../workloads/slo-goodput.md)。
+- [推理并行：张量分解、流水、专家与上下文](../algorithms/parallelism.md)。
+- [内存分配：地址、容量与在途所有权](../system-semantics/memory-allocators.md)。
+- [性能实验：独立重复、效应量与尾部证据](../tools/statistical-experiments.md)。

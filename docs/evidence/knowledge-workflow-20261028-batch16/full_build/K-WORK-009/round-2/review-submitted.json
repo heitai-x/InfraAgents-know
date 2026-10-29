@@ -1,0 +1,336 @@
+{
+  "entry_id": "K-WORK-009",
+  "body_sha256": "ff824834fe4aeaa25a027e7e085e6e114fc257c65e0d89dee1e59c47d8fcf3d6",
+  "reviewer": "sol-reviewer:K-WORK-009:round-2",
+  "decision": "accept",
+  "documents": {
+    "AGENTS.md": "b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a",
+    "docs/knowledge-method.md": "69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb",
+    "docs/knowledge-review.md": "f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21",
+    "knowledge/workloads/cost-and-energy.md": "ff824834fe4aeaa25a027e7e085e6e114fc257c65e0d89dee1e59c47d8fcf3d6",
+    "knowledge/sources/S-LINUX-RESOURCES.md": "d829824442f5a9abd36c3caf63c5fd30da8da4f8839db88e33aa045b7baa05f0",
+    "knowledge/sources/S-MLPERF-SCENARIOS.md": "e210de2929034d4a6e25a31ee72b81a184412a7e637c979210f91ae02a261b04",
+    "knowledge/sources/S-MLPERF-LLM.md": "d0a591089c57e5e6d0051cdd73ce4ffc1bbfe60657470732921e25710f936cf0",
+    "knowledge/workloads/multi-model-placement.md": "0d7872b7823ecd01b49950d97431db0f4f8ef61da18208492d88c07955720400",
+    "knowledge/tools/statistical-experiments.md": "908b3588a6fa20bb1f2aed9f5db51c4b462953d79f8944cdbcfea7141c74644f",
+    "knowledge/system-semantics/deployment-environment.md": "1b47e39a7f36c9f1cba4dc1792ad9243fd69d083ae1d6a7bb13bfd80dae1a8a5",
+    "references/S-LINUX-RESOURCES/fulltext.txt": "458dd3fccfb13be3947b2a2f96f4f340f24c9ca39b7a2713be09a62e1b33d412",
+    "references/S-MLPERF-SCENARIOS/upstream/loadgen/README.md": "074479dbeb369205ccc8800450c647893b4901c247e0e4ee7f321f05254e9305",
+    "references/S-MLPERF-LLM/upstream/language/llama2-70b/README.md": "f7eee4fb707a5035e7c8f8fe01f351a4620ea1ab904ca8086fcd9043eabb6b5e",
+    "references/S-MLPERF-LLM/upstream/loadgen/README.md": "074479dbeb369205ccc8800450c647893b4901c247e0e4ee7f321f05254e9305",
+    "tools/check_k_work_009_full.py": "19df69f581d1343dcf5cc72b794b0ad0adc0f351072fb76efcb47d26a6b11a28"
+  },
+  "criteria": {
+    "definition": {
+      "assessment": "sufficient",
+      "reason": "动机、输入输出、到达人口、业务截止和资源账区间均已定义。逻辑请求与尝试分离，合格数采用逐请求联合条件；零分母、未知质量和未结责任不会被包装为最终单位指标。",
+      "evidence": [
+        {
+          "path": "knowledge/workloads/cost-and-energy.md",
+          "quote": "输入包括候选身份、逻辑请求及尝试记录、质量和服务条件、资源占用与计费记录、计量域拓扑、能量或功率样本，以及价格和分摊合同。"
+        },
+        {
+          "path": "knowledge/workloads/cost-and-energy.md",
+          "quote": "N_good=0 时单位指标未定义，仍须报告总成本、总能量和失败账，不能写成零成本。"
+        }
+      ]
+    },
+    "legality": {
+      "assessment": "sufficient",
+      "reason": "将共同任务和服务合同、计量域覆盖、物理身份、无重置证据及严格增量界作为成立条件，将计费、分摊和采样重建作为明确选择。模计数恢复的唯一性条件正确；没有将平均功率限制误作瞬时硬界。来源事实与独立推导的归属清楚。",
+      "evidence": [
+        {
+          "path": "knowledge/workloads/cost-and-energy.md",
+          "quote": "选择一组计量域时，需要核对实际覆盖集合两两不重叠，其并集恰好覆盖声明的目标；无法证明覆盖关系就分别报告，不能当作完整系统总量。"
+        },
+        {
+          "path": "knowledge/workloads/cost-and-energy.md",
+          "quote": "在身份与代次不变、没有重置、并已证明 0≤d≤U<M 时，唯一合法增量是"
+        },
+        {
+          "path": "knowledge/workloads/cost-and-energy.md",
+          "quote": "配置的平均功率限制和时间窗口本身不提供这种瞬时硬上界；不能仅凭该配置证明回绕次数。"
+        }
+      ]
+    },
+    "algorithm": {
+      "assessment": "sufficient",
+      "reason": "两段伪代码展开计数恢复和完整结算的输入、初始化、推进、冻结、排空、去重、计费、覆盖校验与结束条件。请求资格和物理责任分别推进，失败保留已知事实并使相应指标未知；没有用业务终止替代物理最后使用。",
+      "evidence": [
+        {
+          "path": "knowledge/workloads/cost-and-energy.md",
+          "quote": "结算状态依次为 PLANNED、COLLECTING、BUSINESS_FROZEN、SETTLING、CLOSED；采集不完整时可以进入 INCOMPLETE。"
+        },
+        {
+          "path": "knowledge/workloads/cost-and-energy.md",
+          "quote": "继续记录在途 kernel、复制、输出借用、绑定拆除和必要备用占用"
+        },
+        {
+          "path": "knowledge/workloads/cost-and-energy.md",
+          "quote": "任一目标域缺失、区间含糊或覆盖不全，则完整总能量未定义"
+        }
+      ]
+    },
+    "cost": {
+      "assessment": "sufficient",
+      "reason": "六类成本在共同范围中连接资源工作量、保留时间和合同费用，区分逻辑字节、实际事务、唯一驻留与关键路径。能量单位、会话取整和分摊守恒正确。组合轨迹的 5800 J、0.2 费用单位及提前截账遗漏量可复算，关闭阈值推导也成立。",
+      "evidence": [
+        {
+          "path": "knowledge/workloads/cost-and-energy.md",
+          "quote": "资源需求用于解释机制，计费合同用于转换费用。二者先分开列账，再在同一候选、同一人口和同一范围中连接。"
+        },
+        {
+          "path": "knowledge/workloads/cost-and-energy.md",
+          "quote": "具有流水重叠时，墙钟由关键路径和资源争用决定，不能将所有阶段累计耗时直接相加。"
+        },
+        {
+          "path": "knowledge/workloads/cost-and-energy.md",
+          "quote": "总能量为 800+3600+600+800=5800 J；总费用为 2×10×0.01=0.2 单位。"
+        }
+      ]
+    },
+    "adaptation": {
+      "assessment": "sufficient",
+      "reason": "以单位合格结果的比值条件判断收益反转；频率、批量、到达轨迹、内存压力、备用转换、计费粒度和故障余量变化均有调整依据。明确说明简化时间模型何时应放弃，节能和减费也没有混同。",
+      "evidence": [
+        {
+          "path": "knowledge/workloads/cost-and-energy.md",
+          "quote": "E_B/E_A < N_good,B/N_good,A。"
+        },
+        {
+          "path": "knowledge/workloads/cost-and-energy.md",
+          "quote": "流水、带宽竞争、温控或 CPU 瓶颈变化后应放弃这个简式。"
+        },
+        {
+          "path": "knowledge/workloads/cost-and-energy.md",
+          "quote": "若请求在启动完成前到达且不允许等待，关闭仍不合法；若合同存在最低计费时长，节能也可能不减少费用。"
+        }
+      ]
+    },
+    "diagnosis": {
+      "assessment": "sufficient",
+      "reason": "诊断表为计数下降、稀疏采样、批量反转、提前截账和分摊变化等观察提供竞争解释、可控干预及撤回条件。检查具有独立参考和实际检出的负对照，且明确限定为有限模型验证。",
+      "evidence": [
+        {
+          "path": "knowledge/workloads/cost-and-energy.md",
+          "quote": "固定同一轨迹，分别改变最大等待与可用 KV；等待干预有效则修正批量策略，容量干预有效则重算驻留与副本"
+        },
+        {
+          "path": "knowledge/workloads/cost-and-energy.md",
+          "quote": "在共同计量域并行保留较密参考，按原样本降采样；变化仅来自重建时收缩采样模型结论，不能宣称设备更节能"
+        },
+        {
+          "path": "knowledge/workloads/cost-and-energy.md",
+          "quote": "固定物理记录只改权重，再做移除租户的可行对照；仅权重导致变化时只报告归因变化"
+        }
+      ]
+    }
+  },
+  "findings": [],
+  "limitations": [
+    "本次结论依据任务内提供的正文、材料和执行证据；文档哈希按要求原样绑定，未重新读取磁盘字节计算哈希，也未验证离线链接的实际可达性。",
+    "未读取省略的六个图像资产或任何上游源码归档。LoadGen 具体场景机制核对到完整来源说明；所供 README 支持职责分离，但没有独立展开全部场景定义。",
+    "检查验证有限算术与账务模型，不覆盖真实传感器准确性、驱动周期与端点、物理计量域覆盖、功率硬上界、采样扰动、价格合同或物理责任采集完整性。",
+    "没有真实 GPU、CPU package、整机电表、在线服务、尾部 SLO、质量或 Agent 使用效果的实测结论。"
+  ],
+  "checks": [
+    {
+      "script": "tools/check_k_work_009_full.py",
+      "args": [],
+      "script_sha256": "19df69f581d1343dcf5cc72b794b0ad0adc0f351072fb76efcb47d26a6b11a28",
+      "status": "passed_in_supplied_preflight",
+      "reviewer_executed": false,
+      "evidence": "actual_preflight",
+      "returncode": 0,
+      "interpreter": "/usr/bin/python3.12",
+      "runtime_flags": [
+        "-I",
+        "-S",
+        "-B",
+        "-X",
+        "utf8"
+      ],
+      "result": "所供 remote_bwrap 记录绑定当前脚本和候选正文哈希，未超时，stderr 为空。stdout 报告计数恢复枚举 1784 例、计费枚举 154 例、10 个检出的负对照及 22 项拒绝输入；组合轨迹为 5800 J、费用 1/5、合格数 1。"
+    }
+  ],
+  "no_checks_reason": "",
+  "reading_scope": {
+    "range_unit": "所供提取文本的零起点、左闭右开字符范围；范围身份采用材料清单，不表示重新核验磁盘文件。",
+    "full_supplied_documents": [
+      {
+        "path": "AGENTS.md",
+        "ranges": [
+          [
+            0,
+            567
+          ]
+        ]
+      },
+      {
+        "path": "docs/knowledge-method.md",
+        "ranges": [
+          [
+            0,
+            2251
+          ]
+        ]
+      },
+      {
+        "path": "docs/knowledge-review.md",
+        "ranges": [
+          [
+            0,
+            3016
+          ]
+        ]
+      },
+      {
+        "path": "knowledge/workloads/cost-and-energy.md",
+        "ranges": [
+          [
+            0,
+            12598
+          ]
+        ]
+      },
+      {
+        "path": "knowledge/sources/S-LINUX-RESOURCES.md",
+        "ranges": [
+          [
+            0,
+            949
+          ]
+        ]
+      },
+      {
+        "path": "knowledge/sources/S-MLPERF-SCENARIOS.md",
+        "ranges": [
+          [
+            0,
+            823
+          ]
+        ]
+      },
+      {
+        "path": "knowledge/sources/S-MLPERF-LLM.md",
+        "ranges": [
+          [
+            0,
+            702
+          ]
+        ]
+      },
+      {
+        "path": "knowledge/workloads/multi-model-placement.md",
+        "ranges": [
+          [
+            0,
+            13608
+          ]
+        ]
+      },
+      {
+        "path": "knowledge/tools/statistical-experiments.md",
+        "ranges": [
+          [
+            0,
+            4269
+          ]
+        ]
+      },
+      {
+        "path": "knowledge/system-semantics/deployment-environment.md",
+        "ranges": [
+          [
+            0,
+            3882
+          ]
+        ]
+      },
+      {
+        "path": "references/S-LINUX-RESOURCES/fulltext.txt",
+        "ranges": [
+          [
+            0,
+            131630
+          ]
+        ]
+      },
+      {
+        "path": "references/S-MLPERF-SCENARIOS/upstream/loadgen/README.md",
+        "ranges": [
+          [
+            0,
+            11382
+          ]
+        ]
+      },
+      {
+        "path": "references/S-MLPERF-LLM/upstream/language/llama2-70b/README.md",
+        "ranges": [
+          [
+            0,
+            12270
+          ]
+        ]
+      },
+      {
+        "path": "references/S-MLPERF-LLM/upstream/loadgen/README.md",
+        "ranges": [
+          [
+            0,
+            11382
+          ]
+        ]
+      }
+    ],
+    "supplied_excerpts": [
+      {
+        "path": "knowledge/workloads/metric-events.md",
+        "ranges": [
+          [
+            0,
+            5679
+          ],
+          [
+            8000,
+            16487
+          ]
+        ]
+      },
+      {
+        "path": "knowledge/workloads/measurement-comparability.md",
+        "ranges": [
+          [
+            0,
+            10349
+          ],
+          [
+            12000,
+            15817
+          ]
+        ]
+      },
+      {
+        "path": "knowledge/workloads/elastic-serving.md",
+        "ranges": [
+          [
+            0,
+            7957
+          ],
+          [
+            8000,
+            14209
+          ]
+        ]
+      }
+    ],
+    "other_inspected_material": [
+      "完整 candidate.test_script、candidate.author_notes、author_material_scopes 和 actual_preflight，包括脚本哈希、正文输入哈希、实际 argv、stdout、stderr、退出码与沙箱范围。"
+    ],
+    "author_scope_assessment": "作者账本记录原正文 e68e30bc7b68d554863044fe495751d95fc53993fb21c755ab89ef5d0ea4fd1b 的完整供给范围 [0,3169)，以及方法、标准、来源说明、三份相关完整章节和所列原文全文；K-WORK-001、004、008 为明确摘录。审阅者当前复核的是 ff824834fe4aeaa25a027e7e085e6e114fc257c65e0d89dee1e59c47d8fcf3d6 候选全文。供给账本与作者实际认知阅读分开，不由摘录推断作者只获得摘要。",
+    "source_fidelity_assessment": "powercap 原文支持层级计量域、energy_uj 微焦耳单位、支持时写零重置、范围字段及 RAPL 示例没有瞬时 power_uw；LoadGen README 明确不负责准确率评分；Llama 2 README 支持首 token 通知、答案 token 数一致及 interactive 的特定延迟约束。候选未迁移这些特定阈值，也未把基准报告当作本项目实测。",
+    "artifact_contract_assessment": "本轮提供的 candidate 为包含 chapter、test_script、no_test_reason、author_notes 的结构化对象，已交付完整候选并有当前脚本的预检记录。上一轮非严格 JSON 的问题不再作为当前未解决 finding；未声称重新解析了上一轮原始失败文件。"
+  },
+  "test_assessment": "独立复核了脚本各函数、参考和负对照，而非仅采用退出码。counter_step 的恢复量由已知真实增量正向生成读数后核对；严格 U<M 排除相差整周期的歧义。1784 个有限输入覆盖全部起点与周期内增量，绝对差分变体消费相同读数，780 个不一致提供真实故障见证；另覆盖不变端点、重置不明、身份或代次改变、不相容上界及保留中间样本。计费实现的整数取整与逐块枚举参考采用不同计算路径，覆盖零时长、粒度边界、去重、冲突及独立会话，向下取整和合并会话负对照均能改变结果。功率积分与线性函数解析原函数核对，非等间隔完整积分为 1200 J，裁剪积分为 900 J；算术样本均值故障输出 3200/3，与参考区分。计量域使用显式物理覆盖集合检验重叠和缺口。请求资格对照预先给定集合，组合轨迹把同一请求账接到费用与能量，检出尝试数扩大分母、业务截止截断资源账及负基线残差截零。分摊检查使用费用守恒不变量。部分负对照是直接计算的错误表达式，并非完整故障结算器，因此不将其描述为端到端生产实现验证。脚本没有实现原始尝试事件归并、完整 AccountCandidate 控制器或真实最后使用证据采集；功率解析参考也只覆盖所选线性模型。这些遗漏与正文声明的有限模型范围相容。作者注明其阶段未执行 Python，独立 JavaScript 探针不冒充 Python；随后提供的 actual_preflight 才是当前 Python 脚本退出码 0 的执行证据。本审阅者未重新执行 Python，未把未执行检查记为自行 PASS。"
+}

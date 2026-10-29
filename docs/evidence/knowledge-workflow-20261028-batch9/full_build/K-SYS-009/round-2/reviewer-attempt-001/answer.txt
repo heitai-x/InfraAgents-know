@@ -1,0 +1,148 @@
+{
+  "entry_id": "K-SYS-009",
+  "body_sha256": "4fe6248155d18f66f214f5ee2066c6dd746c72f2270c91d632c649b261a3263f",
+  "reviewer": "sol-reviewer:K-SYS-009:round-2",
+  "decision": "revise",
+  "documents": {
+    "AGENTS.md": "b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a",
+    "docs/knowledge-method.md": "69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb",
+    "docs/knowledge-review.md": "f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21",
+    "knowledge/system-semantics/distributed-state-transfer.md": "4fe6248155d18f66f214f5ee2066c6dd746c72f2270c91d632c649b261a3263f",
+    "knowledge/sources/S-DISTSERVE.md": "968cbf46667e862085b0e2d72405805351bd33880ac23d8d055bf259192411f4",
+    "knowledge/sources/S-CUDA-TOPOLOGY.md": "39d4039179728ce8570c3b9ec3801aaad52108d030f278fb598a4d6d47de1f8e",
+    "knowledge/sources/S-VLLM-PREFIX.md": "9e3f16fdac245da8aa97deea55a820642b67e626329748c980eaa2fc0b7656f5",
+    "knowledge/sources/S-RDMA.md": "660948886af9019ac90e6c58ab7b2a4ca9dbf282f1bb74de37162403f24f4d49",
+    "knowledge/sources/S-GPUDIRECT.md": "7a14b2ca6cdf1f54e79fc02dbf10739305b285a6d454f08cf03594249ffd36f1",
+    "knowledge/sources/S-LLUMNIX.md": "86e48c54e7733dffeaec420e7205c4eeb3d28f7d59c7d0d8c2f16d2fa275d586",
+    "knowledge/hardware/transport-and-rdma.md": "72bcf1d8948eae41c243e422f6b0370462dcc4bf33ef86f5664a09b4e46d3ba2",
+    "knowledge/system-semantics/distributed-kv-store.md": "ecc4f667ff186b05fececba52c500e43d0460def524e6200b9cfa00fcdb984c0",
+    "knowledge/system-semantics/serving-recovery.md": "f551fa1f1e6213469c856a880839eefff504fb39f4dd692000b2df80a20a7f5e",
+    "knowledge/algorithms/routing-and-migration.md": "1b9dcfd5fea499a91611459bb936e1c1c49ceb562171fb0f1ba360a7010f5d32",
+    "knowledge/system-semantics/evidence-and-independent-checks.md": "50b7c97de928be322713ef149fb734c0c20acda17c4a321c46a198b0019831be",
+    "knowledge/tools/timeline-attribution.md": "cf4b01a8ca5cb35e653b65fbe2bc018d3ae5cc42788a77688524fb29c7da817d",
+    "knowledge/algorithms/kv-offload-prefetch.md": "a7088eba5c78cd9e96cf011d61946ad7dec4ecb6378ac16e7f2fc3820af38301",
+    "references/S-VLLM-PREFIX/fulltext.txt": "0d6423dca458bb628af7d15961bdba92b0d501660f93690610a354ef68f07353",
+    "references/S-RDMA/fulltext.txt": "9f4bea8bc130fc7dcdf0b53d20ce7269555cddd2a7c67e5d54c6dbd7a55b2720",
+    "tools/check_k_sys_009_full.py": "538d5b5fd63a766d16adade2e203e5bb5779d716b13de65edc5b9887a29630e2"
+  },
+  "criteria": {
+    "definition": {
+      "assessment": "sufficient",
+      "reason": "明确迁移动机、输入输出、共同恢复位置及身份层次，区分已知输入、已有 KV、未消费 token 与外部输出；普通 causal decoder 的适用范围清楚。",
+      "evidence": [
+        {
+          "path": "knowledge/system-semantics/distributed-state-transfer.md",
+          "quote": "令 x[0:p) 表示已消费的 token，S(p) 表示所有必需状态族完成这些输入后的模型状态；下一次消费位置为 p。"
+        },
+        {
+          "path": "knowledge/system-semantics/distributed-state-transfer.md",
+          "quote": "输入已知、状态已计算、token 已确认和输出已提交是不同事实。"
+        }
+      ]
+    },
+    "legality": {
+      "assessment": "sufficient",
+      "reason": "充分解释计算与表示相容、完整范围、稳定快照、共享页保护、消费者可见性和物理最后使用条件，并把 wire layout、阶段数等实现选择与正确性分开。固定来源支持的事实与新增应用协议推导有明确区分。",
+      "evidence": [
+        {
+          "path": "knowledge/system-semantics/distributed-state-transfer.md",
+          "quote": "以下条件来自正确性：读取前生产和可见性完成；快照内容稳定；每个逻辑状态贡献完整；发布绑定同一 manifest；同一请求只有一个有效提交权；最后物理使用结束前不复用存储。"
+        },
+        {
+          "path": "knowledge/system-semantics/distributed-state-transfer.md",
+          "quote": "这是本章的应用协议推导，不是 RDMA、DistServe 或 Llumnix 自动提供的事务接口。"
+        }
+      ]
+    },
+    "algorithm": {
+      "assessment": "partial",
+      "reason": "地址映射、复制、冻结、READY、权威决定、幂等安装及失败排空均有实质展开；但目标 head 复制时，列明的任务键不能区分同一逻辑范围的不同目标物理副本，与提交前去重规则组合后存在漏写路径。",
+      "evidence": [
+        {
+          "path": "knowledge/system-semantics/distributed-state-transfer.md",
+          "quote": "目标要求多个物理副本时必须复制到各自位置。"
+        },
+        {
+          "path": "knowledge/system-semantics/distributed-state-transfer.md",
+          "quote": "3 为每个目标需求生成唯一任务键：tx、层、种类、范围、head、表示"
+        },
+        {
+          "path": "knowledge/system-semantics/distributed-state-transfer.md",
+          "quote": "相同任务的重复控制消息返回原状态，不产生第二次物理写入或第二份引用。"
+        }
+      ]
+    },
+    "cost": {
+      "assessment": "sufficient",
+      "reason": "六类成本均有明确计量边界；逻辑内容、物理容量、访存、链路时间和驻留分别列账。独立复算地址与容量算例、512 MiB 全量、128 MiB 后缀、6.25 ms 下界及追赶递推，未发现单位或算术错误；流水公式明确限定独立资源和充分缓冲。",
+      "evidence": [
+        {
+          "path": "knowledge/system-semantics/distributed-state-transfer.md",
+          "quote": "D=Σ_l N_l Hkv_l(dK_l sK_l+dV_l sV_l)+D_aux，"
+        },
+        {
+          "path": "knowledge/system-semantics/distributed-state-transfer.md",
+          "quote": "若 m 个等长块依次经历独立的打包 a、传输 b、解包 c 秒，理想三阶段流水时间为 a+b+c+(m−1)max(a,b,c)。"
+        },
+        {
+          "path": "knowledge/system-semantics/distributed-state-transfer.md",
+          "quote": "若来自既有池，应在池内核算，不能再把池总容量与这些对象相加。"
+        }
+      ]
+    },
+    "adaptation": {
+      "assessment": "sufficient",
+      "reason": "解释带宽、增长率、阶段开销、容量、剩余请求长度及注册冷热如何改变选择；窗口和递归状态不满足稳定追加前提时，明确要求更换快照机制或放弃在线方案。",
+      "evidence": [
+        {
+          "path": "knowledge/system-semantics/distributed-state-transfer.md",
+          "quote": "若 B≤g、残余不降、目标余量不足、请求即将结束或重试消耗已超过收益预算，应停止在线追赶，选择有界的冻结复制、保持源执行或中止迁移。"
+        },
+        {
+          "path": "knowledge/system-semantics/distributed-state-transfer.md",
+          "quote": "没有稳定快照时应放弃该在线方案。"
+        }
+      ]
+    },
+    "diagnosis": {
+      "assessment": "sufficient",
+      "reason": "实验设计对布局、scale、可见性、旧写覆盖、授权、资源干扰和追赶不收敛给出可区分干预及反证后的修正。检查包含独立参考和实际执行的错误路径；其覆盖不足以关闭本次任务键问题，但不构成全文诊断方法缺失。",
+      "evidence": [
+        {
+          "path": "knowledge/system-semantics/distributed-state-transfer.md",
+          "quote": "先固定请求、模型、输入和完成边界，再对竞争解释做单变量干预。"
+        },
+        {
+          "path": "knowledge/system-semantics/distributed-state-transfer.md",
+          "quote": "正确协议分别阻止 READY、消费或地址重用；全设备同步消除异常仍不足以定位缺失边"
+        }
+      ]
+    }
+  },
+  "findings": [
+    {
+      "id": "K-SYS-009-target-replica-task-key",
+      "criterion": "algorithm",
+      "evidence": "knowledge/system-semantics/distributed-state-transfer.md 同时规定“目标要求多个物理副本时必须复制到各自位置。”、“3 为每个目标需求生成唯一任务键：tx、层、种类、范围、head、表示”和“相同任务的重复控制消息返回原状态，不产生第二次物理写入或第二份引用。” 同一 tx 中，目标 TP rank 0 和 rank 2 可以都需要 L0/K/[0:5)/head 0、相同表示；列出的键字段完全相同。独立内存反例按这些字段建键并去重，两个目标需求只产生一个键和一次提交，rank 2 被遗漏。脚本 transfer_case 的复制案例直接遍历目标 rank 写入，未经过该任务键或去重机制。",
+      "impact": "按照给定字段实现提交前去重，会把合法的目标副本写入误当作重复消息，导致缺失物理副本、无法形成完整 READY；若完成集合也按该键计数，还可能错误宣布就绪。",
+      "blocking": true,
+      "required_revision": "明确区分逻辑内容身份与目标写入任务身份。任务键应绑定目标副本/所有者及目标分配，并覆盖必要的通道范围；或者明确一个逻辑任务内包含完整目标扇出清单，每个目标操作分别去重、记账和完成，全部目标完成后才计任务完成。让现有 head 复制检查实际经过该规划与去重路径，并加入遗漏目标区分字段会漏写且被独立目标参考检出的负对照。"
+    }
+  ],
+  "limitations": [
+    "真实 CUDA/GPUDirect 可见性、NIC 取消和注册撤销、并发原子性及持久权威恢复均未由这些 CPU 模型验证，正文已正确限定。",
+    "检查不执行 attention、真实量化编码或多步模型数值比较，也不证明目标设备性能或知识改善 Agent 使用效果。",
+    "协议检查采用单请求、单尝试最终快照的抽象事件模型；不证明多尝试并发授权实现或真实故障恢复。",
+    "逐层接收后立即执行、窗口覆盖和递归状态的在线迁移不属于当前基线；不能外推普通 append-only 递推。",
+    "原始论文和 CUDA 文档的核对仅覆盖所供摘录；未读取未提供范围、完整 PDF 版面或上游源码归档。"
+  ],
+  "checks": [
+    {
+      "script": "tools/check_k_sys_009_full.py",
+      "args": []
+    }
+  ],
+  "no_checks_reason": "",
+  "reading_scope": "全文阅读均指所供提取文本，字符范围为零起点、右开区间。全文：AGENTS.md [0,567)；docs/knowledge-method.md [0,2251)；docs/knowledge-review.md [0,3016)；knowledge/system-semantics/distributed-state-transfer.md [0,14865)；knowledge/sources/S-DISTSERVE.md [0,443)；knowledge/sources/S-CUDA-TOPOLOGY.md [0,500)；knowledge/sources/S-VLLM-PREFIX.md [0,521)；knowledge/sources/S-RDMA.md [0,739)；knowledge/sources/S-GPUDIRECT.md [0,615)；knowledge/sources/S-LLUMNIX.md [0,962)；knowledge/hardware/transport-and-rdma.md [0,4088)；knowledge/system-semantics/distributed-kv-store.md [0,3441)；knowledge/system-semantics/serving-recovery.md [0,3834)；knowledge/algorithms/routing-and-migration.md [0,3228)；knowledge/system-semantics/evidence-and-independent-checks.md [0,3845)；knowledge/tools/timeline-attribution.md [0,3485)；knowledge/algorithms/kv-offload-prefetch.md [0,3710)；references/S-VLLM-PREFIX/fulltext.txt [0,13926)；references/S-RDMA/fulltext.txt [0,25147)。tools/check_k_sys_009_full.py 按 candidate.test_script 从首行至 main 调用完整阅读；同时阅读 author_notes 和 actual_preflight 执行记录。仅摘录：knowledge/algorithms/disaggregated-serving.md [0,4000)、[16000,18071)；knowledge/system-semantics/collective-ordering.md [8000,10258)、[16000,19813)；knowledge/algorithms/heterogeneous-state-cache.md [0,4049)、[12000,14022)；knowledge/models/gqa-kv-heads.md [0,2071)、[12000,16000)；knowledge/models/mla.md [0,2420)、[12000,15651)；knowledge/system-semantics/host-device-timing.md [0,4000)、[8000,10071)；所供路径 knowledge/system-semantics/position-mask-cache.md [0,4000)、[8000,10071)；references/S-DISTSERVE/fulltext.txt [12000,20000)、[28000,52000)、[60000,70667)、[72000,76000)、[80000,84000)；references/S-CUDA-TOPOLOGY/fulltext.txt [40000,42667)、[76000,80000)、[84000,88000)、[224000,228000)、[296000,304000)、[472000,476000)、[488000,496000)、[500000,504000)、[508000,512000)、[1064000,1072000)；references/S-GPUDIRECT/fulltext.txt [0,46667)、[48000,52000)；references/S-LLUMNIX/fulltext.txt [0,14666)、[20000,36000)、[40000,44000)、[48000,52000)、[56000,60000)、[64000,72000)。documents 仅列全文材料及完整交付脚本，不将摘录列为整文件阅读。当前工具无文件读取能力且资源列表为空，未读取本地 SKILL.md、实际目录或链接目标；未声称完成文件系统链接检查。",
+  "test_assessment": "核对了完整 Python 检查算法及所供真实执行记录。actual_preflight 的 script_sha256 与绑定脚本一致，记录为 remote_bwrap 内 Python 3.12 使用 -I -S -B -X utf8 执行，returncode=0、stderr 为空、未超时；输出为 360 个区间案例、832 次普通布局元素写入、480 次复制布局元素写入及包含空 manifest 的 25 种有效协议顺序。这是所供协调者执行证据，不是本审阅者重新执行 Python。作者仅运行 JavaScript 有限模型的声明与后续协调者 Python 运行分别成立，不能混记。区间集合参考独立枚举位置；物理布局参考反向枚举物理页和槽，不调用被测 address；事件审计从日志重建完成、可见、冻结、决定、发布和排空不变量，不读取 Move 内部状态。错误布局实际进入复制路径，遗漏 scale 的路径实际提交并消费，提前回收路径实际在 pending 非空时释放，随后均由参考拒绝，因而不是只核对预写错误标签。覆盖空范围、短尾、重分页、重分片、目标 head 复制、缺源、完成乱序、失败完成、重复控制消息、确认重放及 incarnation 变化；成本检查支持给定有限算例。关键遗漏是布局测试直接写各目标 rank，协议测试使用单目标 unit，二者没有组合验证正文的任务键规划与去重。本审阅者另以 JavaScript 内存反例核对明确列出的键字段：两个目标 rank 的合法需求得到一个键，去重后遗漏一个目标；该反例仅验证此身份冲突，不冒充 Python 或设备执行。本轮已提供结构化候选和真实 preflight，上一轮非严格 JSON 记录不继续沿用为当前阻塞项；当前 revise 来自新发现的具体算法缺口。"
+}

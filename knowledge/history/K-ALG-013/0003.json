@@ -1,0 +1,61 @@
+{
+  "id": "K-ALG-013",
+  "path": "algorithms/disaggregated-serving.md",
+  "category": "algorithms",
+  "title": "Prefill/Decode 分离：状态传输与队列耦合",
+  "summary": "分离式服务把两个阶段的资源策略解耦，同时引入 KV 传输、布局转换和跨节点状态提交。",
+  "revision": 3,
+  "status": "seed",
+  "tags": [
+    "disaggregation",
+    "PD split",
+    "prefill decode",
+    "KV transfer"
+  ],
+  "scope": {
+    "model_families": [],
+    "platforms": [],
+    "runtimes": [],
+    "workloads": []
+  },
+  "source_ids": [
+    "S-DISTSERVE",
+    "S-CUDA-TOPOLOGY",
+    "S-PAGED",
+    "S-MOONCAKE"
+  ],
+  "related": [
+    "K-HW-002",
+    "K-SYS-009",
+    "K-WORK-005",
+    "K-ALG-007",
+    "K-SYS-013",
+    "K-HW-014",
+    "K-ALG-023",
+    "K-SYS-014",
+    "K-ALG-015",
+    "K-ENGINE-005",
+    "K-SYS-010",
+    "K-WORK-006"
+  ],
+  "evidence": [],
+  "updated_at": "2026-10-27",
+  "sha256": "07d8beba67dd10960cd504dafad8cdf0baaf92c03ef368a2a97236690c6bc7e8",
+  "questions": [
+    "分离后首 token 路径由哪些段组成，为什么缩短 prefill kernel 不能同时改善 TTFT 和 ITL？",
+    "从模型形状推导一次 KV 传输的字节和下界时，TP 布局、dtype 和位置规则如何进入传输格式？",
+    "目标侧预留、分块传输与提交点之间的关系是什么，中断时未提交页如何回滚？",
+    "在什么 prompt 长度、到达率和互联条件下共置可能优于分离，P/D 配比由什么决定？",
+    "P 侧提前发送首 token 与等待 D 接管就绪，各自如何影响 TTFT 与第一次间隔？"
+  ],
+  "symptoms": [
+    "TTFT 改善但第一次输出间隔远超后续 ITL",
+    "P 池吞吐很高而 D 侧接管排队使整体 goodput 不升",
+    "平均传输带宽充足但尾部请求因传输拥塞超时"
+  ],
+  "assumes": [
+    "prefill 与 decode 运行在不同实例池",
+    "阶段间存在可测量带宽的 KV 传输链路",
+    "两侧模型、adapter 和位置规则一致"
+  ]
+}

@@ -1,0 +1,56 @@
+{
+  "id": "K-FW-010",
+  "path": "frameworks/nki-tiling.md",
+  "category": "frameworks",
+  "title": "NKI：Partition 轴、片上生存期与 Attention 数据流",
+  "summary": "NKI 的 tile 是带硬件轴语义的片上对象；布局与生存期共同决定 DMA、矩阵和归约引擎的供给。",
+  "revision": 3,
+  "status": "seed",
+  "tags": [
+    "NKI",
+    "partition",
+    "tiling",
+    "PSUM",
+    "SBUF footprint",
+    "PSUM lifetime",
+    "tile legality"
+  ],
+  "scope": {
+    "model_families": [],
+    "platforms": [
+      "trainium"
+    ],
+    "runtimes": [],
+    "workloads": []
+  },
+  "source_ids": [
+    "S-NKI",
+    "S-FLASH"
+  ],
+  "related": [
+    "K-HW-008",
+    "K-ALG-004",
+    "K-HW-001",
+    "K-ALG-016",
+    "K-HW-011",
+    "K-FW-004"
+  ],
+  "evidence": [],
+  "updated_at": "2026-10-27",
+  "sha256": "abc8dbd0be6a05a8b52ed4686ab2d0e27f893c6e182656c36c514306c0799a16",
+  "questions": [
+    "带硬件轴语义的 tile 布局为什么不是抽象转置，partition 轴限制了什么？",
+    "一个 tile 的片上生存期如何推导，PSUM 与 SBUF 的占用怎样决定流水深度？",
+    "矩阵 tile 的可复算资源账包含哪些项，与 GPU 的寄存器账有何不同？",
+    "归约与 attention 的活跃集合在片上如何组织，哪些指令能力限制形状？",
+    "指令能力与形状分支如何影响内核是否合法，而不仅是是否最快？"
+  ],
+  "symptoms": [
+    "内核在某些 head 维度下无法编译",
+    "DMA 供给跟不上矩阵引擎"
+  ],
+  "assumes": [
+    "Trainium 的 SBUF/PSUM 存储层级",
+    "NKI 风格的显式 tile 编程"
+  ]
+}

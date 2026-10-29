@@ -1,0 +1,185 @@
+{
+  "entry_id": "K-FW-006",
+  "body_sha256": "f4b1f1885c923a88fb908b14261f16b0946647de640c93e6a843d2831e4b41a8",
+  "reviewer": "sol-reviewer:K-FW-006:round-2",
+  "decision": "accept",
+  "documents": {
+    "AGENTS.md": "b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a",
+    "docs/knowledge-method.md": "69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb",
+    "docs/knowledge-review.md": "f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21",
+    "knowledge/frameworks/attention-backends.md": "f4b1f1885c923a88fb908b14261f16b0946647de640c93e6a843d2831e4b41a8",
+    "knowledge/sources/S-FLASH.md": "58fd332d0b00d7116d21660e8e2e8ee147d939a55859d6e624aea100e768ae39",
+    "knowledge/sources/S-FLASHATTENTION3.md": "1c03e7e0674d15ce246c297a814e946774d476c2de6fb073a29a47c323b56121",
+    "knowledge/sources/S-PAGED.md": "50893a22385b0d577980153a9bc9c617acdcb2a9d7be0af655ad49421f06cc09",
+    "knowledge/sources/S-SDPA.md": "f209595c61cf92d30cf44312522d64ac6585ed259653722dae2874b61b170d77",
+    "knowledge/sources/S-FA-IMPL.md": "8f68d299f331833caeea6f0ca366e0dbd2559744f50f546bd089a2dbc8079ad6",
+    "knowledge/sources/S-FI.md": "bc0a19124be4e05621f93ff9c2f35ed8cccfee0465383f4df1671e1dcec9bfc9",
+    "knowledge/sources/S-FLASHINFERPAPER.md": "0e4c6f197789b08bbd5d0f35b202ce316bbe788bdc6a3f67ca0c27e19e256437",
+    "knowledge/sources/S-TORCH-CUDA.md": "8ee61677a1e35d475d9bb122b2c7fa824ccf054acefbe2f12345d72c1fb1b00e",
+    "knowledge/sources/S-AITER.md": "8e8e3f7799b0cef8a69eb5803fc7a5c72aa2ecb93596c5e8c3736e9bcbe380ad",
+    "knowledge/sources/S-FLASHATTENTION2.md": "068eaf20c1aebb32016c411bb4404bc67970762220233eb0de3acc30cc000865",
+    "knowledge/sources/S-TRITON.md": "424109f8cee2e62edafdcd161f46190ecece6dcde0107ce42e67c1291801d14f",
+    "knowledge/sources/S-CUDA-CAPABILITY.md": "b01baba1d2826b0682b2b58c6a0d23bf0f6e616a758e41c74b4688b55417f286",
+    "knowledge/sources/S-CUDA-BEST.md": "4b752c1a26f66a195df62be354649f0a6880f733fb365e82e87bdd63bf71d45c",
+    "references/S-AITER/fulltext.txt": "ae4425731e2cf494c3d20c921aa10135f26bce3ddbb0bab6497cd3dbdd7ac1c6",
+    "tools/check_k_fw_006_full.py": "d911be9423c3b1c3d719c947abbb89cd75afff07deee5423d11bc4cbc2865132"
+  },
+  "criteria": {
+    "definition": {
+      "assessment": "sufficient",
+      "reason": "明确了执行优化的动机、独立张量几何、合法集合、head映射、稳定统计与输出，区分已知token、已完成KV、执行资源和发布状态。空行和非有限算术边界有明确限定。",
+      "evidence": [
+        {
+          "path": "knowledge/frameworks/attention-backends.md",
+          "quote": "对一个请求和一个 query head，设 Q∈ℝ^{L×d_k}、K∈ℝ^{S×d_k}、V∈ℝ^{S×d_v}、O∈ℝ^{L×d_v}。"
+        },
+        {
+          "path": "knowledge/frameworks/attention-backends.md",
+          "quote": "已知 token 不等于已有 KV，也不等于已有末行 logits。"
+        },
+        {
+          "path": "knowledge/frameworks/attention-backends.md",
+          "quote": "空行采用明确示例契约：输出零、标记为空、自然对数 LSE 为负无穷。"
+        }
+      ]
+    },
+    "legality": {
+      "assessment": "sufficient",
+      "reason": "将函数要求与布局、分区、精度和调度选择分开；合并要求集合不相交、分数解释一致，硬件实例明确集体参与和布局约束。来源事实与独立构造、实数等价与有限精度近似均有区分。",
+      "evidence": [
+        {
+          "path": "knowledge/frameworks/attention-backends.md",
+          "quote": "同一 query 的合法集合拆成不相交 I、J，且 score 定义与数值解释一致时，由两个状态合并："
+        },
+        {
+          "path": "knowledge/frameworks/attention-backends.md",
+          "quote": "全部 lane 以相同参数和控制流参加矩阵加载、乘加、写回；前后共享通信另有 warp 内存同步。"
+        },
+        {
+          "path": "knowledge/frameworks/attention-backends.md",
+          "quote": "fallback仍保持原可见集合，不能不支持窗口就静默改全attention。"
+        }
+      ]
+    },
+    "algorithm": {
+      "assessment": "sufficient",
+      "reason": "初始化、逐块推进、逐行空分支、最终归一化及异步完成依赖完整。FP8伪代码已将可见性、概率生成与量化、统计和分子更新全部嵌入KV循环，K-FW-006-FP8-KV-LOOP关闭。两块轨迹保留e⁻²的旧贡献；量化分子另有正确的历史贡献不变量。warp映射、发布和最后读者协议可按声明合同重建。",
+      "evidence": [
+        {
+          "path": "knowledge/frameworks/attention-backends.md",
+          "quote": "可见性、空块、P生成与量化、ℓ/U更新、m交接都属于每个KV块的循环体。"
+        },
+        {
+          "path": "knowledge/frameworks/attention-backends.md",
+          "quote": "U新←r·U＋sP·(P8 V8)·sV"
+        },
+        {
+          "path": "knowledge/frameworks/attention-backends.md",
+          "quote": "U_t=Σ_{b≤t}exp(m_b−m_t)·P̂_b·V̂_b。"
+        },
+        {
+          "path": "knowledge/frameworks/attention-backends.md",
+          "quote": "下一块统计可以领先 U，但重标度必须等待当前 PV 对 U 的写入结束。"
+        }
+      ]
+    },
+    "cost": {
+      "assessment": "sufficient",
+      "reason": "计算、请求交通、设备事务、片上通信、准备摊销、暴露同步和驻留分别列账，并声明假设和单位。独立复算确认warp实例4096字节共享容量、7680字节逻辑片上交通、16384 FLOPs，以及GQA分区表和封存过渡容量；没有把设定利用率当设备测量。",
+      "evidence": [
+        {
+          "path": "knowledge/frameworks/attention-backends.md",
+          "quote": "唯一持久KV为Dstate=BHkvS(d_k+d_v)b。"
+        },
+        {
+          "path": "knowledge/frameworks/attention-backends.md",
+          "quote": "容量E=BHqLC(d_v+1)·4字节，部分写出与合并读入约2E，最终输出另计。"
+        },
+        {
+          "path": "knowledge/frameworks/attention-backends.md",
+          "quote": "有重叠时沿依赖关键路径计时，不机械累加各kernel和同一段等待。"
+        },
+        {
+          "path": "knowledge/frameworks/attention-backends.md",
+          "quote": "若尾块来自预留池，不得再重复加进总容量。"
+        }
+      ]
+    },
+    "adaptation": {
+      "assessment": "sufficient",
+      "reason": "解释了query长度、batch、head联合消费、分区数、计划复用、量化尾块和设备能力变化时哪些关系保留、哪些成本重算，以及何时选择反转或回退。组合轨迹明确新Q/K/V必须先合法可用，取消仍须等待物理最后访问。",
+      "evidence": [
+        {
+          "path": "knowledge/frameworks/attention-backends.md",
+          "quote": "不能沿用R=1的U(C)曲线宣称4倍加速，须重测任务与驻留。"
+        },
+        {
+          "path": "knowledge/frameworks/attention-backends.md",
+          "quote": "平台从CUDA转ROCm时保留函数与完成依赖，重做wave、矩阵、LDS和布局映射，不能只替换常量。"
+        },
+        {
+          "path": "knowledge/frameworks/attention-backends.md",
+          "quote": "自回归未知token仍依赖前一步输出，第二图包不能消除这个依赖。"
+        },
+        {
+          "path": "knowledge/frameworks/attention-backends.md",
+          "quote": "代次避免旧通知串账，但不能阻止旧DMA物理覆盖；仍须等真实最后访问结束。"
+        }
+      ]
+    },
+    "diagnosis": {
+      "assessment": "sufficient",
+      "reason": "竞争解释配有可控干预与反证后的修正。新脚本真实观察初始化及每块状态，Decimal参考从原始输入独立重建合法前缀，并以共同尺度偏移负对照证明状态比较具有最终O/LSE比较之外的区分力，K-FW-006-STATE-CHECK-SCOPE关闭。所供新哈希执行记录与这些断言一致，未扩写为设备或一般FP8验证。",
+      "evidence": [
+        {
+          "path": "knowledge/frameworks/attention-backends.md",
+          "quote": "参考独立遍历截至该块的全部合法位置，用Decimal重算点积、偏置、最大值、指数质量和加权和，再比较三个分量。"
+        },
+        {
+          "path": "knowledge/frameworks/attention-backends.md",
+          "quote": "共同偏移m并反向缩放ℓ/U的观测变体保留最终O/LSE，却由逐块状态比较拒绝"
+        },
+        {
+          "path": "knowledge/frameworks/attention-backends.md",
+          "quote": "若长输入符合18+2.4N，则首尾解释不足，需查稳态。"
+        },
+        {
+          "path": "knowledge/frameworks/attention-backends.md",
+          "quote": "这些是检查的定义与覆盖，不是执行通过声明；实际结果由绑定当前脚本和固定输入的真实执行记录承担。"
+        }
+      ]
+    }
+  },
+  "findings": [],
+  "limitations": [
+    "本结论是声明范围内的内容验收；没有CUDA/HIP编译、真实内存可见性、barrier、矩阵指令、异步协议、驻留、spill、事务、重叠或性能证据。",
+    "尺度检查只覆盖可精确解码的非单位尺度及singleton P=1路径，不验证一般FP8/FP16舍入、尺度存储、次正规数、模型质量或Agent使用效果。",
+    "Python通过结论依据用户提供的actual_preflight记录；本审阅调用没有独立重跑Python。作者阶段未执行Python与随后预检成功属于不同阶段，不互相替代。",
+    "原始资料除S-AITER README外仅阅读所供摘录。S-SDPA、S-FI、S-TRITON只有来源说明，未独立读取上游完整文档或源码；未进行PDF视觉核对。",
+    "没有文件读取或shell工具，MCP资源及模板列表为空，因此未能读取C:/Users/26815/.codex/skills/infraagents-knowledge-build/SKILL.md，也未独立检查磁盘链接目标或重算文件字节哈希。文档身份采用任务提供的绑定值；相对链接的路径关系已检查，存在性保留未验证。"
+  ],
+  "checks": [
+    {
+      "script": "tools/check_k_fw_006_full.py",
+      "args": [],
+      "script_sha256": "d911be9423c3b1c3d719c947abbb89cd75afff07deee5423d11bc4cbc2865132",
+      "execution_source": "actual_preflight",
+      "interpreter": "/usr/bin/python3.12",
+      "interpreter_args": [
+        "-I",
+        "-S",
+        "-B",
+        "-X",
+        "utf8"
+      ],
+      "returncode": 0,
+      "stderr": "",
+      "timed_out": false,
+      "reviewer_reran": false,
+      "assessment": "所供remote_bwrap执行记录绑定当前脚本哈希和当前正文输入哈希，stdout与六个测试函数实际断言对应；支持声明的确定性CPU标量检查通过。"
+    }
+  ],
+  "no_checks_reason": "",
+  "reading_scope": "本审阅完整阅读documents中列出的AGENTS.md、两份方法/审查文档、当前候选正文、13份来源说明、S-AITER原始README，以及candidate.test_script完整脚本；同时检查完整author_notes和actual_preflight执行记录。当前正文按materials标记为full，范围[0,22264)，绑定f4b1f1885c923a88fb908b14261f16b0946647de640c93e6a843d2831e4b41a8。以下均仅为所供摘录，范围单位为提取文本零基半开字符区间：knowledge/algorithms/attention-io.md [0,250),[8000,12000)；knowledge/algorithms/cross-attention-cache.md [0,250),[12000,16000)；knowledge/frameworks/cuda-graph-buffers.md [4000,5003),[12000,15247)；knowledge/models/mla.md [8000,12250)；knowledge/algorithms/context-reuse.md [0,1190),[8000,11060)；knowledge/algorithms/kv-compression.md [0,250),[4000,8000)；knowledge/hardware/gpu-kernel-pipelines.md [0,250),[12000,16000)；knowledge/algorithms/prefix-cache-identity.md [0,4250)；knowledge/tools/correctness-oracles.md [0,250),[8000,12000)；knowledge/frameworks/streams-allocator.md [4000,8250)；knowledge/algorithms/operator-primitives.md [8000,8250),[12000,16000)；knowledge/system-semantics/position-mask-cache.md [0,4000),[8000,8250)；knowledge/system-semantics/memory-allocators.md [8000,12000),[16000,16250)；knowledge/algorithms/paged-kv-capacity.md [0,4000),[12000,12250)；knowledge/hardware/rocm-execution.md [4000,8000),[12000,12250)；knowledge/hardware/memory-and-roofline.md [4000,4250),[8000,12000)；knowledge/tools/gpu-characterization.md [0,4250)；knowledge/tools/statistical-experiments.md [0,250),[8000,12000)；knowledge/frameworks/triton-kernels.md [4000,4250),[8000,12000)；knowledge/algorithms/quantization-contract.md [8000,12250)。原始摘录：references/S-FLASH/fulltext.txt [0,8000),[12000,19994),[72000,76000)；references/S-FLASHATTENTION3/fulltext.txt [4000,8000),[12000,16000),[28000,31994),[32000,40000)；references/S-PAGED/fulltext.txt [8000,12000),[20000,28000),[44000,47994),[64000,68000)；references/S-FA-IMPL/fulltext.txt [0,12000),[16000,23994)；references/S-FLASHINFERPAPER/fulltext.txt [8000,12000),[16000,19994),[32000,40000),[80000,84000)；references/S-TORCH-CUDA/fulltext.txt [0,3994),[4000,8000),[20000,24000),[36000,40000),[48000,52000)；references/S-FLASHATTENTION2/fulltext.txt [4000,11994),[12000,20000),[24000,28000)；references/S-CUDA-CAPABILITY/fulltext.txt [348000,351995),[408000,420000),[948000,952000)；references/S-CUDA-BEST/fulltext.txt [64000,68000),[76000,83995),[84000,88000),[124000,128000)。这些摘录文件未列入documents，也不声称完整阅读。author_material_scopes是作者独立的材料供应账，其旧正文章节哈希和原始摘录终点与本审阅材料不同；不将本审阅范围回填为作者范围，也不把供应账视为实际认知阅读证明。未读取源码归档。",
+  "test_assessment": "逐函数检查确认：online_row返回初始及每块后的状态副本；check_trace将截至每块的索引交给dense_reference，后者以70位Decimal直接从q、keys、vals、allowed、scale和bias重建分数、最大值、指数质量及加权和，不调用在线递推、其分数函数或合并器。checked_row另外比较最终O和自然LSE。因此检查不是以同一递推充当参考。边界实际进入路径，包括前中后空块、全mask、S=0、不同块宽及尾部、dk≠dv、偏置和1000/1001有限分数。last_block_only、inverse_u_only、inverse_both及reset_empty产生错误轨迹并交给同一状态比较器；共同偏移m且按e反向缩放ell/U的观测变体先证明最终O/LSE保持，再要求状态比较拒绝，直接修复旧检查范围问题。merge负对照实际计算平均权重、错误指数底数和重复质量，并与独立稠密输出比较；mask负对照真实执行先全体归一化后屏蔽；causal和GQA负对照接入数值attention。编码特例覆盖非单位Q/K/V尺度和早期质量保留，但未实现一般FP8量化器，也未单独注入遗漏sP的故障，正文没有将这些遗漏宣称已验证。actual_preflight的脚本哈希、退出码0、空stderr及stdout与上述断言一致，只支持固定输入CPU范围。审阅另在V8中独立枚举256个warp元素归属并复算容量、交通和GQA时间表，结果与正文一致；这不是Python重跑或设备执行。原两项具体缺口均关闭，campaign-K-FW-006-r1要求的完整候选重新评估已完成，未发现新的阻塞问题。"
+}

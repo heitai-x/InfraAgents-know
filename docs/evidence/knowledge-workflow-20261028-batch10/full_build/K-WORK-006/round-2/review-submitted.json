@@ -1,0 +1,144 @@
+{
+  "entry_id": "K-WORK-006",
+  "body_sha256": "887102a34592548cac187c1dc233b98a5b03c1433922ddafa7fb17db67ee26d4",
+  "reviewer": "sol-reviewer:K-WORK-006:round-2",
+  "decision": "revise",
+  "documents": {
+    "AGENTS.md": "b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a",
+    "docs/knowledge-method.md": "69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb",
+    "docs/knowledge-review.md": "f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21",
+    "knowledge/workloads/capacity-planning.md": "887102a34592548cac187c1dc233b98a5b03c1433922ddafa7fb17db67ee26d4",
+    "knowledge/sources/S-PAGED.md": "50893a22385b0d577980153a9bc9c617acdcb2a9d7be0af655ad49421f06cc09",
+    "knowledge/sources/S-DISTSERVE.md": "968cbf46667e862085b0e2d72405805351bd33880ac23d8d055bf259192411f4",
+    "knowledge/sources/S-MLPERF-LLM.md": "d0a591089c57e5e6d0051cdd73ce4ffc1bbfe60657470732921e25710f936cf0",
+    "knowledge/sources/S-SERVERLESSLLM.md": "aff9202b72fffcdf3145d0f014888070d2e12995b04f9c259930ad90a806473d",
+    "knowledge/system-semantics/memory-allocators.md": "2e7258787b94ad142c7c236541e8718803ad30b273d08e6c398dff673a1df838",
+    "knowledge/system-semantics/host-runtime.md": "005342b6131acdd072d5cf35456a5b01e5630f764b614e7090639fde01a5b36a",
+    "knowledge/workloads/session-workloads.md": "0269e1987e1107d0cf0135cb32aa759c67d5266cfa09fb1402f97704c4ab4d78",
+    "knowledge/tools/statistical-experiments.md": "908b3588a6fa20bb1f2aed9f5db51c4b462953d79f8944cdbcfea7141c74644f",
+    "knowledge/workloads/slo-goodput.md": "5aa9b71cddb7d896ffa1fe6d78ac61cf0bb92d76279ae4d563f1110ed9dbedb4",
+    "knowledge/algorithms/tiered-residency.md": "eb3ebc6320d5a32481cf645605d159860dc6d1edb97f1e98afd89ddb24ee82af",
+    "references/S-MLPERF-LLM/upstream/language/llama2-70b/README.md": "f7eee4fb707a5035e7c8f8fe01f351a4620ea1ab904ca8086fcd9043eabb6b5e",
+    "references/S-MLPERF-LLM/upstream/loadgen/README.md": "074479dbeb369205ccc8800450c647893b4901c247e0e4ee7f321f05254e9305",
+    "tools/check_k_work_006_full.py": "55818664a7293e8b99b9f221649687f54fc08c2d5a608300082000af7dc6eb1a"
+  },
+  "criteria": {
+    "definition": {
+      "assessment": "sufficient",
+      "reason": "明确区分瞬时容量、长期资源需求和联合质量/SLO，给出输入输出、物理身份、请求视图、业务终止与物理责任，以及互斥的五类池状态。预分配 backing 与池内可复用容量的口径清楚。",
+      "evidence": [
+        {
+          "path": "knowledge/workloads/capacity-planning.md",
+          "quote": "输入是模型状态描述、设备与拓扑、请求轨迹或分布、服务曲面、质量/SLO 和成本目标。"
+        },
+        {
+          "path": "knowledge/workloads/capacity-planning.md",
+          "quote": "N_pool=L+H+R+D+F，且所有项非负、物理页集合两两不交。"
+        }
+      ]
+    },
+    "legality": {
+      "assessment": "sufficient",
+      "reason": "共享身份、私有写区、完成与可见性、取消串行化、分配代次和最后使用分别构成硬条件；同置、分离、缓存和抢占保留为有条件的方案选择。未把逻辑取消或旧回调过滤当作物理排空。",
+      "evidence": [
+        {
+          "path": "knowledge/workloads/capacity-planning.md",
+          "quote": "回收要求逻辑持有、未来使用和实际访问均已结束"
+        },
+        {
+          "path": "knowledge/workloads/capacity-planning.md",
+          "quote": "分配代次能防止迟到回调修改新元数据，也不能阻止旧 DMA 写坏同一地址，所以它不替代排空。"
+        }
+      ]
+    },
+    "algorithm": {
+      "assessment": "partial",
+      "reason": "A01 的三类撤销路径、唯一预留责任和延迟完成后再次准入已修复；A02 的 H→R→L 与独立 F→H 补充也已修复。但新增的可恢复旧视图基线与组合轨迹中的同页后续追加尚未接通：未说明采用私有尾页替换还是满足条件的原地追加，导致页内推进的临时预算和失败边界不确定。",
+      "evidence": [
+        {
+          "path": "knowledge/workloads/capacity-planning.md",
+          "quote": "规划器不得在 TRY_ADMIT 成功后再次扣 free、再次提交或再次发布。"
+        },
+        {
+          "path": "knowledge/workloads/capacity-planning.md",
+          "quote": "该基线保持已提交状态可恢复：追加涉及旧尾页时，若要保留旧视图就建立私有写区。"
+        },
+        {
+          "path": "knowledge/workloads/capacity-planning.md",
+          "quote": "现有 guard 在首个跨页追加时转 R，完成后转 L，后续位置填入同页。"
+        }
+      ]
+    },
+    "cost": {
+      "assessment": "partial",
+      "reason": "六类成本、单位、共享资源合并、流水首尾和规划复杂度有实质展开。C01 已关闭：一般阶段比例、整数近似条件和零需求均正确。但组合增长轨迹尚未计入其可恢复基线要求的尾页替换过渡容量，或证明采用原地追加时为何不需要该容量；净页增量不能替代推进前的峰值预算。",
+      "evidence": [
+        {
+          "path": "knowledge/workloads/capacity-planning.md",
+          "quote": "n_P/n_D≈(λ_eff^P/λ_eff^D)·(r_D/r_P)。"
+        },
+        {
+          "path": "knowledge/workloads/capacity-planning.md",
+          "quote": "共享减少容量不证明流量同比下降。"
+        },
+        {
+          "path": "knowledge/workloads/capacity-planning.md",
+          "quote": "最后一行的请求还可在已取得页的空槽内推进，但下一次 30 请求共同跨页前没有足够预算。"
+        }
+      ]
+    },
+    "adaptation": {
+      "assessment": "sufficient",
+      "reason": "条件变化表明确哪些身份与守恒关系保留，哪些需求轴、服务曲面、阶段流率、排空峰值和运行点必须重算；给出了回到同置、判定不可行和放弃平均负载尾部判断的条件。",
+      "evidence": [
+        {
+          "path": "knowledge/workloads/capacity-planning.md",
+          "quote": "重算实际 P/D/传输流率与末行恢复；不能按命中率直接缩放两池比例"
+        },
+        {
+          "path": "knowledge/workloads/capacity-planning.md",
+          "quote": "重算 DRAINING 峰值与驻留；不得以活跃请求数下降推断容量已释放"
+        }
+      ]
+    },
+    "diagnosis": {
+      "assessment": "sufficient",
+      "reason": "竞争解释与干预能够区分提前释放、guard 未补充、阶段流率变化和共享链路饱和，并说明反证后撤回什么结论。T01 已关闭：脚本确有独立整数可行性枚举，所供实际执行记录与该脚本身份匹配。检查没有证明尾页追加交界，该遗漏具体归入 A03，不扩大为设备或完整模型测试要求。",
+      "evidence": [
+        {
+          "path": "knowledge/workloads/capacity-planning.md",
+          "quote": "分别在提交前、接受后未发布、发布后取消；延迟最后访问并再次申请同页，比较旧访问实际读取内容；发现复用即撤回“取消等于释放”"
+        },
+        {
+          "path": "knowledge/workloads/capacity-planning.md",
+          "quote": "实例上取整与从零开始的整数可行性枚举对照"
+        }
+      ]
+    }
+  },
+  "findings": [
+    {
+      "id": "K-WORK-006-A03",
+      "criterion": "algorithm",
+      "evidence": "正文规定：“该基线保持已提交状态可恢复：追加涉及旧尾页时，若要保留旧视图就建立私有写区。允许原地写入的实现必须另行证明无并发旧读者，并定义写入失败后的恢复边界，不能直接沿用‘旧视图未受影响’的结论。”组合轨迹却写：“现有 guard 在首个跨页追加时转 R，完成后转 L，后续位置填入同页。”随后又写：“最后一行的请求还可在已取得页的空槽内推进，但下一次 30 请求共同跨页前没有足够预算。”脚本 test_growth 仅以 begin_growth(tx, 30) 取得整页并提交，没有有效长度、旧尾页替换或原地追加分支。",
+      "impact": "按正文的私有写区基线，已发布尾页的下一次追加可能需要先取得替换页，即使提交并释放旧页后 LIVE 净增量为零。例如最终 L=788、H=0、F=12 时，30 请求各替换一个尾页需要先取得30页，不能按空槽足够直接整批推进。若组合轨迹实际采用原地追加，则缺少它自己要求的无并发旧读者前提、允许写入范围以及部分失败后的恢复边界。当前无法用同一执行方案复算页内推进与保护不足时的容量决定。",
+      "blocking": true,
+      "required_revision": "明确组合轨迹采用哪条尾页追加路径。若沿用保留旧视图的私有页基线，补出尾页复制/写入期间的 H、R、L、D、F 更新、旧页释放时刻及预算不足动作，区分净增长和过渡峰值；修正空槽内可直接推进的表述。若采用原地追加，明确无并发旧读者、仅写未提交槽位、有效长度发布和部分失败恢复的具体条件，并解释其与基线的关系。检查只需增加一个已发布部分尾页的后续追加轨迹，并以净增量为零却跳过必要临时预留的错误路径作负对照，或检验所选原地路径的对应边界。"
+    }
+  ],
+  "limitations": [
+    "本次完整审阅所供正文、脚本及材料范围；没有本地文件读取或 Python 执行入口，未独立重跑 Python、验证磁盘链接或重新计算文件哈希。绑定字段按任务给定值保留，脚本运行结论来自所供 actual_preflight。",
+    "脚本是单拥有者串行 CPU 事件模型；共享容量由 token 集合与 trie 另行核对，没有联合模拟共享逻辑引用、COW 和异步访问的全部交错。",
+    "接受状态未知的安全性仅以持续保留责任表达，没有验证真实驱动复位、NIC 排空、设备可见性或跨线程原子性。",
+    "服务曲面、实际带宽、冷启动分布、质量、联合 SLO、故障余量和 Agent 使用效果均未由这些算术及事件检查建立。"
+  ],
+  "checks": [
+    {
+      "script": "tools/check_k_work_006_full.py",
+      "args": []
+    }
+  ],
+  "no_checks_reason": "",
+  "reading_scope": "全文阅读任务提供的 AGENTS.md [0,567)、docs/knowledge-method.md [0,2251)、docs/knowledge-review.md [0,3016)、knowledge/workloads/capacity-planning.md [0,15831)；四份来源说明 S-PAGED [0,2206)、S-DISTSERVE [0,443)、S-MLPERF-LLM [0,702)、S-SERVERLESSLLM [0,781)；相关章节 memory-allocators [0,4191)、host-runtime [0,7559)、session-workloads [0,3583)、statistical-experiments [0,4269)、slo-goodput [0,2616)、tiered-residency [0,4244)；两份 MLPerf README llama2-70b [0,12270)、loadgen [0,11382)。全文审阅 candidate.test_script，并检查 author_notes 和 actual_preflight 的返回码、stdout、stderr、执行参数、脚本哈希及隔离范围。仅按所供摘录阅读：memory-and-roofline [0,3727)、[8000,12000)；disaggregated-serving [0,4844)、[16000,18883)；arrival-and-concurrency [0,4000)、[8000,10613)、[12000,13114)；design-synthesis [0,7727)；checkpoint-loading [4000,5630)、[8000,14097)；S-PAGED/fulltext.txt [0,12000)、[16000,78163)；S-DISTSERVE/fulltext.txt [0,20000)、[24000,58163)、[60000,76000)、[80000,84000)；S-SERVERLESSLLM/fulltext.txt [0,30163)、[32000,68000)、[76000,84000)。范围均为原提取文本零起点、右开字符区间；摘录文件未列入 documents。未阅读未提供的 PDF 版面、图片、reader.html 或源码归档。",
+  "test_assessment": "所供 actual_preflight 使用 Python 3.12 隔离执行，脚本 SHA256 与绑定值一致，returncode=0、stderr为空、未超时；stdout列出各组检查及最终通过。该执行属于协调者提供的真实记录，不是本审阅者重新执行，也不能倒写为作者已执行 Python；正文对作者当时仅执行 V8 复算的说明可保留为历史范围。独立审阅确认：页去重用不同构造的 token trie 对照；整数实例参考从0开始直接检验资源不等式，确有140组对照；流体递推用保留余段的细步到达/服务守恒参考核对。生命周期审计器从 reserve、accept、finish、release 日志重建责任，不依赖 Pool.free；提前释放负对照确实重新申请相同物理页、改变载荷，使旧访问读到不同内容，再要求审计器拒绝，能够检验 A01 对应的提前复用机制。三条取消路径、部分接受、多操作最后使用、迟到/重复完成和缺失完成均有具体轨迹。guard错误对照是构造错误账行后检查总和，能发现所列守恒错误，但没有执行一个错误的增长实现；阶段比例、向下取整、遗漏网络和重置积压也有明确数值反例。脚本网络下界3来自每请求512、每实例800这一独立资源设定，不能解释为正文单链路1.5 GiB/s算例需要3条链路。主要遗漏是没有部分尾页、旧页替换、页内有效长度和追加失败模型，因此整页增长测试通过不能支持 A03 所述交界。审阅者另以 V8 独立复算确认：L=788、H=0、F=12时无法同时预留30个私有替换页；L=758、H=30、F=12时，尾页替换的合法过渡可为(758,30,0,0,12)→(758,0,30,0,12)→(758,0,0,0,42)，每行总和800，但净LIVE不变不代表无需临时预算。来源摘录支持正文引用的分页、阶段分离和加载机制及其限定；五类分区、guard和取消协议已明确归为独立推导。A01、原A02、C01、T01关闭；campaign要求的全候选复核仍因当前A03需修订。"
+}

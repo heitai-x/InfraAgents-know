@@ -1,0 +1,189 @@
+{
+  "entry_id": "K-ALG-024",
+  "body_sha256": "aded39e566eeee5969d31ca445a2fdbfa4d0e9f6a47a7e573e80d96288d245e4",
+  "reviewer": "sol-reviewer:K-ALG-024:round-1",
+  "decision": "revise",
+  "documents": {
+    "AGENTS.md": "b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a",
+    "docs/knowledge-method.md": "69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb",
+    "docs/knowledge-review.md": "f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21",
+    "knowledge/algorithms/branch-generation.md": "aded39e566eeee5969d31ca445a2fdbfa4d0e9f6a47a7e573e80d96288d245e4",
+    "knowledge/sources/S-EAGLE.md": "5781850aa1d8dd5a43cb5c971d595431cca204d90ebb0004357062e36de1fa8c",
+    "knowledge/sources/S-SPEC.md": "a637c44fe62f12685aed5d022d23eabf949083343dbce9656b0a149e742bfd90",
+    "knowledge/sources/S-PAGED.md": "50893a22385b0d577980153a9bc9c617acdcb2a9d7be0af655ad49421f06cc09",
+    "knowledge/sources/S-TORCH-REPRO.md": "05f2b5b9819f01363fadadf41987482edfebb130bc134c36c44a00138fd5eb28",
+    "knowledge/sources/S-SGLANG.md": "4fd6badbee1df40da422f2866f1536bbe4f5266856b8d97004072a21b9d0e2c9",
+    "knowledge/algorithms/speculation-budget.md": "91a6e60d5151fb5b1155d2ba0ddcb3ba1251e69f7caf79b0ec217c7bf9a74d0d",
+    "knowledge/algorithms/batched-sampling.md": "eedef73ece886112211c643f263add7644e5bd2018f2043c1716a172368aa6f2",
+    "knowledge/system-semantics/request-batch-identity.md": "4bb364464c1ccab29bf079263a4e80d9d352e1477040fdcaf150a36294e37443",
+    "knowledge/workloads/session-workloads.md": "0269e1987e1107d0cf0135cb32aa759c67d5266cfa09fb1402f97704c4ab4d78",
+    "knowledge/engine-index/vllm-model-runner.md": "87d1433d4f64d939ff8f137d1c1d4092cfdf2b3d7ebdd011a0f344cc66564714",
+    "references/S-EAGLE/fulltext.txt": "509e09a8a7d28806b4154100599a018a8535fd4cccbd56129efa10ea90436df2",
+    "references/S-SPEC/fulltext.txt": "66ebddbde83df97b2389d7e0e98c844435478aedeec56d024bf52b8cc0d94cec",
+    "references/S-TORCH-REPRO/fulltext.txt": "4f6b1deb38f7f174a2e340674680aaa0484e02a1d18cccd1bb94618df512cc2a",
+    "tools/check_k_alg_024_full.py": "6619f87f4926640bfa587ada4d59cb11fb2eabf67f43b1524a982ef1c04bd9f0"
+  },
+  "criteria": {
+    "definition": {
+      "assessment": "sufficient",
+      "reason": "动机、三种输出契约、父子身份、累计评分及已输出与已计算边界均已定义；正文正确区分父节点预测分布与子节点自身状态。",
+      "evidence": [
+        {
+          "path": "knowledge/algorithms/branch-generation.md",
+          "quote": "这里必须分开两个长度：n_b 是已经确认可对外表达的 token 数，k_b 是模型状态实际覆盖的前缀长度。"
+        },
+        {
+          "path": "knowledge/algorithms/branch-generation.md",
+          "quote": "节点 τ(n) 的概率由 p_{par(n)}(τ(n)) 给出，而不是由 p_n(τ(n)) 给出。"
+        }
+      ]
+    },
+    "legality": {
+      "assessment": "partial",
+      "reason": "祖先可见性、共享写入隔离、实际采样分布和物理完成条件解释充分；但把按 batch 行消费共享连续随机流判为独立采样不合法，混淆了样本独立性与调度无关的可复现性。",
+      "evidence": [
+        {
+          "path": "knowledge/algorithms/branch-generation.md",
+          "quote": "若要求“从 pθ(·|x) 独立抽取”，采样路径不能由当前 batch 行共享同一个连续随机流。"
+        },
+        {
+          "path": "knowledge/algorithms/branch-generation.md",
+          "quote": "逻辑引用计数归零只证明逻辑所有者消失，不能证明设备读取、复制或传输已经完成；回收还要等待完成票据。"
+        }
+      ]
+    },
+    "algorithm": {
+      "assessment": "partial",
+      "reason": "累计评分与单步投机接受/剩余质量构造成立，但 BeamStep 的完成集合数据流没有闭合；树前向没有展开或明确委托逐层状态生产；共同提交消费的 RNG_next、score_new 缺少明确交付与计算。",
+      "evidence": [
+        {
+          "path": "knowledge/algorithms/branch-generation.md",
+          "quote": "2 C ← 空；F_new ← F_t"
+        },
+        {
+          "path": "knowledge/algorithms/branch-generation.md",
+          "quote": "15 终止候选按最终键保留前 K 个加入 F_{t+1}"
+        },
+        {
+          "path": "knowledge/algorithms/branch-generation.md",
+          "quote": "树验证需要先由目标模型一次前向计算候选树中各个节点的 p_n。"
+        },
+        {
+          "path": "knowledge/algorithms/branch-generation.md",
+          "quote": "8 等待数据、描述和复制完成；发布 y_new、grammar_new、RNG_next、score_new 与各族有效范围"
+        }
+      ]
+    },
+    "cost": {
+      "assessment": "sufficient",
+      "reason": "在所声明的共享根、私有尾部和逻辑容量模型内，520 MiB/136 MiB 与1040/272页可复算。候选评分、mask、间接寻址和复制、跨设备通信、准备、同步及驻留已区分；链式收益式的独立接受率与并行资源前提符合所供来源，不构成设备性能证明。",
+      "evidence": [
+        {
+          "path": "knowledge/algorithms/branch-generation.md",
+          "quote": "这个节省只消除共同前缀的重复驻留，不消除四条不同路径的后续计算、logits、mask 和提交开销。"
+        },
+        {
+          "path": "knowledge/algorithms/branch-generation.md",
+          "quote": "C_draft+C_verify(N)+C_commit < E[L_out] C_decode"
+        },
+        {
+          "path": "knowledge/algorithms/branch-generation.md",
+          "quote": "驻留峰值包括根前缀、候选节点、未选中兄弟、旧快照、输出缓冲和 staging；共享页只计一次，预留容量与其物化页不能重复相加。"
+        }
+      ]
+    },
+    "adaptation": {
+      "assessment": "sufficient",
+      "reason": "解释了页长、前缀与尾长、分支宽深及目标 batch 利用率变化如何改变收益；评分键与束宽改变被明确视为搜索语义变化。实际参数最优值未测量可作为边界保留。",
+      "evidence": [
+        {
+          "path": "knowledge/algorithms/branch-generation.md",
+          "quote": "改变 K、R 或 T 都会改变搜索结果，不能把它们当作纯执行优化隐藏。"
+        },
+        {
+          "path": "knowledge/algorithms/branch-generation.md",
+          "quote": "尾很长、COW 频繁、页尾浪费大或目标 batch 已饱和时，额外候选可能只增加计算和驻留。"
+        }
+      ]
+    },
+    "diagnosis": {
+      "assessment": "partial",
+      "reason": "容量、候选计算、准备与同步的竞争解释及控制实验已有不同预测；但K=1的反例不能推出所称选择，且提交负对照仅构造数值差异，没有执行错误提交并由独立状态不变量检测。",
+      "evidence": [
+        {
+          "path": "knowledge/algorithms/branch-generation.md",
+          "quote": "则宽度 1 在第一步丢掉 a，最终得到 b,a 的概率 0.006，漏掉 a,a 的 0.38。"
+        },
+        {
+          "path": "knowledge/algorithms/branch-generation.md",
+          "quote": "若固定请求集后差距消失，优先支持容量/准入解释；若固定请求集后仍慢，再查候选工作量。"
+        },
+        {
+          "path": "knowledge/algorithms/branch-generation.md",
+          "quote": "可将提交实现与完整重放参考逐 token 比较；根前缀、A、C、T 四个边界要分别记录。"
+        }
+      ]
+    }
+  },
+  "findings": [
+    {
+      "id": "K-ALG-024-BEAM-FINISHED",
+      "criterion": "algorithm",
+      "evidence": "BeamStep 中为“2 C ← 空；F_new ← F_t”“5         将 h 以长度限制加入 F_new；继续”，但返回前仅有“15 终止候选按最终键保留前 K 个加入 F_{t+1}”；C_end 在第11步首次使用，未初始化。",
+      "impact": "旧完成假设和本轮长度终止假设写入了未被用于返回的 F_new。按当前步骤不能确定它们是否保留，也不能保证完成集在跨轮后仍为全局前K；达到长度限制的合法结果可能丢失。现有脚本没有完成集或EOS路径，无法发现此问题。",
+      "blocking": true,
+      "required_revision": "初始化 C_end；明确把 F_t、本轮长度终止结果和EOS终止候选合并，按统一声明的最终键去重、截取并赋给 F_{t+1}。用含旧完成结果、长度终止及新EOS候选的小轨迹对照独立枚举参考，验证保留结果和容量上界。"
+    },
+    {
+      "id": "K-ALG-024-BEAM-COUNTEREXAMPLE",
+      "criterion": "diagnosis",
+      "evidence": "正文写道：“根 p(a)=0.4、p(b)=0.6，给定 a 后 p(a|a)=0.95，给定 b 后 p(a|b)=0.01，则宽度 1 在第一步丢掉 a，最终得到 b,a 的概率 0.006，漏掉 a,a 的 0.38。”",
+      "impact": "按两项词表补全，p(b|b)=0.99，宽度1会选 b,b，概率0.594，高于 a,a 的0.38，因而该例没有证明漏掉全局最优。若允许其他词表项，第二步分布又不完整，仍不能推出选择 b,a。",
+      "blocking": true,
+      "required_revision": "替换为完整归一化、逐步选择确实成立的反例。例如保持根分布和a后的分布，令b后的两项概率均为0.5，则宽度1保留的路径概率为0.3，而被剪掉的a,a为0.38；声明平局规则，并独立枚举全部完整路径核对。"
+    },
+    {
+      "id": "K-ALG-024-RNG-INDEPENDENCE",
+      "criterion": "legality",
+      "evidence": "“若要求‘从 pθ(·|x) 独立抽取’，采样路径不能由当前 batch 行共享同一个连续随机流。”原文中的引号为中文双引号：若要求“从 pθ(·|x) 独立抽取”，采样路径不能由当前 batch 行共享同一个连续随机流。",
+      "impact": "共享流中不重复使用的独立随机抽取可以产生独立样本；batch重排改变具体随机数归属，通常破坏的是调度无关的固定seed轨迹，并不自动破坏目标联合分布。当前表述把一种更强的执行契约误写成独立采样的必要条件。",
+      "blocking": true,
+      "required_revision": "分别说明分布独立性、随机数重复或相关性，以及调度无关可复现性的条件。将逻辑分支子流表述为满足后者的一种设计选择，并保留对子流导出质量的要求；与已供 batched-sampling.md 的条件化表述对齐。"
+    },
+    {
+      "id": "K-ALG-024-TREE-FORWARD",
+      "criterion": "algorithm",
+      "evidence": "“树验证需要先由目标模型一次前向计算候选树中各个节点的 p_n。”共同提交随后使用“5     若 a 非空且最后节点有可提交状态：选该状态”。",
+      "impact": "正文给出了可见集合，却没有说明各层如何从节点输入、父路径历史和本层候选KV生产下一层输入，以及何时形成可提交的全层状态。涉及递归状态时，兄弟节点的父状态快照如何产生也未展开。现有延伸阅读没有明确把这一必要算法委托给完整解释，读者仍需自行补齐核心生产阶段。",
+      "blocking": true,
+      "required_revision": "补充简明的逐层树前向数据流，或明确委托到已有完整章节的具体算法：交代节点token和深度位置、各层输入与祖先KV、候选状态的私有写入、最终logits及全层完成条件。对递归状态说明沿父边取得状态的方式，或明确限制本算法的模型范围。"
+    },
+    {
+      "id": "K-ALG-024-COMMIT-HANDOFF",
+      "criterion": "algorithm",
+      "evidence": "VerifyTreePath 声明输出为“选中的普通 token 路径 a、末尾事件 t、已计算状态边界 k_state”；CommitAccepted 输入为“旧 grammar/RNG/score”，却直接发布“grammar_new、RNG_next、score_new”。检查脚本的提交负对照仅为“faulty_computed = computed + 1”和“assert faulty_computed != computed”。",
+      "impact": "验证消耗的候选抽样、接受随机数和修正抽样没有明确传给提交；新累计评分也没有计算步骤。失败重试可能复用错误随机位置，或发布与选中路径不符的评分。现有负对照的断言由加1构造必然成立，没有检查错误边界进入状态后是否被独立参考拒绝。",
+      "blocking": true,
+      "required_revision": "明确交付验证后的候选RNG状态，并按所声明的目标评分及EOS契约计算新评分和grammar状态；在发布前完成验证与准备，区分发布前失败和发布后回收。将提交检查改为执行候选状态选择、pending token保留及原状态保护，并以独立路径重放或明确状态账核对；提前提交bonus的负对照应实际经过同一检查器并被拒绝。"
+    }
+  ],
+  "limitations": [
+    "审查依据本轮提供的冻结文本和执行记录；documents 中的哈希按要求保留，未从本地磁盘重新读取或计算。",
+    "未读取上游源码归档、PDF视觉原件或HTML阅读器；摘录不代表完整原始文件阅读，链接未执行本地存在性检查。",
+    "所供执行记录只支持该CPU脚本在记录环境中退出码为0；不证明真实模型、GPU可见性、异步回收、互连、吞吐、统计采样频率或Agent使用效果。",
+    "EAGLE与Spec关键机制及公式已对照所供完整抽取文本；PagedAttention与SGLang事实核对限于所供原文摘录。正文将Q_n构造及完成票据标为本库推导，这一来源边界可以保留。"
+  ],
+  "checks": [
+    {
+      "script": "tools/check_k_alg_024_full.py",
+      "args": [],
+      "execution_evidence": "用户提供的 actual_preflight",
+      "returncode": 0,
+      "independently_rerun": false,
+      "script_sha256": "6619f87f4926640bfa587ada4d59cb11fb2eabf67f43b1524a982ef1c04bd9f0"
+    }
+  ],
+  "no_checks_reason": "",
+  "reading_scope": "完整阅读本轮提供的以下抽取文本，范围均为零基半开字符区间：AGENTS.md [0,567)；docs/knowledge-method.md [0,2251)；docs/knowledge-review.md [0,3016)；knowledge/algorithms/branch-generation.md [0,11864)；knowledge/sources/S-EAGLE.md [0,706)、S-SPEC.md [0,518)、S-PAGED.md [0,2206)、S-TORCH-REPRO.md [0,501)、S-SGLANG.md [0,472)；knowledge/algorithms/speculation-budget.md [0,3904)、batched-sampling.md [0,2567)；knowledge/system-semantics/request-batch-identity.md [0,2669)；knowledge/workloads/session-workloads.md [0,3583)；knowledge/engine-index/vllm-model-runner.md [0,2207)；references/S-EAGLE/fulltext.txt [0,47854)、references/S-SPEC/fulltext.txt [0,47353)、references/S-TORCH-REPRO/fulltext.txt [0,7936)。完整检查 candidate.test_script 所供脚本及 actual_preflight 执行记录，未自行重跑Python。其余仅阅读所供摘录：structured-output.md [0,5621)、[8000,11823)；paged-kv-capacity.md [0,4000)、[8000,10019)、[12000,15425)；heterogeneous-state-cache.md [0,3422)、[8000,14022)；recurrent-hybrid-state.md [0,4000)、[8000,10998)、[12000,14446)；references/S-PAGED/fulltext.txt [0,15541)、[16000,80000)；references/S-SGLANG/fulltext.txt [0,79541)。这些摘录文件没有列入 documents，不声称完整阅读其原文件。",
+  "test_assessment": "已检查脚本算法与所供真实执行记录：remote_bwrap 使用隔离的Python标准库环境，脚本哈希与绑定一致，returncode=0、stderr为空，输出与main中的检查相符。作者说明自己未执行，与协调侧另有preflight记录并不矛盾。beam参考重新逐路径累加条件对数概率，能发现局部末token排序错误，但未实现EOS、旧完成集、长度终止或最终键；单token投机检查以目标概率向量为独立期望，覆盖反向偏置及q中零质量，argmax和丢弃剩余质量会产生可检测差异；容量检查以页圆整和固定字节数核对，520/136 MiB成立，但仅覆盖根对齐情形。可见集正例具有手写集合参考，负例只添加B后比较集合，未执行其对logits或状态的影响；提交正例只构造token列表和长度，负例加1后断言不同属于构造性恒真，不能证明实际错误提交被捕获。脚本也未执行递归VerifyTreePath、多层状态生产、RNG/评分交付、失败回滚或物理回收。审阅者另在functions.exec中独立枚举两项词表：aa=0.38、ab=0.02、ba=0.006、bb=0.594，确认正文K=1反例不成立；独立计算接受质量加拒绝剩余质量，得到目标A=0.9、B=0.1。上述算术检查不扩展为设备或引擎验证。"
+}

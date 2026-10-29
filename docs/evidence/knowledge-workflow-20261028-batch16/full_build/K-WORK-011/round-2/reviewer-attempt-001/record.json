@@ -1,0 +1,200 @@
+{
+  "role": "reviewer",
+  "engine": "sol",
+  "requested_model": "gpt-6.1-sol",
+  "reasoning_effort": "high",
+  "prompt_sha256": "8fcf2d637283ea7540e72dac733db5a48ae368617c83afc0f68806efa5a41374",
+  "usage": [
+    {
+      "input_tokens": 210288,
+      "cached_input_tokens": 7552,
+      "cache_write_input_tokens": 0,
+      "output_tokens": 5277,
+      "reasoning_output_tokens": 1474
+    }
+  ],
+  "answer": "{\n  \"entry_id\": \"K-WORK-011\",\n  \"body_sha256\": \"ba04b1809a56cd12f896fb43ba97a12e4b818e6bd02c10040539a85d187aa450\",\n  \"reviewer\": \"sol-reviewer:K-WORK-011:round-2\",\n  \"decision\": \"revise\",\n  \"documents\": {\n    \"AGENTS.md\": \"b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a\",\n    \"docs/knowledge-method.md\": \"69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb\",\n    \"docs/knowledge-review.md\": \"f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21\",\n    \"knowledge/workloads/cluster-resource-placement.md\": \"ba04b1809a56cd12f896fb43ba97a12e4b818e6bd02c10040539a85d187aa450\",\n    \"knowledge/sources/S-BORG.md\": \"2efc1ae7dfd3d9751a94b3ce8ee9426cb4943197fa2afc80c344f009d52c7331\",\n    \"knowledge/sources/S-ALPASERVE.md\": \"7f6908cd7b40479e932d8f7dc3074354322e218a92b03a15d229e3fdcd9612be\",\n    \"knowledge/sources/S-CUDA-TOPOLOGY.md\": \"39d4039179728ce8570c3b9ec3801aaad52108d030f278fb598a4d6d47de1f8e\",\n    \"knowledge/system-semantics/tenant-isolation.md\": \"0ca7501a80e750152a5fb3b9815c77f9e3f9aa393ff7546b3f05375958f88606\",\n    \"knowledge/system-semantics/storage-services.md\": \"283ceab23fbbf5c27bbb4486b56c2123459a19a00229c5baae70d09c18062661\",\n    \"knowledge/system-semantics/deployment-environment.md\": \"1b47e39a7f36c9f1cba4dc1792ad9243fd69d083ae1d6a7bb13bfd80dae1a8a5\",\n    \"references/S-ALPASERVE/fulltext.txt\": \"14cfb8691f5780a5916f9354af8a2713b5c8876abbd174e1c53a983f9eb995db\",\n    \"tools/check_k_work_011_full.py\": \"be7a9461e26539b7e2cfa7740fd2e32dce13a2fa49668de84813351e0239b602\"\n  },\n  \"criteria\": {\n    \"definition\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"明确了逐rank需求、物理槽、节点聚合资源、映射输出、请求身份及生命周期；CPU份额与绑核、正式分配与可服务容量分别解释，符号和单位足以恢复资源账。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/workloads/cluster-resource-placement.md\",\n          \"quote\": \"分别表示设备能力、设备内存字节、CPU 时间份额、主存字节、临时存储字节和声明窗口内的网络需求。\"\n        },\n        {\n          \"path\": \"knowledge/workloads/cluster-resource-placement.md\",\n          \"quote\": \"准入决定表与运行状态分开：历史 COMMITTED 决定不会因退役而消失。\"\n        }\n      ]\n    },\n    \"legality\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"区分硬约束与软偏好，覆盖rank完整性、槽互斥、逐槽容量、节点聚合、路径和授权。故障模型已改为必要资源的依赖域交集，并限定固定非冗余组与服务率相加的前提。R1-FAULT-01关闭。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/workloads/cluster-resource-placement.md\",\n          \"quote\": \"rank 完整且槽互斥：每个必要 rank 恰好分配一次，不重复占用同一槽。\"\n        },\n        {\n          \"path\": \"knowledge/workloads/cluster-resource-placement.md\",\n          \"quote\": \"alive_g(F)=1[D_g∩F=∅]。\"\n        },\n        {\n          \"path\": \"knowledge/workloads/cluster-resource-placement.md\",\n          \"quote\": \"只有在存活组仍能兑现同一负载口径下的 μ_g，且这些服务率满足共同资源预算时，才可计算\"\n        }\n      ]\n    },\n    \"algorithm\": {\n      \"assessment\": \"partial\",\n      \"reason\": \"候选回溯、预算停止、提交时重检、请求查重、所有权日志和RESERVED回滚均有实质展开；原R1-TEST-01与R1-GANG-01的具体缺陷已修复。但成功提交分支在临界区内直接返回，使同一伪代码后续的节点准备发送步骤不可达，尚未闭合COMMITTED到实际准备的推进链。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/workloads/cluster-resource-placement.md\",\n          \"quote\": \"所有准入、取消、代次变更、资源释放和影响合法性的状态更新都经过同一串行临界区。\"\n        },\n        {\n          \"path\": \"knowledge/workloads/cluster-resource-placement.md\",\n          \"quote\": \"写入唯一决定 (k,h,π,t,COMMITTED)，更新运行状态。\\n         返回该决定。\"\n        },\n        {\n          \"path\": \"knowledge/workloads/cluster-resource-placement.md\",\n          \"quote\": \"5. 离开临界区后才向节点发送带 k、v、π、t 的准备指令。\"\n        }\n      ]\n    },\n    \"cost\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"已分离候选输出上限与实际展开预算，按增量检查、完整检查、候选复制、评分和排序计费，并说明成对路径检查与预计算条件。六类成本及共享准备资源有对应对象。独立复算ring设定得到半双工4.7175 ms、全双工2.37375 ms及端点发送96 MiB，与正文一致。R1-COST-01关闭。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/workloads/cluster-resource-placement.md\",\n          \"quote\": \"T_search=O(T_pre+Σ_{a=1..E}(d+c_inc(a))+Σ_{q=1..Q}c_full(q)+n(P+c_score)+n log n)。\"\n        },\n        {\n          \"path\": \"knowledge/workloads/cluster-resource-placement.md\",\n          \"quote\": \"全 rank 对检查可有 E_t=Θ(P²)。\"\n        },\n        {\n          \"path\": \"knowledge/workloads/cluster-resource-placement.md\",\n          \"quote\": \"共享磁盘、NIC、PCIe 或 CPU 会增加资源次序，不能同时给各 rank 一份独占带宽。\"\n        }\n      ]\n    },\n    \"adaptation\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"节点故障、负载、设备型号、链路、碎片和搜索预算变化均说明保留的不变量与需要重新求解的条件；跨节点改变执行配置时要求重新验证，未把旧容量或路径缓存无条件沿用。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/workloads/cluster-resource-placement.md\",\n          \"quote\": \"也可以把 A 改为两节点各两卡，但那是新的执行配置，必须重新核对逐 rank 容量、通信、组准备、故障条件和 SLO。\"\n        },\n        {\n          \"path\": \"knowledge/workloads/cluster-resource-placement.md\",\n          \"quote\": \"增加预算、改顺序或索引；把预算耗尽保留为未知，不改写成无解\"\n        }\n      ]\n    },\n    \"diagnosis\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"诊断表给出竞争解释、受控干预、预测及反证后的修正，覆盖碎片、搜索、重复分配、故障容量、排队和迁移。区分CPU逻辑模型与生产锁、设备完成及实际SLO证据，未以退出码替代机制判断。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/workloads/cluster-resource-placement.md\",\n          \"quote\": \"随 B 出现合法候选时撤回无解判断；E 小但慢则检查单次成本\"\n        },\n        {\n          \"path\": \"knowledge/workloads/cluster-resource-placement.md\",\n          \"quote\": \"存活集合正确而容量不足时，重算共同争用和 μ_g(F)\"\n        },\n        {\n          \"path\": \"knowledge/workloads/cluster-resource-placement.md\",\n          \"quote\": \"故障模拟和设备注入的证据范围应分别报告。\"\n        }\n      ]\n    }\n  },\n  \"findings\": [\n    {\n      \"id\": \"K-WORK-011-R2-GANG-START-01\",\n      \"criterion\": \"algorithm\",\n      \"evidence\": \"GANG_ADMIT第4步成功分支写“写入唯一决定 (k,h,π,t,COMMITTED)，更新运行状态。”后立即“返回该决定。”；节点准备发送却位于后续第5步：“离开临界区后才向节点发送带 k、v、π、t 的准备指令。”。配套SerialAdmission.admit同样在形成决定后返回，未建模准备指令派发。\",\n      \"impact\": \"按当前伪代码执行，首次成功提交也会在发送准备指令前结束。即使控制器不崩溃、没有并发错误，资源仍可能停留在COMMITTED而节点从未开始准备；串行账本检查不会发现这条推进链中断。\",\n      \"blocking\": true,\n      \"required_revision\": \"把成功提交后的返回移到离开临界区并派发准备指令之后，或明确由另一个已展开的后继步骤负责派发，并保证首次提交实际触发它。保留历史重试返回原决定且不重新启动已退役实例的语义。补一个小型事件核对：首次成功提交能够触发临界区外准备，拒绝和历史重试不会错误地产生新启动。无需增加控制器崩溃恢复或通用分布式事务。\"\n    }\n  ],\n  \"limitations\": [\n    \"执行结论来自用户提供、绑定本轮脚本SHA-256的actual_preflight记录；本审阅调用未另行执行Python，也未重新核验磁盘字节或证据目录落盘。\",\n    \"Borg与CUDA原文仅按本次提供的字符范围核对；未声称完整阅读其原始文件。CUDA所供摘录不足以独立核验完整多GPU章节，相关一般性结论同时受来源说明的范围限制。\",\n    \"CPU检查覆盖抽象独占槽、类型、内存、节点CPU及固定依赖组；不覆盖一般拓扑搜索、性能评分、准备期峰值、真实设备分配或端到端SLO，正文对此声明清楚。\",\n    \"准入模型把一次admit视为不可交错操作，不证明真实锁覆盖、异步节点行为、生命周期回收或控制器崩溃恢复。\",\n    \"未执行本地链接存在性、reader.html渲染或Agent构建效果测试；相关材料路径的审阅不等于这些检查通过。\"\n  ],\n  \"checks\": [\n    {\n      \"script\": \"tools/check_k_work_011_full.py\",\n      \"args\": [],\n      \"script_sha256\": \"be7a9461e26539b7e2cfa7740fd2e32dce13a2fa49668de84813351e0239b602\",\n      \"execution_origin\": \"用户提供的actual_preflight；审阅者未重跑\",\n      \"backend\": \"remote_bwrap\",\n      \"interpreter\": \"python3.12\",\n      \"returncode\": 0,\n      \"stderr\": \"\",\n      \"result\": \"所声明CPU模型检查通过；输出记录2808个放置案例、201个故障案例，并报告放置、账本和代表故障域负对照被拒绝。该结果不覆盖本轮发现的准备派发控制流。\"\n    }\n  ],\n  \"reading_scope\": \"完整阅读本次提供的AGENTS.md[0,567)、docs/knowledge-method.md[0,2251)、docs/knowledge-review.md[0,3016)、候选正文[0,13524)、S-BORG来源说明[0,732)、S-ALPASERVE来源说明[0,657)、S-CUDA-TOPOLOGY来源说明[0,500)、tenant-isolation.md[0,4131)、storage-services.md[0,3922)、deployment-environment.md[0,3882)、S-ALPASERVE/fulltext.txt[0,82594)，以及candidate.test_script完整脚本、author_notes和actual_preflight执行记录。相关章仅阅读所供摘录：parallelism.md[0,2802)、[8000,14642)；topology-parallelism.md[0,4000)、[8000,10276)、[12000,15168)；cpu-serving.md[0,4000)、[8000,13444)；multi-model-placement.md[0,7836)、[12000,13608)；elastic-serving.md[0,7235)、[12000,14209)；design-synthesis.md[0,2146)、[12000,19298)。Borg原文仅阅读[0,68728)、[72000,88000)。CUDA原文仅阅读[4000,8000)、[16000,20000)、[36000,52000)、[56000,72727)、[208000,212000)、[280000,288000)、[456000,460000)、[644000,648000)、[688000,692000)、[800000,804000)、[948000,956000)、[1068000,1072000)、[1080000,1084000)。以上范围为零基、左闭右开提取字符范围，摘录文件未列入documents。作者材料账与审阅范围分别处理：账本记录作者获供Borg和AlpaServe全文、CUDA[56000,78531)等摘录及旧正文全文；不据此证明作者认知阅读，也不把审阅者较窄的Borg/CUDA范围归给作者。未读取源码归档。\",\n  \"test_assessment\": \"已逐函数检查脚本。reference_placements枚举实际槽的互斥排列，再于完整映射计算类型、逐槽内存、同节点及节点CPU总量；generate则使用增量剩余CPU和已用槽回溯，参考构造与候选过滤不同。audit_result既审核映射，也在COMPLETE时比较完整合法集合。must显式抛出异常，expect_rejected要求审计确实失败；总内存和总槽数错误算法在两个非法设定上必须偏离参考，再由同一audit_result拒绝，重复槽映射也被拒绝，原R1-TEST-01因此关闭。有限域计数36×(3+9+27)×2=2808，与实际输出一致。预算检查覆盖零预算、失败扩展计费、候选上限及回溯恢复，但没有验证一般拓扑或评分。准入审计从正式分配重建物理所有权与CPU责任，两个串行调用顺序、重试、冲突、代次和两类回滚均有检查；孤儿扣账及重复正式槽负对照确由同一账本审计拒绝，原R1-GANG-01的共同排序与所有权缺口已修复。该模型没有准备派发事件，不能发现当前成功分支提前返回的问题。故障参考先移除实际资源再检查组完整性，与依赖域并集实现对照；11个域的零至两个失效组合共67种，三个组布局共201例，与实际输出一致，代表域负对照在rackA故障时被拒绝，原R1-FAULT-01关闭。作者说明其阶段未运行Python，而后续actual_preflight确实执行了绑定本轮哈希的脚本；两者阶段不同，不将作者待执行命令登记为作者已执行PASS。实际成功退出只支持这些已检查模型，不消除正文控制流缺陷。\"\n}",
+  "exit_code": 0,
+  "status": "completed",
+  "timeout_seconds": 1800,
+  "response_path": "D:\\桌面\\xdb\\InfraAgents\\InfraAgents-know-astra-new\\InfraAgents-know\\docs\\evidence\\knowledge-workflow-20261028-batch16\\full_build\\K-WORK-011\\round-2\\reviewer-attempt-001\\answer.txt",
+  "record_path": "D:\\桌面\\xdb\\InfraAgents\\InfraAgents-know-astra-new\\InfraAgents-know\\docs\\evidence\\knowledge-workflow-20261028-batch16\\full_build\\K-WORK-011\\round-2\\reviewer-attempt-001\\record.json",
+  "tool_events": [],
+  "inventory_tool_events": [],
+  "rejected_tool_events": [],
+  "tool_policy": "metadata_inventory_only",
+  "tool_policy_version": "metadata-inventory-v1",
+  "tool_policy_scope": "Only empty-argument codex host plugin/skill-directory descriptors and empty template inventory; inventory is not knowledge evidence. All other tool events reject the call.",
+  "tool_policy_reason": "Production chapter construction allows observed generic capability discovery metadata; this does not claim a zero-tool comparison or external source reading.",
+  "malformed_event_lines": [],
+  "turn_completed": true,
+  "error_events": [],
+  "recovered_transport_events": [],
+  "terminal_error_events": [],
+  "transport_recovered": false,
+  "actual_model": null,
+  "identity_verified": null,
+  "identity_basis": "Explicit CLI model and isolated HTTP provider; CLI events do not expose server model identity.",
+  "provider": "eval-openai-http",
+  "max_output_tokens": null,
+  "cli_version": "codex-cli 0.164.0-alpha.11.1",
+  "cost_scope": "Codex token usage is reported; subscription charge is not exposed.",
+  "parsed": {
+    "entry_id": "K-WORK-011",
+    "body_sha256": "ba04b1809a56cd12f896fb43ba97a12e4b818e6bd02c10040539a85d187aa450",
+    "reviewer": "sol-reviewer:K-WORK-011:round-2",
+    "decision": "revise",
+    "documents": {
+      "AGENTS.md": "b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a",
+      "docs/knowledge-method.md": "69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb",
+      "docs/knowledge-review.md": "f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21",
+      "knowledge/workloads/cluster-resource-placement.md": "ba04b1809a56cd12f896fb43ba97a12e4b818e6bd02c10040539a85d187aa450",
+      "knowledge/sources/S-BORG.md": "2efc1ae7dfd3d9751a94b3ce8ee9426cb4943197fa2afc80c344f009d52c7331",
+      "knowledge/sources/S-ALPASERVE.md": "7f6908cd7b40479e932d8f7dc3074354322e218a92b03a15d229e3fdcd9612be",
+      "knowledge/sources/S-CUDA-TOPOLOGY.md": "39d4039179728ce8570c3b9ec3801aaad52108d030f278fb598a4d6d47de1f8e",
+      "knowledge/system-semantics/tenant-isolation.md": "0ca7501a80e750152a5fb3b9815c77f9e3f9aa393ff7546b3f05375958f88606",
+      "knowledge/system-semantics/storage-services.md": "283ceab23fbbf5c27bbb4486b56c2123459a19a00229c5baae70d09c18062661",
+      "knowledge/system-semantics/deployment-environment.md": "1b47e39a7f36c9f1cba4dc1792ad9243fd69d083ae1d6a7bb13bfd80dae1a8a5",
+      "references/S-ALPASERVE/fulltext.txt": "14cfb8691f5780a5916f9354af8a2713b5c8876abbd174e1c53a983f9eb995db",
+      "tools/check_k_work_011_full.py": "be7a9461e26539b7e2cfa7740fd2e32dce13a2fa49668de84813351e0239b602"
+    },
+    "criteria": {
+      "definition": {
+        "assessment": "sufficient",
+        "reason": "明确了逐rank需求、物理槽、节点聚合资源、映射输出、请求身份及生命周期；CPU份额与绑核、正式分配与可服务容量分别解释，符号和单位足以恢复资源账。",
+        "evidence": [
+          {
+            "path": "knowledge/workloads/cluster-resource-placement.md",
+            "quote": "分别表示设备能力、设备内存字节、CPU 时间份额、主存字节、临时存储字节和声明窗口内的网络需求。"
+          },
+          {
+            "path": "knowledge/workloads/cluster-resource-placement.md",
+            "quote": "准入决定表与运行状态分开：历史 COMMITTED 决定不会因退役而消失。"
+          }
+        ]
+      },
+      "legality": {
+        "assessment": "sufficient",
+        "reason": "区分硬约束与软偏好，覆盖rank完整性、槽互斥、逐槽容量、节点聚合、路径和授权。故障模型已改为必要资源的依赖域交集，并限定固定非冗余组与服务率相加的前提。R1-FAULT-01关闭。",
+        "evidence": [
+          {
+            "path": "knowledge/workloads/cluster-resource-placement.md",
+            "quote": "rank 完整且槽互斥：每个必要 rank 恰好分配一次，不重复占用同一槽。"
+          },
+          {
+            "path": "knowledge/workloads/cluster-resource-placement.md",
+            "quote": "alive_g(F)=1[D_g∩F=∅]。"
+          },
+          {
+            "path": "knowledge/workloads/cluster-resource-placement.md",
+            "quote": "只有在存活组仍能兑现同一负载口径下的 μ_g，且这些服务率满足共同资源预算时，才可计算"
+          }
+        ]
+      },
+      "algorithm": {
+        "assessment": "partial",
+        "reason": "候选回溯、预算停止、提交时重检、请求查重、所有权日志和RESERVED回滚均有实质展开；原R1-TEST-01与R1-GANG-01的具体缺陷已修复。但成功提交分支在临界区内直接返回，使同一伪代码后续的节点准备发送步骤不可达，尚未闭合COMMITTED到实际准备的推进链。",
+        "evidence": [
+          {
+            "path": "knowledge/workloads/cluster-resource-placement.md",
+            "quote": "所有准入、取消、代次变更、资源释放和影响合法性的状态更新都经过同一串行临界区。"
+          },
+          {
+            "path": "knowledge/workloads/cluster-resource-placement.md",
+            "quote": "写入唯一决定 (k,h,π,t,COMMITTED)，更新运行状态。\n         返回该决定。"
+          },
+          {
+            "path": "knowledge/workloads/cluster-resource-placement.md",
+            "quote": "5. 离开临界区后才向节点发送带 k、v、π、t 的准备指令。"
+          }
+        ]
+      },
+      "cost": {
+        "assessment": "sufficient",
+        "reason": "已分离候选输出上限与实际展开预算，按增量检查、完整检查、候选复制、评分和排序计费，并说明成对路径检查与预计算条件。六类成本及共享准备资源有对应对象。独立复算ring设定得到半双工4.7175 ms、全双工2.37375 ms及端点发送96 MiB，与正文一致。R1-COST-01关闭。",
+        "evidence": [
+          {
+            "path": "knowledge/workloads/cluster-resource-placement.md",
+            "quote": "T_search=O(T_pre+Σ_{a=1..E}(d+c_inc(a))+Σ_{q=1..Q}c_full(q)+n(P+c_score)+n log n)。"
+          },
+          {
+            "path": "knowledge/workloads/cluster-resource-placement.md",
+            "quote": "全 rank 对检查可有 E_t=Θ(P²)。"
+          },
+          {
+            "path": "knowledge/workloads/cluster-resource-placement.md",
+            "quote": "共享磁盘、NIC、PCIe 或 CPU 会增加资源次序，不能同时给各 rank 一份独占带宽。"
+          }
+        ]
+      },
+      "adaptation": {
+        "assessment": "sufficient",
+        "reason": "节点故障、负载、设备型号、链路、碎片和搜索预算变化均说明保留的不变量与需要重新求解的条件；跨节点改变执行配置时要求重新验证，未把旧容量或路径缓存无条件沿用。",
+        "evidence": [
+          {
+            "path": "knowledge/workloads/cluster-resource-placement.md",
+            "quote": "也可以把 A 改为两节点各两卡，但那是新的执行配置，必须重新核对逐 rank 容量、通信、组准备、故障条件和 SLO。"
+          },
+          {
+            "path": "knowledge/workloads/cluster-resource-placement.md",
+            "quote": "增加预算、改顺序或索引；把预算耗尽保留为未知，不改写成无解"
+          }
+        ]
+      },
+      "diagnosis": {
+        "assessment": "sufficient",
+        "reason": "诊断表给出竞争解释、受控干预、预测及反证后的修正，覆盖碎片、搜索、重复分配、故障容量、排队和迁移。区分CPU逻辑模型与生产锁、设备完成及实际SLO证据，未以退出码替代机制判断。",
+        "evidence": [
+          {
+            "path": "knowledge/workloads/cluster-resource-placement.md",
+            "quote": "随 B 出现合法候选时撤回无解判断；E 小但慢则检查单次成本"
+          },
+          {
+            "path": "knowledge/workloads/cluster-resource-placement.md",
+            "quote": "存活集合正确而容量不足时，重算共同争用和 μ_g(F)"
+          },
+          {
+            "path": "knowledge/workloads/cluster-resource-placement.md",
+            "quote": "故障模拟和设备注入的证据范围应分别报告。"
+          }
+        ]
+      }
+    },
+    "findings": [
+      {
+        "id": "K-WORK-011-R2-GANG-START-01",
+        "criterion": "algorithm",
+        "evidence": "GANG_ADMIT第4步成功分支写“写入唯一决定 (k,h,π,t,COMMITTED)，更新运行状态。”后立即“返回该决定。”；节点准备发送却位于后续第5步：“离开临界区后才向节点发送带 k、v、π、t 的准备指令。”。配套SerialAdmission.admit同样在形成决定后返回，未建模准备指令派发。",
+        "impact": "按当前伪代码执行，首次成功提交也会在发送准备指令前结束。即使控制器不崩溃、没有并发错误，资源仍可能停留在COMMITTED而节点从未开始准备；串行账本检查不会发现这条推进链中断。",
+        "blocking": true,
+        "required_revision": "把成功提交后的返回移到离开临界区并派发准备指令之后，或明确由另一个已展开的后继步骤负责派发，并保证首次提交实际触发它。保留历史重试返回原决定且不重新启动已退役实例的语义。补一个小型事件核对：首次成功提交能够触发临界区外准备，拒绝和历史重试不会错误地产生新启动。无需增加控制器崩溃恢复或通用分布式事务。"
+      }
+    ],
+    "limitations": [
+      "执行结论来自用户提供、绑定本轮脚本SHA-256的actual_preflight记录；本审阅调用未另行执行Python，也未重新核验磁盘字节或证据目录落盘。",
+      "Borg与CUDA原文仅按本次提供的字符范围核对；未声称完整阅读其原始文件。CUDA所供摘录不足以独立核验完整多GPU章节，相关一般性结论同时受来源说明的范围限制。",
+      "CPU检查覆盖抽象独占槽、类型、内存、节点CPU及固定依赖组；不覆盖一般拓扑搜索、性能评分、准备期峰值、真实设备分配或端到端SLO，正文对此声明清楚。",
+      "准入模型把一次admit视为不可交错操作，不证明真实锁覆盖、异步节点行为、生命周期回收或控制器崩溃恢复。",
+      "未执行本地链接存在性、reader.html渲染或Agent构建效果测试；相关材料路径的审阅不等于这些检查通过。"
+    ],
+    "checks": [
+      {
+        "script": "tools/check_k_work_011_full.py",
+        "args": [],
+        "script_sha256": "be7a9461e26539b7e2cfa7740fd2e32dce13a2fa49668de84813351e0239b602",
+        "execution_origin": "用户提供的actual_preflight；审阅者未重跑",
+        "backend": "remote_bwrap",
+        "interpreter": "python3.12",
+        "returncode": 0,
+        "stderr": "",
+        "result": "所声明CPU模型检查通过；输出记录2808个放置案例、201个故障案例，并报告放置、账本和代表故障域负对照被拒绝。该结果不覆盖本轮发现的准备派发控制流。"
+      }
+    ],
+    "reading_scope": "完整阅读本次提供的AGENTS.md[0,567)、docs/knowledge-method.md[0,2251)、docs/knowledge-review.md[0,3016)、候选正文[0,13524)、S-BORG来源说明[0,732)、S-ALPASERVE来源说明[0,657)、S-CUDA-TOPOLOGY来源说明[0,500)、tenant-isolation.md[0,4131)、storage-services.md[0,3922)、deployment-environment.md[0,3882)、S-ALPASERVE/fulltext.txt[0,82594)，以及candidate.test_script完整脚本、author_notes和actual_preflight执行记录。相关章仅阅读所供摘录：parallelism.md[0,2802)、[8000,14642)；topology-parallelism.md[0,4000)、[8000,10276)、[12000,15168)；cpu-serving.md[0,4000)、[8000,13444)；multi-model-placement.md[0,7836)、[12000,13608)；elastic-serving.md[0,7235)、[12000,14209)；design-synthesis.md[0,2146)、[12000,19298)。Borg原文仅阅读[0,68728)、[72000,88000)。CUDA原文仅阅读[4000,8000)、[16000,20000)、[36000,52000)、[56000,72727)、[208000,212000)、[280000,288000)、[456000,460000)、[644000,648000)、[688000,692000)、[800000,804000)、[948000,956000)、[1068000,1072000)、[1080000,1084000)。以上范围为零基、左闭右开提取字符范围，摘录文件未列入documents。作者材料账与审阅范围分别处理：账本记录作者获供Borg和AlpaServe全文、CUDA[56000,78531)等摘录及旧正文全文；不据此证明作者认知阅读，也不把审阅者较窄的Borg/CUDA范围归给作者。未读取源码归档。",
+    "test_assessment": "已逐函数检查脚本。reference_placements枚举实际槽的互斥排列，再于完整映射计算类型、逐槽内存、同节点及节点CPU总量；generate则使用增量剩余CPU和已用槽回溯，参考构造与候选过滤不同。audit_result既审核映射，也在COMPLETE时比较完整合法集合。must显式抛出异常，expect_rejected要求审计确实失败；总内存和总槽数错误算法在两个非法设定上必须偏离参考，再由同一audit_result拒绝，重复槽映射也被拒绝，原R1-TEST-01因此关闭。有限域计数36×(3+9+27)×2=2808，与实际输出一致。预算检查覆盖零预算、失败扩展计费、候选上限及回溯恢复，但没有验证一般拓扑或评分。准入审计从正式分配重建物理所有权与CPU责任，两个串行调用顺序、重试、冲突、代次和两类回滚均有检查；孤儿扣账及重复正式槽负对照确由同一账本审计拒绝，原R1-GANG-01的共同排序与所有权缺口已修复。该模型没有准备派发事件，不能发现当前成功分支提前返回的问题。故障参考先移除实际资源再检查组完整性，与依赖域并集实现对照；11个域的零至两个失效组合共67种，三个组布局共201例，与实际输出一致，代表域负对照在rackA故障时被拒绝，原R1-FAULT-01关闭。作者说明其阶段未运行Python，而后续actual_preflight确实执行了绑定本轮哈希的脚本；两者阶段不同，不将作者待执行命令登记为作者已执行PASS。实际成功退出只支持这些已检查模型，不消除正文控制流缺陷。"
+  },
+  "format_status": "strict_json",
+  "format_error": null,
+  "output_text": "{\n  \"entry_id\": \"K-WORK-011\",\n  \"body_sha256\": \"ba04b1809a56cd12f896fb43ba97a12e4b818e6bd02c10040539a85d187aa450\",\n  \"reviewer\": \"sol-reviewer:K-WORK-011:round-2\",\n  \"decision\": \"revise\",\n  \"documents\": {\n    \"AGENTS.md\": \"b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a\",\n    \"docs/knowledge-method.md\": \"69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb\",\n    \"docs/knowledge-review.md\": \"f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21\",\n    \"knowledge/workloads/cluster-resource-placement.md\": \"ba04b1809a56cd12f896fb43ba97a12e4b818e6bd02c10040539a85d187aa450\",\n    \"knowledge/sources/S-BORG.md\": \"2efc1ae7dfd3d9751a94b3ce8ee9426cb4943197fa2afc80c344f009d52c7331\",\n    \"knowledge/sources/S-ALPASERVE.md\": \"7f6908cd7b40479e932d8f7dc3074354322e218a92b03a15d229e3fdcd9612be\",\n    \"knowledge/sources/S-CUDA-TOPOLOGY.md\": \"39d4039179728ce8570c3b9ec3801aaad52108d030f278fb598a4d6d47de1f8e\",\n    \"knowledge/system-semantics/tenant-isolation.md\": \"0ca7501a80e750152a5fb3b9815c77f9e3f9aa393ff7546b3f05375958f88606\",\n    \"knowledge/system-semantics/storage-services.md\": \"283ceab23fbbf5c27bbb4486b56c2123459a19a00229c5baae70d09c18062661\",\n    \"knowledge/system-semantics/deployment-environment.md\": \"1b47e39a7f36c9f1cba4dc1792ad9243fd69d083ae1d6a7bb13bfd80dae1a8a5\",\n    \"references/S-ALPASERVE/fulltext.txt\": \"14cfb8691f5780a5916f9354af8a2713b5c8876abbd174e1c53a983f9eb995db\",\n    \"tools/check_k_work_011_full.py\": \"be7a9461e26539b7e2cfa7740fd2e32dce13a2fa49668de84813351e0239b602\"\n  },\n  \"criteria\": {\n    \"definition\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"明确了逐rank需求、物理槽、节点聚合资源、映射输出、请求身份及生命周期；CPU份额与绑核、正式分配与可服务容量分别解释，符号和单位足以恢复资源账。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/workloads/cluster-resource-placement.md\",\n          \"quote\": \"分别表示设备能力、设备内存字节、CPU 时间份额、主存字节、临时存储字节和声明窗口内的网络需求。\"\n        },\n        {\n          \"path\": \"knowledge/workloads/cluster-resource-placement.md\",\n          \"quote\": \"准入决定表与运行状态分开：历史 COMMITTED 决定不会因退役而消失。\"\n        }\n      ]\n    },\n    \"legality\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"区分硬约束与软偏好，覆盖rank完整性、槽互斥、逐槽容量、节点聚合、路径和授权。故障模型已改为必要资源的依赖域交集，并限定固定非冗余组与服务率相加的前提。R1-FAULT-01关闭。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/workloads/cluster-resource-placement.md\",\n          \"quote\": \"rank 完整且槽互斥：每个必要 rank 恰好分配一次，不重复占用同一槽。\"\n        },\n        {\n          \"path\": \"knowledge/workloads/cluster-resource-placement.md\",\n          \"quote\": \"alive_g(F)=1[D_g∩F=∅]。\"\n        },\n        {\n          \"path\": \"knowledge/workloads/cluster-resource-placement.md\",\n          \"quote\": \"只有在存活组仍能兑现同一负载口径下的 μ_g，且这些服务率满足共同资源预算时，才可计算\"\n        }\n      ]\n    },\n    \"algorithm\": {\n      \"assessment\": \"partial\",\n      \"reason\": \"候选回溯、预算停止、提交时重检、请求查重、所有权日志和RESERVED回滚均有实质展开；原R1-TEST-01与R1-GANG-01的具体缺陷已修复。但成功提交分支在临界区内直接返回，使同一伪代码后续的节点准备发送步骤不可达，尚未闭合COMMITTED到实际准备的推进链。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/workloads/cluster-resource-placement.md\",\n          \"quote\": \"所有准入、取消、代次变更、资源释放和影响合法性的状态更新都经过同一串行临界区。\"\n        },\n        {\n          \"path\": \"knowledge/workloads/cluster-resource-placement.md\",\n          \"quote\": \"写入唯一决定 (k,h,π,t,COMMITTED)，更新运行状态。\\n         返回该决定。\"\n        },\n        {\n          \"path\": \"knowledge/workloads/cluster-resource-placement.md\",\n          \"quote\": \"5. 离开临界区后才向节点发送带 k、v、π、t 的准备指令。\"\n        }\n      ]\n    },\n    \"cost\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"已分离候选输出上限与实际展开预算，按增量检查、完整检查、候选复制、评分和排序计费，并说明成对路径检查与预计算条件。六类成本及共享准备资源有对应对象。独立复算ring设定得到半双工4.7175 ms、全双工2.37375 ms及端点发送96 MiB，与正文一致。R1-COST-01关闭。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/workloads/cluster-resource-placement.md\",\n          \"quote\": \"T_search=O(T_pre+Σ_{a=1..E}(d+c_inc(a))+Σ_{q=1..Q}c_full(q)+n(P+c_score)+n log n)。\"\n        },\n        {\n          \"path\": \"knowledge/workloads/cluster-resource-placement.md\",\n          \"quote\": \"全 rank 对检查可有 E_t=Θ(P²)。\"\n        },\n        {\n          \"path\": \"knowledge/workloads/cluster-resource-placement.md\",\n          \"quote\": \"共享磁盘、NIC、PCIe 或 CPU 会增加资源次序，不能同时给各 rank 一份独占带宽。\"\n        }\n      ]\n    },\n    \"adaptation\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"节点故障、负载、设备型号、链路、碎片和搜索预算变化均说明保留的不变量与需要重新求解的条件；跨节点改变执行配置时要求重新验证，未把旧容量或路径缓存无条件沿用。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/workloads/cluster-resource-placement.md\",\n          \"quote\": \"也可以把 A 改为两节点各两卡，但那是新的执行配置，必须重新核对逐 rank 容量、通信、组准备、故障条件和 SLO。\"\n        },\n        {\n          \"path\": \"knowledge/workloads/cluster-resource-placement.md\",\n          \"quote\": \"增加预算、改顺序或索引；把预算耗尽保留为未知，不改写成无解\"\n        }\n      ]\n    },\n    \"diagnosis\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"诊断表给出竞争解释、受控干预、预测及反证后的修正，覆盖碎片、搜索、重复分配、故障容量、排队和迁移。区分CPU逻辑模型与生产锁、设备完成及实际SLO证据，未以退出码替代机制判断。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/workloads/cluster-resource-placement.md\",\n          \"quote\": \"随 B 出现合法候选时撤回无解判断；E 小但慢则检查单次成本\"\n        },\n        {\n          \"path\": \"knowledge/workloads/cluster-resource-placement.md\",\n          \"quote\": \"存活集合正确而容量不足时，重算共同争用和 μ_g(F)\"\n        },\n        {\n          \"path\": \"knowledge/workloads/cluster-resource-placement.md\",\n          \"quote\": \"故障模拟和设备注入的证据范围应分别报告。\"\n        }\n      ]\n    }\n  },\n  \"findings\": [\n    {\n      \"id\": \"K-WORK-011-R2-GANG-START-01\",\n      \"criterion\": \"algorithm\",\n      \"evidence\": \"GANG_ADMIT第4步成功分支写“写入唯一决定 (k,h,π,t,COMMITTED)，更新运行状态。”后立即“返回该决定。”；节点准备发送却位于后续第5步：“离开临界区后才向节点发送带 k、v、π、t 的准备指令。”。配套SerialAdmission.admit同样在形成决定后返回，未建模准备指令派发。\",\n      \"impact\": \"按当前伪代码执行，首次成功提交也会在发送准备指令前结束。即使控制器不崩溃、没有并发错误，资源仍可能停留在COMMITTED而节点从未开始准备；串行账本检查不会发现这条推进链中断。\",\n      \"blocking\": true,\n      \"required_revision\": \"把成功提交后的返回移到离开临界区并派发准备指令之后，或明确由另一个已展开的后继步骤负责派发，并保证首次提交实际触发它。保留历史重试返回原决定且不重新启动已退役实例的语义。补一个小型事件核对：首次成功提交能够触发临界区外准备，拒绝和历史重试不会错误地产生新启动。无需增加控制器崩溃恢复或通用分布式事务。\"\n    }\n  ],\n  \"limitations\": [\n    \"执行结论来自用户提供、绑定本轮脚本SHA-256的actual_preflight记录；本审阅调用未另行执行Python，也未重新核验磁盘字节或证据目录落盘。\",\n    \"Borg与CUDA原文仅按本次提供的字符范围核对；未声称完整阅读其原始文件。CUDA所供摘录不足以独立核验完整多GPU章节，相关一般性结论同时受来源说明的范围限制。\",\n    \"CPU检查覆盖抽象独占槽、类型、内存、节点CPU及固定依赖组；不覆盖一般拓扑搜索、性能评分、准备期峰值、真实设备分配或端到端SLO，正文对此声明清楚。\",\n    \"准入模型把一次admit视为不可交错操作，不证明真实锁覆盖、异步节点行为、生命周期回收或控制器崩溃恢复。\",\n    \"未执行本地链接存在性、reader.html渲染或Agent构建效果测试；相关材料路径的审阅不等于这些检查通过。\"\n  ],\n  \"checks\": [\n    {\n      \"script\": \"tools/check_k_work_011_full.py\",\n      \"args\": [],\n      \"script_sha256\": \"be7a9461e26539b7e2cfa7740fd2e32dce13a2fa49668de84813351e0239b602\",\n      \"execution_origin\": \"用户提供的actual_preflight；审阅者未重跑\",\n      \"backend\": \"remote_bwrap\",\n      \"interpreter\": \"python3.12\",\n      \"returncode\": 0,\n      \"stderr\": \"\",\n      \"result\": \"所声明CPU模型检查通过；输出记录2808个放置案例、201个故障案例，并报告放置、账本和代表故障域负对照被拒绝。该结果不覆盖本轮发现的准备派发控制流。\"\n    }\n  ],\n  \"reading_scope\": \"完整阅读本次提供的AGENTS.md[0,567)、docs/knowledge-method.md[0,2251)、docs/knowledge-review.md[0,3016)、候选正文[0,13524)、S-BORG来源说明[0,732)、S-ALPASERVE来源说明[0,657)、S-CUDA-TOPOLOGY来源说明[0,500)、tenant-isolation.md[0,4131)、storage-services.md[0,3922)、deployment-environment.md[0,3882)、S-ALPASERVE/fulltext.txt[0,82594)，以及candidate.test_script完整脚本、author_notes和actual_preflight执行记录。相关章仅阅读所供摘录：parallelism.md[0,2802)、[8000,14642)；topology-parallelism.md[0,4000)、[8000,10276)、[12000,15168)；cpu-serving.md[0,4000)、[8000,13444)；multi-model-placement.md[0,7836)、[12000,13608)；elastic-serving.md[0,7235)、[12000,14209)；design-synthesis.md[0,2146)、[12000,19298)。Borg原文仅阅读[0,68728)、[72000,88000)。CUDA原文仅阅读[4000,8000)、[16000,20000)、[36000,52000)、[56000,72727)、[208000,212000)、[280000,288000)、[456000,460000)、[644000,648000)、[688000,692000)、[800000,804000)、[948000,956000)、[1068000,1072000)、[1080000,1084000)。以上范围为零基、左闭右开提取字符范围，摘录文件未列入documents。作者材料账与审阅范围分别处理：账本记录作者获供Borg和AlpaServe全文、CUDA[56000,78531)等摘录及旧正文全文；不据此证明作者认知阅读，也不把审阅者较窄的Borg/CUDA范围归给作者。未读取源码归档。\",\n  \"test_assessment\": \"已逐函数检查脚本。reference_placements枚举实际槽的互斥排列，再于完整映射计算类型、逐槽内存、同节点及节点CPU总量；generate则使用增量剩余CPU和已用槽回溯，参考构造与候选过滤不同。audit_result既审核映射，也在COMPLETE时比较完整合法集合。must显式抛出异常，expect_rejected要求审计确实失败；总内存和总槽数错误算法在两个非法设定上必须偏离参考，再由同一audit_result拒绝，重复槽映射也被拒绝，原R1-TEST-01因此关闭。有限域计数36×(3+9+27)×2=2808，与实际输出一致。预算检查覆盖零预算、失败扩展计费、候选上限及回溯恢复，但没有验证一般拓扑或评分。准入审计从正式分配重建物理所有权与CPU责任，两个串行调用顺序、重试、冲突、代次和两类回滚均有检查；孤儿扣账及重复正式槽负对照确由同一账本审计拒绝，原R1-GANG-01的共同排序与所有权缺口已修复。该模型没有准备派发事件，不能发现当前成功分支提前返回的问题。故障参考先移除实际资源再检查组完整性，与依赖域并集实现对照；11个域的零至两个失效组合共67种，三个组布局共201例，与实际输出一致，代表域负对照在rackA故障时被拒绝，原R1-FAULT-01关闭。作者说明其阶段未运行Python，而后续actual_preflight确实执行了绑定本轮哈希的脚本；两者阶段不同，不将作者待执行命令登记为作者已执行PASS。实际成功退出只支持这些已检查模型，不消除正文控制流缺陷。\"\n}",
+  "elapsed_seconds": 141.078
+}

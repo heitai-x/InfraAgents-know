@@ -25,7 +25,7 @@ publication = "deferred"
 
 五角色实际模型身份必须与 profile 中的 `gpt-6-astra` 一致。此日期是官方知识截止日期，不是已披露的训练完成时间。源码版本日期使用固定提交时间，不能据此证明模型训练集成员关系。最初 v1 含 73 篇，65 篇机制正文保留、8 篇修订具体内容；当前扩充版的计数与状态以根目录 VERSION.json 和构建记录为准。
 
-原始实现的访问限制继续由 Task 的 `restricted_originals` 决定；分支或时间资格本身不替代这些权限。
+本构建版本按实际内容提供论文和文档阅读成员，实现逻辑在来源说明中以机制与伪代码交付。混合归档的文档成员仍可读；完整归档保留作审计。既有 Task 的 restricted_originals 是额外限制，时间资格不替代阅读范围。
 
 ## 验证
 
@@ -57,12 +57,6 @@ v2.1 当时的 RSI 反馈和章节修订接入使用包含提交 `6d205853b6135a
 
 如使用同一份限时 seed 配合 Luna 等其他实际模型，可以按 Task 选择 `full` 与 `seed_and_learned`；这不声明这些模型具有 Astra 的训练或知识截止日期。为运行建立独立可写知识仓库并将 runs 放在其中，运行期反馈和 learned 保留真实观察日期；已发布的限时 seed 标签保持固定。此次实际接入使用的初始知识内容仍为 `astra-2026-04-30-v2.1`，没有为运行修复改写章节或原始资料。
 
-## v2.2-r1 发布时的读取兼容性（历史）
-
-远端提交 `1239948` 保存了r1的发布前补验：当时探针使用章节ID、`ID@revision`及正文路径，需要运行时提交 `07d114a451e42d382381bee4cd215f1ebd8630a5`。旧推荐版本 `6d20585` 的发布验证不代表支持该读取形式。四视图、324次正文读取及117份历史的补验结论保留在 [原验证回执](evidence/knowledge-publication-check-20261024.json)。
-
-该记录不要求当前框架恢复已经移除的 `ID@revision` 接口。r2探针按下节的当前合同工作，旧兼容性说明及证据继续作为历史依据。
-
 ## 当前 v2.2-r2 的内容与接口检查
 
 当前探针对应框架已采用的准确 ID / 路径读取接口。角色的采用声明只提交 `entry_id` 和 `purpose`；探针调用所提供运行时的 `KnowledgeUse` 解析器与 `bind_handoff`，由框架取得冻结修订号，再调用内部 `validate_uses`。调用者提供 `revision` 或使用 `ID@revision` 会被拒绝。内部归档和版本检查继续保留准确身份。
@@ -77,7 +71,7 @@ python3 tools/check_knowledge_examples.py --report /tmp/knowledge-examples.json
 python3 tools/probe_knowledge_runtime.py --runtime /path/to/InfraAgents --repository . --report /tmp/knowledge-runtime.json
 ```
 
-原交付内容快照不带 Git 历史，默认结构检查使用已保存的前版清单与正文。只有在真实 Git 检出中具备相应历史对象时，才额外使用 `--baseline f640148464929f803a53b55e27ee4cbb83dc8657` 检查最初基线。
+内容快照不带 Git 历史，默认结构检查使用已保存的前版清单与正文。只有在真实 Git 检出中具备相应历史对象时，才额外使用 `--baseline f640148464929f803a53b55e27ee4cbb83dc8657` 检查最初基线。
 
 正文或时间 profile 改变后，用所选框架的现有审计函数重新生成根目录报告，再运行结构检查：
 
@@ -90,3 +84,13 @@ PYTHONPATH=/path/to/InfraAgents/src python3 -c "from pathlib import Path; from i
 探针在独立副本中验证四种知识视图，完整读取当前正文和历史，经过框架绑定检查采用声明，并核对未读、重复、撤回及受限原文的拒绝行为。模型名仅是选择条件 fixture，没有调用模型。查询命中只作为检索观察，不是引擎任务门禁。
 
 本轮报告及使用的实际运行时模块身份见 [修改与验证](evidence/knowledge-cleanup-20261027/review.md)。上述历史运行时曾验证的发布路径不自动成为当前验证结论；本轮不执行知识发布、真实 Agent 构建、模型请求或 GPU 性能实验。
+
+## v2.3 构建草稿的阅读与经验类型
+
+运行时改动位于本地工作树 `.worktrees/knowledge-exploration-20261027`；本轮验证以实际模块与输入清单绑定，没有部署或切换活动 Task。
+
+knowledge_index 支持 category、kind、offset、limit。初始目录返回一页章节及主题计数；kind 可选 mechanism、observation、workflow。read_knowledge 的 view=structure 返回准确二级标题与摘录，不登记为正文阅读；section 选择准确标题，offset 则相对于该节分页。省略 section 保留整章读取。采用回执保留实际字符范围及 complete_read，不把分节阅读伪装成整章阅读。
+
+Evolution 的观测与 workflow 使用与机制正文相同的复核、预览、发布、历史和冻结路径。观测结构保存环境、负载、方法与 metric/value/unit/uncertainty；真实日期和实验证据由原路径绑定。workflow 保存触发、前提、步骤、检查、停止或调整条件、成本及可选既有模板 ID，不自动执行。候选、局部支持与跨任务资格继续区分；seed 不混入后续实验观测。
+
+当前验证见[构建记录](evidence/knowledge-construction-20261027/review.md)。全文结构、字节身份、标量算法检查和框架 fixture 不证明 Agent 已构建出更快的真实引擎。

@@ -1,0 +1,77 @@
+{
+  "id": "K-HW-011",
+  "path": "hardware/gpu-kernel-pipelines.md",
+  "category": "hardware",
+  "title": "GPU 矩阵与归约流水：布局、资源和完成依赖",
+  "summary": "GPU tile、片上布局和异步流水共同受寄存器、共享存储及完成依赖约束；GEMM 与 attention 的最优组织随形状和架构改变。",
+  "revision": 3,
+  "status": "seed",
+  "tags": [
+    "GPU",
+    "Tensor Core",
+    "MFMA",
+    "TMA",
+    "WGMMA",
+    "tile",
+    "warp specialization",
+    "寄存器",
+    "LDS",
+    "spill"
+  ],
+  "scope": {
+    "model_families": [],
+    "platforms": [
+      "cuda",
+      "rocm"
+    ],
+    "runtimes": [],
+    "workloads": []
+  },
+  "source_ids": [
+    "S-FLASHATTENTION3",
+    "S-FLASH",
+    "S-CUDA-BEST",
+    "S-CUDA-ASYNC",
+    "S-ROCM",
+    "S-TORCH-NUMERIC",
+    "S-CUDA-CAPABILITY"
+  ],
+  "related": [
+    "K-HW-005",
+    "K-HW-006",
+    "K-ALG-004",
+    "K-FW-007",
+    "K-FW-003",
+    "K-HW-001",
+    "K-ALG-005",
+    "K-ALG-008",
+    "K-FW-006",
+    "K-FW-010",
+    "K-HW-004",
+    "K-MODEL-003",
+    "K-MODEL-004",
+    "K-MODEL-006",
+    "K-MODEL-007",
+    "K-MODEL-009",
+    "K-TOOLS-003",
+    "K-TOOLS-004"
+  ],
+  "evidence": [],
+  "updated_at": "2026-10-27",
+  "sha256": "c977ed242186679f34260f4b78ee7a86cb190de2f3ab61bd93f2f06c34e5eb1c",
+  "questions": [
+    "GEMM 的数据依赖与片上资源账如何建立，哪些项常被漏算？",
+    "为什么要先适配矩阵指令布局再安排线程，swizzle 的代价落在哪里？",
+    "生产者与消费者分工下，环形缓冲的代次与完成依赖必须满足什么？",
+    "attention 中归约与矩阵流水怎样连接，缩放方向错误如何用反例检查？",
+    "缺少 TMA 与线程块簇时，同一依赖由哪些替代机制承担，代价如何测？"
+  ],
+  "symptoms": [
+    "GPU 增加流水级数反而变慢",
+    "在另一代 GPU 上共享存储超限无法启动"
+  ],
+  "assumes": [
+    "具有矩阵指令的 GPU",
+    "tile 级的 kernel 组织"
+  ]
+}

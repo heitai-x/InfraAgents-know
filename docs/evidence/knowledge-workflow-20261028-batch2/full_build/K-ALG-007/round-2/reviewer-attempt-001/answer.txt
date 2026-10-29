@@ -1,0 +1,173 @@
+{
+  "entry_id": "K-ALG-007",
+  "body_sha256": "c5a854cb96507bd6efc8baaf217b78156b4b02f49ee26d388539050a1a692b50",
+  "reviewer": "sol-reviewer:K-ALG-007:round-2",
+  "decision": "revise",
+  "documents": {
+    "AGENTS.md": "b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a",
+    "docs/knowledge-method.md": "69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb",
+    "docs/knowledge-review.md": "f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21",
+    "knowledge/algorithms/chunked-prefill.md": "c5a854cb96507bd6efc8baaf217b78156b4b02f49ee26d388539050a1a692b50",
+    "knowledge/sources/S-SARATHI.md": "a4616b358fc59f97fd787e1eabbbca74d50c6f279bf3192d4c585f3ea80fb165",
+    "knowledge/sources/S-ORCA.md": "920ef987a4a019bb4f0e0386e30bf1c1e3bc720d199ae4de22e462db4f41520a",
+    "knowledge/sources/S-HF-CACHE.md": "1a4afcf0d800ba3f42836445874d620ae9f7ba8ab4c361caa505376cc471595c",
+    "knowledge/algorithms/attention-io.md": "c607e2ee0090e1161f1b1158d5fac07c52456d86807f110f4b2eb688281136f1",
+    "knowledge/workloads/slo-goodput.md": "5aa9b71cddb7d896ffa1fe6d78ac61cf0bb92d76279ae4d563f1110ed9dbedb4",
+    "knowledge/hardware/memory-and-roofline.md": "2bebeecbaa625667b8ad8c2fbc13449f0da31ac24b0abd6289127be1150c7d0c",
+    "knowledge/workloads/session-workloads.md": "0269e1987e1107d0cf0135cb32aa759c67d5266cfa09fb1402f97704c4ab4d78",
+    "knowledge/system-semantics/memory-allocators.md": "2e7258787b94ad142c7c236541e8718803ad30b273d08e6c398dff673a1df838",
+    "knowledge/tools/statistical-experiments.md": "908b3588a6fa20bb1f2aed9f5db51c4b462953d79f8944cdbcfea7141c74644f",
+    "knowledge/algorithms/disaggregated-serving.md": "07d8beba67dd10960cd504dafad8cdf0baaf92c03ef368a2a97236690c6bc7e8",
+    "knowledge/engine-index/vllm-scheduler.md": "9e576ff7711ed5e448a4bedfe7ab69949a79bc3f61417bf258f7a3b56caf1fe5",
+    "knowledge/frameworks/compile-dynamic-shapes.md": "6f9773875d24bbe32fd80e62cfba4e85f841ec1b65876b513c30d8d9f000b1ef",
+    "knowledge/system-semantics/position-mask-cache.md": "91641b10a52209747af8d9fa83f822bedb01c583cede42a58550ad87ffe14ad6",
+    "knowledge/system-semantics/known-tensions.md": "e7e30a27ff5b42d93b55bc6e36a008ce6f5c100410fbe357ee3870a4ad601f90",
+    "references/S-SARATHI/fulltext.txt": "388df7fbaf41f3838c2005a2cfa7e27c56140abd6fd85b1c91c5bd31796ef5a3",
+    "references/S-ORCA/fulltext.txt": "2119a53d77b4a933bab56d7e40b5304fa725561c412514459e56729ca6836794",
+    "references/S-HF-CACHE/fulltext.txt": "373837b8ac246d43867eb21de168cc59e5e6e78f5f3b9c27bee54740c4a635b4",
+    "tools/check_k_alg_007_full.py": "3b17a77b91f78059960ee98ea88307645ed9d8a104c42d47fe3185aacfa846e9"
+  },
+  "criteria": {
+    "definition": {
+      "assessment": "partial",
+      "reason": "动机、prefill 输入输出、提交边界和因果对数定义充分；但同一请求状态又用于持续 decode，固定 prompt 长度 P 与持续增长的 KV 边界 c 不相容，也没有定义 decode 消费的已采样 token。见 K-ALG-007-R2-STATE。",
+      "evidence": [
+        {
+          "path": "knowledge/algorithms/chunked-prefill.md",
+          "quote": "对请求 r 定义 P 为 prompt 的逻辑 token 数，c 为已经提交且可复用的连续 K/V 边界，L 表示最后位置 logits 是否已经得到，g 为请求代次。"
+        },
+        {
+          "path": "knowledge/algorithms/chunked-prefill.md",
+          "quote": "若 r.c < 0 或 r.c > r.P：标记 inconsistent_state"
+        }
+      ]
+    },
+    "legality": {
+      "assessment": "sufficient",
+      "reason": "明确把 causal 可见性、位置连续性、缓存身份和共享写隔离作为合法条件，把块长、桶、调度策略和阶段分离作为选择。因果对数恒等式成立；对双向、窗口和混合状态给出了适用限制。三条来源说明与所供固定原文的关键机制相符，独立预算与事务设计未冒充来源实现。",
+      "evidence": [
+        {
+          "path": "knowledge/algorithms/chunked-prefill.md",
+          "quote": "只要每块的 mask 包含自身和所有过去、排除所有未来，分块结果就与整段 prefill 的数学函数相同。"
+        },
+        {
+          "path": "knowledge/algorithms/chunked-prefill.md",
+          "quote": "前缀缓存只有在模型版本、位置规则、量化尺度、adapter 和内容身份都一致时才是同一前缀；共享页上的尾块写入还需要写时复制或等价隔离。"
+        }
+      ]
+    },
+    "algorithm": {
+      "assessment": "partial",
+      "reason": "prefill/recovery 的行归属、历史可见性和成功后提交已有实质展开。当前供应正文确实只有一个 provenance 标记并保留三条来源解释，旧问题在本快照中关闭。但混合调度存在 decode 状态缺失、无 prefill 候选时阻断 decode，以及非法状态继续进入分类的问题，不能据现有 CPU 检查认定完整算法正确。",
+      "evidence": [
+        {
+          "path": "knowledge/algorithms/chunked-prefill.md",
+          "quote": "若 candidates 为空且仍有 PREFILL 或 RECOVERY：\n    返回 blocked_by 中最接近可解除的一项；不得空转推进 c"
+        },
+        {
+          "path": "knowledge/algorithms/chunked-prefill.md",
+          "quote": "对 recovery 段：r.L ← true，r.c 保持不变"
+        },
+        {
+          "path": "knowledge/algorithms/chunked-prefill.md",
+          "quote": "<!-- infraagents:provenance -->"
+        }
+      ]
+    },
+    "cost": {
+      "assessment": "partial",
+      "reason": "正确区分逻辑对数、解释性 KV 重读、实际设备流量、物理容量和关键路径。独立复算确认 55.446656/69.446656 ms、最后块 9.598336 ms、最大 q=704/464 和独占尾页容量 72。但伪代码没有把已预留 decode 的时间及混合形状纳入明确的候选可行性公式，预算保证尚未落实。",
+      "evidence": [
+        {
+          "path": "knowledge/algorithms/chunked-prefill.md",
+          "quote": "实际 kernel 会因 tile、query 复用、L2、布局和并行度改变流量，所以它只是解释性模型，不能直接当作带宽测量结果。"
+        },
+        {
+          "path": "knowledge/algorithms/chunked-prefill.md",
+          "quote": "记录 reserve_time、reserve_pages 与最紧迫 decode 的剩余间隔"
+        },
+        {
+          "path": "knowledge/algorithms/chunked-prefill.md",
+          "quote": "用 h=r.c 计算 T_prep + T_linear(q) + T_attention(h,q)"
+        }
+      ]
+    },
+    "adaptation": {
+      "assessment": "sufficient",
+      "reason": "说明了低负载、严格 ITL、长历史读取、主机空档、图桶和模型结构变化下保留、调块或放弃切片的理由。主机空档反例能实际反转设备段时间的排序，没有宣称固定块长普遍最优。",
+      "evidence": [
+        {
+          "path": "knowledge/algorithms/chunked-prefill.md",
+          "quote": "设备段改善 1.2 ms，却被新增主机空档 2.6 ms 抵消。"
+        },
+        {
+          "path": "knowledge/algorithms/chunked-prefill.md",
+          "quote": "低负载且没有 decode 等待时，整段 prefill 往往减少固定成本和 K/V 重读；严格 ITL 且长 prompt 干扰严重时，小块或 P/D 分离更有空间。"
+        }
+      ]
+    },
+    "diagnosis": {
+      "assessment": "sufficient",
+      "reason": "对主机空档、页/COW 等待、decode 入选不足、低效桶和历史重读分别给出不同预测与干预，并说明反证后转向其他解释及不确定结果的处理。数值等价与真实性能检查被明确提出为待执行的验证设计；当前脚本实际覆盖范围较窄，详见 test_assessment。",
+      "evidence": [
+        {
+          "path": "knowledge/algorithms/chunked-prefill.md",
+          "quote": "参考 mask 应由逻辑位置独立构造，不能复用被测实现的同一 mask 代码。"
+        },
+        {
+          "path": "knowledge/algorithms/chunked-prefill.md",
+          "quote": "若差异落在重复运行的不确定区间内，保留未知，不按一次轨迹排序。"
+        }
+      ]
+    }
+  },
+  "findings": [
+    {
+      "id": "K-ALG-007-R2-STATE",
+      "criterion": "algorithm",
+      "evidence": "正文定义“P 为 prompt 的逻辑 token 数”，并检查“若 r.c < 0 或 r.c > r.P：标记 inconsistent_state”；同时建立“decode 行：位置 r.c，逐行可见 0 到 r.c”。成功提交仅列 prefill 与 recovery，没有 decode 的输入 token、KV 边界推进及 logits 消费/更新。",
+      "impact": "例如 P=c=8、L=true 时，执行位置 8 之前还需从位置 7 的 logits 采样并确认输入 token。算法没有产生或接收这个输入；执行后若 c 不更新会重复写位置 8，若正确更新为 9，下一轮又违反 c≤P。因而不能按给定状态合同持续服务混合批中的 decode。",
+      "blocking": true,
+      "required_revision": "区分固定 prompt 终点、已确认 token 边界和已提交 KV 边界，明确采样到 decode 输入的交接、decode 成功提交及失败保持的状态。也可将 decode 明确作为外部合同，但须完整给出其输入就绪条件、行位置和完成回调，不能继续用仅适合 prefill 的 c≤P 状态代表持续 decode。检查提交说明中的末行位置应与零起始的 P−1 一致。增加能够连续推进至少两轮的状态轨迹验证。"
+    },
+    {
+      "id": "K-ALG-007-R2-DECODE-FALLBACK",
+      "criterion": "algorithm",
+      "evidence": "伪代码先“为 DECODE_READY 行预留本轮 decode 的预算和页容量”，随后规定“若 candidates 为空且仍有 PREFILL 或 RECOVERY：返回 blocked_by”。在没有 PREFILL/RECOVERY 时，又无条件“按 policy 从 candidates 选择一个 prefill 或 recovery 段”。",
+      "impact": "已有可执行 decode 而长 prompt 没有可行块时，函数直接返回，导致本应受到保护的 decode 也失去服务。只有 decode 的轮次则无法从空 candidates 中选择。两条路径都会破坏本章保护 ITL 的核心机制。",
+      "blocking": true,
+      "required_revision": "允许零个 prefill/recovery 段与已选 decode 组成合法 view；仅当整个执行视图为空时返回 blocked_by。明确无请求时的退出，并在放弃选择时撤销不再使用的预留。验证 decode-only，以及 decode 可行但所有 prefill 候选因时间或页限制失败的路径。"
+    },
+    {
+      "id": "K-ALG-007-R2-MIXED-BUDGET",
+      "criterion": "cost",
+      "evidence": "伪代码记录“reserve_time、reserve_pages”，但候选估时仅为“用 h=r.c 计算 T_prep + T_linear(q) + T_attention(h,q)”，比较条件为“若 T_prep 加本次成本加余量超过 budget”；输入 budget 被定义为“本轮时间预算”。",
+      "impact": "没有说明 budget 是否已扣除 reserve_time，也没有用混合批总行数、各 decode 历史和 padding 重新估计执行时间。在可相加的校准模型中，总预算 10 ms、decode 预留 6 ms、prefill 候选 8 ms 会被单独比较错误放行；融合模型则更不能直接假设两个独立估时之和或仅用 prefill 估时。T_prep 的表达还存在重复计入歧义。",
+      "blocking": true,
+      "required_revision": "给出明确的候选视图成本变量和单位：可使用包含 decode、prefill、桶/padding 的混合成本模型，或在声明适用条件后从总预算扣除预留并采用保守增量上界。准备成本只计一次；页检查应明确基于扣除既有预留后的可用物理容量。验证加入 decode 后最大合法 q 改变及边界候选被拒绝的情况。"
+    },
+    {
+      "id": "K-ALG-007-R2-INVALID-FALLTHROUGH",
+      "criterion": "algorithm",
+      "evidence": "分类循环依次执行“若 r.P = 0 且模型合同没有外部 BOS 输入：标记 invalid_empty”“若 r.c < 0 或 r.c > r.P：标记 inconsistent_state”，随后仍执行 PREFILL/DECODE_READY/RECOVERY 分类，没有 continue、拒绝返回或候选排除条件。",
+      "impact": "P=c=0、L=false 在标记 invalid_empty 后仍会进入 RECOVERY，形成位置 P−1=−1 的查询；c 超界的请求同样可能进入执行类别。脚本 next_action 的提前 return 与正文的控制流不同，其空 prompt 通过不能证明该伪代码拒绝了非法输入。",
+      "blocking": true,
+      "required_revision": "让非法输入和身份失效成为明确的终止或跳过分支，保证其不参与预留、候选或执行视图。用与正文相同的分类控制流验证空输入、负 c 和 c 超出相应合法边界时不会产生设备行或改变提交状态。"
+    }
+  ],
+  "limitations": [
+    "没有目标 GPU 数值、同步、重叠或服务性能实测，也没有知识改善 Agent 构建效果的对照证据；这些边界不单独构成阻塞问题。",
+    "CPU 检查没有实现真实 KV、hidden/logits、共享尾页 COW、窗口状态、SSM 或量化缓存，不能外推这些组合的正确性。",
+    "本轮读取的是用户提供的绑定文本快照与执行记录；未重新读取磁盘文件、计算文件哈希或确认相对链接目标实际存在。当前正文的相对路径写法与所供来源路径相容。",
+    "当前工具没有本地文件读取或 Python/SSH 执行能力。未能载入本地 infraagents-knowledge-build/SKILL.md、未提供的 docs/knowledge-build-workflow.md、workflow.json 或 round-1 证据目录；使用用户给定 JSON 合同和已提供方法文档完成本次语义审查。旧 provenance 问题的关闭仅针对当前供应正文。"
+  ],
+  "checks": [
+    {
+      "script": "tools/check_k_alg_007_full.py",
+      "args": []
+    }
+  ],
+  "no_checks_reason": "",
+  "reading_scope": "完整阅读用户供应的全部材料；下列范围为所供 extracted text 的零起始半开字符范围，不代表另行打开磁盘文件或 PDF。全文：AGENTS.md [0,567)；docs/knowledge-method.md [0,2251)；docs/knowledge-review.md [0,3016)；knowledge/algorithms/chunked-prefill.md [0,10195)；knowledge/sources/S-SARATHI.md [0,1423)；S-ORCA.md [0,1394)；S-HF-CACHE.md [0,827)；knowledge/algorithms/attention-io.md [0,3795)；knowledge/workloads/slo-goodput.md [0,2616)；knowledge/hardware/memory-and-roofline.md [0,4009)；knowledge/workloads/session-workloads.md [0,3583)；knowledge/system-semantics/memory-allocators.md [0,4191)；knowledge/tools/statistical-experiments.md [0,4269)；knowledge/algorithms/disaggregated-serving.md [0,4052)；knowledge/engine-index/vllm-scheduler.md [0,2314)；knowledge/frameworks/compile-dynamic-shapes.md [0,4495)；knowledge/system-semantics/position-mask-cache.md [0,4078)；knowledge/system-semantics/known-tensions.md [0,5454)；references/S-SARATHI/fulltext.txt [0,76950)；references/S-ORCA/fulltext.txt [0,90276)；references/S-HF-CACHE/fulltext.txt [0,7977)。仅节选：knowledge/algorithms/iteration-batching.md [0,2538)、[8000,12000)；knowledge/system-semantics/design-synthesis.md [0,6538)，两者未列入 documents。检查脚本全文来自 candidate.test_script，从 from fractions import Fraction 至最后的 PASS 输出语句；已完整检查作者说明和 actual_preflight 的 stdout、stderr、返回码、脚本绑定哈希及执行参数。未阅读源码归档、reader.html、PDF 或未提供的 workflow 文档。",
+  "test_assessment": "提供的 actual_preflight 记录显示，绑定脚本在 remote_bwrap 中以 Python 3.12、只读输入、隔离网络运行，returncode=0、stderr 为空且未超时；这与作者“未亲自运行”的说明可以同时成立。本审阅没有重新运行该 Python 脚本。独立检查其算法：mask 测试用完整位置范围构造参考，与非均匀分块遍历比较，并用对数恒等式交叉约束，实际检测删除自身 key 后少 6 对；这确实覆盖分块可见性的一个机制，不是单纯打印 PASS。预算使用 Fraction，检测省略三角项导致 q 从 704 高估到 727；页测试检测忽略独占尾页空槽的 64 对 72；重读测试用逐块累计对照闭式，检测漏掉后缀重读项。审阅另行算术复核了预算临界值、八块总时间及末块时间，均与正文一致。恢复测试只检查动作标签，未重算最后 query 或 logits；提交测试只检查执行前页失败和 overrun，未模拟设备执行、发布、COW、取消或代次。主机空档测试验证设定加法产生 7.8 对 6.4 ms 的反转，不是服务性能实验。脚本没有运行正文调度器，也没有 decode-only、prefill 全部不可行时继续 decode、混合预算、持续 decode 提交或非法输入分类控制流的独立参考；其 next_action 提前返回还掩盖了正文非法状态的贯穿执行。因此已执行检查支持局部公式和简化不变量，不能关闭本轮调度算法 findings，也不能记为 GPU、数值等价或完整事务 PASS。"
+}

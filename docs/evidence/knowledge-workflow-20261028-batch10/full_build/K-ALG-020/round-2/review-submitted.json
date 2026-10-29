@@ -1,0 +1,171 @@
+{
+  "entry_id": "K-ALG-020",
+  "body_sha256": "2a3dffea88f24e7440a8167b8fa99f56b9aa21c5e0a36783f5b8f6570527f9fe",
+  "reviewer": "sol-reviewer:K-ALG-020:round-2",
+  "decision": "accept",
+  "documents": {
+    "AGENTS.md": "b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a",
+    "docs/knowledge-method.md": "69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb",
+    "docs/knowledge-review.md": "f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21",
+    "knowledge/algorithms/heterogeneous-execution.md": "2a3dffea88f24e7440a8167b8fa99f56b9aa21c5e0a36783f5b8f6570527f9fe",
+    "knowledge/sources/S-POWERINFER.md": "2ddb8fae1189c3f837c9f5daaceab96dad85f6ffd8be5bb0ec3ff6a146c51f83",
+    "knowledge/sources/S-FLEXGEN.md": "17e4559a473711a2ee3eba92de0837f1babf4b3107bb58b748aecdb6382d711b",
+    "knowledge/sources/S-CPU-TUNING.md": "46948047959d30284614764d498ea02e41e76a47bf55597fec93df61e14964fb",
+    "knowledge/sources/S-TORCH-NUMERIC.md": "cbe91153d9ff7bd2f596d1d6c4e15de1ad68571f3cbde23215891a8ec7f6fab4",
+    "knowledge/hardware/cpu-linear-kernels.md": "b4d5391890478b2874f6ea548b154a580a0810356f9cf9cb05248a9d2f728dcc",
+    "knowledge/hardware/shared-memory-paths.md": "9471f29d33a5821b00e11b6d08fb69fe31288087d558f05c5f9234350efe8b0d",
+    "knowledge/algorithms/kv-offload-prefetch.md": "a7088eba5c78cd9e96cf011d61946ad7dec4ecb6378ac16e7f2fc3820af38301",
+    "knowledge/algorithms/weight-expert-offload.md": "cb230fafeec2d39fa40228ad44dbb41d34c62673fbac2325b6e797f206bc0fde",
+    "knowledge/engine-index/vllm-model-runner.md": "87d1433d4f64d939ff8f137d1c1d4092cfdf2b3d7ebdd011a0f344cc66564714",
+    "knowledge/algorithms/tiered-residency.md": "eb3ebc6320d5a32481cf645605d159860dc6d1edb97f1e98afd89ddb24ee82af",
+    "knowledge/models/recommendation-inference.md": "a36b0addea05174460d8f51179643665f98c51c6aa4a4d9dec235535948dd06d",
+    "knowledge/models/graph-inference.md": "343135d67c7fd61ed1e7fb82185df7a8f30ebfc86cb5427dfd9e6313046fe6fe",
+    "references/S-POWERINFER/fulltext.txt": "534835a255386fe1b982fab98455901041c55bbdd9f79f2783fc37eab6ce2d40",
+    "references/S-FLEXGEN/fulltext.txt": "81e117f2abb41d168438b9100b42bdae278d13e42980b0e29590260bdbca3266",
+    "references/S-TORCH-NUMERIC/fulltext.txt": "bb6b2d8154a10f8f3b15e5ae4465cbc8d833067046964fc6b4d66dc036131b45",
+    "tools/check_k_alg_020_full.py": "cf7e5d8ba4ed41ba58aef529a92ae63c3217238a7bd0c0f34b8081f6282ee639"
+  },
+  "criteria": {
+    "definition": {
+      "assessment": "sufficient",
+      "reason": "明确比较搬权重与搬激活/结果，定义算子、计划、冻结身份、数值契约和结果可读状态；将一次层输出发布与整个请求的 token 提交区分，未假定尚未生成的 token 或 KV 已存在。",
+      "evidence": [
+        {
+          "path": "knowledge/algorithms/heterogeneous-execution.md",
+          "quote": "设一层或算子为 $Y=F_θ(X;S)$。X 是输入，θ 是权重，S 是本次计算读取的状态快照，例如 KV、mask、位置和归一化参数。"
+        },
+        {
+          "path": "knowledge/algorithms/heterogeneous-execution.md",
+          "quote": "DONE 表示结果已经在合并端可读且生产者不再写入，不只是 CPU 算完或复制已提交。"
+        }
+      ]
+    },
+    "legality": {
+      "assessment": "sufficient",
+      "reason": "输出分片要求完整且互斥、保持位置映射；归约分片解释 bias 和非线性的位置，给出 softmax 统计量合并及空行契约。实数等价、浮点误差和预测近似分别限定。PowerInfer 的模型及预测误差、FlexGen 的量化组合限制均与所供固定原文相符。",
+      "evidence": [
+        {
+          "path": "knowledge/algorithms/heterogeneous-execution.md",
+          "quote": "双方各自完成完整 K 归约，最后按原通道位置 scatter。分片可以非连续、长度不整除或一侧为空，但必须保留原位置映射。"
+        },
+        {
+          "path": "knowledge/algorithms/heterogeneous-execution.md",
+          "quote": "预测为零但实际非零则必须补算、验证，或明确进入允许近似的质量契约。"
+        },
+        {
+          "path": "knowledge/algorithms/heterogeneous-execution.md",
+          "quote": "空分片不参与最大值与指数计算，避免计算未定义的空最大值。"
+        }
+      ]
+    },
+    "algorithm": {
+      "assessment": "sufficient",
+      "reason": "算法已补齐成功接收、DONE 推进、空侧成功谓词、合并完成及最终提交事务。输入准备、计算、H2D、合并与消费者分别具有保留条件；取消先撤销提交资格，回收仍等待实际最后访问。串行状态域消除了资格检查与发布之间的无保护窗口。K-ALG-020-R1-ALGORITHM-001 关闭。",
+      "evidence": [
+        {
+          "path": "knowledge/algorithms/heterogeneous-execution.md",
+          "quote": "保存本代私有结果句柄，phase[u]=DONE"
+        },
+        {
+          "path": "knowledge/algorithms/heterogeneous-execution.md",
+          "quote": "成功终态(u) := phase[u]=DONE 或 phase[u]=DONE_EMPTY"
+        },
+        {
+          "path": "knowledge/algorithms/heterogeneous-execution.md",
+          "quote": "条件未满足时等待后续真实事件，不读取尚未就绪的结果"
+        },
+        {
+          "path": "knowledge/algorithms/heterogeneous-execution.md",
+          "quote": "只有相应物理范围再无读写责任时才回收；未知结束则隔离并报告"
+        }
+      ]
+    },
+    "cost": {
+      "assessment": "sufficient",
+      "reason": "六类成本及容量口径完整，条件化路径公式和 MiB/GiB 换算正确。现按同一物理资源合计流量后跨资源取最大，并区别单次关键路径、稳态周期和反馈限制。独立复算得到搬权重 32.75 ms、CPU 分工 9.6220703125 ms，以及共享资源 15.625 ms、独立资源 7.8125 ms 的构造周期。K-ALG-020-R1-COST-001 关闭。",
+      "evidence": [
+        {
+          "path": "knowledge/algorithms/heterogeneous-execution.md",
+          "quote": "$Q_r=Σ_e q_{e,r}$。"
+        },
+        {
+          "path": "knowledge/algorithms/heterogeneous-execution.md",
+          "quote": "$P≥max(max_r Q_r/B_r, max_d F_d/R_d, H_{owner}, P_{dep})$。"
+        },
+        {
+          "path": "knowledge/algorithms/heterogeneous-execution.md",
+          "quote": "路径内确实有先后关系的阶段时间可以相加，跨独立资源的服务需求不能普遍求和。"
+        },
+        {
+          "path": "knowledge/algorithms/heterogeneous-execution.md",
+          "quote": "驻留积分可写为 $A_C=∫C(t)dt$，单位为 byte·s，描述占用持续时间，不能直接加到毫秒延迟中。"
+        }
+      ]
+    },
+    "adaptation": {
+      "assessment": "sufficient",
+      "reason": "常驻容量、batch、历史、稀疏性、表示、拥塞和共享内存变化均对应具体重算项及保留关系；CPU 时间升至 80 ms 的算例实际反转选择。未将 FlexGen 的量化与 CPU delegation 收益直接叠乘。",
+      "evidence": [
+        {
+          "path": "knowledge/algorithms/heterogeneous-execution.md",
+          "quote": "更新放置并计迁移成本；CPU 成为慢端时减少委托或放弃预测稀疏路径"
+        },
+        {
+          "path": "knowledge/algorithms/heterogeneous-execution.md",
+          "quote": "若保持其他设定，只把 CPU 冷计算改为 80 ms，CPU 分工变为 81.6220703125 ms，搬权重路径的 32.75 ms 反而占优。"
+        }
+      ]
+    },
+    "diagnosis": {
+      "assessment": "sufficient",
+      "reason": "针对慢端、提前读取、取消竞争、身份错配和错误资源聚合提出可控干预及反证后的修正。检查具有不同于被测实现的数值参考、事件历史审计和服务区间构造，并实际检出相关错误变体。明确设备实验和 Agent 使用效果仍未验证。",
+      "evidence": [
+        {
+          "path": "knowledge/algorithms/heterogeneous-execution.md",
+          "quote": "延迟 CPU 完成和 H2D，要求合并读取始终为零；若仍读结果，修复门控，不能归因数值精度"
+        },
+        {
+          "path": "knowledge/algorithms/heterogeneous-execution.md",
+          "quote": "保持字节与带宽，分别映射到同一 DRAM 和独立资源，构造可服务时间线；若独立案例仍要求双倍周期，修正跨资源求和"
+        },
+        {
+          "path": "knowledge/algorithms/heterogeneous-execution.md",
+          "quote": "性能对照固定函数、输入、dtype、质量契约和计时边界，记录真实完成而不是仅记录提交返回。"
+        }
+      ]
+    }
+  },
+  "findings": [],
+  "limitations": [
+    "结论限定为一次层或算子的只读快照计算与输出发布；真实多层 KV 增量安装、采样及整个请求提交没有由本章模型验证，正文已明确范围。",
+    "协议模型以单一串行状态拥有者和输入完成证书为前提，未实现逐物理范围的真实 CPU/GPU/DMA 责任账、设备可见性、部分启动或故障域排空证明。",
+    "没有真实 GPU、DMA、PCIe、NUMA、kernel、统一内存迁移、各 dtype 数值误差、预测质量、服务 SLO 或 Agent 使用效果测量；解析下界不证明目标设备可达。",
+    "Python 通过依据为用户提供、绑定当前脚本哈希的 actual_preflight；本审阅调用未重新执行 Python。作者所述六条 V8 轨迹没有提供可独立重放的原始程序；当前 Python 实际输出为五条正常轨迹，两者不合并计数。",
+    "仅阅读所供原文提取文本，未读取 PDF 图像、reader.html、外链、上游源码或 S-CPU-TUNING 原始教程；相对链接的路径关系已审阅，磁盘实体存在性未核验。",
+    "本调用没有文件读取或命令执行工具，MCP 资源及模板列表均为空，未能读取 C:/Users/26815/.codex/skills/infraagents-knowledge-build/SKILL.md。审查依据为用户完整提供的方法、标准及材料，不声称已执行该技能工作流或写入审查文件。"
+  ],
+  "checks": [
+    {
+      "script": "tools/check_k_alg_020_full.py",
+      "args": [],
+      "script_sha256": "cf7e5d8ba4ed41ba58aef529a92ae63c3217238a7bd0c0f34b8081f6282ee639",
+      "status": "passed",
+      "evidence_origin": "用户提供的 actual_preflight，审阅者已检查完整脚本及 stdout、stderr、执行参数和绑定哈希；不是审阅者自行重跑",
+      "interpreter_options": [
+        "-I",
+        "-S",
+        "-B",
+        "-X",
+        "utf8"
+      ],
+      "backend": "remote_bwrap",
+      "returncode": 0,
+      "stderr": "",
+      "timed_out": false,
+      "result": "32 种有理数输出分配、Decimal attention 参考、五条正常提交轨迹通过；七个身份字段遗漏、两种提前合并顺序及取消后提交变体被检出；共享与独立资源构造分别得到 15.625 ms 和 7.8125 ms。"
+    }
+  ],
+  "no_checks_reason": "",
+  "reading_scope": "完整阅读用户所供材料，以下范围均为提取文本的零起点、半开字符区间。全文：AGENTS.md [0,567)；docs/knowledge-method.md [0,2251)；docs/knowledge-review.md [0,3016)；knowledge/algorithms/heterogeneous-execution.md [0,14485)；knowledge/sources/S-POWERINFER.md [0,739)；knowledge/sources/S-FLEXGEN.md [0,989)；knowledge/sources/S-CPU-TUNING.md [0,731)；knowledge/sources/S-TORCH-NUMERIC.md [0,532)；knowledge/hardware/cpu-linear-kernels.md [0,4016)；knowledge/hardware/shared-memory-paths.md [0,3129)；knowledge/algorithms/kv-offload-prefetch.md [0,3710)；knowledge/algorithms/weight-expert-offload.md [0,3216)；knowledge/engine-index/vllm-model-runner.md [0,2207)；knowledge/algorithms/tiered-residency.md [0,4244)；knowledge/models/recommendation-inference.md [0,3902)；knowledge/models/graph-inference.md [0,3892)；references/S-POWERINFER/fulltext.txt [0,77788)；references/S-FLEXGEN/fulltext.txt [0,85794)；references/S-TORCH-NUMERIC/fulltext.txt [0,10998)。另完整阅读候选 test_script 对应的 tools/check_k_alg_020_full.py，用户未为其提供字符区间；阅读 author_notes 及 actual_preflight 执行记录。仅摘录：knowledge/hardware/host-device-transfer.md [0,5666)；knowledge/algorithms/async-scheduling.md [4000,9666)；knowledge/system-semantics/cancellation-resource-completion.md [0,1666)、[12000,16000)；knowledge/hardware/rocm-execution.md [8000,10808)、[12000,14858)；knowledge/hardware/metal-unified-memory.md [0,1959)、[12000,15707)；knowledge/models/moe-routing.md [8000,9666)、[12000,16000)；knowledge/system-semantics/design-synthesis.md [4000,9666)。摘录文件未列入 documents。哈希使用用户要求的绑定字段，未声称重新读取磁盘并计算哈希。",
+  "test_assessment": "检查具有实质辨别力。矩阵参考 dense 按完整矩阵正向归约，被测 shard 反向归约并通过原通道映射 scatter；有理数避免浮点噪声，32 种分配覆盖非连续通道和双方空侧，另测零归约长度及非法覆盖。attention 被测路径先计算分片统计量再重标度，参考使用 70 位 Decimal 直接整行指数与归一化；空分片、全空行和大分数范围均有比较，错误等权平均确实偏离参考。协议 reference_prefix 从原始事件使用完整固定身份重建成功、失败及取消资格，不调用被测匹配器或推进方法；audit 在每次合并读取及提交处检查前置事实。两种非空完成顺序、CPU 空侧、GPU 空侧和全空输出共五条正常路径实际完成合并与提交；early_merge 变体在首个完成后提前读取，被相同审计检出，直接验证了上一轮缺失的完成门控。逐字段身份遗漏和合并后忽略取消也实际触发断言。协议测试输入的分片值来自参考输出，因此协议测试本身不验证执行器算术；算术由独立 algebra 检查承担。物理访问被抽象为分片 pending、merge_pending 和消费者责任，未模拟真实准备/DMA 中间事件、旧代对象独立责任账及多消费者集合，不外推硬件正确性。资源参考显式构造无同资源区间重叠的服务计划，周期由预设释放时间和实际完成间隔取得，而非直接复述 resource_bound；共享流量漏计和跨独立资源求和均与构造结果矛盾。审阅者另在 V8 中独立复算路径算术并构造五单位资源时间线，结果与上述数值一致；该复算不是 Python 重跑。当前两项具体阻塞问题均已修复，完整候选在声明边界内满足原六项标准，campaign-K-ALG-020-r1 可随本次复核关闭。"
+}

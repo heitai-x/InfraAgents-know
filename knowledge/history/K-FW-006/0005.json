@@ -1,0 +1,78 @@
+{
+  "id": "K-FW-006",
+  "path": "frameworks/attention-backends.md",
+  "category": "frameworks",
+  "title": "Attention 执行接口：可见性、几何、状态布局与执行模式的交集",
+  "summary": "Attention 的合法性来自可见性、几何和状态契约；分块、分区、布局与准备复用改变并行度、驻留和成本频率。",
+  "revision": 5,
+  "status": "seed",
+  "tags": [
+    "attention interface",
+    "可见性",
+    "causal 对齐",
+    "分区合并",
+    "LSE",
+    "准备与执行",
+    "摊销边界",
+    "metadata 单位",
+    "KV 布局",
+    "workspace",
+    "图执行",
+    "GQA 物化",
+    "SDPA",
+    "FlashAttention",
+    "FlashInfer"
+  ],
+  "scope": {
+    "model_families": [],
+    "platforms": [],
+    "runtimes": [],
+    "workloads": []
+  },
+  "source_ids": [
+    "S-FLASH",
+    "S-FLASHATTENTION3",
+    "S-PAGED",
+    "S-SDPA",
+    "S-FA-IMPL",
+    "S-FI",
+    "S-FLASHINFERPAPER",
+    "S-TORCH-CUDA",
+    "S-AITER"
+  ],
+  "related": [
+    "K-ALG-004",
+    "K-ALG-010",
+    "K-FW-005",
+    "K-MODEL-006",
+    "K-ALG-022",
+    "K-ALG-021",
+    "K-HW-011",
+    "K-ALG-003",
+    "K-TOOLS-006",
+    "K-FW-003",
+    "K-ALG-016",
+    "K-SYS-003",
+    "K-SYS-012",
+    "K-ALG-002",
+    "K-HW-006"
+  ],
+  "evidence": [],
+  "updated_at": "2026-10-27",
+  "sha256": "0875fae4a1e160848053fe93cfd0d9fd641549e9eb9b8f9ff59cd4c3a0c96728",
+  "questions": [
+    "一个 attention backend 接口至少要表达哪些语义，才能判断它是否是等价替换？",
+    "非等长 causal 的对齐约定不同会怎样改变可见集合，如何用绝对位置构造等价 mask？",
+    "分区 attention 合并必须满足哪些不变量，为什么分区重叠会重复计入概率质量？",
+    "一次 attention 调用从逻辑状态可用到输出可消费之间包含哪些真实工作，成本在哪些频率上发生？",
+    "怎样用同一逻辑状态比较不同 backend，才能区分数学接入错误与资源效率差异？"
+  ],
+  "symptoms": [
+    "换 backend 后短序列正确但长序列输出漂移",
+    "首次形状调用远慢于后续调用"
+  ],
+  "assumes": [
+    "分页或变长的 KV 表示",
+    "GQA 或 MHA 的 head 映射已知"
+  ]
+}

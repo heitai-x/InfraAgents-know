@@ -1,0 +1,57 @@
+{
+  "id": "K-ENGINE-003",
+  "path": "engine-index/vllm-model-runner.md",
+  "category": "engine-index",
+  "title": "执行视图决策：压紧、固定槽与结果归属",
+  "summary": "动态请求集合需要转成设备能执行的张量，但逻辑身份不应随物理行号变化。执行器的核心问题是保持请求、query 位置、缓存写入与输出行之间的可逆对应，并管理这些表示的生存期。",
+  "revision": 3,
+  "status": "seed",
+  "tags": [
+    "vLLM",
+    "GPUModelRunner",
+    "execute_model",
+    "sample_tokens",
+    "executor-contract",
+    "state-generation"
+  ],
+  "scope": {
+    "model_families": [],
+    "platforms": [],
+    "runtimes": [
+      "vllm"
+    ],
+    "workloads": []
+  },
+  "source_ids": [
+    "S-VLLM-RUNNER",
+    "S-VLLM-CODE",
+    "S-TORCH-CUDA"
+  ],
+  "related": [
+    "K-SYS-002",
+    "K-FW-005",
+    "K-ALG-011",
+    "K-ENGINE-001",
+    "K-FW-011",
+    "K-SYS-012",
+    "K-ALG-020",
+    "K-ALG-024"
+  ],
+  "evidence": [],
+  "updated_at": "2026-10-27",
+  "sha256": "87d1433d4f64d939ff8f137d1c1d4092cfdf2b3d7ebdd011a0f344cc66564714",
+  "questions": [
+    "为什么会出现执行视图决策的问题，输入与状态如何定义？",
+    "哪些依赖与资源条件决定合法性，哪些表示或策略可以更换？",
+    "不同选择怎样改变数据流、状态更新、准备与驻留成本？",
+    "怎样用反例、完成证据和区分实验判断收益与失效？"
+  ],
+  "symptoms": [
+    "只有混合批出错而单请求执行正确",
+    "图重放地址稳定但上一轮内容尚未消费就被覆盖"
+  ],
+  "assumes": [
+    "vLLM V1 固定提交的 ModelRunner 源码",
+    "调度输出与执行结果通过持久批状态交接"
+  ]
+}

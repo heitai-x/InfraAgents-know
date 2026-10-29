@@ -1,0 +1,67 @@
+{
+  "id": "K-HW-010",
+  "path": "hardware/cpu-linear-kernels.md",
+  "category": "hardware",
+  "title": "CPU GEMM/GEMV：寄存器、缓存与线程划分",
+  "summary": "CPU 线性层需把 shape 的重用机会落实到寄存器、cache/TLB、打包和线程分区；同一配置不适用于全部 GEMV/GEMM。",
+  "revision": 3,
+  "status": "seed",
+  "tags": [
+    "CPU",
+    "GEMM",
+    "GEMV",
+    "SIMD",
+    "cache",
+    "TLB",
+    "预打包",
+    "NUMA",
+    "线程"
+  ],
+  "scope": {
+    "model_families": [],
+    "platforms": [
+      "cpu"
+    ],
+    "runtimes": [],
+    "workloads": []
+  },
+  "source_ids": [
+    "S-GOTO",
+    "S-CPU-TUNING",
+    "S-TORCH-NUMERIC",
+    "S-PERF"
+  ],
+  "related": [
+    "K-HW-009",
+    "K-HW-001",
+    "K-ALG-016",
+    "K-FW-012",
+    "K-SYS-015",
+    "K-ALG-005",
+    "K-FW-007",
+    "K-HW-004",
+    "K-MODEL-003",
+    "K-SYS-010",
+    "K-TOOLS-003",
+    "K-TOOLS-004",
+    "K-ALG-020"
+  ],
+  "evidence": [],
+  "updated_at": "2026-10-27",
+  "sha256": "b4d5391890478b2874f6ea548b154a580a0810356f9cf9cb05248a9d2f728dcc",
+  "questions": [
+    "由 shape 决定主要资源时，GEMV 与 GEMM 的瓶颈分别落在哪里？",
+    "分块如何把重用落到寄存器、cache 与 TLB 各层，打包的摊销条件是什么？",
+    "向量通道、尾部与累加链如何影响正确性与吞吐？",
+    "线程沿哪个轴切分取决于什么，切错轴的代价怎样显现？",
+    "小 M 与较大 M 的候选配置为何不同，如何用信号区分瓶颈并调整？"
+  ],
+  "symptoms": [
+    "CPU 小 batch 快而 prefill 退化",
+    "预打包后首请求变慢"
+  ],
+  "assumes": [
+    "CPU 上执行的线性层",
+    "SIMD 指令集已知"
+  ]
+}

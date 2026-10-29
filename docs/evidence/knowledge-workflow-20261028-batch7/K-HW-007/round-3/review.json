@@ -1,0 +1,158 @@
+{
+  "entry_id": "K-HW-007",
+  "body_sha256": "2150baabf2d5caf5240b610924420e1a92de8d802f90e7af41681c5b30a4a348",
+  "reviewer": "sol-reviewer:K-HW-007:round-3",
+  "decision": "accept",
+  "documents": {
+    "AGENTS.md": "b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a",
+    "docs/knowledge-method.md": "69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb",
+    "docs/knowledge-review.md": "f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21",
+    "knowledge/hardware/metal-unified-memory.md": "2150baabf2d5caf5240b610924420e1a92de8d802f90e7af41681c5b30a4a348",
+    "knowledge/sources/S-MLX-MEM.md": "1d65e19c9f1394965bdf43eb8e6049a56dcdbe06af5602af386d4608845192d0",
+    "knowledge/sources/S-MLX.md": "7ee538d3fc5d3e2167c4f395180e9f63c984f75be9aeb3f419c902b2255cd9c9",
+    "knowledge/frameworks/mlx-serving.md": "f16f8287e7fd632c26f479dc90c88d0c4468852e86eac1a654ac0914a0958d4e",
+    "knowledge/hardware/memory-and-roofline.md": "7d0e6ef2eda6c43f6023bb4322438d512179e88ec2df3307621b8882f28da64b",
+    "knowledge/workloads/metric-events.md": "c21db7895f35f10ebe16fe4fc795de05ea48de02cd90339712f9a4a49252d1bb",
+    "knowledge/hardware/shared-memory-paths.md": "9471f29d33a5821b00e11b6d08fb69fe31288087d558f05c5f9234350efe8b0d",
+    "knowledge/algorithms/heterogeneous-execution.md": "8fd777e06b150eaba4e3288ccb188adbb975e37c28c77a72a9b6878a70e027f4",
+    "knowledge/system-semantics/memory-allocators.md": "2e7258787b94ad142c7c236541e8718803ad30b273d08e6c398dff673a1df838",
+    "references/S-MLX-MEM/fulltext.txt": "472f16846acae9c84a7daca168b900903579e71b5c05aa2376229f79a0d70f64",
+    "references/S-MLX/fulltext.txt": "070faaf48ca988d2b78a568a649a2e7e0a05ed5577740aa14e1b0a730e52e438",
+    "tools/check_k_hw_007_full.py": "b208dd21c0027592bbbf7dc3a5ef842a9ad263ee4a2b0c1c0cfe824560d573a8"
+  },
+  "criteria": {
+    "definition": {
+      "assessment": "sufficient",
+      "reason": "正文解释统一物理池减少副本却保留访存、同步及容量成本，定义物理分配身份、生命期、请求输入与已计算边界、缓存身份及RNG。明确区分已知token与其全层KV，并给出峰值和驻留积分的单位。",
+      "evidence": [
+        {
+          "path": "knowledge/hardware/metal-unified-memory.md",
+          "quote": "x 是已确认 token，n 是已知长度，k 是全部必要层 KV 都已完成的连续边界，0≤k≤n。"
+        },
+        {
+          "path": "knowledge/hardware/metal-unified-memory.md",
+          "quote": "token 追加到 x 不等于它的 KV 已完成。"
+        },
+        {
+          "path": "knowledge/hardware/metal-unified-memory.md",
+          "quote": "A_C 的单位为 byte·s，不能直接加到毫秒延迟中。"
+        }
+      ]
+    },
+    "legality": {
+      "assessment": "sufficient",
+      "reason": "明确区分固定来源保证和服务候选设计；覆盖冲突依赖、框架外访问、设备算子支持、非法输入、容量准入及可见性。共享物理池和分段KV候选均未被扩大解释为任意设备能力或现有后端保证。",
+      "evidence": [
+        {
+          "path": "knowledge/hardware/metal-unified-memory.md",
+          "quote": "同一物理范围发生 RAW、WAR 或 WAW 冲突时必须建立依赖。"
+        },
+        {
+          "path": "knowledge/hardware/metal-unified-memory.md",
+          "quote": "目标设备必须支持实际算子、dtype 和布局。"
+        },
+        {
+          "path": "knowledge/hardware/metal-unified-memory.md",
+          "quote": "这不是某个 MLX attention 已支持分段 KV 的事实声明。"
+        }
+      ]
+    },
+    "algorithm": {
+      "assessment": "sufficient",
+      "reason": "完整阅读本章及其委托的K-FW-008后，可以恢复逐位置、逐层输入与私有KV准备、缓存复用、末行重算、求值根、采样、事务提交及失败排空。R2-A01已修复：主机在完整logits分支内执行可见性与采样；设备仅追加已建立节点的输出根，无采样值在求值前初始化。追加后k保持旧n；取消禁止业务安装，物理回收仍等待真实最后使用结束。",
+      "evidence": [
+        {
+          "path": "knowledge/hardware/metal-unified-memory.md",
+          "quote": "attention 消费该层已提交 [0:b) 和本执行 [b:t+1) 的 KV"
+        },
+        {
+          "path": "knowledge/hardware/metal-unified-memory.md",
+          "quote": "若 has_full_logits：\n    为实际存在的 prepared.logits 建立 HOST_VISIBLE\n    token,rho_next=纯采样(prepared.logits,s.rho)"
+        },
+        {
+          "path": "knowledge/hardware/metal-unified-memory.md",
+          "quote": "否则：\n    不建立采样节点和采样输出根\n    在求值前令 token=空；rho_next=s.rho"
+        },
+        {
+          "path": "knowledge/hardware/metal-unified-memory.md",
+          "quote": "尚有访问未结束时保留全部相关对象，不把超时当作结束"
+        }
+      ]
+    },
+    "cost": {
+      "assessment": "sufficient",
+      "reason": "同一候选下区分有效载荷、物理并集、逻辑读取、设备事务、共享带宽及阶段时间。复算128 KiB/token、四请求2 GiB、三请求14.75 GiB峰值与15.75 GiB准入、[2,4)累计7个读取位置及72.5 ms资源项均一致。重算、前缀物化、权重遍历、准备、同步、交付和驻留成本均有条件与边界；未将设定资源项冒充端到端实测。",
+      "evidence": [
+        {
+          "path": "knowledge/hardware/metal-unified-memory.md",
+          "quote": "D_admit=M_peak+C_reserve，准入条件 D_admit≤C_budget。"
+        },
+        {
+          "path": "knowledge/hardware/metal-unified-memory.md",
+          "quote": "A_r=Σ_{t=b_r}^{e_r−1}(t+1)=(e_r−b_r)(b_r+e_r+1)/2。"
+        },
+        {
+          "path": "knowledge/hardware/metal-unified-memory.md",
+          "quote": "逐 token 执行 q 行可能遍历 q 次；按层将整个片段作为矩阵执行，可能在一次层调用内复用权重。"
+        },
+        {
+          "path": "knowledge/hardware/metal-unified-memory.md",
+          "quote": "无 logits 的片段没有 logits 主机可见性和采样阶段，但仍支付全层 KV 求值、拥有者处理和提交成本。"
+        }
+      ]
+    },
+    "adaptation": {
+      "assessment": "sufficient",
+      "reason": "对上下文、batch、CPU竞争、片段边界、缓存结果、连续布局、dtype、图规模及内存压力变化，分别说明保留的不变量、需要重算的成本与收缩或放弃条件。修复后的无logits行为也进入条件变化表，未只停留在单条成功轨迹。",
+      "evidence": [
+        {
+          "path": "knowledge/hardware/metal-unified-memory.md",
+          "quote": "两种采样路径均跳过采样；出现 logits 主机访问或采样输出根时修复控制流"
+        },
+        {
+          "path": "knowledge/hardware/metal-unified-memory.md",
+          "quote": "增加复制流量和峰值；复制成本超过收益时改布局或缩小并发"
+        },
+        {
+          "path": "knowledge/hardware/metal-unified-memory.md",
+          "quote": "权重复用可能改善，KV、工作区、等待增加；吞吐提升而 ITL 变坏时限制 batch"
+        }
+      ]
+    },
+    "diagnosis": {
+      "assessment": "sufficient",
+      "reason": "正文为部分prefill故障、序列分歧、取消、共享资源、容量异常及隐式求值提供竞争解释、固定输入干预和反证后的调整。检查脚本直接建模本轮故障所在的可见性操作与求值根构造，且负对照实际触发断言；CPU事件与设备行为的证据边界声明清楚。",
+      "evidence": [
+        {
+          "path": "knowledge/hardware/metal-unified-memory.md",
+          "quote": "检查必须执行可见性操作和根集合构造，并让空访问及未知根立即失败。"
+        },
+        {
+          "path": "knowledge/hardware/metal-unified-memory.md",
+          "quote": "固定输入和 rho，比较完整前缀参考与多片推进；逐步检查 n/k、每层 KV 和采样前缀；先定位首次分歧再修正"
+        },
+        {
+          "path": "knowledge/hardware/metal-unified-memory.md",
+          "quote": "它们验证局部模型能够拒绝具体错误，不能证明真实后端遵守协议。"
+        }
+      ]
+    }
+  },
+  "findings": [],
+  "limitations": [
+    "本次依据用户供应的完整提取文本、完整脚本和绑定执行记录审查；documents中的哈希按指定身份复制，未独立读取磁盘重新计算，也未检查reader.html或实际链接目标。",
+    "当前发现的工具不提供文件读取或进程执行入口，无法读取本地infraagents-knowledge-build/SKILL.md或自行重跑Python；没有声称完成该技能的本地流程、产物写入或登记。",
+    "整数因果归约与玩具采样验证结构和状态关系，不验证真实Transformer浮点数值、softmax或采样分布；模型图和HOST_VISIBLE事件不证明MLX/Metal的实际依赖与可见性。",
+    "Owner以单个聚合eval使用者表示物理责任；真实多消费者、跨stream、外部原生访问及提交后设备读者责任转移未得到运行验证。",
+    "无复制分段KV的后端可实现性、真实转换峰值、编译驻留、持续带宽、系统压缩或换出、服务延迟、网络重送去重及Agent使用效果均未测量。以上边界已声明，不作为本章当前阻塞缺口。"
+  ],
+  "checks": [
+    {
+      "script": "tools/check_k_hw_007_full.py",
+      "args": []
+    }
+  ],
+  "no_checks_reason": "",
+  "reading_scope": "完整阅读所供材料，范围均为提取文本的零基半开字符区间：AGENTS.md [0,567)；docs/knowledge-method.md [0,2251)；docs/knowledge-review.md [0,3016)；knowledge/hardware/metal-unified-memory.md [0,15707)；knowledge/sources/S-MLX-MEM.md [0,495)；knowledge/sources/S-MLX.md [0,470)；knowledge/frameworks/mlx-serving.md [0,13635)；knowledge/hardware/memory-and-roofline.md [0,13210)；knowledge/workloads/metric-events.md [0,2891)；knowledge/hardware/shared-memory-paths.md [0,3129)；knowledge/algorithms/heterogeneous-execution.md [0,3935)；knowledge/system-semantics/memory-allocators.md [0,4191)；references/S-MLX-MEM/fulltext.txt [0,2656)；references/S-MLX/fulltext.txt [0,4768)。另完整阅读candidate.test_script自shebang至main调用的全部供应内容，以及author_notes、待处理问题和actual_preflight执行记录。两份fulltext是所供完整提取文本，不代表读取reader.html、源码归档或整个上游仓库；未递归核对相关章节的其他来源原文。",
+  "test_assessment": "独立检查脚本算法，而非仅采信PASS。dense_reference按层计算完整前缀，prepare按位置逐层使用只读base与私有delta，二者循环组织不同；assert_prepared比较全层KV、完整末行结果和旧前缀对象身份。采样判据依据完成前缀边界，从完整前缀参考独立计算期望token与RNG；主机路径实际调用模型可见性操作，设备路径实际建立依赖并遍历根。对n=4、k=2、q=1，两条路径都只含位置2的两层KV根，主机事件为EVAL、NO_SAMPLE，设备事件为NO_SAMPLE、EVAL；设备还在EVAL快照处检查空token和旧RNG。host_before_guard真实触发空logits访问断言，device_unconditional_roots真实触发未知根断言，直接覆盖R2-A01机制，旧问题关闭。完整处理缺结果也被拒绝。多步轨迹将两种采样编排接入提交并核对相同输出；取消、失败重入、缺根、迟到及重复最后使用事件检查业务不变量。成本检查用按时刻物理并集对照事件扫描，用逐查询枚举对照累计读取公式；复制前缀、错误k/RNG、提前发布、取消后提交、别名重复计数及余量错误等负对照均进入断言。部分简单算术负对照属于局部恒等式检查，不能代替后端实现验证，但整套检查并非仅复述实现。所供actual_preflight绑定本轮脚本哈希b208dd21c0027592bbbf7dc3a5ef842a9ad263ee4a2b0c1c0cfe824560d573a8，remote_bwrap以隔离Python运行，returncode=0、stderr为空、未超时，输出108个准备案例、230条采样编排、63个读取区间及19个被检出的负对照；这些是供应记录中的真实执行结果，不是本审阅者新执行的结果。作者关于其环境未运行Python的说明与协调者随后提供本轮运行记录并不冲突。检查仍不覆盖真实设备数值、并发可见性、多物理消费者、性能或Agent使用效果；正文未将这些未执行项目记为PASS。来源事实与所供固定文档一致，M1 Max的2.8/1.4 ms保留为来源报告，服务协议与成本式明确属于独立推导。"
+}

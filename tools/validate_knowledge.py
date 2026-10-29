@@ -47,6 +47,10 @@ def validate(root: Path, baseline: str | None = None) -> dict:
     by_id = {entry["id"]: entry for entry in entries}
     by_path = {local("knowledge/" + e["path"]): e["id"] for e in entries}
     source_ids = {source["id"] for source in sources}
+    reading_file=root/'knowledge/source-reading.json'
+    reading=read_json(reading_file).get('sources',{}) if reading_file.is_file() else None
+    if reading is not None and set(reading)!=source_ids:
+        issue('reading_source_set')
     for kind, values in (("entry", entries), ("source", sources)):
         for identifier, count in Counter(x["id"] for x in values).items():
             if count != 1:
@@ -74,6 +78,10 @@ def validate(root: Path, baseline: str | None = None) -> dict:
                           "exists": exists})
             if not exists:
                 issue("missing_local_link", file=str(path.relative_to(root)), target=destination)
+            if reading is not None and target is not None and target.is_relative_to(root/'references'):
+                relative=target.relative_to(root).as_posix();parts=Path(relative).parts
+                if len(parts)>2 and parts[1] in reading and relative not in reading[parts[1]]['paths']:
+                    issue('link_to_audit_only_member',file=str(path.relative_to(root)),target=relative)
             if target in by_path:
                 linked.add(by_path[target])
         return linked
@@ -88,13 +96,18 @@ def validate(root: Path, baseline: str | None = None) -> dict:
             issue("body_hash", id=identifier)
         if not text.startswith("# " + identifier + "："):
             issue("heading_id", id=identifier)
-        if "```" in text or "~~~" in text or re.search(r"https?://", text):
+        prose = re.sub(r'(?m)^```pseudocode[ \t]*\r?\n([\s\S]*?)^```[ \t]*(?:\r?\n|$)', r'\1', text)
+        if "```" in prose or "~~~" in prose or re.search(r"https?://", text):
             issue("noncode_local_prose", id=identifier)
         headings = re.findall(r"^## (.+)$", text, re.MULTILINE)
         if len(headings) != len(set(headings)):
             issue("duplicate_revision_heading", id=identifier)
         if not entry.get("source_ids") or set(entry["source_ids"]) - source_ids:
             issue("invalid_sources", id=identifier)
+        for field in ('questions','assumes','symptoms'):
+            value=entry.get(field,[])
+            if not isinstance(value,list) or not all(isinstance(x,str) and x.strip() for x in value):
+                issue('invalid_navigation_metadata',id=identifier,field=field)
         if set(entry.get("related", [])) - by_id.keys():
             issue("invalid_related", id=identifier)
         inspect_links(path, text)
@@ -123,6 +136,15 @@ def validate(root: Path, baseline: str | None = None) -> dict:
         inspect_links(note, note.read_text(encoding="utf-8-sig"))
         manifest_path = local(source["archive_manifest"])
         manifest = read_json(manifest_path)
+        if reading is not None:
+            registered={source['archive_manifest']} | {(manifest_path.parent/x['path']).relative_to(root).as_posix() for x in manifest['files']}
+            selected=reading.get(sid,{})
+            if set(selected.get('paths',[]))-registered or selected.get('primary') is not None and selected['primary'] not in selected.get('paths',[]):
+                issue('invalid_reading_members',id=sid)
+            implementation=[x['path'] for x in manifest['files'] if x['path'].startswith('upstream/') and Path(x['path']).suffix in {'.py','.cu','.cuh','.cpp','.cc','.c','.h','.hpp','.hip','.sh'}]
+            blocked=implementation+(['reader.html','fulltext.txt','original.tar.gz'] if implementation else [])
+            if any((manifest_path.parent/name).relative_to(root).as_posix() in selected.get('paths',[]) for name in blocked):
+                issue('implementation_exposed_as_reading',id=sid)
         for member in manifest["files"]:
             path = local(member["path"], manifest_path.parent)
             if not path.is_file():
@@ -300,9 +322,15 @@ def validate(root: Path, baseline: str | None = None) -> dict:
     if sha(previous_sources_path.read_bytes()) != version["previous_sources_sha256"]:
         issue("previous_source_registry_hash")
     previous_sources = {source["id"]: source for source in read_json(previous_sources_path)["sources"]}
-    if set(previous_sources) != source_ids:
-        issue("source_set_changed")
+    added_sources=source_ids-set(previous_sources)
+    removed_sources=set(previous_sources)-source_ids
+    declared=version.get('source_changes',{})
+    if (removed_sources or added_sources!=set(declared.get('added',[]))
+            or declared.get('removed',[])!=[]):
+        issue("source_set_changed",added=sorted(added_sources),removed=sorted(removed_sources))
     for source in sources:
+        if source['id'] in added_sources:
+            continue  # New source is fully checked above and explicitly declared.
         prior = previous_sources.get(source["id"], {})
         if {k: v for k, v in source.items() if k != "local_sha256"} != {
                 k: v for k, v in prior.items() if k != "local_sha256"}:

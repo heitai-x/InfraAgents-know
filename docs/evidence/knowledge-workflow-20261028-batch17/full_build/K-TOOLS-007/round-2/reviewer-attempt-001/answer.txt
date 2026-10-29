@@ -1,0 +1,143 @@
+{
+  "entry_id": "K-TOOLS-007",
+  "body_sha256": "14017e56432309fb64c2d2938c66db01a81c9ee2a18791344f316d6e342f68dd",
+  "reviewer": "sol-reviewer:K-TOOLS-007:round-2",
+  "decision": "accept",
+  "documents": {
+    "AGENTS.md": "b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a",
+    "docs/knowledge-method.md": "69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb",
+    "docs/knowledge-review.md": "f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21",
+    "knowledge/tools/statistical-experiments.md": "14017e56432309fb64c2d2938c66db01a81c9ee2a18791344f316d6e342f68dd",
+    "knowledge/sources/S-STATS.md": "70aaa597c5ab44b118296fe0527f0b510b7c8e4fb2e62170ce6547c0f7457f8e",
+    "knowledge/sources/S-MLPERF-SCENARIOS.md": "e210de2929034d4a6e25a31ee72b81a184412a7e637c979210f91ae02a261b04",
+    "knowledge/sources/S-GENAI-PERF.md": "1db17462a3ae4cd41dcb58a78f3f9fa9e71ff3a51614e56855be07bcb95618e0",
+    "knowledge/sources/S-TORCH-REPRO.md": "05f2b5b9819f01363fadadf41987482edfebb130bc134c36c44a00138fd5eb28",
+    "references/S-MLPERF-SCENARIOS/upstream/loadgen/README.md": "074479dbeb369205ccc8800450c647893b4901c247e0e4ee7f321f05254e9305",
+    "references/S-GENAI-PERF/fulltext.txt": "357d6fcaafc41f2954ea87da567cd2b41ec8a146f8e4f19cb976acf39f539ddc",
+    "references/S-TORCH-REPRO/fulltext.txt": "4f6b1deb38f7f174a2e340674680aaa0484e02a1d18cccd1bb94618df512cc2a",
+    "tools/check_k_tools_007_full.py": "c4c6ce0d2b8dd9662f009f9e3d173ede67c822a8b2faf565962fc5a35ab684a4"
+  },
+  "criteria": {
+    "definition": {
+      "assessment": "sufficient",
+      "reason": "解释重复层级的动机，定义比较合同、观测轴、差值和均值比的方向与单位，并区分业务结果、质量、分析和验证状态。输入输出与未决结果均有明确含义。",
+      "evidence": [
+        {
+          "path": "knowledge/tools/statistical-experiments.md",
+          "quote": "输入是 C、候选集合、预算、层级结构和决策阈值；输出是逐请求事件、效应量及其区间、尾部证据、失败账、停止决策及未验证边界。"
+        },
+        {
+          "path": "knowledge/tools/statistical-experiments.md",
+          "quote": "分析成功产生 ANALYZED；区间不能合法构造时为 UNRESOLVED，仍保留已有点估计与失败原因。"
+        }
+      ]
+    },
+    "legality": {
+      "assessment": "sufficient",
+      "reason": "比较人口、事件边界、独立单位、配对、停止及区间前提均已说明。精确配对 t 区间与近似重采样分开；分母下限被准确标为保守输出策略。来源中的独立系统假设没有冒充配对扩展的证明。",
+      "evidence": [
+        {
+          "path": "knowledge/tools/statistical-experiments.md",
+          "quote": "统计条件必须显式：独立重复、相应层内的可交换性与平稳性、有限方差、解析方法所需的正态或渐近依据、有效配对、无未建模 carryover，以及合法停止规则。"
+        },
+        {
+          "path": "knowledge/tools/statistical-experiments.md",
+          "quote": "分母规则是本章选择的保守有限区间输出策略，不是普遍的比值区间定理。"
+        }
+      ]
+    },
+    "algorithm": {
+      "assessment": "sufficient",
+      "reason": "总流程贯通计划、执行、资格、归约、推断和保留验证。均值比现已逐副本计算两个均值再相除，明确共同索引、非配对子树、冻结权重及失效副本的处理。配对差值公式不再被用于比值，F01 已关闭。数值分母检查实际被调用，且当前脚本已有匹配哈希的真实执行记录，F02 已关闭。",
+      "evidence": [
+        {
+          "path": "knowledge/tools/statistical-experiments.md",
+          "quote": "均值比：计算两个均值后相除，使用层级 bootstrap 传播双方不确定性"
+        },
+        {
+          "path": "knowledge/tools/statistical-experiments.md",
+          "quote": "每次重采样先抽 R 个区组索引 r₁,…,r_R，同一索引同时选择 A 与 B。随后每个被抽中的区组副本独立产生自己的内层抽样。"
+        },
+        {
+          "path": "knowledge/tools/statistical-experiments.md",
+          "quote": "若存在 invalid：返回 point、诊断及区间 UNRESOLVED"
+        }
+      ]
+    },
+    "cost": {
+      "assessment": "sufficient",
+      "reason": "六类成本与同一实验范围相连，区分副本暂存和全部保存、共享成本与关键路径。核对了 247 的逐项成本、运行层方差、两层预算代入及求导结果；n* 的量纲、正方差条件和整数预算边界一致。",
+      "evidence": [
+        {
+          "path": "knowledge/tools/statistical-experiments.md",
+          "quote": "层级 bootstrap 每次遍历 N 个观测时为 O(MN)，最终排序 M 个副本另需 O(M log M)。"
+        },
+        {
+          "path": "knowledge/tools/statistical-experiments.md",
+          "quote": "各项须使用可相加的成本单位；墙钟时间有重叠时应沿依赖和竞争资源计算关键路径。"
+        },
+        {
+          "path": "knowledge/tools/statistical-experiments.md",
+          "quote": "当 τ²>0、σ²>0 时，对 n 求导，得到内层候选 n*=√(σ²c₀/(τ²c₁))。"
+        }
+      ]
+    },
+    "adaptation": {
+      "assessment": "sufficient",
+      "reason": "说明硬件、负载、质量、缓存、层级、估计量及停止规则变化后保留什么、重算什么和何时放弃有限区间。没有把增加重采样次数解释为增加真实独立证据。",
+      "evidence": [
+        {
+          "path": "knowledge/tools/statistical-experiments.md",
+          "quote": "增加 M 只减少有限次重采样带来的数值近似误差，不增加真实独立运行，也不会补出未出现的尾部机制。"
+        },
+        {
+          "path": "knowledge/tools/statistical-experiments.md",
+          "quote": "| 差值改为均值比 | 原始配对与候选指标 | 更换区间分支，传播双方均值不确定性，并重新确定分母可信域 |"
+        }
+      ]
+    },
+    "diagnosis": {
+      "assessment": "sufficient",
+      "reason": "竞争解释对应可控干预、可否定预测和撤回或修正条件。比值聚合顺序、配对破坏、分母筛选和平铺错误均有明确区分模型，脚本包含相应参考或不变量及实际检出的故障算法。",
+      "evidence": [
+        {
+          "path": "knowledge/tools/statistical-experiments.md",
+          "quote": "用已知逐对 A=2B 的正值模型；合法共同索引始终给 2，破坏配对则违反该不变量"
+        },
+        {
+          "path": "knowledge/tools/statistical-experiments.md",
+          "quote": "固定并枚举小数据的抽样计划；存在失效分母时要求未决，不重新抽样补足"
+        },
+        {
+          "path": "knowledge/tools/statistical-experiments.md",
+          "quote": "诊断须提出可否定预测。一次时间测量不能确定原因；应控制输入，只改变能区分解释的条件。"
+        }
+      ]
+    }
+  },
+  "findings": [],
+  "limitations": [
+    "真实执行证据来自本任务提供的 actual_preflight；本审阅未重新运行 Python。记录的脚本哈希与当前绑定一致，退出码为 0，stderr 为空，只支持其中执行的有限模型断言。",
+    "检查不验证统计覆盖率、总体分母稳定性、真实漂移或稀有尾部；全部有限重采样分母通过不能替代这些证据。",
+    "实现检查限于运行等权、两层且内外均配对的比值路径；独立候选树、仅外层配对、更多层级、时间块和请求加权实现未动态验证，正文已明确。",
+    "合同检查消费声明字段，不是完整请求事件账本、质量评价、保留集隔离或序贯停止执行的验证。",
+    "未验证设备性能、实际同步与排空、服务吞吐和尾延迟，以及知识对 Agent 构建能力的因果效果。",
+    "S-STATS 只核对所供摘录；未读取缺失范围、源码归档或图像。MLPerf 场景细节沿完整来源说明使用，未重新核验其指向的 test_settings.h。离线链接的相对路径已检查语义，磁盘目标存在性未验证。"
+  ],
+  "checks": [
+    {
+      "script": "tools/check_k_tools_007_full.py",
+      "args": [],
+      "script_sha256": "c4c6ce0d2b8dd9662f009f9e3d173ede67c822a8b2faf565962fc5a35ab684a4",
+      "execution_source": "provided actual_preflight",
+      "backend": "remote_bwrap",
+      "python_version": "3.12",
+      "returncode": 0,
+      "result": "PASS finite-model assertions only",
+      "reviewer_reran": false
+    }
+  ],
+  "no_checks_reason": "",
+  "reading_scope": "本审阅完整阅读消息所供候选正文、完整 Python 脚本、author_notes、上一轮问题及 actual_preflight 的命令、哈希、stdout/stderr 和执行元数据。以下范围均为所供提取文本的零基半开字符范围。完整材料：AGENTS.md [0,567)；docs/knowledge-method.md [0,2251)；docs/knowledge-review.md [0,3016)；knowledge/tools/statistical-experiments.md [0,14430)；knowledge/sources/S-STATS.md [0,983)；knowledge/sources/S-MLPERF-SCENARIOS.md [0,823)；knowledge/sources/S-GENAI-PERF.md [0,506)；knowledge/sources/S-TORCH-REPRO.md [0,501)；references/S-MLPERF-SCENARIOS/upstream/loadgen/README.md [0,11382)；references/S-GENAI-PERF/fulltext.txt [0,46825)；references/S-TORCH-REPRO/fulltext.txt [0,7936)。来源摘录：references/S-STATS/fulltext.txt [0,72000)、[76000,104399)、[112000,175763)，不是全文。相关章节仅阅读所供摘录：knowledge/workloads/measurement-comparability.md [4000,6741)；knowledge/workloads/slo-goodput.md [0,2741)；knowledge/tools/correctness-oracles.md [8000,10741)；knowledge/system-semantics/evidence-and-independent-checks.md [0,2741)；knowledge/tools/timeline-attribution.md [0,2741)；knowledge/algorithms/quantization-contract.md [0,2741)；knowledge/algorithms/speculation-budget.md [8000,9304)、[16000,17437)；knowledge/algorithms/chunked-prefill.md [8000,9045)、[12000,13696)；knowledge/algorithms/batched-sampling.md [12000,12617)、[20000,22124)；knowledge/algorithms/lora-serving.md [0,2741)；knowledge/algorithms/parallelism.md [8000,10741)；knowledge/frameworks/numerical-reference.md [4000,6741)；knowledge/frameworks/triton-kernels.md [8000,10741)；knowledge/hardware/memory-and-roofline.md [8000,10741)；knowledge/hardware/cuda-execution.md [16000,18741)；knowledge/models/encoder-decoder-streaming.md [0,2741)；knowledge/models/image-diffusion.md [4000,5557)、[16000,17184)；knowledge/system-semantics/host-device-timing.md [0,2741)；knowledge/system-semantics/design-synthesis.md [0,2741)；knowledge/tools/trace-observability.md [12000,12034)、[16000,18707)；knowledge/tools/framework-profiler-scope.md [0,2741)；knowledge/tools/failure-evidence.md [4000,6741)；knowledge/workloads/metric-events.md [4000,6741)；knowledge/workloads/arrival-and-concurrency.md [0,2741)；knowledge/workloads/input-distribution.md [0,2741)；knowledge/workloads/capacity-planning.md [16000,18741)；knowledge/algorithms/kv-compression.md [4000,6741)；knowledge/workloads/cost-and-energy.md [8000,10741)；knowledge/system-semantics/retrieval-pipeline.md [0,2741)；knowledge/models/graph-inference.md [0,2741)；knowledge/tools/gpu-characterization.md [0,2741)。documents 仅列完整供给的文件及完整候选脚本。作者材料账与本审阅范围分别处理：作者 S-STATS 供给范围为 [0,74560)、[76000,175763)，其原始章节哈希 908b3588a6fa20bb1f2aed9f5db51c4b462953d79f8944cdbcfea7141c74644f 属于修订输入；当前审查绑定新正文 14017e56432309fb64c2d2938c66db01a81c9ee2a18791344f316d6e342f68dd。供给账不被当作认知阅读证明。",
+  "test_assessment": "独立检查了算法与测试的对应关系。bootstrap_ratio 先计算两个运行等权均值，再逐计划保持共同外层和内层索引计算比值；原始或副本分母不可信时保留 UNRESOLVED，不筛掉副本构造区间。check_ratio 的 64 个有序计划与不调用 aggregate、采用 Fraction 和多项式占用权重的参考比较整个分布，并以经验 CDF 条件核对端点；A=2B 是独立配对不变量。当前参考用于平衡小数据，未据此宣称非平衡抽样分布已验证。check_denominators 实际消费原始零分母、仅副本为零、正微小分母和等于下限的数据；零副本用例保留四个结果中的一个 None 并阻止有限区间。零分母补零负对照检查故障函数返回语义，本身不是完整 bootstrap 包装器的变异测试；主路径另有数值输入及未决状态断言。逐对比值平均和破坏配对故障确实经过分布参考或不变量并被检出。其他检查使用给定 t 临界值的算术、不覆盖总体均值的离散反例、运行层与平铺方差对照、二项式反演、分位数边界、候选噪声枚举和逐项成本账。所供实际执行记录包含对应 NEGATIVE_DETECTED 和 RESULT PASS，且绑定当前脚本，补足作者阶段尚缺的执行证据；不把作者未运行 Python 的笔记改写成作者已执行。F01、F02 及要求重审完整候选的工作流问题均可关闭。未执行的设备、覆盖率、其他重采样结构及完整服务合同检查保留为限制。"
+}

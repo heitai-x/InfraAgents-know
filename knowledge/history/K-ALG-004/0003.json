@@ -1,0 +1,64 @@
+{
+  "id": "K-ALG-004",
+  "path": "algorithms/attention-io.md",
+  "category": "algorithms",
+  "title": "Attention 的 IO、在线 softmax 与分块归约",
+  "summary": "精确 attention 可以通过改变数据流避免存储完整分数矩阵；算法复杂度、HBM 流量与数值归约顺序分别决定成本。",
+  "revision": 3,
+  "status": "seed",
+  "tags": [
+    "FlashAttention",
+    "online softmax",
+    "IO",
+    "split-K"
+  ],
+  "scope": {
+    "model_families": [
+      "transformer"
+    ],
+    "platforms": [],
+    "runtimes": [],
+    "workloads": []
+  },
+  "source_ids": [
+    "S-FLASH",
+    "S-TRITON",
+    "S-TORCH-NUMERIC",
+    "S-FLASHATTENTION3"
+  ],
+  "related": [
+    "K-HW-001",
+    "K-FW-006",
+    "K-MODEL-006",
+    "K-HW-011",
+    "K-ALG-018",
+    "K-HW-013",
+    "K-ALG-007",
+    "K-FW-002",
+    "K-FW-007",
+    "K-FW-010",
+    "K-HW-005",
+    "K-MODEL-002",
+    "K-MODEL-007",
+    "K-ALG-016"
+  ],
+  "evidence": [],
+  "updated_at": "2026-10-27",
+  "sha256": "c607e2ee0090e1161f1b1158d5fac07c52456d86807f110f4b2eb688281136f1",
+  "questions": [
+    "消除 M×N 分数矩阵减少的是哪类成本，为什么 QK 和 PV 的 FLOPs 并不随之消失？",
+    "分块处理 K/V 时需要保留哪些可合并统计量，为什么直接平均各块归一化输出是错误的？",
+    "沿 query 切分与沿 KV 切分各自在什么历史长度和 batch 下更有利，合并成本如何计入？",
+    "因果、窗口和块稀疏 mask 在什么条件下才能转化为真实的 FLOPs 节省？",
+    "改变分块大小或累加精度后，怎样区分数学等价重排的舍入差异与真正的实现错误？"
+  ],
+  "symptoms": [
+    "长 prefill 的 attention 受显存带宽限制而非算力限制",
+    "全 mask 行产生 NaN 或 split-K 合并后输出超出 V 的取值范围",
+    "短历史 decode 启用 split-K 后反而变慢"
+  ],
+  "assumes": [
+    "精确 softmax attention，不改变模型函数",
+    "GPU 分层存储结构下的 kernel 执行"
+  ]
+}

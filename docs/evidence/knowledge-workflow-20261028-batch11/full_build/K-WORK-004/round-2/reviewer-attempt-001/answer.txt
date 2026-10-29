@@ -1,0 +1,136 @@
+{
+  "entry_id": "K-WORK-004",
+  "body_sha256": "bfb3fd1d686964025a9aeb29aa8d31b86078f2724ba31f200a41dc9e6c06cf62",
+  "reviewer": "sol-reviewer:K-WORK-004:round-2",
+  "decision": "accept",
+  "documents": {
+    "AGENTS.md": "b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a",
+    "docs/knowledge-method.md": "69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb",
+    "docs/knowledge-review.md": "f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21",
+    "knowledge/workloads/measurement-comparability.md": "bfb3fd1d686964025a9aeb29aa8d31b86078f2724ba31f200a41dc9e6c06cf62",
+    "knowledge/sources/S-GENAI-PERF.md": "1db17462a3ae4cd41dcb58a78f3f9fa9e71ff3a51614e56855be07bcb95618e0",
+    "knowledge/sources/S-TORCH-PROFILER.md": "e103ff98986d0d266fe73736277d24afc57aa5892fd55d204bed2d84c6f7b050",
+    "knowledge/sources/S-NCU.md": "1bec5edf1e9343ad79094b2772466c3132597f8f83085d1d8959683c187f9f17",
+    "knowledge/sources/S-STATS.md": "70aaa597c5ab44b118296fe0527f0b510b7c8e4fb2e62170ce6547c0f7457f8e",
+    "knowledge/sources/S-TORCH-REPRO.md": "05f2b5b9819f01363fadadf41987482edfebb130bc134c36c44a00138fd5eb28",
+    "knowledge/workloads/slo-goodput.md": "5aa9b71cddb7d896ffa1fe6d78ac61cf0bb92d76279ae4d563f1110ed9dbedb4",
+    "knowledge/tools/statistical-experiments.md": "908b3588a6fa20bb1f2aed9f5db51c4b462953d79f8944cdbcfea7141c74644f",
+    "knowledge/workloads/session-workloads.md": "0269e1987e1107d0cf0135cb32aa759c67d5266cfa09fb1402f97704c4ab4d78",
+    "knowledge/tools/correctness-oracles.md": "c2f88bc9746ac25586fc6700aaf0f5a8d043a1b1f4aee99dfdee02e1ef468aab",
+    "knowledge/workloads/cost-and-energy.md": "e68e30bc7b68d554863044fe495751d95fc53993fb21c755ab89ef5d0ea4fd1b",
+    "references/S-GENAI-PERF/fulltext.txt": "357d6fcaafc41f2954ea87da567cd2b41ec8a146f8e4f19cb976acf39f539ddc",
+    "references/S-TORCH-PROFILER/upstream/docs/source/profiler.md": "6ac1b9178129e968ce7b03f56c78498fec2545c09ce0ca7f9b937b93ec91e772",
+    "references/S-TORCH-REPRO/fulltext.txt": "4f6b1deb38f7f174a2e340674680aaa0484e02a1d18cccd1bb94618df512cc2a",
+    "tools/check_k_work_004_full.py": "f9f071cfced66ce675d944eb7548a752c98793493faf4a8f580031ca837d8150"
+  },
+  "criteria": {
+    "definition": {
+      "assessment": "sufficient",
+      "reason": "测量计划明确候选、环境、负载、初始状态、边界、采集、估计量和重复层级；请求生命期与尝试分开。冷启动三种目标、秒单位的事件链及输出均可恢复。当前冷启动恒等式包含加载、准备、发送等待和首次请求，已修复上一轮漏计问题。",
+      "evidence": [
+        {
+          "path": "knowledge/workloads/measurement-comparability.md",
+          "quote": "一次测量计划写成 $M=(c,e,w,s,b,i,a,r)$"
+        },
+        {
+          "path": "knowledge/workloads/measurement-comparability.md",
+          "quote": "完整冷启动为 13 s，已加载冷执行为 3 s，请求延迟为 1 s，启动至就绪为 12 s，最终响应后仍有 1 s 排空。"
+        }
+      ]
+    },
+    "legality": {
+      "assessment": "sufficient",
+      "reason": "比较资格覆盖任务质量、负载依赖、状态、时钟、人口、资源和采集合同，允许候选身份作为处理改变。统计部分正确区分正态差值下的精确 t 区间与依赖有效样本规模的渐近近似，处理零样本方差、carryover、删失及选择性停止；与所供统计原文限定一致。",
+      "evidence": [
+        {
+          "path": "knowledge/workloads/measurement-comparability.md",
+          "quote": "应要求处理之外的比较合同相同，或相应因素按预先声明的设计随机化。"
+        },
+        {
+          "path": "knowledge/workloads/measurement-comparability.md",
+          "quote": "不能用统一的样本数门槛或“iid”标签保证小样本覆盖率。"
+        }
+      ]
+    },
+    "algorithm": {
+      "assessment": "sufficient",
+      "reason": "两层伪代码交付输入输出、初始化、区组与候选顺序、准备完成判据、真实事件消费、冻结窗口、失败排空和独立确认。完成证据推进预热计数，失败不清除物理责任，迟到事件不覆盖既有终态。核心统计量另有公式和重采样步骤支持；有限模型检查没有冒充完整实测控制器。",
+      "evidence": [
+        {
+          "path": "knowledge/workloads/measurement-comparability.md",
+          "quote": "在触发实例建立或加载之前记录 t0"
+        },
+        {
+          "path": "knowledge/workloads/measurement-comparability.md",
+          "quote": "消费完成事件；成功完成才增加对应 hp，解除匹配的 Q 项"
+        },
+        {
+          "path": "knowledge/workloads/measurement-comparability.md",
+          "quote": "物理责任全结束则 CLOSED；到 drain 边界仍未结束则返回责任账"
+        }
+      ]
+    },
+    "cost": {
+      "assessment": "sufficient",
+      "reason": "六类成本具有具体来源和核算边界，区分逻辑字节、设备事务、唯一驻留及墙钟关键路径。Replay 的 pass、保存恢复、缓存刷新与主机重复条件符合所供摘录。两层方差代入预算后得到的驻点正确，适用条件和退化情形明确；日志复杂度与真实开销分开。",
+      "evidence": [
+        {
+          "path": "knowledge/workloads/measurement-comparability.md",
+          "quote": "同一时刻按唯一 backing 去重；池容量不再加池内对象"
+        },
+        {
+          "path": "knowledge/workloads/measurement-comparability.md",
+          "quote": "若导出与测量交叠，应改用区间并集或关键路径，不能再次相加。"
+        },
+        {
+          "path": "knowledge/workloads/measurement-comparability.md",
+          "quote": "运行效应为零、内层强相关、冷启动不可重复或成本随 n 改变时，不能沿用该驻点。"
+        }
+      ]
+    },
+    "adaptation": {
+      "assessment": "sufficient",
+      "reason": "条件改变后需要更新的路径桶、缓存状态、计时能力、资源作用域和重复层级均明确，同时说明可保留的身份、边界与守恒关系。对持续漂移、长尾证据不足和确认区间跨阈值给出调整或未决出口，没有迁移旧准备证明或设备常数。",
+      "evidence": [
+        {
+          "path": "knowledge/workloads/measurement-comparability.md",
+          "quote": "shape/batch 变化重建路径桶；缓存策略变化重新定义初始状态与驻留"
+        },
+        {
+          "path": "knowledge/workloads/measurement-comparability.md",
+          "quote": "可以保留任务身份、边界和守恒关系，但不能直接沿用旧准备证书、计数器常数或独立性假设。"
+        }
+      ]
+    },
+    "diagnosis": {
+      "assessment": "sufficient",
+      "reason": "竞争解释连接具体干预、不同预测和反证后的修正，覆盖冷路径、缓存继承、采集扰动、运行层变化、积压、输出工作量与搜索噪声。稀有长尾反例实际反驳 iid 自动保证小样本覆盖率；检查中的错误规则能够被相应参考或不变量区分。",
+      "evidence": [
+        {
+          "path": "knowledge/workloads/measurement-comparability.md",
+          "quote": "若最终时间改善而预计字节变化没有发生，应修改机制解释，即使候选仍可保留。"
+        },
+        {
+          "path": "knowledge/workloads/measurement-comparability.md",
+          "quote": "因此覆盖率至多为 $1-0.99^{16}\\approx14.8542\\%$，远低于 95%。"
+        }
+      ]
+    }
+  },
+  "findings": [],
+  "limitations": [
+    "检查只支持有限模型中的合同判别、预热谓词、时间边界和统计代数，不覆盖完整请求事件解析、依赖调度、窗口删失、迟到通知及物理责任控制器的全部执行路径；正文对此未声称完整验证。",
+    "没有真实服务、CPU/GPU 性能、时钟校准、重置效果、设备可见性、profiler/replay 扰动、功率或 Agent 使用效果证据。",
+    "S-NCU、S-STATS 原文及三个相关章节仅按所供摘录复核；未读取其完整原文、图片或上游源码。Profiler 原始文档只是生成入口，其展开机制本轮依据来源说明。",
+    "非平衡重复、一般自相关或非平稳尾部、配对层级 bootstrap 和序贯推断未获得一般有效性证明；当前正文已明确限定。",
+    "文档哈希采用任务提供的绑定值。已核对所供文本的引用关系和相对链接形式，未独立访问磁盘、重算文件哈希或验证 reader.html 等目标可达性。"
+  ],
+  "checks": [
+    {
+      "script": "tools/check_k_work_004_full.py",
+      "args": []
+    }
+  ],
+  "reading_scope": "完整阅读任务内所供文本，未声称读取磁盘文件。以下范围均为提取文本的零基半开字符范围。全文：AGENTS.md [0,567)；docs/knowledge-method.md [0,2251)；docs/knowledge-review.md [0,3016)；knowledge/workloads/measurement-comparability.md [0,15873)；knowledge/sources/S-GENAI-PERF.md [0,506)；S-TORCH-PROFILER.md [0,779)；S-NCU.md [0,477)；S-STATS.md [0,983)；S-TORCH-REPRO.md [0,501)；knowledge/workloads/slo-goodput.md [0,2616)；knowledge/tools/statistical-experiments.md [0,4269)；knowledge/workloads/session-workloads.md [0,3583)；knowledge/tools/correctness-oracles.md [0,5245)；knowledge/workloads/cost-and-energy.md [0,3169)；references/S-GENAI-PERF/fulltext.txt [0,46825)；references/S-TORCH-PROFILER/upstream/docs/source/profiler.md [0,1055)；references/S-TORCH-REPRO/fulltext.txt [0,7936)。摘录：knowledge/workloads/arrival-and-concurrency.md [0,9511)、[12000,13114)；knowledge/tools/timeline-attribution.md [0,5401)、[8000,13224)；knowledge/frameworks/checkpoint-loading.md [0,8528)、[12000,14097)；references/S-NCU/fulltext.txt [0,20000)、[24000,26848)、[28000,40000)、[48000,60000)、[64000,68000)、[72000,100000)、[108000,112000)、[116000,136000)；references/S-STATS/fulltext.txt [0,4000)、[20000,28000)、[32000,36000)、[56000,80000)、[88000,90848)、[100000,104000)、[108000,128000)、[132000,168000)。另完整审阅 candidate.test_script、author_notes 和所供 actual_preflight 执行信息。documents 只登记所供全文与完整脚本，不登记摘录为全文。",
+  "test_assessment": "显式批准指定检查 tools/check_k_work_004_full.py 在其声明的有限模型范围内作为本轮证据。独立审阅了完整脚本，而非仅凭退出码认可：冷启动用独立阶段持续时间求和及时间平移不变量；比值用手算有理数；方差用成对平方差恒等式和绝对参考；区间覆盖用计数闭式矩、二项概率守恒及平方不等式参考。48 条冷启动组合覆盖零加载、准备、发送等待和排空变化，并检查缺失终点、逆序及非有限时间；其余部分覆盖合同字段缺失、预热漏桶/次数不足/待决责任、空样本、零分母、单运行及退化方差。六个负对照的登记受实际判别断言约束，分别区分忽略事件边界、只完成部分预热、请求计时冒充冷启动、混用两种比值、平铺请求冒充独立运行，以及 iid 自动保证 95% t 覆盖率的错误主张。最后一项检验的是统计适用性主张，并非生产区间选择器。所供 actual_preflight 的 script_sha256 与本轮绑定一致，Python 3.12 隔离执行 returncode=0、stderr 为空、未超时，stdout 报告 48 条持续时间组合、17 类二项计数和六个已区分负对照；这属于所供协调者执行记录，本审阅者没有再次运行 Python。审阅者另实际执行只读 JavaScript，以 BigInt 二项质量和独立整数平方不等式复算，得到覆盖类别 k=1、2、3、总概率质量为 1、覆盖率 0.1485256982687133，并复核冷启动 13 s、运行层均值方差 2500 和零超限上界约 0.02951305。未把这些代数结果记作设备测试通过。完整事件控制器、真实采集和一般统计模型的遗漏已在正文及本审查 limitations 中限定，不构成当前宣称的假通过。上一轮冷启动边界及 t 区间条件问题已关闭；campaign-K-WORK-004-r1 所要求的指定检查明确判断与完整候选复核在本次 accept 中完成。"
+}

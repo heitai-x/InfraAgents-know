@@ -1,0 +1,62 @@
+{
+  "id": "K-ALG-010",
+  "path": "algorithms/cross-attention-cache.md",
+  "category": "algorithms",
+  "title": "交叉注意力缓存：固定源、独立几何与可见性",
+  "summary": "当 encoder 输出和投影权重固定时，cross-attention 的 K/V 与 decoder 步数无关，可以一次生成、多次读取。",
+  "revision": 4,
+  "status": "seed",
+  "tags": [
+    "cross attention",
+    "encoder decoder",
+    "交叉注意力",
+    "context KV",
+    "source revision",
+    "cross KV residency",
+    "stage handoff"
+  ],
+  "scope": {
+    "model_families": [],
+    "platforms": [],
+    "runtimes": [],
+    "workloads": []
+  },
+  "source_ids": [
+    "S-TRANSFORMER",
+    "S-WHISPER",
+    "S-FI"
+  ],
+  "related": [
+    "K-MODEL-005",
+    "K-ALG-002",
+    "K-FW-006",
+    "K-MODEL-008",
+    "K-ALG-017",
+    "K-ALG-018",
+    "K-SYS-015",
+    "K-SYS-014",
+    "K-SYS-012",
+    "K-FW-005",
+    "K-MODEL-009",
+    "K-SYS-003"
+  ],
+  "evidence": [],
+  "updated_at": "2026-10-28",
+  "sha256": "9bf5802ad24d06fcea9a327ea73bce8a03d75b82fe330cbf3ab20a87ca04b7f7",
+  "questions": [
+    "固定源下 cross-attention 的 K/V 为何与 decoder 步数无关，缓存消除了哪部分重复成本？",
+    "缓存全部 cross 层 K/V 与只保留 E 再重投影，在什么源长度和内存条件下各自更合适？",
+    "decoder self-attention 与 cross-attention 有哪些独立几何维度，分页批如何编码？",
+    "流式源更新时，旧 E 在什么条件下才是新 E 的稳定前缀，否则缓存应如何按版本区分？",
+    "encoder 领先 decoder 时，源表示、cross KV 与 self KV 的持有时间如何进入阶段间准入？"
+  ],
+  "symptoms": [
+    "待解码请求堆积使特征或 cross 缓存先于 decode 容量耗尽",
+    "追加音频后已交付文本需要修订或 cross KV 与新源版本不一致",
+    "每个目标步都从主存取回全部 cross KV 使传输覆盖投影节省"
+  ],
+  "assumes": [
+    "encoder-decoder 结构，源表示固定或分段更新",
+    "cross-attention 的投影权重在生成期间不变"
+  ]
+}

@@ -1,0 +1,136 @@
+{
+  "entry_id": "K-ALG-018",
+  "body_sha256": "4b8d8bad42a337904a2630f9ecf2fb39b5b8d6142bb00aa51f43afb36a842b20",
+  "reviewer": "sol-reviewer:K-ALG-018:round-2",
+  "decision": "accept",
+  "documents": {
+    "AGENTS.md": "b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a",
+    "docs/knowledge-method.md": "69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb",
+    "docs/knowledge-review.md": "f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21",
+    "knowledge/algorithms/kv-offload-prefetch.md": "4b8d8bad42a337904a2630f9ecf2fb39b5b8d6142bb00aa51f43afb36a842b20",
+    "knowledge/sources/S-FLEXGEN.md": "17e4559a473711a2ee3eba92de0837f1babf4b3107bb58b748aecdb6382d711b",
+    "knowledge/sources/S-PAGED.md": "50893a22385b0d577980153a9bc9c617acdcb2a9d7be0af655ad49421f06cc09",
+    "knowledge/sources/S-HF-CACHE.md": "1a4afcf0d800ba3f42836445874d620ae9f7ba8ab4c361caa505376cc471595c",
+    "knowledge/sources/S-CUDA-ASYNC.md": "40df9287d0648a8ef55a046ceb1c18dd402619ede6e57ca33d3f90e4ace3da05",
+    "knowledge/algorithms/tiered-residency.md": "eb3ebc6320d5a32481cf645605d159860dc6d1edb97f1e98afd89ddb24ee82af",
+    "knowledge/system-semantics/memory-allocators.md": "2e7258787b94ad142c7c236541e8718803ad30b273d08e6c398dff673a1df838",
+    "knowledge/engine-index/vllm-kv-manager.md": "50b09c7a66c1282b7f6f7ac7ef1f265b953b908ae5fba883c9beec4732e1ab89",
+    "knowledge/engine-index/sglang-radix-scheduler.md": "abf1eb7040f1f6ba697822719094f8cc26172a329d6003a027862ef89de03374",
+    "references/S-HF-CACHE/fulltext.txt": "373837b8ac246d43867eb21de168cc59e5e6e78f5f3b9c27bee54740c4a635b4",
+    "tools/check_k_alg_018_full.py": "761dcd19b823559b37bebcf7a1a068fdc42bf506b85fb22356acda53f73a5e09"
+  },
+  "criteria": {
+    "definition": {
+      "assessment": "sufficient",
+      "reason": "说明暂停恢复、前缀命中和活跃卸载的不同动机，定义计算身份、消费位置、恢复状态和视图输入输出。U 包含推进中产生的历史，E 只包含规划开始时已有的可预取历史；窗口端点、W=1、q=0及缺少下一输入/logits的边界一致。",
+      "evidence": [
+        {
+          "path": "knowledge/algorithms/kv-offload-prefetch.md",
+          "quote": "令 p 为已完成模型消费的 token 数，S(p) 为消费 x[0:p) 后继续执行所需的状态包。"
+        },
+        {
+          "path": "knowledge/algorithms/kv-offload-prefetch.md",
+          "quote": "E(p,q)=U(p,q)∩[0,p)：规划开始时已经存在、可以从旧状态副本预取的位置。"
+        }
+      ]
+    },
+    "legality": {
+      "assessment": "sufficient",
+      "reason": "区分内容身份、表示、有效范围、消费者可见性和物理最后使用；完整安装与按层工作视图被明确作为不同方案。目的副本去重、COW、非整页恢复及代次检查的能力边界清楚。来源归因与所供说明、原文范围相容，未将CUDA设备内复制接口泛化为主机设备传输实现。",
+      "evidence": [
+        {
+          "path": "knowledge/algorithms/kv-offload-prefetch.md",
+          "quote": "共享引用只有在内容、表示和生存期相容时才可映射到同一目的副本。"
+        },
+        {
+          "path": "knowledge/algorithms/kv-offload-prefetch.md",
+          "quote": "代次检查用于拒绝迟到通知和错误结算；它不能阻止已经发出的旧 DMA 写入地址。"
+        }
+      ]
+    },
+    "algorithm": {
+      "assessment": "sufficient",
+      "reason": "两段伪代码给出预留、提交责任、完成覆盖、发布、失败排空及逐层生产消费顺序。当前层KV来自本层隐藏输入，层输出交给下一层；新增状态被持久保存，全部层完成才提交消费位置。完整后备与循环工作槽的定位关系避免发布失效静态页表。混合可变状态和多步在途被明确排除出基线。",
+      "evidence": [
+        {
+          "path": "knowledge/algorithms/kv-offload-prefetch.md",
+          "quote": "由本层隐藏输入生成 Q 与当前位置 K/V"
+        },
+        {
+          "path": "knowledge/algorithms/kv-offload-prefetch.md",
+          "quote": "将新增 K/V 安装到本步私有持久位置，或完成必要写回"
+        },
+        {
+          "path": "knowledge/algorithms/kv-offload-prefetch.md",
+          "quote": "已提交历史不可变，新增 KV 使用私有候选；全部层完成才发布 S(p+1)。"
+        }
+      ]
+    },
+    "cost": {
+      "assessment": "sufficient",
+      "reason": "六类成本使用同一计划口径，区分有效内容、逻辑页引用、唯一分配、设备事务和链路服务量。独立复算确认96/256 B、384/512/768 B、4 GiB、31.25/250 ms及23/32/37的算术和递推一致。双槽递推包括首层等待和槽最后使用，新增写回另用R_i延长释放点，未把只读模型当作完整decode性能。",
+      "evidence": [
+        {
+          "path": "knowledge/algorithms/kv-offload-prefetch.md",
+          "quote": "对存储层 h，容量应写为 M_h,peak=max_t Σ_{a∈Live_h(t)} bytes(a)，其中 a 是唯一物理分配。"
+        },
+        {
+          "path": "knowledge/algorithms/kv-offload-prefetch.md",
+          "quote": "C_i=max(C_{i−1},F_{i−k})+m_i，"
+        },
+        {
+          "path": "knowledge/algorithms/kv-offload-prefetch.md",
+          "quote": "这些附加责任没有包含在前述 23/37 的只读模型中。"
+        }
+      ]
+    },
+    "adaptation": {
+      "assessment": "sufficient",
+      "reason": "对历史增长、窗口退化、共享、页长、表示变化、容量下降、拥塞和取消分别说明不变量及调整依据。恢复与重算的设定比较给出可计算的选择反转，未把容量改善或缓存命中直接等同于延迟收益。",
+      "evidence": [
+        {
+          "path": "knowledge/algorithms/kv-offload-prefetch.md",
+          "quote": "重新求流水；持续带宽不足时减少卸载、改放置或限准入"
+        },
+        {
+          "path": "knowledge/algorithms/kv-offload-prefetch.md",
+          "quote": "同一恢复边界的重算若为 20 ms，命中不意味着更快"
+        }
+      ]
+    },
+    "diagnosis": {
+      "assessment": "sufficient",
+      "reason": "观察项对应多个竞争解释，并给出固定变量、内容检查、延迟注入及反证后修正。检查脚本具有集合枚举、逐槽参考、事件责任不变量和独立时刻模拟；负对照能触发旧集合公式、错误页计数、COW污染、提前获取/回收和错误完全隐藏假设。真实执行记录绑定本轮脚本与正文，足以关闭上一轮具体执行失败。",
+      "evidence": [
+        {
+          "path": "knowledge/algorithms/kv-offload-prefetch.md",
+          "quote": "峰值增加而等待不降时减少深度"
+        },
+        {
+          "path": "knowledge/algorithms/kv-offload-prefetch.md",
+          "quote": "全设备同步使错误消失，只说明某些执行关系改变，不能唯一定位缺失依赖"
+        },
+        {
+          "path": "knowledge/algorithms/kv-offload-prefetch.md",
+          "quote": "检查执行是否通过由绑定当前脚本和输入的真实执行记录承担。"
+        }
+      ]
+    }
+  },
+  "findings": [],
+  "limitations": [
+    "检查是CPU抽象模型，不验证真实Transformer数值、CUDA作用域、DMA完成证据、PCIe重叠、锁页、文件持久性或端到端性能；正文已清楚声明。",
+    "生命周期限单物理槽和有限轨迹，安装限两层不可变清单；未验证任意多范围并发、混合递归/量化状态回滚或多步同时在途。",
+    "流水穷举只验证两阶段只读模型；三阶段写回、双向共享瓶颈和真实竞争资源尚无执行验证。",
+    "本次直接核对的FlexGen、PagedAttention及CUDA原文均为所供摘录；未检查PDF图像、reader.html渲染、外链或上游源码，也未执行文件系统链接存在性检查。",
+    "未验证知识对Agent构建能力的实际改善。"
+  ],
+  "checks": [
+    {
+      "script": "tools/check_k_alg_018_full.py",
+      "args": []
+    }
+  ],
+  "reading_scope": "本审阅完整阅读用户内嵌的当前候选正文、完整candidate.test_script、author_notes、actual_preflight及方法材料。全文材料及零基半开字符范围：AGENTS.md [0,567)；docs/knowledge-method.md [0,2251)；docs/knowledge-review.md [0,3016)；knowledge/algorithms/kv-offload-prefetch.md [0,11529)；knowledge/sources/S-FLEXGEN.md [0,989)；S-PAGED.md [0,2206)；S-HF-CACHE.md [0,827)；S-CUDA-ASYNC.md [0,1610)；knowledge/algorithms/tiered-residency.md [0,4244)；knowledge/system-semantics/memory-allocators.md [0,4191)；knowledge/engine-index/vllm-kv-manager.md [0,2189)；sglang-radix-scheduler.md [0,1901)；references/S-HF-CACHE/fulltext.txt [0,7977)。以下仅阅读所供摘录，不登记为全文documents：knowledge/algorithms/paged-kv-capacity.md [0,4000)、[12000,12722)；prefix-cache-identity.md [0,722)、[4000,8000)；heterogeneous-state-cache.md [0,722)、[8000,12000)；knowledge/system-semantics/distributed-state-transfer.md [0,4000)、[12000,12722)；knowledge/algorithms/heterogeneous-execution.md [8000,10235)、[12000,14487)；attention-io.md [0,4722)；cross-attention-cache.md [0,722)、[12000,16000)；lora-serving.md [4000,8722)；knowledge/frameworks/streams-allocator.md [4000,8722)；knowledge/models/sliding-window-attention.md [0,4000)、[12000,12722)；knowledge/tools/timeline-attribution.md [4000,7601)、[12000,13121)；knowledge/hardware/storage-io.md [0,722)、[12000,16000)；knowledge/algorithms/kv-compression.md [0,722)、[4000,8000)；context-reuse.md [0,4722)。原文摘录：references/S-FLEXGEN/fulltext.txt [0,42636)、[44000,48000)、[56000,85794)；references/S-PAGED/fulltext.txt [0,72430)、[76000,80000)；references/S-CUDA-ASYNC/fulltext.txt [16000,20000)、[36000,40000)、[80000,84000)、[204000,212000)、[284000,288000)、[300000,304000)、[440000,444000)、[452000,456000)、[472000,476000)、[492000,492430)、[504000,508000)、[516000,520000)、[548000,552000)、[580000,584000)、[744000,748000)、[772000,776000)、[808000,812000)、[1104000,1112000)。作者范围另按author_material_scopes核对：作者获供旧正文全文及其记录的来源范围；这些范围与本审阅摘录并不完全相同，不能据本审阅范围缩减作者材料资格。作者账本记录供应范围，不证明认知阅读。",
+  "test_assessment": "独立审查脚本算法及所供真实执行记录，未在本审阅会话重新运行Python。actual_preflight记录returncode=0、stderr为空、未超时，脚本SHA256为761dcd19b823559b37bebcf7a1a068fdc42bf506b85fb22356acda53f73a5e09，input_digests中的本章SHA256为4b8d8bad42a337904a2630f9ecf2fb39b5b8d6142bb00aa51f43afb36a842b20，均匹配本轮绑定。输出6816项检查、792组读集合参数和2460组流水参数仅说明执行覆盖，不单独作为充分性依据。读集合参考逐query/逐位置判断可见性，独立于区间实现；同时验证U及其旧历史投影E。旧W=1公式被实际反例检出；q=1、W=4应有{7,8,9}，p=0、q=3全注意力U应有{0,1}而E为空，原失败断言已按语义修复。页计划按每请求逻辑页遍历，与逐物理槽及逻辑页集合参考比较，验证六逻辑页、四物理页和12个唯一有效槽，避免原20个token引用被当作页引用。COW执行复制及私有写入，错误共享写产生可观察污染。生命周期观察器从事件重建复制、拥有者和读者责任，拒绝提前获取、带读者释放及带复制释放；旧写污染用同一内存位置先写新内容再执行旧写演示，属于CPU轨迹而非DMA实测。安装检查以独立必需清单校验身份、位置、范围和元数据，错误仅按层数验收的判据会接受所构造缺陷。流水参考逐整数时刻推进两个引擎及槽占用，与max递推结构不同，覆盖空任务、零时长、单槽和多槽；错误完全隐藏估计28违反复制资源32的下界，并与参考37不符。正文成本算术另经复算一致。作者仅声称其阶段执行过JavaScript子模型、未执行交付Python，与后来提供的workflow真实Python预检并不矛盾。因此campaign-K-ALG-018-r1的四项具体失败在本轮候选和绑定执行上关闭。未覆盖的三阶段写回、真实设备可见性及混合状态回滚均作为已声明验证边界保留。"
+}

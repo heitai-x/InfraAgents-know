@@ -1,0 +1,163 @@
+{
+  "entry_id": "K-SYS-001",
+  "body_sha256": "54ecd16989b483f0b68d255439c5443baf6553c0bcd895adc7f0f91ebfb37e71",
+  "reviewer": "sol-reviewer:K-SYS-001:round-2",
+  "decision": "accept",
+  "documents": {
+    "AGENTS.md": "b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a",
+    "docs/knowledge-method.md": "69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb",
+    "docs/knowledge-review.md": "f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21",
+    "knowledge/system-semantics/host-device-timing.md": "54ecd16989b483f0b68d255439c5443baf6553c0bcd895adc7f0f91ebfb37e71",
+    "knowledge/sources/S-CUDA-ASYNC.md": "40df9287d0648a8ef55a046ceb1c18dd402619ede6e57ca33d3f90e4ace3da05",
+    "knowledge/sources/S-NSYS.md": "823ebab3b5e25820e6d55b2c6ad4dba63004b08fe75d562fb0890ace857f8336",
+    "knowledge/sources/S-OTEL.md": "b68ba3b2833dc7f9f5ad7f49ae395fa70cc31b94252dd1741149e1fd1eca4068",
+    "knowledge/sources/S-RDMA.md": "660948886af9019ac90e6c58ab7b2a4ca9dbf282f1bb74de37162403f24f4d49",
+    "knowledge/sources/S-LINUX-IO.md": "786caae53cc1e80173616ce470c481145e285c2176b7cff4777576cc893fc316",
+    "knowledge/tools/timeline-attribution.md": "cf4b01a8ca5cb35e653b65fbe2bc018d3ae5cc42788a77688524fb29c7da817d",
+    "knowledge/hardware/storage-io.md": "cec95f0a908c9abf7e9f7b83a5c930d044709d06c479d3c82967241edb49ff31",
+    "knowledge/hardware/transport-and-rdma.md": "72bcf1d8948eae41c243e422f6b0370462dcc4bf33ef86f5664a09b4e46d3ba2",
+    "knowledge/system-semantics/distributed-state-transfer.md": "425985efff21e4acbe091ddfa9043cf97b37e550b606f10c0e1560a3c02b1f6f",
+    "knowledge/tools/statistical-experiments.md": "908b3588a6fa20bb1f2aed9f5db51c4b462953d79f8944cdbcfea7141c74644f",
+    "knowledge/hardware/host-device-transfer.md": "e4921a0714af21f7ab1a336f40af662f716f2c64a42dd598eb2cede548c858d2",
+    "knowledge/tools/trace-observability.md": "e8e0b6f2fb16e6f34bb0496eea393370eb14aa050488b2b96e12ec1f6468d833",
+    "knowledge/workloads/metric-events.md": "c21db7895f35f10ebe16fe4fc795de05ea48de02cd90339712f9a4a49252d1bb",
+    "references/S-OTEL/fulltext.txt": "f00d2f265bdd7aceff39c2d3c52f7cd3ab12b061e1f02cefaf84d6e12afa34a4",
+    "references/S-RDMA/fulltext.txt": "9f4bea8bc130fc7dcdf0b53d20ce7269555cddd2a7c67e5d54c6dbd7a55b2720",
+    "references/S-LINUX-IO/fulltext.txt": "d6da925f1c90da275de1e6aa94a179a3273ad342fe77b61608a8b77fa75c3495",
+    "tools/check_k_sys_001_full.py": "78c52c1b7906ec176d8e9f23bb86fe8cd4625c0d07d04c3695f616b631f6626c"
+  },
+  "criteria": {
+    "definition": {
+      "assessment": "sufficient",
+      "reason": "明确了异步事件不能按返回顺序或时间排序直接形成因果链的动机；定义半开区间、累计量、并集、并发、释放时间、边等待及物理对象生存期。输入身份、时间域、单位、输出和未知状态均有交代。偏移公式的符号方向、非负交集与算例一致。",
+      "evidence": [
+        {
+          "path": "knowledge/system-semantics/host-device-timing.md",
+          "quote": "一次观测至少需要事件语义、时间戳、单位、时间域、进程/线程/设备/队列作用域，以及请求、对象范围、执行尝试和对象代次。"
+        },
+        {
+          "path": "knowledge/system-semantics/host-device-timing.md",
+          "quote": "区间统一采用半开形式 I=[s,e)，时长 d=e−s，要求 s≤e。"
+        },
+        {
+          "path": "knowledge/system-semantics/host-device-timing.md",
+          "quote": "节点 v 是一段不可再分的工作或事件，持续时间下界 d_v≥0；r_v≥0 是相对共同起点的释放时间下界。"
+        }
+      ]
+    },
+    "legality": {
+      "assessment": "sufficient",
+      "reason": "把身份、时钟可比性、因果证据、采集覆盖和最后使用条件与观测方案选择分开。没有把父子 span、API 返回、本地 CQE或逻辑取消扩展为不成立的完成保证。所供 Nsight、verbs、iomap原文支持相应限定；版本事实未越过cutoff，独立推导未冒充来源实测。",
+      "evidence": [
+        {
+          "path": "knowledge/system-semantics/host-device-timing.md",
+          "quote": "声称的因果边有证据。普通 stream 顺序、覆盖最后写入的 event 等待、数据依赖和资源移交可以提供边；时间戳较早本身不提供边。"
+        },
+        {
+          "path": "knowledge/system-semantics/host-device-timing.md",
+          "quote": "选择范围标注、原始事件、聚合表或短窗口，是观测方案选择。它们改变成本和可回答的问题，不改变异步执行的合法性。"
+        },
+        {
+          "path": "knowledge/system-semantics/host-device-timing.md",
+          "quote": "逻辑取消禁止后继业务推进，但不会自动结束已提交读取、DMA 或 kernel。"
+        }
+      ]
+    },
+    "algorithm": {
+      "assessment": "sufficient",
+      "reason": "区间算法完整给出校验、裁剪、合并、端点扫描及返回值，结束先于开始与半开语义一致。DAG算法覆盖内部释放、全部前驱、环、空图、重复边和路径见证；从任意节点起始的路径参考能独立检验释放约束。对象路径明确按范围和代次推进，部分完成不发布完整内容，回收等待全部实际使用结束；其观测重建抽象范围已声明。",
+      "evidence": [
+        {
+          "path": "knowledge/system-semantics/host-device-timing.md",
+          "quote": "若 e<s，拒绝；必须先检查，再做窗口裁剪"
+        },
+        {
+          "path": "knowledge/system-semantics/host-device-timing.md",
+          "quote": "释放约束可以主导内部节点，所以回溯路径不必始于原图的根。"
+        },
+        {
+          "path": "knowledge/system-semantics/host-device-timing.md",
+          "quote": "需要缩图时，只能在保留目标全部祖先及其释放约束后计算。"
+        },
+        {
+          "path": "knowledge/system-semantics/host-device-timing.md",
+          "quote": "关闭未来授权且全部实际使用结束：允许归还，状态 RETIRED"
+        }
+      ]
+    },
+    "cost": {
+      "assessment": "sufficient",
+      "reason": "六类成本具有明确对象和条件，区分分析开销、物理流量、覆盖时间、请求路径和驻留容量。复算组合轨迹得到累计110 ms、请求完成75 ms、所选设备活动27 ms；读取缩短后的55 ms与依赖一致。两块64 MiB缓冲的重叠驻留为128 MiB，未重复计池内used。排序、拓扑递推复杂度及共享带宽下界的单位正确，且未把必要下界当成可达保证。",
+      "evidence": [
+        {
+          "path": "knowledge/system-semantics/host-device-timing.md",
+          "quote": "这些成本不是六个可直接相加的阶段时间。"
+        },
+        {
+          "path": "knowledge/system-semantics/host-device-timing.md",
+          "quote": "这是跨资源活动覆盖，不是 GPU 忙碌时间。"
+        },
+        {
+          "path": "knowledge/system-semantics/host-device-timing.md",
+          "quote": "48–60 期间两块物理内存同时存活，共 128 MiB；H2D 返回得早不能缩短这段保护。"
+        },
+        {
+          "path": "knowledge/system-semantics/host-device-timing.md",
+          "quote": "资源 r 每个有效工作单位承受 Q_r 字节、在同一并发条件下可持续带宽为 B_r 时，启动周期至少为 Q_r/B_r"
+        }
+      ]
+    },
+    "adaptation": {
+      "assessment": "sufficient",
+      "reason": "对多stream、多设备、校准老化、取消重试、饱和负载和采集扰动分别说明保留的依赖与应调整的证据。明确误差超过决策差异时放弃精确单向归因，方案改变后重新求路径，且区分当前请求延迟收益和共享容量收益。",
+      "evidence": [
+        {
+          "path": "knowledge/system-semantics/host-device-timing.md",
+          "quote": "界限宽于决策差异时放弃精确单向归因"
+        },
+        {
+          "path": "knowledge/system-semantics/host-device-timing.md",
+          "quote": "每次改变持续时间、释放时间或边后，都应重新求最大约束路径，而不是永久给某节点贴上关键标签。"
+        },
+        {
+          "path": "knowledge/system-semantics/host-device-timing.md",
+          "quote": "若改变读取方式也增加转换、注册或共享链路压力，必须重新计算。"
+        }
+      ]
+    },
+    "diagnosis": {
+      "assessment": "sufficient",
+      "reason": "竞争解释均连接到能产生不同预测的干预，包括采集缺口与供给不足、等待转移与真实加速、依赖串行与资源饱和、设备排空与通知处理。负对照涉及实际机制错误，未把相邻区间表示差异误判为并集错误。测试具有独立参考和已执行的错误对照，且CPU模型、设备验证与服务效果边界清楚。",
+      "evidence": [
+        {
+          "path": "knowledge/system-semantics/host-device-timing.md",
+          "quote": "分别延迟设备消费和主机通知处理，记录三种边界"
+        },
+        {
+          "path": "knowledge/system-semantics/host-device-timing.md",
+          "quote": "不能仅凭全设备同步使异常消失就定位缺的是哪条边，因为同步同时改变了多个候选关系。"
+        },
+        {
+          "path": "knowledge/system-semantics/host-device-timing.md",
+          "quote": "若观察反驳预测，应修改机制解释，即使候选总体仍然有益。"
+        }
+      ]
+    }
+  },
+  "findings": [],
+  "limitations": [
+    "本审查依据任务嵌入的冻结文本、脚本和actual_preflight记录。当前工具没有本地文件读取或Python执行接口，未重新计算磁盘文件哈希、验证离线链接实际可访问性或重跑Python；本地infraagents-knowledge-build技能文件也未能载入，未声称已执行其流程。",
+    "CUDA与Nsight原文仅按所供摘录核对，未通读完整指南；没有独立源码归档，未核验上游实现。",
+    "Python检查验证规范化整数时间域的有限CPU模型。未覆盖非有限数值拒绝、一般实数精度、原始trace身份去重、漂移与丢失、对象重建协议的完整状态探索、实际资源调度或容量扫描实现；正文对此未声称获得设备证明。",
+    "未执行CUDA、DMA、文件I/O、RDMA、profiler或真实服务实验；平台可见性、事件覆盖、物理重叠、性能与Agent使用效果仍需各自证据。"
+  ],
+  "checks": [
+    {
+      "script": "tools/check_k_sys_001_full.py",
+      "args": []
+    }
+  ],
+  "no_checks_reason": "",
+  "reading_scope": "完整阅读任务所供全文；以下范围均为提取文本中从零开始的半开字符区间：AGENTS.md [0,567)；docs/knowledge-method.md [0,2251)；docs/knowledge-review.md [0,3016)；knowledge/system-semantics/host-device-timing.md [0,12129)；knowledge/sources/S-CUDA-ASYNC.md [0,1610)；S-NSYS.md [0,498)；S-OTEL.md [0,520)；S-RDMA.md [0,739)；S-LINUX-IO.md [0,850)；knowledge/tools/timeline-attribution.md [0,3485)；knowledge/hardware/storage-io.md [0,3886)；transport-and-rdma.md [0,4088)；knowledge/system-semantics/distributed-state-transfer.md [0,3216)；knowledge/tools/statistical-experiments.md [0,4269)；knowledge/hardware/host-device-transfer.md [0,6485)；knowledge/tools/trace-observability.md [0,3421)；knowledge/workloads/metric-events.md [0,2891)；references/S-OTEL/fulltext.txt [0,8256)；references/S-RDMA/fulltext.txt [0,25147)，包含六份verbs文档；references/S-LINUX-IO/fulltext.txt [0,52366)，包含blk-mq、iomap design及operations。完整阅读candidate.test_script所供Python脚本、author_notes及actual_preflight执行记录。仅阅读摘录：knowledge/frameworks/streams-allocator.md [0,4500)、[8000,12000)；knowledge/algorithms/async-scheduling.md [0,2560)、[8000,13940)；references/S-CUDA-ASYNC/fulltext.txt所供范围 [12000,18313)、[36000,40000)、[160000,164000)、[452000,460000)、[500000,504000)、[548000,552000)、[604000,608000)、[648000,652000)、[696000,700000)、[732000,740000)、[756000,764000)、[772000,780000)、[956000,960000)、[972000,976000)、[1024000,1028000)、[1032000,1036000)、[1100000,1108000)；references/S-NSYS/fulltext.txt所供范围 [32000,36000)、[52000,56000)、[64000,68000)、[112000,116000)、[136000,148000)、[152000,160000)、[168000,180000)、[188000,192000)、[236000,240000)、[312000,316000)、[340000,344000)、[348000,350313)、[368000,372000)、[392000,396000)、[408000,412000)、[444000,452000)、[464000,468000)。摘录范围沿用任务元数据，不据此声称阅读未展示内容或完整原件；这些摘录文件未列入documents。",
+  "test_assessment": "独立审查了检查算法与实际执行记录。区间参考逐整数单元计数，不复用候选的裁剪排序和端点扫描；比较规范合并区间、累计、并集、并发和idle，并检查U≤S≤KU及窗口守恒。DAG参考从每个节点枚举全部有向路径，以该起点释放时间计分，独立于候选拓扑递推；另检验释放、全部前驱约束及见证路径分数。时钟参考枚举可行偏移，核对因果交集端点和真实经过时间的包含关系。固定案例覆盖空输入、零长、相邻、重复操作、嵌套、裁剪、内部释放、汇合和零持续时间；随机DAG打乱标签，避免依赖节点编号拓扑有序。负对照中start-first、ignore_release、choose_min及缺边均实际执行错误算法并产生可检测差异；累计冒充并集、累计冒充路径、点偏移和半RTT用具体反例检出，虽较简单，但对应正文实际错误机制，整体检查不属自证。actual_preflight绑定脚本SHA256为78c52c1b7906ec176d8e9f23bb86fe8cd4625c0d07d04c3695f616b631f6626c，记录Python3.12在remote_bwrap隔离环境中以-I -S -B -X utf8执行，returncode=0、stderr为空、未超时；输出为308个区间案例、300个随机DAG及固定案例、56个时钟案例和八类负对照。该记录支持关闭campaign-K-SYS-001-r1的语法失败；当前脚本以显式require失败判断替代非法断言。本审查没有亲自重跑该进程，也未把作者所述JavaScript运行计为独立复现。作者明确未执行Python，与后来协调者提供的Python预检记录并不矛盾。遗漏主要是一般实数及非有限输入、目标参数封装、原始身份关联、对象状态重建和驻留扫描的自动验证；算法与算例可由正文核对，且这些遗漏未被冒充为已验证的设备或服务效果。"
+}

@@ -1,0 +1,199 @@
+{
+  "role": "reviewer",
+  "engine": "sol",
+  "requested_model": "gpt-6.1-sol",
+  "reasoning_effort": "high",
+  "prompt_sha256": "63ef78dc8415da4fb1b9a666969723e04baec53e1818231437afc1cb471c2933",
+  "usage": [
+    {
+      "input_tokens": 162046,
+      "cached_input_tokens": 7552,
+      "cache_write_input_tokens": 0,
+      "output_tokens": 5910,
+      "reasoning_output_tokens": 2070
+    }
+  ],
+  "answer": "{\n  \"entry_id\": \"K-ENGINE-002\",\n  \"body_sha256\": \"c624aa5dbb066e30d438652d57072c9119270f6f3b7e840dcb8e8174fb455c73\",\n  \"reviewer\": \"sol-reviewer:K-ENGINE-002:round-4\",\n  \"decision\": \"accept\",\n  \"documents\": {\n    \"AGENTS.md\": \"b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a\",\n    \"docs/knowledge-method.md\": \"69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb\",\n    \"docs/knowledge-review.md\": \"f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21\",\n    \"knowledge/engine-index/vllm-kv-manager.md\": \"c624aa5dbb066e30d438652d57072c9119270f6f3b7e840dcb8e8174fb455c73\",\n    \"knowledge/sources/S-VLLM-KV.md\": \"b131f32897dbe7385a3a51ba1190e831268aa2d6bc2ed90c27bb59b3eb69a7f3\",\n    \"knowledge/sources/S-VLLM-CODE.md\": \"6bb988f700accbd146a39d95800256b89ac5f3914994086394848413aff61a6d\",\n    \"knowledge/sources/S-VLLM-HYBRID.md\": \"0b3b67b14c24f707211afc5bf40eb2af9c5c549d5170c2ff25bd3efe5e81c8c9\",\n    \"knowledge/algorithms/tiered-residency.md\": \"eb3ebc6320d5a32481cf645605d159860dc6d1edb97f1e98afd89ddb24ee82af\",\n    \"references/S-VLLM-HYBRID/fulltext.txt\": \"c82febf32c70bc2755f7678dfe63925a264fbe68cf44980ad8f63b891f76ecc0\",\n    \"tools/check_k_engine_002_full.py\": \"8fa8a681dc6fbe7262f4deb6ca7e7c28e6087261cfd85f5f00bf3d4f0a06e23c\"\n  },\n  \"criteria\": {\n    \"definition\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"明确区分已知输入、候选命中、确认状态、安排进度和容量，定义共同恢复位置及物理责任。Held(tx) 与私有归属 T 分离，覆盖没有私有目标的源保护事务；采样结果也未被误当成已有 KV。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/engine-index/vllm-kv-manager.md\",\n          \"quote\": \"令位置 p 表示已经消费输入 x[0:p)，下一输入是 x[p]。\"\n        },\n        {\n          \"path\": \"knowledge/engine-index/vllm-kv-manager.md\",\n          \"quote\": \"已经采样但尚未被模型消费的 token，也不自动具有对应 KV。\"\n        },\n        {\n          \"path\": \"knowledge/engine-index/vllm-kv-manager.md\",\n          \"quote\": \"一个事务没有私有目标，也可能持有源页 H。\"\n        }\n      ]\n    },\n    \"legality\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"恢复资格同时受计算身份、授权、状态族交集、输出合同、表示和目标可消费性约束；容量检查排除刚保护的对象并逐池成立。联合预留、完整块复用和保守结算被明确作为有范围的方案，未冒充普遍实现要求。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/engine-index/vllm-kv-manager.md\",\n          \"quote\": \"哈希用于寻找候选，不能替代完整身份核验；相同 token 片段在不同上文之后的 KV 通常不同。\"\n        },\n        {\n          \"path\": \"knowledge/engine-index/vllm-kv-manager.md\",\n          \"quote\": \"外部副本 READY 只说明源端满足其合同；目标端必须完成传输、转换和消费者可见性。\"\n        },\n        {\n          \"path\": \"knowledge/engine-index/vllm-kv-manager.md\",\n          \"quote\": \"这是一种便于失败恢复的独立联合预留基线，不宣称固定源码具有相同原子接口。\"\n        }\n      ]\n    },\n    \"algorithm\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"匹配、保护、联合预留、私有执行、提交和失败排空形成完整路径。K-ENGINE-002-H-SETTLEMENT 已关闭：取得 H 时登记全集，成功先建立 O 或恢复接管责任，再遍历全集结算；中止按逐对象最后使用结算，完成入口自动续办，未使用保护立即解除，重复收尾不重复归还且保留其他事务的 H。publish、release_tx、complete 与 settle_tx 的实际代码对应这些更新。逐层模型推进明确委托到已供摘录中的异构状态缓存完整重放算法，该算法解释高层输入来源及全族共同提交。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/engine-index/vllm-kv-manager.md\",\n          \"quote\": \"重新核验命中与恢复源身份；取得每项 H 时同时记入 Held(tx)\"\n        },\n        {\n          \"path\": \"knowledge/engine-index/vllm-kv-manager.md\",\n          \"quote\": \"为完整新请求视图的目标建立请求持有 O，再转交对应私有归属 T\"\n        },\n        {\n          \"path\": \"knowledge/engine-index/vllm-kv-manager.md\",\n          \"quote\": \"调用 SettleTx，遍历 Held(tx) 全集，包含未进入新视图的源和未采用命中页\"\n        },\n        {\n          \"path\": \"knowledge/engine-index/vllm-kv-manager.md\",\n          \"quote\": \"只有真实最后使用证据成立时才结算匹配 U；随后自动再次调用 SettleTx\"\n        },\n        {\n          \"path\": \"knowledge/engine-index/vllm-kv-manager.md\",\n          \"quote\": \"保留提交/中止收据和操作终态；重复调用只处理尚未结算的项\"\n        }\n      ]\n    },\n    \"cost\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"六类成本在同一计划和时间窗中列账，区分唯一容量、固定池保留、逻辑交通、链路载荷与关键路径。独立核算新增页数示例、160 B COW、640/512 B 保护容量、层组地址、6.875 MiB 快照、1 MiB padding 和31.25 ms传输均一致。新增 H 结算也计入责任遍历、重复扫描和驻留延长，没有把角色重叠重复计为物理字节。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/engine-index/vllm-kv-manager.md\",\n          \"quote\": \"640 B 包含本轮保护页和旧读者页，是该阶段不能立即让给新内容的唯一页容量；池的固定保留量始终为 768 B，不能再把两者相加。\"\n        },\n        {\n          \"path\": \"knowledge/engine-index/vllm-kv-manager.md\",\n          \"quote\": \"直接在每个完成事件重扫全部责任和操作的解释模型则有额外重复工作，不能把一次 O(L) 当作整个排空成本。\"\n        },\n        {\n          \"path\": \"knowledge/engine-index/vllm-kv-manager.md\",\n          \"quote\": \"存在重叠时按真实依赖求关键路径，共享 HBM、链路或 CPU 的工作仍竞争同一资源。\"\n        }\n      ]\n    },\n    \"adaptation\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"对预留量、块长、窗口、模型与表示、外部带宽和层组粒度变化，分别说明必须保留的合法性与需要重算的成本；允许回退恢复位置、重放、分池或放弃外部命中。没有把更大命中位置或更多预留当成无条件改进。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/engine-index/vllm-kv-manager.md\",\n          \"quote\": \"异构检查点和工作区不同，容量不一定随 p 单调。\"\n        },\n        {\n          \"path\": \"knowledge/engine-index/vllm-kv-manager.md\",\n          \"quote\": \"窗口扩大后，旧历史缺失不能靠增加长度字段补回；需要合法副本或重放。递归状态也不能任意倒退。\"\n        },\n        {\n          \"path\": \"knowledge/engine-index/vllm-kv-manager.md\",\n          \"quote\": \"外部带宽下降、转换变重或重算变快时，重新比较完整候选，允许较短共同恢复点或放弃外部命中。\"\n        }\n      ]\n    },\n    \"diagnosis\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"提供命中无延迟收益、空闲却分配失败、共享无 ITL 收益和取消后污染的竞争解释及受控干预。针对本轮缺口，以原始取得清单区分目标命中、非目标读取源、未采用候选和其他事务保护；检查既观察残留责任又观察可分配集合，负对照实际遗漏清理，能反驳脚本与正文协议之间的对应关系。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/engine-index/vllm-kv-manager.md\",\n          \"quote\": \"固定同一清单，分别让源进入目标视图、仅被复制、完全未采用；只在后两类泄漏，支持结算范围误用目标 handles 的解释。\"\n        },\n        {\n          \"path\": \"knowledge/engine-index/vllm-kv-manager.md\",\n          \"quote\": \"独立责任观察器必须区分这些情况，不能用清空所有 holds 验证“修复”。\"\n        },\n        {\n          \"path\": \"knowledge/engine-index/vllm-kv-manager.md\",\n          \"quote\": \"旧通知被拒绝但新页仍被旧写覆盖，反驳的是物理回收顺序，不能用增加代次比较修复。\"\n        }\n      ]\n    }\n  },\n  \"findings\": [],\n  \"limitations\": [\n    \"本次依据消息提供的完整材料、摘录及冻结哈希进行审查，未从磁盘重新读取或独立计算文件哈希，也未另行执行 Python。检查通过结论仅归属于所供 actual_preflight 的实际执行记录。\",\n    \"S-VLLM-KV 与 S-VLLM-CODE 仅提供完整机制说明，没有暴露上游源码归档；据此核对说明与正文的一致性，不声称完成原始源码核验。Hybrid 原文已全文检查，其早期功能限制和组数措辞矛盾均被正文保留。\",\n    \"相对链接指向所供材料的路径关系已核对；未执行离线链接目标存在性检查，未阅读 reader.html 图版或未供给的关联章节范围。\",\n    \"CPU 模型不验证完整请求授权入口、多池联合预留、expected_view 并发竞争、任意异构恢复、接受状态未知的设备恢复或分布式源租约。正文已明确这些边界。\",\n    \"未验证真实模型数值、低精度元数据处理、CPU 并发原子性、GPU/stream/NIC 可见性、DMA 停止、目标 kernel ABI、性能、SLO 或 Agent 使用效果。保守 H 结算的延迟也未被证明最优。\"\n  ],\n  \"checks\": [\n    {\n      \"script\": \"tools/check_k_engine_002_full.py\",\n      \"args\": []\n    }\n  ],\n  \"no_checks_reason\": \"\",\n  \"reading_scope\": \"本审阅调用完整阅读消息所供 AGENTS.md [0,567)、docs/knowledge-method.md [0,2251)、docs/knowledge-review.md [0,3016)、当前候选 knowledge/engine-index/vllm-kv-manager.md [0,15814)、S-VLLM-KV.md [0,726)、S-VLLM-CODE.md [0,612)、S-VLLM-HYBRID.md [0,568)、tiered-residency.md [0,4244)、references/S-VLLM-HYBRID/fulltext.txt [0,15489)，以及完整 candidate.test_script、author_notes、当前 finding、author_material_scopes 与 actual_preflight。字符范围均为提取文本的零基半开区间。关联章节仅阅读所供摘录：paged-kv-capacity.md [0,4000)、[8000,11200)、[12000,15425)；heterogeneous-state-cache.md [0,603)、[4000,14022)；vllm-scheduler.md [0,2625)、[4000,12000)；memory-allocators.md [0,393)、[4000,12000)、[16000,18232)；kv-offload-prefetch.md [0,7096)、[8000,11529)；distributed-kv-store.md [0,2625)、[4000,12000)；kv-compression.md [0,10625)。这些摘录文件未列入 documents。作者与审阅者范围分别处理：作者供料账中的正文是哈希50b09c7a66c1282b7f6f7ac7ef1f265b953b908ae5fba883c9beec4732e1ab89、长度2189的旧正文，不能冒充当前15814字候选；作者所述额外 round-3 阅读属于其陈述，未由该 files 清单单独证明。供料账记录暴露范围，不证明认知阅读。本次结论来自对当前完整候选的独立检查。\",\n  \"test_assessment\": \"已逐函数检查交付脚本及其参考、观察器和故障分支。容量参考枚举逐 token 所需页集合，不调用 additional_pages 定义期望；恢复参考逐位置检查 full 与窗口资格，与被测双向搜索分离，但只覆盖初始化可用、统一块边界及有限 full/window 配对，并非任意状态族穷举。audit 从未完成操作记录重建访问责任；H 观察器另外保留原始 acquired 清单，以操作历史和请求视图推导应保留 H、私有目标和可分配集合，不从 settled 字段或清理循环定义期望。publish 先建立目标 owners 并转交 private，再调用 settle_tx；release_tx 关闭 ACTIVE 后调用同一入口；complete 结算 uses 后自动续办，因此覆盖了原 finding 指出的两条终结路径和非目标源遗漏。六条正常组合为 commit/failure/cancel 各配有无在途 source-read；active_initial=False 实际没有登记 source-read，不能单凭标签声称它是已完成源读的正常路径。已完成源读后提交还出现在故障轨迹中。检查覆盖未使用保护立即解除、在途源延后解除、最后完成自动收尾、O 接管顺序、OTHER 保护、请求退役后的读者保护、容量恢复和终态重试幂等。三种 H 故障实际跳过清理，观察构建发生在预期失败捕获域外；其残留 H 与容量差异由同一观察器检出。既有负对照还真实执行提前发布、错误复用后的旧物理写入和共享尾部覆盖。COW 检查只是列表分叉模型，层组检查只是明确布局下的算术，不构成真实模型或设备证明。所供 actual_preflight 绑定脚本SHA-256为8fa8a681dc6fbe7262f4deb6ca7e7c28e6087261cfd85f5f00bf3d4f0a06e23c、正文输入为本次body_sha256；remote_bwrap 中 Python 3.12 实际运行返回0，stderr为空、未超时，报告22032个容量案例、4160个恢复案例、6条H正常轨迹、10个负对照检出及26807次断言。该记录提供当前 Python 的执行证据，补足作者当时仅执行 V8 探针的边界；本审阅调用没有将其记作自行重跑或硬件PASS。结合正文状态更新及实际故障检测，原H结算阻塞已解决。\"\n}",
+  "exit_code": 0,
+  "status": "completed",
+  "timeout_seconds": 1800,
+  "response_path": "D:\\桌面\\xdb\\InfraAgents\\InfraAgents-know-astra-new\\InfraAgents-know\\docs\\evidence\\knowledge-workflow-20261028-batch21\\full_build\\K-ENGINE-002\\round-4\\reviewer-attempt-001\\answer.txt",
+  "record_path": "D:\\桌面\\xdb\\InfraAgents\\InfraAgents-know-astra-new\\InfraAgents-know\\docs\\evidence\\knowledge-workflow-20261028-batch21\\full_build\\K-ENGINE-002\\round-4\\reviewer-attempt-001\\record.json",
+  "tool_events": [],
+  "inventory_tool_events": [],
+  "rejected_tool_events": [],
+  "tool_policy": "metadata_inventory_only",
+  "tool_policy_version": "metadata-inventory-v1",
+  "tool_policy_scope": "Only empty-argument codex host plugin/skill-directory descriptors and empty template inventory; inventory is not knowledge evidence. All other tool events reject the call.",
+  "tool_policy_reason": "Production chapter construction allows observed generic capability discovery metadata; this does not claim a zero-tool comparison or external source reading.",
+  "malformed_event_lines": [],
+  "turn_completed": true,
+  "error_events": [],
+  "recovered_transport_events": [],
+  "terminal_error_events": [],
+  "transport_recovered": false,
+  "actual_model": null,
+  "identity_verified": null,
+  "identity_basis": "Explicit CLI model and isolated HTTP provider; CLI events do not expose server model identity.",
+  "provider": "eval-openai-http",
+  "max_output_tokens": null,
+  "cli_version": "codex-cli 0.164.0-alpha.11.1",
+  "cost_scope": "Codex token usage is reported; subscription charge is not exposed.",
+  "parsed": {
+    "entry_id": "K-ENGINE-002",
+    "body_sha256": "c624aa5dbb066e30d438652d57072c9119270f6f3b7e840dcb8e8174fb455c73",
+    "reviewer": "sol-reviewer:K-ENGINE-002:round-4",
+    "decision": "accept",
+    "documents": {
+      "AGENTS.md": "b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a",
+      "docs/knowledge-method.md": "69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb",
+      "docs/knowledge-review.md": "f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21",
+      "knowledge/engine-index/vllm-kv-manager.md": "c624aa5dbb066e30d438652d57072c9119270f6f3b7e840dcb8e8174fb455c73",
+      "knowledge/sources/S-VLLM-KV.md": "b131f32897dbe7385a3a51ba1190e831268aa2d6bc2ed90c27bb59b3eb69a7f3",
+      "knowledge/sources/S-VLLM-CODE.md": "6bb988f700accbd146a39d95800256b89ac5f3914994086394848413aff61a6d",
+      "knowledge/sources/S-VLLM-HYBRID.md": "0b3b67b14c24f707211afc5bf40eb2af9c5c549d5170c2ff25bd3efe5e81c8c9",
+      "knowledge/algorithms/tiered-residency.md": "eb3ebc6320d5a32481cf645605d159860dc6d1edb97f1e98afd89ddb24ee82af",
+      "references/S-VLLM-HYBRID/fulltext.txt": "c82febf32c70bc2755f7678dfe63925a264fbe68cf44980ad8f63b891f76ecc0",
+      "tools/check_k_engine_002_full.py": "8fa8a681dc6fbe7262f4deb6ca7e7c28e6087261cfd85f5f00bf3d4f0a06e23c"
+    },
+    "criteria": {
+      "definition": {
+        "assessment": "sufficient",
+        "reason": "明确区分已知输入、候选命中、确认状态、安排进度和容量，定义共同恢复位置及物理责任。Held(tx) 与私有归属 T 分离，覆盖没有私有目标的源保护事务；采样结果也未被误当成已有 KV。",
+        "evidence": [
+          {
+            "path": "knowledge/engine-index/vllm-kv-manager.md",
+            "quote": "令位置 p 表示已经消费输入 x[0:p)，下一输入是 x[p]。"
+          },
+          {
+            "path": "knowledge/engine-index/vllm-kv-manager.md",
+            "quote": "已经采样但尚未被模型消费的 token，也不自动具有对应 KV。"
+          },
+          {
+            "path": "knowledge/engine-index/vllm-kv-manager.md",
+            "quote": "一个事务没有私有目标，也可能持有源页 H。"
+          }
+        ]
+      },
+      "legality": {
+        "assessment": "sufficient",
+        "reason": "恢复资格同时受计算身份、授权、状态族交集、输出合同、表示和目标可消费性约束；容量检查排除刚保护的对象并逐池成立。联合预留、完整块复用和保守结算被明确作为有范围的方案，未冒充普遍实现要求。",
+        "evidence": [
+          {
+            "path": "knowledge/engine-index/vllm-kv-manager.md",
+            "quote": "哈希用于寻找候选，不能替代完整身份核验；相同 token 片段在不同上文之后的 KV 通常不同。"
+          },
+          {
+            "path": "knowledge/engine-index/vllm-kv-manager.md",
+            "quote": "外部副本 READY 只说明源端满足其合同；目标端必须完成传输、转换和消费者可见性。"
+          },
+          {
+            "path": "knowledge/engine-index/vllm-kv-manager.md",
+            "quote": "这是一种便于失败恢复的独立联合预留基线，不宣称固定源码具有相同原子接口。"
+          }
+        ]
+      },
+      "algorithm": {
+        "assessment": "sufficient",
+        "reason": "匹配、保护、联合预留、私有执行、提交和失败排空形成完整路径。K-ENGINE-002-H-SETTLEMENT 已关闭：取得 H 时登记全集，成功先建立 O 或恢复接管责任，再遍历全集结算；中止按逐对象最后使用结算，完成入口自动续办，未使用保护立即解除，重复收尾不重复归还且保留其他事务的 H。publish、release_tx、complete 与 settle_tx 的实际代码对应这些更新。逐层模型推进明确委托到已供摘录中的异构状态缓存完整重放算法，该算法解释高层输入来源及全族共同提交。",
+        "evidence": [
+          {
+            "path": "knowledge/engine-index/vllm-kv-manager.md",
+            "quote": "重新核验命中与恢复源身份；取得每项 H 时同时记入 Held(tx)"
+          },
+          {
+            "path": "knowledge/engine-index/vllm-kv-manager.md",
+            "quote": "为完整新请求视图的目标建立请求持有 O，再转交对应私有归属 T"
+          },
+          {
+            "path": "knowledge/engine-index/vllm-kv-manager.md",
+            "quote": "调用 SettleTx，遍历 Held(tx) 全集，包含未进入新视图的源和未采用命中页"
+          },
+          {
+            "path": "knowledge/engine-index/vllm-kv-manager.md",
+            "quote": "只有真实最后使用证据成立时才结算匹配 U；随后自动再次调用 SettleTx"
+          },
+          {
+            "path": "knowledge/engine-index/vllm-kv-manager.md",
+            "quote": "保留提交/中止收据和操作终态；重复调用只处理尚未结算的项"
+          }
+        ]
+      },
+      "cost": {
+        "assessment": "sufficient",
+        "reason": "六类成本在同一计划和时间窗中列账，区分唯一容量、固定池保留、逻辑交通、链路载荷与关键路径。独立核算新增页数示例、160 B COW、640/512 B 保护容量、层组地址、6.875 MiB 快照、1 MiB padding 和31.25 ms传输均一致。新增 H 结算也计入责任遍历、重复扫描和驻留延长，没有把角色重叠重复计为物理字节。",
+        "evidence": [
+          {
+            "path": "knowledge/engine-index/vllm-kv-manager.md",
+            "quote": "640 B 包含本轮保护页和旧读者页，是该阶段不能立即让给新内容的唯一页容量；池的固定保留量始终为 768 B，不能再把两者相加。"
+          },
+          {
+            "path": "knowledge/engine-index/vllm-kv-manager.md",
+            "quote": "直接在每个完成事件重扫全部责任和操作的解释模型则有额外重复工作，不能把一次 O(L) 当作整个排空成本。"
+          },
+          {
+            "path": "knowledge/engine-index/vllm-kv-manager.md",
+            "quote": "存在重叠时按真实依赖求关键路径，共享 HBM、链路或 CPU 的工作仍竞争同一资源。"
+          }
+        ]
+      },
+      "adaptation": {
+        "assessment": "sufficient",
+        "reason": "对预留量、块长、窗口、模型与表示、外部带宽和层组粒度变化，分别说明必须保留的合法性与需要重算的成本；允许回退恢复位置、重放、分池或放弃外部命中。没有把更大命中位置或更多预留当成无条件改进。",
+        "evidence": [
+          {
+            "path": "knowledge/engine-index/vllm-kv-manager.md",
+            "quote": "异构检查点和工作区不同，容量不一定随 p 单调。"
+          },
+          {
+            "path": "knowledge/engine-index/vllm-kv-manager.md",
+            "quote": "窗口扩大后，旧历史缺失不能靠增加长度字段补回；需要合法副本或重放。递归状态也不能任意倒退。"
+          },
+          {
+            "path": "knowledge/engine-index/vllm-kv-manager.md",
+            "quote": "外部带宽下降、转换变重或重算变快时，重新比较完整候选，允许较短共同恢复点或放弃外部命中。"
+          }
+        ]
+      },
+      "diagnosis": {
+        "assessment": "sufficient",
+        "reason": "提供命中无延迟收益、空闲却分配失败、共享无 ITL 收益和取消后污染的竞争解释及受控干预。针对本轮缺口，以原始取得清单区分目标命中、非目标读取源、未采用候选和其他事务保护；检查既观察残留责任又观察可分配集合，负对照实际遗漏清理，能反驳脚本与正文协议之间的对应关系。",
+        "evidence": [
+          {
+            "path": "knowledge/engine-index/vllm-kv-manager.md",
+            "quote": "固定同一清单，分别让源进入目标视图、仅被复制、完全未采用；只在后两类泄漏，支持结算范围误用目标 handles 的解释。"
+          },
+          {
+            "path": "knowledge/engine-index/vllm-kv-manager.md",
+            "quote": "独立责任观察器必须区分这些情况，不能用清空所有 holds 验证“修复”。"
+          },
+          {
+            "path": "knowledge/engine-index/vllm-kv-manager.md",
+            "quote": "旧通知被拒绝但新页仍被旧写覆盖，反驳的是物理回收顺序，不能用增加代次比较修复。"
+          }
+        ]
+      }
+    },
+    "findings": [],
+    "limitations": [
+      "本次依据消息提供的完整材料、摘录及冻结哈希进行审查，未从磁盘重新读取或独立计算文件哈希，也未另行执行 Python。检查通过结论仅归属于所供 actual_preflight 的实际执行记录。",
+      "S-VLLM-KV 与 S-VLLM-CODE 仅提供完整机制说明，没有暴露上游源码归档；据此核对说明与正文的一致性，不声称完成原始源码核验。Hybrid 原文已全文检查，其早期功能限制和组数措辞矛盾均被正文保留。",
+      "相对链接指向所供材料的路径关系已核对；未执行离线链接目标存在性检查，未阅读 reader.html 图版或未供给的关联章节范围。",
+      "CPU 模型不验证完整请求授权入口、多池联合预留、expected_view 并发竞争、任意异构恢复、接受状态未知的设备恢复或分布式源租约。正文已明确这些边界。",
+      "未验证真实模型数值、低精度元数据处理、CPU 并发原子性、GPU/stream/NIC 可见性、DMA 停止、目标 kernel ABI、性能、SLO 或 Agent 使用效果。保守 H 结算的延迟也未被证明最优。"
+    ],
+    "checks": [
+      {
+        "script": "tools/check_k_engine_002_full.py",
+        "args": []
+      }
+    ],
+    "no_checks_reason": "",
+    "reading_scope": "本审阅调用完整阅读消息所供 AGENTS.md [0,567)、docs/knowledge-method.md [0,2251)、docs/knowledge-review.md [0,3016)、当前候选 knowledge/engine-index/vllm-kv-manager.md [0,15814)、S-VLLM-KV.md [0,726)、S-VLLM-CODE.md [0,612)、S-VLLM-HYBRID.md [0,568)、tiered-residency.md [0,4244)、references/S-VLLM-HYBRID/fulltext.txt [0,15489)，以及完整 candidate.test_script、author_notes、当前 finding、author_material_scopes 与 actual_preflight。字符范围均为提取文本的零基半开区间。关联章节仅阅读所供摘录：paged-kv-capacity.md [0,4000)、[8000,11200)、[12000,15425)；heterogeneous-state-cache.md [0,603)、[4000,14022)；vllm-scheduler.md [0,2625)、[4000,12000)；memory-allocators.md [0,393)、[4000,12000)、[16000,18232)；kv-offload-prefetch.md [0,7096)、[8000,11529)；distributed-kv-store.md [0,2625)、[4000,12000)；kv-compression.md [0,10625)。这些摘录文件未列入 documents。作者与审阅者范围分别处理：作者供料账中的正文是哈希50b09c7a66c1282b7f6f7ac7ef1f265b953b908ae5fba883c9beec4732e1ab89、长度2189的旧正文，不能冒充当前15814字候选；作者所述额外 round-3 阅读属于其陈述，未由该 files 清单单独证明。供料账记录暴露范围，不证明认知阅读。本次结论来自对当前完整候选的独立检查。",
+    "test_assessment": "已逐函数检查交付脚本及其参考、观察器和故障分支。容量参考枚举逐 token 所需页集合，不调用 additional_pages 定义期望；恢复参考逐位置检查 full 与窗口资格，与被测双向搜索分离，但只覆盖初始化可用、统一块边界及有限 full/window 配对，并非任意状态族穷举。audit 从未完成操作记录重建访问责任；H 观察器另外保留原始 acquired 清单，以操作历史和请求视图推导应保留 H、私有目标和可分配集合，不从 settled 字段或清理循环定义期望。publish 先建立目标 owners 并转交 private，再调用 settle_tx；release_tx 关闭 ACTIVE 后调用同一入口；complete 结算 uses 后自动续办，因此覆盖了原 finding 指出的两条终结路径和非目标源遗漏。六条正常组合为 commit/failure/cancel 各配有无在途 source-read；active_initial=False 实际没有登记 source-read，不能单凭标签声称它是已完成源读的正常路径。已完成源读后提交还出现在故障轨迹中。检查覆盖未使用保护立即解除、在途源延后解除、最后完成自动收尾、O 接管顺序、OTHER 保护、请求退役后的读者保护、容量恢复和终态重试幂等。三种 H 故障实际跳过清理，观察构建发生在预期失败捕获域外；其残留 H 与容量差异由同一观察器检出。既有负对照还真实执行提前发布、错误复用后的旧物理写入和共享尾部覆盖。COW 检查只是列表分叉模型，层组检查只是明确布局下的算术，不构成真实模型或设备证明。所供 actual_preflight 绑定脚本SHA-256为8fa8a681dc6fbe7262f4deb6ca7e7c28e6087261cfd85f5f00bf3d4f0a06e23c、正文输入为本次body_sha256；remote_bwrap 中 Python 3.12 实际运行返回0，stderr为空、未超时，报告22032个容量案例、4160个恢复案例、6条H正常轨迹、10个负对照检出及26807次断言。该记录提供当前 Python 的执行证据，补足作者当时仅执行 V8 探针的边界；本审阅调用没有将其记作自行重跑或硬件PASS。结合正文状态更新及实际故障检测，原H结算阻塞已解决。"
+  },
+  "format_status": "strict_json",
+  "format_error": null,
+  "output_text": "{\n  \"entry_id\": \"K-ENGINE-002\",\n  \"body_sha256\": \"c624aa5dbb066e30d438652d57072c9119270f6f3b7e840dcb8e8174fb455c73\",\n  \"reviewer\": \"sol-reviewer:K-ENGINE-002:round-4\",\n  \"decision\": \"accept\",\n  \"documents\": {\n    \"AGENTS.md\": \"b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a\",\n    \"docs/knowledge-method.md\": \"69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb\",\n    \"docs/knowledge-review.md\": \"f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21\",\n    \"knowledge/engine-index/vllm-kv-manager.md\": \"c624aa5dbb066e30d438652d57072c9119270f6f3b7e840dcb8e8174fb455c73\",\n    \"knowledge/sources/S-VLLM-KV.md\": \"b131f32897dbe7385a3a51ba1190e831268aa2d6bc2ed90c27bb59b3eb69a7f3\",\n    \"knowledge/sources/S-VLLM-CODE.md\": \"6bb988f700accbd146a39d95800256b89ac5f3914994086394848413aff61a6d\",\n    \"knowledge/sources/S-VLLM-HYBRID.md\": \"0b3b67b14c24f707211afc5bf40eb2af9c5c549d5170c2ff25bd3efe5e81c8c9\",\n    \"knowledge/algorithms/tiered-residency.md\": \"eb3ebc6320d5a32481cf645605d159860dc6d1edb97f1e98afd89ddb24ee82af\",\n    \"references/S-VLLM-HYBRID/fulltext.txt\": \"c82febf32c70bc2755f7678dfe63925a264fbe68cf44980ad8f63b891f76ecc0\",\n    \"tools/check_k_engine_002_full.py\": \"8fa8a681dc6fbe7262f4deb6ca7e7c28e6087261cfd85f5f00bf3d4f0a06e23c\"\n  },\n  \"criteria\": {\n    \"definition\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"明确区分已知输入、候选命中、确认状态、安排进度和容量，定义共同恢复位置及物理责任。Held(tx) 与私有归属 T 分离，覆盖没有私有目标的源保护事务；采样结果也未被误当成已有 KV。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/engine-index/vllm-kv-manager.md\",\n          \"quote\": \"令位置 p 表示已经消费输入 x[0:p)，下一输入是 x[p]。\"\n        },\n        {\n          \"path\": \"knowledge/engine-index/vllm-kv-manager.md\",\n          \"quote\": \"已经采样但尚未被模型消费的 token，也不自动具有对应 KV。\"\n        },\n        {\n          \"path\": \"knowledge/engine-index/vllm-kv-manager.md\",\n          \"quote\": \"一个事务没有私有目标，也可能持有源页 H。\"\n        }\n      ]\n    },\n    \"legality\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"恢复资格同时受计算身份、授权、状态族交集、输出合同、表示和目标可消费性约束；容量检查排除刚保护的对象并逐池成立。联合预留、完整块复用和保守结算被明确作为有范围的方案，未冒充普遍实现要求。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/engine-index/vllm-kv-manager.md\",\n          \"quote\": \"哈希用于寻找候选，不能替代完整身份核验；相同 token 片段在不同上文之后的 KV 通常不同。\"\n        },\n        {\n          \"path\": \"knowledge/engine-index/vllm-kv-manager.md\",\n          \"quote\": \"外部副本 READY 只说明源端满足其合同；目标端必须完成传输、转换和消费者可见性。\"\n        },\n        {\n          \"path\": \"knowledge/engine-index/vllm-kv-manager.md\",\n          \"quote\": \"这是一种便于失败恢复的独立联合预留基线，不宣称固定源码具有相同原子接口。\"\n        }\n      ]\n    },\n    \"algorithm\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"匹配、保护、联合预留、私有执行、提交和失败排空形成完整路径。K-ENGINE-002-H-SETTLEMENT 已关闭：取得 H 时登记全集，成功先建立 O 或恢复接管责任，再遍历全集结算；中止按逐对象最后使用结算，完成入口自动续办，未使用保护立即解除，重复收尾不重复归还且保留其他事务的 H。publish、release_tx、complete 与 settle_tx 的实际代码对应这些更新。逐层模型推进明确委托到已供摘录中的异构状态缓存完整重放算法，该算法解释高层输入来源及全族共同提交。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/engine-index/vllm-kv-manager.md\",\n          \"quote\": \"重新核验命中与恢复源身份；取得每项 H 时同时记入 Held(tx)\"\n        },\n        {\n          \"path\": \"knowledge/engine-index/vllm-kv-manager.md\",\n          \"quote\": \"为完整新请求视图的目标建立请求持有 O，再转交对应私有归属 T\"\n        },\n        {\n          \"path\": \"knowledge/engine-index/vllm-kv-manager.md\",\n          \"quote\": \"调用 SettleTx，遍历 Held(tx) 全集，包含未进入新视图的源和未采用命中页\"\n        },\n        {\n          \"path\": \"knowledge/engine-index/vllm-kv-manager.md\",\n          \"quote\": \"只有真实最后使用证据成立时才结算匹配 U；随后自动再次调用 SettleTx\"\n        },\n        {\n          \"path\": \"knowledge/engine-index/vllm-kv-manager.md\",\n          \"quote\": \"保留提交/中止收据和操作终态；重复调用只处理尚未结算的项\"\n        }\n      ]\n    },\n    \"cost\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"六类成本在同一计划和时间窗中列账，区分唯一容量、固定池保留、逻辑交通、链路载荷与关键路径。独立核算新增页数示例、160 B COW、640/512 B 保护容量、层组地址、6.875 MiB 快照、1 MiB padding 和31.25 ms传输均一致。新增 H 结算也计入责任遍历、重复扫描和驻留延长，没有把角色重叠重复计为物理字节。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/engine-index/vllm-kv-manager.md\",\n          \"quote\": \"640 B 包含本轮保护页和旧读者页，是该阶段不能立即让给新内容的唯一页容量；池的固定保留量始终为 768 B，不能再把两者相加。\"\n        },\n        {\n          \"path\": \"knowledge/engine-index/vllm-kv-manager.md\",\n          \"quote\": \"直接在每个完成事件重扫全部责任和操作的解释模型则有额外重复工作，不能把一次 O(L) 当作整个排空成本。\"\n        },\n        {\n          \"path\": \"knowledge/engine-index/vllm-kv-manager.md\",\n          \"quote\": \"存在重叠时按真实依赖求关键路径，共享 HBM、链路或 CPU 的工作仍竞争同一资源。\"\n        }\n      ]\n    },\n    \"adaptation\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"对预留量、块长、窗口、模型与表示、外部带宽和层组粒度变化，分别说明必须保留的合法性与需要重算的成本；允许回退恢复位置、重放、分池或放弃外部命中。没有把更大命中位置或更多预留当成无条件改进。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/engine-index/vllm-kv-manager.md\",\n          \"quote\": \"异构检查点和工作区不同，容量不一定随 p 单调。\"\n        },\n        {\n          \"path\": \"knowledge/engine-index/vllm-kv-manager.md\",\n          \"quote\": \"窗口扩大后，旧历史缺失不能靠增加长度字段补回；需要合法副本或重放。递归状态也不能任意倒退。\"\n        },\n        {\n          \"path\": \"knowledge/engine-index/vllm-kv-manager.md\",\n          \"quote\": \"外部带宽下降、转换变重或重算变快时，重新比较完整候选，允许较短共同恢复点或放弃外部命中。\"\n        }\n      ]\n    },\n    \"diagnosis\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"提供命中无延迟收益、空闲却分配失败、共享无 ITL 收益和取消后污染的竞争解释及受控干预。针对本轮缺口，以原始取得清单区分目标命中、非目标读取源、未采用候选和其他事务保护；检查既观察残留责任又观察可分配集合，负对照实际遗漏清理，能反驳脚本与正文协议之间的对应关系。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/engine-index/vllm-kv-manager.md\",\n          \"quote\": \"固定同一清单，分别让源进入目标视图、仅被复制、完全未采用；只在后两类泄漏，支持结算范围误用目标 handles 的解释。\"\n        },\n        {\n          \"path\": \"knowledge/engine-index/vllm-kv-manager.md\",\n          \"quote\": \"独立责任观察器必须区分这些情况，不能用清空所有 holds 验证“修复”。\"\n        },\n        {\n          \"path\": \"knowledge/engine-index/vllm-kv-manager.md\",\n          \"quote\": \"旧通知被拒绝但新页仍被旧写覆盖，反驳的是物理回收顺序，不能用增加代次比较修复。\"\n        }\n      ]\n    }\n  },\n  \"findings\": [],\n  \"limitations\": [\n    \"本次依据消息提供的完整材料、摘录及冻结哈希进行审查，未从磁盘重新读取或独立计算文件哈希，也未另行执行 Python。检查通过结论仅归属于所供 actual_preflight 的实际执行记录。\",\n    \"S-VLLM-KV 与 S-VLLM-CODE 仅提供完整机制说明，没有暴露上游源码归档；据此核对说明与正文的一致性，不声称完成原始源码核验。Hybrid 原文已全文检查，其早期功能限制和组数措辞矛盾均被正文保留。\",\n    \"相对链接指向所供材料的路径关系已核对；未执行离线链接目标存在性检查，未阅读 reader.html 图版或未供给的关联章节范围。\",\n    \"CPU 模型不验证完整请求授权入口、多池联合预留、expected_view 并发竞争、任意异构恢复、接受状态未知的设备恢复或分布式源租约。正文已明确这些边界。\",\n    \"未验证真实模型数值、低精度元数据处理、CPU 并发原子性、GPU/stream/NIC 可见性、DMA 停止、目标 kernel ABI、性能、SLO 或 Agent 使用效果。保守 H 结算的延迟也未被证明最优。\"\n  ],\n  \"checks\": [\n    {\n      \"script\": \"tools/check_k_engine_002_full.py\",\n      \"args\": []\n    }\n  ],\n  \"no_checks_reason\": \"\",\n  \"reading_scope\": \"本审阅调用完整阅读消息所供 AGENTS.md [0,567)、docs/knowledge-method.md [0,2251)、docs/knowledge-review.md [0,3016)、当前候选 knowledge/engine-index/vllm-kv-manager.md [0,15814)、S-VLLM-KV.md [0,726)、S-VLLM-CODE.md [0,612)、S-VLLM-HYBRID.md [0,568)、tiered-residency.md [0,4244)、references/S-VLLM-HYBRID/fulltext.txt [0,15489)，以及完整 candidate.test_script、author_notes、当前 finding、author_material_scopes 与 actual_preflight。字符范围均为提取文本的零基半开区间。关联章节仅阅读所供摘录：paged-kv-capacity.md [0,4000)、[8000,11200)、[12000,15425)；heterogeneous-state-cache.md [0,603)、[4000,14022)；vllm-scheduler.md [0,2625)、[4000,12000)；memory-allocators.md [0,393)、[4000,12000)、[16000,18232)；kv-offload-prefetch.md [0,7096)、[8000,11529)；distributed-kv-store.md [0,2625)、[4000,12000)；kv-compression.md [0,10625)。这些摘录文件未列入 documents。作者与审阅者范围分别处理：作者供料账中的正文是哈希50b09c7a66c1282b7f6f7ac7ef1f265b953b908ae5fba883c9beec4732e1ab89、长度2189的旧正文，不能冒充当前15814字候选；作者所述额外 round-3 阅读属于其陈述，未由该 files 清单单独证明。供料账记录暴露范围，不证明认知阅读。本次结论来自对当前完整候选的独立检查。\",\n  \"test_assessment\": \"已逐函数检查交付脚本及其参考、观察器和故障分支。容量参考枚举逐 token 所需页集合，不调用 additional_pages 定义期望；恢复参考逐位置检查 full 与窗口资格，与被测双向搜索分离，但只覆盖初始化可用、统一块边界及有限 full/window 配对，并非任意状态族穷举。audit 从未完成操作记录重建访问责任；H 观察器另外保留原始 acquired 清单，以操作历史和请求视图推导应保留 H、私有目标和可分配集合，不从 settled 字段或清理循环定义期望。publish 先建立目标 owners 并转交 private，再调用 settle_tx；release_tx 关闭 ACTIVE 后调用同一入口；complete 结算 uses 后自动续办，因此覆盖了原 finding 指出的两条终结路径和非目标源遗漏。六条正常组合为 commit/failure/cancel 各配有无在途 source-read；active_initial=False 实际没有登记 source-read，不能单凭标签声称它是已完成源读的正常路径。已完成源读后提交还出现在故障轨迹中。检查覆盖未使用保护立即解除、在途源延后解除、最后完成自动收尾、O 接管顺序、OTHER 保护、请求退役后的读者保护、容量恢复和终态重试幂等。三种 H 故障实际跳过清理，观察构建发生在预期失败捕获域外；其残留 H 与容量差异由同一观察器检出。既有负对照还真实执行提前发布、错误复用后的旧物理写入和共享尾部覆盖。COW 检查只是列表分叉模型，层组检查只是明确布局下的算术，不构成真实模型或设备证明。所供 actual_preflight 绑定脚本SHA-256为8fa8a681dc6fbe7262f4deb6ca7e7c28e6087261cfd85f5f00bf3d4f0a06e23c、正文输入为本次body_sha256；remote_bwrap 中 Python 3.12 实际运行返回0，stderr为空、未超时，报告22032个容量案例、4160个恢复案例、6条H正常轨迹、10个负对照检出及26807次断言。该记录提供当前 Python 的执行证据，补足作者当时仅执行 V8 探针的边界；本审阅调用没有将其记作自行重跑或硬件PASS。结合正文状态更新及实际故障检测，原H结算阻塞已解决。\"\n}",
+  "elapsed_seconds": 145.641
+}

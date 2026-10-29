@@ -1,0 +1,71 @@
+{
+  "id": "K-ALG-018",
+  "path": "algorithms/kv-offload-prefetch.md",
+  "category": "algorithms",
+  "title": "KV 卸载与预取：读集合、恢复点与迁移预算",
+  "summary": "KV 卸载按实际可见集合与共同恢复点组织；暂停恢复、前缀命中和活跃 decode 的持续传输需要不同预算。",
+  "revision": 3,
+  "status": "seed",
+  "tags": [
+    "KV offload",
+    "KV 卸载",
+    "预取",
+    "重算",
+    "恢复点",
+    "HBM",
+    "DRAM",
+    "SSD"
+  ],
+  "scope": {
+    "model_families": [],
+    "platforms": [],
+    "runtimes": [],
+    "workloads": []
+  },
+  "source_ids": [
+    "S-FLEXGEN",
+    "S-PAGED",
+    "S-HF-CACHE",
+    "S-CUDA-ASYNC"
+  ],
+  "related": [
+    "K-ALG-017",
+    "K-ALG-002",
+    "K-ALG-003",
+    "K-ALG-009",
+    "K-SYS-009",
+    "K-ALG-020",
+    "K-SYS-012",
+    "K-ALG-004",
+    "K-ALG-010",
+    "K-ALG-014",
+    "K-ENGINE-002",
+    "K-ENGINE-004",
+    "K-FW-003",
+    "K-MODEL-007",
+    "K-TOOLS-002",
+    "K-HW-012",
+    "K-ALG-021",
+    "K-ALG-022"
+  ],
+  "evidence": [],
+  "updated_at": "2026-10-27",
+  "sha256": "a7088eba5c78cd9e96cf011d61946ad7dec4ecb6378ac16e7f2fc3820af38301",
+  "questions": [
+    "暂停请求换出、跨请求前缀缓存和活跃 decode 历史卸载三种使用各支付什么成本，收益为何不能互推？",
+    "按层、按 token 块和按 head 分片存放 KV 各自便于什么，与设备布局不同时引入哪些转换代价？",
+    "恢复状态的传输时延与重算时间在什么条件下可比较，带宽从 DRAM 换到 SSD 时结论如何反转？",
+    "逐层预取的提前量由什么决定，每步都读整段历史时链路带宽如何给出 ITL 下界？",
+    "恢复过程中哪些对象必须齐备才能发布可执行视图，取消后迟到的 DMA 如何结算？"
+  ],
+  "symptoms": [
+    "显存释放成功但 decode 间隔变长",
+    "卸载的前缀缓存命中却比直接重算更慢",
+    "某一层读取失败后其他层的新映射进入了下一次 forward"
+  ],
+  "assumes": [
+    "KV 可以按块导出到主存或 SSD",
+    "模型可见历史集合由模型结构决定",
+    "有可校准的传输带宽与重算成本"
+  ]
+}

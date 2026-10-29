@@ -1,0 +1,172 @@
+{
+  "entry_id": "K-SYS-006",
+  "body_sha256": "b1aad0549c0c8077f136f29d6ed2b668c2da36de8f61be96c15c15133ee4e84a",
+  "reviewer": "sol-reviewer:K-SYS-006:round-2",
+  "decision": "revise",
+  "documents": {
+    "AGENTS.md": "b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a",
+    "docs/knowledge-method.md": "69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb",
+    "docs/knowledge-review.md": "f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21",
+    "knowledge/system-semantics/evidence-and-independent-checks.md": "b1aad0549c0c8077f136f29d6ed2b668c2da36de8f61be96c15c15133ee4e84a",
+    "knowledge/sources/S-ACE.md": "70abcd0bca78d6a7f375b405a57e2059d1bb8035145f9c601e19b66151fdae5f",
+    "knowledge/sources/S-GEPA.md": "f9e57fdc57f98c7251ac91028119f8b672f0aca1ebafcbf60aa7d8101546806e",
+    "knowledge/sources/S-SELF-CORRECTION.md": "11a90d1c07a36377defcad6a8e5a0b5f5e312047f27bb8fafaba0fbda63aecdf",
+    "knowledge/sources/S-REFLEXION.md": "8c9e9ede563792342301f716a48a4ab0d256e3bd52782f7d2c876d55f804e09c",
+    "knowledge/sources/S-STATS.md": "70aaa597c5ab44b118296fe0527f0b510b7c8e4fb2e62170ce6547c0f7457f8e",
+    "knowledge/tools/correctness-oracles.md": "c2f88bc9746ac25586fc6700aaf0f5a8d043a1b1f4aee99dfdee02e1ef468aab",
+    "knowledge/tools/failure-evidence.md": "23dfc65dcbd319c1789dcb80b62f6c843bb5db8c076e86a00643cff546700067",
+    "knowledge/system-semantics/design-synthesis.md": "6e93d34ef8d9300a48ad2453aa1e26ef8391fbcc954d99133bb68110cee175cd",
+    "knowledge/tools/statistical-experiments.md": "908b3588a6fa20bb1f2aed9f5db51c4b462953d79f8944cdbcfea7141c74644f",
+    "knowledge/frameworks/numerical-reference.md": "a70beff4c73683f897d9c0c1fb291539051e20b2c31adfd90a3f6677c411596f",
+    "knowledge/workloads/input-distribution.md": "b1b68f0d2a6d640c4b64c2bc98560b9e9a79a6a60b445899949b5db15b96aa90",
+    "knowledge/system-semantics/distributed-state-transfer.md": "425985efff21e4acbe091ddfa9043cf97b37e550b606f10c0e1560a3c02b1f6f",
+    "tools/check_k_sys_006_full.py": "f57ce76d5d324fa29a711e384612637bfd9931601a8743dd39fe39d5b42bb61e"
+  },
+  "criteria": {
+    "definition": {
+      "assessment": "sufficient",
+      "reason": "命题、范围、证据记录及证据状态均有定义；配对差值区间说明独立单位、指标单位和适用假设，并明确与 S-STATS 的来源边界。",
+      "evidence": [
+        {
+          "path": "knowledge/system-semantics/evidence-and-independent-checks.md",
+          "quote": "其中 `P` 是待检验命题，`S` 是使它可判定的范围，`M` 是机制或推导，`I` 是失效条件集合，`status` 是证据状态，`rev` 是修订身份。"
+        },
+        {
+          "path": "knowledge/system-semantics/evidence-and-independent-checks.md",
+          "quote": "这里 `s_d` 是差值的样本标准差，单位与 `Y` 相同；`A` 与 `B` 的顺序固定。"
+        }
+      ]
+    },
+    "legality": {
+      "assessment": "partial",
+      "reason": "身份、完整终态、独立核对和各类结论的合法边界说明充分，但正文及 author_notes 把本轮实际提供的 S-SELF-CORRECTION 节选称为完整原文，阅读资格声明与材料范围不符。",
+      "evidence": [
+        {
+          "path": "knowledge/system-semantics/evidence-and-independent-checks.md",
+          "quote": "模型、任务函数、输入、比较对象、终止事件、版本和度量单位必须能对应到同一个命题。"
+        },
+        {
+          "path": "knowledge/system-semantics/evidence-and-independent-checks.md",
+          "quote": "本轮所给材料中，S-SELF-CORRECTION 为完整原文；S-ACE、S-GEPA、S-REFLEXION、S-STATS 为节选范围"
+        }
+      ]
+    },
+    "algorithm": {
+      "assessment": "partial",
+      "reason": "伪代码展开了阻断、冲突、升级和回退，但 BUILD_EFFECT 分支没有落实正文要求的机制条件；检查脚本的两个 gate 又共享几乎相同的布尔分支，未忠实表示正文的重要独立条件，穷举一致不能证明正文状态机正确。",
+      "evidence": [
+        {
+          "path": "knowledge/system-semantics/evidence-and-independent-checks.md",
+          "quote": "比较对象、模型、任务、工具和预算固定；配对或区组；独立评价器；保留任务；负对照；记录机制与使用路径"
+        },
+        {
+          "path": "knowledge/system-semantics/evidence-and-independent-checks.md",
+          "quote": "36     IF no held-out construction task OR no documented knowledge-use path THEN\n37         RETURN (CHECKED, reason = transfer_or_use_not_established)\n38     RETURN (SUPPORTED_EFFECT, accepted = scoped_build_effect)"
+        },
+        {
+          "path": "knowledge/system-semantics/evidence-and-independent-checks.md",
+          "quote": "30     IF no independent reference on the changed condition OR no mechanism for retained dependency THEN"
+        }
+      ]
+    },
+    "cost": {
+      "assessment": "partial",
+      "reason": "覆盖准备、重复运行、参考、迁移、同步扰动和证据驻留，但 T_check 的各项没有共同单位，驻留成本和审查成本没有量化定义；随后又与错误决策损失直接相加，尚不足以复算这一成本模型。",
+      "evidence": [
+        {
+          "path": "knowledge/system-semantics/evidence-and-independent-checks.md",
+          "quote": "`T_check = C_fixture + n_build C_build + n_run C_run + n_measure C_measure + n_xfer C_xfer + C_reference + C_review + C_retain`"
+        },
+        {
+          "path": "knowledge/system-semantics/evidence-and-independent-checks.md",
+          "quote": "`C_review` 是判断、复算和记录修订的理由；`C_retain` 是证据、日志和原始对象的驻留。"
+        },
+        {
+          "path": "knowledge/system-semantics/evidence-and-independent-checks.md",
+          "quote": "`L = L_FN · P(accept bad) + L_FP · P(reject good) + T_check`"
+        }
+      ]
+    },
+    "adaptation": {
+      "assessment": "sufficient",
+      "reason": "分别解释机制关系保留、性能证据重取、前提破坏后放弃迁移，以及检查器修复后按原始信息完整性重分析或重跑。取消组合场景被用于检查设计，没有冒称设备验证。",
+      "evidence": [
+        {
+          "path": "knowledge/system-semantics/evidence-and-independent-checks.md",
+          "quote": "当模型函数、权重版本、位置规则和质量契约不变，而观测常数或机器速度改变时，保留机制关系，重取成本和性能证据。"
+        },
+        {
+          "path": "knowledge/system-semantics/evidence-and-independent-checks.md",
+          "quote": "原始事件完整时可以用新检查重分析并保留新旧身份，缺少所需信息时必须重跑相应路径。"
+        }
+      ]
+    },
+    "diagnosis": {
+      "assessment": "sufficient",
+      "reason": "给出反馈、预算、提示、排队、路由和选择偏差等竞争解释，配有保持任务契约的干预及反证后的缩域原则；身份错配、空结果和遗漏慢请求的反例可人工核对。",
+      "evidence": [
+        {
+          "path": "knowledge/system-semantics/evidence-and-independent-checks.md",
+          "quote": "区分实验要改变一个能产生不同预测的条件，同时保持任务标准、输入和比较对象尽可能不变。"
+        },
+        {
+          "path": "knowledge/system-semantics/evidence-and-independent-checks.md",
+          "quote": "空结果也不能被“所有存在元素都正确”的真值接受为完成。"
+        },
+        {
+          "path": "knowledge/system-semantics/evidence-and-independent-checks.md",
+          "quote": "一个短请求上卸载更慢，可以反驳“卸载总会更快”，不能反驳“容量不足时卸载提供可执行路径”。"
+        }
+      ]
+    }
+  },
+  "findings": [
+    {
+      "id": "K-SYS-006-r2-algorithm-01",
+      "criterion": "algorithm",
+      "evidence": "正文表格要求 BUILD_EFFECT“记录机制与使用路径”，且说明 SUPPORTED_EFFECT 支持知识条件造成的差异；PROMOTE 第33–38行只检查配对/预算/评价器、保留任务和使用路径，没有检查 M。令 M 缺失而其他条件成立，伪代码仍返回 SUPPORTED_EFFECT。脚本 reference_gate 和 chapter_gate 却都通过“f['paired_budget_matched'] and f['heldout'] and f['mechanism']”要求机制，因而脚本不是该分支的忠实转写。",
+      "impact": "正文算法能够在缺少机制解释时升级构建效果命题，违背自己声明的晋升门槛；现有一致性检查不能暴露该差异。",
+      "blocking": true,
+      "required_revision": "对齐正文表格、状态解释和 BUILD_EFFECT 伪代码，明确机制与知识使用路径各自的判断条件；补充其他条件全部满足但机制缺失的定向反例，并核对转写与正文逐项对应。"
+    },
+    {
+      "id": "K-SYS-006-r2-algorithm-02",
+      "criterion": "algorithm",
+      "evidence": "脚本 reference_gate 与 chapter_gate 的 TRANSFER 分支均以“f['heldout'] and f['mechanism']”返回 TRANSFERABLE，未单独表示正文第30行“no independent reference on the changed condition”；OBS 分支也没有表示第22行“I states the invalidation set”。BOOL_KEYS 同样没有 evaluator_fixed 或 documented_use_path，无法分别检验正文第34、36行。所谓参考与被测 gate 主要是相同条件的重复编码；naive_gate 的负对照只检测另一个故意宽松的实现。",
+      "impact": "24576 个配置全部一致仅证明两个简化模型一致。原范围检查完成但改变条件没有独立参考、OBS 缺失失效条件等关键错误不在状态空间内，现有 PASS 不能支持作者声称的完整提升规则核对。",
+      "blocking": true,
+      "required_revision": "把正文实际使用的独立谓词显式建模，声明每个字段对应的正文条件；使用独立约束或不变量审查顺序状态机，并针对缺失失效条件、缺失改变条件参考、评价器变化及缺失使用路径分别设置只破坏该条件的负对照。执行修订后的检查，保留实际结果和覆盖边界。"
+    },
+    {
+      "id": "K-SYS-006-r2-cost-01",
+      "criterion": "cost",
+      "evidence": "正文给出“T_check = C_fixture + ... + C_review + C_retain”，却将 C_review 定义为“判断、复算和记录修订的理由”，将 C_retain 定义为“证据、日志和原始对象的驻留”，没有指定时间、货币或其他共同单位；随后“L = L_FN · P(accept bad) + L_FP · P(reject good) + T_check”直接相加，未说明损失与检查时间如何换算。",
+      "impact": "无法检查量纲一致性，也无法根据该式比较增加检查与承担错误损失的代价；驻留容量、持续时间和经济费用的区别没有进入计算。",
+      "blocking": true,
+      "required_revision": "明确成本模型的共同单位及串行或累计资源口径。驻留可单列容量和持续时间，或给出费用换算；审查项定义为实际耗时或费用。若 L 使用货币或效用损失，应转换检查成本后再相加，并明确运行与测量项如何避免重复计费。"
+    },
+    {
+      "id": "K-SYS-006-r2-legality-01",
+      "criterion": "legality",
+      "evidence": "正文声明“本轮所给材料中，S-SELF-CORRECTION 为完整原文”，author_notes 同样声称使用完整原文；实际 supplied material 将 references/S-SELF-CORRECTION/fulltext.txt 标为 excerpt，只提供 [0,54583) 和 [56000,58191)，缺少 [54583,56000)。",
+      "impact": "来源阅读资格被扩大，违反本章自身的证据范围原则；已提供部分足以支持主要论述，也不能据此声称全篇阅读。",
+      "blocking": true,
+      "required_revision": "将本轮阅读声明改为实际节选范围，并同步修正作者说明；如确实补读缺失部分，应提供相应读取证据后再声明完整阅读。保留当前已由可见段落支持的机制结论。"
+    }
+  ],
+  "limitations": [
+    "未提供目标设备、真实服务或 Agent 构建效果实验；纯逻辑与结构检查不能证明同步、内存可见性、性能收益或构建能力改善。",
+    "论文事实复核限于所给原文范围；没有源码归档可供核对，也未把来源说明中的历史全文阅读记录当成本轮阅读。",
+    "本次检查执行证据来自用户提供的 actual_preflight；本审阅 invocation 没有执行脚本或重新计算本地文件哈希。",
+    "当前可用工具没有文件读取能力或可读资源，未能额外读取技能文件及 docs/knowledge-build-workflow.md；审查采用用户明确提供的 JSON 格式及完整方法、审查文档。"
+  ],
+  "checks": [
+    {
+      "script": "tools/check_k_sys_006_full.py",
+      "args": []
+    }
+  ],
+  "no_checks_reason": "",
+  "reading_scope": "完整阅读所提供的 AGENTS.md [0,567)、docs/knowledge-method.md [0,2251)、docs/knowledge-review.md [0,3016)、候选正文 [0,12223)；五份来源说明 S-ACE [0,501)、S-GEPA [0,499)、S-SELF-CORRECTION [0,491)、S-REFLEXION [0,489)、S-STATS [0,983)；相关完整章节 correctness-oracles [0,5245)、failure-evidence [0,3753)、design-synthesis [0,9874)、statistical-experiments [0,4269)、numerical-reference [0,3374)、input-distribution [0,2880)、distributed-state-transfer [0,3216)。完整阅读用户提供的 tools/check_k_sys_006_full.py、author_notes 和 actual_preflight。原文仅阅读所给零基半开字符范围：S-ACE [0,16000)、[20000,24000)、[28000,32784)、[36000,48000)、[52000,56000)、[64000,79990)；S-GEPA [0,4000)、[12000,16774)、[20000,24000)、[48000,52000)、[56000,60000)、[76000,84000)、[88000,92000)、[196000,200000)、[208000,212000)、[252000,256000)、[264000,276000)；S-SELF-CORRECTION [0,54583)、[56000,58191)；S-REFLEXION [0,49048)、[52000,59726)；S-STATS [0,16000)、[32000,40000)、[64000,72000)、[76000,77010)、[100000,104000)、[120000,124000)、[136000,140000)、[156000,160000)、[168000,175763)。没有将上述节选原文加入 documents，也没有声称读取其完整文件、PDF 图像、源码或未提供的 workflow 文件。",
+  "test_assessment": "提供的真实预检记录绑定脚本哈希 f57ce76d5d324fa29a711e384612637bfd9931601a8743dd39fe39d5b42bb61e，记录 returncode=0、24576 个配置、零模型差异和结构检查通过；这些是协调者执行结果，本审阅未重跑。上一轮 provenance 缺失问题可关闭：当前候选恰有一个字面标记、唯一来源标题及实质来源说明，预检 structural_errors=[] 与文本一致。脚本的身份负对照有实际辨别意义：固定 A=17、B=99，能区别错配输出和空结果；结构负样例也被拒绝。但核心 reference_gate 和 chapter_gate 主要重复同一组条件，不构成作者所称的独立声明式参考；naive_gate 被拒绝没有检验正文与转写之间的差异。静态对照已发现 BUILD_EFFECT 机制门槛不一致，且 OBS 的失效条件、TRANSFER 的改变条件独立参考、BUILD_EFFECT 的固定评价器和使用路径未分别建模。单调性只检查所选布尔抽象，不能补足这些遗漏。effective_independent 也只比较误差模型标签，不能证明真实参考路径的数据依赖独立性。结构检查仅排除 HTTP 字符串，没有验证相对链接目标存在。脚本失败分支只打印 FAIL，未设置非零退出码，因此退出码本身不能作为通过标准。以上反例来自静态检查，没有伪记为已执行的失败测试。"
+}

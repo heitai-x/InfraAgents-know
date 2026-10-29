@@ -1,0 +1,213 @@
+{
+  "role": "reviewer",
+  "engine": "sol",
+  "requested_model": "gpt-6.1-sol",
+  "reasoning_effort": "high",
+  "prompt_sha256": "44c650a8f9e1256d1e0b59049ea4219786570016b8135a99a2ec9f2664bfea8d",
+  "usage": [
+    {
+      "input_tokens": 536877,
+      "cached_input_tokens": 409728,
+      "cache_write_input_tokens": 0,
+      "output_tokens": 6337,
+      "reasoning_output_tokens": 2079
+    }
+  ],
+  "answer": "{\n  \"entry_id\": \"K-HW-008\",\n  \"body_sha256\": \"fe70dde321e2b20af7f34a7241dbe75506b13cd2bd67be0962fd52eea2f3502f\",\n  \"reviewer\": \"sol-reviewer:K-HW-008:round-1\",\n  \"decision\": \"revise\",\n  \"documents\": {\n    \"AGENTS.md\": \"b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a\",\n    \"docs/knowledge-method.md\": \"69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb\",\n    \"docs/knowledge-review.md\": \"f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21\",\n    \"knowledge/hardware/trainium-dataflow.md\": \"fe70dde321e2b20af7f34a7241dbe75506b13cd2bd67be0962fd52eea2f3502f\",\n    \"knowledge/sources/S-NKI.md\": \"5eca93756e9d9ea39e366b72499e1cc699ccbc886525515b5e1ad3c636533f65\",\n    \"knowledge/sources/S-NXDI.md\": \"dcaaabf089394f00959b8f425199cf6eb4b281655eb4ae9086f6411d047d34e9\",\n    \"knowledge/frameworks/checkpoint-loading.md\": \"5205ab97f77cdb821e5a0c3f6685a99cfc12ccc8474f96c6de82375372cb59bf\",\n    \"knowledge/hardware/transport-and-rdma.md\": \"72bcf1d8948eae41c243e422f6b0370462dcc4bf33ef86f5664a09b4e46d3ba2\",\n    \"knowledge/system-semantics/memory-allocators.md\": \"2e7258787b94ad142c7c236541e8718803ad30b273d08e6c398dff673a1df838\",\n    \"references/S-NKI/fulltext.txt\": \"51af21b46679e35ec17b340aaca6e1cf0a47cdbba1f3ab82082da1a5baeacbef\",\n    \"references/S-NXDI/fulltext.txt\": \"0d0c89049b3f333f623e8e8ff80686223af0ddd742eba48cdf9c065745327ab7\",\n    \"tools/check_k_hw_008_full.py\": \"b11d9d118872ea7d40ee0b11a0a0bdb4a19d09ed61d3ffc3476bf18ab74f71e3\"\n  },\n  \"criteria\": {\n    \"definition\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"明确给出 attention 的轴、函数、在线统计及执行对象，区分逻辑位置、物理槽和已提交状态；动机与输入输出足以界定本章范围。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/hardware/trainium-dataflow.md\",\n          \"quote\": \"对单个 attention head，令 Q[L,d]、K[S,d]、V[S,dv]，缩放为 a，query 行 i 的合法 key 集合为 A_i。\"\n        },\n        {\n          \"path\": \"knowledge/hardware/trainium-dataflow.md\",\n          \"quote\": \"m 是已处理可见分数的最大值，l 是相对 m 的指数和，U 是相对 m 的加权 V 向量和。\"\n        }\n      ]\n    },\n    \"legality\": {\n      \"assessment\": \"partial\",\n      \"reason\": \"可见性、最后读者、程序身份及资源层级的约束清楚，但循环块长校验允许零，Double-FP8 的 free 轴描述也与来源及本章来源段不一致。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/hardware/trainium-dataflow.md\",\n          \"quote\": \"1 校验 L、S、Bq、Bk 非负，d、dv 为正；L=0 时返回空输出和空 LSE\"\n        },\n        {\n          \"path\": \"knowledge/hardware/trainium-dataflow.md\",\n          \"quote\": \"Double-FP8 的第二 free 维必须为 2；不能叠加 column tiling、sparse matmul 或 TensorE transpose mode\"\n        }\n      ]\n    },\n    \"algorithm\": {\n      \"assessment\": \"partial\",\n      \"reason\": \"数学递推与 context 选桶公式可恢复，但 RunAttentionTile 没有将 m_new 写回 m，且把 PV 布局形成排在 PV 执行之后；因此其声称的完整执行顺序不能直接实现。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/hardware/trainium-dataflow.md\",\n          \"quote\": \"4   对块内每行初始化 m=-∞、l=0、U=零向量；建立 Q 的读者票据\"\n        },\n        {\n          \"path\": \"knowledge/hardware/trainium-dataflow.md\",\n          \"quote\": \"13     更新 l←alpha·l+Σw_j；以合法概率布局执行 PV，得到 tileU；\"\n        },\n        {\n          \"path\": \"knowledge/hardware/trainium-dataflow.md\",\n          \"quote\": \"14     为 PV 形成 Bk→partition、Bq→free 的合法布局；\"\n        }\n      ]\n    },\n    \"cost\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"HBM 交通公式明确循环顺序与忽略项，活跃量区分 SBUF/PSUM 和额外临时量，准备、通信、同步及驻留均有条件化解释。独立复算得到单槽 86144 B、双缓冲 151680 B，以及每片 19 GiB、加入 flat 后 21 GiB，与正文一致。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/hardware/trainium-dataflow.md\",\n          \"quote\": \"D_Q=L d s_Q+ceil(L/Bq) S(d s_K+dv s_V)+L dv s_O。\"\n        },\n        {\n          \"path\": \"knowledge/hardware/trainium-dataflow.md\",\n          \"quote\": \"PSUM 输出、额外 Ub、转置临时量、对齐和 epilogue 另计。\"\n        },\n        {\n          \"path\": \"knowledge/hardware/trainium-dataflow.md\",\n          \"quote\": \"独立工作可以重叠，同块 QK→softmax→PV 和必要转移有顺序依赖；沿实际关键路径计时间。\"\n        }\n      ]\n    },\n    \"adaptation\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"对形状、精度、DMA 饱和、bank 压力、前缀复用及并行配置变化，说明了保留的不变量、可调整的选择和需要重算的资源；FP8 轴名错误另列为合法性修订。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/hardware/trainium-dataflow.md\",\n          \"quote\": \"DMA transpose 可能加重等待，比较 TensorE transpose 的完整路径\"\n        },\n        {\n          \"path\": \"knowledge/hardware/trainium-dataflow.md\",\n          \"quote\": \"这些调整不能改变模型规定的可见集合和归一化。\"\n        }\n      ]\n    },\n    \"diagnosis\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"竞争解释有对应干预和反证修正；CPU 检查具有独立整行参考及实际被检测的负对照。诊断设计成立，但其成功不能消除正文与脚本状态更新不一致的问题。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/hardware/trainium-dataflow.md\",\n          \"quote\": \"若字节下降而时间不变，转查 DMA、归约或同步\"\n        },\n        {\n          \"path\": \"knowledge/hardware/trainium-dataflow.md\",\n          \"quote\": \"注入 padding poison；若输出随 poison 改变，优先修 mask，不先放宽数值容差\"\n        },\n        {\n          \"path\": \"knowledge/hardware/trainium-dataflow.md\",\n          \"quote\": \"它不加载 NxD，不执行 NEFF，不模拟真实 Neuron/GPU 可见性、并发、bank、DMA 或性能；CPU 检查结果不能写成硬件实测。\"\n        }\n      ]\n    }\n  },\n  \"findings\": [\n    {\n      \"id\": \"K-HW-008-R1-ALG-001\",\n      \"criterion\": \"algorithm\",\n      \"evidence\": \"正文初始化“m=-∞、l=0、U=零向量”，随后计算“m_new=max(m,m_tile)”并“更新 U←alpha·U+tileU”，但整个 RunAttentionTile 没有 m←m_new。脚本则明确执行 m = mn。\",\n      \"impact\": \"按正文执行，m 始终为负无穷，每个非空块的 alpha 都为零，先前块贡献被丢弃。独立按正文递推计算 scores=[0,0]、V=[[1,0],[0,1]]、Bk=1，得到 [0,1]，整行参考为 [0.5,0.5]。脚本测试的是补全后的另一条状态链。\",\n      \"blocking\": true,\n      \"required_revision\": \"在使用旧 m 完成本块重标度后，明确共同提交 m←m_new、l 和 U；空块保持全部状态不变。让检查对应修订后的伪代码，并检查遗漏 m 写回能够被独立参考发现。\"\n    },\n    {\n      \"id\": \"K-HW-008-R1-ALG-002\",\n      \"criterion\": \"algorithm\",\n      \"evidence\": \"第 13 步写“以合法概率布局执行 PV，得到 tileU”，第 14 步才写“为 PV 形成 Bk→partition、Bq→free 的合法布局”；前文称算法表达“逻辑 tile 的完整顺序”。\",\n      \"impact\": \"PV 的输入布局生产者排在消费者之后，执行路径无法按编号兑现。tileU 的 PSUM 完成及交接也没有在更新 U 前明确落地，削弱了本章核心的布局与执行依赖链。\",\n      \"blocking\": true,\n      \"required_revision\": \"先形成由 w_j 构成的 PV 输入及合法布局，完成转换与可见性，再执行 PV；明确结果所在存储、完成依赖及更新 U 前必要的 PSUM→SBUF 交接。\"\n    },\n    {\n      \"id\": \"K-HW-008-R1-LEG-001\",\n      \"criterion\": \"legality\",\n      \"evidence\": \"“1 校验 L、S、Bq、Bk 非负，d、dv 为正”允许 Bq=0 或 Bk=0，但后续要求按这些块长遍历 query/key 块。\",\n      \"impact\": \"非空输入下零块长没有合法推进关系，可能导致循环不推进或实现直接报错；当前脚本只使用正块长，没有验证该输入拒绝条件。\",\n      \"blocking\": true,\n      \"required_revision\": \"明确 L、S 为非负整数，Bq、Bk、d、dv 为正整数，D 为正整数；在进入循环前拒绝零块长，保留 L=0 的空输出契约。\"\n    },\n    {\n      \"id\": \"K-HW-008-R1-LEG-002\",\n      \"criterion\": \"legality\",\n      \"evidence\": \"适应表写“Double-FP8 的第二 free 维必须为 2”，来源与推导段则写“最外层 free 维必须为 2”。固定来源给出的最大输入为 [128,2,128]、[128,2,512]，并说明 second dimension 是 most major free dimension。\",\n      \"impact\": \"把整个张量的第二维误称为第二个 free 维，会将大小为 2 的要求施加到错误轴；两个 free 轴中应为最外层那个取 2。\",\n      \"blocking\": false,\n      \"required_revision\": \"统一改为“张量第二维，即最外层（最慢变化）free 维必须为 2”，并与来源段的轴名保持一致。\"\n    }\n  ],\n  \"limitations\": [\n    \"未执行 NKI 编译、NEFF 加载、真实 Trainium 数值、DMA 可见性、bank、并发或性能检查；正文对此界限声明充分，不因缺少设备实测单独判修。\",\n    \"所供 CPU 脚本从预先给定的 scores 开始，不验证 QK 坐标映射、PV 物理布局、槽位代次、context 绑定或逐层模型执行。\",\n    \"多层前缀重算与请求发布的完整机制由相关章节承担；本章的 SelectContextBinding 仅产生绑定计划，不构成完整模型执行器。\",\n    \"未独立复算文件哈希、验证本地链接目标存在性或检查 reader.html 图版；documents 中的身份绑定按用户提供的固定值记录。\"\n  ],\n  \"checks\": [\n    {\n      \"script\": \"tools/check_k_hw_008_full.py\",\n      \"args\": []\n    }\n  ],\n  \"no_checks_reason\": \"\",\n  \"reading_scope\": \"完整阅读所供全文，字符范围均为零基半开区间：AGENTS.md [0,567)、docs/knowledge-method.md [0,2251)、docs/knowledge-review.md [0,3016)、knowledge/hardware/trainium-dataflow.md [0,12013)、knowledge/sources/S-NKI.md [0,525)、knowledge/sources/S-NXDI.md [0,559)、knowledge/frameworks/checkpoint-loading.md [0,3354)、knowledge/hardware/transport-and-rdma.md [0,4088)、knowledge/system-semantics/memory-allocators.md [0,4191)、references/S-NKI/fulltext.txt [0,27103)、references/S-NXDI/fulltext.txt [0,48117)。完整阅读用户提供的 tools/check_k_hw_008_full.py 文本、author_notes 和 actual_preflight 执行记录。相邻章节仅阅读所供摘录：neuron-serving.md [0,3194)、[4000,12948)；nki-tiling.md [0,5150)、[8000,14992)；heterogeneous-state-cache.md [0,6120)、[8000,14022)；parallelism.md [0,12142)。摘录文件未放入 documents；未声称通读这些原章，未读取上游源码归档。\",\n  \"test_assessment\": \"已检查脚本算法及所供真实执行记录，本会话未重新运行 Python。reference_attention 对整行有效集合使用 50 位 Decimal 稳定 softmax，不调用被测在线递推，具有独立参考价值。实际 preflight 记录的脚本哈希与绑定值一致，returncode=0；正确因果用例最大绝对差 4.441e-16，padding 用例 1.110e-16，重标度、L=0 和全空行用例通过。include_padding 负对照差异为 4.697e+01，no_rescale 为 5.000e-01，确实检测到 mask 和跨块重标度错误，属于本章数学机制的有效检查。作者明确声明自己未运行，协调者提供了后续实际执行，两者没有被混写为作者执行。覆盖包括非整除尾块、因果 mask、padding poison、空 query 和全 mask 行；未覆盖 S=0 时显式 dv 的输出形状、非法零块长、LSE、逐块内部统计及硬件依赖。关键问题是脚本含 m = mn，而正文没有对应更新，故成功记录不能证明当前伪代码正确。复核另在内存中按正文递推执行了两块等分数反例，观察到正文输出 [0,1] 与独立稠密参考 [0.5,0.5] 不符，并独立复算了正文容量算例；这些是 CPU 数学检查，不是设备结果。\"\n}",
+  "exit_code": 0,
+  "status": "completed",
+  "timeout_seconds": 1800,
+  "response_path": "D:\\桌面\\xdb\\InfraAgents\\InfraAgents-know-astra-new\\InfraAgents-know\\docs\\evidence\\knowledge-workflow-20261028-batch8\\full_build\\K-HW-008\\round-1\\reviewer-attempt-001\\answer.txt",
+  "record_path": "D:\\桌面\\xdb\\InfraAgents\\InfraAgents-know-astra-new\\InfraAgents-know\\docs\\evidence\\knowledge-workflow-20261028-batch8\\full_build\\K-HW-008\\round-1\\reviewer-attempt-001\\record.json",
+  "tool_events": [],
+  "inventory_tool_events": [],
+  "rejected_tool_events": [],
+  "tool_policy": "metadata_inventory_only",
+  "tool_policy_version": "metadata-inventory-v1",
+  "tool_policy_scope": "Only empty-argument codex host plugin/skill-directory descriptors and empty template inventory; inventory is not knowledge evidence. All other tool events reject the call.",
+  "tool_policy_reason": "Production chapter construction allows observed generic capability discovery metadata; this does not claim a zero-tool comparison or external source reading.",
+  "malformed_event_lines": [],
+  "turn_completed": true,
+  "error_events": [],
+  "recovered_transport_events": [],
+  "terminal_error_events": [],
+  "transport_recovered": false,
+  "actual_model": null,
+  "identity_verified": null,
+  "identity_basis": "Explicit CLI model and isolated HTTP provider; CLI events do not expose server model identity.",
+  "provider": "eval-openai-http",
+  "max_output_tokens": null,
+  "cli_version": "codex-cli 0.164.0-alpha.11.1",
+  "cost_scope": "Codex token usage is reported; subscription charge is not exposed.",
+  "parsed": {
+    "entry_id": "K-HW-008",
+    "body_sha256": "fe70dde321e2b20af7f34a7241dbe75506b13cd2bd67be0962fd52eea2f3502f",
+    "reviewer": "sol-reviewer:K-HW-008:round-1",
+    "decision": "revise",
+    "documents": {
+      "AGENTS.md": "b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a",
+      "docs/knowledge-method.md": "69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb",
+      "docs/knowledge-review.md": "f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21",
+      "knowledge/hardware/trainium-dataflow.md": "fe70dde321e2b20af7f34a7241dbe75506b13cd2bd67be0962fd52eea2f3502f",
+      "knowledge/sources/S-NKI.md": "5eca93756e9d9ea39e366b72499e1cc699ccbc886525515b5e1ad3c636533f65",
+      "knowledge/sources/S-NXDI.md": "dcaaabf089394f00959b8f425199cf6eb4b281655eb4ae9086f6411d047d34e9",
+      "knowledge/frameworks/checkpoint-loading.md": "5205ab97f77cdb821e5a0c3f6685a99cfc12ccc8474f96c6de82375372cb59bf",
+      "knowledge/hardware/transport-and-rdma.md": "72bcf1d8948eae41c243e422f6b0370462dcc4bf33ef86f5664a09b4e46d3ba2",
+      "knowledge/system-semantics/memory-allocators.md": "2e7258787b94ad142c7c236541e8718803ad30b273d08e6c398dff673a1df838",
+      "references/S-NKI/fulltext.txt": "51af21b46679e35ec17b340aaca6e1cf0a47cdbba1f3ab82082da1a5baeacbef",
+      "references/S-NXDI/fulltext.txt": "0d0c89049b3f333f623e8e8ff80686223af0ddd742eba48cdf9c065745327ab7",
+      "tools/check_k_hw_008_full.py": "b11d9d118872ea7d40ee0b11a0a0bdb4a19d09ed61d3ffc3476bf18ab74f71e3"
+    },
+    "criteria": {
+      "definition": {
+        "assessment": "sufficient",
+        "reason": "明确给出 attention 的轴、函数、在线统计及执行对象，区分逻辑位置、物理槽和已提交状态；动机与输入输出足以界定本章范围。",
+        "evidence": [
+          {
+            "path": "knowledge/hardware/trainium-dataflow.md",
+            "quote": "对单个 attention head，令 Q[L,d]、K[S,d]、V[S,dv]，缩放为 a，query 行 i 的合法 key 集合为 A_i。"
+          },
+          {
+            "path": "knowledge/hardware/trainium-dataflow.md",
+            "quote": "m 是已处理可见分数的最大值，l 是相对 m 的指数和，U 是相对 m 的加权 V 向量和。"
+          }
+        ]
+      },
+      "legality": {
+        "assessment": "partial",
+        "reason": "可见性、最后读者、程序身份及资源层级的约束清楚，但循环块长校验允许零，Double-FP8 的 free 轴描述也与来源及本章来源段不一致。",
+        "evidence": [
+          {
+            "path": "knowledge/hardware/trainium-dataflow.md",
+            "quote": "1 校验 L、S、Bq、Bk 非负，d、dv 为正；L=0 时返回空输出和空 LSE"
+          },
+          {
+            "path": "knowledge/hardware/trainium-dataflow.md",
+            "quote": "Double-FP8 的第二 free 维必须为 2；不能叠加 column tiling、sparse matmul 或 TensorE transpose mode"
+          }
+        ]
+      },
+      "algorithm": {
+        "assessment": "partial",
+        "reason": "数学递推与 context 选桶公式可恢复，但 RunAttentionTile 没有将 m_new 写回 m，且把 PV 布局形成排在 PV 执行之后；因此其声称的完整执行顺序不能直接实现。",
+        "evidence": [
+          {
+            "path": "knowledge/hardware/trainium-dataflow.md",
+            "quote": "4   对块内每行初始化 m=-∞、l=0、U=零向量；建立 Q 的读者票据"
+          },
+          {
+            "path": "knowledge/hardware/trainium-dataflow.md",
+            "quote": "13     更新 l←alpha·l+Σw_j；以合法概率布局执行 PV，得到 tileU；"
+          },
+          {
+            "path": "knowledge/hardware/trainium-dataflow.md",
+            "quote": "14     为 PV 形成 Bk→partition、Bq→free 的合法布局；"
+          }
+        ]
+      },
+      "cost": {
+        "assessment": "sufficient",
+        "reason": "HBM 交通公式明确循环顺序与忽略项，活跃量区分 SBUF/PSUM 和额外临时量，准备、通信、同步及驻留均有条件化解释。独立复算得到单槽 86144 B、双缓冲 151680 B，以及每片 19 GiB、加入 flat 后 21 GiB，与正文一致。",
+        "evidence": [
+          {
+            "path": "knowledge/hardware/trainium-dataflow.md",
+            "quote": "D_Q=L d s_Q+ceil(L/Bq) S(d s_K+dv s_V)+L dv s_O。"
+          },
+          {
+            "path": "knowledge/hardware/trainium-dataflow.md",
+            "quote": "PSUM 输出、额外 Ub、转置临时量、对齐和 epilogue 另计。"
+          },
+          {
+            "path": "knowledge/hardware/trainium-dataflow.md",
+            "quote": "独立工作可以重叠，同块 QK→softmax→PV 和必要转移有顺序依赖；沿实际关键路径计时间。"
+          }
+        ]
+      },
+      "adaptation": {
+        "assessment": "sufficient",
+        "reason": "对形状、精度、DMA 饱和、bank 压力、前缀复用及并行配置变化，说明了保留的不变量、可调整的选择和需要重算的资源；FP8 轴名错误另列为合法性修订。",
+        "evidence": [
+          {
+            "path": "knowledge/hardware/trainium-dataflow.md",
+            "quote": "DMA transpose 可能加重等待，比较 TensorE transpose 的完整路径"
+          },
+          {
+            "path": "knowledge/hardware/trainium-dataflow.md",
+            "quote": "这些调整不能改变模型规定的可见集合和归一化。"
+          }
+        ]
+      },
+      "diagnosis": {
+        "assessment": "sufficient",
+        "reason": "竞争解释有对应干预和反证修正；CPU 检查具有独立整行参考及实际被检测的负对照。诊断设计成立，但其成功不能消除正文与脚本状态更新不一致的问题。",
+        "evidence": [
+          {
+            "path": "knowledge/hardware/trainium-dataflow.md",
+            "quote": "若字节下降而时间不变，转查 DMA、归约或同步"
+          },
+          {
+            "path": "knowledge/hardware/trainium-dataflow.md",
+            "quote": "注入 padding poison；若输出随 poison 改变，优先修 mask，不先放宽数值容差"
+          },
+          {
+            "path": "knowledge/hardware/trainium-dataflow.md",
+            "quote": "它不加载 NxD，不执行 NEFF，不模拟真实 Neuron/GPU 可见性、并发、bank、DMA 或性能；CPU 检查结果不能写成硬件实测。"
+          }
+        ]
+      }
+    },
+    "findings": [
+      {
+        "id": "K-HW-008-R1-ALG-001",
+        "criterion": "algorithm",
+        "evidence": "正文初始化“m=-∞、l=0、U=零向量”，随后计算“m_new=max(m,m_tile)”并“更新 U←alpha·U+tileU”，但整个 RunAttentionTile 没有 m←m_new。脚本则明确执行 m = mn。",
+        "impact": "按正文执行，m 始终为负无穷，每个非空块的 alpha 都为零，先前块贡献被丢弃。独立按正文递推计算 scores=[0,0]、V=[[1,0],[0,1]]、Bk=1，得到 [0,1]，整行参考为 [0.5,0.5]。脚本测试的是补全后的另一条状态链。",
+        "blocking": true,
+        "required_revision": "在使用旧 m 完成本块重标度后，明确共同提交 m←m_new、l 和 U；空块保持全部状态不变。让检查对应修订后的伪代码，并检查遗漏 m 写回能够被独立参考发现。"
+      },
+      {
+        "id": "K-HW-008-R1-ALG-002",
+        "criterion": "algorithm",
+        "evidence": "第 13 步写“以合法概率布局执行 PV，得到 tileU”，第 14 步才写“为 PV 形成 Bk→partition、Bq→free 的合法布局”；前文称算法表达“逻辑 tile 的完整顺序”。",
+        "impact": "PV 的输入布局生产者排在消费者之后，执行路径无法按编号兑现。tileU 的 PSUM 完成及交接也没有在更新 U 前明确落地，削弱了本章核心的布局与执行依赖链。",
+        "blocking": true,
+        "required_revision": "先形成由 w_j 构成的 PV 输入及合法布局，完成转换与可见性，再执行 PV；明确结果所在存储、完成依赖及更新 U 前必要的 PSUM→SBUF 交接。"
+      },
+      {
+        "id": "K-HW-008-R1-LEG-001",
+        "criterion": "legality",
+        "evidence": "“1 校验 L、S、Bq、Bk 非负，d、dv 为正”允许 Bq=0 或 Bk=0，但后续要求按这些块长遍历 query/key 块。",
+        "impact": "非空输入下零块长没有合法推进关系，可能导致循环不推进或实现直接报错；当前脚本只使用正块长，没有验证该输入拒绝条件。",
+        "blocking": true,
+        "required_revision": "明确 L、S 为非负整数，Bq、Bk、d、dv 为正整数，D 为正整数；在进入循环前拒绝零块长，保留 L=0 的空输出契约。"
+      },
+      {
+        "id": "K-HW-008-R1-LEG-002",
+        "criterion": "legality",
+        "evidence": "适应表写“Double-FP8 的第二 free 维必须为 2”，来源与推导段则写“最外层 free 维必须为 2”。固定来源给出的最大输入为 [128,2,128]、[128,2,512]，并说明 second dimension 是 most major free dimension。",
+        "impact": "把整个张量的第二维误称为第二个 free 维，会将大小为 2 的要求施加到错误轴；两个 free 轴中应为最外层那个取 2。",
+        "blocking": false,
+        "required_revision": "统一改为“张量第二维，即最外层（最慢变化）free 维必须为 2”，并与来源段的轴名保持一致。"
+      }
+    ],
+    "limitations": [
+      "未执行 NKI 编译、NEFF 加载、真实 Trainium 数值、DMA 可见性、bank、并发或性能检查；正文对此界限声明充分，不因缺少设备实测单独判修。",
+      "所供 CPU 脚本从预先给定的 scores 开始，不验证 QK 坐标映射、PV 物理布局、槽位代次、context 绑定或逐层模型执行。",
+      "多层前缀重算与请求发布的完整机制由相关章节承担；本章的 SelectContextBinding 仅产生绑定计划，不构成完整模型执行器。",
+      "未独立复算文件哈希、验证本地链接目标存在性或检查 reader.html 图版；documents 中的身份绑定按用户提供的固定值记录。"
+    ],
+    "checks": [
+      {
+        "script": "tools/check_k_hw_008_full.py",
+        "args": []
+      }
+    ],
+    "no_checks_reason": "",
+    "reading_scope": "完整阅读所供全文，字符范围均为零基半开区间：AGENTS.md [0,567)、docs/knowledge-method.md [0,2251)、docs/knowledge-review.md [0,3016)、knowledge/hardware/trainium-dataflow.md [0,12013)、knowledge/sources/S-NKI.md [0,525)、knowledge/sources/S-NXDI.md [0,559)、knowledge/frameworks/checkpoint-loading.md [0,3354)、knowledge/hardware/transport-and-rdma.md [0,4088)、knowledge/system-semantics/memory-allocators.md [0,4191)、references/S-NKI/fulltext.txt [0,27103)、references/S-NXDI/fulltext.txt [0,48117)。完整阅读用户提供的 tools/check_k_hw_008_full.py 文本、author_notes 和 actual_preflight 执行记录。相邻章节仅阅读所供摘录：neuron-serving.md [0,3194)、[4000,12948)；nki-tiling.md [0,5150)、[8000,14992)；heterogeneous-state-cache.md [0,6120)、[8000,14022)；parallelism.md [0,12142)。摘录文件未放入 documents；未声称通读这些原章，未读取上游源码归档。",
+    "test_assessment": "已检查脚本算法及所供真实执行记录，本会话未重新运行 Python。reference_attention 对整行有效集合使用 50 位 Decimal 稳定 softmax，不调用被测在线递推，具有独立参考价值。实际 preflight 记录的脚本哈希与绑定值一致，returncode=0；正确因果用例最大绝对差 4.441e-16，padding 用例 1.110e-16，重标度、L=0 和全空行用例通过。include_padding 负对照差异为 4.697e+01，no_rescale 为 5.000e-01，确实检测到 mask 和跨块重标度错误，属于本章数学机制的有效检查。作者明确声明自己未运行，协调者提供了后续实际执行，两者没有被混写为作者执行。覆盖包括非整除尾块、因果 mask、padding poison、空 query 和全 mask 行；未覆盖 S=0 时显式 dv 的输出形状、非法零块长、LSE、逐块内部统计及硬件依赖。关键问题是脚本含 m = mn，而正文没有对应更新，故成功记录不能证明当前伪代码正确。复核另在内存中按正文递推执行了两块等分数反例，观察到正文输出 [0,1] 与独立稠密参考 [0.5,0.5] 不符，并独立复算了正文容量算例；这些是 CPU 数学检查，不是设备结果。"
+  },
+  "format_status": "strict_json",
+  "format_error": null,
+  "output_text": "{\n  \"entry_id\": \"K-HW-008\",\n  \"body_sha256\": \"fe70dde321e2b20af7f34a7241dbe75506b13cd2bd67be0962fd52eea2f3502f\",\n  \"reviewer\": \"sol-reviewer:K-HW-008:round-1\",\n  \"decision\": \"revise\",\n  \"documents\": {\n    \"AGENTS.md\": \"b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a\",\n    \"docs/knowledge-method.md\": \"69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb\",\n    \"docs/knowledge-review.md\": \"f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21\",\n    \"knowledge/hardware/trainium-dataflow.md\": \"fe70dde321e2b20af7f34a7241dbe75506b13cd2bd67be0962fd52eea2f3502f\",\n    \"knowledge/sources/S-NKI.md\": \"5eca93756e9d9ea39e366b72499e1cc699ccbc886525515b5e1ad3c636533f65\",\n    \"knowledge/sources/S-NXDI.md\": \"dcaaabf089394f00959b8f425199cf6eb4b281655eb4ae9086f6411d047d34e9\",\n    \"knowledge/frameworks/checkpoint-loading.md\": \"5205ab97f77cdb821e5a0c3f6685a99cfc12ccc8474f96c6de82375372cb59bf\",\n    \"knowledge/hardware/transport-and-rdma.md\": \"72bcf1d8948eae41c243e422f6b0370462dcc4bf33ef86f5664a09b4e46d3ba2\",\n    \"knowledge/system-semantics/memory-allocators.md\": \"2e7258787b94ad142c7c236541e8718803ad30b273d08e6c398dff673a1df838\",\n    \"references/S-NKI/fulltext.txt\": \"51af21b46679e35ec17b340aaca6e1cf0a47cdbba1f3ab82082da1a5baeacbef\",\n    \"references/S-NXDI/fulltext.txt\": \"0d0c89049b3f333f623e8e8ff80686223af0ddd742eba48cdf9c065745327ab7\",\n    \"tools/check_k_hw_008_full.py\": \"b11d9d118872ea7d40ee0b11a0a0bdb4a19d09ed61d3ffc3476bf18ab74f71e3\"\n  },\n  \"criteria\": {\n    \"definition\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"明确给出 attention 的轴、函数、在线统计及执行对象，区分逻辑位置、物理槽和已提交状态；动机与输入输出足以界定本章范围。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/hardware/trainium-dataflow.md\",\n          \"quote\": \"对单个 attention head，令 Q[L,d]、K[S,d]、V[S,dv]，缩放为 a，query 行 i 的合法 key 集合为 A_i。\"\n        },\n        {\n          \"path\": \"knowledge/hardware/trainium-dataflow.md\",\n          \"quote\": \"m 是已处理可见分数的最大值，l 是相对 m 的指数和，U 是相对 m 的加权 V 向量和。\"\n        }\n      ]\n    },\n    \"legality\": {\n      \"assessment\": \"partial\",\n      \"reason\": \"可见性、最后读者、程序身份及资源层级的约束清楚，但循环块长校验允许零，Double-FP8 的 free 轴描述也与来源及本章来源段不一致。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/hardware/trainium-dataflow.md\",\n          \"quote\": \"1 校验 L、S、Bq、Bk 非负，d、dv 为正；L=0 时返回空输出和空 LSE\"\n        },\n        {\n          \"path\": \"knowledge/hardware/trainium-dataflow.md\",\n          \"quote\": \"Double-FP8 的第二 free 维必须为 2；不能叠加 column tiling、sparse matmul 或 TensorE transpose mode\"\n        }\n      ]\n    },\n    \"algorithm\": {\n      \"assessment\": \"partial\",\n      \"reason\": \"数学递推与 context 选桶公式可恢复，但 RunAttentionTile 没有将 m_new 写回 m，且把 PV 布局形成排在 PV 执行之后；因此其声称的完整执行顺序不能直接实现。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/hardware/trainium-dataflow.md\",\n          \"quote\": \"4   对块内每行初始化 m=-∞、l=0、U=零向量；建立 Q 的读者票据\"\n        },\n        {\n          \"path\": \"knowledge/hardware/trainium-dataflow.md\",\n          \"quote\": \"13     更新 l←alpha·l+Σw_j；以合法概率布局执行 PV，得到 tileU；\"\n        },\n        {\n          \"path\": \"knowledge/hardware/trainium-dataflow.md\",\n          \"quote\": \"14     为 PV 形成 Bk→partition、Bq→free 的合法布局；\"\n        }\n      ]\n    },\n    \"cost\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"HBM 交通公式明确循环顺序与忽略项，活跃量区分 SBUF/PSUM 和额外临时量，准备、通信、同步及驻留均有条件化解释。独立复算得到单槽 86144 B、双缓冲 151680 B，以及每片 19 GiB、加入 flat 后 21 GiB，与正文一致。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/hardware/trainium-dataflow.md\",\n          \"quote\": \"D_Q=L d s_Q+ceil(L/Bq) S(d s_K+dv s_V)+L dv s_O。\"\n        },\n        {\n          \"path\": \"knowledge/hardware/trainium-dataflow.md\",\n          \"quote\": \"PSUM 输出、额外 Ub、转置临时量、对齐和 epilogue 另计。\"\n        },\n        {\n          \"path\": \"knowledge/hardware/trainium-dataflow.md\",\n          \"quote\": \"独立工作可以重叠，同块 QK→softmax→PV 和必要转移有顺序依赖；沿实际关键路径计时间。\"\n        }\n      ]\n    },\n    \"adaptation\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"对形状、精度、DMA 饱和、bank 压力、前缀复用及并行配置变化，说明了保留的不变量、可调整的选择和需要重算的资源；FP8 轴名错误另列为合法性修订。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/hardware/trainium-dataflow.md\",\n          \"quote\": \"DMA transpose 可能加重等待，比较 TensorE transpose 的完整路径\"\n        },\n        {\n          \"path\": \"knowledge/hardware/trainium-dataflow.md\",\n          \"quote\": \"这些调整不能改变模型规定的可见集合和归一化。\"\n        }\n      ]\n    },\n    \"diagnosis\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"竞争解释有对应干预和反证修正；CPU 检查具有独立整行参考及实际被检测的负对照。诊断设计成立，但其成功不能消除正文与脚本状态更新不一致的问题。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/hardware/trainium-dataflow.md\",\n          \"quote\": \"若字节下降而时间不变，转查 DMA、归约或同步\"\n        },\n        {\n          \"path\": \"knowledge/hardware/trainium-dataflow.md\",\n          \"quote\": \"注入 padding poison；若输出随 poison 改变，优先修 mask，不先放宽数值容差\"\n        },\n        {\n          \"path\": \"knowledge/hardware/trainium-dataflow.md\",\n          \"quote\": \"它不加载 NxD，不执行 NEFF，不模拟真实 Neuron/GPU 可见性、并发、bank、DMA 或性能；CPU 检查结果不能写成硬件实测。\"\n        }\n      ]\n    }\n  },\n  \"findings\": [\n    {\n      \"id\": \"K-HW-008-R1-ALG-001\",\n      \"criterion\": \"algorithm\",\n      \"evidence\": \"正文初始化“m=-∞、l=0、U=零向量”，随后计算“m_new=max(m,m_tile)”并“更新 U←alpha·U+tileU”，但整个 RunAttentionTile 没有 m←m_new。脚本则明确执行 m = mn。\",\n      \"impact\": \"按正文执行，m 始终为负无穷，每个非空块的 alpha 都为零，先前块贡献被丢弃。独立按正文递推计算 scores=[0,0]、V=[[1,0],[0,1]]、Bk=1，得到 [0,1]，整行参考为 [0.5,0.5]。脚本测试的是补全后的另一条状态链。\",\n      \"blocking\": true,\n      \"required_revision\": \"在使用旧 m 完成本块重标度后，明确共同提交 m←m_new、l 和 U；空块保持全部状态不变。让检查对应修订后的伪代码，并检查遗漏 m 写回能够被独立参考发现。\"\n    },\n    {\n      \"id\": \"K-HW-008-R1-ALG-002\",\n      \"criterion\": \"algorithm\",\n      \"evidence\": \"第 13 步写“以合法概率布局执行 PV，得到 tileU”，第 14 步才写“为 PV 形成 Bk→partition、Bq→free 的合法布局”；前文称算法表达“逻辑 tile 的完整顺序”。\",\n      \"impact\": \"PV 的输入布局生产者排在消费者之后，执行路径无法按编号兑现。tileU 的 PSUM 完成及交接也没有在更新 U 前明确落地，削弱了本章核心的布局与执行依赖链。\",\n      \"blocking\": true,\n      \"required_revision\": \"先形成由 w_j 构成的 PV 输入及合法布局，完成转换与可见性，再执行 PV；明确结果所在存储、完成依赖及更新 U 前必要的 PSUM→SBUF 交接。\"\n    },\n    {\n      \"id\": \"K-HW-008-R1-LEG-001\",\n      \"criterion\": \"legality\",\n      \"evidence\": \"“1 校验 L、S、Bq、Bk 非负，d、dv 为正”允许 Bq=0 或 Bk=0，但后续要求按这些块长遍历 query/key 块。\",\n      \"impact\": \"非空输入下零块长没有合法推进关系，可能导致循环不推进或实现直接报错；当前脚本只使用正块长，没有验证该输入拒绝条件。\",\n      \"blocking\": true,\n      \"required_revision\": \"明确 L、S 为非负整数，Bq、Bk、d、dv 为正整数，D 为正整数；在进入循环前拒绝零块长，保留 L=0 的空输出契约。\"\n    },\n    {\n      \"id\": \"K-HW-008-R1-LEG-002\",\n      \"criterion\": \"legality\",\n      \"evidence\": \"适应表写“Double-FP8 的第二 free 维必须为 2”，来源与推导段则写“最外层 free 维必须为 2”。固定来源给出的最大输入为 [128,2,128]、[128,2,512]，并说明 second dimension 是 most major free dimension。\",\n      \"impact\": \"把整个张量的第二维误称为第二个 free 维，会将大小为 2 的要求施加到错误轴；两个 free 轴中应为最外层那个取 2。\",\n      \"blocking\": false,\n      \"required_revision\": \"统一改为“张量第二维，即最外层（最慢变化）free 维必须为 2”，并与来源段的轴名保持一致。\"\n    }\n  ],\n  \"limitations\": [\n    \"未执行 NKI 编译、NEFF 加载、真实 Trainium 数值、DMA 可见性、bank、并发或性能检查；正文对此界限声明充分，不因缺少设备实测单独判修。\",\n    \"所供 CPU 脚本从预先给定的 scores 开始，不验证 QK 坐标映射、PV 物理布局、槽位代次、context 绑定或逐层模型执行。\",\n    \"多层前缀重算与请求发布的完整机制由相关章节承担；本章的 SelectContextBinding 仅产生绑定计划，不构成完整模型执行器。\",\n    \"未独立复算文件哈希、验证本地链接目标存在性或检查 reader.html 图版；documents 中的身份绑定按用户提供的固定值记录。\"\n  ],\n  \"checks\": [\n    {\n      \"script\": \"tools/check_k_hw_008_full.py\",\n      \"args\": []\n    }\n  ],\n  \"no_checks_reason\": \"\",\n  \"reading_scope\": \"完整阅读所供全文，字符范围均为零基半开区间：AGENTS.md [0,567)、docs/knowledge-method.md [0,2251)、docs/knowledge-review.md [0,3016)、knowledge/hardware/trainium-dataflow.md [0,12013)、knowledge/sources/S-NKI.md [0,525)、knowledge/sources/S-NXDI.md [0,559)、knowledge/frameworks/checkpoint-loading.md [0,3354)、knowledge/hardware/transport-and-rdma.md [0,4088)、knowledge/system-semantics/memory-allocators.md [0,4191)、references/S-NKI/fulltext.txt [0,27103)、references/S-NXDI/fulltext.txt [0,48117)。完整阅读用户提供的 tools/check_k_hw_008_full.py 文本、author_notes 和 actual_preflight 执行记录。相邻章节仅阅读所供摘录：neuron-serving.md [0,3194)、[4000,12948)；nki-tiling.md [0,5150)、[8000,14992)；heterogeneous-state-cache.md [0,6120)、[8000,14022)；parallelism.md [0,12142)。摘录文件未放入 documents；未声称通读这些原章，未读取上游源码归档。\",\n  \"test_assessment\": \"已检查脚本算法及所供真实执行记录，本会话未重新运行 Python。reference_attention 对整行有效集合使用 50 位 Decimal 稳定 softmax，不调用被测在线递推，具有独立参考价值。实际 preflight 记录的脚本哈希与绑定值一致，returncode=0；正确因果用例最大绝对差 4.441e-16，padding 用例 1.110e-16，重标度、L=0 和全空行用例通过。include_padding 负对照差异为 4.697e+01，no_rescale 为 5.000e-01，确实检测到 mask 和跨块重标度错误，属于本章数学机制的有效检查。作者明确声明自己未运行，协调者提供了后续实际执行，两者没有被混写为作者执行。覆盖包括非整除尾块、因果 mask、padding poison、空 query 和全 mask 行；未覆盖 S=0 时显式 dv 的输出形状、非法零块长、LSE、逐块内部统计及硬件依赖。关键问题是脚本含 m = mn，而正文没有对应更新，故成功记录不能证明当前伪代码正确。复核另在内存中按正文递推执行了两块等分数反例，观察到正文输出 [0,1] 与独立稠密参考 [0.5,0.5] 不符，并独立复算了正文容量算例；这些是 CPU 数学检查，不是设备结果。\"\n}",
+  "elapsed_seconds": 200.797
+}

@@ -1,0 +1,60 @@
+{
+  "id": "K-ALG-019",
+  "path": "algorithms/weight-expert-offload.md",
+  "category": "algorithms",
+  "title": "权重与专家卸载：重用、路由与在途版本",
+  "summary": "权重与专家卸载同时依赖批次重用、专家并集、热点和版本；按 token 稀疏不能直接推断 batch 读取稀疏。",
+  "revision": 3,
+  "status": "seed",
+  "tags": [
+    "weight offload",
+    "专家卸载",
+    "MoE",
+    "热点",
+    "预取",
+    "权重",
+    "激活稀疏"
+  ],
+  "scope": {
+    "model_families": [],
+    "platforms": [],
+    "runtimes": [],
+    "workloads": []
+  },
+  "source_ids": [
+    "S-FLEXGEN",
+    "S-POWERINFER",
+    "S-MIXTRAL",
+    "S-CUDA-ASYNC"
+  ],
+  "related": [
+    "K-ALG-017",
+    "K-ALG-020",
+    "K-MODEL-003",
+    "K-FW-011",
+    "K-ALG-015",
+    "K-FW-012",
+    "K-ENGINE-005",
+    "K-FW-005"
+  ],
+  "evidence": [],
+  "updated_at": "2026-10-28",
+  "sha256": "45741ae4271010aa6cb0e088dd2d70cf2f185daa839f6d0eddbff3a6bf25dab5",
+  "questions": [
+    "稠密层按层轮流处理多个微批以摊薄权重读取，摊到每 token 的传输下界为什么不能替代 ITL？",
+    "每 token 只用 k 个专家时，一个 batch 实际触及多少专家，热点非均匀时该估计如何失效？",
+    "固定热门专家、按近期路由更新、需求加载与预测预取各自在什么条件下更合适？",
+    "新版本权重发布后，旧版本在途计算和部分加载的专家应如何处理所有权？",
+    "激活稀疏的热点神经元路线与确定性 MoE 路由在验证上有什么本质区别？"
+  ],
+  "symptoms": [
+    "batch 扩大后几乎每轮都要加载全部专家",
+    "缓存命中率很高但每轮唯一加载字节仍不下降",
+    "预取的专家大量未被使用而链路持续繁忙"
+  ],
+  "assumes": [
+    "权重不能全部常驻设备",
+    "MoE 或激活稀疏模型的路由在运行时决定",
+    "权重按模型版本和分片有稳定身份"
+  ]
+}

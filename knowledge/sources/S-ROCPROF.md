@@ -2,18 +2,21 @@
 
 ## 本地完整原文
 
-[完整原文](../../references/S-ROCPROF/reader.html) · [全文文本](../../references/S-ROCPROF/fulltext.txt)
+[文档原文](../../references/S-ROCPROF/upstream/README.md)
 
 固定版本：Git 95541731741b6821a0301b9c6a62922507b3835e (2026-02-16)。来源版本日期：2026-02-16；整理核对日期：2026-10-22。
 
-## 来源支持的机制与定义
+## 先定位执行实例，再解释资源信号
 
-ROCprofiler-SDK 的 rocprofv3 区分 API/activity tracing 与 kernel counter collection，记录进程、agent、queue、dispatch 等身份。计数器可用集合和并行采集能力依 GPU 而定。
+归档 README 列出 HIP/HSA 等 API trace、设备与 dispatch 计数采集、内存复制/分配/迁移、marker 和其他可选事件；这些能力描述不能替代某个设备上的实际支持与采集结果。CLI 源文件用于核对配置组织，不作为阅读原文。
 
-## InfraAgents 如何据此推导
+API 时间说明 host 调用区间，设备 activity 说明实际执行区间；计数器在选定执行范围上描述资源活动。将不同进程、设备、队列或 dispatch 的记录混在一起，会把“某个 kernel 的解释”变成无归属的总量。
 
-本库用系统 trace 定位执行实例，再用计数器解释 CU、访存和寄存器瓶颈；多遍采集与正常并发路径分别解释。
+```pseudocode
+用 trace 确定待解释的执行区间及其进程、设备、队列和 dispatch 身份
+选择能区分当前竞争解释的计数或事件，确认目标设备实际支持
+保留采集范围、版本、运行条件和额外开销；需要多次采集时保留每次身份
+将资源信号连接到该执行实例，再在普通运行中检验性能解释
+```
 
-## 适用边界
-
-所列机制与接口资料；本文设计推导和数值例为独立分析，不是目标机器实测。 原始版本、日期依据与归档范围见本地 provenance.json；版本日期不证明模型训练实际包含该资料。
+一个计数器名称不自动证明带宽已饱和、所有 CU 都繁忙或寄存器压力是原因。还需对应的工作量、时间边界与可能的竞争解释。详细方法见[时间线归因](../tools/timeline-attribution.md)和[内核计数器](../tools/kernel-counter-replay.md)。本文不报告真实采集结果，混合归档的 README 保留直接阅读入口。

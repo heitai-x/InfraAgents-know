@@ -1,0 +1,133 @@
+{
+  "entry_id": "K-ALG-023",
+  "body_sha256": "833367b4ebb988bc089a1dbb73b61d7e5dffaff0d4c8622c68c9e33ddbd77560",
+  "reviewer": "sol-reviewer:K-ALG-023:round-3",
+  "decision": "accept",
+  "documents": {
+    "AGENTS.md": "b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a",
+    "docs/knowledge-method.md": "69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb",
+    "docs/knowledge-review.md": "f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21",
+    "knowledge/algorithms/routing-and-migration.md": "833367b4ebb988bc089a1dbb73b61d7e5dffaff0d4c8622c68c9e33ddbd77560",
+    "knowledge/sources/S-LLUMNIX.md": "86e48c54e7733dffeaec420e7205c4eeb3d28f7d59c7d0d8c2f16d2fa275d586",
+    "knowledge/sources/S-MOONCAKE.md": "87547af306062e8e7c7d5da5de6102cd47ac371d0b9172a1b4c2eda719134e8b",
+    "knowledge/sources/S-SGLANG.md": "4fd6badbee1df40da422f2866f1536bbe4f5266856b8d97004072a21b9d0e2c9",
+    "knowledge/sources/S-DISTSERVE.md": "968cbf46667e862085b0e2d72405805351bd33880ac23d8d055bf259192411f4",
+    "knowledge/engine-index/vllm-scheduler.md": "9e576ff7711ed5e448a4bedfe7ab69949a79bc3f61417bf258f7a3b56caf1fe5",
+    "knowledge/engine-index/sglang-radix-scheduler.md": "abf1eb7040f1f6ba697822719094f8cc26172a329d6003a027862ef89de03374",
+    "tools/check_k_alg_023_full.py": "122055910e846191d65458bcef6bf75a7181d35056b1bf05039e192f9228296e"
+  },
+  "criteria": {
+    "definition": {
+      "assessment": "sufficient",
+      "reason": "明确路由与迁移的动机、合法候选计划、输出和责任对象，区分已知输入、全层共同完成状态、未消费 token 与提交授权。完成时间和追赶递推均说明符号、单位和适用假设；增长速率 g 与执行尝试代次 g 的局部含义已明确区分。",
+      "evidence": [
+        {
+          "path": "knowledge/algorithms/routing-and-migration.md",
+          "quote": "请求的已知输入为 x[0:A)，已消费位置为 p，S(p) 表示所有必需状态族共同完成前 p 个输入后的状态。"
+        },
+        {
+          "path": "knowledge/algorithms/routing-and-migration.md",
+          "quote": "下一次消费位置为 p；已采样而未消费的 token 可以已在 x[p:A) 中，但其 KV 尚不存在。"
+        }
+      ]
+    },
+    "legality": {
+      "assessment": "sufficient",
+      "reason": "先求合法集合再排序，覆盖计算与表示身份、共同恢复集合、冷路径、源保护、目标容量和输出依赖。将快照评分与资源域中的实际预留分开，明确逻辑取消不解除物理访问责任。append-only、暂停复制、COW 与恢复计划属于带前提的选择。",
+      "evidence": [
+        {
+          "path": "knowledge/algorithms/routing-and-migration.md",
+          "quote": "实际恢复位置 c 必须属于全部必需状态族的共同恢复集合，并满足输入与表示合同。不能仅取各状态族最大位置的最小值；集合可能有空洞。"
+        },
+        {
+          "path": "knowledge/algorithms/routing-and-migration.md",
+          "quote": "取消、超时、lease 过期和旧结果被拒绝，都不证明 DMA、kernel 或网络访问已经结束。"
+        },
+        {
+          "path": "knowledge/algorithms/routing-and-migration.md",
+          "quote": "在目标资源协调域中原子复核容量与代次并预留新增资源"
+        }
+      ]
+    },
+    "algorithm": {
+      "assessment": "sufficient",
+      "reason": "ROUTE 给出候选生成、过滤、排序、复核、保护、预留和退出路径；迁移给出复制前沿、统一阶段入口、最终冻结、完整准备、权威接管和异常责任。当前步骤6先判断差量，步骤7–10才检查并取得阶段预算和容量，步骤14强制返回入口，已修复首次复制绕过预算的问题。零预算中止、初始达阈值直接冻结、下一入口中止及最后允许阶段达阈值四条路径，与脚本事件和时间/字节记录一致。K-ALG-023-r2-migration-entry-guard 及其对应 workflow 阻塞项可以关闭。",
+      "evidence": [
+        {
+          "path": "knowledge/algorithms/routing-and-migration.md",
+          "quote": "6 若 D≤ε，直接转最终冻结；不预留、不启动任何预复制阶段\n7 若 m≥max_stages，转预冻结中止"
+        },
+        {
+          "path": "knowledge/algorithms/routing-and-migration.md",
+          "quote": "14 返回阶段入口步骤 3，重新判断差量，不能直接启动下一次复制"
+        },
+        {
+          "path": "knowledge/algorithms/routing-and-migration.md",
+          "quote": "20 等待全部状态族及消费者依赖，核对恰好恢复 S(p)，建立 PREPARED"
+        }
+      ]
+    },
+    "cost": {
+      "assessment": "sufficient",
+      "reason": "串行成本与重叠依赖图分别处理，六类资源账覆盖准备、失败工作和双份驻留。递推、固定点、成功字节守恒与中止账推导相容，数值算例与所供执行记录一致。零阶段不支付预复制固定开销，直接冻结仍支付最终控制开销；实际失败消耗、冻结前增长和排空额外成本也有说明，没有将模型逻辑字节冒充设备事务或容量峰值。",
+      "evidence": [
+        {
+          "path": "knowledge/algorithms/routing-and-migration.md",
+          "quote": "t_k=α+D_k/B，D_{k+1}=g t_k=rD_k+a，r=g/B，a=gα。"
+        },
+        {
+          "path": "knowledge/algorithms/routing-and-migration.md",
+          "quote": "中止前已复制字节只有 ΣD_k，已花时间为 T_pre；关闭、排空和恢复可能另有成本。"
+        },
+        {
+          "path": "knowledge/algorithms/routing-and-migration.md",
+          "quote": "物理峰值按同时存活分配并集计算，不能用 X 当作容量峰值。"
+        }
+      ]
+    },
+    "adaptation": {
+      "assessment": "sufficient",
+      "reason": "明确不随策略变化而放宽的身份、恢复点、容量、授权与最后使用条件，并解释队列、带宽、增长、固定开销、预算、状态可变性及拓扑变化后的重算和退出路线。热点复制收益保持同一计价单位和边际价值，不把副本数量直接等同于服务能力。",
+      "evidence": [
+        {
+          "path": "knowledge/algorithms/routing-and-migration.md",
+          "quote": "身份、共同恢复点、容量承诺、唯一提交权和最后使用条件保持不变；队列预测、亲和程度、阶段大小、复制阈值与热点副本数量可以调整。"
+        },
+        {
+          "path": "knowledge/algorithms/routing-and-migration.md",
+          "quote": "无法建立稳定快照时，改为暂停复制、合法重放或放弃在线迁移。"
+        }
+      ]
+    },
+    "diagnosis": {
+      "assessment": "sufficient",
+      "reason": "将观察连接到多个竞争解释、受控干预和可反驳预测，并说明反证后修改哪一项判断。本轮负对照实际执行被禁止的复制动作，由独立参考检查阶段数、事件、时间和字节，能够发现最终状态名相同却已经违反预算的错误。检查范围和设备实验范围清楚分开。",
+      "evidence": [
+        {
+          "path": "knowledge/algorithms/routing-and-migration.md",
+          "quote": "仅验证最终状态名相同会漏掉这些错误，必须同时核对阶段事件、时间、字节和最终差量。"
+        },
+        {
+          "path": "knowledge/algorithms/routing-and-migration.md",
+          "quote": "若固定身份与恢复点、去掉远端等待并确认实际跳过计算后仍慢，传输解释不充分，应继续检查后缀执行或输出提交。"
+        }
+      ]
+    }
+  },
+  "findings": [],
+  "limitations": [
+    "本次审阅检查了所供完整候选、脚本及 actual_preflight 执行记录，没有在当前审阅会话重新启动 Python。执行通过结论仅引用绑定当前脚本哈希的所供记录。",
+    "检查只覆盖有限路由资格、串行连续增长、阶段数预算和符号范围；实际目录并发、容量事务、权威授权、失败阶段排空、真实字节限流和硬时间预算均未由该脚本验证，正文已明确声明。",
+    "未验证真实模型数值、布局转换、GPU/NIC 可见性、物理最后使用、设备性能、SLO 或 Agent 构建效果；这些边界不构成本章已声明模型范围内的阻塞缺陷。",
+    "论文仅按所供摘录核对。Llumnix 的16张A10、64实例sleep与artifact细节，以及Mooncake部分评估配置，还依赖所供完整来源说明；未独立读取未提供的论文范围、PDF版面或上游源码。离线链接的相对路径与所供资料对应，但未检查文件系统中的 reader.html 实际存在性。"
+  ],
+  "checks": [
+    {
+      "script": "tools/check_k_alg_023_full.py",
+      "args": []
+    }
+  ],
+  "no_checks_reason": "",
+  "reading_scope": "完整阅读本消息提供的全文：AGENTS.md [0,567)、docs/knowledge-method.md [0,2251)、docs/knowledge-review.md [0,3016)、当前候选 knowledge/algorithms/routing-and-migration.md [0,14097)、四份来源说明 S-LLUMNIX [0,962)、S-MOONCAKE [0,997)、S-SGLANG [0,472)、S-DISTSERVE [0,443)、knowledge/engine-index/vllm-scheduler.md [0,2314)、knowledge/engine-index/sglang-radix-scheduler.md [0,1901)，以及 candidate.test_script 的完整交付文本、author_notes 和 actual_preflight。相关章节仅阅读所供摘录：knowledge/algorithms/prefix-cache-identity.md [0,68)、[4000,10003)；knowledge/system-semantics/distributed-kv-store.md [0,968)、[8000,13103)；knowledge/system-semantics/serving-recovery.md [4000,6071)、[12000,16000)；knowledge/hardware/transport-and-rdma.md [0,6071)；knowledge/algorithms/disaggregated-serving.md [0,3188)、[16000,18883)；knowledge/workloads/slo-goodput.md [4000,10071)；knowledge/hardware/topology-parallelism.md [8000,10903)、[12000,15168)；knowledge/models/vision-language.md [4000,8000)、[12000,14071)；knowledge/system-semantics/request-batch-identity.md [12000,15000)、[16000,19071)；knowledge/system-semantics/collective-ordering.md [0,2258)、[16000,19813)；knowledge/system-semantics/distributed-state-transfer.md [0,4000)、[8000,8511)、[16000,17560)；knowledge/workloads/multi-model-placement.md [4000,8463)、[12000,13608)。论文仅阅读所供摘录：references/S-LLUMNIX/fulltext.txt [0,16000)、[20000,44000)、[48000,52000)、[56000,63762)、[64000,72000)；references/S-MOONCAKE/fulltext.txt [0,43762)、[52000,60000)、[64000,72000)；references/S-SGLANG/fulltext.txt [0,8000)、[12000,28000)、[32000,51761)、[52000,68000)；references/S-DISTSERVE/fulltext.txt [0,7762)、[12000,20000)、[28000,52000)、[60000,76000)、[80000,84000)。以上范围均为提取文本的零起点半开字符区间。documents 只列所供全文及完整交付脚本。作者范围另依据 author_material_scopes 记录：其原正文为旧哈希1b9dcfd5fea499a91611459bb936e1c1c49ceb562171fb0f1ba360a7010f5d32的完整3228字符；论文摘录范围与本审阅范围不同，未以本审阅摘录反推作者暴露范围。作者台账证明材料供应范围，不证明认知阅读；其author-materials.json仅提供元数据，未独立读取该文件。",
+  "test_assessment": "已逐项检查完整脚本的参考构造、边界断言和故障变体，并核对所供实际执行。路由实现逐候选过滤，参考独立以集合交集构造合法选项，不调用 eligible、score 或 route；容量不足和源未READY时，严格最低成本的C确实被错误排序变体选择，而参考选择B。错误η夹具全拒绝，未通过删除身份检查修复。迁移参考以Fraction闭式递推求首次达阈值阶段，再生成预期事件和成本，不调用逐阶段migration；另有成功路径字节守恒与整数范围覆盖。late_guard变体确实先RESERVE、COPY再判断：零预算反例产生1阶段、5秒、10字节，初始达阈值反例产生额外0.5秒预复制和总1.5字节，均被审计拒绝。因此本轮检查并非仅复述正确实现，也实际检验了保留审查指出的机制缺陷。所供remote_bwrap记录以Python3.12及-I -S -B -X utf8执行当前脚本，script_sha256为122055910e846191d65458bcef6bf75a7181d35056b1bf05039e192f9228296e，正文输入绑定为833367b4ebb988bc089a1dbb73b61d7e5dffaff0d4c8622c68c9e33ddbd77560，returncode=0、stderr为空、未超时；输出包含四条入口账、1024种路由资格组合、486个迁移组合及已检出负对照。作者仅声称其自身执行了V8探针、没有Python PASS，符合作者阶段记录；随后提供的当前Python预检补上了该执行证据。该脚本不读取正文并自动执行伪代码，伪代码与模型的对应由本次人工语义复核建立；它也不执行完整迁移协议或设备路径，不能据此扩张为这些范围的PASS。来源核对中，所供Llumnix §4.2支持逐阶段预分配及最终暂停，§5支持实例失败中止请求；Mooncake支持缓存、队列、传输与局部复核，原文比较方向不一致已保留并改用独立成本；SGLang离线命中率结论的容量条件和饥饿边界、DistServe按需拉取与未实现容错边界均未被扩大。未发现需要新增阻塞项的来源归属、推导或当前算法错误。"
+}

@@ -1,0 +1,135 @@
+{
+  "entry_id": "K-SYS-025",
+  "body_sha256": "2c3ab7bd0903177a2a0c9babd52bb73861669654d7770c9f87e1bb6314d38722",
+  "reviewer": "sol-reviewer:K-SYS-025:round-3",
+  "decision": "accept",
+  "documents": {
+    "AGENTS.md": "b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a",
+    "docs/knowledge-method.md": "69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb",
+    "docs/knowledge-review.md": "f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21",
+    "knowledge/system-semantics/known-tensions.md": "2c3ab7bd0903177a2a0c9babd52bb73861669654d7770c9f87e1bb6314d38722",
+    "knowledge/sources/S-ORCA.md": "920ef987a4a019bb4f0e0386e30bf1c1e3bc720d199ae4de22e462db4f41520a",
+    "knowledge/sources/S-SARATHI.md": "a4616b358fc59f97fd787e1eabbbca74d50c6f279bf3192d4c585f3ea80fb165",
+    "knowledge/sources/S-SPEC.md": "a637c44fe62f12685aed5d022d23eabf949083343dbce9656b0a149e742bfd90",
+    "knowledge/sources/S-KIVI.md": "79161876fab16fe335430a8d38d01de97bb0e17bee0cb9d29c6ba2dfa598998e",
+    "knowledge/sources/S-TORCH-CUDA.md": "8ee61677a1e35d475d9bb122b2c7fa824ccf054acefbe2f12345d72c1fb1b00e",
+    "knowledge/sources/S-PAGED.md": "50893a22385b0d577980153a9bc9c617acdcb2a9d7be0af655ad49421f06cc09",
+    "tools/check_k_sys_025_full.py": "4006c26d33c4584945ce4b3abe644d4484644e62efdc1cf798fe4ae7022e8a76"
+  },
+  "criteria": {
+    "definition": {
+      "assessment": "sufficient",
+      "reason": "明确张力的动机、诊断输入输出、执行视图和六类资源对象；区分已确认token、全层KV完成边界与尚未消费的logits，容量、驻留积分和服务事件的单位与口径明确。",
+      "evidence": [
+        {
+          "path": "knowledge/system-semantics/known-tensions.md",
+          "quote": "限定普通 causal decoder 时，以 P 表示 prompt 终点，A 表示已确认 token 的右开边界，c 表示所有必要层均完整、可复用的连续 KV 右开边界，ℓ 表示尚未消费的末行 logits 票据。"
+        },
+        {
+          "path": "knowledge/system-semantics/known-tensions.md",
+          "quote": "诊断输入为相同模型、数值合同和外部请求轨迹下的视图及事件记录；输出为候选的合法性、条件化成本、竞争解释和下一次可区分的实验。"
+        }
+      ]
+    },
+    "legality": {
+      "assessment": "sufficient",
+      "reason": "将模型与表示相容、历史可见性、共享写隔离、生产依赖及最后物理使用列为合法条件，将批、桶、chunk和分组列为选择；没有把logits就绪当成下一token或其KV已经存在，也没有把取消当成物理完成。来源版本及论文结论的适用条件清楚。",
+      "evidence": [
+        {
+          "path": "knowledge/system-semantics/known-tensions.md",
+          "quote": "合法性包括：模型、adapter、位置和缓存表示相容；每行只消费自己的合法历史；未发布状态不可读；写入共享尾部前隔离；固定图与其捕获地址绑定一致；输入生产先于消费；最后物理使用结束后才复用。"
+        },
+        {
+          "path": "knowledge/system-semantics/known-tensions.md",
+          "quote": "A=c 而 ℓ 缺失时，应恢复末行输出或等待合法生产者，不能把不存在的 token[c] 送入 decode。"
+        }
+      ]
+    },
+    "algorithm": {
+      "assessment": "sufficient",
+      "reason": "诊断伪代码交付身份校验、容量扫描、依赖建模、完整候选重建、干预与退出条件；量化追加交付逐层分组、冻结参数、共同发布、失败保留和安全回收。两轮混合轨迹的输入、可见集合、COW与提交边界一致。模型逐层前向细节可沿所链接且已提供相关展开的分块和投机章节核对，本章承担的组合算法没有以未解释的库调用替代。",
+      "evidence": [
+        {
+          "path": "knowledge/system-semantics/known-tensions.md",
+          "quote": "对合法候选重新构造完整混合视图，不能分别通过后直接拼接"
+        },
+        {
+          "path": "knowledge/system-semantics/known-tensions.md",
+          "quote": "5 等待所有必要层的码、参数和有效边界完成并可见\n  成功：原子发布相容的新快照和残余边界\n  失败：不发布部分结果，保留旧快照，排空已接受访问"
+        },
+        {
+          "path": "knowledge/system-semantics/known-tensions.md",
+          "quote": "若第一轮发布前失败，A仍使用P且c=5，B仍保留已确认token[8]且c=8；重试B使用相同token，不能重新采样。"
+        }
+      ]
+    },
+    "cost": {
+      "assessment": "sufficient",
+      "reason": "计算、访存、通信、准备、同步与驻留按同一范围记账，区分逻辑字节、实际事务、唯一容量和关键路径。复核批上限60、分块额外14 ms、投机期望3.3616、KV稳态38.125 MiB与条件化转换峰值21.875 MiB，单位和算术一致。本轮已准确收窄转换峰值检查声明，满足上一轮允许的修复路径；K-SYS-025-r2-transition-peak-check-scope及其workflow修订要求可以关闭。",
+      "evidence": [
+        {
+          "path": "knowledge/system-semantics/known-tensions.md",
+          "quote": "对同一资源上的消费者先合并需求，再估计 D_j/B_j 或 F_j/P_j；不能让两个 HBM 消费者各自领取完整独占带宽。"
+        },
+        {
+          "path": "knowledge/system-semantics/known-tensions.md",
+          "quote": "若转换期间先保留128个token的完整K/V，再分配K码及参数，峰值为20+1.25+0.625=21.875 MiB。"
+        },
+        {
+          "path": "knowledge/system-semantics/known-tensions.md",
+          "quote": "该项是共存公式的算术断言，不是独立的瞬态分配与释放模拟。"
+        }
+      ]
+    },
+    "adaptation": {
+      "assessment": "sufficient",
+      "reason": "说明batch、历史、接受率、块长、桶、质量与主机关键路径变化如何改变成本，并保留合法性要求；提供decode-only、关闭投机、提高精度和eager等条件化运行点，不把优化设为无条件要求。",
+      "evidence": [
+        {
+          "path": "knowledge/system-semantics/known-tensions.md",
+          "quote": "接受长度稳定而验证及排队增加时，应调整预算或关闭投机；关闭投机始终是合法运行点。"
+        },
+        {
+          "path": "knowledge/system-semantics/known-tensions.md",
+          "quote": "提高敏感部分精度、改变组长或残余策略可以重新评估；质量仍不合格或转换成本超过流量收益时应放弃该配置。"
+        }
+      ]
+    },
+    "diagnosis": {
+      "assessment": "sufficient",
+      "reason": "对容量与读取、摊薄成本与ITL、准备与页等待、接受率与验证饱和、表示错误与模型敏感性等给出竞争解释和可控干预；明确预测吻合仍可能不具辨识性，未观测只能形成实验设计。交叉配置保留交互项，检查证据与设备、服务及使用效果证据分开。",
+      "evidence": [
+        {
+          "path": "knowledge/system-semantics/known-tensions.md",
+          "quote": "若预测成立但其他解释仍可产生相同结果：保持不确定"
+        },
+        {
+          "path": "knowledge/system-semantics/known-tensions.md",
+          "quote": "固定前缀扫描读者数，记录唯一容量、L2/HBM事务及整轮时间；只证实容量时撤回带宽同比节省结论"
+        },
+        {
+          "path": "knowledge/system-semantics/known-tensions.md",
+          "quote": "未取得观测时结束于实验设计，不能直接进入“支持”"
+        }
+      ]
+    }
+  },
+  "findings": [],
+  "limitations": [
+    "KV转换峰值仅有声明共存条件下的算术断言；没有独立模拟分配、发布、最后使用与释放，也没有只计转换后稳态的峰值负对照。正文已准确声明，不能据此声称转换生命周期通过验证。",
+    "KV封组参考只覆盖固定同构、整除几何及所列长度，不证明任意prefill初始化、异构层、尾组打包、分页、对齐、allocator保留或workspace成本。",
+    "混合轨迹的脚本仅检查配对数和padding；确认、重试、COW、取消排空及完整多层执行状态机未由本脚本执行。",
+    "没有目标模型、低精度kernel、CUDA Graph、DMA、设备可见性、实际HBM事务、生产尾延迟或Agent使用效果的实测证据。",
+    "来源原文和相关章节仅核对下列实际供给摘录；没有读取未供给范围、PDF图版或源码归档。离线链接的相对路径静态合理，但本次未实际打开文件验证目标存在或渲染。",
+    "本次审阅检查了所供真实preflight记录，没有独立重跑Python；执行结论仅归属于该记录绑定的脚本、fixture及输入快照。"
+  ],
+  "checks": [
+    {
+      "script": "tools/check_k_sys_025_full.py",
+      "args": []
+    }
+  ],
+  "no_checks_reason": "",
+  "reading_scope": "完整阅读用户供给的AGENTS.md [0,567)、docs/knowledge-method.md [0,2251)、docs/knowledge-review.md [0,3016)、当前候选knowledge/system-semantics/known-tensions.md [0,14562)、六份来源说明S-ORCA [0,1394)、S-SARATHI [0,1423)、S-SPEC [0,518)、S-KIVI [0,713)、S-TORCH-CUDA [0,1468)、S-PAGED [0,2206)，以及candidate.test_script全部文本、author_notes、author_material_scopes和actual_preflight记录。相关章节仅阅读实际供给摘录：memory-and-roofline.md [0,2927)、[4000,13215)；chunked-prefill.md [0,12142)；speculation-budget.md [0,4000)、[8000,14705)、[16000,17437)；quantization-contract.md [0,5747)、[8000,14395)；cuda-graph-buffers.md [0,4895)、[8000,15247)；host-runtime.md [0,6746)、[8000,12000)、[16000,17396)；specialization-levers.md [0,671)、[4000,15471)。六份原文仅阅读本次materials实际供给范围：S-ORCA/fulltext.txt [0,866)、[8000,20000)、[28000,36000)、[40000,44000)、[48000,56000)、[64000,68000)；S-SARATHI/fulltext.txt [8000,24000)、[28000,40865)、[48000,56000)；S-SPEC/fulltext.txt [0,32000)、[36000,37512)、[44000,47353)；S-KIVI/fulltext.txt [0,12866)、[16000,24000)、[28000,44000)；S-TORCH-CUDA/fulltext.txt [16000,20000)、[28000,36000)、[40000,44000)、[48000,52000)、[56000,68865)、[76000,80000)；S-PAGED/fulltext.txt [0,12000)、[16000,32000)、[40000,40866)、[44000,48000)、[64000,68000)。所有范围均为提取文本零基半开字符范围。documents仅登记完整供给的文件，不登记摘录原文。作者材料范围按独立author_material_scopes台账理解，其原文供给范围与本审阅者不同；台账证明供给范围，不证明认知阅读，未据本次摘录反推作者只收到相同范围。",
+  "test_assessment": "已逐段静态检查脚本算法与所供实际执行输出。独立参考包括：正整数batch枚举对照闭式预算；直接按逻辑位置建立可见关系对照分块集合与计数；接受/拒绝路径精确概率枚举对照期望尾和；逐token封组及逐组字节累计对照KV聚合公式；逐行放置对照桶padding；区间中点的唯一物理对象并集对照事件扫描峰值与积分。边界覆盖包含空分块、非零历史、非均匀块、alpha为0和1、gamma为0、KV封组前后及零token、空桶、同时结束与开始、共享持有和零长度区间。所供round-3 actual_preflight记录returncode=0、stderr为空、未超时，script_sha256为4006c26d33c4584945ce4b3abe644d4484644e62efdc1cf798fe4ae7022e8a76，fixture_sha256为44cdeb53910929e91cc3d32fea27b0de8e6c9b38562f1aeaf30f1afc6a0d4fa9，输入摘要包含当前正文2c3ab7bd0903177a2a0c9babd52bb73861669654d7770c9f87e1bb6314d38722。输出实际列出11个被拒绝负对照；预算64条、固定历史、漏固定项、全接受、平均空档、理想位宽漏账和提前回收等分别触及对应成本或生命周期关系。部分负对照直接提供错误估值而非运行完整错误实现，因此只能证明参考能拒绝该类错误结果。提前回收变体实际改变区间并由并集参考拒绝，能检出峰值相同但驻留积分错误。seal_peak没有独立瞬态参考，其算术断言不能证明分配回收顺序；本轮正文已完整承认这一点，且未再将稳态参考或通用区间参考冒称该轨迹验证。作者关于自身阶段未重跑Python的说明与后续所供round-3 preflight记录属于不同执行阶段，不能混为作者亲自运行。成功执行只支持上述限定CPU模型，不据退出码推断整章机制或目标设备正确。"
+}

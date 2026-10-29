@@ -1,0 +1,62 @@
+{
+  "id": "K-ALG-014",
+  "path": "algorithms/lora-serving.md",
+  "category": "algorithms",
+  "title": "多 LoRA 服务：低秩计算、驻留与缓存身份",
+  "summary": "LoRA 为共享基座增加低秩映射；多适配器服务将模型复用问题转换成按请求选择增量权重的问题。",
+  "revision": 3,
+  "status": "seed",
+  "tags": [
+    "LoRA",
+    "adapter",
+    "低秩",
+    "多租户",
+    "共同内存池",
+    "异 rank",
+    "adapter 预取",
+    "公平等待",
+    "热切换"
+  ],
+  "scope": {
+    "model_families": [],
+    "platforms": [],
+    "runtimes": [],
+    "workloads": []
+  },
+  "source_ids": [
+    "S-LORA",
+    "S-VLLM-PREFIX",
+    "S-TORCH-NUMERIC",
+    "S-SLORA"
+  ],
+  "related": [
+    "K-ALG-003",
+    "K-ALG-001",
+    "K-FW-005",
+    "K-SYS-012",
+    "K-WORK-007",
+    "K-SYS-011",
+    "K-SYS-016",
+    "K-ALG-018",
+    "K-TOOLS-007"
+  ],
+  "evidence": [],
+  "updated_at": "2026-10-27",
+  "sha256": "3cba63cc43866f40cca61ad911f32115e9beaa5c4adff9559b4deb592fd3d4d7",
+  "questions": [
+    "单 adapter 合并进基座与多 adapter 运行时低秩分支在内存和数值上各有什么差别？",
+    "混合 batch 中按 adapter 分组、按 rank 分桶或统一最大 rank 补齐，各自改变哪些成本？",
+    "为什么同 token 前缀在不同 adapter 下的 KV 不能共享，缓存 key 需要包含什么？",
+    "adapter 与 KV 共用分页池时，多保留一个冷 adapter 的机会成本如何用 token 数表达？",
+    "热切换 adapter 版本时，哪些对象必须一起发布，旧版本在途引用如何保持有效？"
+  ],
+  "symptoms": [
+    "低频 adapter 请求的首 token 延迟远高于热租户平均值",
+    "加载新 adapter 后 KV 可驻留请求数明显减少",
+    "同文本在不同 adapter 下返回了相同的缓存状态"
+  ],
+  "assumes": [
+    "多个 LoRA adapter 共享同一基座模型",
+    "存在前缀缓存或分页 KV 管理"
+  ]
+}

@@ -1,0 +1,4037 @@
+{
+  "schema_version": 1,
+  "created_at": "2026-10-28T05:53:16+00:00",
+  "baseline_version": "base-gpt-6-astra-2026-04-30-v2.3-draft8",
+  "baseline_sha256": "bef6dc9ca7f29498a76bd9a5a6fbd64f0bb1e068e52254fff05ca1c0451cd1b0",
+  "max_rounds": 3,
+  "questions": [
+    "definition",
+    "legality",
+    "algorithm",
+    "cost",
+    "adaptation",
+    "diagnosis"
+  ],
+  "scope": "Whole selected queue, not a certificate of semantic completeness or device performance.",
+  "jobs": {
+    "K-ALG-001": {
+      "id": "K-ALG-001",
+      "path": "knowledge/algorithms/iteration-batching.md",
+      "baseline_revision": 4,
+      "baseline_sha256": "08f5ebb413f0a054e97302e5b080df44005de6c5704d0a24747085a5246e647a",
+      "prior_review": "mechanism_expansion_content_reviewed_with_limits",
+      "source_ids": [
+        "S-ORCA",
+        "S-SARATHI",
+        "S-VLLM-SCHED"
+      ],
+      "related": [
+        "K-ALG-007",
+        "K-ALG-008",
+        "K-SYS-002",
+        "K-WORK-002",
+        "K-SYS-012",
+        "K-WORK-005",
+        "K-WORK-010",
+        "K-SYS-015",
+        "K-ALG-014",
+        "K-ENGINE-001",
+        "K-ENGINE-004",
+        "K-SYS-010",
+        "K-WORK-007"
+      ],
+      "state": "queued",
+      "round": 0,
+      "author": null,
+      "reviews": [],
+      "checks": [],
+      "agent_use": "unassessed",
+      "issues": []
+    },
+    "K-ALG-006": {
+      "id": "K-ALG-006",
+      "path": "knowledge/algorithms/speculation-budget.md",
+      "baseline_revision": 4,
+      "baseline_sha256": "91a6e60d5151fb5b1155d2ba0ddcb3ba1251e69f7caf79b0ec217c7bf9a74d0d",
+      "prior_review": "navigation_registered_deep_review_pending",
+      "source_ids": [
+        "S-SPEC",
+        "S-HF-CACHE",
+        "S-TORCH-REPRO",
+        "S-EAGLE"
+      ],
+      "related": [
+        "K-ALG-011",
+        "K-ALG-008",
+        "K-MODEL-004",
+        "K-SYS-003",
+        "K-ALG-024",
+        "K-SYS-014",
+        "K-TOOLS-007",
+        "K-ALG-012",
+        "K-SYS-024",
+        "K-SYS-025"
+      ],
+      "state": "needs_attention",
+      "round": 3,
+      "author": "sol-author:K-ALG-006:round-3",
+      "reviews": [
+        {
+          "path": "docs/evidence/knowledge-workflow-20261028-batch4/K-ALG-006/round-2/review.json",
+          "sha256": "535bfa52c2e56c3aa87be74f45e7694266047f1d7c3ebb931034d0539135c3a7"
+        },
+        {
+          "path": "docs/evidence/knowledge-workflow-20261028-batch4/K-ALG-006/round-3/review.json",
+          "sha256": "985812a5ef0c9236323414d95073cdc5d25bf66496468744628b45d963c9a11e"
+        }
+      ],
+      "checks": [],
+      "agent_use": "unassessed",
+      "issues": [
+        {
+          "id": "sol-K-ALG-006-unreachable-grammar-suffix",
+          "criterion": "algorithm",
+          "evidence": "正文允许“草稿提出目标概率为零的 token 可以合法发生，接受概率为零即可。”但链式伪代码先完整生成候选，再在目标验证阶段执行“每个 pᵢ 使用其条件前缀下的目标变换与 grammar 状态”，然后才进入接受扫描。其异常分支仅写“若失败、身份失效或已取消，不发布候选结果，保留 S0 并排空使用者”。取合法 H，目标 grammar 只允许 a，故 p₁=(1,0)；草稿无该约束，q₁=(0,1)，γ=2，提出 b,b。第一候选必拒绝，完整残余应输出 a；但 H+b 是 grammar 死前缀，p₂ 无法归一化，算法会在到达这个合法拒绝分支前失败。",
+          "impact": "合法初始请求可因必被拒绝的草稿后缀而失败或反复回到 S0，无法兑现目标分布保持及每轮推进。当前概率检查中的 target(h) 对所有历史都有正质量，因而不会检出此问题。",
+          "blocking": true,
+          "required_revision": "明确区分已确认前缀自身无合法延伸与不可达草稿后缀。为链式回合规定目标 grammar 的路径检查和截断/延迟变换规则：保留验证首个非法候选所需的父分布，在其必拒绝后从完整残余修正；不要构造或归一化该非法候选之后的目标分布。说明草稿或目标遇到终止状态时如何停止后续准备，并保持实际输入行和成本计量一致。加入上述确定性小词表反例，以直接目标参考检验输出 a、状态边界及不会因无用后缀失败。"
+        },
+        {
+          "id": "campaign-K-ALG-006-r3",
+          "criterion": "algorithm",
+          "blocking": true,
+          "evidence": "docs/evidence/knowledge-workflow-20261028-batch4/full_build/K-ALG-006/round-3",
+          "impact": "Independent semantic reviewer requested revision; see retained review",
+          "required_revision": "Repair the recorded concrete failure and re-evaluate the full candidate."
+        }
+      ]
+    },
+    "K-ALG-009": {
+      "id": "K-ALG-009",
+      "path": "knowledge/algorithms/heterogeneous-state-cache.md",
+      "baseline_revision": 3,
+      "baseline_sha256": "c9d7ef861fd1243cb4a605a38405fe1c7ddb2cfc24a653a97a83080ad065d02b",
+      "prior_review": "navigation_registered_deep_review_pending",
+      "source_ids": [
+        "S-VLLM-HYBRID",
+        "S-MAMBA",
+        "S-PAGED"
+      ],
+      "related": [
+        "K-MODEL-004",
+        "K-MODEL-006",
+        "K-MODEL-007",
+        "K-ALG-003",
+        "K-ALG-017",
+        "K-ALG-018",
+        "K-SYS-012",
+        "K-SYS-014",
+        "K-ALG-024",
+        "K-ALG-002",
+        "K-ENGINE-002",
+        "K-FW-009",
+        "K-HW-008",
+        "K-SYS-003",
+        "K-SYS-009",
+        "K-SYS-010"
+      ],
+      "state": "verified",
+      "round": 4,
+      "author": "sol-author:K-ALG-009:round-4",
+      "reviews": [
+        {
+          "path": "docs/evidence/knowledge-workflow-20261028-batch4/K-ALG-009/round-4/review.json",
+          "sha256": "f9091af33d02f27067c6890c9e188fcf83f588f16cd0ce5deea168a01bf94246"
+        }
+      ],
+      "checks": [
+        {
+          "path": "docs/evidence/knowledge-workflow-20261028-batch4/K-ALG-009/round-4/check-0.json",
+          "sha256": "87d6c6884c169cf185d78779998d790a6d742232ecbed4ac23238a15e018edd8",
+          "exit_code": 0
+        }
+      ],
+      "agent_use": "unassessed",
+      "issues": [],
+      "max_rounds": 4,
+      "budget_adjustments": [
+        {
+          "at": "2026-10-28T06:57:16.077391+00:00",
+          "previous": 3,
+          "new": 4,
+          "reason": "Only one concretely evidenced replay-input complexity claim remains after the third candidate; permit one targeted Sol correction with the retained candidate and reviewer feedback, leaving other task budgets unchanged."
+        }
+      ],
+      "manager_notes": [
+        "Use the retained round-3 candidate as the repair baseline. Its state/replay/lifetime work was already checked. Fix R3-REPLAY-INPUT-COST: qualify O(nF) as state-family eligibility only and separately account for worst-case O(n^2) interval-input rescanning, or implement and cost a prefix preprocessing scheme. Verify the missing-final-input witness and preserve unrelated valid mechanisms. Do not start a different algorithm or claim the old script was linear."
+      ]
+    },
+    "K-ALG-010": {
+      "id": "K-ALG-010",
+      "path": "knowledge/algorithms/cross-attention-cache.md",
+      "baseline_revision": 3,
+      "baseline_sha256": "24ccdfcf4b31aba460cc537493e1c17e73643683f1c4e2df5a6c673fb5e2166e",
+      "prior_review": "navigation_registered_deep_review_pending",
+      "source_ids": [
+        "S-TRANSFORMER",
+        "S-WHISPER",
+        "S-FI"
+      ],
+      "related": [
+        "K-MODEL-005",
+        "K-ALG-002",
+        "K-FW-006",
+        "K-MODEL-008",
+        "K-ALG-017",
+        "K-ALG-018",
+        "K-SYS-015",
+        "K-SYS-014",
+        "K-SYS-012",
+        "K-FW-005",
+        "K-MODEL-009",
+        "K-SYS-003"
+      ],
+      "state": "queued",
+      "round": 0,
+      "author": null,
+      "reviews": [],
+      "checks": [],
+      "agent_use": "unassessed",
+      "issues": []
+    },
+    "K-ALG-011": {
+      "id": "K-ALG-011",
+      "path": "knowledge/algorithms/batched-sampling.md",
+      "baseline_revision": 3,
+      "baseline_sha256": "eedef73ece886112211c643f263add7644e5bd2018f2043c1716a172368aa6f2",
+      "prior_review": "navigation_registered_deep_review_pending",
+      "source_ids": [
+        "S-FI-SAMPLE",
+        "S-TORCH-REPRO",
+        "S-SPEC"
+      ],
+      "related": [
+        "K-SYS-002",
+        "K-ALG-012",
+        "K-ALG-006",
+        "K-ALG-024",
+        "K-SYS-014",
+        "K-TOOLS-007",
+        "K-ENGINE-003",
+        "K-SYS-007"
+      ],
+      "state": "queued",
+      "round": 0,
+      "author": null,
+      "reviews": [],
+      "checks": [],
+      "agent_use": "unassessed",
+      "issues": []
+    },
+    "K-ALG-012": {
+      "id": "K-ALG-012",
+      "path": "knowledge/algorithms/structured-output.md",
+      "baseline_revision": 3,
+      "baseline_sha256": "dd564087bb7df327081ce442368799cb0b27c59e9cbdab314b0a0dac99ca8ade",
+      "prior_review": "navigation_registered_deep_review_pending",
+      "source_ids": [
+        "S-XGRAMMAR",
+        "S-FI-SAMPLE",
+        "S-CHAT"
+      ],
+      "related": [
+        "K-ALG-011",
+        "K-ALG-006",
+        "K-SYS-007",
+        "K-ALG-024",
+        "K-SYS-014",
+        "K-TOOLS-006"
+      ],
+      "state": "queued",
+      "round": 0,
+      "author": null,
+      "reviews": [],
+      "checks": [],
+      "agent_use": "unassessed",
+      "issues": []
+    },
+    "K-ALG-013": {
+      "id": "K-ALG-013",
+      "path": "knowledge/algorithms/disaggregated-serving.md",
+      "baseline_revision": 3,
+      "baseline_sha256": "07d8beba67dd10960cd504dafad8cdf0baaf92c03ef368a2a97236690c6bc7e8",
+      "prior_review": "navigation_registered_deep_review_pending",
+      "source_ids": [
+        "S-DISTSERVE",
+        "S-CUDA-TOPOLOGY",
+        "S-PAGED",
+        "S-MOONCAKE"
+      ],
+      "related": [
+        "K-HW-002",
+        "K-SYS-009",
+        "K-WORK-005",
+        "K-ALG-007",
+        "K-SYS-013",
+        "K-HW-014",
+        "K-ALG-023",
+        "K-SYS-014",
+        "K-ALG-015",
+        "K-ENGINE-005",
+        "K-SYS-010",
+        "K-WORK-006"
+      ],
+      "state": "verified",
+      "round": 3,
+      "author": "sol-author:K-ALG-013:round-3",
+      "reviews": [
+        {
+          "path": "docs/evidence/knowledge-workflow-20261028-batch4/K-ALG-013/round-1/review.json",
+          "sha256": "b45af08ca50fc9c96999de97e83ed888bc9f417763f0c24260773dd295e0be4d"
+        },
+        {
+          "path": "docs/evidence/knowledge-workflow-20261028-batch4/K-ALG-013/round-2/review.json",
+          "sha256": "32df0d598549ff36f21dcfcef1e7f144b93a37c26ac1f204a113b1594e1510ca"
+        },
+        {
+          "path": "docs/evidence/knowledge-workflow-20261028-batch4/K-ALG-013/round-3/review.json",
+          "sha256": "e0b430fbbeb4fc06d5c7bc313844f558eb3c02a37ae41073a27b52cd3e5c72e2"
+        }
+      ],
+      "checks": [
+        {
+          "path": "docs/evidence/knowledge-workflow-20261028-batch4/K-ALG-013/round-3/check-0.json",
+          "sha256": "f36fccfe633e63d99aa9024ae4a2a103437ced3c5618b17fdba9166b90e1f8d9",
+          "exit_code": 0
+        }
+      ],
+      "agent_use": "unassessed",
+      "issues": []
+    },
+    "K-ALG-014": {
+      "id": "K-ALG-014",
+      "path": "knowledge/algorithms/lora-serving.md",
+      "baseline_revision": 3,
+      "baseline_sha256": "3cba63cc43866f40cca61ad911f32115e9beaa5c4adff9559b4deb592fd3d4d7",
+      "prior_review": "navigation_registered_deep_review_pending",
+      "source_ids": [
+        "S-LORA",
+        "S-VLLM-PREFIX",
+        "S-TORCH-NUMERIC",
+        "S-SLORA"
+      ],
+      "related": [
+        "K-ALG-003",
+        "K-ALG-001",
+        "K-FW-005",
+        "K-SYS-012",
+        "K-WORK-007",
+        "K-SYS-011",
+        "K-SYS-016",
+        "K-ALG-018",
+        "K-TOOLS-007"
+      ],
+      "state": "queued",
+      "round": 0,
+      "author": null,
+      "reviews": [],
+      "checks": [],
+      "agent_use": "unassessed",
+      "issues": []
+    },
+    "K-ALG-015": {
+      "id": "K-ALG-015",
+      "path": "knowledge/algorithms/parallelism.md",
+      "baseline_revision": 3,
+      "baseline_sha256": "161a883561e39371ea22a1430c385546c402db2f993d8a37c6f37e03e1e4bd17",
+      "prior_review": "navigation_registered_deep_review_pending",
+      "source_ids": [
+        "S-NCCL-COLLECTIVE",
+        "S-CUDA-TOPOLOGY",
+        "S-MIXTRAL",
+        "S-DEEPSEEKV3"
+      ],
+      "related": [
+        "K-HW-002",
+        "K-MODEL-003",
+        "K-ALG-013",
+        "K-SYS-005",
+        "K-HW-014",
+        "K-ALG-019",
+        "K-MODEL-006",
+        "K-SYS-012",
+        "K-TOOLS-007",
+        "K-HW-008",
+        "K-MODEL-002",
+        "K-MODEL-009",
+        "K-MODEL-010",
+        "K-SYS-010",
+        "K-WORK-011"
+      ],
+      "state": "queued",
+      "round": 0,
+      "author": null,
+      "reviews": [],
+      "checks": [],
+      "agent_use": "unassessed",
+      "issues": []
+    },
+    "K-ENGINE-001": {
+      "id": "K-ENGINE-001",
+      "path": "knowledge/engine-index/vllm-scheduler.md",
+      "baseline_revision": 3,
+      "baseline_sha256": "9e576ff7711ed5e448a4bedfe7ab69949a79bc3f61417bf258f7a3b56caf1fe5",
+      "prior_review": "focused_algorithm_and_design_revision",
+      "source_ids": [
+        "S-VLLM-SCHED",
+        "S-VLLM-CODE",
+        "S-ORCA"
+      ],
+      "related": [
+        "K-ENGINE-002",
+        "K-ENGINE-003",
+        "K-ALG-001",
+        "K-ALG-007",
+        "K-SYS-015",
+        "K-ALG-023",
+        "K-WORK-010",
+        "K-SYS-010"
+      ],
+      "state": "queued",
+      "round": 0,
+      "author": null,
+      "reviews": [],
+      "checks": [],
+      "agent_use": "unassessed",
+      "issues": []
+    },
+    "K-ENGINE-002": {
+      "id": "K-ENGINE-002",
+      "path": "knowledge/engine-index/vllm-kv-manager.md",
+      "baseline_revision": 3,
+      "baseline_sha256": "50b09c7a66c1282b7f6f7ac7ef1f265b953b908ae5fba883c9beec4732e1ab89",
+      "prior_review": "focused_algorithm_and_design_revision",
+      "source_ids": [
+        "S-VLLM-KV",
+        "S-VLLM-CODE",
+        "S-VLLM-HYBRID"
+      ],
+      "related": [
+        "K-ALG-002",
+        "K-ALG-009",
+        "K-ENGINE-001",
+        "K-SYS-012",
+        "K-ALG-017",
+        "K-ALG-018",
+        "K-SYS-013",
+        "K-ALG-021"
+      ],
+      "state": "queued",
+      "round": 0,
+      "author": null,
+      "reviews": [],
+      "checks": [],
+      "agent_use": "unassessed",
+      "issues": []
+    },
+    "K-ENGINE-003": {
+      "id": "K-ENGINE-003",
+      "path": "knowledge/engine-index/vllm-model-runner.md",
+      "baseline_revision": 3,
+      "baseline_sha256": "87d1433d4f64d939ff8f137d1c1d4092cfdf2b3d7ebdd011a0f344cc66564714",
+      "prior_review": "focused_algorithm_and_design_revision",
+      "source_ids": [
+        "S-VLLM-RUNNER",
+        "S-VLLM-CODE",
+        "S-TORCH-CUDA"
+      ],
+      "related": [
+        "K-SYS-002",
+        "K-FW-005",
+        "K-ALG-011",
+        "K-ENGINE-001",
+        "K-FW-011",
+        "K-SYS-012",
+        "K-ALG-020",
+        "K-ALG-024"
+      ],
+      "state": "queued",
+      "round": 0,
+      "author": null,
+      "reviews": [],
+      "checks": [],
+      "agent_use": "unassessed",
+      "issues": []
+    },
+    "K-ENGINE-004": {
+      "id": "K-ENGINE-004",
+      "path": "knowledge/engine-index/sglang-radix-scheduler.md",
+      "baseline_revision": 3,
+      "baseline_sha256": "abf1eb7040f1f6ba697822719094f8cc26172a329d6003a027862ef89de03374",
+      "prior_review": "focused_algorithm_and_design_revision",
+      "source_ids": [
+        "S-SGLANG",
+        "S-SGLANG-CODE"
+      ],
+      "related": [
+        "K-ALG-003",
+        "K-ALG-001",
+        "K-SYS-004",
+        "K-SYS-013",
+        "K-ALG-023",
+        "K-ALG-018",
+        "K-ALG-021"
+      ],
+      "state": "queued",
+      "round": 0,
+      "author": null,
+      "reviews": [],
+      "checks": [],
+      "agent_use": "unassessed",
+      "issues": []
+    },
+    "K-ENGINE-005": {
+      "id": "K-ENGINE-005",
+      "path": "knowledge/engine-index/tensorrt-llm.md",
+      "baseline_revision": 3,
+      "baseline_sha256": "6ade1253f3747041bef4a816d82387c3771bff3459a153719cfbd571c2454c0b",
+      "prior_review": "focused_algorithm_and_design_revision",
+      "source_ids": [
+        "S-TRTLLM",
+        "S-TRTLLM-CODE"
+      ],
+      "related": [
+        "K-ALG-008",
+        "K-ALG-013",
+        "K-FW-005",
+        "K-SYS-004",
+        "K-ALG-017",
+        "K-ALG-019",
+        "K-HW-014",
+        "K-SYS-014",
+        "K-SYS-012"
+      ],
+      "state": "queued",
+      "round": 0,
+      "author": null,
+      "reviews": [],
+      "checks": [],
+      "agent_use": "unassessed",
+      "issues": []
+    },
+    "K-FW-001": {
+      "id": "K-FW-001",
+      "path": "knowledge/frameworks/inference-eval.md",
+      "baseline_revision": 4,
+      "baseline_sha256": "9381e25cf021f5338aef4311ba5c95ca2255fead917335c292b79347acf6b4b9",
+      "prior_review": "navigation_registered_deep_review_pending",
+      "source_ids": [
+        "S-TORCH-INFERENCE",
+        "S-TORCH-CUDA",
+        "S-TORCH-REPRO",
+        "S-TORCH-DYNAMIC",
+        "S-TORCH-NUMERIC"
+      ],
+      "related": [
+        "K-FW-002",
+        "K-FW-004",
+        "K-SYS-003",
+        "K-FW-011",
+        "K-ALG-016",
+        "K-SYS-015",
+        "K-TOOLS-006",
+        "K-SYS-012",
+        "K-HW-009",
+        "K-TOOLS-004"
+      ],
+      "state": "needs_attention",
+      "round": 3,
+      "author": "sol-author:K-FW-001:round-3",
+      "reviews": [
+        {
+          "path": "docs/evidence/knowledge-workflow-20261028-batch4/K-FW-001/round-1/review.json",
+          "sha256": "0d721764acc0b5fe708828e2aee2d1babad498070a91f21a446c785fddd9dd4b"
+        },
+        {
+          "path": "docs/evidence/knowledge-workflow-20261028-batch4/K-FW-001/round-2/review.json",
+          "sha256": "6fec1f774852fbc71c25302e0e9492d611102991c87e925cb7dc76431cae8335"
+        },
+        {
+          "path": "docs/evidence/knowledge-workflow-20261028-batch4/K-FW-001/round-3/review.json",
+          "sha256": "ec9a935690d48d3a3d37695be87b599b79866f6ea16b487cf9292c5e696c77d3"
+        }
+      ],
+      "checks": [],
+      "agent_use": "unassessed",
+      "issues": [
+        {
+          "id": "K-FW-001-AUX-PRODUCER-JOIN",
+          "criterion": "algorithm",
+          "evidence": "正文允许“模型内部若使用其他 stream，必须将它们登记到保护域，并让 `S_f` 的完成点汇合所有影响 raw 的生产者。”但 ServeOne 的实际顺序为“raw = SelectByLogicalPosition(y, q.output_positions) on S_f”“tx.Protect(raw)”“JoinRegisteredInternalProducersInto(S_f)”。脚本 Engine 的执行队列只有 f、c、k，begin 的 forward 直接在 f 上写 raw，没有辅助 stream 生产 y 后由 f 选择输出的轨迹。",
+          "impact": "当 model.forward 在已登记辅助 stream 上生产 y，而输出选择在 S_f 上执行 gather 或复制时，选择操作可以早于 y 的生产完成。随后汇合和等待 e_f 只能证明这些操作最终都结束，不能证明选择读取了正确版本。请求可能带着完成凭据发布错误 raw；当前通过记录未检验这一正文允许的路径。",
+          "blocking": true,
+          "required_revision": "在 SelectByLogicalPosition 首次读取 y 之前，将其全部必要生产者依赖建立到 S_f；或者明确规定并展开 model.forward 返回时已经建立这些依赖的契约，避免把首次汇合放在选择之后。保留选择完成后的 e_f 作为 raw 的完成凭据。扩展抽象检查：让已登记辅助 stream 延迟生产 y，S_f 执行实际读取数据的选择；正确路径应按依赖推进并匹配独立参考，删除选择前等待的负对照应由未初始化读取或版本读取不变量拒绝。保留本轮已正确修复的转换等待和失败生命周期处理。"
+        },
+        {
+          "id": "campaign-K-FW-001-r3",
+          "criterion": "algorithm",
+          "blocking": true,
+          "evidence": "docs/evidence/knowledge-workflow-20261028-batch4/full_build/K-FW-001/round-3",
+          "impact": "Independent semantic reviewer requested revision; see retained review",
+          "required_revision": "Repair the recorded concrete failure and re-evaluate the full candidate."
+        }
+      ]
+    },
+    "K-FW-002": {
+      "id": "K-FW-002",
+      "path": "knowledge/frameworks/numerical-reference.md",
+      "baseline_revision": 3,
+      "baseline_sha256": "a70beff4c73683f897d9c0c1fb291539051e20b2c31adfd90a3f6677c411596f",
+      "prior_review": "navigation_registered_deep_review_pending",
+      "source_ids": [
+        "S-TORCH-NUMERIC",
+        "S-TORCH-REPRO",
+        "S-GPTQ",
+        "S-INT8"
+      ],
+      "related": [
+        "K-ALG-004",
+        "K-ALG-005",
+        "K-TOOLS-006",
+        "K-ALG-016",
+        "K-FW-012",
+        "K-TOOLS-007",
+        "K-SYS-012",
+        "K-FW-001",
+        "K-SYS-006",
+        "K-ALG-021"
+      ],
+      "state": "queued",
+      "round": 0,
+      "author": null,
+      "reviews": [],
+      "checks": [],
+      "agent_use": "unassessed",
+      "issues": []
+    },
+    "K-FW-003": {
+      "id": "K-FW-003",
+      "path": "knowledge/frameworks/streams-allocator.md",
+      "baseline_revision": 3,
+      "baseline_sha256": "64427e69f6eb991d4029242e24e4edf56a331d233fdeab3c50f53f0f84a4df7b",
+      "prior_review": "navigation_registered_deep_review_pending",
+      "source_ids": [
+        "S-TORCH-CUDA",
+        "S-CUDA-ASYNC",
+        "S-CUDA-ALLOC"
+      ],
+      "related": [
+        "K-ALG-008",
+        "K-FW-005",
+        "K-SYS-004",
+        "K-HW-011",
+        "K-HW-013",
+        "K-ALG-018",
+        "K-SYS-012",
+        "K-FW-006",
+        "K-HW-003",
+        "K-SYS-001",
+        "K-SYS-015",
+        "K-HW-014"
+      ],
+      "state": "queued",
+      "round": 0,
+      "author": null,
+      "reviews": [],
+      "checks": [],
+      "agent_use": "unassessed",
+      "issues": []
+    },
+    "K-FW-004": {
+      "id": "K-FW-004",
+      "path": "knowledge/frameworks/compile-dynamic-shapes.md",
+      "baseline_revision": 3,
+      "baseline_sha256": "6f9773875d24bbe32fd80e62cfba4e85f841ec1b65876b513c30d8d9f000b1ef",
+      "prior_review": "navigation_registered_deep_review_pending",
+      "source_ids": [
+        "S-TORCH-DYNAMIC",
+        "S-NXDI",
+        "S-TRITON",
+        "S-TVM",
+        "S-ANSOR"
+      ],
+      "related": [
+        "K-FW-005",
+        "K-ALG-007",
+        "K-WORK-003",
+        "K-FW-011",
+        "K-SYS-011",
+        "K-FW-007",
+        "K-MODEL-013",
+        "K-MODEL-014",
+        "K-MODEL-016",
+        "K-FW-001",
+        "K-FW-009",
+        "K-FW-010",
+        "K-MODEL-009",
+        "K-TOOLS-004"
+      ],
+      "state": "queued",
+      "round": 0,
+      "author": null,
+      "reviews": [],
+      "checks": [],
+      "agent_use": "unassessed",
+      "issues": []
+    },
+    "K-FW-005": {
+      "id": "K-FW-005",
+      "path": "knowledge/frameworks/cuda-graph-buffers.md",
+      "baseline_revision": 3,
+      "baseline_sha256": "440b52fb12e41f753d0800016ddd7f9d40b5634e2c33431d1208986d1ccaedef",
+      "prior_review": "navigation_registered_deep_review_pending",
+      "source_ids": [
+        "S-TORCH-CUDA",
+        "S-CUDA-ASYNC",
+        "S-FI",
+        "S-TRTLLM",
+        "S-FLASHINFERPAPER"
+      ],
+      "related": [
+        "K-ALG-008",
+        "K-ALG-010",
+        "K-FW-006",
+        "K-SYS-004",
+        "K-ALG-019",
+        "K-ALG-014",
+        "K-ALG-017",
+        "K-SYS-012",
+        "K-SYS-011",
+        "K-ENGINE-003",
+        "K-ENGINE-005",
+        "K-FW-003",
+        "K-FW-004",
+        "K-HW-005",
+        "K-SYS-010",
+        "K-TOOLS-008",
+        "K-SYS-024",
+        "K-SYS-025"
+      ],
+      "state": "verified",
+      "round": 3,
+      "author": "sol-author:K-FW-005:round-3",
+      "reviews": [
+        {
+          "path": "docs/evidence/knowledge-workflow-20261028-batch4/K-FW-005/round-2/review.json",
+          "sha256": "8bddb541cee497487413c531a27358fab8ced99484914121297e40486c636c31"
+        },
+        {
+          "path": "docs/evidence/knowledge-workflow-20261028-batch4/K-FW-005/round-3/review.json",
+          "sha256": "81ea4642f901e8dd134fb1ee956a88bc646b2ff342c360023461a67d6854d2cb"
+        }
+      ],
+      "checks": [
+        {
+          "path": "docs/evidence/knowledge-workflow-20261028-batch4/K-FW-005/round-3/check-0.json",
+          "sha256": "7abca2ee456e38f246ae634c8742b3e45fa8be0edce415cff2ad2c73fa23223f",
+          "exit_code": 0
+        }
+      ],
+      "agent_use": "unassessed",
+      "issues": []
+    },
+    "K-FW-006": {
+      "id": "K-FW-006",
+      "path": "knowledge/frameworks/attention-backends.md",
+      "baseline_revision": 8,
+      "baseline_sha256": "ead758e413f2fd59119e77ce8a91eddd5e5fe6468a315109554d78013df3b4f5",
+      "prior_review": "focused_algorithm_and_design_revision",
+      "source_ids": [
+        "S-FLASH",
+        "S-FLASHATTENTION3",
+        "S-PAGED",
+        "S-SDPA",
+        "S-FA-IMPL",
+        "S-FI",
+        "S-FLASHINFERPAPER",
+        "S-TORCH-CUDA",
+        "S-AITER",
+        "S-FLASHATTENTION2",
+        "S-TRITON",
+        "S-CUDA-CAPABILITY",
+        "S-CUDA-BEST"
+      ],
+      "related": [
+        "K-ALG-004",
+        "K-ALG-010",
+        "K-FW-005",
+        "K-MODEL-006",
+        "K-ALG-022",
+        "K-ALG-021",
+        "K-HW-011",
+        "K-ALG-003",
+        "K-TOOLS-006",
+        "K-FW-003",
+        "K-ALG-016",
+        "K-SYS-003",
+        "K-SYS-012",
+        "K-ALG-002",
+        "K-HW-006",
+        "K-HW-001",
+        "K-TOOLS-008",
+        "K-TOOLS-007",
+        "K-FW-007",
+        "K-ALG-005"
+      ],
+      "state": "queued",
+      "round": 0,
+      "author": null,
+      "reviews": [],
+      "checks": [],
+      "agent_use": "unassessed",
+      "issues": []
+    },
+    "K-FW-007": {
+      "id": "K-FW-007",
+      "path": "knowledge/frameworks/triton-kernels.md",
+      "baseline_revision": 5,
+      "baseline_sha256": "4f22ff425d383743410ce23431532f8096c633aea86a63bd6e7c7ae2e5304652",
+      "prior_review": "navigation_registered_deep_review_pending",
+      "source_ids": [
+        "S-TRITON",
+        "S-CUDA-BEST",
+        "S-ROCM",
+        "S-TVM",
+        "S-ANSOR",
+        "S-TORCH-NUMERIC",
+        "S-TORCH-CUDA"
+      ],
+      "related": [
+        "K-ALG-004",
+        "K-HW-005",
+        "K-HW-006",
+        "K-HW-011",
+        "K-HW-010",
+        "K-HW-004",
+        "K-FW-004",
+        "K-TOOLS-003",
+        "K-TOOLS-007",
+        "K-ALG-016"
+      ],
+      "state": "verified",
+      "round": 3,
+      "author": "sol-author:K-FW-007:round-3",
+      "reviews": [
+        {
+          "path": "docs/evidence/knowledge-workflow-20261028-batch4/K-FW-007/round-1/review.json",
+          "sha256": "6d1c41e2f4310e5714c421a0b740aea661f51077cae8dd873413b305fc319126"
+        },
+        {
+          "path": "docs/evidence/knowledge-workflow-20261028-batch4/K-FW-007/round-3/review.json",
+          "sha256": "1d21fcca0492f3cbf680fd95761943885c73f0041a8e1077097e7bf66d9497c0"
+        }
+      ],
+      "checks": [
+        {
+          "path": "docs/evidence/knowledge-workflow-20261028-batch4/K-FW-007/round-3/check-0.json",
+          "sha256": "64d922f54d582a8e8e4d52fccfc9a47931663ab4789b9e432b460b7386f64dcd",
+          "exit_code": 0
+        }
+      ],
+      "agent_use": "unassessed",
+      "issues": []
+    },
+    "K-FW-008": {
+      "id": "K-FW-008",
+      "path": "knowledge/frameworks/mlx-serving.md",
+      "baseline_revision": 3,
+      "baseline_sha256": "c308a8ac651460ede6b6e53d3413bea4c4a7707b757516faf8a752b35872b6c1",
+      "prior_review": "navigation_registered_deep_review_pending",
+      "source_ids": [
+        "S-MLX",
+        "S-MLX-MEM",
+        "S-MLX-EXEC"
+      ],
+      "related": [
+        "K-HW-007",
+        "K-ALG-008",
+        "K-SYS-004",
+        "K-SYS-012",
+        "K-SYS-015",
+        "K-FW-011",
+        "K-HW-013"
+      ],
+      "state": "revise",
+      "round": 2,
+      "author": "ds-author:K-FW-008:round-2",
+      "reviews": [
+        {
+          "path": "docs/evidence/knowledge-workflow-20261028-batch4/K-FW-008/round-1/review.json",
+          "sha256": "a4a779b991ad9e64daf2d5655aad5009c2c444fbc4507654c22f5d81b7c2720d"
+        },
+        {
+          "path": "docs/evidence/knowledge-workflow-20261028-batch4/K-FW-008/round-2/review.json",
+          "sha256": "af16c7f19e409ee1aeddf04daf515efbe0f58364404960d6eac719237a59ab2a"
+        }
+      ],
+      "checks": [],
+      "agent_use": "unassessed",
+      "issues": [
+        {
+          "id": "K-FW-008-DIA-05",
+          "criterion": "diagnosis",
+          "evidence": "tools/check_k_fw_008_full.py 中 make_capture 的调用体为“return capture_reference(kind, x, current, captured)”；capture_reference 直接以“if kind == 'explicit':”选择 current，否则选择 captured。负对照仍直接检查“require(faulty_explicit(1, state, 1) == 6,”。正文则解释“trace 时 state[0] 是常量”。",
+          "impact": "被测调用直接执行预设的参考规则，没有一次 trace 生成、后续独立执行的表示，因此无法检出重新捕获、错误绑定输入或错误保存捕获对象等机制缺陷。负对照证明预设函数不满足常数 6，不能支撑作者关于状态捕获实现接受同一独立判据的判断。容量身份部分已修复，不再沿用旧容量负对照问题。",
+          "blocking": true,
+          "required_revision": "保留有效的图闭包、容量和服务检查。为捕获建立最小 trace/执行 CPU 模型：trace 固化隐式常量并为显式状态保留输入槽，后续调用执行该表示；以外部保存的 trace 快照及每次显式输入计算独立预期。让故意把显式状态固化或把隐式常量重新读取的实现接受同一判据并被拒绝，避免被测执行器直接调用参考函数。"
+        },
+        {
+          "id": "K-FW-008-LEG-06",
+          "criterion": "legality",
+          "evidence": "正文异常分支设置“r.commit_eligible=false”，但 COMMIT 仅检查“若 r.canceled 或 r.version≠snap 或 not r.live：”；SERVE_AND_COMMIT 入口也没有失败或提交资格检查。脚本 serve_step 的失败分支设置 FAILED_DRAINING 并保留 pending_uses，下一次调用只检查 canceled、输入与 k，commit 同样不检查失败阶段或 pending 责任。",
+          "impact": "静态追踪现有脚本即可得到：req_with_prefix([1,2,3,4],2) 求值失败并保留 eval_use 后，再次调用正常 serve_step，仍能提交 token 并把阶段改成 COMMITTED，旧 eval_use 尚未结束。该轨迹未实际执行于所附测试。正文所称撤销业务提交资格没有被算法落实，排空或隔离状态也不是有效的推进边界。",
+          "blocking": true,
+          "required_revision": "在同一状态拥有者下落实失败后的资格撤销，使服务入口和 COMMIT 拒绝 FAILED_DRAINING、QUARANTINED 及已撤销资格的请求，或明确给出等价的终止 live 规则。若允许重试，必须先建立排空和新执行身份的明确入口。CPU 模型应执行失败后再次推进及迟到完成的轨迹，检查旧状态、版本、RNG 和输出不被非法提交，并由同一资格不变量检出故意遗漏检查的实现。"
+        },
+        {
+          "id": "K-FW-008-COST-07",
+          "criterion": "cost",
+          "evidence": "PREPARE 写“local=复制 KV 前缀 [0,b)”，随后只把新区间提交回请求；成本段给出“近似的逻辑访存量 Q_step≈W_q+Σ_r n_r·b_kv”，容量算例列权重、活跃 KV、工作区和图/中间量，但没有说明前缀复制的存储关系。",
+          "impact": "若复制意味着物理 K/V 数据复制，每步除 attention 读取外还增加约 2·b·b_kv 的复制读写，并在准备期间同时持有原前缀与私有副本；当前公式会漏掉随上下文增长的成本。若仅复制引用或视图，算法需要明确旧前缀只读共享、新区间私有，否则无法按同一候选计算访存与峰值。",
+          "blocking": true,
+          "required_revision": "明确 local 的物理存储契约。若采用只读前缀引用加私有增量，说明索引、写入隔离和提交关系，并让 CPU 模型体现该边界；若确实复制前缀，则把复制读写、准备时间及同时存活副本纳入该服务算法的成本，限定现有简式所覆盖的范围。无需增加设备测量。"
+        },
+        {
+          "id": "campaign-K-FW-008-r2",
+          "criterion": "algorithm",
+          "blocking": true,
+          "evidence": "docs/evidence/knowledge-workflow-20261028-batch4/full_build/K-FW-008/round-2",
+          "impact": "Independent semantic reviewer requested revision; see retained review",
+          "required_revision": "Repair the recorded concrete failure and re-evaluate the full candidate."
+        }
+      ]
+    },
+    "K-FW-009": {
+      "id": "K-FW-009",
+      "path": "knowledge/frameworks/neuron-serving.md",
+      "baseline_revision": 3,
+      "baseline_sha256": "0a7be25e54019cb53d80e180594d1eb633cfdd9e9a058cb340a2c07dee7f3f0e",
+      "prior_review": "navigation_registered_deep_review_pending",
+      "source_ids": [
+        "S-NXDI",
+        "S-NKI"
+      ],
+      "related": [
+        "K-HW-008",
+        "K-FW-004",
+        "K-ALG-009",
+        "K-FW-011",
+        "K-SYS-011",
+        "K-SYS-014",
+        "K-ALG-002",
+        "K-MODEL-002"
+      ],
+      "state": "queued",
+      "round": 0,
+      "author": null,
+      "reviews": [],
+      "checks": [],
+      "agent_use": "unassessed",
+      "issues": []
+    },
+    "K-FW-010": {
+      "id": "K-FW-010",
+      "path": "knowledge/frameworks/nki-tiling.md",
+      "baseline_revision": 3,
+      "baseline_sha256": "abc8dbd0be6a05a8b52ed4686ab2d0e27f893c6e182656c36c514306c0799a16",
+      "prior_review": "navigation_registered_deep_review_pending",
+      "source_ids": [
+        "S-NKI",
+        "S-FLASH"
+      ],
+      "related": [
+        "K-HW-008",
+        "K-ALG-004",
+        "K-HW-001",
+        "K-ALG-016",
+        "K-HW-011",
+        "K-FW-004"
+      ],
+      "state": "verified",
+      "round": 3,
+      "author": "sol-author:K-FW-010:round-3",
+      "reviews": [
+        {
+          "path": "docs/evidence/knowledge-workflow-20261028-batch4/K-FW-010/round-2/review.json",
+          "sha256": "2cf799f134caedf1644ff4b5d21254609ad1f38f29205d129a0268191ccf9541"
+        },
+        {
+          "path": "docs/evidence/knowledge-workflow-20261028-batch4/K-FW-010/round-3/review.json",
+          "sha256": "78a98536ace00c9a51c0a421a00821382a9cc517f633ff670c5a123ac78ca770"
+        }
+      ],
+      "checks": [
+        {
+          "path": "docs/evidence/knowledge-workflow-20261028-batch4/K-FW-010/round-3/check-0.json",
+          "sha256": "8b705cdee995edbf1960d42af13d4f33c37aa49ef4fd61c71485bad87c333c15",
+          "exit_code": 0
+        }
+      ],
+      "agent_use": "unassessed",
+      "issues": []
+    },
+    "K-HW-001": {
+      "id": "K-HW-001",
+      "path": "knowledge/hardware/memory-and-roofline.md",
+      "baseline_revision": 3,
+      "baseline_sha256": "2bebeecbaa625667b8ad8c2fbc13449f0da31ac24b0abd6289127be1150c7d0c",
+      "prior_review": "navigation_registered_deep_review_pending",
+      "source_ids": [
+        "S-CUDA-BEST",
+        "S-PAGED",
+        "S-FLASH",
+        "S-CPU-TUNING",
+        "S-SERVERLESSLLM"
+      ],
+      "related": [
+        "K-ALG-005",
+        "K-MODEL-001",
+        "K-WORK-006",
+        "K-HW-010",
+        "K-SYS-012",
+        "K-SYS-015",
+        "K-TOOLS-007",
+        "K-ALG-004",
+        "K-ALG-007",
+        "K-FW-010",
+        "K-HW-007",
+        "K-HW-009",
+        "K-MODEL-002",
+        "K-MODEL-010",
+        "K-TOOLS-003",
+        "K-HW-011",
+        "K-TOOLS-008",
+        "K-SYS-025"
+      ],
+      "state": "queued",
+      "round": 0,
+      "author": null,
+      "reviews": [],
+      "checks": [],
+      "agent_use": "unassessed",
+      "issues": []
+    },
+    "K-HW-002": {
+      "id": "K-HW-002",
+      "path": "knowledge/hardware/topology-parallelism.md",
+      "baseline_revision": 4,
+      "baseline_sha256": "44b63f4291293b51e17b58d64bcfa9fe2bd384534a589c9b74fae0ad157ead29",
+      "prior_review": "navigation_registered_deep_review_pending",
+      "source_ids": [
+        "S-CUDA-TOPOLOGY",
+        "S-NCCL-COLLECTIVE",
+        "S-NCCL-GROUP",
+        "S-RDMA",
+        "S-GPUDIRECT"
+      ],
+      "related": [
+        "K-ALG-015",
+        "K-ALG-013",
+        "K-SYS-005",
+        "K-HW-014",
+        "K-SYS-013",
+        "K-ALG-023",
+        "K-MODEL-003",
+        "K-WORK-011",
+        "K-SYS-019"
+      ],
+      "state": "queued",
+      "round": 0,
+      "author": null,
+      "reviews": [],
+      "checks": [],
+      "agent_use": "unassessed",
+      "issues": []
+    },
+    "K-HW-003": {
+      "id": "K-HW-003",
+      "path": "knowledge/hardware/host-device-transfer.md",
+      "baseline_revision": 5,
+      "baseline_sha256": "e4921a0714af21f7ab1a336f40af662f716f2c64a42dd598eb2cede548c858d2",
+      "prior_review": "navigation_registered_deep_review_pending",
+      "source_ids": [
+        "S-CUDA-ASYNC",
+        "S-CUDA-BEST",
+        "S-CUDA-ALLOC",
+        "S-LINUX-IO",
+        "S-TORCH-CUDA"
+      ],
+      "related": [
+        "K-ALG-008",
+        "K-FW-003",
+        "K-MODEL-008",
+        "K-HW-012",
+        "K-HW-013",
+        "K-ALG-020",
+        "K-ALG-017",
+        "K-SYS-001",
+        "K-HW-009",
+        "K-SYS-019",
+        "K-FW-011",
+        "K-HW-014"
+      ],
+      "state": "needs_attention",
+      "round": 3,
+      "author": "sol-author:K-HW-003:round-3",
+      "reviews": [
+        {
+          "path": "docs/evidence/knowledge-workflow-20261028-batch4/K-HW-003/round-3/review.json",
+          "sha256": "42acdcd9ad09e54c42946b00b85a25bf51931a99bccc5b5462ebd96a8a23e6bf"
+        }
+      ],
+      "checks": [],
+      "agent_use": "unassessed",
+      "issues": [
+        {
+          "id": "K-HW-003-R3-UNENQUEUED-PREPARE",
+          "criterion": "algorithm",
+          "evidence": "knowledge/hardware/host-device-transfer.md：启动先执行“生成新 uid；pending[uid] 保存 kind、所有端点身份、所需范围”；确定没有入队时只写“撤销这个 uid 的读写责任与目的预留”和“按错误策略标记失败或等待容量”，没有明确结算 pending 或保存 prepare 重试入口；调用方仍执行“取得 H；启动 prepare(外部原始载荷,H)；next 加一”。结束条件又要求“pending 清空”。",
+          "impact": "N=1 时，prepare 确定未入队并选择等待容量：目的预留已撤销，next 已变为1，没有 READY H，也不会收到该 uid 的真实完成。按当前明确更新，pending 残留且输入不再被准入，无法重试或排空。即使将撤销责任解释为同时删除 pending，输入游标丢失仍会使该请求没有后继动作。",
+          "blocking": true,
+          "required_revision": "让启动返回明确的入队结果；确定未入队时幂等删除该 uid 的 pending 和访问责任，归还目的预留。prepare 选择重试时保留输入位置或进入显式重试队列，并说明容量恢复如何唤醒；选择失败时进入完整终态失败处理。加入执行实际推进/回滚逻辑的检查，验证首次 prepare 被拒绝后可以恢复完成或明确失败并排空。"
+        },
+        {
+          "id": "K-HW-003-R3-CANCELED-ADMISSION",
+          "criterion": "algorithm",
+          "evidence": "knowledge/hardware/host-device-transfer.md：取消处理规定“设置 live=false，禁止新阶段与未来响应提交”；四个下游推进分支均限定 live，但输入分支仅为“当 next<N 且 H 有槽和准入预算：”，随后“取得 H；启动 prepare(外部原始载荷,H)；next 加一”。启动的前置条件也没有检查请求 live。",
+          "impact": "请求在尚未取得 H 时被取消，后续推进仍满足该输入分支并启动新的准备工作，违反本章取消后禁止新阶段的契约。取消若已先将请求计为终态，之后还可能重新产生资源责任，破坏结束判断。",
+          "blocking": true,
+          "required_revision": "在准入选择中跳过已取消或失败的输入，并在启动前检查请求仍有执行资格；明确跳过时如何推进游标和保持终态。增加取消先于首次准备、取消后因其他请求完成而再次唤醒的检查，断言不再为该请求取得槽或建立新 pending，同时其他请求能够继续完成。"
+        },
+        {
+          "id": "campaign-K-HW-003-r3",
+          "criterion": "algorithm",
+          "blocking": true,
+          "evidence": "docs/evidence/knowledge-workflow-20261028-batch4/full_build/K-HW-003/round-3",
+          "impact": "Independent semantic reviewer requested revision; see retained review",
+          "required_revision": "Repair the recorded concrete failure and re-evaluate the full candidate."
+        }
+      ]
+    },
+    "K-HW-004": {
+      "id": "K-HW-004",
+      "path": "knowledge/hardware/precision-and-kernel-support.md",
+      "baseline_revision": 3,
+      "baseline_sha256": "7185979b8429b7d44fd34ec0910bbe85c617a457cc4d9d9055920e73d07bc5d3",
+      "prior_review": "navigation_registered_deep_review_pending",
+      "source_ids": [
+        "S-CUDA-CAPABILITY",
+        "S-TORCH-NUMERIC",
+        "S-GPTQ",
+        "S-SMOOTHQUANT",
+        "S-AWQ",
+        "S-FLASHINFERPAPER"
+      ],
+      "related": [
+        "K-ALG-005",
+        "K-HW-005",
+        "K-HW-006",
+        "K-FW-012",
+        "K-HW-010",
+        "K-HW-011",
+        "K-TOOLS-003",
+        "K-ALG-021",
+        "K-FW-007",
+        "K-MODEL-014"
+      ],
+      "state": "queued",
+      "round": 0,
+      "author": null,
+      "reviews": [],
+      "checks": [],
+      "agent_use": "unassessed",
+      "issues": []
+    },
+    "K-HW-005": {
+      "id": "K-HW-005",
+      "path": "knowledge/hardware/cuda-execution.md",
+      "baseline_revision": 3,
+      "baseline_sha256": "1ce1166d2d3017ec2c6ee9a02f07be615e38d4aca7aca26d270ebcf5559ed14c",
+      "prior_review": "navigation_registered_deep_review_pending",
+      "source_ids": [
+        "S-CUDA-BEST",
+        "S-CUDA-CAPABILITY",
+        "S-CUDA-ASYNC",
+        "S-FLASHATTENTION3",
+        "S-NCU"
+      ],
+      "related": [
+        "K-ALG-004",
+        "K-FW-005",
+        "K-FW-007",
+        "K-HW-011",
+        "K-SYS-012",
+        "K-ALG-017",
+        "K-TOOLS-007",
+        "K-HW-004",
+        "K-SYS-010",
+        "K-TOOLS-008"
+      ],
+      "state": "queued",
+      "round": 0,
+      "author": null,
+      "reviews": [],
+      "checks": [],
+      "agent_use": "unassessed",
+      "issues": []
+    },
+    "K-HW-006": {
+      "id": "K-HW-006",
+      "path": "knowledge/hardware/rocm-execution.md",
+      "baseline_revision": 3,
+      "baseline_sha256": "90b76df39be1414db25b7b98297de507d3e63fdc49599264d0214fcb60ad62e0",
+      "prior_review": "navigation_registered_deep_review_pending",
+      "source_ids": [
+        "S-ROCM",
+        "S-AITER",
+        "S-TRITON"
+      ],
+      "related": [
+        "K-FW-006",
+        "K-FW-007",
+        "K-HW-004",
+        "K-HW-011",
+        "K-HW-013",
+        "K-ALG-020"
+      ],
+      "state": "queued",
+      "round": 0,
+      "author": null,
+      "reviews": [],
+      "checks": [],
+      "agent_use": "unassessed",
+      "issues": []
+    },
+    "K-HW-007": {
+      "id": "K-HW-007",
+      "path": "knowledge/hardware/metal-unified-memory.md",
+      "baseline_revision": 3,
+      "baseline_sha256": "b4a1f38557eecf13e85f3a962f617c95ec86ef7c800a664471d6b1d2c3d31fd4",
+      "prior_review": "navigation_registered_deep_review_pending",
+      "source_ids": [
+        "S-MLX-MEM",
+        "S-MLX"
+      ],
+      "related": [
+        "K-FW-008",
+        "K-HW-001",
+        "K-WORK-001",
+        "K-HW-013",
+        "K-ALG-020",
+        "K-SYS-012"
+      ],
+      "state": "queued",
+      "round": 0,
+      "author": null,
+      "reviews": [],
+      "checks": [],
+      "agent_use": "unassessed",
+      "issues": []
+    },
+    "K-HW-008": {
+      "id": "K-HW-008",
+      "path": "knowledge/hardware/trainium-dataflow.md",
+      "baseline_revision": 3,
+      "baseline_sha256": "0773594917538d150957f945b6c9268e1aca64bb83e041aec2315c1cb0984019",
+      "prior_review": "navigation_registered_deep_review_pending",
+      "source_ids": [
+        "S-NKI",
+        "S-NXDI"
+      ],
+      "related": [
+        "K-FW-009",
+        "K-FW-010",
+        "K-ALG-009",
+        "K-FW-011",
+        "K-HW-014",
+        "K-ALG-015",
+        "K-SYS-012"
+      ],
+      "state": "queued",
+      "round": 0,
+      "author": null,
+      "reviews": [],
+      "checks": [],
+      "agent_use": "unassessed",
+      "issues": []
+    },
+    "K-HW-009": {
+      "id": "K-HW-009",
+      "path": "knowledge/hardware/cpu-serving.md",
+      "baseline_revision": 3,
+      "baseline_sha256": "0467a77e32d299364f1a04695ead407096bc28259f06bd063f60572cc715ca82",
+      "prior_review": "navigation_registered_deep_review_pending",
+      "source_ids": [
+        "S-CPU-TUNING",
+        "S-TORCH-NUMERIC",
+        "S-GOTO",
+        "S-INT8",
+        "S-PERF"
+      ],
+      "related": [
+        "K-HW-001",
+        "K-WORK-002",
+        "K-FW-001",
+        "K-HW-010",
+        "K-FW-012",
+        "K-SYS-015",
+        "K-SYS-012",
+        "K-TOOLS-003",
+        "K-HW-003",
+        "K-TOOLS-001",
+        "K-WORK-011",
+        "K-SYS-019",
+        "K-MODEL-015"
+      ],
+      "state": "queued",
+      "round": 0,
+      "author": null,
+      "reviews": [],
+      "checks": [],
+      "agent_use": "unassessed",
+      "issues": []
+    },
+    "K-MODEL-001": {
+      "id": "K-MODEL-001",
+      "path": "knowledge/models/prefill-decode-state.md",
+      "baseline_revision": 6,
+      "baseline_sha256": "1afebf211c092d55f9e3a074402824c16acb472ae31f48019af7a4ad73ba13e8",
+      "prior_review": "navigation_registered_deep_review_pending",
+      "source_ids": [
+        "S-TRANSFORMER",
+        "S-HF-CACHE",
+        "S-SARATHI",
+        "S-MISTRAL",
+        "S-MLA",
+        "S-MAMBA",
+        "S-WHISPER",
+        "S-QWEN-VL"
+      ],
+      "related": [
+        "K-MODEL-002",
+        "K-MODEL-004",
+        "K-MODEL-006",
+        "K-SYS-007",
+        "K-FW-011",
+        "K-ALG-016",
+        "K-SYS-012",
+        "K-HW-001"
+      ],
+      "state": "verified",
+      "round": 3,
+      "author": "sol-author:K-MODEL-001:round-3",
+      "reviews": [
+        {
+          "path": "docs/evidence/knowledge-workflow-20261028-batch4/K-MODEL-001/round-1/review.json",
+          "sha256": "381d5af25d6fdba1ae0302d5d8fd8bc627d6775a6a92071171a4fec5eaf0c126"
+        },
+        {
+          "path": "docs/evidence/knowledge-workflow-20261028-batch4/K-MODEL-001/round-3/review.json",
+          "sha256": "8faa4e7709e63760440e8242dd356bc08338d7a956bad332ed223b545849d303"
+        }
+      ],
+      "checks": [
+        {
+          "path": "docs/evidence/knowledge-workflow-20261028-batch4/K-MODEL-001/round-3/check-0.json",
+          "sha256": "a662a563aa2d9ae75ba01a30986d5ab9092559b48547e8c226880acd0b98b523",
+          "exit_code": 0
+        }
+      ],
+      "agent_use": "unassessed",
+      "issues": []
+    },
+    "K-MODEL-002": {
+      "id": "K-MODEL-002",
+      "path": "knowledge/models/gqa-kv-heads.md",
+      "baseline_revision": 4,
+      "baseline_sha256": "9b51a72ccc9c86095f9c8a37e234893fe93068938390f69513c6ff90dd22da1d",
+      "prior_review": "navigation_registered_deep_review_pending",
+      "source_ids": [
+        "S-GQA",
+        "S-HF-CACHE",
+        "S-FI",
+        "S-KIVI",
+        "S-NXDI"
+      ],
+      "related": [
+        "K-ALG-002",
+        "K-ALG-004",
+        "K-MODEL-006",
+        "K-HW-001",
+        "K-ALG-021",
+        "K-ALG-015",
+        "K-SYS-009",
+        "K-ALG-005",
+        "K-FW-009",
+        "K-MODEL-001"
+      ],
+      "state": "queued",
+      "round": 0,
+      "author": null,
+      "reviews": [],
+      "checks": [],
+      "agent_use": "unassessed",
+      "issues": []
+    },
+    "K-MODEL-003": {
+      "id": "K-MODEL-003",
+      "path": "knowledge/models/moe-routing.md",
+      "baseline_revision": 4,
+      "baseline_sha256": "1983c63c143c20159af90e0b7d66d4adbb0c8ac471df67d1ca1176599ed30bbc",
+      "prior_review": "navigation_registered_deep_review_pending",
+      "source_ids": [
+        "S-MIXTRAL",
+        "S-MLA",
+        "S-NCCL-COLLECTIVE",
+        "S-DEEPSEEKV3"
+      ],
+      "related": [
+        "K-ALG-015",
+        "K-HW-002",
+        "K-WORK-003",
+        "K-ALG-019",
+        "K-ALG-020",
+        "K-HW-010",
+        "K-HW-011",
+        "K-SYS-012"
+      ],
+      "state": "revise",
+      "round": 1,
+      "author": "ds-author:K-MODEL-003:round-1",
+      "reviews": [
+        {
+          "path": "docs/evidence/knowledge-workflow-20261028-batch4/K-MODEL-003/round-1/review.json",
+          "sha256": "2e6e255e7a4395cd370711d5337e70b404454ec470ff94e77bdfdacdee44caaa"
+        }
+      ],
+      "checks": [],
+      "agent_use": "unassessed",
+      "issues": [
+        {
+          "id": "K-MODEL-003-ALG-001",
+          "criterion": "algorithm",
+          "evidence": "正文 item 为“item = (layer, t, e, g[t][e], X[t], return_slot=(t,e))”；local_bucket 的显式追加只有“if r == local_rank:\n        local_bucket[item.e].append(item)”。远端路径只写“等待 hidden 与 metadata 在接收侧可见，且 generation 与 place 快照一致”，combine 只写“接收远端 partial，按 (layer,t,generation) 累加”。",
+          "impact": "远端接收数据没有明确成为专家执行的 local_bucket 输入，专家结果也没有明确发送回 origin。t 来自各 rank 的 X[0..B-1]，却未声明全局唯一身份或 origin 映射；两个来源 rank 各有 t=0 且命中同一目的 rank 时，partial[t] 无法据现有说明区分返回归属。generation 被要求校验，却未在 item 构造中交付。读者仍需自行补出本章核心分布式算法。",
+          "blocking": true,
+          "required_revision": "明确 B/t 的作用域及 token 到 origin 的唯一映射；在快照/item 中携带或明确关联 routing/placement generation。补出接收项按 expert 入桶、按 origin 与 token 聚合、发送返回 partial、origin 按预期贡献完成条件累加的路径，并区分逐 item 返回与本地预合并。以两个 origin 均含本地 token 0、目的端存在远端项的 CPU 模型对照直接公式，注入错误归属或漏返回负对照。"
+        },
+        {
+          "id": "K-MODEL-003-COST-001",
+          "criterion": "cost",
+          "evidence": "正文写“若不做同 token 同目的 rank 去重，dispatch hidden 主项为 N_items d b_h，combine 返回主项也为 N_items d b_h”，并定义“D_send = |{(t, r): 存在 e∈S_t 且 place[e].rank=r}|”，随后称“则 dispatch hidden 主项约为 D_send d b_h”。",
+          "impact": "N_items 包含本地项，D_send 也包含目的 rank 等于 origin rank 的对。全部专家本地执行时，这些公式仍给出正的发送字节；例如单 rank、一个 token 时 D_send=1，d=4096、b_h=2 得到 8 KiB，而网络发送为零。这会错误预测 EP 流量与放置/去重收益；后面的 24 个远端项算例没有修正一般公式。",
+          "blocking": true,
+          "required_revision": "显式定义 origin(t)，以远端 item 数计算未去重网络流量，以满足 r≠origin(t) 的 token-destination 对计算去重发送和返回流量。若保留包含本地项的逻辑搬运量，分别命名并声明计量边界。检查加入全部本地及本地/远端混合放置，对照逐条发送账本验证字节，并检测把本地对误计为网络发送的负对照。"
+        },
+        {
+          "id": "campaign-K-MODEL-003-r1",
+          "criterion": "algorithm",
+          "blocking": true,
+          "evidence": "docs/evidence/knowledge-workflow-20261028-batch4/full_build/K-MODEL-003/round-1",
+          "impact": "Independent semantic reviewer requested revision; see retained review",
+          "required_revision": "Repair the recorded concrete failure and re-evaluate the full candidate."
+        }
+      ]
+    },
+    "K-MODEL-004": {
+      "id": "K-MODEL-004",
+      "path": "knowledge/models/recurrent-hybrid-state.md",
+      "baseline_revision": 4,
+      "baseline_sha256": "b16b229713829787bffef07a62a08c0feca0a7b3a188aea2332a3689388c0417",
+      "prior_review": "navigation_registered_deep_review_pending",
+      "source_ids": [
+        "S-MAMBA",
+        "S-VLLM-HYBRID",
+        "S-HF-CACHE"
+      ],
+      "related": [
+        "K-ALG-009",
+        "K-ALG-006",
+        "K-ALG-003",
+        "K-ALG-017",
+        "K-ALG-024",
+        "K-HW-011",
+        "K-SYS-014",
+        "K-MODEL-001"
+      ],
+      "state": "queued",
+      "round": 0,
+      "author": null,
+      "reviews": [],
+      "checks": [],
+      "agent_use": "unassessed",
+      "issues": []
+    },
+    "K-MODEL-005": {
+      "id": "K-MODEL-005",
+      "path": "knowledge/models/encoder-decoder-streaming.md",
+      "baseline_revision": 3,
+      "baseline_sha256": "147fa3bc49d6b6423d7ba03ecc311b87345ee7c2c934a4b0007ad59b2ed72bf4",
+      "prior_review": "navigation_registered_deep_review_pending",
+      "source_ids": [
+        "S-TRANSFORMER",
+        "S-WHISPER",
+        "S-MOONSHINE"
+      ],
+      "related": [
+        "K-ALG-010",
+        "K-MODEL-011",
+        "K-SYS-007",
+        "K-SYS-015",
+        "K-SYS-004",
+        "K-WORK-005",
+        "K-MODEL-012",
+        "K-TOOLS-007",
+        "K-SYS-010"
+      ],
+      "state": "verified",
+      "round": 3,
+      "author": "sol-author:K-MODEL-005:round-3",
+      "reviews": [
+        {
+          "path": "docs/evidence/knowledge-workflow-20261028-batch4/K-MODEL-005/round-1/review.json",
+          "sha256": "a20250438aff6ff330f80445c8689aa8e4ff847a00d20dcadb0fdb74c4ecedd4"
+        },
+        {
+          "path": "docs/evidence/knowledge-workflow-20261028-batch4/K-MODEL-005/round-3/review.json",
+          "sha256": "7dd69b6d9a6a8b3c1d1c18c4c9c3b2aa02fafb3ea5a27215fb96d23633a16199"
+        }
+      ],
+      "checks": [
+        {
+          "path": "docs/evidence/knowledge-workflow-20261028-batch4/K-MODEL-005/round-3/check-0.json",
+          "sha256": "28c72ddfddc1294ff072f2080876fc1ac324d7d1d3e51d330f33ec735ff0b2f7",
+          "exit_code": 0
+        }
+      ],
+      "agent_use": "unassessed",
+      "issues": []
+    },
+    "K-MODEL-006": {
+      "id": "K-MODEL-006",
+      "path": "knowledge/models/mla.md",
+      "baseline_revision": 4,
+      "baseline_sha256": "01385fb7e6be8482ebd773498a96fc9d027a9c6d300abb415002864fccb9521b",
+      "prior_review": "navigation_registered_deep_review_pending",
+      "source_ids": [
+        "S-MLA",
+        "S-FI",
+        "S-TORCH-NUMERIC",
+        "S-DEEPSEEKV3",
+        "S-KIVI"
+      ],
+      "related": [
+        "K-MODEL-002",
+        "K-ALG-004",
+        "K-ALG-009",
+        "K-ALG-021",
+        "K-ALG-015",
+        "K-HW-011",
+        "K-SYS-009",
+        "K-FW-006",
+        "K-MODEL-001"
+      ],
+      "state": "queued",
+      "round": 0,
+      "author": null,
+      "reviews": [],
+      "checks": [],
+      "agent_use": "unassessed",
+      "issues": []
+    },
+    "K-MODEL-007": {
+      "id": "K-MODEL-007",
+      "path": "knowledge/models/sliding-window-attention.md",
+      "baseline_revision": 4,
+      "baseline_sha256": "1e53a46e31c96b8f99e06f88a107ec0df87becb9d064e31bed580854c0fa0aef",
+      "prior_review": "navigation_registered_deep_review_pending",
+      "source_ids": [
+        "S-MISTRAL",
+        "S-HF-CACHE",
+        "S-VLLM-HYBRID",
+        "S-KIVI",
+        "S-H2O"
+      ],
+      "related": [
+        "K-SYS-003",
+        "K-ALG-009",
+        "K-ALG-004",
+        "K-ALG-021",
+        "K-ALG-018",
+        "K-HW-011"
+      ],
+      "state": "queued",
+      "round": 0,
+      "author": null,
+      "reviews": [],
+      "checks": [],
+      "agent_use": "unassessed",
+      "issues": []
+    },
+    "K-MODEL-008": {
+      "id": "K-MODEL-008",
+      "path": "knowledge/models/vision-language.md",
+      "baseline_revision": 4,
+      "baseline_sha256": "5ce873c82e975be23aedfebbdeeda5acc0cf55d35b51ef24f744af9d174fe55c",
+      "prior_review": "navigation_registered_deep_review_pending",
+      "source_ids": [
+        "S-QWEN-VL",
+        "S-TRANSFORMER",
+        "S-HF-CACHE"
+      ],
+      "related": [
+        "K-ALG-010",
+        "K-SYS-007",
+        "K-WORK-003",
+        "K-SYS-015",
+        "K-SYS-012",
+        "K-ALG-023",
+        "K-WORK-005",
+        "K-HW-003",
+        "K-MODEL-012",
+        "K-SYS-010",
+        "K-MODEL-014"
+      ],
+      "state": "queued",
+      "round": 0,
+      "author": null,
+      "reviews": [],
+      "checks": [],
+      "agent_use": "unassessed",
+      "issues": []
+    },
+    "K-MODEL-009": {
+      "id": "K-MODEL-009",
+      "path": "knowledge/models/image-diffusion.md",
+      "baseline_revision": 3,
+      "baseline_sha256": "6ed5e64644912c151a9a6a49cb6d28d4eb5fb99a44ea21e5ce7fb41b44482910",
+      "prior_review": "navigation_registered_deep_review_pending",
+      "source_ids": [
+        "S-LDM",
+        "S-DIT",
+        "S-DIFFUSERS",
+        "S-WAN"
+      ],
+      "related": [
+        "K-MODEL-010",
+        "K-ALG-010",
+        "K-FW-004",
+        "K-WORK-005",
+        "K-HW-011",
+        "K-ALG-015",
+        "K-SYS-012",
+        "K-TOOLS-007",
+        "K-MODEL-011",
+        "K-SYS-010"
+      ],
+      "state": "verified",
+      "round": 3,
+      "author": "sol-author:K-MODEL-009:round-3",
+      "reviews": [
+        {
+          "path": "docs/evidence/knowledge-workflow-20261028-batch4/K-MODEL-009/round-1/review.json",
+          "sha256": "905ab5cf41f6c9dddcd16554f357945a90227725721a176ca6e68ddf209aeff1"
+        },
+        {
+          "path": "docs/evidence/knowledge-workflow-20261028-batch4/K-MODEL-009/round-2/review.json",
+          "sha256": "70002bd7d373d179a2e1ea97629ba17663f305ad511f4045e6f9829f19c39a00"
+        },
+        {
+          "path": "docs/evidence/knowledge-workflow-20261028-batch4/K-MODEL-009/round-3/review.json",
+          "sha256": "8b1df7a0ade014654e48eb7be1feed20efa04ecbf3141cb5268eb316f95035ae"
+        }
+      ],
+      "checks": [
+        {
+          "path": "docs/evidence/knowledge-workflow-20261028-batch4/K-MODEL-009/round-3/check-0.json",
+          "sha256": "5c119f44c8855e9dc1322775d9abea7c455169ddf47a074eb1c08e928154df59",
+          "exit_code": 0
+        }
+      ],
+      "agent_use": "unassessed",
+      "issues": []
+    },
+    "K-MODEL-010": {
+      "id": "K-MODEL-010",
+      "path": "knowledge/models/video-generation.md",
+      "baseline_revision": 3,
+      "baseline_sha256": "df8c69ef755bd2794e8f33e2f0927594cbf9769f7ec600d042081b92fc1ef92b",
+      "prior_review": "navigation_registered_deep_review_pending",
+      "source_ids": [
+        "S-WAN",
+        "S-DIT",
+        "S-DIFFUSERS"
+      ],
+      "related": [
+        "K-MODEL-009",
+        "K-ALG-015",
+        "K-HW-001",
+        "K-HW-014",
+        "K-SYS-015",
+        "K-SYS-012",
+        "K-WORK-005",
+        "K-SYS-010"
+      ],
+      "state": "queued",
+      "round": 0,
+      "author": null,
+      "reviews": [],
+      "checks": [],
+      "agent_use": "unassessed",
+      "issues": []
+    },
+    "K-MODEL-011": {
+      "id": "K-MODEL-011",
+      "path": "knowledge/models/speech-generation.md",
+      "baseline_revision": 3,
+      "baseline_sha256": "9cab040f27f77dc8040a6cc6f0ae96a175542e4379e2262ca2cdb53fb9aee3a4",
+      "prior_review": "navigation_registered_deep_review_pending",
+      "source_ids": [
+        "S-OMNI",
+        "S-MOONSHINE",
+        "S-WHISPER"
+      ],
+      "related": [
+        "K-MODEL-005",
+        "K-WORK-001",
+        "K-SYS-008",
+        "K-SYS-015",
+        "K-SYS-004",
+        "K-SYS-014",
+        "K-WORK-005",
+        "K-MODEL-009",
+        "K-MODEL-012",
+        "K-SYS-010"
+      ],
+      "state": "queued",
+      "round": 0,
+      "author": null,
+      "reviews": [],
+      "checks": [],
+      "agent_use": "unassessed",
+      "issues": []
+    },
+    "K-MODEL-012": {
+      "id": "K-MODEL-012",
+      "path": "knowledge/models/omni-multimodal.md",
+      "baseline_revision": 3,
+      "baseline_sha256": "f1fc4dc6611ad1b53ad8cc7f2abf0cbf9b9b2022d2d22c64dc712a39943d9d15",
+      "prior_review": "navigation_registered_deep_review_pending",
+      "source_ids": [
+        "S-OMNI",
+        "S-QWEN-VL",
+        "S-OTEL"
+      ],
+      "related": [
+        "K-MODEL-008",
+        "K-MODEL-011",
+        "K-SYS-008",
+        "K-WORK-003",
+        "K-SYS-015",
+        "K-SYS-014",
+        "K-WORK-005",
+        "K-WORK-010",
+        "K-SYS-012",
+        "K-MODEL-005",
+        "K-SYS-010"
+      ],
+      "state": "queued",
+      "round": 0,
+      "author": null,
+      "reviews": [],
+      "checks": [],
+      "agent_use": "unassessed",
+      "issues": []
+    },
+    "K-SYS-001": {
+      "id": "K-SYS-001",
+      "path": "knowledge/system-semantics/host-device-timing.md",
+      "baseline_revision": 3,
+      "baseline_sha256": "411061489661a325939476348559d80df773a32cc19be2aef216e4d4a5b0b554",
+      "prior_review": "navigation_registered_deep_review_pending",
+      "source_ids": [
+        "S-CUDA-ASYNC",
+        "S-NSYS",
+        "S-OTEL",
+        "S-RDMA",
+        "S-LINUX-IO"
+      ],
+      "related": [
+        "K-TOOLS-002",
+        "K-FW-003",
+        "K-ALG-008",
+        "K-HW-012",
+        "K-HW-014",
+        "K-SYS-009",
+        "K-TOOLS-007",
+        "K-HW-003",
+        "K-TOOLS-001",
+        "K-WORK-001"
+      ],
+      "state": "queued",
+      "round": 0,
+      "author": null,
+      "reviews": [],
+      "checks": [],
+      "agent_use": "unassessed",
+      "issues": []
+    },
+    "K-SYS-002": {
+      "id": "K-SYS-002",
+      "path": "knowledge/system-semantics/request-batch-identity.md",
+      "baseline_revision": 3,
+      "baseline_sha256": "4bb364464c1ccab29bf079263a4e80d9d352e1477040fdcaf150a36294e37443",
+      "prior_review": "navigation_registered_deep_review_pending",
+      "source_ids": [
+        "S-ORCA",
+        "S-VLLM-SCHED",
+        "S-OTEL"
+      ],
+      "related": [
+        "K-ALG-001",
+        "K-ALG-011",
+        "K-ALG-008",
+        "K-ALG-024",
+        "K-WORK-010",
+        "K-SYS-011",
+        "K-SYS-014",
+        "K-SYS-016",
+        "K-ALG-023",
+        "K-ENGINE-003",
+        "K-SYS-008",
+        "K-TOOLS-006",
+        "K-SYS-015"
+      ],
+      "state": "needs_attention",
+      "round": 3,
+      "author": "sol-author:K-SYS-002:round-3",
+      "reviews": [
+        {
+          "path": "docs/evidence/knowledge-workflow-20261028-batch4/K-SYS-002/round-1/review.json",
+          "sha256": "045342ac64f9b42a59cd4b11cc44394b49efdc89d72d39706ce86495b87ebe20"
+        },
+        {
+          "path": "docs/evidence/knowledge-workflow-20261028-batch4/K-SYS-002/round-2/review.json",
+          "sha256": "25210caba414c9773128716dce5acb4f8cc5056ca9fd4d5b4b97a172f55d26de"
+        },
+        {
+          "path": "docs/evidence/knowledge-workflow-20261028-batch4/K-SYS-002/round-3/review.json",
+          "sha256": "63c828bdb0f0c65df3e70d87b8ef51e725222d28cb7c37a7caef26c826eca3d9"
+        }
+      ],
+      "checks": [],
+      "agent_use": "unassessed",
+      "issues": [
+        {
+          "id": "K-SYS-002-F07",
+          "criterion": "algorithm",
+          "evidence": "算法 1 建立记录的步骤为“冻结 V_t；建立 E_t，completion_claimed=false，released=false”，后续仅登记物理责任、检查准备和提交，没有将 view_id 写入分支 active_view。算法 2 却要求“active_view=view_id；槽 owner/epoch 与 E 相符”，算法 3 还会“清除仍指向本视图的 active_view”。脚本 Runtime.build 额外执行了“self.states[seg.key].active = view_id”。",
+          "impact": "从没有活跃视图的合法分支开始，按正文显式更新执行构造与完成，active_view 仍为空，合法完成会被判为 discarded，k、token 和输出均无法推进。脚本补入了正文缺少的状态转换，因此其 PASS 不能证明当前伪代码可执行。",
+          "blocking": true,
+          "required_revision": "在构造/发布视图时明确把每个入选分支登记为由该 view_id 持有，并规定这一步与段快照、资源预留的原子关系；确定未提交、准备失败或取消时明确如何结束业务解析并清除绑定。让检查轨迹对应正文更新顺序，加入省略 active_view 登记的故障模型，证明正常完成推进而该故障被拒绝。"
+        },
+        {
+          "id": "K-SYS-002-F08",
+          "criterion": "algorithm",
+          "evidence": "KV_ONLY 分支仅规定“在同一事务中消费 J 并令 k←p1、v←v+1”及其他业务状态不变。“给新有效 KV 建立长期引用，不能只留下 E 的执行引用”缩进在成功 SAMPLE 的事务内。finalize 无条件“释放本视图执行引用；长期有效 KV 的拥有者引用继续存在”。脚本明确写道“Long-lived KV payloads are outside this model”。",
+          "impact": "第一轮 [0,64) 纯 KV 完成后可以立即 finalize，但算法没有为新有效范围建立长期拥有者引用。若这些新页仅由执行记录保护，释放 E 后即可被回收，账面 k=64 却没有受保护的 KV；第二轮读取 [0,64) 历史不再合法。采样失败但保存 k=p1 的路径也存在同类缺口。只记录整数 k 的脚本无法发现这一错误。",
+          "blocking": true,
+          "required_revision": "把新有效 KV 的长期拥有权建立或转移放到每个保留 KV 边界的路径中，覆盖 KV_ONLY、成功 SAMPLE，以及选择保留 KV 的采样失败路径；明确事务成功前由谁保护、丢弃段释放哪些预留、finalize 只能释放哪些执行引用。以最小符号页/引用账检查两轮 prefill：第一轮释放视图后历史页仍存活且不可复用；漏掉长期引用的负对照必须失败。"
+        },
+        {
+          "id": "K-SYS-002-F09",
+          "criterion": "algorithm",
+          "evidence": "正文把设备部分概括为“设备按行描述读取历史并写独占范围→等待覆盖全层写入与结果生产的完成边界”，并要求证据“覆盖必要行、全层 KV 写入、logits 生产以及声明的可见性边界”。当前正文未展开各层 hidden state、该层历史 K/V、新 K/V 与末层 logits 的连接，也未明确指向承担这一完整解释的具体链接段落。",
+          "impact": "全层完成是提交门的要求，但尚未说明其所证明的数据流。读者无法仅沿当前算法核对每层输入来自何处、同一 κ/版本/可见集合如何贯穿层间，以及为何某层写入或独立 logits 支路完成不能推进整个分支 k。脚本的 layers 布尔值仅假设证据成立。",
+          "blocking": true,
+          "required_revision": "补充范围明确的逐层数据流：已知 token 形成首层输入，每层使用同分支的该层历史 K/V、计算本轮 K/V 与 hidden state，保持身份映射并向下一层传递，末层产生目标 logits，全部必要层与结果可见后才允许整段提交；或者明确链接到已有完整解释并说明本章如何使用其契约。无需复制完整 attention 数学或增加统一章节结构。"
+        },
+        {
+          "id": "campaign-K-SYS-002-r3",
+          "criterion": "algorithm",
+          "blocking": true,
+          "evidence": "docs/evidence/knowledge-workflow-20261028-batch4/full_build/K-SYS-002/round-3",
+          "impact": "Independent semantic reviewer requested revision; see retained review",
+          "required_revision": "Repair the recorded concrete failure and re-evaluate the full candidate."
+        }
+      ]
+    },
+    "K-SYS-003": {
+      "id": "K-SYS-003",
+      "path": "knowledge/system-semantics/position-mask-cache.md",
+      "baseline_revision": 4,
+      "baseline_sha256": "91641b10a52209747af8d9fa83f822bedb01c583cede42a58550ad87ffe14ad6",
+      "prior_review": "navigation_registered_deep_review_pending",
+      "source_ids": [
+        "S-HF-CACHE",
+        "S-TRANSFORMER",
+        "S-SDPA",
+        "S-FA-IMPL",
+        "S-ROPE",
+        "S-KIVI"
+      ],
+      "related": [
+        "K-ALG-007",
+        "K-MODEL-007",
+        "K-FW-006",
+        "K-FW-011",
+        "K-ALG-021",
+        "K-ALG-009",
+        "K-ALG-010",
+        "K-SYS-009",
+        "K-ALG-006",
+        "K-FW-001",
+        "K-TOOLS-006"
+      ],
+      "state": "queued",
+      "round": 0,
+      "author": null,
+      "reviews": [],
+      "checks": [],
+      "agent_use": "unassessed",
+      "issues": []
+    },
+    "K-SYS-004": {
+      "id": "K-SYS-004",
+      "path": "knowledge/system-semantics/cancellation-resource-completion.md",
+      "baseline_revision": 3,
+      "baseline_sha256": "919052c77f65a13c9dc09aad03341ed31f0820dbbdcb2750b5789f349f9e86c1",
+      "prior_review": "navigation_registered_deep_review_pending",
+      "source_ids": [
+        "S-ASGI",
+        "S-CUDA-ALLOC",
+        "S-CUDA-ASYNC",
+        "S-RDMA",
+        "S-LINUX-IO",
+        "S-SERVERLESSLLM"
+      ],
+      "related": [
+        "K-ALG-008",
+        "K-FW-003",
+        "K-SYS-008",
+        "K-SYS-011",
+        "K-SYS-012",
+        "K-SYS-014",
+        "K-SYS-018",
+        "K-HW-014",
+        "K-TOOLS-005",
+        "K-ALG-002",
+        "K-ENGINE-004",
+        "K-ENGINE-005",
+        "K-FW-005",
+        "K-FW-008",
+        "K-MODEL-005",
+        "K-MODEL-011",
+        "K-TOOLS-006",
+        "K-SYS-015",
+        "K-WORK-010",
+        "K-ALG-017",
+        "K-ALG-020",
+        "K-SYS-016"
+      ],
+      "state": "queued",
+      "round": 0,
+      "author": null,
+      "reviews": [],
+      "checks": [],
+      "agent_use": "unassessed",
+      "issues": []
+    },
+    "K-SYS-005": {
+      "id": "K-SYS-005",
+      "path": "knowledge/system-semantics/collective-ordering.md",
+      "baseline_revision": 5,
+      "baseline_sha256": "0007f921f7cac18dfc14baae23133812bd3c58a6f8fc0bddde1d6d0a3d017168",
+      "prior_review": "navigation_registered_deep_review_pending",
+      "source_ids": [
+        "S-NCCL-GROUP",
+        "S-NCCL-COLLECTIVE",
+        "S-CUDA-TOPOLOGY",
+        "S-CUDA-ASYNC"
+      ],
+      "related": [
+        "K-ALG-015",
+        "K-HW-002",
+        "K-SYS-009",
+        "K-HW-014",
+        "K-SYS-014",
+        "K-ALG-023",
+        "K-TOOLS-005"
+      ],
+      "state": "revise",
+      "round": 2,
+      "author": "ds-author:K-SYS-005:round-2",
+      "reviews": [
+        {
+          "path": "docs/evidence/knowledge-workflow-20261028-batch4/K-SYS-005/round-2/review.json",
+          "sha256": "f20e0ee5f2dca748ff6983e20d97447c792a27842148aa6dbb565030562095e9"
+        }
+      ],
+      "checks": [],
+      "agent_use": "unassessed",
+      "issues": [
+        {
+          "id": "K-SYS-005-empty-count-contract",
+          "criterion": "legality",
+          "evidence": "正文同时要求“各 rank 使用相同 count 和相同 datatype”，又按 slot.has_payload(r) 分支允许“把空工作表示为零长度操作”。伪代码只在有 payload 时 reserve input and output ranges，随后所有 rank 都调用 SUBMIT。没有规定零长度必须为全组共同描述，也没有为局部空 rank 构造匹配长度的合法输入。脚本 empty = [[], [], []] 只覆盖所有 rank 同时为空。",
+          "impact": "一个 rank 无工作而其他 rank 的同槽位 count 为正时，局部 count=0 会破坏 NCCL 契约；若保留正 count 却没有预留输入范围，则可能访问无效缓冲。保留槽位本身不足以保证合法。",
+          "blocking": true,
+          "required_revision": "区分全组零长度与局部无有效数据。全组零长度必须使用共同 count；局部空 rank 必须按操作语义提供匹配长度的合法缓冲，例如数学语义允许时填充归约单位元，否则共同拒绝或重构操作。按 Broadcast/Reduce 等角色分别定义所需输入输出范围。增加能拒绝混合零/非零 count 的检查。"
+        },
+        {
+          "id": "K-SYS-005-ungrouped-issue-progress",
+          "criterion": "algorithm",
+          "evidence": "SUBMIT 后只有“if ret is an immediate error then local_error ← ret”；D.use_group 为 false 时直接设置“close_ret ← SUCCESS”。后续只在 close_ret = IN_PROGRESS 时执行 POLL_ISSUE，因此非 group SUBMIT 返回 IN_PROGRESS 的状态被丢弃，算法仍会继续提交或进入设备事件等待。",
+          "impact": "正文同时讨论不使用 group 和 nonblocking communicator，却没有保证非 group 路径的发起完成；可能过早调用相关 CUDA 操作，违背本章要求的提交与设备完成分离。",
+          "blocking": true,
+          "required_revision": "明确 SUBMIT 的返回契约，处理非 group 每次调用的 IN_PROGRESS、错误及发起完成后才能进行的后续操作；或者明确将非 group 分支限制为已证明同步完成发起的模式。用同一执行模型覆盖 group/non-group 的成功、pending、错误与超时路径。"
+        },
+        {
+          "id": "K-SYS-005-completion-event-production",
+          "criterion": "algorithm",
+          "evidence": "正文首次使用完成票据的位置是“wait_state ← WAIT_FOR_DEVICE_OR_EVENT(slot.event, deadline)”，此前没有创建或记录 slot.event，也没有说明该事件如何覆盖本 seq 的通信。等待成功后没有 DEVICE_DONE 更新，而发布处要求“require slot is DEVICE_DONE and consumer dependency satisfied”。",
+          "impact": "读者无法由伪代码建立通信到完成事件的因果链；未记录或旧代次事件可能错误放行，严格按已列更新执行则没有进入 DEVICE_DONE 的步骤。另建 TRANSITIONS 表不能补足正文算法。",
+          "blocking": true,
+          "required_revision": "在发起确认之后明确记录覆盖相应通信的 stream/event 完成票据，绑定 communicator、seq、slot 和代次；说明等待成功的后置条件并更新 DEVICE_DONE。将 publish_set 输出映射到对应槽位，明确消费者等待和最后使用关系。检查应能拒绝未记录、旧代次或未覆盖该通信的事件。"
+        },
+        {
+          "id": "K-SYS-005-failure-closure-gap",
+          "criterion": "algorithm",
+          "evidence": "正文要求“任一 rank 的本地失败、超时或提交路径未知，都必须让受影响执行组进入一致的终止、恢复或共同前缀重建”，但伪代码失败分支只有 record 后 return FAILED/ABORT；成功分支没有接收组级失败或确认提交权的步骤。脚本 failure_closure 的 timeout 分支为 pass，末尾只检查 failed 集合。手工逐分支追踪 failure_closure([(0, 'local_fail'), (0, 'abort'), (1, 'timeout')]) 和 failure_closure([(0, 'timeout'), (1, 'publish')])，两者均返回 None；这不是实际执行结果。",
+          "impact": "算法没有实现其声称的失败传播不变量，也没有交代已提交通信与预留缓冲如何结算。检查器会接受成员未进入共同终态、超时后仍发布的轨迹，因此现有成功输出不能支持完整失败闭包判断。",
+          "blocking": true,
+          "required_revision": "给出失败与发布的明确时间边界及组级处理步骤，或明确委托给带具体输入输出契约的调用方恢复协议：停止新提交、传播失败、撤销未提交发布资格，并在确认物理最后使用结束前保留在途缓冲。不要将逻辑 abort 当作设备已排空。检查器应接收参与集合，核对所有成员的终态，拒绝未解决的 UNKNOWN 后发布和未结算在途操作，并加入上述漏检轨迹。"
+        },
+        {
+          "id": "campaign-K-SYS-005-r2",
+          "criterion": "algorithm",
+          "blocking": true,
+          "evidence": "docs/evidence/knowledge-workflow-20261028-batch4/full_build/K-SYS-005/round-2",
+          "impact": "Independent semantic reviewer requested revision; see retained review",
+          "required_revision": "Repair the recorded concrete failure and re-evaluate the full candidate."
+        }
+      ]
+    },
+    "K-SYS-006": {
+      "id": "K-SYS-006",
+      "path": "knowledge/system-semantics/evidence-and-independent-checks.md",
+      "baseline_revision": 3,
+      "baseline_sha256": "50b7c97de928be322713ef149fb734c0c20acda17c4a321c46a198b0019831be",
+      "prior_review": "navigation_registered_deep_review_pending",
+      "source_ids": [
+        "S-ACE",
+        "S-GEPA",
+        "S-SELF-CORRECTION",
+        "S-REFLEXION",
+        "S-STATS"
+      ],
+      "related": [
+        "K-TOOLS-006",
+        "K-TOOLS-005",
+        "K-SYS-010",
+        "K-TOOLS-007",
+        "K-FW-002",
+        "K-WORK-003",
+        "K-SYS-009"
+      ],
+      "state": "revise",
+      "round": 2,
+      "author": "ds-author:K-SYS-006:round-2",
+      "reviews": [
+        {
+          "path": "docs/evidence/knowledge-workflow-20261028-batch4/K-SYS-006/round-2/review.json",
+          "sha256": "48414fbbcd4e783d54968653f203707ce057c4462d78d96a55e40f7b4866d442"
+        }
+      ],
+      "checks": [],
+      "agent_use": "unassessed",
+      "issues": [
+        {
+          "id": "K-SYS-006-r2-algorithm-01",
+          "criterion": "algorithm",
+          "evidence": "正文表格要求 BUILD_EFFECT“记录机制与使用路径”，且说明 SUPPORTED_EFFECT 支持知识条件造成的差异；PROMOTE 第33–38行只检查配对/预算/评价器、保留任务和使用路径，没有检查 M。令 M 缺失而其他条件成立，伪代码仍返回 SUPPORTED_EFFECT。脚本 reference_gate 和 chapter_gate 却都通过“f['paired_budget_matched'] and f['heldout'] and f['mechanism']”要求机制，因而脚本不是该分支的忠实转写。",
+          "impact": "正文算法能够在缺少机制解释时升级构建效果命题，违背自己声明的晋升门槛；现有一致性检查不能暴露该差异。",
+          "blocking": true,
+          "required_revision": "对齐正文表格、状态解释和 BUILD_EFFECT 伪代码，明确机制与知识使用路径各自的判断条件；补充其他条件全部满足但机制缺失的定向反例，并核对转写与正文逐项对应。"
+        },
+        {
+          "id": "K-SYS-006-r2-algorithm-02",
+          "criterion": "algorithm",
+          "evidence": "脚本 reference_gate 与 chapter_gate 的 TRANSFER 分支均以“f['heldout'] and f['mechanism']”返回 TRANSFERABLE，未单独表示正文第30行“no independent reference on the changed condition”；OBS 分支也没有表示第22行“I states the invalidation set”。BOOL_KEYS 同样没有 evaluator_fixed 或 documented_use_path，无法分别检验正文第34、36行。所谓参考与被测 gate 主要是相同条件的重复编码；naive_gate 的负对照只检测另一个故意宽松的实现。",
+          "impact": "24576 个配置全部一致仅证明两个简化模型一致。原范围检查完成但改变条件没有独立参考、OBS 缺失失效条件等关键错误不在状态空间内，现有 PASS 不能支持作者声称的完整提升规则核对。",
+          "blocking": true,
+          "required_revision": "把正文实际使用的独立谓词显式建模，声明每个字段对应的正文条件；使用独立约束或不变量审查顺序状态机，并针对缺失失效条件、缺失改变条件参考、评价器变化及缺失使用路径分别设置只破坏该条件的负对照。执行修订后的检查，保留实际结果和覆盖边界。"
+        },
+        {
+          "id": "K-SYS-006-r2-cost-01",
+          "criterion": "cost",
+          "evidence": "正文给出“T_check = C_fixture + ... + C_review + C_retain”，却将 C_review 定义为“判断、复算和记录修订的理由”，将 C_retain 定义为“证据、日志和原始对象的驻留”，没有指定时间、货币或其他共同单位；随后“L = L_FN · P(accept bad) + L_FP · P(reject good) + T_check”直接相加，未说明损失与检查时间如何换算。",
+          "impact": "无法检查量纲一致性，也无法根据该式比较增加检查与承担错误损失的代价；驻留容量、持续时间和经济费用的区别没有进入计算。",
+          "blocking": true,
+          "required_revision": "明确成本模型的共同单位及串行或累计资源口径。驻留可单列容量和持续时间，或给出费用换算；审查项定义为实际耗时或费用。若 L 使用货币或效用损失，应转换检查成本后再相加，并明确运行与测量项如何避免重复计费。"
+        },
+        {
+          "id": "K-SYS-006-r2-legality-01",
+          "criterion": "legality",
+          "evidence": "正文声明“本轮所给材料中，S-SELF-CORRECTION 为完整原文”，author_notes 同样声称使用完整原文；实际 supplied material 将 references/S-SELF-CORRECTION/fulltext.txt 标为 excerpt，只提供 [0,54583) 和 [56000,58191)，缺少 [54583,56000)。",
+          "impact": "来源阅读资格被扩大，违反本章自身的证据范围原则；已提供部分足以支持主要论述，也不能据此声称全篇阅读。",
+          "blocking": true,
+          "required_revision": "将本轮阅读声明改为实际节选范围，并同步修正作者说明；如确实补读缺失部分，应提供相应读取证据后再声明完整阅读。保留当前已由可见段落支持的机制结论。"
+        },
+        {
+          "id": "campaign-K-SYS-006-r2",
+          "criterion": "algorithm",
+          "blocking": true,
+          "evidence": "docs/evidence/knowledge-workflow-20261028-batch4/full_build/K-SYS-006/round-2",
+          "impact": "Independent semantic reviewer requested revision; see retained review",
+          "required_revision": "Repair the recorded concrete failure and re-evaluate the full candidate."
+        }
+      ]
+    },
+    "K-SYS-007": {
+      "id": "K-SYS-007",
+      "path": "knowledge/system-semantics/tokenization-io.md",
+      "baseline_revision": 4,
+      "baseline_sha256": "1dea61a1f632805cb90873e747cb3079230a7b6bab76b17b4281662b82367565",
+      "prior_review": "navigation_registered_deep_review_pending",
+      "source_ids": [
+        "S-CHAT",
+        "S-HF-CACHE",
+        "S-ASGI"
+      ],
+      "related": [
+        "K-ALG-003",
+        "K-MODEL-008",
+        "K-ALG-011",
+        "K-FW-011",
+        "K-WORK-010",
+        "K-SYS-015",
+        "K-TOOLS-006",
+        "K-ALG-012",
+        "K-MODEL-001",
+        "K-MODEL-005",
+        "K-SYS-008",
+        "K-WORK-003",
+        "K-MODEL-013"
+      ],
+      "state": "queued",
+      "round": 0,
+      "author": null,
+      "reviews": [],
+      "checks": [],
+      "agent_use": "unassessed",
+      "issues": []
+    },
+    "K-SYS-008": {
+      "id": "K-SYS-008",
+      "path": "knowledge/system-semantics/service-protocol.md",
+      "baseline_revision": 5,
+      "baseline_sha256": "8995b7ecd763f40525388858c4c483d4550783f80ca112f35045ef954af437ab",
+      "prior_review": "navigation_registered_deep_review_pending",
+      "source_ids": [
+        "S-ASGI",
+        "S-OTEL",
+        "S-GENAI-PERF",
+        "S-BORG",
+        "S-NVIDIA-PLUGIN"
+      ],
+      "related": [
+        "K-SYS-004",
+        "K-WORK-001",
+        "K-MODEL-011",
+        "K-SYS-015",
+        "K-SYS-011",
+        "K-SYS-014",
+        "K-SYS-016",
+        "K-WORK-008",
+        "K-TOOLS-005",
+        "K-SYS-002",
+        "K-SYS-007",
+        "K-SYS-010",
+        "K-MODEL-012",
+        "K-TOOLS-006"
+      ],
+      "state": "queued",
+      "round": 0,
+      "author": null,
+      "reviews": [],
+      "checks": [],
+      "agent_use": "unassessed",
+      "issues": []
+    },
+    "K-SYS-009": {
+      "id": "K-SYS-009",
+      "path": "knowledge/system-semantics/distributed-state-transfer.md",
+      "baseline_revision": 3,
+      "baseline_sha256": "425985efff21e4acbe091ddfa9043cf97b37e550b606f10c0e1560a3c02b1f6f",
+      "prior_review": "navigation_registered_deep_review_pending",
+      "source_ids": [
+        "S-DISTSERVE",
+        "S-CUDA-TOPOLOGY",
+        "S-VLLM-PREFIX",
+        "S-RDMA",
+        "S-GPUDIRECT",
+        "S-LLUMNIX"
+      ],
+      "related": [
+        "K-ALG-013",
+        "K-SYS-005",
+        "K-ALG-009",
+        "K-HW-014",
+        "K-SYS-013",
+        "K-SYS-014",
+        "K-ALG-023",
+        "K-MODEL-002",
+        "K-MODEL-006",
+        "K-SYS-001",
+        "K-SYS-003",
+        "K-SYS-006",
+        "K-TOOLS-002",
+        "K-ALG-018"
+      ],
+      "state": "queued",
+      "round": 0,
+      "author": null,
+      "reviews": [],
+      "checks": [],
+      "agent_use": "unassessed",
+      "issues": []
+    },
+    "K-SYS-010": {
+      "id": "K-SYS-010",
+      "path": "knowledge/system-semantics/design-synthesis.md",
+      "baseline_revision": 6,
+      "baseline_sha256": "6e93d34ef8d9300a48ad2453aa1e26ef8391fbcc954d99133bb68110cee175cd",
+      "prior_review": "navigation_registered_deep_review_pending",
+      "source_ids": [
+        "S-PAGED",
+        "S-SARATHI",
+        "S-DISTSERVE",
+        "S-MLA",
+        "S-NXDI",
+        "S-CPU-TUNING",
+        "S-GOTO",
+        "S-INT8",
+        "S-STATS"
+      ],
+      "related": [
+        "K-ALG-001",
+        "K-ALG-009",
+        "K-FW-005",
+        "K-WORK-006",
+        "K-FW-011",
+        "K-ALG-016",
+        "K-HW-010",
+        "K-FW-012",
+        "K-SYS-012",
+        "K-SYS-015",
+        "K-WORK-010",
+        "K-TOOLS-007",
+        "K-ALG-003",
+        "K-HW-005",
+        "K-ALG-017",
+        "K-ALG-020",
+        "K-ALG-015",
+        "K-ALG-013",
+        "K-WORK-007",
+        "K-MODEL-005",
+        "K-MODEL-008",
+        "K-MODEL-009",
+        "K-MODEL-010",
+        "K-MODEL-011",
+        "K-MODEL-012",
+        "K-MODEL-013",
+        "K-SYS-017",
+        "K-MODEL-014",
+        "K-MODEL-015",
+        "K-MODEL-016",
+        "K-WORK-011",
+        "K-SYS-018",
+        "K-SYS-019",
+        "K-ALG-007",
+        "K-ENGINE-001",
+        "K-SYS-006",
+        "K-SYS-008",
+        "K-SYS-024"
+      ],
+      "state": "queued",
+      "round": 0,
+      "author": null,
+      "reviews": [],
+      "checks": [],
+      "agent_use": "unassessed",
+      "issues": []
+    },
+    "K-TOOLS-001": {
+      "id": "K-TOOLS-001",
+      "path": "knowledge/tools/trace-observability.md",
+      "baseline_revision": 4,
+      "baseline_sha256": "e8e0b6f2fb16e6f34bb0496eea393370eb14aa050488b2b96e12ec1f6468d833",
+      "prior_review": "navigation_registered_deep_review_pending",
+      "source_ids": [
+        "S-NSYS",
+        "S-TORCH-PROFILER",
+        "S-PERF",
+        "S-LINUX-IO",
+        "S-RDMA"
+      ],
+      "related": [
+        "K-TOOLS-002",
+        "K-SYS-001",
+        "K-TOOLS-005",
+        "K-HW-012",
+        "K-HW-014",
+        "K-HW-009",
+        "K-SYS-015",
+        "K-TOOLS-007"
+      ],
+      "state": "queued",
+      "round": 0,
+      "author": null,
+      "reviews": [],
+      "checks": [],
+      "agent_use": "unassessed",
+      "issues": []
+    },
+    "K-TOOLS-002": {
+      "id": "K-TOOLS-002",
+      "path": "knowledge/tools/timeline-attribution.md",
+      "baseline_revision": 3,
+      "baseline_sha256": "cf4b01a8ca5cb35e653b65fbe2bc018d3ae5cc42788a77688524fb29c7da817d",
+      "prior_review": "navigation_registered_deep_review_pending",
+      "source_ids": [
+        "S-NSYS",
+        "S-OTEL",
+        "S-CUDA-ASYNC",
+        "S-LINUX-IO",
+        "S-RDMA"
+      ],
+      "related": [
+        "K-SYS-001",
+        "K-TOOLS-003",
+        "K-WORK-004",
+        "K-HW-012",
+        "K-HW-014",
+        "K-ALG-018",
+        "K-SYS-009",
+        "K-TOOLS-001",
+        "K-TOOLS-004",
+        "K-TOOLS-007"
+      ],
+      "state": "queued",
+      "round": 0,
+      "author": null,
+      "reviews": [],
+      "checks": [],
+      "agent_use": "unassessed",
+      "issues": []
+    },
+    "K-TOOLS-003": {
+      "id": "K-TOOLS-003",
+      "path": "knowledge/tools/kernel-counter-replay.md",
+      "baseline_revision": 3,
+      "baseline_sha256": "9ecd4279422f94ccc42ffa70aca42d5fbec6e8f61a1182fb5983aebeaccd692d",
+      "prior_review": "navigation_registered_deep_review_pending",
+      "source_ids": [
+        "S-NCU",
+        "S-CUDA-BEST",
+        "S-ROCM",
+        "S-PERF",
+        "S-LINUX-IO"
+      ],
+      "related": [
+        "K-HW-001",
+        "K-FW-007",
+        "K-TOOLS-002",
+        "K-HW-010",
+        "K-FW-012",
+        "K-HW-011",
+        "K-HW-012",
+        "K-HW-014",
+        "K-HW-004",
+        "K-HW-009",
+        "K-TOOLS-008"
+      ],
+      "state": "queued",
+      "round": 0,
+      "author": null,
+      "reviews": [],
+      "checks": [],
+      "agent_use": "unassessed",
+      "issues": []
+    },
+    "K-TOOLS-004": {
+      "id": "K-TOOLS-004",
+      "path": "knowledge/tools/framework-profiler-scope.md",
+      "baseline_revision": 3,
+      "baseline_sha256": "4f46307c9d0e0daeaf3d8ebecf0f3e385ff7696d342af2a002c41eced70d93d1",
+      "prior_review": "navigation_registered_deep_review_pending",
+      "source_ids": [
+        "S-TORCH-PROFILER",
+        "S-MLX",
+        "S-NKI",
+        "S-ROCPROF",
+        "S-METAL-TOOLS",
+        "S-NEURON-EXPLORER",
+        "S-PERF"
+      ],
+      "related": [
+        "K-TOOLS-002",
+        "K-FW-004",
+        "K-FW-001",
+        "K-HW-010",
+        "K-HW-011",
+        "K-SYS-015",
+        "K-TOOLS-007"
+      ],
+      "state": "queued",
+      "round": 0,
+      "author": null,
+      "reviews": [],
+      "checks": [],
+      "agent_use": "unassessed",
+      "issues": []
+    },
+    "K-TOOLS-005": {
+      "id": "K-TOOLS-005",
+      "path": "knowledge/tools/failure-evidence.md",
+      "baseline_revision": 3,
+      "baseline_sha256": "23dfc65dcbd319c1789dcb80b62f6c843bb5db8c076e86a00643cff546700067",
+      "prior_review": "navigation_registered_deep_review_pending",
+      "source_ids": [
+        "S-PY-SUBPROCESS",
+        "S-CUDA-ASYNC",
+        "S-TORCH-NUMERIC",
+        "S-LINUX-RESOURCES",
+        "S-RDMA",
+        "S-LINUX-IO"
+      ],
+      "related": [
+        "K-SYS-006",
+        "K-SYS-005",
+        "K-TOOLS-006",
+        "K-SYS-004",
+        "K-SYS-014",
+        "K-SYS-018",
+        "K-SYS-019",
+        "K-TOOLS-007",
+        "K-SYS-008",
+        "K-TOOLS-001",
+        "K-SYS-016"
+      ],
+      "state": "queued",
+      "round": 0,
+      "author": null,
+      "reviews": [],
+      "checks": [],
+      "agent_use": "unassessed",
+      "issues": []
+    },
+    "K-TOOLS-006": {
+      "id": "K-TOOLS-006",
+      "path": "knowledge/tools/correctness-oracles.md",
+      "baseline_revision": 6,
+      "baseline_sha256": "c2f88bc9746ac25586fc6700aaf0f5a8d043a1b1f4aee99dfdee02e1ef468aab",
+      "prior_review": "navigation_registered_deep_review_pending",
+      "source_ids": [
+        "S-TORCH-NUMERIC",
+        "S-TORCH-REPRO",
+        "S-HF-CACHE",
+        "S-ASGI",
+        "S-INT8"
+      ],
+      "related": [
+        "K-FW-002",
+        "K-SYS-003",
+        "K-SYS-008",
+        "K-SYS-006",
+        "K-ALG-016",
+        "K-SYS-012",
+        "K-WORK-010",
+        "K-TOOLS-007",
+        "K-FW-011",
+        "K-SYS-002",
+        "K-SYS-004",
+        "K-FW-006",
+        "K-ALG-012",
+        "K-FW-001",
+        "K-SYS-007",
+        "K-TOOLS-005",
+        "K-WORK-004",
+        "K-MODEL-013",
+        "K-MODEL-014"
+      ],
+      "state": "queued",
+      "round": 0,
+      "author": null,
+      "reviews": [],
+      "checks": [],
+      "agent_use": "unassessed",
+      "issues": []
+    },
+    "K-WORK-001": {
+      "id": "K-WORK-001",
+      "path": "knowledge/workloads/metric-events.md",
+      "baseline_revision": 3,
+      "baseline_sha256": "c21db7895f35f10ebe16fe4fc795de05ea48de02cd90339712f9a4a49252d1bb",
+      "prior_review": "navigation_registered_deep_review_pending",
+      "source_ids": [
+        "S-GENAI-PERF",
+        "S-MLPERF-LLM",
+        "S-ASGI"
+      ],
+      "related": [
+        "K-SYS-008",
+        "K-MODEL-011",
+        "K-SYS-001",
+        "K-WORK-010",
+        "K-TOOLS-007",
+        "K-SYS-015",
+        "K-WORK-005",
+        "K-HW-007",
+        "K-WORK-009"
+      ],
+      "state": "queued",
+      "round": 0,
+      "author": null,
+      "reviews": [],
+      "checks": [],
+      "agent_use": "unassessed",
+      "issues": []
+    },
+    "K-WORK-002": {
+      "id": "K-WORK-002",
+      "path": "knowledge/workloads/arrival-and-concurrency.md",
+      "baseline_revision": 3,
+      "baseline_sha256": "9f373defa7f34499c60daeeb9fbf7758d7762817cf7e61073b92117b741e06b4",
+      "prior_review": "navigation_registered_deep_review_pending",
+      "source_ids": [
+        "S-MLPERF-LLM",
+        "S-MLPERF-SCENARIOS",
+        "S-GENAI-PERF"
+      ],
+      "related": [
+        "K-WORK-005",
+        "K-ALG-001",
+        "K-WORK-006",
+        "K-WORK-010",
+        "K-TOOLS-007",
+        "K-HW-009",
+        "K-WORK-004"
+      ],
+      "state": "queued",
+      "round": 0,
+      "author": null,
+      "reviews": [],
+      "checks": [],
+      "agent_use": "unassessed",
+      "issues": []
+    },
+    "K-WORK-003": {
+      "id": "K-WORK-003",
+      "path": "knowledge/workloads/input-distribution.md",
+      "baseline_revision": 3,
+      "baseline_sha256": "b1b68f0d2a6d640c4b64c2bc98560b9e9a79a6a60b445899949b5db15b96aa90",
+      "prior_review": "navigation_registered_deep_review_pending",
+      "source_ids": [
+        "S-GENAI-PERF",
+        "S-PAGED",
+        "S-QWEN-VL"
+      ],
+      "related": [
+        "K-ALG-003",
+        "K-FW-004",
+        "K-MODEL-008",
+        "K-WORK-010",
+        "K-TOOLS-007",
+        "K-WORK-005",
+        "K-SYS-007",
+        "K-MODEL-003",
+        "K-MODEL-012",
+        "K-SYS-006",
+        "K-MODEL-013",
+        "K-MODEL-015",
+        "K-MODEL-016"
+      ],
+      "state": "queued",
+      "round": 0,
+      "author": null,
+      "reviews": [],
+      "checks": [],
+      "agent_use": "unassessed",
+      "issues": []
+    },
+    "K-WORK-004": {
+      "id": "K-WORK-004",
+      "path": "knowledge/workloads/measurement-comparability.md",
+      "baseline_revision": 3,
+      "baseline_sha256": "c3c5fbcd9a6b8b4f94954bda424488c83c3a741a2de339fea4f7aa83b4dcc215",
+      "prior_review": "navigation_registered_deep_review_pending",
+      "source_ids": [
+        "S-GENAI-PERF",
+        "S-TORCH-PROFILER",
+        "S-NCU",
+        "S-STATS",
+        "S-TORCH-REPRO"
+      ],
+      "related": [
+        "K-WORK-002",
+        "K-WORK-005",
+        "K-TOOLS-002",
+        "K-TOOLS-007",
+        "K-FW-011",
+        "K-WORK-010",
+        "K-TOOLS-006",
+        "K-WORK-009"
+      ],
+      "state": "queued",
+      "round": 0,
+      "author": null,
+      "reviews": [],
+      "checks": [],
+      "agent_use": "unassessed",
+      "issues": []
+    },
+    "K-WORK-005": {
+      "id": "K-WORK-005",
+      "path": "knowledge/workloads/slo-goodput.md",
+      "baseline_revision": 3,
+      "baseline_sha256": "5aa9b71cddb7d896ffa1fe6d78ac61cf0bb92d76279ae4d563f1110ed9dbedb4",
+      "prior_review": "navigation_registered_deep_review_pending",
+      "source_ids": [
+        "S-MLPERF-LLM",
+        "S-DISTSERVE",
+        "S-GENAI-PERF"
+      ],
+      "related": [
+        "K-WORK-001",
+        "K-WORK-002",
+        "K-WORK-006",
+        "K-ALG-001",
+        "K-WORK-010",
+        "K-TOOLS-007",
+        "K-SYS-015",
+        "K-ALG-007",
+        "K-ALG-013",
+        "K-MODEL-005",
+        "K-MODEL-008",
+        "K-MODEL-009",
+        "K-MODEL-010",
+        "K-MODEL-011",
+        "K-MODEL-012",
+        "K-WORK-003",
+        "K-WORK-004",
+        "K-ALG-023",
+        "K-WORK-008",
+        "K-SYS-017"
+      ],
+      "state": "queued",
+      "round": 0,
+      "author": null,
+      "reviews": [],
+      "checks": [],
+      "agent_use": "unassessed",
+      "issues": []
+    },
+    "K-WORK-006": {
+      "id": "K-WORK-006",
+      "path": "knowledge/workloads/capacity-planning.md",
+      "baseline_revision": 4,
+      "baseline_sha256": "2a1fab417c30d8e6984c202d805f31863e0f00e248558c583609b5f9ba7e88c7",
+      "prior_review": "navigation_registered_deep_review_pending",
+      "source_ids": [
+        "S-PAGED",
+        "S-DISTSERVE",
+        "S-MLPERF-LLM",
+        "S-SERVERLESSLLM"
+      ],
+      "related": [
+        "K-HW-001",
+        "K-ALG-013",
+        "K-WORK-002",
+        "K-SYS-010",
+        "K-SYS-012",
+        "K-FW-011",
+        "K-SYS-015",
+        "K-WORK-010",
+        "K-TOOLS-007",
+        "K-WORK-005",
+        "K-ALG-017"
+      ],
+      "state": "queued",
+      "round": 0,
+      "author": null,
+      "reviews": [],
+      "checks": [],
+      "agent_use": "unassessed",
+      "issues": []
+    },
+    "K-FW-011": {
+      "id": "K-FW-011",
+      "path": "knowledge/frameworks/checkpoint-loading.md",
+      "baseline_revision": 2,
+      "baseline_sha256": "5205ab97f77cdb821e5a0c3f6685a99cfc12ccc8474f96c6de82375372cb59bf",
+      "prior_review": "navigation_registered_deep_review_pending",
+      "source_ids": [
+        "S-SERVERLESSLLM",
+        "S-TORCH-INFERENCE",
+        "S-TORCH-CUDA"
+      ],
+      "related": [
+        "K-MODEL-001",
+        "K-FW-001",
+        "K-FW-012",
+        "K-SYS-012",
+        "K-HW-003",
+        "K-ENGINE-003",
+        "K-FW-004",
+        "K-FW-008",
+        "K-FW-009",
+        "K-HW-008",
+        "K-SYS-003",
+        "K-SYS-007",
+        "K-SYS-010",
+        "K-TOOLS-006",
+        "K-WORK-004",
+        "K-WORK-006",
+        "K-ALG-016",
+        "K-HW-012",
+        "K-ALG-019",
+        "K-SYS-011",
+        "K-SYS-018",
+        "K-SYS-019"
+      ],
+      "state": "queued",
+      "round": 0,
+      "author": null,
+      "reviews": [],
+      "checks": [],
+      "agent_use": "unassessed",
+      "issues": []
+    },
+    "K-ALG-016": {
+      "id": "K-ALG-016",
+      "path": "knowledge/algorithms/operator-primitives.md",
+      "baseline_revision": 5,
+      "baseline_sha256": "7e67de661bf7263bb65c68fbb97c8344055f1795758a89b149c7c95b097526eb",
+      "prior_review": "navigation_registered_deep_review_pending",
+      "source_ids": [
+        "S-TRANSFORMER",
+        "S-RMSNORM",
+        "S-ROPE",
+        "S-TORCH-NUMERIC",
+        "S-FLASH",
+        "S-CPU-TUNING",
+        "S-SDPA",
+        "S-FA-IMPL",
+        "S-CUDA-BEST",
+        "S-TRITON"
+      ],
+      "related": [
+        "K-MODEL-001",
+        "K-ALG-004",
+        "K-FW-002",
+        "K-HW-010",
+        "K-FW-011",
+        "K-FW-007",
+        "K-FW-006",
+        "K-FW-001",
+        "K-FW-010",
+        "K-SYS-010",
+        "K-TOOLS-006",
+        "K-MODEL-013",
+        "K-MODEL-014",
+        "K-MODEL-015",
+        "K-MODEL-016"
+      ],
+      "state": "queued",
+      "round": 0,
+      "author": null,
+      "reviews": [],
+      "checks": [],
+      "agent_use": "unassessed",
+      "issues": []
+    },
+    "K-HW-010": {
+      "id": "K-HW-010",
+      "path": "knowledge/hardware/cpu-linear-kernels.md",
+      "baseline_revision": 3,
+      "baseline_sha256": "b4d5391890478b2874f6ea548b154a580a0810356f9cf9cb05248a9d2f728dcc",
+      "prior_review": "navigation_registered_deep_review_pending",
+      "source_ids": [
+        "S-GOTO",
+        "S-CPU-TUNING",
+        "S-TORCH-NUMERIC",
+        "S-PERF"
+      ],
+      "related": [
+        "K-HW-009",
+        "K-HW-001",
+        "K-ALG-016",
+        "K-FW-012",
+        "K-SYS-015",
+        "K-ALG-005",
+        "K-FW-007",
+        "K-HW-004",
+        "K-MODEL-003",
+        "K-SYS-010",
+        "K-TOOLS-003",
+        "K-TOOLS-004",
+        "K-ALG-020"
+      ],
+      "state": "queued",
+      "round": 0,
+      "author": null,
+      "reviews": [],
+      "checks": [],
+      "agent_use": "unassessed",
+      "issues": []
+    },
+    "K-FW-012": {
+      "id": "K-FW-012",
+      "path": "knowledge/frameworks/cpu-quantized-kernels.md",
+      "baseline_revision": 2,
+      "baseline_sha256": "fcb634a208ad9c814cc9b3228aee7082ca77091c7a385b3d3d57618f14aba310",
+      "prior_review": "navigation_registered_deep_review_pending",
+      "source_ids": [
+        "S-INT8",
+        "S-GPTQ",
+        "S-CPU-TUNING",
+        "S-TORCH-NUMERIC"
+      ],
+      "related": [
+        "K-ALG-005",
+        "K-HW-010",
+        "K-HW-004",
+        "K-FW-002",
+        "K-FW-011",
+        "K-HW-009",
+        "K-SYS-010",
+        "K-TOOLS-003",
+        "K-ALG-019"
+      ],
+      "state": "queued",
+      "round": 0,
+      "author": null,
+      "reviews": [],
+      "checks": [],
+      "agent_use": "unassessed",
+      "issues": []
+    },
+    "K-SYS-012": {
+      "id": "K-SYS-012",
+      "path": "knowledge/system-semantics/memory-allocators.md",
+      "baseline_revision": 2,
+      "baseline_sha256": "2e7258787b94ad142c7c236541e8718803ad30b273d08e6c398dff673a1df838",
+      "prior_review": "navigation_registered_deep_review_pending",
+      "source_ids": [
+        "S-VATTENTION",
+        "S-PAGED",
+        "S-CUDA-ALLOC",
+        "S-TORCH-CUDA"
+      ],
+      "related": [
+        "K-ALG-002",
+        "K-ALG-003",
+        "K-SYS-004",
+        "K-FW-003",
+        "K-FW-005",
+        "K-ALG-001",
+        "K-ALG-007",
+        "K-ALG-009",
+        "K-ALG-010",
+        "K-ALG-014",
+        "K-ALG-015",
+        "K-ENGINE-002",
+        "K-ENGINE-003",
+        "K-ENGINE-005",
+        "K-FW-001",
+        "K-FW-002",
+        "K-FW-006",
+        "K-FW-008",
+        "K-HW-001",
+        "K-HW-005",
+        "K-HW-007",
+        "K-HW-008",
+        "K-HW-009",
+        "K-MODEL-001",
+        "K-MODEL-003",
+        "K-MODEL-008",
+        "K-MODEL-009",
+        "K-MODEL-010",
+        "K-MODEL-012",
+        "K-SYS-010",
+        "K-TOOLS-006",
+        "K-WORK-006",
+        "K-FW-011",
+        "K-ALG-017",
+        "K-ALG-018",
+        "K-HW-013",
+        "K-WORK-007"
+      ],
+      "state": "queued",
+      "round": 0,
+      "author": null,
+      "reviews": [],
+      "checks": [],
+      "agent_use": "unassessed",
+      "issues": []
+    },
+    "K-SYS-015": {
+      "id": "K-SYS-015",
+      "path": "knowledge/system-semantics/host-runtime.md",
+      "baseline_revision": 4,
+      "baseline_sha256": "005342b6131acdd072d5cf35456a5b01e5630f764b614e7090639fde01a5b36a",
+      "prior_review": "navigation_registered_deep_review_pending",
+      "source_ids": [
+        "S-ASGI",
+        "S-CPU-TUNING",
+        "S-OTEL",
+        "S-PY-SUBPROCESS",
+        "S-LINUX-RESOURCES",
+        "S-TORCH-CUDA"
+      ],
+      "related": [
+        "K-HW-009",
+        "K-SYS-008",
+        "K-SYS-004",
+        "K-SYS-002",
+        "K-TOOLS-001",
+        "K-FW-003",
+        "K-ALG-008",
+        "K-SYS-010",
+        "K-ALG-001",
+        "K-ALG-010",
+        "K-ENGINE-001",
+        "K-FW-001",
+        "K-FW-008",
+        "K-HW-001",
+        "K-MODEL-005",
+        "K-MODEL-008",
+        "K-MODEL-010",
+        "K-MODEL-011",
+        "K-MODEL-012",
+        "K-SYS-007",
+        "K-TOOLS-004",
+        "K-WORK-001",
+        "K-WORK-005",
+        "K-WORK-006",
+        "K-HW-010",
+        "K-HW-012",
+        "K-SYS-019",
+        "K-MODEL-014",
+        "K-MODEL-016",
+        "K-SYS-025"
+      ],
+      "state": "queued",
+      "round": 0,
+      "author": null,
+      "reviews": [],
+      "checks": [],
+      "agent_use": "unassessed",
+      "issues": []
+    },
+    "K-WORK-010": {
+      "id": "K-WORK-010",
+      "path": "knowledge/workloads/session-workloads.md",
+      "baseline_revision": 3,
+      "baseline_sha256": "0269e1987e1107d0cf0135cb32aa759c67d5266cfa09fb1402f97704c4ab4d78",
+      "prior_review": "navigation_registered_deep_review_pending",
+      "source_ids": [
+        "S-SGLANG",
+        "S-ORCA",
+        "S-VLLM-PREFIX",
+        "S-MLPERF-SCENARIOS"
+      ],
+      "related": [
+        "K-WORK-002",
+        "K-WORK-003",
+        "K-ALG-003",
+        "K-SYS-007",
+        "K-SYS-004",
+        "K-ALG-001",
+        "K-ALG-007",
+        "K-ENGINE-001",
+        "K-MODEL-012",
+        "K-SYS-002",
+        "K-SYS-010",
+        "K-TOOLS-006",
+        "K-WORK-001",
+        "K-WORK-004",
+        "K-WORK-005",
+        "K-WORK-006",
+        "K-ALG-024"
+      ],
+      "state": "queued",
+      "round": 0,
+      "author": null,
+      "reviews": [],
+      "checks": [],
+      "agent_use": "unassessed",
+      "issues": []
+    },
+    "K-TOOLS-007": {
+      "id": "K-TOOLS-007",
+      "path": "knowledge/tools/statistical-experiments.md",
+      "baseline_revision": 4,
+      "baseline_sha256": "908b3588a6fa20bb1f2aed9f5db51c4b462953d79f8944cdbcfea7141c74644f",
+      "prior_review": "navigation_registered_deep_review_pending",
+      "source_ids": [
+        "S-STATS",
+        "S-MLPERF-SCENARIOS",
+        "S-GENAI-PERF",
+        "S-TORCH-REPRO"
+      ],
+      "related": [
+        "K-WORK-004",
+        "K-WORK-005",
+        "K-TOOLS-006",
+        "K-SYS-006",
+        "K-TOOLS-002",
+        "K-ALG-005",
+        "K-ALG-006",
+        "K-ALG-007",
+        "K-ALG-011",
+        "K-ALG-014",
+        "K-ALG-015",
+        "K-FW-002",
+        "K-FW-007",
+        "K-HW-001",
+        "K-HW-005",
+        "K-MODEL-005",
+        "K-MODEL-009",
+        "K-SYS-001",
+        "K-SYS-010",
+        "K-TOOLS-001",
+        "K-TOOLS-004",
+        "K-TOOLS-005",
+        "K-WORK-001",
+        "K-WORK-002",
+        "K-WORK-003",
+        "K-WORK-006",
+        "K-ALG-021",
+        "K-WORK-009",
+        "K-SYS-017",
+        "K-MODEL-016",
+        "K-TOOLS-008"
+      ],
+      "state": "queued",
+      "round": 0,
+      "author": null,
+      "reviews": [],
+      "checks": [],
+      "agent_use": "unassessed",
+      "issues": []
+    },
+    "K-HW-011": {
+      "id": "K-HW-011",
+      "path": "knowledge/hardware/gpu-kernel-pipelines.md",
+      "baseline_revision": 4,
+      "baseline_sha256": "4db609a35cae2c7bd05603e026fc76d3e1281111ca2dad54d1a319851b3b498a",
+      "prior_review": "mechanism_expansion_content_reviewed_with_limits",
+      "source_ids": [
+        "S-FLASHATTENTION3",
+        "S-FLASH",
+        "S-CUDA-BEST",
+        "S-CUDA-ASYNC",
+        "S-ROCM",
+        "S-TORCH-NUMERIC",
+        "S-CUDA-CAPABILITY"
+      ],
+      "related": [
+        "K-HW-005",
+        "K-HW-006",
+        "K-ALG-004",
+        "K-FW-007",
+        "K-FW-003",
+        "K-HW-001",
+        "K-ALG-005",
+        "K-ALG-008",
+        "K-FW-006",
+        "K-FW-010",
+        "K-HW-004",
+        "K-MODEL-003",
+        "K-MODEL-004",
+        "K-MODEL-006",
+        "K-MODEL-007",
+        "K-MODEL-009",
+        "K-TOOLS-003",
+        "K-TOOLS-004"
+      ],
+      "state": "queued",
+      "round": 0,
+      "author": null,
+      "reviews": [],
+      "checks": [],
+      "agent_use": "unassessed",
+      "issues": []
+    },
+    "K-ALG-017": {
+      "id": "K-ALG-017",
+      "path": "knowledge/algorithms/tiered-residency.md",
+      "baseline_revision": 2,
+      "baseline_sha256": "eb3ebc6320d5a32481cf645605d159860dc6d1edb97f1e98afd89ddb24ee82af",
+      "prior_review": "navigation_registered_deep_review_pending",
+      "source_ids": [
+        "S-FLEXGEN",
+        "S-SERVERLESSLLM",
+        "S-PAGED",
+        "S-CUDA-ASYNC"
+      ],
+      "related": [
+        "K-SYS-012",
+        "K-HW-012",
+        "K-ALG-018",
+        "K-ALG-019",
+        "K-ALG-020",
+        "K-SYS-004",
+        "K-WORK-006",
+        "K-ALG-008",
+        "K-ALG-009",
+        "K-ALG-010",
+        "K-ENGINE-002",
+        "K-ENGINE-005",
+        "K-FW-005",
+        "K-HW-003",
+        "K-HW-005",
+        "K-MODEL-004",
+        "K-SYS-010",
+        "K-SYS-013",
+        "K-SYS-018",
+        "K-MODEL-015"
+      ],
+      "state": "queued",
+      "round": 0,
+      "author": null,
+      "reviews": [],
+      "checks": [],
+      "agent_use": "unassessed",
+      "issues": []
+    },
+    "K-HW-012": {
+      "id": "K-HW-012",
+      "path": "knowledge/hardware/storage-io.md",
+      "baseline_revision": 2,
+      "baseline_sha256": "cec95f0a908c9abf7e9f7b83a5c930d044709d06c479d3c82967241edb49ff31",
+      "prior_review": "navigation_registered_deep_review_pending",
+      "source_ids": [
+        "S-LINUX-IO",
+        "S-SERVERLESSLLM",
+        "S-CUDA-ASYNC",
+        "S-GPUDIRECT"
+      ],
+      "related": [
+        "K-FW-011",
+        "K-ALG-017",
+        "K-ALG-018",
+        "K-HW-003",
+        "K-SYS-015",
+        "K-SYS-001",
+        "K-TOOLS-001",
+        "K-TOOLS-002",
+        "K-TOOLS-003",
+        "K-SYS-018",
+        "K-SYS-017"
+      ],
+      "state": "queued",
+      "round": 0,
+      "author": null,
+      "reviews": [],
+      "checks": [],
+      "agent_use": "unassessed",
+      "issues": []
+    },
+    "K-ALG-018": {
+      "id": "K-ALG-018",
+      "path": "knowledge/algorithms/kv-offload-prefetch.md",
+      "baseline_revision": 3,
+      "baseline_sha256": "a7088eba5c78cd9e96cf011d61946ad7dec4ecb6378ac16e7f2fc3820af38301",
+      "prior_review": "navigation_registered_deep_review_pending",
+      "source_ids": [
+        "S-FLEXGEN",
+        "S-PAGED",
+        "S-HF-CACHE",
+        "S-CUDA-ASYNC"
+      ],
+      "related": [
+        "K-ALG-017",
+        "K-ALG-002",
+        "K-ALG-003",
+        "K-ALG-009",
+        "K-SYS-009",
+        "K-ALG-020",
+        "K-SYS-012",
+        "K-ALG-004",
+        "K-ALG-010",
+        "K-ALG-014",
+        "K-ENGINE-002",
+        "K-ENGINE-004",
+        "K-FW-003",
+        "K-MODEL-007",
+        "K-TOOLS-002",
+        "K-HW-012",
+        "K-ALG-021",
+        "K-ALG-022"
+      ],
+      "state": "queued",
+      "round": 0,
+      "author": null,
+      "reviews": [],
+      "checks": [],
+      "agent_use": "unassessed",
+      "issues": []
+    },
+    "K-ALG-019": {
+      "id": "K-ALG-019",
+      "path": "knowledge/algorithms/weight-expert-offload.md",
+      "baseline_revision": 2,
+      "baseline_sha256": "cb230fafeec2d39fa40228ad44dbb41d34c62673fbac2325b6e797f206bc0fde",
+      "prior_review": "navigation_registered_deep_review_pending",
+      "source_ids": [
+        "S-FLEXGEN",
+        "S-POWERINFER",
+        "S-MIXTRAL",
+        "S-CUDA-ASYNC"
+      ],
+      "related": [
+        "K-ALG-017",
+        "K-ALG-020",
+        "K-MODEL-003",
+        "K-FW-011",
+        "K-ALG-015",
+        "K-FW-012",
+        "K-ENGINE-005",
+        "K-FW-005"
+      ],
+      "state": "queued",
+      "round": 0,
+      "author": null,
+      "reviews": [],
+      "checks": [],
+      "agent_use": "unassessed",
+      "issues": []
+    },
+    "K-ALG-020": {
+      "id": "K-ALG-020",
+      "path": "knowledge/algorithms/heterogeneous-execution.md",
+      "baseline_revision": 3,
+      "baseline_sha256": "8fd777e06b150eaba4e3288ccb188adbb975e37c28c77a72a9b6878a70e027f4",
+      "prior_review": "navigation_registered_deep_review_pending",
+      "source_ids": [
+        "S-POWERINFER",
+        "S-FLEXGEN",
+        "S-CPU-TUNING",
+        "S-TORCH-NUMERIC"
+      ],
+      "related": [
+        "K-HW-010",
+        "K-HW-003",
+        "K-HW-013",
+        "K-ALG-018",
+        "K-ALG-019",
+        "K-ALG-008",
+        "K-SYS-004",
+        "K-ENGINE-003",
+        "K-HW-006",
+        "K-HW-007",
+        "K-MODEL-003",
+        "K-SYS-010",
+        "K-ALG-017",
+        "K-MODEL-015",
+        "K-MODEL-016"
+      ],
+      "state": "queued",
+      "round": 0,
+      "author": null,
+      "reviews": [],
+      "checks": [],
+      "agent_use": "unassessed",
+      "issues": []
+    },
+    "K-HW-013": {
+      "id": "K-HW-013",
+      "path": "knowledge/hardware/shared-memory-paths.md",
+      "baseline_revision": 2,
+      "baseline_sha256": "9471f29d33a5821b00e11b6d08fb69fe31288087d558f05c5f9234350efe8b0d",
+      "prior_review": "navigation_registered_deep_review_pending",
+      "source_ids": [
+        "S-MLX-MEM",
+        "S-CUDA-ASYNC",
+        "S-TORCH-CUDA"
+      ],
+      "related": [
+        "K-HW-003",
+        "K-HW-007",
+        "K-ALG-020",
+        "K-SYS-012",
+        "K-FW-003",
+        "K-FW-008",
+        "K-ALG-004",
+        "K-HW-006"
+      ],
+      "state": "queued",
+      "round": 0,
+      "author": null,
+      "reviews": [],
+      "checks": [],
+      "agent_use": "unassessed",
+      "issues": []
+    },
+    "K-ALG-021": {
+      "id": "K-ALG-021",
+      "path": "knowledge/algorithms/kv-compression.md",
+      "baseline_revision": 4,
+      "baseline_sha256": "b106cc93bcd9d5acfce5e7766eb25f5c1fbd4ba7844dd1fe6454fc08cc1d99f4",
+      "prior_review": "navigation_registered_deep_review_pending",
+      "source_ids": [
+        "S-KIVI",
+        "S-H2O",
+        "S-CACHEGEN",
+        "S-INT8",
+        "S-TORCH-NUMERIC"
+      ],
+      "related": [
+        "K-ALG-005",
+        "K-ALG-002",
+        "K-ALG-018",
+        "K-MODEL-007",
+        "K-FW-002",
+        "K-TOOLS-007",
+        "K-ALG-003",
+        "K-ENGINE-002",
+        "K-ENGINE-004",
+        "K-FW-006",
+        "K-HW-004",
+        "K-MODEL-002",
+        "K-MODEL-006",
+        "K-SYS-003",
+        "K-SYS-013",
+        "K-ALG-022"
+      ],
+      "state": "queued",
+      "round": 0,
+      "author": null,
+      "reviews": [],
+      "checks": [],
+      "agent_use": "unassessed",
+      "issues": []
+    },
+    "K-SYS-013": {
+      "id": "K-SYS-013",
+      "path": "knowledge/system-semantics/distributed-kv-store.md",
+      "baseline_revision": 2,
+      "baseline_sha256": "ecc4f667ff186b05fececba52c500e43d0460def524e6200b9cfa00fcdb984c0",
+      "prior_review": "navigation_registered_deep_review_pending",
+      "source_ids": [
+        "S-MOONCAKE",
+        "S-CACHEGEN",
+        "S-PAGED",
+        "S-SGLANG"
+      ],
+      "related": [
+        "K-ALG-003",
+        "K-ALG-017",
+        "K-ALG-021",
+        "K-HW-014",
+        "K-SYS-009",
+        "K-SYS-014",
+        "K-ALG-023",
+        "K-ALG-002",
+        "K-ALG-013",
+        "K-ENGINE-002",
+        "K-ENGINE-004",
+        "K-HW-002",
+        "K-SYS-018",
+        "K-ALG-022"
+      ],
+      "state": "queued",
+      "round": 0,
+      "author": null,
+      "reviews": [],
+      "checks": [],
+      "agent_use": "unassessed",
+      "issues": []
+    },
+    "K-HW-014": {
+      "id": "K-HW-014",
+      "path": "knowledge/hardware/transport-and-rdma.md",
+      "baseline_revision": 2,
+      "baseline_sha256": "72bcf1d8948eae41c243e422f6b0370462dcc4bf33ef86f5664a09b4e46d3ba2",
+      "prior_review": "navigation_registered_deep_review_pending",
+      "source_ids": [
+        "S-RDMA",
+        "S-GPUDIRECT",
+        "S-NCCL-COLLECTIVE",
+        "S-NCCL-GROUP",
+        "S-CUDA-TOPOLOGY"
+      ],
+      "related": [
+        "K-HW-002",
+        "K-HW-003",
+        "K-FW-003",
+        "K-SYS-009",
+        "K-SYS-013",
+        "K-SYS-014",
+        "K-ALG-003",
+        "K-ALG-013",
+        "K-ALG-015",
+        "K-ENGINE-005",
+        "K-HW-008",
+        "K-MODEL-010",
+        "K-SYS-001",
+        "K-SYS-004",
+        "K-SYS-005",
+        "K-TOOLS-001",
+        "K-TOOLS-002",
+        "K-TOOLS-003",
+        "K-ALG-023",
+        "K-SYS-019",
+        "K-MODEL-015",
+        "K-MODEL-016"
+      ],
+      "state": "queued",
+      "round": 0,
+      "author": null,
+      "reviews": [],
+      "checks": [],
+      "agent_use": "unassessed",
+      "issues": []
+    },
+    "K-SYS-014": {
+      "id": "K-SYS-014",
+      "path": "knowledge/system-semantics/serving-recovery.md",
+      "baseline_revision": 2,
+      "baseline_sha256": "f551fa1f1e6213469c856a880839eefff504fb39f4dd692000b2df80a20a7f5e",
+      "prior_review": "navigation_registered_deep_review_pending",
+      "source_ids": [
+        "S-LLUMNIX",
+        "S-ASGI",
+        "S-NCCL-GROUP",
+        "S-TORCH-REPRO",
+        "S-SERVERLESSLLM"
+      ],
+      "related": [
+        "K-SYS-004",
+        "K-SYS-005",
+        "K-SYS-009",
+        "K-ALG-009",
+        "K-HW-014",
+        "K-ALG-023",
+        "K-TOOLS-005",
+        "K-ALG-006",
+        "K-ALG-010",
+        "K-ALG-011",
+        "K-ALG-012",
+        "K-ALG-013",
+        "K-ENGINE-005",
+        "K-FW-009",
+        "K-MODEL-004",
+        "K-MODEL-011",
+        "K-MODEL-012",
+        "K-SYS-002",
+        "K-SYS-008",
+        "K-SYS-013",
+        "K-SYS-011",
+        "K-WORK-008",
+        "K-SYS-018",
+        "K-SYS-019"
+      ],
+      "state": "queued",
+      "round": 0,
+      "author": null,
+      "reviews": [],
+      "checks": [],
+      "agent_use": "unassessed",
+      "issues": []
+    },
+    "K-ALG-023": {
+      "id": "K-ALG-023",
+      "path": "knowledge/algorithms/routing-and-migration.md",
+      "baseline_revision": 2,
+      "baseline_sha256": "1b9dcfd5fea499a91611459bb936e1c1c49ceb562171fb0f1ba360a7010f5d32",
+      "prior_review": "navigation_registered_deep_review_pending",
+      "source_ids": [
+        "S-LLUMNIX",
+        "S-MOONCAKE",
+        "S-SGLANG",
+        "S-DISTSERVE"
+      ],
+      "related": [
+        "K-ALG-003",
+        "K-SYS-013",
+        "K-SYS-014",
+        "K-HW-014",
+        "K-ALG-013",
+        "K-WORK-005",
+        "K-ENGINE-001",
+        "K-ENGINE-004",
+        "K-HW-002",
+        "K-MODEL-008",
+        "K-SYS-002",
+        "K-SYS-005",
+        "K-SYS-009",
+        "K-WORK-007"
+      ],
+      "state": "queued",
+      "round": 0,
+      "author": null,
+      "reviews": [],
+      "checks": [],
+      "agent_use": "unassessed",
+      "issues": []
+    },
+    "K-ALG-024": {
+      "id": "K-ALG-024",
+      "path": "knowledge/algorithms/branch-generation.md",
+      "baseline_revision": 2,
+      "baseline_sha256": "42157d4da17ab8ffd7a0aa2f5cd57a1cacdf1a989757261993f6671ae231de3a",
+      "prior_review": "navigation_registered_deep_review_pending",
+      "source_ids": [
+        "S-EAGLE",
+        "S-SPEC",
+        "S-PAGED",
+        "S-TORCH-REPRO",
+        "S-SGLANG"
+      ],
+      "related": [
+        "K-ALG-006",
+        "K-ALG-011",
+        "K-ALG-012",
+        "K-ALG-002",
+        "K-SYS-002",
+        "K-WORK-010",
+        "K-ALG-009",
+        "K-ENGINE-003",
+        "K-MODEL-004"
+      ],
+      "state": "queued",
+      "round": 0,
+      "author": null,
+      "reviews": [],
+      "checks": [],
+      "agent_use": "unassessed",
+      "issues": []
+    },
+    "K-SYS-011": {
+      "id": "K-SYS-011",
+      "path": "knowledge/system-semantics/model-lifecycle.md",
+      "baseline_revision": 2,
+      "baseline_sha256": "bf15950cafcbb584f031cc3a1ea9eaf3331d2816819c6e468ae333d70a3c7c0e",
+      "prior_review": "navigation_registered_deep_review_pending",
+      "source_ids": [
+        "S-SERVERLESSLLM",
+        "S-BORG",
+        "S-NVIDIA-PLUGIN",
+        "S-TORCH-INFERENCE"
+      ],
+      "related": [
+        "K-FW-011",
+        "K-SYS-004",
+        "K-SYS-008",
+        "K-SYS-014",
+        "K-WORK-008",
+        "K-SYS-018",
+        "K-SYS-019",
+        "K-ALG-014",
+        "K-FW-004",
+        "K-FW-005",
+        "K-FW-009",
+        "K-SYS-002"
+      ],
+      "state": "queued",
+      "round": 0,
+      "author": null,
+      "reviews": [],
+      "checks": [],
+      "agent_use": "unassessed",
+      "issues": []
+    },
+    "K-WORK-007": {
+      "id": "K-WORK-007",
+      "path": "knowledge/workloads/multi-model-placement.md",
+      "baseline_revision": 2,
+      "baseline_sha256": "d60397111d36bfb52045d741842175cc794fbb37af694406558bdbd992133171",
+      "prior_review": "navigation_registered_deep_review_pending",
+      "source_ids": [
+        "S-ALPASERVE",
+        "S-SLORA",
+        "S-LORA",
+        "S-VLLM-PREFIX"
+      ],
+      "related": [
+        "K-ALG-014",
+        "K-SYS-012",
+        "K-ALG-001",
+        "K-ALG-023",
+        "K-WORK-008",
+        "K-SYS-016",
+        "K-WORK-011",
+        "K-SYS-010",
+        "K-WORK-009"
+      ],
+      "state": "queued",
+      "round": 0,
+      "author": null,
+      "reviews": [],
+      "checks": [],
+      "agent_use": "unassessed",
+      "issues": []
+    },
+    "K-WORK-008": {
+      "id": "K-WORK-008",
+      "path": "knowledge/workloads/elastic-serving.md",
+      "baseline_revision": 2,
+      "baseline_sha256": "782ba12ac9d0af5f8dbdd477e0c706230ae14e7f54d2795ab3b385eaeb8b39f4",
+      "prior_review": "navigation_registered_deep_review_pending",
+      "source_ids": [
+        "S-SERVERLESSLLM",
+        "S-ALPASERVE",
+        "S-BORG"
+      ],
+      "related": [
+        "K-SYS-011",
+        "K-WORK-007",
+        "K-WORK-009",
+        "K-WORK-011",
+        "K-SYS-018",
+        "K-SYS-014",
+        "K-WORK-005",
+        "K-SYS-008"
+      ],
+      "state": "queued",
+      "round": 0,
+      "author": null,
+      "reviews": [],
+      "checks": [],
+      "agent_use": "unassessed",
+      "issues": []
+    },
+    "K-WORK-009": {
+      "id": "K-WORK-009",
+      "path": "knowledge/workloads/cost-and-energy.md",
+      "baseline_revision": 2,
+      "baseline_sha256": "e68e30bc7b68d554863044fe495751d95fc53993fb21c755ab89ef5d0ea4fd1b",
+      "prior_review": "navigation_registered_deep_review_pending",
+      "source_ids": [
+        "S-LINUX-RESOURCES",
+        "S-MLPERF-SCENARIOS",
+        "S-MLPERF-LLM"
+      ],
+      "related": [
+        "K-WORK-001",
+        "K-WORK-004",
+        "K-WORK-008",
+        "K-WORK-007",
+        "K-TOOLS-007",
+        "K-SYS-019"
+      ],
+      "state": "queued",
+      "round": 0,
+      "author": null,
+      "reviews": [],
+      "checks": [],
+      "agent_use": "unassessed",
+      "issues": []
+    },
+    "K-SYS-016": {
+      "id": "K-SYS-016",
+      "path": "knowledge/system-semantics/tenant-isolation.md",
+      "baseline_revision": 2,
+      "baseline_sha256": "0ca7501a80e750152a5fb3b9815c77f9e3f9aa393ff7546b3f05375958f88606",
+      "prior_review": "navigation_registered_deep_review_pending",
+      "source_ids": [
+        "S-LINUX-RESOURCES",
+        "S-NVIDIA-PLUGIN",
+        "S-BORG",
+        "S-VLLM-PREFIX"
+      ],
+      "related": [
+        "K-SYS-002",
+        "K-SYS-004",
+        "K-SYS-008",
+        "K-ALG-003",
+        "K-WORK-007",
+        "K-WORK-011",
+        "K-SYS-019",
+        "K-TOOLS-005",
+        "K-ALG-014"
+      ],
+      "state": "queued",
+      "round": 0,
+      "author": null,
+      "reviews": [],
+      "checks": [],
+      "agent_use": "unassessed",
+      "issues": []
+    },
+    "K-WORK-011": {
+      "id": "K-WORK-011",
+      "path": "knowledge/workloads/cluster-resource-placement.md",
+      "baseline_revision": 2,
+      "baseline_sha256": "235de985ced67e21bfe6727ff2e91be680e8def602ad02a3f3e9de2b3ca1b8a1",
+      "prior_review": "navigation_registered_deep_review_pending",
+      "source_ids": [
+        "S-BORG",
+        "S-ALPASERVE",
+        "S-CUDA-TOPOLOGY"
+      ],
+      "related": [
+        "K-ALG-015",
+        "K-HW-002",
+        "K-HW-009",
+        "K-WORK-007",
+        "K-WORK-008",
+        "K-SYS-016",
+        "K-SYS-018",
+        "K-SYS-019",
+        "K-SYS-010"
+      ],
+      "state": "queued",
+      "round": 0,
+      "author": null,
+      "reviews": [],
+      "checks": [],
+      "agent_use": "unassessed",
+      "issues": []
+    },
+    "K-SYS-018": {
+      "id": "K-SYS-018",
+      "path": "knowledge/system-semantics/storage-services.md",
+      "baseline_revision": 2,
+      "baseline_sha256": "283ceab23fbbf5c27bbb4486b56c2123459a19a00229c5baae70d09c18062661",
+      "prior_review": "navigation_registered_deep_review_pending",
+      "source_ids": [
+        "S-CEPH06",
+        "S-SERVERLESSLLM",
+        "S-LINUX-IO",
+        "S-BORG"
+      ],
+      "related": [
+        "K-FW-011",
+        "K-HW-012",
+        "K-ALG-017",
+        "K-SYS-013",
+        "K-SYS-014",
+        "K-SYS-011",
+        "K-WORK-008",
+        "K-WORK-011",
+        "K-SYS-004",
+        "K-SYS-010",
+        "K-TOOLS-005",
+        "K-SYS-017"
+      ],
+      "state": "queued",
+      "round": 0,
+      "author": null,
+      "reviews": [],
+      "checks": [],
+      "agent_use": "unassessed",
+      "issues": []
+    },
+    "K-SYS-019": {
+      "id": "K-SYS-019",
+      "path": "knowledge/system-semantics/deployment-environment.md",
+      "baseline_revision": 2,
+      "baseline_sha256": "1b47e39a7f36c9f1cba4dc1792ad9243fd69d083ae1d6a7bb13bfd80dae1a8a5",
+      "prior_review": "navigation_registered_deep_review_pending",
+      "source_ids": [
+        "S-NVIDIA-PLUGIN",
+        "S-LINUX-RESOURCES",
+        "S-TORCH-CUDA",
+        "S-BORG"
+      ],
+      "related": [
+        "K-HW-009",
+        "K-HW-002",
+        "K-HW-014",
+        "K-FW-011",
+        "K-SYS-011",
+        "K-SYS-015",
+        "K-SYS-016",
+        "K-SYS-014",
+        "K-TOOLS-005",
+        "K-HW-003",
+        "K-SYS-010",
+        "K-WORK-009",
+        "K-WORK-011"
+      ],
+      "state": "queued",
+      "round": 0,
+      "author": null,
+      "reviews": [],
+      "checks": [],
+      "agent_use": "unassessed",
+      "issues": []
+    },
+    "K-ALG-022": {
+      "id": "K-ALG-022",
+      "path": "knowledge/algorithms/context-reuse.md",
+      "baseline_revision": 2,
+      "baseline_sha256": "ddd8fa928d5ebd9876aca4971dc357b666ea999be9b148e3e88404c9e271ab13",
+      "prior_review": "navigation_registered_deep_review_pending",
+      "source_ids": [
+        "S-CACHEBLEND",
+        "S-ROPE",
+        "S-PAGED",
+        "S-SGLANG"
+      ],
+      "related": [
+        "K-ALG-003",
+        "K-ALG-018",
+        "K-ALG-021",
+        "K-SYS-013",
+        "K-SYS-017",
+        "K-FW-006"
+      ],
+      "state": "queued",
+      "round": 0,
+      "author": null,
+      "reviews": [],
+      "checks": [],
+      "agent_use": "unassessed",
+      "issues": []
+    },
+    "K-MODEL-013": {
+      "id": "K-MODEL-013",
+      "path": "knowledge/models/embedding-reranking.md",
+      "baseline_revision": 2,
+      "baseline_sha256": "44f22a27c9b4a11579bed108952f18722d90cd0d4c326db189c865d7e51aef38",
+      "prior_review": "navigation_registered_deep_review_pending",
+      "source_ids": [
+        "S-BERT",
+        "S-FAISS",
+        "S-TORCH-NUMERIC"
+      ],
+      "related": [
+        "K-SYS-007",
+        "K-ALG-016",
+        "K-FW-004",
+        "K-WORK-003",
+        "K-SYS-017",
+        "K-TOOLS-006",
+        "K-SYS-010"
+      ],
+      "state": "queued",
+      "round": 0,
+      "author": null,
+      "reviews": [],
+      "checks": [],
+      "agent_use": "unassessed",
+      "issues": []
+    },
+    "K-SYS-017": {
+      "id": "K-SYS-017",
+      "path": "knowledge/system-semantics/retrieval-pipeline.md",
+      "baseline_revision": 2,
+      "baseline_sha256": "bd09460502715f214c20ffdd68bdbc6bb9373668a849ca602b75d5e933ff40d0",
+      "prior_review": "navigation_registered_deep_review_pending",
+      "source_ids": [
+        "S-FAISS",
+        "S-CACHEBLEND",
+        "S-BERT"
+      ],
+      "related": [
+        "K-MODEL-013",
+        "K-ALG-022",
+        "K-SYS-018",
+        "K-HW-012",
+        "K-WORK-005",
+        "K-TOOLS-007",
+        "K-SYS-010"
+      ],
+      "state": "queued",
+      "round": 0,
+      "author": null,
+      "reviews": [],
+      "checks": [],
+      "agent_use": "unassessed",
+      "issues": []
+    },
+    "K-MODEL-014": {
+      "id": "K-MODEL-014",
+      "path": "knowledge/models/vision-inference.md",
+      "baseline_revision": 2,
+      "baseline_sha256": "a3b95c24c3838a54df90db945066257c0960e20a24929ed2812838fc5a3528a0",
+      "prior_review": "navigation_registered_deep_review_pending",
+      "source_ids": [
+        "S-RESNET",
+        "S-TVM",
+        "S-TORCH-NUMERIC"
+      ],
+      "related": [
+        "K-ALG-016",
+        "K-FW-004",
+        "K-HW-004",
+        "K-SYS-015",
+        "K-MODEL-008",
+        "K-TOOLS-006",
+        "K-SYS-010"
+      ],
+      "state": "queued",
+      "round": 0,
+      "author": null,
+      "reviews": [],
+      "checks": [],
+      "agent_use": "unassessed",
+      "issues": []
+    },
+    "K-MODEL-015": {
+      "id": "K-MODEL-015",
+      "path": "knowledge/models/recommendation-inference.md",
+      "baseline_revision": 2,
+      "baseline_sha256": "a36b0addea05174460d8f51179643665f98c51c6aa4a4d9dec235535948dd06d",
+      "prior_review": "navigation_registered_deep_review_pending",
+      "source_ids": [
+        "S-DLRM",
+        "S-TORCH-NUMERIC"
+      ],
+      "related": [
+        "K-ALG-016",
+        "K-ALG-017",
+        "K-ALG-020",
+        "K-HW-009",
+        "K-HW-014",
+        "K-WORK-003",
+        "K-SYS-010"
+      ],
+      "state": "queued",
+      "round": 0,
+      "author": null,
+      "reviews": [],
+      "checks": [],
+      "agent_use": "unassessed",
+      "issues": []
+    },
+    "K-MODEL-016": {
+      "id": "K-MODEL-016",
+      "path": "knowledge/models/graph-inference.md",
+      "baseline_revision": 2,
+      "baseline_sha256": "343135d67c7fd61ed1e7fb82185df7a8f30ebfc86cb5427dfd9e6313046fe6fe",
+      "prior_review": "navigation_registered_deep_review_pending",
+      "source_ids": [
+        "S-GRAPHSAGE",
+        "S-TVM",
+        "S-TORCH-NUMERIC"
+      ],
+      "related": [
+        "K-ALG-016",
+        "K-ALG-020",
+        "K-SYS-015",
+        "K-HW-014",
+        "K-WORK-003",
+        "K-TOOLS-007",
+        "K-FW-004",
+        "K-SYS-010"
+      ],
+      "state": "queued",
+      "round": 0,
+      "author": null,
+      "reviews": [],
+      "checks": [],
+      "agent_use": "unassessed",
+      "issues": []
+    },
+    "K-TOOLS-008": {
+      "id": "K-TOOLS-008",
+      "path": "knowledge/tools/gpu-characterization.md",
+      "baseline_revision": 1,
+      "baseline_sha256": "b31dd621ab293e8cb26d65dce51ec87b66e86a614dc91fff508c71182529cc3f",
+      "prior_review": "inherited_draft_reviewed_with_limits",
+      "source_ids": [
+        "S-CUDA-BEST",
+        "S-CUDA-ASYNC",
+        "S-NCU",
+        "S-NSYS",
+        "S-CUDA-TOPOLOGY"
+      ],
+      "related": [
+        "K-HW-001",
+        "K-HW-005",
+        "K-TOOLS-003",
+        "K-TOOLS-007",
+        "K-FW-005",
+        "K-SYS-024"
+      ],
+      "state": "queued",
+      "round": 0,
+      "author": null,
+      "reviews": [],
+      "checks": [],
+      "agent_use": "unassessed",
+      "issues": []
+    },
+    "K-SYS-024": {
+      "id": "K-SYS-024",
+      "path": "knowledge/system-semantics/specialization-levers.md",
+      "baseline_revision": 1,
+      "baseline_sha256": "3b316014be245e02a12d9aaf841d5a6518918d47685edb127865369dee1e37d6",
+      "prior_review": "inherited_draft_reviewed_with_limits",
+      "source_ids": [
+        "S-ORCA",
+        "S-SARATHI",
+        "S-SPEC",
+        "S-CUDA-BEST",
+        "S-TORCH-CUDA"
+      ],
+      "related": [
+        "K-SYS-010",
+        "K-TOOLS-008",
+        "K-FW-005",
+        "K-ALG-006",
+        "K-SYS-025"
+      ],
+      "state": "queued",
+      "round": 0,
+      "author": null,
+      "reviews": [],
+      "checks": [],
+      "agent_use": "unassessed",
+      "issues": []
+    },
+    "K-SYS-025": {
+      "id": "K-SYS-025",
+      "path": "knowledge/system-semantics/known-tensions.md",
+      "baseline_revision": 1,
+      "baseline_sha256": "e7e30a27ff5b42d93b55bc6e36a008ce6f5c100410fbe357ee3870a4ad601f90",
+      "prior_review": "inherited_draft_reviewed_with_limits",
+      "source_ids": [
+        "S-ORCA",
+        "S-SARATHI",
+        "S-SPEC",
+        "S-KIVI",
+        "S-TORCH-CUDA",
+        "S-PAGED"
+      ],
+      "related": [
+        "K-HW-001",
+        "K-ALG-007",
+        "K-ALG-006",
+        "K-ALG-005",
+        "K-FW-005",
+        "K-SYS-015",
+        "K-SYS-024"
+      ],
+      "state": "queued",
+      "round": 0,
+      "author": null,
+      "reviews": [],
+      "checks": [],
+      "agent_use": "unassessed",
+      "issues": []
+    }
+  },
+  "predecessor_run": "docs/evidence/knowledge-workflow-20261028-batch3",
+  "registered_version": "base-gpt-6-astra-2026-04-30-v2.3-draft9",
+  "verified_at": "2026-10-28T09:26:35+00:00",
+  "successor_run": "docs/evidence/knowledge-workflow-20261028-batch5"
+}

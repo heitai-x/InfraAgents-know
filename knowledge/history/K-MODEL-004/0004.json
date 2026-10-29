@@ -1,0 +1,61 @@
+{
+  "id": "K-MODEL-004",
+  "path": "models/recurrent-hybrid-state.md",
+  "category": "models",
+  "title": "SSM 与混合模型：递归状态、扫描与恢复",
+  "summary": "递归状态是前缀的压缩摘要；它支持低增长成本的 decode，却改变了前缀复用、回滚和批次管理方式。",
+  "revision": 4,
+  "status": "seed",
+  "tags": [
+    "Mamba",
+    "SSM",
+    "recurrent",
+    "混合模型",
+    "state checkpoint",
+    "associative scan",
+    "speculative rollback",
+    "joint checkpoint"
+  ],
+  "scope": {
+    "model_families": [
+      "ssm",
+      "hybrid"
+    ],
+    "platforms": [],
+    "runtimes": [],
+    "workloads": []
+  },
+  "source_ids": [
+    "S-MAMBA",
+    "S-VLLM-HYBRID",
+    "S-HF-CACHE"
+  ],
+  "related": [
+    "K-ALG-009",
+    "K-ALG-006",
+    "K-ALG-003",
+    "K-ALG-017",
+    "K-ALG-024",
+    "K-HW-011",
+    "K-SYS-014",
+    "K-MODEL-001"
+  ],
+  "evidence": [],
+  "updated_at": "2026-10-27",
+  "sha256": "b16b229713829787bffef07a62a08c0feca0a7b3a188aea2332a3689388c0417",
+  "questions": [
+    "递归状态作为前缀的压缩摘要，它的存储复杂度与 KV 有何不同？",
+    "混合模型的状态包包含哪些内容，前缀缓存为什么从连续页变成检查点？",
+    "scan 的并行依据是什么，片上收益来自何处？",
+    "投机接受位置必须能恢复，递归状态被覆盖后如何回滚？",
+    "分层迁移为什么仍以完整快照为边界，部分迁移会破坏什么？"
+  ],
+  "symptoms": [
+    "前缀命中后递归层输出不一致",
+    "投机拒绝后无法回到正确状态"
+  ],
+  "assumes": [
+    "含 SSM 或线性递归层的模型",
+    "状态按请求持久"
+  ]
+}

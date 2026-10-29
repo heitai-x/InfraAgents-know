@@ -1,0 +1,167 @@
+{
+  "entry_id": "K-ENGINE-001",
+  "body_sha256": "d8db1dda188cdf14064119956a53750a2db61e8309dcf0e6fa4fd568addfa269",
+  "reviewer": "sol-reviewer:K-ENGINE-001:round-3",
+  "decision": "accept",
+  "documents": {
+    "AGENTS.md": "b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a",
+    "docs/knowledge-method.md": "69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb",
+    "docs/knowledge-review.md": "f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21",
+    "knowledge/engine-index/vllm-scheduler.md": "d8db1dda188cdf14064119956a53750a2db61e8309dcf0e6fa4fd568addfa269",
+    "knowledge/sources/S-VLLM-SCHED.md": "2e9bbe0d29145039d1bcd43bb54d40c4136ef51641a6e33a5d7097eb0500daf0",
+    "knowledge/sources/S-VLLM-CODE.md": "6bb988f700accbd146a39d95800256b89ac5f3914994086394848413aff61a6d",
+    "knowledge/sources/S-ORCA.md": "920ef987a4a019bb4f0e0386e30bf1c1e3bc720d199ae4de22e462db4f41520a",
+    "knowledge/engine-index/vllm-kv-manager.md": "50b09c7a66c1282b7f6f7ac7ef1f265b953b908ae5fba883c9beec4732e1ab89",
+    "knowledge/workloads/session-workloads.md": "0269e1987e1107d0cf0135cb32aa759c67d5266cfa09fb1402f97704c4ab4d78",
+    "references/S-ORCA/fulltext.txt": "2119a53d77b4a933bab56d7e40b5304fa725561c412514459e56729ca6836794",
+    "tools/check_k_engine_001_full.py": "4577e258bfbd4a3f30f36dc3242f27f515742fcb502844d0d5279e72bee7704f"
+  },
+  "criteria": {
+    "definition": {
+      "assessment": "sufficient",
+      "reason": "明确限定普通 causal decoder、非空输入、无投机和单请求单未解析视图；区分已确认输入、全层 KV、安排前沿、持有容量、授权和票据。输入输出及稳定不变量足以解释完整命中、恢复和普通 decode 的不同就绪状态。",
+      "evidence": [
+        {
+          "path": "knowledge/engine-index/vllm-scheduler.md",
+          "quote": "稳定边界保持 0≤c≤s≤n≤L_model、s≤a。无 active 时 s=c；反过来 s=c 不证明无在途工作，因为 RECOVER_LAST 不增加前沿。"
+        },
+        {
+          "path": "knowledge/engine-index/vllm-scheduler.md",
+          "quote": "输入包括请求、就绪信号、页池与其他资源池、预算和 π；输出为 (V,S,reasons)。"
+        }
+      ]
+    },
+    "legality": {
+      "assessment": "sufficient",
+      "reason": "预算全部初始化，COMPUTE 与恢复均在预留前检查累计 token、sequence 和 encoder 需求；零预算语义明确。结果安装在同一拥有者原子域核对当前授权、版本、active 和边界，拒绝、失败及证据不足均明确退出。已修复 BUDGET 和 COMMIT-AUTH。",
+      "evidence": [
+        {
+          "path": "knowledge/engine-index/vllm-scheduler.md",
+          "quote": "初始化 used_tok←0，used_seq←0，used_enc←0，selected_encoder_blocks←空"
+        },
+        {
+          "path": "knowledge/engine-index/vllm-scheduler.md",
+          "quote": "若 used_tok+q>B_tok 或 used_seq+1>B_seq 或 used_enc+e>B_enc："
+        },
+        {
+          "path": "knowledge/engine-index/vllm-scheduler.md",
+          "quote": "核对当前授权 g、身份 η、状态版本 v、取消与结束状态"
+        },
+        {
+          "path": "knowledge/engine-index/vllm-scheduler.md",
+          "quote": "任一不成立：记录旧尝试无提交权；返回 STALE"
+        }
+      ]
+    },
+    "algorithm": {
+      "assessment": "sufficient",
+      "reason": "完整给出候选选择、事务预留、冻结登记、逐层执行、结果解析和唯一采样接受。扩容不再由旧容量截断；恢复进入 V 和 active，失败保持原边界，成功经票据追加真实输入后连接 decode。逐层数据流与所供 ModelRunner 摘录一致。已修复 CAPACITY、SUCCESSOR 和 RECOVERY-ROLLBACK。",
+      "evidence": [
+        {
+          "path": "knowledge/engine-index/vllm-scheduler.md",
+          "quote": "扩容提案由已知输入 n−s、策略与计算预算产生，不能先被 a−s 截成零。"
+        },
+        {
+          "path": "knowledge/engine-index/vllm-scheduler.md",
+          "quote": "原子登记 A 为 active，并将其加入 V"
+        },
+        {
+          "path": "knowledge/engine-index/vllm-scheduler.md",
+          "quote": "RECOVER_LAST：原 c、s、n、a 均保持；不安装恢复票据"
+        },
+        {
+          "path": "knowledge/engine-index/vllm-scheduler.md",
+          "quote": "将 candidate 追加为 x[n]；n←n+1；生成内容计数←计数+1"
+        },
+        {
+          "path": "knowledge/engine-index/vllm-scheduler.md",
+          "quote": "每层从当前 hidden 产生 Q/K/V，新写入按依赖供本层 attention 消费，再产生下一层 hidden"
+        }
+      ]
+    },
+    "cost": {
+      "assessment": "sufficient",
+      "reason": "实际核对了 causal 对数、QK/PV FLOPs、全层 KV 字节、增量页数与组合轨迹峰值。128 KiB/token、256 KiB/page 和 768 KiB 峰值计算成立，恢复与 decode 的对数分别为 4 和 5。普通写入与恢复暂存分别计账，且区分逻辑字节、设备事务、物理并集和关键路径；六类成本均有条件说明。已修复 KV-UNITS。",
+      "evidence": [
+        {
+          "path": "knowledge/engine-index/vllm-scheduler.md",
+          "quote": "V_i=q_i h_i+q_i(q_i+1)/2，V=Σ_i V_i。"
+        },
+        {
+          "path": "knowledge/engine-index/vllm-scheduler.md",
+          "quote": "则每 token 全层完整 KV 的逻辑字节为"
+        },
+        {
+          "path": "knowledge/engine-index/vllm-scheduler.md",
+          "quote": "定义 Q=Σ_{i∈V}q_i，Q_C 为 COMPUTE 行数之和，Q_R 为 RECOVER_LAST 行数之和，故 Q=Q_C+Q_R。"
+        },
+        {
+          "path": "knowledge/engine-index/vllm-scheduler.md",
+          "quote": "时间按关键路径与共享资源争用计算，不能把可重叠阶段全部相加，也不能无条件取最大值。"
+        }
+      ]
+    },
+    "adaptation": {
+      "assessment": "sufficient",
+      "reason": "说明页长、表示、窗口、adapter 和设备变化后需要重推的资源与恢复条件；解释长短片、运行中优先及 P/D 分离的代价。对无法隔离恢复写区、历史丢失、递归状态和多视图扩展给出明确放弃或扩展条件。ORCA 最大长度预留与本章滚动预留的保证边界保持一致。",
+      "evidence": [
+        {
+          "path": "knowledge/engine-index/vllm-scheduler.md",
+          "quote": "页长、dtype、层组、窗口、adapter 或设备路径改变后，重新推导资源清单、恢复可读范围、桶、encoder 需求和成本。"
+        },
+        {
+          "path": "knowledge/engine-index/vllm-scheduler.md",
+          "quote": "恢复私有写区无法隔离、必要历史丢失或模型含未保存递归状态时，放弃单行恢复，采用真实检查点重放或限制完整 KV 复用。"
+        },
+        {
+          "path": "knowledge/engine-index/vllm-scheduler.md",
+          "quote": "滚动预留不能继承最大长度预留的后续无分配阻塞保证。"
+        }
+      ]
+    },
+    "diagnosis": {
+      "assessment": "sufficient",
+      "reason": "诊断表给出竞争解释、单因素干预及反证后的修正。检查器具有独立候选枚举和页集合参考，负对照实际改变机制并进入共同审计器，参考失败不在预期捕获域。round-2 的已有 active 审计错误已修复并加入回归；所供本轮真实执行支持声明的有限符号覆盖。已修复 CHECK-VALIDITY 和历史检查执行阻塞。",
+      "evidence": [
+        {
+          "path": "knowledge/engine-index/vllm-scheduler.md",
+          "quote": "同时提供互相匹配的旧 A、旧 e，再改变当前授权或 active；当前逻辑状态必须不变"
+        },
+        {
+          "path": "knowledge/engine-index/vllm-scheduler.md",
+          "quote": "审计区分本轮新建条目与输入已有 active：新条目必须唯一登记；已有在途请求必须保持原冻结关系，不要求它出现在本轮新建列表。"
+        },
+        {
+          "path": "knowledge/engine-index/vllm-scheduler.md",
+          "quote": "独立参考建立与正常实现审计均在负对照捕获域外；参考失败不能算作预期缺陷检出。"
+        }
+      ]
+    }
+  },
+  "findings": [],
+  "limitations": [
+    "本审阅依据消息提供的冻结文本、脚本及实际执行记录；没有重新读取磁盘、计算文件哈希、运行脚本或核验离线链接目标存在性。",
+    "vLLM 事实仅核对所供机制说明及相关章节，未独立读取上游源码归档；正文明确区分来源说明与独立设计，没有冒称源码核验。",
+    "encoder 检查仅覆盖非共享整数工作成本，不验证真实块去重、特征生产或依赖执行。",
+    "物理责任仅以完成符号和冲突门表示，不证明真实 COW、DMA、网络、跨 stream 可见性或全部消费者结束。",
+    "采样使用外部给定 token，不验证 Transformer 数值前向、概率、RNG 或 grammar 数值；有限串行轨迹不覆盖任意并发交错、投机和崩溃恢复。",
+    "没有目标设备性能、服务 SLO 或知识改善 Agent 构建能力的使用效果证据。"
+  ],
+  "checks": [
+    {
+      "script": "tools/check_k_engine_001_full.py",
+      "args": [],
+      "script_sha256": "4577e258bfbd4a3f30f36dc3242f27f515742fcb502844d0d5279e72bee7704f",
+      "evidence_origin": "用户提供的 actual_preflight",
+      "backend": "remote_bwrap",
+      "returncode": 0,
+      "stderr": "",
+      "scheduler_reference_cases": 5424,
+      "negative_controls_detected": 18,
+      "reviewer_reran": false,
+      "assessment": "已审阅绑定当前脚本和候选正文的真实执行记录；结果支持声明范围内的 CPU 符号检查通过，不构成设备验证。"
+    }
+  ],
+  "reading_scope": "完整阅读所供 AGENTS.md [0,567)、docs/knowledge-method.md [0,2251)、docs/knowledge-review.md [0,3016)、当前候选 knowledge/engine-index/vllm-scheduler.md [0,12747)、S-VLLM-SCHED [0,760)、S-VLLM-CODE [0,612)、S-ORCA [0,1394)、vllm-kv-manager [0,2189)、session-workloads [0,3583) 和 ORCA 全文文本（供给范围标记为 [0,90276)）；完整审阅 candidate.test_script、author_notes 与 actual_preflight。相关章节仅阅读所供摘录：ModelRunner [0,7965)、[8000,10660)；iteration-batching [0,4780)、[8000,13845)；chunked-prefill [0,4929)、[8000,13696)；host-runtime [0,10625)；routing-and-migration [0,8528)、[12000,14097)；design-synthesis [0,4000)、[8000,14625)。摘录文件未列入 documents。作者材料账单记录的是作者获得的原章及相关材料范围，与本审阅获得的完整新候选分别处理；账单表示供给范围，不证明认知阅读。没有读取源码归档。",
+  "test_assessment": "schedule 自行选择 q、扣预算、预留页并更新安排状态；oracle 不调用 schedule、valid、ticket_valid 或 pages，而从原始输入枚举数量、累计三类预算并用逻辑页集合计算增量。audit_plan 比较动作、采样通知、前沿、容量和剩余页，额外核对新增 active 唯一登记及旧 active 保留。5424 个枚举案例之外，脚本明确覆盖恢复与普通在途、混合新旧请求、重复扫描、零预算、容量增长及失败、恢复失败重试、唯一采样接受到 decode、EOS 和停止上限。结果协议通过明确预期状态及不变量检查当前授权、版本、身份、active、取消、重复结果、事件错配和证据不足。10 个调度缺陷、5 个仅匹配旧事件的授权缺陷、恢复回滚、遗漏输入追加及 KV 重复乘层共 18 个负对照均实际改变行为后触发 AuditError；参考建立和正常审计位于捕获域外。零工作缺陷通过遗漏恢复或容量截断进入共同计划审计器，已消除旧版固定抛错的无效检出。round-2 的 actual=0 expected=1 源于把已有 active 当作本轮新增动作，新版审计和回归直接修复该问题；本轮不同脚本的绑定执行退出码为 0。作者明确未自行执行脚本，与后来提供的协调执行记录并不矛盾。上述证据足以关闭既有具体检查问题；真实 encoder、物理消费者、数值前向、任意并发和性能仍按正文保留边界。"
+}

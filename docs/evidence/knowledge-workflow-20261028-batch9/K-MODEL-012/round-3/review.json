@@ -1,0 +1,149 @@
+{
+  "entry_id": "K-MODEL-012",
+  "body_sha256": "44c0a3c2a8b19dd82a82072e05449b66e2b0b92ed276151df734020d08f1becb",
+  "reviewer": "sol-reviewer:K-MODEL-012:round-3",
+  "decision": "accept",
+  "documents": {
+    "AGENTS.md": "b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a",
+    "docs/knowledge-method.md": "69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb",
+    "docs/knowledge-review.md": "f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21",
+    "knowledge/models/omni-multimodal.md": "44c0a3c2a8b19dd82a82072e05449b66e2b0b92ed276151df734020d08f1becb",
+    "knowledge/sources/S-OMNI.md": "f9f782f335b1c8171f60d218d02b4294715266c0aad5499d3f8c0e867af15ff1",
+    "knowledge/sources/S-QWEN-VL.md": "a41acb4d122419b0575a7fb4b0e510fb409a3b8b8cdb3bf875c571e3ae4c479a",
+    "knowledge/sources/S-OTEL.md": "b68ba3b2833dc7f9f5ad7f49ae395fa70cc31b94252dd1741149e1fd1eca4068",
+    "knowledge/models/vision-language.md": "5ce873c82e975be23aedfebbdeeda5acc0cf55d35b51ef24f744af9d174fe55c",
+    "knowledge/models/speech-generation.md": "9cab040f27f77dc8040a6cc6f0ae96a175542e4379e2262ca2cdb53fb9aee3a4",
+    "knowledge/system-semantics/service-protocol.md": "8995b7ecd763f40525388858c4c483d4550783f80ca112f35045ef954af437ab",
+    "knowledge/workloads/input-distribution.md": "b1b68f0d2a6d640c4b64c2bc98560b9e9a79a6a60b445899949b5db15b96aa90",
+    "knowledge/system-semantics/host-runtime.md": "005342b6131acdd072d5cf35456a5b01e5630f764b614e7090639fde01a5b36a",
+    "knowledge/system-semantics/serving-recovery.md": "f551fa1f1e6213469c856a880839eefff504fb39f4dd692000b2df80a20a7f5e",
+    "knowledge/workloads/slo-goodput.md": "5aa9b71cddb7d896ffa1fe6d78ac61cf0bb92d76279ae4d563f1110ed9dbedb4",
+    "knowledge/workloads/session-workloads.md": "0269e1987e1107d0cf0135cb32aa759c67d5266cfa09fb1402f97704c4ab4d78",
+    "knowledge/system-semantics/memory-allocators.md": "2e7258787b94ad142c7c236541e8718803ad30b273d08e6c398dff673a1df838",
+    "references/S-OMNI/fulltext.txt": "53a114a7567542c936f1d98cfc7dbba2315a0215ba18c1234470efa0abe01af6",
+    "references/S-QWEN-VL/fulltext.txt": "87c0802f0f621cb7ab11e36f542e8d16ada24490084fa471423a12bb2d6a0fd2",
+    "references/S-OTEL/fulltext.txt": "f00d2f265bdd7aceff39c2d3c52f7cd3ab12b061e1f02cefaf84d6e12afa34a4",
+    "tools/check_k_model_012_full.py": "3abc1f732deb4f5f323f3dc9d129f187fcccd089474529c82c11135227ce5d89"
+  },
+  "criteria": {
+    "definition": {
+      "assessment": "sufficient",
+      "reason": "解释了多时钟问题的动机，区分源时间、模型位置、条件记录、声学 code 和样本偏移；known、逐层 KV、logits、选择与发布的对应关系明确。条件记录包含产生预测的位置及所选下一 token，未把选择误记为该 token 已有 KV。",
+      "evidence": [
+        {
+          "path": "knowledge/models/omni-multimodal.md",
+          "quote": "位置 i 是产生预测的已消费输入位置，y_k 是该预测选择的下一 token。"
+        },
+        {
+          "path": "knowledge/models/omni-multimodal.md",
+          "quote": "选择 y_k 后，其自身位置 m+k 尚无 KV；下一次消费它才产生该位置的 KV。"
+        }
+      ]
+    },
+    "legality": {
+      "assessment": "sufficient",
+      "reason": "明确固定 prompt 快照、源块完整性、位置身份、声学左右边界及容量准入条件；将报告事实、代表结构和部署必须补充的模型参数分开。S-OMNI §2.1–2.4、S-QWEN-VL §2.1–2.1.3 和所供 OTEL 文档支持相应事实，未把合成边界或代表双头结构归为已核验 Omni 实现。",
+      "evidence": [
+        {
+          "path": "knowledge/models/omni-multimodal.md",
+          "quote": "输入源 FLUSH、Thinker TEXT_DONE 与 code 流结束是不同事件；前两者不能单独授权右侧补齐。"
+        },
+        {
+          "path": "knowledge/models/omni-multimodal.md",
+          "quote": "以下给出一种完整代表结构，用于说明状态转换；它不是对 Qwen2.5-Omni 源码的断言。"
+        }
+      ]
+    },
+    "algorithm": {
+      "assessment": "sufficient",
+      "reason": "逐层计算、暂写与全层提交、条件预留和持久化选择、Talker 条件与生成对消费、块对齐、声学窗口及调度结局形成可追踪路径。R2-001 的终止门覆盖调度入口、生成 logits 保存和实际发布提交点，末条件与结束状态原子提交，STATE_ONLY 不重新开放生成。R2-002 已改为空唤醒集先失败、非空才等待，并保留完成及预算优先关系。取消后的逻辑拒绝与物理最后使用完成也已区分。",
+      "evidence": [
+        {
+          "path": "knowledge/models/omni-multimodal.md",
+          "quote": "最后条件、停止状态、条件流关闭和结束事件具有同一个逻辑提交点。"
+        },
+        {
+          "path": "knowledge/models/omni-multimodal.md",
+          "quote": "TEXT_DONE 是吸收状态。同一代次不再消费 Thinker known 以继续生成，不再选择，不再发布。"
+        },
+        {
+          "path": "knowledge/models/omni-multimodal.md",
+          "quote": "若 wake_set 为空，返回 FAILED_CONTRACT_DEADLOCK；"
+        },
+        {
+          "path": "knowledge/models/omni-multimodal.md",
+          "quote": "只有引用归零且最后使用事件完成才回收。"
+        }
+      ]
+    },
+    "cost": {
+      "assessment": "sufficient",
+      "reason": "六类成本在同一请求边界列账，给出按阶段频率计算的资源需求、decoder 与 DiT 工作量、逐层 KV、条件预留和退休对象驻留，以及逻辑 PCM 与整块物理分配的区别。360 ms/2 s=18%、八会话144%及PCM字节换算成立。R2-003 已使用事件间消费与欠载递推，补齐观察终点和守恒式，并准确限定聚合公式适用条件。",
+      "evidence": [
+        {
+          "path": "knowledge/models/omni-multimodal.md",
+          "quote": "分支以不同频率运行时，应使用各自 λ_i，写成 ρ_j=Σ_i λ_i w_{i,j}"
+        },
+        {
+          "path": "knowledge/models/omni-multimodal.md",
+          "quote": "该递推同时给出期末驻留和中途欠载，并保持 B(T)=B(0)+Σ_i a_i−(T−t_0)+U(T)，其中 U(t_0)=0。"
+        },
+        {
+          "path": "knowledge/models/omni-multimodal.md",
+          "quote": "统计峰值还要观察到达后的瞬时 B，不能只取观察终点。"
+        }
+      ]
+    },
+    "adaptation": {
+      "assessment": "sufficient",
+      "reason": "对块长、processor、分辨率、抽帧、领先容量、播放突发和设备分池的变化，说明哪些身份与边界必须重核、哪些成本会变化，以及何时改用受支持配置或离线解码。恢复字段覆盖停止状态、未发布选择、预测位置、声学求解和交付前沿，未将已选择 token 恢复为已有 KV。",
+      "evidence": [
+        {
+          "path": "knowledge/models/omni-multimodal.md",
+          "quote": "缺少边界规则时，应采用已支持的块配置或离线完整解码，不能等待不可能到达的上下文。"
+        },
+        {
+          "path": "knowledge/models/omni-multimodal.md",
+          "quote": "若分池传输耗时大于省下的排队，C 也可能更慢。"
+        },
+        {
+          "path": "knowledge/models/omni-multimodal.md",
+          "quote": "恢复出的 TEXT_DONE 优先于任何残留 logits 或 SELECTED，不能因恢复程序发现可用计算结果就重新开放条件流。"
+        }
+      ]
+    },
+    "diagnosis": {
+      "assessment": "sufficient",
+      "reason": "竞争解释配有可控干预和不同状态预测，能够区分正常尾部排空、生成重启、协议重复、合法等待和死锁，以及到达时刻造成的欠载。主要检查具有区间分割、容量守恒、完整前缀重算或逐刻度播放参考，并实际检测对应故障；CPU逻辑证据与真实模型、设备、网络及使用效果边界声明清楚。",
+      "evidence": [
+        {
+          "path": "knowledge/models/omni-multimodal.md",
+          "quote": "p_T 不动且 j_A 增长可能是合法排空。p_T 增长则反驳终止状态机；"
+        },
+        {
+          "path": "knowledge/models/omni-multimodal.md",
+          "quote": "固定播放规则与总量，仅把 1 秒音频从 0 秒移到 0.9 秒；事件参考预测 U 与期末 B 均从 0 变为 0.9 秒。"
+        },
+        {
+          "path": "knowledge/models/omni-multimodal.md",
+          "quote": "这些是确定性的 CPU 逻辑检查，不能证明 Qwen2.5-Omni 的实际轨道排列、模型质量、GPU 内存可见性、kernel 抢占、网络交付或客户端播放。"
+        }
+      ]
+    }
+  },
+  "findings": [],
+  "limitations": [
+    "结论限于代表算法和明确的参数契约。真实 Omni 的双轨排列、条件接口、首尾边界、vocoder 裁剪和全部层配置仍需部署侧核验；当前文本没有将其冒充已实现事实。",
+    "检查不验证真实采样质量、声学质量、GPU发布可见性、异步最后使用、运行时唤醒登记、公平性、网络交付或客户端实际播放，也不证明知识改善了Agent使用效果。",
+    "Python成功执行依据用户提供的哈希绑定actual_preflight记录；本审阅者未重新运行Python。当前工具未提供文件读取或Shell能力，未独立重算文件哈希或检查reader.html、PDF及本地链接目标存在性。"
+  ],
+  "checks": [
+    {
+      "script": "tools/check_k_model_012_full.py",
+      "args": []
+    }
+  ],
+  "no_checks_reason": "",
+  "reading_scope": "完整阅读用户提供的候选正文、完整test_script、author_notes及actual_preflight执行记录。按所供抽取文本的零基半开字符范围，完整材料为：AGENTS.md [0,567)；docs/knowledge-method.md [0,2251)；docs/knowledge-review.md [0,3016)；knowledge/models/omni-multimodal.md [0,22061)；knowledge/sources/S-OMNI.md [0,452)；knowledge/sources/S-QWEN-VL.md [0,466)；knowledge/sources/S-OTEL.md [0,520)；knowledge/models/vision-language.md [0,4050)；knowledge/models/speech-generation.md [0,3599)；knowledge/system-semantics/service-protocol.md [0,6732)；knowledge/workloads/input-distribution.md [0,2880)；knowledge/system-semantics/host-runtime.md [0,7559)；knowledge/system-semantics/serving-recovery.md [0,3834)；knowledge/workloads/slo-goodput.md [0,2616)；knowledge/workloads/session-workloads.md [0,3583)；knowledge/system-semantics/memory-allocators.md [0,4191)；references/S-OMNI/fulltext.txt [0,71173)；references/S-QWEN-VL/fulltext.txt [0,91965)；references/S-OTEL/fulltext.txt [0,8256)。来源事实重点复核Omni §2.1–2.4、VL §2.1–2.1.3及OTEL Context、Propagation和Custom Context Propagation。仅节选阅读knowledge/models/encoder-decoder-streaming.md [0,1828)、[4000,8000)、[12000,13899)，以及knowledge/system-semantics/design-synthesis.md [0,7727)，这两项未列入documents。未读取源码归档、PDF图像、reader.html或本地workflow文件。documents中的身份值按指定绑定字段原样记录。",
+  "test_assessment": "已逐项检查完整Python脚本的算法与断言路径，并核对所供actual_preflight：脚本SHA256与绑定一致，returncode=0，stderr为空，未超时；其日志报告78个区间分割、1140个容量组合、增量KV对完整前缀参考、声学窗口、EOS/LENGTH多轮排空、16种调度结局及572个单到达和448个双到达播放参考。作者明确未亲自执行Python，与后续提供的preflight实际执行记录不矛盾。完整前缀参考按层遍历全部前缀，区别于增量缓存逐位置推进；播放参考逐整数时钟加入事件后消费，区别于按事件间隔计算。终止测试使用独立停止序列参考，检查Talker及发送多轮排空期间文本事件、条件前沿和最终条件数冻结，并检查零上限、STATE_ONLY、重复prepare、旧代次及终止后迟到事务。三个本轮故障均有实际拒绝路径：移除终止门会消费末token并再次发布，错误WAIT顺序违反无事件失败预期，无条件聚合式与逐刻度参考不符。其他主要负对照覆盖容量越界、提前记KV、空末块、错误首窗口及局部等待阻塞下游。脚本中少数固定算术断言和直接构造错误输出的断言覆盖价值有限，未用它们支持完整机制正确性；主要结论另有独立参考和状态不变量。审阅者另实际执行JavaScript抽象投影：16种调度组合、1792条双到达播放轨迹及守恒式、EOS/LENGTH/零上限终止重入；检出681条聚合式与事件参考不一致轨迹和两种移除终止门的故障。该投影不是Python复跑，也不模拟真实设备。R2-001、R2-002、R2-003及其workflow修订要求在当前候选声明范围内关闭。"
+}

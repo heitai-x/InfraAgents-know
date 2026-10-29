@@ -1,0 +1,150 @@
+{
+  "entry_id": "K-SYS-012",
+  "body_sha256": "65b52c7e3af448c1946d382c3aadcd031d92b885c0f44c28dcf3123395d6f491",
+  "reviewer": "sol-reviewer:K-SYS-012:round-2",
+  "decision": "revise",
+  "documents": {
+    "AGENTS.md": "b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a",
+    "docs/knowledge-method.md": "69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb",
+    "docs/knowledge-review.md": "f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21",
+    "knowledge/system-semantics/memory-allocators.md": "65b52c7e3af448c1946d382c3aadcd031d92b885c0f44c28dcf3123395d6f491",
+    "knowledge/sources/S-VATTENTION.md": "c841eab45685791bc135d2641ec49661c122c2d8c36fa88f055db1f79b8f1f5d",
+    "knowledge/sources/S-PAGED.md": "50893a22385b0d577980153a9bc9c617acdcb2a9d7be0af655ad49421f06cc09",
+    "knowledge/sources/S-CUDA-ALLOC.md": "3ba021c941f2ed8f048be34d1ba0110f37675a3460013f24a239cc43a1e8630a",
+    "knowledge/sources/S-TORCH-CUDA.md": "8ee61677a1e35d475d9bb122b2c7fa824ccf054acefbe2f12345d72c1fb1b00e",
+    "knowledge/engine-index/vllm-kv-manager.md": "50b09c7a66c1282b7f6f7ac7ef1f265b953b908ae5fba883c9beec4732e1ab89",
+    "knowledge/engine-index/tensorrt-llm.md": "6ade1253f3747041bef4a816d82387c3771bff3459a153719cfbd571c2454c0b",
+    "tools/check_k_sys_012_full.py": "cea081a0d602440a86b8d9511b3e7d63acafcc24754ca76d3e7144cb13d2288e"
+  },
+  "criteria": {
+    "definition": {
+      "assessment": "sufficient",
+      "reason": "明确分配身份、对象版本、物理范围和五类责任集合，并区分拥有者资格、当前在途访问及物理持有量；各算法给出输入输出和终态，足以限定本章问题。",
+      "evidence": [
+        {
+          "path": "knowledge/system-semantics/memory-allocators.md",
+          "quote": "物理分配身份记为 x=(space,fid,e,size,compat)"
+        },
+        {
+          "path": "knowledge/system-semantics/memory-allocators.md",
+          "quote": "U 是否为空描述当前访问；它不能替代拥有者的未来访问资格。"
+        }
+      ]
+    },
+    "legality": {
+      "assessment": "sufficient",
+      "reason": "发布、回收、登记先于提交及完整身份结算被明确列为约束，池划分、粒度和映射组织作为条件化选择。来源版本及设备能力边界清楚，未把虚拟连续、引用归零或取消解释为物理访问结束。",
+      "evidence": [
+        {
+          "path": "knowledge/system-semantics/memory-allocators.md",
+          "quote": "容量足够只是必要条件。物理连续区间、虚拟地址可用性、页粒度、权限及设备能力仍须独立满足。"
+        },
+        {
+          "path": "knowledge/system-semantics/memory-allocators.md",
+          "quote": "递增 e 可以阻止旧完成事件结算新责任，却不能阻止旧 DMA 对同一物理地址写入。"
+        }
+      ]
+    },
+    "algorithm": {
+      "assessment": "partial",
+      "reason": "正文已修复R1-002和R1-003：重复读取保持资格、共享拥有者独立退役、COW引用在发布时转换、准备访问和失败排空均已展开。但交付模型的操作身份只在当前U中去重，且首次发布前的拥有者无法通过retire关闭，分别违反正文完成幂等和退役协议；尚不能认可算法交付与检查模型的一致性。",
+      "evidence": [
+        {
+          "path": "knowledge/system-semantics/memory-allocators.md",
+          "quote": "原子切换对象页表和版本，再撤销该对象被替换旧视图的 L。"
+        },
+        {
+          "path": "knowledge/system-semantics/memory-allocators.md",
+          "quote": "已结算的重复证书无状态变化；旧代或不匹配证书不能修改当前新分配。"
+        },
+        {
+          "path": "knowledge/system-semantics/memory-allocators.md",
+          "quote": "在串行域内关闭 owner 的访问登记、分享和新事务提交资格。"
+        }
+      ]
+    },
+    "cost": {
+      "assessment": "sufficient",
+      "reason": "R1-001已修复：对象需求、缓存匹配、新backing和其他容量承诺分离，检查准备全过程峰值，缓存复用只作分类转移。逐区域舍入算例、复制双向流量、共享资源带宽、映射暴露等待和驻留积分的单位及条件一致。R1-006的30%与10%已正确归属vAttention §3.3.2。",
+      "evidence": [
+        {
+          "path": "knowledge/system-semantics/memory-allocators.md",
+          "quote": "C_plan = bytes((F_hold∖E)∪A)+bytes(J)+M_margin ≤ C_cap。"
+        },
+        {
+          "path": "knowledge/system-semantics/memory-allocators.md",
+          "quote": "分类从 cached=128、preparing=0 变成 cached=64、preparing=64，C_hold 始终为 128 KiB，可以准入。"
+        },
+        {
+          "path": "knowledge/system-semantics/memory-allocators.md",
+          "quote": "共用同一内存资源时理想流量时间下界为2D/β"
+        },
+        {
+          "path": "knowledge/system-semantics/memory-allocators.md",
+          "quote": "两个数字属于vAttention作者对当时实现的观察，不属于2023年PagedAttention论文，也不是本章实测。"
+        }
+      ]
+    },
+    "adaptation": {
+      "assessment": "sufficient",
+      "reason": "说明负载长度、共享比例、层数、映射slack、取消频率和固定地址条件变化后如何重选组织，并保留身份、发布与回收约束。R1-005已修复，短请求下增大块长的浪费方向与公式及S-PAGED §7.2一致。",
+      "evidence": [
+        {
+          "path": "knowledge/system-semantics/memory-allocators.md",
+          "quote": "固定短请求长度且块长已经大于请求时，继续增大块长会增加尾部浪费，并可能降低共享机会。"
+        },
+        {
+          "path": "knowledge/system-semantics/memory-allocators.md",
+          "quote": "取消多、传输慢或完成证据缺失会扩大draining/隔离驻留。应降低并发、限制预取或恢复访问域"
+        }
+      ]
+    },
+    "diagnosis": {
+      "assessment": "partial",
+      "reason": "竞争解释、干预和反证修正具体；重写的事件账及实际污染负对照实质解决了R1-004所述旧检查缺陷。所供当前脚本执行记录有效且退出码为0，但fixtures未覆盖同一分配代次内uid再次登记及首次发布前RetireOwner，两条路径存在可由现有oracle检出的错误，需要修复后补入检查。",
+      "evidence": [
+        {
+          "path": "knowledge/system-semantics/memory-allocators.md",
+          "quote": "责任参考应从已接受的事件及实际结束记录重建，不把allocator当前U当成自己的正确答案。"
+        },
+        {
+          "path": "knowledge/system-semantics/memory-allocators.md",
+          "quote": "正常与错误完成处理器消费同一个旧完成事件；旧写实验保留真实旧责任，并实际执行对复用物理槽的覆盖"
+        }
+      ]
+    }
+  },
+  "findings": [
+    {
+      "id": "K-SYS-012-R2-001",
+      "criterion": "algorithm",
+      "evidence": "正文要求“已结算的重复证书无状态变化”。当前脚本register_public仅通过“or (epoch, uid, mode) in f.u”拒绝当前在途重复；complete通过“f.u.remove(key)”移除票据，没有已结束操作记录。当前check_same_old_completion在两次访问之间执行retire并改变epoch，只覆盖跨分配代次情形。",
+      "impact": "在A保持OPEN且页epoch不变时，完成uid=42的读取，再调用w.access('A', 42)，脚本会再次接受并生成新的pending事件。此时将前一次完成证书交给a.complete(old)，它会成功删除新事件的U。现有独立事件账仍保留新事件，audit会发现event responsibility mismatch；若随后退役A，错误账务还允许带真实在途读取回收。这说明物理epoch不能替代同一分配生命期内的操作身份和完成幂等。",
+      "blocking": true,
+      "required_revision": "明确uid的唯一性和重试生命期，保存足以拒绝或幂等处理已结束操作重试的登记记录；新操作必须取得新的完整身份，完成处理核对该身份。补充同一页epoch内完成、重复登记/重试、重放旧证书的轨迹，以独立事件账确认不会产生第二次提交或删除另一项责任，并保留能触发该错误的负对照。"
+    },
+    {
+      "id": "K-SYS-012-R2-002",
+      "criterion": "diagnosis",
+      "evidence": "正文RetireOwner要求“中止属于 owner 的未提交事务；已提交准备按 Abort 排空”。脚本reserve创建Transaction但不登记新owner的live资格；live首次由publish中的“self.live[t.owner] = True”设置。retire开头却是“if not self.live.get(owner, False): return”。",
+      "impact": "新拥有者A首次reserve并提交初始化后、publish前调用retire('A')会直接返回，既不关闭资格也不中止事务。初始化完成后publish仍可成功，已要求退役的请求因此获得可见视图。若初始化仍在途，本应发生的ABORTING及排空分支也完全没有执行。现有取消检查直接调用abort(t)，无法发现RetireOwner入口的这一缺陷。",
+      "blocking": true,
+      "required_revision": "让新拥有者在准备开始时具有可关闭的明确资格，或让retire同时处理尚未发布但已有事务的拥有者；关闭后禁止其发布并中止相关准备，保留已接受访问直到结束。分别在首次取得页后、初始化在途和初始化完成但发布前调用RetireOwner，独立检查CLOSED、无可见视图、责任保留与最终回收，并检测忽略此退役的负对照。"
+    }
+  ],
+  "limitations": [
+    "上述两条新增失败轨迹来自对当前脚本的静态逐步推演，本审阅调用未实际执行这些新增Python轨迹，不将其记为已运行FAIL或PASS。",
+    "所供实际preflight绑定当前脚本SHA256，支持现有有限fixtures及负对照执行成功；不证明全部协议路径正确。",
+    "CPU模型不证明GPU页表/TLB、异步映射撤销、stream/event可见性、DMA停止、真实线程竞争、跨设备提交、CUDA Graph或性能；正文对此已有清楚限定，可保留为验证边界。",
+    "原始资料仅核验所供摘录。reviewer收到的CUDA摘录没有完整§11.3及§11.9，不能独立确认全部allocator规则；author账本的相应范围更宽，不能据reviewer范围反推作者未获这些材料。",
+    "未读取reader.html版面、PDF图版或源码归档，未实际验证磁盘链接可达性、文件字节哈希及工作流登记状态。"
+  ],
+  "checks": [
+    {
+      "script": "tools/check_k_sys_012_full.py",
+      "args": []
+    }
+  ],
+  "reading_scope": "本审阅依据任务内提供文本，完整阅读AGENTS.md[0,567)、docs/knowledge-method.md[0,2251)、docs/knowledge-review.md[0,3016)、当前memory-allocators.md[0,15189)、S-VATTENTION说明[0,1375)、S-PAGED说明[0,2206)、S-CUDA-ALLOC说明[0,498)、S-TORCH-CUDA说明[0,1468)、vllm-kv-manager.md[0,2189)、tensorrt-llm.md[0,2145)，以及candidate.test_script全文、author_notes和actual_preflight记录。相邻章节仅阅读所供摘录：paged-kv-capacity[12000,14297)；prefix-cache-identity[0,2297)；cancellation-resource-completion[0,2297)；streams-allocator[4000,6297)；cuda-graph-buffers[0,2297)；iteration-batching[0,2297)；chunked-prefill[4000,4601)、[12000,13696)；heterogeneous-state-cache[0,2297)；cross-attention-cache[4000,6297)；lora-serving[8000,10297)；parallelism[0,2297)；vllm-model-runner[8000,10297)；inference-eval[16000,18297)；numerical-reference[4000,6297)；attention-backends[0,2297)；mlx-serving[8000,8662)、[12000,13635)；memory-and-roofline[4000,6297)；cuda-execution[12000,14297)；metal-unified-memory[0,2297)；trainium-dataflow[12000,14297)；cpu-serving[8000,10297)；prefill-decode-state[16000,18297)；moe-routing[8000,10297)；vision-language[4000,6297)；image-diffusion[4000,5113)、[16000,17184)；video-generation[4000,6297)；omni-multimodal[8000,10297)；design-synthesis[4000,6297)；correctness-oracles[0,2297)；capacity-planning[4000,6297)；checkpoint-loading[0,92)、[12000,14205)；tiered-residency[0,2297)；kv-offload-prefetch[8000,10297)；shared-memory-paths[0,2297)；multi-model-placement[0,2297)。原文阅读范围：references/S-VATTENTION/fulltext.txt[0,44729)、[52000,64000)；references/S-PAGED/fulltext.txt[0,12000)、[16000,32729)、[36000,48000)、[52000,68000)；references/S-CUDA-ALLOC/fulltext.txt[44000,60000)、[260000,264000)、[296000,300000)、[308000,312000)、[756000,760000)、[768000,768729)、[940000,952000)、[960000,972000)；references/S-TORCH-CUDA/fulltext.txt[0,4729)、[12000,52000)、[56000,64000)、[76000,80000)。范围均为提取文本零基半开字符区间。documents仅列完整供应的文件；原文摘录不列作全文。author_material_scopes另行核对：它记录作者获供旧正文全文、四份来源说明全文、相关章指定摘录及较宽的原文摘录，不是作者实际认知阅读的证明，也不是本reviewer的阅读范围。",
+  "test_assessment": "实际检查了脚本算法与所供真实执行记录。actual_preflight.execution.script_sha256为cea081a0d602440a86b8d9511b3e7d63acafcc24754ca76d3e7144cb13d2288e，与本轮绑定一致；Python3.12在remote_bwrap中以-I -S -B -X utf8执行，returncode=0、stderr为空、未超时。作者说明自己未运行Python，与后续协调者提供的preflight不矛盾；本审阅未重新执行。算术参考以分配单元枚举对照舍入，共1040例；协议oracle从World.events中实际pending事件重建U，从fixture明确的逻辑视图重建refs，并检查容量、终态和标量内容。取得首个页、安装首个映射后确实注入失败；初始化及复制取消保留真实事件；同一旧完成证书分别送入正常及忽略epoch处理器，坏处理器的误删由独立事件账检出；旧写负对照实际覆盖复用槽，内容oracle检出5被改成7，正确说明epoch不是写屏障。这些检查已超出旧版的自证断言，原R1-004缺陷可关闭。现有有限轨迹仍遗漏同一分配epoch内uid再次登记和首次发布前通过retire关闭新owner；当前实现分别存在旧证书误删新责任和取消后仍能发布的问题。现有退出码0不覆盖这两条路径，须修复并用同一独立oracle检查。"
+}

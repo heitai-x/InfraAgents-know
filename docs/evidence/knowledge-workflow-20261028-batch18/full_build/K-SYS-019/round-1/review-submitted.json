@@ -1,0 +1,460 @@
+{
+  "entry_id": "K-SYS-019",
+  "body_sha256": "5c926c7a3484986ec939e07489fc958e10950d3424cd84dcb58bb995cc79a6dc",
+  "reviewer": "sol-reviewer:K-SYS-019:round-1",
+  "decision": "revise",
+  "documents": {
+    "AGENTS.md": "b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a",
+    "docs/knowledge-method.md": "69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb",
+    "docs/knowledge-review.md": "f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21",
+    "knowledge/system-semantics/deployment-environment.md": "5c926c7a3484986ec939e07489fc958e10950d3424cd84dcb58bb995cc79a6dc",
+    "knowledge/sources/S-NVIDIA-PLUGIN.md": "dcbdcae57ae70346efc20ed1421becee1f358d7a650a2929031aac05993cef91",
+    "knowledge/sources/S-LINUX-RESOURCES.md": "d829824442f5a9abd36c3caf63c5fd30da8da4f8839db88e33aa045b7baa05f0",
+    "knowledge/sources/S-TORCH-CUDA.md": "8ee61677a1e35d475d9bb122b2c7fa824ccf054acefbe2f12345d72c1fb1b00e",
+    "knowledge/sources/S-BORG.md": "2efc1ae7dfd3d9751a94b3ce8ee9426cb4943197fa2afc80c344f009d52c7331",
+    "knowledge/hardware/host-device-transfer.md": "e4921a0714af21f7ab1a336f40af662f716f2c64a42dd598eb2cede548c858d2",
+    "knowledge/workloads/cluster-resource-placement.md": "235de985ced67e21bfe6727ff2e91be680e8def602ad02a3f3e9de2b3ca1b8a1",
+    "references/S-NVIDIA-PLUGIN/fulltext.txt": "0f86c2073119311977b39a773e3c98790682ae1c8269720fe6dda15447d74a94",
+    "tools/check_k_sys_019_full.py": "61d46b868bc4a37590368e0f2e48f96b39195a1ea5585d862be1c816436f5ff6"
+  },
+  "criteria": {
+    "definition": {
+      "assessment": "partial",
+      "reason": "环境身份、资源边界和证书对象已展开，但将相容关系称为偏序，同时明确否定传递性，数学定义矛盾。",
+      "evidence": [
+        {
+          "path": "knowledge/system-semantics/deployment-environment.md",
+          "quote": "环境代次 ε 是 𝒳 的抽象身份：只要任一可能改变合法执行集合的字段变化，ε 就递增。"
+        },
+        {
+          "path": "knowledge/system-semantics/deployment-environment.md",
+          "quote": "## 相容关系是偏序，不是一个标量"
+        },
+        {
+          "path": "knowledge/system-semantics/deployment-environment.md",
+          "quote": "第三，相容一般不可传递。"
+        }
+      ]
+    },
+    "legality": {
+      "assessment": "partial",
+      "reason": "能够区分能力相容、访问名额和物理容量，但逐 rank 上限不能证明共享祖先预算可行；故障域检查还将执行组内部 rank 分散误作普遍合法条件。",
+      "evidence": [
+        {
+          "path": "knowledge/system-semantics/deployment-environment.md",
+          "quote": "执行合法当且仅当 R_α(K_𝒳) 成立，并且观测到的能力集合确实属于这次执行由 μ 选出的设备。"
+        },
+        {
+          "path": "knowledge/system-semantics/deployment-environment.md",
+          "quote": "2 对每个 rank 逐维检查 d_r ≤ e(r)，并记录限制来自哪个祖先"
+        },
+        {
+          "path": "knowledge/system-semantics/deployment-environment.md",
+          "quote": "4 检查故障域：实例的 rank 集合不能全部落在同一个已声明会共同失效的域"
+        }
+      ]
+    },
+    "algorithm": {
+      "assessment": "partial",
+      "reason": "三段伪代码提供了主要输入、分支和输出，但 cpuset 折叠与固定来源不符，设备映射依赖未被来源保证的序列关系，且不保证注入顺序时的分支没有终止或等待。",
+      "evidence": [
+        {
+          "path": "knowledge/system-semantics/deployment-environment.md",
+          "quote": "E(n) = ∩ { S_a : a∈π(n), S_a ≠ ∅ }。"
+        },
+        {
+          "path": "knowledge/system-semantics/deployment-environment.md",
+          "quote": "3 若所用注入通道不保证顺序，则只发布集合 {V}，不发布 μ"
+        },
+        {
+          "path": "knowledge/system-semantics/deployment-environment.md",
+          "quote": "4 V′ ← framework_filter(V)，下标从 0 重新编号"
+        }
+      ]
+    },
+    "cost": {
+      "assessment": "partial",
+      "reason": "六类成本、唯一存储峰值和缓存算例已有实质内容，52 GiB 与 162.5 秒的算术正确。但就绪时间模型对串行估计、重叠完成时间和上界的解释矛盾，逐 rank CPU 需求与额度的单位也未保持一致。",
+      "evidence": [
+        {
+          "path": "knowledge/system-semantics/deployment-environment.md",
+          "quote": "共享引用只计一次，预留池与其内部存活对象不重复相加"
+        },
+        {
+          "path": "knowledge/system-semantics/deployment-environment.md",
+          "quote": "T_ready = max_r ( q_r + L_r^load + L_r^probe + L_r^verify ) + T_group。"
+        },
+        {
+          "path": "knowledge/system-semantics/deployment-environment.md",
+          "quote": "各项在 r 内部可能重叠；若确实重叠，应改用依赖图，而不是把四项相加当作上界。"
+        }
+      ]
+    },
+    "adaptation": {
+      "assessment": "partial",
+      "reason": "依赖闭包、代次失效、重建映射和收窄范围的原则充分，但将共享方式变化直接等同于物理设备数和故障域数变化，并将 time-slicing 与 MPS 的容量条件合并，可能产生错误选择。",
+      "evidence": [
+        {
+          "path": "knowledge/system-semantics/deployment-environment.md",
+          "quote": "用户态库升级要按依赖闭包判断。"
+        },
+        {
+          "path": "knowledge/system-semantics/deployment-environment.md",
+          "quote": "容量条件从 k·C 变成 Σ d_i ≤ C，故障域从 k 个变成一个。"
+        },
+        {
+          "path": "knowledge/system-semantics/deployment-environment.md",
+          "quote": "确认最后访问结束后再释放旧环境"
+        }
+      ]
+    },
+    "diagnosis": {
+      "assessment": "sufficient",
+      "reason": "诊断表提供了多种竞争解释、控制变量和反证后的修正方向，并明确区分实验设计与已执行实验。所需目标设备证据可以保留为验证边界。",
+      "evidence": [
+        {
+          "path": "knowledge/system-semantics/deployment-environment.md",
+          "quote": "环境故障的典型困难是多个解释都能产生同一个末端症状。"
+        },
+        {
+          "path": "knowledge/system-semantics/deployment-environment.md",
+          "quote": "固定物理设备，只改 cpuset 与亲和；只改共租户负载"
+        },
+        {
+          "path": "knowledge/system-semantics/deployment-environment.md",
+          "quote": "这些是诊断设计，不是已在目标机器执行的实验。"
+        }
+      ]
+    }
+  },
+  "findings": [
+    {
+      "id": "K-SYS-019-R1-001",
+      "criterion": "definition",
+      "evidence": "正文同时写出“## 相容关系是偏序，不是一个标量”和“第三，相容一般不可传递。”",
+      "impact": "偏序必须具有传递性；当前表述让读者无法确定讨论的是需求包含关系、能力次序，还是制品与环境之间的相容谓词。",
+      "blocking": true,
+      "required_revision": "将本节统一为有明确对象域的相容谓词；若另需定义偏序，单独定义其对象和关系，并说明它与相容谓词的区别。无需增加统一标题或额外场景。"
+    },
+    {
+      "id": "K-SYS-019-R1-002",
+      "criterion": "algorithm",
+      "evidence": "正文使用“E(n) = ∩ { S_a : a∈π(n), S_a ≠ ∅ }。”并要求“非空请求时有效集必须是请求集的子集”。固定 Linux 摘录 84000:96000 明确规定：非空请求中的 CPU 全部无法授予时，“it will be treated just like an empty \"cpuset.cpus\"”；cpuset.mems.effective 也有同样分支。",
+      "impact": "例如父有效集为 {0,1}、子请求为 {2}，当前公式及检查器得到空集，而所供文档规定按空请求处理、继承父有效集。子集不变量在这个分支也不成立。这是固定来源中已明确的语义差异，不能仅列为尚未实测的边界。",
+      "blocking": true,
+      "required_revision": "按固定版本展开有效集递推，处理非空请求交集为空时的回退，并明确在线资源及分区配置的适用条件；真实环境以 effective 文件为准。同步修正参考算法和条件化不变量，用该回退输入检查原交集算法会被检出。"
+    },
+    {
+      "id": "K-SYS-019-R1-003",
+      "criterion": "algorithm",
+      "evidence": "正文断言“通道改变的是传递方式，不改变逻辑序由下发顺序决定这一点”，算法随后执行“V ← [g.physical_id for g in grants]，保留下发顺序”。步骤 3 又规定不保证顺序时“不发布 μ”，但步骤 4—7 仍继续构造并返回 μ。脚本对同一 GPU 的两个 grant 直接生成两个逻辑序号。",
+      "impact": "README 说明设备清单传递方式和共享引用，没有保证 grant 顺序就是 CUDA 枚举顺序，也没有保证重复访问名额会产生重复 CUDA 设备序号。当前检查验证的是自行构造的序列，不能支持真实映射链；步骤 3 还存在明确的控制流矛盾。",
+      "blocking": true,
+      "required_revision": "区分访问名额、实际可见设备枚举和进程内逻辑序号。以实际枚举获得的逻辑序号—稳定身份对应关系建立 μ，并与授权物理集合核对；仅在有固定契约依据时采用顺序推导。不保证顺序的分支应返回待枚举状态，取得结果后再推进。共享名额不直接充当 CUDA ordinal 数量。符号检查可以使用显式给定的枚举结果，无须为本轮增加 GPU 实测要求。"
+    },
+    {
+      "id": "K-SYS-019-R1-004",
+      "criterion": "legality",
+      "evidence": "ADMIT_RANKS 第 2 步只要求“对每个 rank 逐维检查 d_r ≤ e(r)”，第 3 步仅对物理设备汇总共享需求，随后“全部通过才返回可行与账本”。其输入将 CPU 维写为“CPU 时间”，而有效 CPU 公式使用 Q/τ。",
+      "impact": "祖先上限是后代共同消费的预算，不能向每个 rank 分别承诺完整额度。例如父内存上限 48 GiB、两个子组各上限 32 GiB、两个 rank 各需 30 GiB，逐 rank 检查全部通过，父组却需 60 GiB。CPU 也有相同问题；CPU 秒不能直接与 CPU 秒/秒比较。",
+      "blocking": true,
+      "required_revision": "在每个共享祖先和实际资源域汇总同一窗口的需求或预留，计入已有占用与承诺；内存按记费归属和唯一对象处理。明确 CPU 需求为指定窗口中的时间份额，或先将时间需求换算为份额。缺少其他消费者账本时返回必要条件通过或未知，不能返回完整容量可行。加入上述共享祖先反例，使逐 rank 单独放行的变体被拒绝。"
+    },
+    {
+      "id": "K-SYS-019-R1-005",
+      "criterion": "legality",
+      "evidence": "ADMIT_RANKS 规定“实例的 rank 集合不能全部落在同一个已声明会共同失效的域”。相关完整章节 cluster-resource-placement.md 明确区分“执行组内部追求近距离通信，独立副本之间追求故障分散”。",
+      "impact": "单 rank 实例必然位于某个共同失效域；合法的单节点 TP 组也可能全部位于一个节点。分散同一个必需执行组的 ranks，仍不能使其在任一必要 rank 丢失后继续提供完整服务。",
+      "blocking": true,
+      "required_revision": "将故障域判断绑定服务声明的故障承诺：按场景移除失去必要依赖的完整执行组，再检查剩余独立副本及容量。未声明容错目标的单实例计划可以普通准入，只需如实记录其共同失效风险。"
+    },
+    {
+      "id": "K-SYS-019-R1-006",
+      "criterion": "cost",
+      "evidence": "正文先称 T_ready 为“一个保守模型”，随后写“若确实重叠，应改用依赖图，而不是把四项相加当作上界”。",
+      "impact": "固定非负阶段时长且串行调度合法时，串行总和仍可作为保守上界，重叠本身不会否定这一点。反过来，若各 rank 使用孤立带宽估时却共享 SSD 或 NIC，当前 max_r 表达式又未必是实际时间上界。现有文字混淆了完成时间估计和有条件的界。",
+      "blocking": true,
+      "required_revision": "明确各时间项的起止、单位、是否包含争用及适用资源假设。强制串行时使用求和；允许重叠时用依赖与资源图计算完成时间，或明确求和只是具备前提的保守估计。共享资源和跨 rank 依赖应进入共同模型。"
+    },
+    {
+      "id": "K-SYS-019-R1-007",
+      "criterion": "adaptation",
+      "evidence": "正文写“共享方式从独占改为 time-slicing 或 MPS”后，“容量条件从 k·C 变成 Σ d_i ≤ C，故障域从 k 个变成一个”。同章又已说明“MPS 由控制守护进程按份额限制显存与计算”。",
+      "impact": "切换共享方式不必改变物理设备数或故障域数；只有将原先分布于 k 个设备的工作合并到同一设备时，才出现这里的容量变化。MPS 还存在每客户端上限，例如两等份共享 80 GiB 时，60+20=80 仍不能使 60 GiB 客户端合法。",
+      "blocking": true,
+      "required_revision": "按变化后的实际 μ 和共享组重新计账，将合并到单设备作为有明确前提的情形；time-slicing 检查物理总容量，MPS 还检查固定版本契约下的客户端份额上限。故障域数量由实际共同依赖决定，不由共享模式名称直接推出。"
+    },
+    {
+      "id": "K-SYS-019-R1-008",
+      "criterion": "algorithm",
+      "evidence": "正文声称第三组负对照包括“忽略第二级过滤。三类都必须被检出”，第四组声称“范围外的 dtype、模态、上下文长度必须被拒”。实际脚本没有忽略过滤的故障变体，D 组全部请求的 dtype 都是 fp16；effective_fold 与 admit_rank 也没有实现正文 P_eff 中的 min(|E_cpuset|, quota)。",
+      "impact": "执行记录的退出码 0 真实，但不能证明未运行的 dtype 越界、第三类故障变体或 cpuset 数量限制已通过。当前数据中 cpuset 数量均未成为 CPU 准入瓶颈，遗漏该项仍可全部通过。",
+      "blocking": true,
+      "required_revision": "使正文覆盖声明与实际执行一致：增加所声明的 dtype 越界和忽略过滤负对照，并检查 cpuset 数量小于 CPU quota 的准入情形；或明确收窄未实现的检查声明。保留作者未执行与协调者实际执行的区别，修订后重新记录真实结果。"
+    }
+  ],
+  "limitations": [
+    "本次依据任务内提供的完整文本、明确摘录、脚本和 actual_preflight 记录复核；未直接读取知识库文件、reader.html 版面或源码归档，未独立重新执行 Python。",
+    "未进行真实 cgroup、CUDA、device plugin 注入、CDI、MIG、MPS 或故障恢复实验；正确声明的这些设备验证边界不单独构成拒收理由。",
+    "所供 Linux、PyTorch 和 Borg 原文为摘录，结论仅覆盖实际提供区间；没有据此声称重新通读这些原始文件。",
+    "离线相对链接形式已检查，但未逐个打开目标文件，不能报告链接可达性 PASS。",
+    "没有目标设备性能、服务 SLO、隔离强度或知识改善 Agent 使用效果的证据。"
+  ],
+  "checks": [
+    {
+      "script": "tools/check_k_sys_019_full.py",
+      "args": [],
+      "script_sha256": "61d46b868bc4a37590368e0f2e48f96b39195a1ea5585d862be1c816436f5ff6",
+      "execution_origin": "用户提供的 actual_preflight；协调者 remote_bwrap 执行记录",
+      "reviewer_rerun": false,
+      "returncode": 0,
+      "timed_out": false,
+      "assessment": "已核对完整脚本、实际 argv、stdout、空 stderr 和输入绑定。现有有限用例及实际编入的负对照按预期完成；不等于正文机制完整或来源语义正确。"
+    }
+  ],
+  "no_checks_reason": "",
+  "reading_scope": {
+    "basis": "以下范围均指任务内实际提供的 UTF-8 提取文本，字符范围为零基半开区间；不是文件系统访问记录。",
+    "full": {
+      "AGENTS.md": [
+        [
+          0,
+          567
+        ]
+      ],
+      "docs/knowledge-method.md": [
+        [
+          0,
+          2251
+        ]
+      ],
+      "docs/knowledge-review.md": [
+        [
+          0,
+          3016
+        ]
+      ],
+      "knowledge/system-semantics/deployment-environment.md": [
+        [
+          0,
+          12791
+        ]
+      ],
+      "knowledge/sources/S-NVIDIA-PLUGIN.md": [
+        [
+          0,
+          890
+        ]
+      ],
+      "knowledge/sources/S-LINUX-RESOURCES.md": [
+        [
+          0,
+          949
+        ]
+      ],
+      "knowledge/sources/S-TORCH-CUDA.md": [
+        [
+          0,
+          1468
+        ]
+      ],
+      "knowledge/sources/S-BORG.md": [
+        [
+          0,
+          732
+        ]
+      ],
+      "knowledge/hardware/host-device-transfer.md": [
+        [
+          0,
+          6485
+        ]
+      ],
+      "knowledge/workloads/cluster-resource-placement.md": [
+        [
+          0,
+          3360
+        ]
+      ],
+      "references/S-NVIDIA-PLUGIN/fulltext.txt": [
+        [
+          0,
+          52241
+        ]
+      ],
+      "tools/check_k_sys_019_full.py": "candidate.test_script 提供的完整脚本"
+    },
+    "excerpts": {
+      "knowledge/hardware/cpu-serving.md": [
+        [
+          0,
+          4000
+        ],
+        [
+          8000,
+          10538
+        ]
+      ],
+      "knowledge/hardware/topology-parallelism.md": [
+        [
+          8000,
+          14538
+        ]
+      ],
+      "knowledge/hardware/transport-and-rdma.md": [
+        [
+          0,
+          6538
+        ]
+      ],
+      "knowledge/frameworks/checkpoint-loading.md": [
+        [
+          0,
+          333
+        ],
+        [
+          8000,
+          14205
+        ]
+      ],
+      "knowledge/system-semantics/model-lifecycle.md": [
+        [
+          0,
+          6538
+        ]
+      ],
+      "knowledge/system-semantics/host-runtime.md": [
+        [
+          0,
+          4000
+        ],
+        [
+          12000,
+          14538
+        ]
+      ],
+      "knowledge/system-semantics/tenant-isolation.md": [
+        [
+          4000,
+          8000
+        ],
+        [
+          12000,
+          14538
+        ]
+      ],
+      "knowledge/system-semantics/serving-recovery.md": [
+        [
+          0,
+          2538
+        ],
+        [
+          12000,
+          16000
+        ]
+      ],
+      "knowledge/tools/failure-evidence.md": [
+        [
+          0,
+          2538
+        ],
+        [
+          4000,
+          8000
+        ]
+      ],
+      "knowledge/system-semantics/design-synthesis.md": [
+        [
+          12000,
+          18538
+        ]
+      ],
+      "knowledge/workloads/cost-and-energy.md": [
+        [
+          0,
+          2538
+        ],
+        [
+          8000,
+          12000
+        ]
+      ],
+      "references/S-LINUX-RESOURCES/fulltext.txt": [
+        [
+          0,
+          4000
+        ],
+        [
+          8000,
+          12000
+        ],
+        [
+          16000,
+          20000
+        ],
+        [
+          40000,
+          68000
+        ],
+        [
+          72000,
+          76000
+        ],
+        [
+          84000,
+          96000
+        ],
+        [
+          112000,
+          112834
+        ],
+        [
+          120000,
+          124000
+        ]
+      ],
+      "references/S-TORCH-CUDA/fulltext.txt": [
+        [
+          0,
+          4000
+        ],
+        [
+          8000,
+          8834
+        ],
+        [
+          16000,
+          48000
+        ],
+        [
+          52000,
+          72000
+        ],
+        [
+          76000,
+          80000
+        ]
+      ],
+      "references/S-BORG/fulltext.txt": [
+        [
+          0,
+          16835
+        ],
+        [
+          20000,
+          28000
+        ],
+        [
+          36000,
+          64000
+        ],
+        [
+          80000,
+          88000
+        ]
+      ]
+    },
+    "author_scope_assessment": "作者 ledger 与本次 reviewer materials 分开核对。作者收到的是旧正文全文及其记录的来源范围；旧正文哈希与候选不同属于本轮重写，不作为身份错误。作者记录的三个原文摘录范围比 reviewer 范围略大，不用 reviewer 的缩短范围反推作者未获相应材料。ledger 证明供应范围，不证明认知阅读。作者明确说明仅静态手算、未执行；实际成功执行归于所附协调者记录。"
+  },
+  "test_assessment": "A 组在 8 个节点上比较递推折叠与路径收集最小值；cpuset 参考采用逐 CPU 成员判定，与集合交实现有所区分，并有父集及请求集子集检查。它们能检出只看本级的错误，但共同采用遗漏回退分支的模型，不能交叉证明 Linux 语义。B 组有 5 个手定预期，覆盖相等边界、内存超限和祖先 CPU 上限，并实际检出 /svc/f 上 CPU=3 的本级放行错误；没有多 rank 共同祖先预算，也没有 cpuset 数量限制 CPU 的情形。C 组核对 grant 顺序、过滤后的映射位置和共享容量，实际检查了错误物理序号及副本容量翻倍；映射与 seq 同源，只证明给定序列的内部一致性，不证明注入和 CUDA 枚举关系，也未执行声称的忽略过滤故障变体。D 组有 7 个固定预期，覆盖模态收窄、长上下文和代次不匹配；只看模型名的错误函数确实在过期及长上下文输入上放行，但没有 dtype 越界输入，也没有实现依赖字段变化后的证书失效过程。脚本未验证峰值并集、成本公式、故障场景或 MPS 客户端容量，不能从退出码 0 外推这些内容已通过。静态核算确认正文峰值 52 GiB、错误阶段求和 107 GiB，以及缓存设定成本 162.5 秒对 25 秒的算术；这些仍是设定量。"
+}

@@ -1,0 +1,198 @@
+{
+  "role": "reviewer",
+  "engine": "sol",
+  "requested_model": "gpt-6.1-sol",
+  "reasoning_effort": "high",
+  "prompt_sha256": "7247f3e21cd6c52e40f418ef7516e4b60e0c54a4eb16ff8d9cb44a134c3d935b",
+  "usage": [
+    {
+      "input_tokens": 240500,
+      "cached_input_tokens": 7552,
+      "cache_write_input_tokens": 0,
+      "output_tokens": 5360,
+      "reasoning_output_tokens": 1034
+    }
+  ],
+  "answer": "{\n  \"entry_id\": \"K-ALG-015\",\n  \"body_sha256\": \"46875292ee131f4d9ee24132e4f8c4685026c4136d21799d3ef700393a600c03\",\n  \"reviewer\": \"sol-reviewer:K-ALG-015:round-2\",\n  \"decision\": \"accept\",\n  \"documents\": {\n    \"AGENTS.md\": \"b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a\",\n    \"docs/knowledge-method.md\": \"69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb\",\n    \"docs/knowledge-review.md\": \"f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21\",\n    \"knowledge/algorithms/parallelism.md\": \"46875292ee131f4d9ee24132e4f8c4685026c4136d21799d3ef700393a600c03\",\n    \"knowledge/sources/S-NCCL-COLLECTIVE.md\": \"5d69a053352b0c9d7c72604c338976277e421305a0fdbc740b3fd8d1f09b87e5\",\n    \"knowledge/sources/S-CUDA-TOPOLOGY.md\": \"39d4039179728ce8570c3b9ec3801aaad52108d030f278fb598a4d6d47de1f8e\",\n    \"knowledge/sources/S-MIXTRAL.md\": \"25a14f727f542ddb8daf029bd89b5961836e63d7689633191ab4b00ee04d0ff7\",\n    \"knowledge/sources/S-DEEPSEEKV3.md\": \"c5f9e6f0e00d5059059b6b7abbcb37a6cfdae23f86880c1b935aad16c3f59339\",\n    \"knowledge/hardware/topology-parallelism.md\": \"44b63f4291293b51e17b58d64bcfa9fe2bd384534a589c9b74fae0ad157ead29\",\n    \"knowledge/hardware/transport-and-rdma.md\": \"72bcf1d8948eae41c243e422f6b0370462dcc4bf33ef86f5664a09b4e46d3ba2\",\n    \"knowledge/algorithms/weight-expert-offload.md\": \"cb230fafeec2d39fa40228ad44dbb41d34c62673fbac2325b6e797f206bc0fde\",\n    \"knowledge/models/mla.md\": \"01385fb7e6be8482ebd773498a96fc9d027a9c6d300abb415002864fccb9521b\",\n    \"knowledge/system-semantics/memory-allocators.md\": \"2e7258787b94ad142c7c236541e8718803ad30b273d08e6c398dff673a1df838\",\n    \"knowledge/tools/statistical-experiments.md\": \"908b3588a6fa20bb1f2aed9f5db51c4b462953d79f8944cdbcfea7141c74644f\",\n    \"knowledge/hardware/trainium-dataflow.md\": \"0773594917538d150957f945b6c9268e1aca64bb83e041aec2315c1cb0984019\",\n    \"knowledge/models/gqa-kv-heads.md\": \"9b51a72ccc9c86095f9c8a37e234893fe93068938390f69513c6ff90dd22da1d\",\n    \"knowledge/models/video-generation.md\": \"df8c69ef755bd2794e8f33e2f0927594cbf9769f7ec600d042081b92fc1ef92b\",\n    \"knowledge/workloads/cluster-resource-placement.md\": \"235de985ced67e21bfe6727ff2e91be680e8def602ad02a3f3e9de2b3ca1b8a1\",\n    \"references/S-NCCL-COLLECTIVE/fulltext.txt\": \"03fee76f12d44b950f31ce903bf28d4268bab2e65f805d62523c6dff3ddc59eb\",\n    \"references/S-MIXTRAL/fulltext.txt\": \"07bf75eef2aad6afcf894396cc42c9aaf973784b3930b3da5c55086a6fcd9811\",\n    \"tools/check_k_alg_015_full.py\": \"346375d5612e66289c4976c7c137504232fa574c0b6c47f23166c08b21b65b9a\"\n  },\n  \"criteria\": {\n    \"definition\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"明确并行的动机、逻辑轴到 rank 再到设备的映射、输入输出及执行状态。TP 矩阵轴、PP 独立微批、EP 逐专家贡献和 CP 合法 key 集合均有数学定义；区分层输出、logits 与确认 token，没有把未来 token 或其缓存当作已经存在的输入。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/algorithms/parallelism.md\",\n          \"quote\": \"输入包含固定模型参数、请求 token、位置和 mask、已有状态及并行计划；输出是下一层 hidden、logits 或确认的生成 token。\"\n        },\n        {\n          \"path\": \"knowledge/algorithms/parallelism.md\",\n          \"quote\": \"执行状态还包括权重分片、KV/MLA latent、微批激活、路由描述符、softmax 统计、通信区、工作区和未完成访问。\"\n        }\n      ]\n    },\n    \"legality\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"完整互斥覆盖、贡献恰好一次、集合操作匹配、全局位置/head 映射、消费者可见性及最后使用关系均被列为合法条件；ring、分片形态和重叠被列为设计选择。NCCL 的 count/datatype、root 和 rank 排序约束与所供原文一致；Mixtral gating 及 DeepSeek-V3 选择分数与原 affinity 的区别符合所供材料。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/algorithms/parallelism.md\",\n          \"quote\": \"分片 G_r 必须满足并集完整且两两不交。\"\n        },\n        {\n          \"path\": \"knowledge/algorithms/parallelism.md\",\n          \"quote\": \"集合操作的成员、数量、datatype、归约方式和逻辑顺序必须匹配。本地没有有效 token 不授权某个成员跳过全组已经约定的操作。\"\n        },\n        {\n          \"path\": \"knowledge/algorithms/parallelism.md\",\n          \"quote\": \"实数中的等价重排也不保证浮点逐位一致。\"\n        }\n      ]\n    },\n    \"algorithm\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"四段伪代码给出输入、初始化、推进和结束条件。TP 重建列输出或行部分和；PP 递推连接上下游和阶段内依赖；EP 用完整身份与 Seen 检查提交；CP 展开局部在线统计、缩放合并和 EMPTY 分支。四卡轨迹补足唯一派发、返回、残差、AllGather 行映射和下一层消费者；PP 说明最终采样及下一 token 回送。逻辑取消与物理访问结算保持区分。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/algorithms/parallelism.md\",\n          \"quote\": \"只有 Seen=S 才提交该 token 输出\"\n        },\n        {\n          \"path\": \"knowledge/algorithms/parallelism.md\",\n          \"quote\": \"当前块的最后读取和发送都结束后才能复用其缓冲。\"\n        },\n        {\n          \"path\": \"knowledge/algorithms/parallelism.md\",\n          \"quote\": \"阶段 1 必须等待自己的接收/广播完成，最终采样由唯一所有者确认并把下一 token 送回需要它的阶段。\"\n        }\n      ]\n    },\n    \"cost\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"计算、逻辑读取、通信发送、准备、同步与驻留均有具体账目和条件。独立复算 ring 每 rank 发送公式、PP 完成时间及气泡、专家 6df 主项、CP 环流字节和计算主项均一致。四卡增长容量为 18.5703125/16.28515625 GiB；24 个远端 item 的往返为 384 KiB，输出恢复再增加 384 KiB。未把接收重复计入发送，也未把逻辑字节或容量推导当作 HBM 事务及实际时延。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/algorithms/parallelism.md\",\n          \"quote\": \"一次每 rank 发送 2(p−1)A/p。接收是另一计量边界，不能在“发送量”中再加一次。\"\n        },\n        {\n          \"path\": \"knowledge/algorithms/parallelism.md\",\n          \"quote\": \"准备包含计数、前缀和、重排与描述符，计数分桶可接近 O(N_items+E)，比较排序则可达 O(N_items log N_items)。\"\n        },\n        {\n          \"path\": \"knowledge/algorithms/parallelism.md\",\n          \"quote\": \"因此 B 的 MoE dispatch/return 为 384 KiB，输出恢复又为 384 KiB，边界合计 768 KiB，尚有 metadata、准备和内存重排。\"\n        }\n      ]\n    },\n    \"adaptation\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"对非整除维度、低负载 decode、流水微批、专家热点、长上下文及表示变化分别说明保留的约束和调整依据。DP 与扩大 TP、PP 与 CP、热点副本与小 GEMM 的取舍均接到容量或关键路径；旧轮放置快照及副本释放条件清楚，未用平均负载或卡数直接外推收益。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/algorithms/parallelism.md\",\n          \"quote\": \"非整除维度可使用记录完整区间的不均匀分片、显式 padding 或更换并行度。\"\n        },\n        {\n          \"path\": \"knowledge/algorithms/parallelism.md\",\n          \"quote\": \"模型能在更小执行组内容纳、请求数足够时，DP 应与继续增加单请求 TP 比较；低负载时，额外副本可能只增加驻留与准备成本。\"\n        },\n        {\n          \"path\": \"knowledge/algorithms/parallelism.md\",\n          \"quote\": \"布局切换先准备新权重与目录，旧轮保持原放置快照；旧访问结束后才释放旧副本。\"\n        }\n      ]\n    },\n    \"diagnosis\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"观察、竞争解释、可控改变和反证后的修正相连。正确性诊断区分覆盖、位置、缩放、身份和布局；性能诊断区分计算、启动、慢 rank、入口拥塞与共享带宽。原 CP 失败被准确定位为非法分片，修复通过独立完整参考与真实负对照验证，没有扩大容差掩盖错误。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/algorithms/parallelism.md\",\n          \"quote\": \"覆盖错误先修计划；覆盖完整仍错再定位分数、mask、缩放与布局，不扩大容差掩盖\"\n        },\n        {\n          \"path\": \"knowledge/algorithms/parallelism.md\",\n          \"quote\": \"队列缩短而层不降说明还需检查入口拥塞或小 GEMM，不能只追求均衡\"\n        },\n        {\n          \"path\": \"knowledge/algorithms/parallelism.md\",\n          \"quote\": \"重叠是否有效以关键路径缩短为准；两条时间线相交不证明共享 HBM 或链路可以同时全速工作。\"\n        }\n      ]\n    }\n  },\n  \"findings\": [],\n  \"limitations\": [\n    \"检查属于确定性 CPU 代数、消息和覆盖模型，不证明实际 NCCL 算法选择、CUDA 可见性、跨 stream 并发、故障排空、设备数值或性能。\",\n    \"CP 参考验证有限分数及所设位置掩码；NaN、无穷、实际投影内核和后端空行语义仍需具体契约与设备验证。\",\n    \"EP 使用固定路由和简化专家函数；去重流量按实际记录数量计算，没有执行真实 hidden 打包、router、SwiGLU 或 grouped GEMM。\",\n    \"四卡容量和通信结果仅适用于声明的模型与布局假设；完整峰值、加载瞬态、真实拓扑、质量及 40 ms ITL 均未实测。\",\n    \"原文核对限所供提取文本；未视觉核对 PDF 图表。CUDA 摘录不能证明完整多 GPU 专节或目标路径，正文已明确依赖来源说明并保留边界。\",\n    \"未执行文件系统链接存在性、登记或冻结读取检查；对链接仅核对所供文本中的相对路径和对应材料身份。未验证知识改善 Agent 构建能力的使用效果。\"\n  ],\n  \"checks\": [\n    {\n      \"script\": \"tools/check_k_alg_015_full.py\",\n      \"args\": []\n    }\n  ],\n  \"reading_scope\": \"完整阅读所供全文，范围均为提取文本零起点、右开字符区间：AGENTS.md [0,567)；docs/knowledge-method.md [0,2251)；docs/knowledge-review.md [0,3016)；knowledge/algorithms/parallelism.md [0,14567)；四份来源说明 S-NCCL-COLLECTIVE [0,493)、S-CUDA-TOPOLOGY [0,500)、S-MIXTRAL [0,459)、S-DEEPSEEKV3 [0,1162)；knowledge/hardware/topology-parallelism.md [0,3562)；knowledge/hardware/transport-and-rdma.md [0,4088)；knowledge/algorithms/weight-expert-offload.md [0,3216)；knowledge/models/mla.md [0,4303)；knowledge/system-semantics/memory-allocators.md [0,4191)；knowledge/tools/statistical-experiments.md [0,4269)；knowledge/hardware/trainium-dataflow.md [0,3115)；knowledge/models/gqa-kv-heads.md [0,3902)；knowledge/models/video-generation.md [0,3900)；knowledge/workloads/cluster-resource-placement.md [0,3360)；references/S-NCCL-COLLECTIVE/fulltext.txt [0,2570)；references/S-MIXTRAL/fulltext.txt [0,32362)。完整阅读 candidate.test_script 所供脚本及作者说明、上一轮失败和本轮 actual_preflight。相关章节仅阅读给定摘录：moe-routing.md [8000,13666)；disaggregated-serving.md [0,4000)、[12000,13666)；collective-ordering.md [12000,13853)、[16000,19813)；image-diffusion.md [0,1666)、[4000,8000)；design-synthesis.md [0,5666)。CUDA 原文仅阅读摘录 [0,8000)、[68000,72000)、[284000,292000)、[452000,488000)、[500000,504000)、[512000,519723)、[520000,524000)、[572000,584000)、[588000,596000)、[608000,612000)、[636000,640000)、[672000,676000)、[720000,724000)；DeepSeek-V3 原文仅阅读摘录 [0,68000)、[72000,103722)、[104000,108000)、[124000,128000)。摘录文件未列入 documents；未读取源码归档、未提供区间或原始 PDF 图像。\",\n  \"test_assessment\": \"已独立检查脚本算法与所供真实执行记录。actual_preflight 的脚本 SHA-256 为 346375d5612e66289c4976c7c137504232fa574c0b6c47f23166c08b21b65b9a，正文输入摘要与本次绑定一致；remote_bwrap 使用 Python 3.12 的 -I -S -B -X utf8 执行完整脚本，returncode=0、stderr 为空且未超时。这是协调者提供的实际运行，本审阅调用未重新执行，也没有把作者此前的 JavaScript 检查写成 Python PASS。TP 使用硬编码整数完整结果核对列拼接和行归约，并检测漏归约及重复 residual；ring 逐轮传递消息后对照直接逐元素求和及发送量闭式；PP 完成递推对照等成本和异成本闭式，并覆盖零工作及错误边界。CP 的完整参考使用 70 位 Decimal 批量 softmax，不复用在线局部统计和合并递推；276 种合法分配、12 个掩码及正反片序得到 6624 次比较，另检查极端分数、EMPTY 和错误平均/未缩放合并。原两组坏分片分别漏 key 4、重复 key 4，现由覆盖验证拒绝；绕过验证后的输出分别为 (0.7262573019754909,-0.37970347643983493) 和 (0.01831394337885219,0.5962201414628878)，均偏离完整参考 (0.28098105191235195,0.23412473968920497)，实际检验了本轮修复的覆盖机制。因此 campaign-K-ALG-015-r1 的具体执行失败可关闭。EP 用 Fraction 的逐 token/专家直接求和对照分桶及预合并记录，检测缺项和重复返回，验证同号 token 的 origin 区分及 40/36/36/32 字节逻辑账。组合检查复算容量、24 个远端 item、768 KiB 边界及 rank 顺序到 token 顺序的逆映射。未执行真实 router/专家内核、CP 环流运输、异步生命周期或故障模型；未专门注入局部位置重置、错误 origin 交换和不均匀 TP 的完整实现。这些遗漏不支持相应运行时 PASS，但与正文已声明的 CPU 检查范围相容，不构成当前六项内容的阻塞缺口。\"\n}",
+  "exit_code": 0,
+  "status": "completed",
+  "timeout_seconds": 1800,
+  "response_path": "D:\\桌面\\xdb\\InfraAgents\\InfraAgents-know-astra-new\\InfraAgents-know\\docs\\evidence\\knowledge-workflow-20261028-batch6\\full_build\\K-ALG-015\\round-2\\reviewer-attempt-001\\answer.txt",
+  "record_path": "D:\\桌面\\xdb\\InfraAgents\\InfraAgents-know-astra-new\\InfraAgents-know\\docs\\evidence\\knowledge-workflow-20261028-batch6\\full_build\\K-ALG-015\\round-2\\reviewer-attempt-001\\record.json",
+  "tool_events": [],
+  "inventory_tool_events": [],
+  "rejected_tool_events": [],
+  "tool_policy": "metadata_inventory_only",
+  "tool_policy_version": "metadata-inventory-v1",
+  "tool_policy_scope": "Only empty-argument codex host plugin/skill-directory descriptors and empty template inventory; inventory is not knowledge evidence. All other tool events reject the call.",
+  "tool_policy_reason": "Production chapter construction allows observed generic capability discovery metadata; this does not claim a zero-tool comparison or external source reading.",
+  "malformed_event_lines": [],
+  "turn_completed": true,
+  "error_events": [],
+  "recovered_transport_events": [],
+  "terminal_error_events": [],
+  "transport_recovered": false,
+  "actual_model": null,
+  "identity_verified": null,
+  "identity_basis": "Explicit CLI model and isolated HTTP provider; CLI events do not expose server model identity.",
+  "provider": "eval-openai-http",
+  "max_output_tokens": null,
+  "cli_version": "codex-cli 0.164.0-alpha.11.1",
+  "cost_scope": "Codex token usage is reported; subscription charge is not exposed.",
+  "parsed": {
+    "entry_id": "K-ALG-015",
+    "body_sha256": "46875292ee131f4d9ee24132e4f8c4685026c4136d21799d3ef700393a600c03",
+    "reviewer": "sol-reviewer:K-ALG-015:round-2",
+    "decision": "accept",
+    "documents": {
+      "AGENTS.md": "b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a",
+      "docs/knowledge-method.md": "69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb",
+      "docs/knowledge-review.md": "f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21",
+      "knowledge/algorithms/parallelism.md": "46875292ee131f4d9ee24132e4f8c4685026c4136d21799d3ef700393a600c03",
+      "knowledge/sources/S-NCCL-COLLECTIVE.md": "5d69a053352b0c9d7c72604c338976277e421305a0fdbc740b3fd8d1f09b87e5",
+      "knowledge/sources/S-CUDA-TOPOLOGY.md": "39d4039179728ce8570c3b9ec3801aaad52108d030f278fb598a4d6d47de1f8e",
+      "knowledge/sources/S-MIXTRAL.md": "25a14f727f542ddb8daf029bd89b5961836e63d7689633191ab4b00ee04d0ff7",
+      "knowledge/sources/S-DEEPSEEKV3.md": "c5f9e6f0e00d5059059b6b7abbcb37a6cfdae23f86880c1b935aad16c3f59339",
+      "knowledge/hardware/topology-parallelism.md": "44b63f4291293b51e17b58d64bcfa9fe2bd384534a589c9b74fae0ad157ead29",
+      "knowledge/hardware/transport-and-rdma.md": "72bcf1d8948eae41c243e422f6b0370462dcc4bf33ef86f5664a09b4e46d3ba2",
+      "knowledge/algorithms/weight-expert-offload.md": "cb230fafeec2d39fa40228ad44dbb41d34c62673fbac2325b6e797f206bc0fde",
+      "knowledge/models/mla.md": "01385fb7e6be8482ebd773498a96fc9d027a9c6d300abb415002864fccb9521b",
+      "knowledge/system-semantics/memory-allocators.md": "2e7258787b94ad142c7c236541e8718803ad30b273d08e6c398dff673a1df838",
+      "knowledge/tools/statistical-experiments.md": "908b3588a6fa20bb1f2aed9f5db51c4b462953d79f8944cdbcfea7141c74644f",
+      "knowledge/hardware/trainium-dataflow.md": "0773594917538d150957f945b6c9268e1aca64bb83e041aec2315c1cb0984019",
+      "knowledge/models/gqa-kv-heads.md": "9b51a72ccc9c86095f9c8a37e234893fe93068938390f69513c6ff90dd22da1d",
+      "knowledge/models/video-generation.md": "df8c69ef755bd2794e8f33e2f0927594cbf9769f7ec600d042081b92fc1ef92b",
+      "knowledge/workloads/cluster-resource-placement.md": "235de985ced67e21bfe6727ff2e91be680e8def602ad02a3f3e9de2b3ca1b8a1",
+      "references/S-NCCL-COLLECTIVE/fulltext.txt": "03fee76f12d44b950f31ce903bf28d4268bab2e65f805d62523c6dff3ddc59eb",
+      "references/S-MIXTRAL/fulltext.txt": "07bf75eef2aad6afcf894396cc42c9aaf973784b3930b3da5c55086a6fcd9811",
+      "tools/check_k_alg_015_full.py": "346375d5612e66289c4976c7c137504232fa574c0b6c47f23166c08b21b65b9a"
+    },
+    "criteria": {
+      "definition": {
+        "assessment": "sufficient",
+        "reason": "明确并行的动机、逻辑轴到 rank 再到设备的映射、输入输出及执行状态。TP 矩阵轴、PP 独立微批、EP 逐专家贡献和 CP 合法 key 集合均有数学定义；区分层输出、logits 与确认 token，没有把未来 token 或其缓存当作已经存在的输入。",
+        "evidence": [
+          {
+            "path": "knowledge/algorithms/parallelism.md",
+            "quote": "输入包含固定模型参数、请求 token、位置和 mask、已有状态及并行计划；输出是下一层 hidden、logits 或确认的生成 token。"
+          },
+          {
+            "path": "knowledge/algorithms/parallelism.md",
+            "quote": "执行状态还包括权重分片、KV/MLA latent、微批激活、路由描述符、softmax 统计、通信区、工作区和未完成访问。"
+          }
+        ]
+      },
+      "legality": {
+        "assessment": "sufficient",
+        "reason": "完整互斥覆盖、贡献恰好一次、集合操作匹配、全局位置/head 映射、消费者可见性及最后使用关系均被列为合法条件；ring、分片形态和重叠被列为设计选择。NCCL 的 count/datatype、root 和 rank 排序约束与所供原文一致；Mixtral gating 及 DeepSeek-V3 选择分数与原 affinity 的区别符合所供材料。",
+        "evidence": [
+          {
+            "path": "knowledge/algorithms/parallelism.md",
+            "quote": "分片 G_r 必须满足并集完整且两两不交。"
+          },
+          {
+            "path": "knowledge/algorithms/parallelism.md",
+            "quote": "集合操作的成员、数量、datatype、归约方式和逻辑顺序必须匹配。本地没有有效 token 不授权某个成员跳过全组已经约定的操作。"
+          },
+          {
+            "path": "knowledge/algorithms/parallelism.md",
+            "quote": "实数中的等价重排也不保证浮点逐位一致。"
+          }
+        ]
+      },
+      "algorithm": {
+        "assessment": "sufficient",
+        "reason": "四段伪代码给出输入、初始化、推进和结束条件。TP 重建列输出或行部分和；PP 递推连接上下游和阶段内依赖；EP 用完整身份与 Seen 检查提交；CP 展开局部在线统计、缩放合并和 EMPTY 分支。四卡轨迹补足唯一派发、返回、残差、AllGather 行映射和下一层消费者；PP 说明最终采样及下一 token 回送。逻辑取消与物理访问结算保持区分。",
+        "evidence": [
+          {
+            "path": "knowledge/algorithms/parallelism.md",
+            "quote": "只有 Seen=S 才提交该 token 输出"
+          },
+          {
+            "path": "knowledge/algorithms/parallelism.md",
+            "quote": "当前块的最后读取和发送都结束后才能复用其缓冲。"
+          },
+          {
+            "path": "knowledge/algorithms/parallelism.md",
+            "quote": "阶段 1 必须等待自己的接收/广播完成，最终采样由唯一所有者确认并把下一 token 送回需要它的阶段。"
+          }
+        ]
+      },
+      "cost": {
+        "assessment": "sufficient",
+        "reason": "计算、逻辑读取、通信发送、准备、同步与驻留均有具体账目和条件。独立复算 ring 每 rank 发送公式、PP 完成时间及气泡、专家 6df 主项、CP 环流字节和计算主项均一致。四卡增长容量为 18.5703125/16.28515625 GiB；24 个远端 item 的往返为 384 KiB，输出恢复再增加 384 KiB。未把接收重复计入发送，也未把逻辑字节或容量推导当作 HBM 事务及实际时延。",
+        "evidence": [
+          {
+            "path": "knowledge/algorithms/parallelism.md",
+            "quote": "一次每 rank 发送 2(p−1)A/p。接收是另一计量边界，不能在“发送量”中再加一次。"
+          },
+          {
+            "path": "knowledge/algorithms/parallelism.md",
+            "quote": "准备包含计数、前缀和、重排与描述符，计数分桶可接近 O(N_items+E)，比较排序则可达 O(N_items log N_items)。"
+          },
+          {
+            "path": "knowledge/algorithms/parallelism.md",
+            "quote": "因此 B 的 MoE dispatch/return 为 384 KiB，输出恢复又为 384 KiB，边界合计 768 KiB，尚有 metadata、准备和内存重排。"
+          }
+        ]
+      },
+      "adaptation": {
+        "assessment": "sufficient",
+        "reason": "对非整除维度、低负载 decode、流水微批、专家热点、长上下文及表示变化分别说明保留的约束和调整依据。DP 与扩大 TP、PP 与 CP、热点副本与小 GEMM 的取舍均接到容量或关键路径；旧轮放置快照及副本释放条件清楚，未用平均负载或卡数直接外推收益。",
+        "evidence": [
+          {
+            "path": "knowledge/algorithms/parallelism.md",
+            "quote": "非整除维度可使用记录完整区间的不均匀分片、显式 padding 或更换并行度。"
+          },
+          {
+            "path": "knowledge/algorithms/parallelism.md",
+            "quote": "模型能在更小执行组内容纳、请求数足够时，DP 应与继续增加单请求 TP 比较；低负载时，额外副本可能只增加驻留与准备成本。"
+          },
+          {
+            "path": "knowledge/algorithms/parallelism.md",
+            "quote": "布局切换先准备新权重与目录，旧轮保持原放置快照；旧访问结束后才释放旧副本。"
+          }
+        ]
+      },
+      "diagnosis": {
+        "assessment": "sufficient",
+        "reason": "观察、竞争解释、可控改变和反证后的修正相连。正确性诊断区分覆盖、位置、缩放、身份和布局；性能诊断区分计算、启动、慢 rank、入口拥塞与共享带宽。原 CP 失败被准确定位为非法分片，修复通过独立完整参考与真实负对照验证，没有扩大容差掩盖错误。",
+        "evidence": [
+          {
+            "path": "knowledge/algorithms/parallelism.md",
+            "quote": "覆盖错误先修计划；覆盖完整仍错再定位分数、mask、缩放与布局，不扩大容差掩盖"
+          },
+          {
+            "path": "knowledge/algorithms/parallelism.md",
+            "quote": "队列缩短而层不降说明还需检查入口拥塞或小 GEMM，不能只追求均衡"
+          },
+          {
+            "path": "knowledge/algorithms/parallelism.md",
+            "quote": "重叠是否有效以关键路径缩短为准；两条时间线相交不证明共享 HBM 或链路可以同时全速工作。"
+          }
+        ]
+      }
+    },
+    "findings": [],
+    "limitations": [
+      "检查属于确定性 CPU 代数、消息和覆盖模型，不证明实际 NCCL 算法选择、CUDA 可见性、跨 stream 并发、故障排空、设备数值或性能。",
+      "CP 参考验证有限分数及所设位置掩码；NaN、无穷、实际投影内核和后端空行语义仍需具体契约与设备验证。",
+      "EP 使用固定路由和简化专家函数；去重流量按实际记录数量计算，没有执行真实 hidden 打包、router、SwiGLU 或 grouped GEMM。",
+      "四卡容量和通信结果仅适用于声明的模型与布局假设；完整峰值、加载瞬态、真实拓扑、质量及 40 ms ITL 均未实测。",
+      "原文核对限所供提取文本；未视觉核对 PDF 图表。CUDA 摘录不能证明完整多 GPU 专节或目标路径，正文已明确依赖来源说明并保留边界。",
+      "未执行文件系统链接存在性、登记或冻结读取检查；对链接仅核对所供文本中的相对路径和对应材料身份。未验证知识改善 Agent 构建能力的使用效果。"
+    ],
+    "checks": [
+      {
+        "script": "tools/check_k_alg_015_full.py",
+        "args": []
+      }
+    ],
+    "reading_scope": "完整阅读所供全文，范围均为提取文本零起点、右开字符区间：AGENTS.md [0,567)；docs/knowledge-method.md [0,2251)；docs/knowledge-review.md [0,3016)；knowledge/algorithms/parallelism.md [0,14567)；四份来源说明 S-NCCL-COLLECTIVE [0,493)、S-CUDA-TOPOLOGY [0,500)、S-MIXTRAL [0,459)、S-DEEPSEEKV3 [0,1162)；knowledge/hardware/topology-parallelism.md [0,3562)；knowledge/hardware/transport-and-rdma.md [0,4088)；knowledge/algorithms/weight-expert-offload.md [0,3216)；knowledge/models/mla.md [0,4303)；knowledge/system-semantics/memory-allocators.md [0,4191)；knowledge/tools/statistical-experiments.md [0,4269)；knowledge/hardware/trainium-dataflow.md [0,3115)；knowledge/models/gqa-kv-heads.md [0,3902)；knowledge/models/video-generation.md [0,3900)；knowledge/workloads/cluster-resource-placement.md [0,3360)；references/S-NCCL-COLLECTIVE/fulltext.txt [0,2570)；references/S-MIXTRAL/fulltext.txt [0,32362)。完整阅读 candidate.test_script 所供脚本及作者说明、上一轮失败和本轮 actual_preflight。相关章节仅阅读给定摘录：moe-routing.md [8000,13666)；disaggregated-serving.md [0,4000)、[12000,13666)；collective-ordering.md [12000,13853)、[16000,19813)；image-diffusion.md [0,1666)、[4000,8000)；design-synthesis.md [0,5666)。CUDA 原文仅阅读摘录 [0,8000)、[68000,72000)、[284000,292000)、[452000,488000)、[500000,504000)、[512000,519723)、[520000,524000)、[572000,584000)、[588000,596000)、[608000,612000)、[636000,640000)、[672000,676000)、[720000,724000)；DeepSeek-V3 原文仅阅读摘录 [0,68000)、[72000,103722)、[104000,108000)、[124000,128000)。摘录文件未列入 documents；未读取源码归档、未提供区间或原始 PDF 图像。",
+    "test_assessment": "已独立检查脚本算法与所供真实执行记录。actual_preflight 的脚本 SHA-256 为 346375d5612e66289c4976c7c137504232fa574c0b6c47f23166c08b21b65b9a，正文输入摘要与本次绑定一致；remote_bwrap 使用 Python 3.12 的 -I -S -B -X utf8 执行完整脚本，returncode=0、stderr 为空且未超时。这是协调者提供的实际运行，本审阅调用未重新执行，也没有把作者此前的 JavaScript 检查写成 Python PASS。TP 使用硬编码整数完整结果核对列拼接和行归约，并检测漏归约及重复 residual；ring 逐轮传递消息后对照直接逐元素求和及发送量闭式；PP 完成递推对照等成本和异成本闭式，并覆盖零工作及错误边界。CP 的完整参考使用 70 位 Decimal 批量 softmax，不复用在线局部统计和合并递推；276 种合法分配、12 个掩码及正反片序得到 6624 次比较，另检查极端分数、EMPTY 和错误平均/未缩放合并。原两组坏分片分别漏 key 4、重复 key 4，现由覆盖验证拒绝；绕过验证后的输出分别为 (0.7262573019754909,-0.37970347643983493) 和 (0.01831394337885219,0.5962201414628878)，均偏离完整参考 (0.28098105191235195,0.23412473968920497)，实际检验了本轮修复的覆盖机制。因此 campaign-K-ALG-015-r1 的具体执行失败可关闭。EP 用 Fraction 的逐 token/专家直接求和对照分桶及预合并记录，检测缺项和重复返回，验证同号 token 的 origin 区分及 40/36/36/32 字节逻辑账。组合检查复算容量、24 个远端 item、768 KiB 边界及 rank 顺序到 token 顺序的逆映射。未执行真实 router/专家内核、CP 环流运输、异步生命周期或故障模型；未专门注入局部位置重置、错误 origin 交换和不均匀 TP 的完整实现。这些遗漏不支持相应运行时 PASS，但与正文已声明的 CPU 检查范围相容，不构成当前六项内容的阻塞缺口。"
+  },
+  "format_status": "strict_json",
+  "format_error": null,
+  "output_text": "{\n  \"entry_id\": \"K-ALG-015\",\n  \"body_sha256\": \"46875292ee131f4d9ee24132e4f8c4685026c4136d21799d3ef700393a600c03\",\n  \"reviewer\": \"sol-reviewer:K-ALG-015:round-2\",\n  \"decision\": \"accept\",\n  \"documents\": {\n    \"AGENTS.md\": \"b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a\",\n    \"docs/knowledge-method.md\": \"69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb\",\n    \"docs/knowledge-review.md\": \"f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21\",\n    \"knowledge/algorithms/parallelism.md\": \"46875292ee131f4d9ee24132e4f8c4685026c4136d21799d3ef700393a600c03\",\n    \"knowledge/sources/S-NCCL-COLLECTIVE.md\": \"5d69a053352b0c9d7c72604c338976277e421305a0fdbc740b3fd8d1f09b87e5\",\n    \"knowledge/sources/S-CUDA-TOPOLOGY.md\": \"39d4039179728ce8570c3b9ec3801aaad52108d030f278fb598a4d6d47de1f8e\",\n    \"knowledge/sources/S-MIXTRAL.md\": \"25a14f727f542ddb8daf029bd89b5961836e63d7689633191ab4b00ee04d0ff7\",\n    \"knowledge/sources/S-DEEPSEEKV3.md\": \"c5f9e6f0e00d5059059b6b7abbcb37a6cfdae23f86880c1b935aad16c3f59339\",\n    \"knowledge/hardware/topology-parallelism.md\": \"44b63f4291293b51e17b58d64bcfa9fe2bd384534a589c9b74fae0ad157ead29\",\n    \"knowledge/hardware/transport-and-rdma.md\": \"72bcf1d8948eae41c243e422f6b0370462dcc4bf33ef86f5664a09b4e46d3ba2\",\n    \"knowledge/algorithms/weight-expert-offload.md\": \"cb230fafeec2d39fa40228ad44dbb41d34c62673fbac2325b6e797f206bc0fde\",\n    \"knowledge/models/mla.md\": \"01385fb7e6be8482ebd773498a96fc9d027a9c6d300abb415002864fccb9521b\",\n    \"knowledge/system-semantics/memory-allocators.md\": \"2e7258787b94ad142c7c236541e8718803ad30b273d08e6c398dff673a1df838\",\n    \"knowledge/tools/statistical-experiments.md\": \"908b3588a6fa20bb1f2aed9f5db51c4b462953d79f8944cdbcfea7141c74644f\",\n    \"knowledge/hardware/trainium-dataflow.md\": \"0773594917538d150957f945b6c9268e1aca64bb83e041aec2315c1cb0984019\",\n    \"knowledge/models/gqa-kv-heads.md\": \"9b51a72ccc9c86095f9c8a37e234893fe93068938390f69513c6ff90dd22da1d\",\n    \"knowledge/models/video-generation.md\": \"df8c69ef755bd2794e8f33e2f0927594cbf9769f7ec600d042081b92fc1ef92b\",\n    \"knowledge/workloads/cluster-resource-placement.md\": \"235de985ced67e21bfe6727ff2e91be680e8def602ad02a3f3e9de2b3ca1b8a1\",\n    \"references/S-NCCL-COLLECTIVE/fulltext.txt\": \"03fee76f12d44b950f31ce903bf28d4268bab2e65f805d62523c6dff3ddc59eb\",\n    \"references/S-MIXTRAL/fulltext.txt\": \"07bf75eef2aad6afcf894396cc42c9aaf973784b3930b3da5c55086a6fcd9811\",\n    \"tools/check_k_alg_015_full.py\": \"346375d5612e66289c4976c7c137504232fa574c0b6c47f23166c08b21b65b9a\"\n  },\n  \"criteria\": {\n    \"definition\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"明确并行的动机、逻辑轴到 rank 再到设备的映射、输入输出及执行状态。TP 矩阵轴、PP 独立微批、EP 逐专家贡献和 CP 合法 key 集合均有数学定义；区分层输出、logits 与确认 token，没有把未来 token 或其缓存当作已经存在的输入。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/algorithms/parallelism.md\",\n          \"quote\": \"输入包含固定模型参数、请求 token、位置和 mask、已有状态及并行计划；输出是下一层 hidden、logits 或确认的生成 token。\"\n        },\n        {\n          \"path\": \"knowledge/algorithms/parallelism.md\",\n          \"quote\": \"执行状态还包括权重分片、KV/MLA latent、微批激活、路由描述符、softmax 统计、通信区、工作区和未完成访问。\"\n        }\n      ]\n    },\n    \"legality\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"完整互斥覆盖、贡献恰好一次、集合操作匹配、全局位置/head 映射、消费者可见性及最后使用关系均被列为合法条件；ring、分片形态和重叠被列为设计选择。NCCL 的 count/datatype、root 和 rank 排序约束与所供原文一致；Mixtral gating 及 DeepSeek-V3 选择分数与原 affinity 的区别符合所供材料。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/algorithms/parallelism.md\",\n          \"quote\": \"分片 G_r 必须满足并集完整且两两不交。\"\n        },\n        {\n          \"path\": \"knowledge/algorithms/parallelism.md\",\n          \"quote\": \"集合操作的成员、数量、datatype、归约方式和逻辑顺序必须匹配。本地没有有效 token 不授权某个成员跳过全组已经约定的操作。\"\n        },\n        {\n          \"path\": \"knowledge/algorithms/parallelism.md\",\n          \"quote\": \"实数中的等价重排也不保证浮点逐位一致。\"\n        }\n      ]\n    },\n    \"algorithm\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"四段伪代码给出输入、初始化、推进和结束条件。TP 重建列输出或行部分和；PP 递推连接上下游和阶段内依赖；EP 用完整身份与 Seen 检查提交；CP 展开局部在线统计、缩放合并和 EMPTY 分支。四卡轨迹补足唯一派发、返回、残差、AllGather 行映射和下一层消费者；PP 说明最终采样及下一 token 回送。逻辑取消与物理访问结算保持区分。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/algorithms/parallelism.md\",\n          \"quote\": \"只有 Seen=S 才提交该 token 输出\"\n        },\n        {\n          \"path\": \"knowledge/algorithms/parallelism.md\",\n          \"quote\": \"当前块的最后读取和发送都结束后才能复用其缓冲。\"\n        },\n        {\n          \"path\": \"knowledge/algorithms/parallelism.md\",\n          \"quote\": \"阶段 1 必须等待自己的接收/广播完成，最终采样由唯一所有者确认并把下一 token 送回需要它的阶段。\"\n        }\n      ]\n    },\n    \"cost\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"计算、逻辑读取、通信发送、准备、同步与驻留均有具体账目和条件。独立复算 ring 每 rank 发送公式、PP 完成时间及气泡、专家 6df 主项、CP 环流字节和计算主项均一致。四卡增长容量为 18.5703125/16.28515625 GiB；24 个远端 item 的往返为 384 KiB，输出恢复再增加 384 KiB。未把接收重复计入发送，也未把逻辑字节或容量推导当作 HBM 事务及实际时延。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/algorithms/parallelism.md\",\n          \"quote\": \"一次每 rank 发送 2(p−1)A/p。接收是另一计量边界，不能在“发送量”中再加一次。\"\n        },\n        {\n          \"path\": \"knowledge/algorithms/parallelism.md\",\n          \"quote\": \"准备包含计数、前缀和、重排与描述符，计数分桶可接近 O(N_items+E)，比较排序则可达 O(N_items log N_items)。\"\n        },\n        {\n          \"path\": \"knowledge/algorithms/parallelism.md\",\n          \"quote\": \"因此 B 的 MoE dispatch/return 为 384 KiB，输出恢复又为 384 KiB，边界合计 768 KiB，尚有 metadata、准备和内存重排。\"\n        }\n      ]\n    },\n    \"adaptation\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"对非整除维度、低负载 decode、流水微批、专家热点、长上下文及表示变化分别说明保留的约束和调整依据。DP 与扩大 TP、PP 与 CP、热点副本与小 GEMM 的取舍均接到容量或关键路径；旧轮放置快照及副本释放条件清楚，未用平均负载或卡数直接外推收益。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/algorithms/parallelism.md\",\n          \"quote\": \"非整除维度可使用记录完整区间的不均匀分片、显式 padding 或更换并行度。\"\n        },\n        {\n          \"path\": \"knowledge/algorithms/parallelism.md\",\n          \"quote\": \"模型能在更小执行组内容纳、请求数足够时，DP 应与继续增加单请求 TP 比较；低负载时，额外副本可能只增加驻留与准备成本。\"\n        },\n        {\n          \"path\": \"knowledge/algorithms/parallelism.md\",\n          \"quote\": \"布局切换先准备新权重与目录，旧轮保持原放置快照；旧访问结束后才释放旧副本。\"\n        }\n      ]\n    },\n    \"diagnosis\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"观察、竞争解释、可控改变和反证后的修正相连。正确性诊断区分覆盖、位置、缩放、身份和布局；性能诊断区分计算、启动、慢 rank、入口拥塞与共享带宽。原 CP 失败被准确定位为非法分片，修复通过独立完整参考与真实负对照验证，没有扩大容差掩盖错误。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/algorithms/parallelism.md\",\n          \"quote\": \"覆盖错误先修计划；覆盖完整仍错再定位分数、mask、缩放与布局，不扩大容差掩盖\"\n        },\n        {\n          \"path\": \"knowledge/algorithms/parallelism.md\",\n          \"quote\": \"队列缩短而层不降说明还需检查入口拥塞或小 GEMM，不能只追求均衡\"\n        },\n        {\n          \"path\": \"knowledge/algorithms/parallelism.md\",\n          \"quote\": \"重叠是否有效以关键路径缩短为准；两条时间线相交不证明共享 HBM 或链路可以同时全速工作。\"\n        }\n      ]\n    }\n  },\n  \"findings\": [],\n  \"limitations\": [\n    \"检查属于确定性 CPU 代数、消息和覆盖模型，不证明实际 NCCL 算法选择、CUDA 可见性、跨 stream 并发、故障排空、设备数值或性能。\",\n    \"CP 参考验证有限分数及所设位置掩码；NaN、无穷、实际投影内核和后端空行语义仍需具体契约与设备验证。\",\n    \"EP 使用固定路由和简化专家函数；去重流量按实际记录数量计算，没有执行真实 hidden 打包、router、SwiGLU 或 grouped GEMM。\",\n    \"四卡容量和通信结果仅适用于声明的模型与布局假设；完整峰值、加载瞬态、真实拓扑、质量及 40 ms ITL 均未实测。\",\n    \"原文核对限所供提取文本；未视觉核对 PDF 图表。CUDA 摘录不能证明完整多 GPU 专节或目标路径，正文已明确依赖来源说明并保留边界。\",\n    \"未执行文件系统链接存在性、登记或冻结读取检查；对链接仅核对所供文本中的相对路径和对应材料身份。未验证知识改善 Agent 构建能力的使用效果。\"\n  ],\n  \"checks\": [\n    {\n      \"script\": \"tools/check_k_alg_015_full.py\",\n      \"args\": []\n    }\n  ],\n  \"reading_scope\": \"完整阅读所供全文，范围均为提取文本零起点、右开字符区间：AGENTS.md [0,567)；docs/knowledge-method.md [0,2251)；docs/knowledge-review.md [0,3016)；knowledge/algorithms/parallelism.md [0,14567)；四份来源说明 S-NCCL-COLLECTIVE [0,493)、S-CUDA-TOPOLOGY [0,500)、S-MIXTRAL [0,459)、S-DEEPSEEKV3 [0,1162)；knowledge/hardware/topology-parallelism.md [0,3562)；knowledge/hardware/transport-and-rdma.md [0,4088)；knowledge/algorithms/weight-expert-offload.md [0,3216)；knowledge/models/mla.md [0,4303)；knowledge/system-semantics/memory-allocators.md [0,4191)；knowledge/tools/statistical-experiments.md [0,4269)；knowledge/hardware/trainium-dataflow.md [0,3115)；knowledge/models/gqa-kv-heads.md [0,3902)；knowledge/models/video-generation.md [0,3900)；knowledge/workloads/cluster-resource-placement.md [0,3360)；references/S-NCCL-COLLECTIVE/fulltext.txt [0,2570)；references/S-MIXTRAL/fulltext.txt [0,32362)。完整阅读 candidate.test_script 所供脚本及作者说明、上一轮失败和本轮 actual_preflight。相关章节仅阅读给定摘录：moe-routing.md [8000,13666)；disaggregated-serving.md [0,4000)、[12000,13666)；collective-ordering.md [12000,13853)、[16000,19813)；image-diffusion.md [0,1666)、[4000,8000)；design-synthesis.md [0,5666)。CUDA 原文仅阅读摘录 [0,8000)、[68000,72000)、[284000,292000)、[452000,488000)、[500000,504000)、[512000,519723)、[520000,524000)、[572000,584000)、[588000,596000)、[608000,612000)、[636000,640000)、[672000,676000)、[720000,724000)；DeepSeek-V3 原文仅阅读摘录 [0,68000)、[72000,103722)、[104000,108000)、[124000,128000)。摘录文件未列入 documents；未读取源码归档、未提供区间或原始 PDF 图像。\",\n  \"test_assessment\": \"已独立检查脚本算法与所供真实执行记录。actual_preflight 的脚本 SHA-256 为 346375d5612e66289c4976c7c137504232fa574c0b6c47f23166c08b21b65b9a，正文输入摘要与本次绑定一致；remote_bwrap 使用 Python 3.12 的 -I -S -B -X utf8 执行完整脚本，returncode=0、stderr 为空且未超时。这是协调者提供的实际运行，本审阅调用未重新执行，也没有把作者此前的 JavaScript 检查写成 Python PASS。TP 使用硬编码整数完整结果核对列拼接和行归约，并检测漏归约及重复 residual；ring 逐轮传递消息后对照直接逐元素求和及发送量闭式；PP 完成递推对照等成本和异成本闭式，并覆盖零工作及错误边界。CP 的完整参考使用 70 位 Decimal 批量 softmax，不复用在线局部统计和合并递推；276 种合法分配、12 个掩码及正反片序得到 6624 次比较，另检查极端分数、EMPTY 和错误平均/未缩放合并。原两组坏分片分别漏 key 4、重复 key 4，现由覆盖验证拒绝；绕过验证后的输出分别为 (0.7262573019754909,-0.37970347643983493) 和 (0.01831394337885219,0.5962201414628878)，均偏离完整参考 (0.28098105191235195,0.23412473968920497)，实际检验了本轮修复的覆盖机制。因此 campaign-K-ALG-015-r1 的具体执行失败可关闭。EP 用 Fraction 的逐 token/专家直接求和对照分桶及预合并记录，检测缺项和重复返回，验证同号 token 的 origin 区分及 40/36/36/32 字节逻辑账。组合检查复算容量、24 个远端 item、768 KiB 边界及 rank 顺序到 token 顺序的逆映射。未执行真实 router/专家内核、CP 环流运输、异步生命周期或故障模型；未专门注入局部位置重置、错误 origin 交换和不均匀 TP 的完整实现。这些遗漏不支持相应运行时 PASS，但与正文已声明的 CPU 检查范围相容，不构成当前六项内容的阻塞缺口。\"\n}",
+  "elapsed_seconds": 124.891
+}

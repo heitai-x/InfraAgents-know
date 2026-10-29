@@ -1,0 +1,329 @@
+{
+  "entry_id": "K-WORK-003",
+  "body_sha256": "d6c1913849bb4051c631cdf505b883709487eac590832ef608f1402a8fe7b58b",
+  "reviewer": "sol-reviewer:K-WORK-003:round-2",
+  "decision": "accept",
+  "documents": {
+    "AGENTS.md": "b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a",
+    "docs/knowledge-method.md": "69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb",
+    "docs/knowledge-review.md": "f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21",
+    "knowledge/workloads/input-distribution.md": "d6c1913849bb4051c631cdf505b883709487eac590832ef608f1402a8fe7b58b",
+    "knowledge/sources/S-GENAI-PERF.md": "1db17462a3ae4cd41dcb58a78f3f9fa9e71ff3a51614e56855be07bcb95618e0",
+    "knowledge/sources/S-PAGED.md": "50893a22385b0d577980153a9bc9c617acdcb2a9d7be0af655ad49421f06cc09",
+    "knowledge/sources/S-QWEN-VL.md": "a41acb4d122419b0575a7fb4b0e510fb409a3b8b8cdb3bf875c571e3ae4c479a",
+    "knowledge/frameworks/compile-dynamic-shapes.md": "6f9773875d24bbe32fd80e62cfba4e85f841ec1b65876b513c30d8d9f000b1ef",
+    "knowledge/models/vision-language.md": "5ce873c82e975be23aedfebbdeeda5acc0cf55d35b51ef24f744af9d174fe55c",
+    "knowledge/workloads/session-workloads.md": "0269e1987e1107d0cf0135cb32aa759c67d5266cfa09fb1402f97704c4ab4d78",
+    "knowledge/tools/statistical-experiments.md": "908b3588a6fa20bb1f2aed9f5db51c4b462953d79f8944cdbcfea7141c74644f",
+    "knowledge/workloads/slo-goodput.md": "5aa9b71cddb7d896ffa1fe6d78ac61cf0bb92d76279ae4d563f1110ed9dbedb4",
+    "knowledge/system-semantics/evidence-and-independent-checks.md": "50b7c97de928be322713ef149fb734c0c20acda17c4a321c46a198b0019831be",
+    "knowledge/models/embedding-reranking.md": "44f22a27c9b4a11579bed108952f18722d90cd0d4c326db189c865d7e51aef38",
+    "knowledge/models/recommendation-inference.md": "a36b0addea05174460d8f51179643665f98c51c6aa4a4d9dec235535948dd06d",
+    "knowledge/models/graph-inference.md": "343135d67c7fd61ed1e7fb82185df7a8f30ebfc86cb5427dfd9e6313046fe6fe",
+    "references/S-GENAI-PERF/fulltext.txt": "357d6fcaafc41f2954ea87da567cd2b41ec8a146f8e4f19cb976acf39f539ddc",
+    "references/S-PAGED/fulltext.txt": "1f7c1718e253614838ba3e453297a8e222867506b737c3d3dedec2e3b026cc40",
+    "references/S-QWEN-VL/fulltext.txt": "87c0802f0f621cb7ab11e36f542e8d16ada24490084fa471423a12bb2d6a0fd2",
+    "tools/check_k_work_003_full.py": "0f59726d42ba1ba55733d3a107bdf142fd98fb616a02864697564ba0164fa667"
+  },
+  "criteria": {
+    "definition": {
+      "assessment": "sufficient",
+      "reason": "联合记录明确请求身份、外部到达、依赖事件、输入身份、媒体几何、正式输出和客户端边界，并解释边际与协方差不足以恢复联合分布。规范化状态与运行事件状态分开；已选择 token、已消费位置和可见正文没有混同。",
+      "evidence": [
+        {
+          "path": "knowledge/workloads/input-distribution.md",
+          "quote": "`r_i=(id_i,s_i,a_i,D_i,u_i,m_i,x_i,y_i,o_i,c_i)`。"
+        },
+        {
+          "path": "knowledge/workloads/input-distribution.md",
+          "quote": "客户端 chunk、正式选择的 token、已消费并形成 KV 的 token、解码字节与已提交字节是不同边界。"
+        },
+        {
+          "path": "knowledge/workloads/input-distribution.md",
+          "quote": "低阶摘要用于定位变化；有限离散样本若要声称经验联合分布完全相同，应比较规范联合记录的频数，而不能仅比较均值与协方差。"
+        }
+      ]
+    },
+    "legality": {
+      "assessment": "sufficient",
+      "reason": "明确制品和单位相容、删失与失败记账、完整缓存身份、依赖闭包、集合隔离及恢复点条件。独立边际抽样、完整单元重采样和连续窗口重放作为不同实验选择解释。来源核对支持 GenAI-Perf 的控制入口及其限制、PagedAttention 的共享机制和 Qwen 的图像处理条件，没有将接口或目录命中当作实际状态就绪证明。",
+      "evidence": [
+        {
+          "path": "knowledge/workloads/input-distribution.md",
+          "quote": "缓存复用要求完整计算身份相同、状态完成、物理副本仍驻留、路由可达及恢复点合法。"
+        },
+        {
+          "path": "knowledge/workloads/input-distribution.md",
+          "quote": "必需依赖必须在所选单元内闭合，或由明确、可验证的初始快照满足。"
+        },
+        {
+          "path": "knowledge/workloads/input-distribution.md",
+          "quote": "独立抽取各边际可以作为零模型或压力干预，但它改变联合规律。"
+        }
+      ]
+    },
+    "algorithm": {
+      "assessment": "sufficient",
+      "reason": "BuildAndAuditWorkload 给出输入输出、初始化、规范化、终止拒绝分支、依赖单元筛选、抽样支持检查、副本身份重写、事件释放、独立审计与冻结条件。双回合轨迹明确完成反馈如何改变后继就绪时间，fixture 与真实闭环的数据来源也有区分。本章核心是负载构造和计账；逐层 attention 公式声明为每层每 query head 的计数，没有借模型前向黑箱声称实现完整 decoder。已修复的拒绝落入和孤立后继问题可关闭。",
+      "evidence": [
+        {
+          "path": "knowledge/workloads/input-distribution.md",
+          "quote": "状态置 REJECTED；记录原因到 Reject；立即继续下一条原始记录。"
+        },
+        {
+          "path": "knowledge/workloads/input-distribution.md",
+          "quote": "每次抽取分配全局唯一 copy_id；重写请求、会话、分支及依赖端点身份。"
+        },
+        {
+          "path": "knowledge/workloads/input-distribution.md",
+          "quote": "节点的就绪时间不早于外部释放界及每个依赖事件时间加其等待间隔。"
+        },
+        {
+          "path": "knowledge/workloads/input-distribution.md",
+          "quote": "真实闭环模式把本次实际提交的回答和工具结果写入下一回合，再重新计算模板、长度、缓存身份与停止边界；若内容改变，不能继续使用旧 x、y 或旧复用距离。"
+        }
+      ]
+    },
+    "cost": {
+      "assessment": "sufficient",
+      "reason": "prefill 配对和 decode 的 y−1 消费边界推导正确，且将 y=0 的部分执行与完成 prefill 路径分开。KV 字节、padding、CPU 准备、传输关键路径、恢复与同步均有条件化说明。唯一物理对象账区分请求、目录、在途使用和交接责任，12/8/4/0 KiB 轨迹与 28 KiB·s 积分正确，预分配池没有重复相加。Qwen 图像、窗口配对、49/63 MiB 容量及暂存字节与所供结构参数相符，并明确不是硬件事务或实测时延。",
+      "evidence": [
+        {
+          "path": "knowledge/workloads/input-distribution.md",
+          "quote": "正式选择第一个输出不会自动计算该输出自身的 KV。"
+        },
+        {
+          "path": "knowledge/workloads/input-distribution.md",
+          "quote": "`P_dec=Σ_(t=1)^m(x+t)=m x+m(m+1)/2`。"
+        },
+        {
+          "path": "knowledge/workloads/input-distribution.md",
+          "quote": "请求完成只撤 A；目录淘汰只撤 C；设备操作完成才撤对应 R/W。"
+        },
+        {
+          "path": "knowledge/workloads/input-distribution.md",
+          "quote": "t 用秒时，I 的单位是 byte·s，`I/(t1−t0)` 才是平均驻留字节。"
+        },
+        {
+          "path": "knowledge/workloads/input-distribution.md",
+          "quote": "通信、复制和计算若重叠，应根据依赖关键路径估时；未重叠的传输、恢复、同步和排队仍需计入。"
+        }
+      ]
+    },
+    "adaptation": {
+      "assessment": "sufficient",
+      "reason": "按模型制品、依赖与生成内容、缓存协议、批形成、媒体几何和取消条件分别说明可保留证据、必须重算的对象及旧结论失效条件。明确会话重采样不保留全局复用距离，以及热点排队可能反转缓存收益，能够支持条件改变后的重新选择。",
+      "evidence": [
+        {
+          "path": "knowledge/workloads/input-distribution.md",
+          "quote": "复制单元保留内部依赖规则，不保证保留原全局时间相关性。"
+        },
+        {
+          "path": "knowledge/workloads/input-distribution.md",
+          "quote": "调整分辨率、crop 或抽帧规则后，应重新计算受影响输入和身份。"
+        },
+        {
+          "path": "knowledge/workloads/input-distribution.md",
+          "quote": "热点消失、复用变稀、缓存保留时间增大或远端排队超过省下的计算时，应放弃相应缓存性能结论。"
+        }
+      ]
+    },
+    "diagnosis": {
+      "assessment": "sufficient",
+      "reason": "针对缓存提速、平均长度相同但尾部变化、多轮异常提速、首输出重复计账、结束后驻留和视觉几何变化提出竞争解释、受控干预和撤回条件。指定检查的主要机制具有独立参考或明确不变量及可检测负对照，实际执行证据与脚本身份一致；没有将 CPU 模型推广成 GPU 或 Agent 效果证明。",
+      "evidence": [
+        {
+          "path": "knowledge/workloads/input-distribution.md",
+          "quote": "固定请求群体和停止合同，只改变缓存容量，记录命中位置、重算 query、排队和驻留；若计算未减少，撤回少算解释"
+        },
+        {
+          "path": "knowledge/workloads/input-distribution.md",
+          "quote": "分别撤请求、目录和最后读者，比较唯一存活对象与整个池；只在责任全撤后仍无法解释的对象才支持泄漏判断"
+        },
+        {
+          "path": "knowledge/workloads/input-distribution.md",
+          "quote": "局部模型通过后仍须在目标制品、事件采集和硬件上验证相应主张；反证先定位单位、身份、事件与分母，再修正实现或缩小结论范围。"
+        }
+      ]
+    }
+  },
+  "findings": [],
+  "limitations": [
+    "审查对象为本轮提供的候选、材料文本和实际 preflight 记录；未直接读取本地仓库、重新计算文件哈希或重新执行 Python。documents 使用任务提供的固定绑定，不证明当前磁盘内容未发生变化。",
+    "原文核对限供给的提取文本；未核验原始 PDF 图片、reader.html、上游源码或磁盘链接可达性。相对链接的路径关系已按所供文本检查。",
+    "检查只验证有限 CPU 逻辑模型，规范化合同经过简化，不执行真实 tokenizer、processor、模型前向或真实闭环生成。",
+    "重放检查覆盖给定时长下的完成依赖、双回合及 join，不覆盖生产排队、首内容依赖、失败传播和外部释放晚于全部依赖的完整事件组合。",
+    "物理驻留检查验证共享去重与缓存、读者保留区间，未验证实际 GPU 完成事件、可见性、W 责任交接、槽位代次复用或异步回收实现。",
+    "LRU 结论限等大小块的完全相联参考策略；视觉计数限声明的处理后单图窗口网格。设备事务、通信重叠、端到端性能和 Agent 使用效果均未测量。"
+  ],
+  "checks": [
+    {
+      "script": "tools/check_k_work_003_full.py",
+      "args": []
+    }
+  ],
+  "reading_scope": {
+    "basis": "完整阅读本轮消息中提供的候选正文、指定 Python 脚本、author_notes、actual_preflight 及材料内容。以下范围均为材料声明的提取文本零基半开字符区间，不声称读取未供给内容。",
+    "full_supplied_documents": {
+      "AGENTS.md": [
+        [
+          0,
+          567
+        ]
+      ],
+      "docs/knowledge-method.md": [
+        [
+          0,
+          2251
+        ]
+      ],
+      "docs/knowledge-review.md": [
+        [
+          0,
+          3016
+        ]
+      ],
+      "knowledge/workloads/input-distribution.md": [
+        [
+          0,
+          15105
+        ]
+      ],
+      "knowledge/sources/S-GENAI-PERF.md": [
+        [
+          0,
+          506
+        ]
+      ],
+      "knowledge/sources/S-PAGED.md": [
+        [
+          0,
+          2206
+        ]
+      ],
+      "knowledge/sources/S-QWEN-VL.md": [
+        [
+          0,
+          466
+        ]
+      ],
+      "knowledge/frameworks/compile-dynamic-shapes.md": [
+        [
+          0,
+          4495
+        ]
+      ],
+      "knowledge/models/vision-language.md": [
+        [
+          0,
+          4050
+        ]
+      ],
+      "knowledge/workloads/session-workloads.md": [
+        [
+          0,
+          3583
+        ]
+      ],
+      "knowledge/tools/statistical-experiments.md": [
+        [
+          0,
+          4269
+        ]
+      ],
+      "knowledge/workloads/slo-goodput.md": [
+        [
+          0,
+          2616
+        ]
+      ],
+      "knowledge/system-semantics/evidence-and-independent-checks.md": [
+        [
+          0,
+          3845
+        ]
+      ],
+      "knowledge/models/embedding-reranking.md": [
+        [
+          0,
+          4128
+        ]
+      ],
+      "knowledge/models/recommendation-inference.md": [
+        [
+          0,
+          3902
+        ]
+      ],
+      "knowledge/models/graph-inference.md": [
+        [
+          0,
+          3892
+        ]
+      ],
+      "references/S-GENAI-PERF/fulltext.txt": [
+        [
+          0,
+          46825
+        ]
+      ],
+      "references/S-PAGED/fulltext.txt": [
+        [
+          0,
+          82285
+        ]
+      ],
+      "references/S-QWEN-VL/fulltext.txt": [
+        [
+          0,
+          91965
+        ]
+      ]
+    },
+    "full_supplied_check": "tools/check_k_work_003_full.py：完整 candidate.test_script，从 shebang 至 main() 入口；任务未提供字符范围元数据。",
+    "excerpts_only": {
+      "knowledge/algorithms/prefix-cache-identity.md": [
+        [
+          0,
+          4535
+        ],
+        [
+          8000,
+          10003
+        ]
+      ],
+      "knowledge/system-semantics/tokenization-io.md": [
+        [
+          0,
+          4000
+        ],
+        [
+          8000,
+          10538
+        ]
+      ],
+      "knowledge/models/moe-routing.md": [
+        [
+          0,
+          4000
+        ],
+        [
+          8000,
+          10053
+        ],
+        [
+          16000,
+          16485
+        ]
+      ],
+      "knowledge/models/omni-multimodal.md": [
+        [
+          4000,
+          10538
+        ]
+      ]
+    },
+    "source_fidelity": "GenAI-Perf 的 README、goodput 和 multi_turn 文档支持长度控制、hash_ids 合成块、响应后回合延迟、联合约束及 token 计数限制。S-PAGED §2.2 支持 prompt 产生首输出分布及后续消费已选 token，§4.2–4.4 支持块映射、共享和 COW，§7.2 支持有负载条件的块大小结果。S-QWEN-VL §2.1–2.1.3 与表1支持图像尺寸、patch、合并、窗口层数、时间位置和7B结构参数。本章额外事件责任及数值算例明确归为独立推导。摘录文件未列入 documents。"
+  },
+  "test_assessment": "明确 approve 指定检查 tools/check_k_work_003_full.py 在其声明的离线 CPU 机制范围内的算法与本次实际执行，并关闭 campaign-K-WORK-003-r1 的本轮检查审批缺口。已逐段审查脚本，未以作者判断或退出码替代语义检查。供给 actual_preflight 的 script_sha256 为 0f59726d42ba1ba55733d3a107bdf142fd98fb616a02864697564ba0164fa667，与绑定一致；实际命令为隔离 Python 3.12 运行该脚本，returncode=0、stderr为空、timed_out=false。本审阅者未重新运行，不把作者先前 JavaScript 执行算作 Python 结果。独立性方面：prefill/decode 以逐条合法 query-key 边及选择/消费事件对照闭式公式；驻留以独立给定的拥有区间并集对照引用增减扫描；缓存以列表 LRU 对照不同身份栈距离；视觉以逐 patch 坐标分组对照窗口公式；拒绝和会话轨迹使用手工分类、手算时间与身份/因果不变量。实际输出记录252个消费边界组合和5465个LRU比较，数量与脚本循环一致。边界包括空记录、非法扰动、缺祖先、重复身份、环、join、慢父节点、y=0/1、EOS、预算、STATE_ONLY、零容量、引用下溢及非法图像尺寸。错误版本或结果经同一参考/不变量检出：拒绝落入与手工合法集合不等，忽略依赖违反完成时间约束，旧decode在y=1错误多计10对，逐请求驻留重复共享页并漏掉结束后的保留，忽略最后读者导致[1,2)少计4 KiB，曾出现即命中错误忽略淘汰。上述负对照实际触及本章修复机制。池分解和部分goodput断言只是辅助代数/集合算例，不单独证明分配器或测量系统正确；它们没有替代主要机制的独立参考。检查不实现完整BuildAndAuditWorkload，不检验真实分层抽样权重、split隔离、处理器身份、全部依赖事件和失败组合，也不检验GPU生命周期；这些遗漏与正文及作者声明的验证边界一致，作为limitation保留。"
+}

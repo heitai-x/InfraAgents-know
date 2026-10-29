@@ -1,0 +1,170 @@
+{
+  "entry_id": "K-SYS-002",
+  "body_sha256": "7654820c3ceced5a4ee42da20ce3edbc229461576384c2274a40e65907094864",
+  "reviewer": "sol-reviewer:K-SYS-002:round-4",
+  "decision": "accept",
+  "documents": {
+    "AGENTS.md": "b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a",
+    "docs/knowledge-method.md": "69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb",
+    "docs/knowledge-review.md": "f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21",
+    "knowledge/system-semantics/request-batch-identity.md": "7654820c3ceced5a4ee42da20ce3edbc229461576384c2274a40e65907094864",
+    "knowledge/sources/S-ORCA.md": "920ef987a4a019bb4f0e0386e30bf1c1e3bc720d199ae4de22e462db4f41520a",
+    "knowledge/sources/S-VLLM-SCHED.md": "2e9bbe0d29145039d1bcd43bb54d40c4136ef51641a6e33a5d7097eb0500daf0",
+    "knowledge/sources/S-OTEL.md": "b68ba3b2833dc7f9f5ad7f49ae395fa70cc31b94252dd1741149e1fd1eca4068",
+    "knowledge/workloads/session-workloads.md": "0269e1987e1107d0cf0135cb32aa759c67d5266cfa09fb1402f97704c4ab4d78",
+    "knowledge/system-semantics/serving-recovery.md": "f551fa1f1e6213469c856a880839eefff504fb39f4dd692000b2df80a20a7f5e",
+    "knowledge/system-semantics/tenant-isolation.md": "0ca7501a80e750152a5fb3b9815c77f9e3f9aa393ff7546b3f05375958f88606",
+    "knowledge/algorithms/routing-and-migration.md": "1b9dcfd5fea499a91611459bb936e1c1c49ceb562171fb0f1ba360a7010f5d32",
+    "knowledge/engine-index/vllm-model-runner.md": "87d1433d4f64d939ff8f137d1c1d4092cfdf2b3d7ebdd011a0f344cc66564714",
+    "references/S-ORCA/fulltext.txt": "2119a53d77b4a933bab56d7e40b5304fa725561c412514459e56729ca6836794",
+    "references/S-OTEL/fulltext.txt": "f00d2f265bdd7aceff39c2d3c52f7cd3ab12b061e1f02cefaf84d6e12afa34a4",
+    "tools/check_k_sys_002_full.py": "13dd770633a947f622870a047f50c9b2dad8763090d4f9459c307a97a8f387a9"
+  },
+  "criteria": {
+    "definition": {
+      "assessment": "sufficient",
+      "reason": "完整定义请求生命期、分支、授权尝试、逻辑位置、视图与物理槽代次，区分已知 token、全层有效 KV、业务提交和最后使用；输入、构造输出及长期状态均明确。长期页表和两类引用使 k 的含义具有资源依据。",
+      "evidence": [
+        {
+          "path": "knowledge/system-semantics/request-batch-identity.md",
+          "quote": "κ=(r,β,g,p)=((request_id,lifetime_id),branch_id,attempt,logical_position)。"
+        },
+        {
+          "path": "knowledge/system-semantics/request-batch-identity.md",
+          "quote": "普通推进满足 0≤k≤n；已知 token 与已完成 KV 不同。新采样 token 可以已经进入 x，却尚未计算自己的 KV。"
+        },
+        {
+          "path": "knowledge/system-semantics/request-batch-identity.md",
+          "quote": "机制输入是请求/分支账、候选工作、资源与版本快照；构造输出是不可变视图 V_t 和执行记录 E_t。"
+        }
+      ]
+    },
+    "legality": {
+      "assessment": "sufficient",
+      "reason": "已确认输入、因果可见性、版本相容、写权、唯一提交权及物理排空构成合法条件；单分支单未释放视图、整视图完成门和固定槽保护明确属于保守选择。KV_ONLY/SAMPLE、完整 KV 命中缺 logits、空输入和终止边界均有处理，未把 ORCA 的历史执行组织提升为数学限制。",
+      "evidence": [
+        {
+          "path": "knowledge/system-semantics/request-batch-identity.md",
+          "quote": "普通推进选择 [p0,p1)=[k,k+q)，其中 q 为正整数，p1≤n，输入已经确认，历史与因果 mask 可用，写区具有独占写权或合法 COW。"
+        },
+        {
+          "path": "knowledge/system-semantics/request-batch-identity.md",
+          "quote": "混合版本只有在执行器逐行支持相应权重地址、页表与数值路径时才合法，否则分桶。"
+        },
+        {
+          "path": "knowledge/system-semantics/request-batch-identity.md",
+          "quote": "epoch 拒绝旧结果，最后使用条件防止旧物理访问；两者解决不同问题。"
+        }
+      ]
+    },
+    "algorithm": {
+      "assessment": "sufficient",
+      "reason": "构造、原子发布、准备、提交、完成、分支事务与回收形成闭合路径。F07 已由发布事务中的 active_view 登记及未提交/准备失败后的 business_done、排空和清绑定步骤修复。F08 已在三条保留 KV 路径统一建立长期拥有权，并限制 finalize 只解除执行引用。F09 已展开首层输入、各层历史及新增 KV、hidden 传递、末层 logits 和逐层逐位置完成覆盖。当前文本足以解释正常推进与拒绝路径，三项旧阻塞均关闭。",
+      "evidence": [
+        {
+          "path": "knowledge/system-semantics/request-batch-identity.md",
+          "quote": "owner[σ]←view_id；对每个入选段令 L[r,β].active_view←view_id"
+        },
+        {
+          "path": "knowledge/system-semantics/request-batch-identity.md",
+          "quote": "令所有尚未解析段为 aborted，business_done←true；k/n/RNG/输出不变"
+        },
+        {
+          "path": "knowledge/system-semantics/request-batch-identity.md",
+          "quote": "所有保留新 KV 的事务都使用同一拥有权步骤：先核对 E 保护的新页及全层写入证据，在事务内为有效范围建立或转移 (r,β) 的长期拥有者引用，发布全层页表，再发布 k 和提交键。"
+        },
+        {
+          "path": "knowledge/system-semantics/request-batch-identity.md",
+          "quote": "第 ℓ 层的历史 K/V 来自 O 中该分支的第 ℓ 层 [0,p0)，本轮新 K/V 来自该层输入 h^(ℓ−1) 的投影，不来自其他层的历史，也不来自兄弟分支。"
+        },
+        {
+          "path": "knowledge/system-semantics/request-batch-identity.md",
+          "quote": "算法 2 的全层门要求对每个必要 (ℓ,κ) 完整覆盖，κ 已含逻辑位置 p；不能用“该层发生过一次写入”代表整个段完成。"
+        }
+      ]
+    },
+    "cost": {
+      "assessment": "sufficient",
+      "reason": "六类成本均有条件化解释。主机复杂度限定为准备、校验及引用移交；attention 公式按每段合法 query-key 对数乘 QK/PV 的每对 4d FLOPs，层数和 query heads 因子一致。逻辑搬运字节、实际内存事务、通信副本、关键路径与唯一物理驻留分开，COW 和长期引用的容量含义明确；没有用符号模型推断硬件性能。",
+      "evidence": [
+        {
+          "path": "knowledge/system-semantics/request-batch-identity.md",
+          "quote": "准备操作量期望为 O(LF+RG+B+H+P)，完成校验及引用移交为 O(L+T+H+P)"
+        },
+        {
+          "path": "knowledge/system-semantics/request-batch-identity.md",
+          "quote": "普通稠密 attention 的 QK 与 PV 主工作量约为 4NℓHq d·Σ_b[q_b h_b+q_b(q_b+1)/2] 个浮点操作"
+        },
+        {
+          "path": "knowledge/system-semantics/request-batch-identity.md",
+          "quote": "时间应沿真实关键路径计算；独立阶段可以重叠，共享 CPU、内存链路或 NIC 的阶段不能各取独占带宽后再宣称完全重叠。"
+        },
+        {
+          "path": "knowledge/system-semantics/request-batch-identity.md",
+          "quote": "共享 KV 页只计一次物理容量，但每个拥有者和执行引用仍需责任记录。"
+        }
+      ]
+    },
+    "adaptation": {
+      "assessment": "sufficient",
+      "reason": "说明活跃集合、图重放、准备瓶颈、慢消费者、版本变化与迁移改变后应如何调整表示和责任组织。更深流水、搜索树、递归及覆盖状态的扩展条件清楚；保持身份和最后使用约束，同时允许调整槽、段表、输出池或放弃不相容缓存。",
+      "evidence": [
+        {
+          "path": "knowledge/system-semantics/request-batch-identity.md",
+          "quote": "更深流水必须增加依赖、未确认进度和提交次序，不能直接删除这一限制。"
+        },
+        {
+          "path": "knowledge/system-semantics/request-batch-identity.md",
+          "quote": "若实测准备已占关键路径，可考虑段表、增量更新或独立输出池；若慢消费者占满槽，应调整有界输出与背压策略，而非提前删除其责任。"
+        },
+        {
+          "path": "knowledge/system-semantics/request-batch-identity.md",
+          "quote": "模型或 processor 改变后，不相容状态必须重建。"
+        }
+      ]
+    },
+    "diagnosis": {
+      "assessment": "sufficient",
+      "reason": "竞争解释配有控制改变和不同预测；检查参考由原始分支账及固定层域产生，能够拒绝同步错配、漏身份、漏绑定、漏 owner 和消费者碰撞。缺层、缺单位置、缺 logits 与不可见证书通过实际完成门拒绝。明确区分符号状态证据、设备事实和使用效果，反证后的修正方向具体。",
+      "evidence": [
+        {
+          "path": "knowledge/system-semantics/request-batch-identity.md",
+          "quote": "检查参考必须独立于被测视图：从原始请求/分支账与明确选中范围重建完整 κ、token、参数、版本、采样资格和输出序号，再核对实际行及派生数组。"
+        },
+        {
+          "path": "knowledge/system-semantics/request-batch-identity.md",
+          "quote": "页参考从分支 k 和固定层域导出每个必须存在的逻辑位置，检查相容页、长期拥有权与不可复用性，不以 E 尚未释放掩盖 owner 缺失。"
+        },
+        {
+          "path": "knowledge/system-semantics/request-batch-identity.md",
+          "quote": "反证应修改对应机制解释，不能通过删请求或放宽分母使结果通过。"
+        }
+      ]
+    }
+  },
+  "findings": [],
+  "limitations": [
+    "检查仅覆盖确定性 CPU 符号身份、状态及页引用模型；不计算真实 hidden、K/V 或 logits，不证明数值等价、采样分布及 PRNG 质量。",
+    "逐层写入、可见性、排空和消费者结束由模型事件提供；真实 GPU、跨 stream、DMA、网络及通信 API 的完成范围仍需实际执行路径证据。",
+    "真实分页与共享尾页 COW、完整 KV 命中后的重算、递归或窗口覆盖状态、搜索共同接受、持久事务及分布式授权未由本脚本验证；正文已声明相应范围或委托相关协议。",
+    "S-VLLM-SCHED 仅核对所供来源说明，没有上游源码归档供独立核验；ORCA 与 OTel 的核对范围为所供全文提取文本，不包含另行检查 PDF 图像或归档字节。",
+    "本次审阅未自行运行 Python 或重新计算磁盘哈希；执行结论依据用户提供、绑定当前脚本及正文摘要的 actual_preflight，未把作者阶段未执行的检查记为通过。"
+  ],
+  "checks": [
+    {
+      "script": "tools/check_k_sys_002_full.py",
+      "args": [],
+      "execution_source": "用户提供的 actual_preflight；审阅者检查脚本逻辑及实际执行记录，未重新执行",
+      "script_sha256": "13dd770633a947f622870a047f50c9b2dad8763090d4f9459c307a97a8f387a9",
+      "body_sha256": "7654820c3ceced5a4ee42da20ce3edbc229461576384c2274a40e65907094864",
+      "backend": "remote_bwrap",
+      "returncode": 0,
+      "timed_out": false,
+      "reported_result": "PASS",
+      "assessment": "实际记录显示全部轨迹完成、九个故障模型被检出，stderr 为空；仅支持脚本声明的符号模型范围。"
+    }
+  ],
+  "no_checks_reason": "",
+  "reading_scope": "完整阅读本消息提供的最终 candidate.chapter、candidate.test_script、author_notes、actual_preflight 和方法材料。完整材料范围均为提取文本的零基半开字符区间：AGENTS.md [0,567)；docs/knowledge-method.md [0,2251)；docs/knowledge-review.md [0,3016)；当前 request-batch-identity.md [0,19071)；S-ORCA.md [0,1394)；S-VLLM-SCHED.md [0,760)；S-OTEL.md [0,520)；session-workloads.md [0,3583)；serving-recovery.md [0,3834)；tenant-isolation.md [0,4131)；routing-and-migration.md [0,3228)；vllm-model-runner.md [0,2207)；references/S-ORCA/fulltext.txt [0,90276)；references/S-OTEL/fulltext.txt [0,8256)。相关章节仅阅读所供摘录：iteration-batching.md [0,5867)、[12000,12671)；batched-sampling.md [4000,6538)、[12000,16000)；async-scheduling.md [0,4598)、[12000,13940)；branch-generation.md [0,5832)、[16000,16706)；model-lifecycle.md [0,2538)、[4000,8000)；service-protocol.md [0,2538)、[4000,8000)；correctness-oracles.md [0,2538)、[8000,12000)；host-runtime.md [0,2979)、[4000,7559)。这些摘录文件未放入 documents。脚本按消息提供的完整替换文本阅读。documents 中摘要复制用户要求的绑定值，未声称本地重算。作者材料账与本次范围分别处理：作者账中的旧正文为 [0,2669)、摘要 4bb364464c1ccab29bf079263a4e80d9d352e1477040fdcaf150a36294e37443，不等于最终候选；账中全文或摘录记录证明供给范围，不证明认知阅读。作者说明提到的额外历史候选及方案审阅未由本次材料独立核验，未作为最终候选正确性的依据。",
+  "test_assessment": "检查具有实际独立参考，非仅重复实现：verify_view 从构造前 deepcopy 的权威分支账和选中范围生成完整预期行；audit_pages 从长期 k、固定两层域、token 历史与版本生成必须存在的页集合；状态轨迹另有固定预期。F07 的省略绑定变体在提交门被拒绝，随后不能满足合法工作应推进至 k=1 的预期，因此检验了缺失状态转换的后果。F08 的三条漏 owner 变体均在执行引用已解除后接受页不变量检查，避免由 E 的存活掩盖缺陷；两轮 prefill 还检查第一轮留下 128 个受保护符号页、第二轮读取历史及最终 256 个有效页。F09 的证书检查比较完整 (层,κ) 多重集合和必要 logits，缺一位置但仍列出全部层、整层缺失、仅 logits、缺 logits、不可见均经过 complete 的实际门拒绝；它验证证书消费规则，不验证证书由真实前向正确产生。24 个排列只检查映射及派生字段，没有执行重排后的数值模型。九个负对照均要求实际抛出失败，全部检出集合还被核对，具有对应机制的判别力。准备失败、取消、确定拒绝、UNKNOWN 后排空、重复通知、兄弟消费者、旧尝试及槽代次等边界有有限轨迹覆盖，不构成任意并发交错证明。作者明确记录其阶段 Python 执行次数为零；后续 actual_preflight 提供当前脚本的真实运行和摘要绑定，两者并不矛盾。接受结论来自当前正文状态转换、数据流、来源解释和成本推导的独立检查，并非由 PASS 标签推出。"
+}

@@ -1,0 +1,169 @@
+{
+  "entry_id": "K-FW-004",
+  "body_sha256": "f50fef4ed282008d0b22bc7818100d33faebdae8edb774d00b277dd733864b12",
+  "reviewer": "/root/editorial_convention",
+  "decision": "accept",
+  "review_scope": "editorial_only",
+  "reading_scope": "实际阅读全部编辑差异及前后上下文，核对旧接受记录、执行记录和保留引句；不声称本次重读全篇阅读链或重新验证技术充分性。",
+  "prior_semantic_review": {
+    "path": "docs/evidence/knowledge-workflow-20261028-batch13/K-FW-004/round-3/review.json",
+    "sha256": "2c7bfe45d711861a990f84d94ad459560bcc67c2fa0ad9cc027577b5f2fefd3b"
+  },
+  "prior_execution_records": [
+    {
+      "path": "docs/evidence/knowledge-workflow-20261028-batch13/K-FW-004/round-3/check-0.json",
+      "sha256": "a153c3d2ad80673ff05ce0b55cb076ddd97db4d640d4ee0a447c14a002cfbfd8",
+      "exit_code": 0,
+      "body_sha256": "3ccbe7826d55f9b69d57379088f5886eb194cfafda06f091dac30f00107eb812",
+      "script_path": "tools/check_k_fw_004_full.py",
+      "script_sha256": "649ea51da82b8512fec1750717be49c049303972dd2bfbe400947effececaede",
+      "meaning": "历史真实执行记录，绑定原检查输入；本次没有重跑或把其正文哈希改成新稿。"
+    }
+  ],
+  "documents": {
+    "knowledge/frameworks/compile-dynamic-shapes.md": "f50fef4ed282008d0b22bc7818100d33faebdae8edb774d00b277dd733864b12",
+    "docs/evidence/knowledge-workflow-20261028-batch13/K-FW-004/round-3/review.json": "2c7bfe45d711861a990f84d94ad459560bcc67c2fa0ad9cc027577b5f2fefd3b",
+    "docs/evidence/knowledge-workflow-20261028-batch13/K-FW-004/round-3/check-0.json": "a153c3d2ad80673ff05ce0b55cb076ddd97db4d640d4ee0a447c14a002cfbfd8"
+  },
+  "criteria": {
+    "definition": {
+      "assessment": "sufficient",
+      "reason": "本次只复核编辑差异及前后上下文，技术充分性承接 docs/evidence/knowledge-workflow-20261028-batch13/K-FW-004/round-3/review.json；其中关于问题动机、数学定义、输入输出与状态关系的对应内容和下列原句仍在新稿，未被本次编辑改变。此次判定不声称重新完成全篇技术审查。",
+      "evidence": [
+        {
+          "path": "knowledge/frameworks/compile-dynamic-shapes.md",
+          "quote": "输出既包括 `y`，也包括状态变化 `z→z'`；输出张量接近而 KV 写错位置，仍然是不正确的执行。"
+        },
+        {
+          "path": "knowledge/frameworks/compile-dynamic-shapes.md",
+          "quote": "逻辑 shape 描述任务，物理 shape 描述分配和执行容量，两者不能混为一谈。"
+        }
+      ]
+    },
+    "legality": {
+      "assessment": "sufficient",
+      "reason": "本次只复核编辑差异及前后上下文，技术充分性承接 docs/evidence/knowledge-workflow-20261028-batch13/K-FW-004/round-3/review.json；其中关于合法条件与可替换的实现选择的对应内容和下列原句仍在新稿，未被本次编辑改变。此次判定不声称重新完成全篇技术审查。",
+      "evidence": [
+        {
+          "path": "knowledge/frameworks/compile-dynamic-shapes.md",
+          "quote": "guard 通过只是允许执行的必要条件，不能弥补错误的 lowering、mask 或状态绑定。"
+        },
+        {
+          "path": "knowledge/frameworks/compile-dynamic-shapes.md",
+          "quote": "合法方案是按逻辑长度选择原分支，或让改写后的程序显式消费逻辑长度；仅屏蔽输出尾部无法修复这个错误。"
+        },
+        {
+          "path": "knowledge/frameworks/compile-dynamic-shapes.md",
+          "quote": "保留全部前缀、只补后缀 padding 也可能是另一种合法策略；它不符合上述优先迁移的选择规则，却不天然违反 attention 数学。"
+        }
+      ]
+    },
+    "algorithm": {
+      "assessment": "sufficient",
+      "reason": "本次只复核编辑差异及前后上下文，技术充分性承接 docs/evidence/knowledge-workflow-20261028-batch13/K-FW-004/round-3/review.json；其中关于算法、数据流、状态转移和完成条件的对应内容和下列原句仍在新稿，未被本次编辑改变。此次判定不声称重新完成全篇技术审查。",
+      "evidence": [
+        {
+          "path": "knowledge/frameworks/compile-dynamic-shapes.md",
+          "quote": "后继层消费的是这次重算得到的 `Xℓ`，不是重新使用 token embedding，也不是从第 `ℓ` 层缓存取出隐藏状态。"
+        },
+        {
+          "path": "knowledge/frameworks/compile-dynamic-shapes.md",
+          "quote": "其历史来源只能是旧提交快照的同一层 `KV_old[ℓ,0:a)`。"
+        },
+        {
+          "path": "knowledge/frameworks/compile-dynamic-shapes.md",
+          "quote": "私有写区标为不可复用，直到全部在途访问排空后回收"
+        },
+        {
+          "path": "knowledge/frameworks/compile-dynamic-shapes.md",
+          "quote": "采样在合法末行 logits 可用后进行；若将采样合入 executable，其 token 和 RNG 副作用也必须进入一致的提交合同。"
+        }
+      ]
+    },
+    "cost": {
+      "assessment": "sufficient",
+      "reason": "本次只复核编辑差异及前后上下文，技术充分性承接 docs/evidence/knowledge-workflow-20261028-batch13/K-FW-004/round-3/review.json；其中关于计算、访存、通信、准备、同步与驻留的条件化成本的对应内容和下列原句仍在新稿，未被本次编辑改变。此次判定不声称重新完成全篇技术审查。",
+      "evidence": [
+        {
+          "path": "knowledge/frameworks/compile-dynamic-shapes.md",
+          "quote": "其中已包含迁移重算行 `m` 和真正 padding 行 `P−q`，不能再把迁移成本加一遍。"
+        },
+        {
+          "path": "knowledge/frameworks/compile-dynamic-shapes.md",
+          "quote": "`A_bucket−A_original=(A_valid−A_original)+(A_bucket−A_valid)`"
+        },
+        {
+          "path": "knowledge/frameworks/compile-dynamic-shapes.md",
+          "quote": "若各层新增区都保留到统一提交，仅有效行的候选主项为 `q v_KV`；按整桶分配时可能是 `P v_KV`。"
+        },
+        {
+          "path": "knowledge/frameworks/compile-dynamic-shapes.md",
+          "quote": "`N_hit Δt≥C_v`，`N_req≥ceil(C_v/(φΔt))`。"
+        }
+      ]
+    },
+    "adaptation": {
+      "assessment": "sufficient",
+      "reason": "本次只复核编辑差异及前后上下文，技术充分性承接 docs/evidence/knowledge-workflow-20261028-batch13/K-FW-004/round-3/review.json；其中关于条件变化后的选择与反转依据的对应内容和下列原句仍在新稿，未被本次编辑改变。此次判定不声称重新完成全篇技术审查。",
+      "evidence": [
+        {
+          "path": "knowledge/frameworks/compile-dynamic-shapes.md",
+          "quote": "这说明固定策略失败和所有组合均不可行不同。"
+        },
+        {
+          "path": "knowledge/frameworks/compile-dynamic-shapes.md",
+          "quote": "若高度动态的输出数量没有可接受上界、外部状态无法进入受支持表示，或成熟库已使可节省部分很小，应允许放弃整段专门编译。"
+        },
+        {
+          "path": "knowledge/frameworks/compile-dynamic-shapes.md",
+          "quote": "模型引入双向依赖、窗口或异构状态层组后，应重新定义各层可复用状态和可见集合，不能仅保留本章的普通全历史 causal mask。"
+        }
+      ]
+    },
+    "diagnosis": {
+      "assessment": "sufficient",
+      "reason": "本次只复核编辑差异及前后上下文，技术充分性承接 docs/evidence/knowledge-workflow-20261028-batch13/K-FW-004/round-3/review.json；其中关于区分实验、负对照、稳定的检查覆盖与未测边界的对应内容和下列原句仍在新稿，未被本次编辑改变。此次判定不声称重新完成全篇技术审查。",
+      "evidence": [
+        {
+          "path": "knowledge/frameworks/compile-dynamic-shapes.md",
+          "quote": "历史参考按层分别保存，不从被测路径复制新增 K/V。"
+        },
+        {
+          "path": "knowledge/frameworks/compile-dynamic-shapes.md",
+          "quote": "失败检查同时比较提交描述符和旧状态内容：公共长度没有推进，却已经原地改坏旧页，也违反保留旧提交的要求。"
+        },
+        {
+          "path": "knowledge/frameworks/compile-dynamic-shapes.md",
+          "quote": "这些有限模型不证明真实设备同步或内存可见性。"
+        }
+      ]
+    }
+  },
+  "findings": [],
+  "limitations": [
+    "原语义审查保留的边界：审查依据任务提供的完整文本、明确摘录及 actual_preflight；本审阅调用没有独立重跑 Python，也没有重新计算文件字节哈希。绑定值按任务要求原样保存。",
+    "原语义审查保留的边界：S-TRITON 只有作者核验后的机制说明，未独立核验上游源码；四份其他来源的结论限于提供的全文提取文本，没有核对 PDF 图版或 reader.html 的实际呈现。",
+    "原语义审查保留的边界：相对链接的目标关系与所供材料一致，但未检查本地文件是否存在或冻结读取是否成功。",
+    "原语义审查保留的边界：检查不覆盖真实编译器、GPU/Neuron、低精度数值、设备同步、图捕获或服务性能，也不能证明 Agent 使用效果。",
+    "原语义审查保留的边界：事务检查使用不可变 CPU 元组与顺序发布模型。旧页保持由其私有构造方式保证，未模拟可变共享页、真实 COW/scatter 地址、取消竞争、异步排空或多 rank 提交；正文已明确这些边界，不能将当前结果记成相应设备检查 PASS。",
+    "原语义审查保留的边界：作者材料账本记录的是供应范围而非认知阅读证明，且其中旧正文的 4495 字符与旧哈希不是当前候选的阅读身份；不能据此断言作者未获完整原文，也不能用它证明作者所述第二轮候选及审查已分别完成阅读。",
+    "本次为非作者的编辑范围复核：只移出作者工具能力、临时执行进度及交叉探针过程，保留检查覆盖和未测边界；未重新审查全文所有公式、来源事实和完整机制。",
+    "既有检查结果只作用于其记录绑定的原输入。本次没有重新执行算法脚本，也没有真实设备、服务性能或 Agent 使用效果实验。",
+    "新稿尚待协调者应用、登记及实际结构和冻结读取验证；本编辑接受记录不能代替那些执行结果。"
+  ],
+  "checks": [],
+  "no_checks_reason": "本次仅编辑过程说明与证据入口，算法、伪代码和检查脚本未变；逐篇差异、原句、链接、正文身份、原接受记录及原检查脚本哈希已核对。既有执行结果保留原输入绑定，不作为新正文已重跑的声明。本次不重复算法检查，发布仍须实际执行结构及冻结读取验证。",
+  "editorial_validation": {
+    "manifest_sha256": "2dddae4de057612382ecb7c4f061d0c0d639f446fc1936e4a10130904c149ced",
+    "baseline_sha256": "3ccbe7826d55f9b69d57379088f5886eb194cfafda06f091dac30f00107eb812",
+    "unlisted_changes": false,
+    "pseudocode_unchanged": true,
+    "headings_unchanged": true,
+    "prior_check_inputs_match_baseline": true,
+    "check_scripts_unchanged": true,
+    "links_resolved": [
+      "docs/evidence/knowledge-workflow-20261028-batch13/K-FW-004/round-3/check-0.json"
+    ],
+    "prior_criterion_evidence_retained": true
+  }
+}

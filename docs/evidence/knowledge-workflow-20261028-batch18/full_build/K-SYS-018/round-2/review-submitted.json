@@ -1,0 +1,132 @@
+{
+  "entry_id": "K-SYS-018",
+  "body_sha256": "830583280402f4b317a500d2f60652ba5bcc55ebde593483c63ed32374658be7",
+  "reviewer": "sol-reviewer:K-SYS-018:round-2",
+  "decision": "accept",
+  "documents": {
+    "AGENTS.md": "b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a",
+    "docs/knowledge-method.md": "69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb",
+    "docs/knowledge-review.md": "f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21",
+    "knowledge/system-semantics/storage-services.md": "830583280402f4b317a500d2f60652ba5bcc55ebde593483c63ed32374658be7",
+    "knowledge/sources/S-CEPH06.md": "c7f4fcb98c84f56537ce795d8701cb89fb3259f9c7f9660f5f2b09ebbd5ec59f",
+    "knowledge/sources/S-SERVERLESSLLM.md": "aff9202b72fffcdf3145d0f014888070d2e12995b04f9c259930ad90a806473d",
+    "knowledge/sources/S-LINUX-IO.md": "786caae53cc1e80173616ce470c481145e285c2176b7cff4777576cc893fc316",
+    "knowledge/sources/S-BORG.md": "2efc1ae7dfd3d9751a94b3ce8ee9426cb4943197fa2afc80c344f009d52c7331",
+    "knowledge/algorithms/tiered-residency.md": "eb3ebc6320d5a32481cf645605d159860dc6d1edb97f1e98afd89ddb24ee82af",
+    "knowledge/workloads/cluster-resource-placement.md": "235de985ced67e21bfe6727ff2e91be680e8def602ad02a3f3e9de2b3ca1b8a1",
+    "knowledge/system-semantics/retrieval-pipeline.md": "bd09460502715f214c20ffdd68bdbc6bb9373668a849ca602b75d5e933ff40d0",
+    "references/S-LINUX-IO/fulltext.txt": "d6da925f1c90da275de1e6aa94a179a3273ad342fe77b61608a8b77fa75c3495",
+    "tools/check_k_sys_018_full.py": "67062e21ca14f5d02a031b43e4c1a5382cfe19ae612b52b60c46ea79df8c7249"
+  },
+  "criteria": {
+    "definition": {
+      "assessment": "sufficient",
+      "reason": "完整定义对象身份、表示、必需范围、持久性和保留策略，区分制品、可重算状态、索引及业务承诺；完成事件和缓存状态具有不同的可推断边界。",
+      "evidence": [
+        {
+          "path": "knowledge/system-semantics/storage-services.md",
+          "quote": "对象合同记为 O=(ns,a,q,R,d,c)。"
+        },
+        {
+          "path": "knowledge/system-semantics/storage-services.md",
+          "quote": "至少区分以下完成事件：操作被接受、部分字节到达、全部必需字节可读、指定副本接收、达到声明持久性、权威清单发布、最后消费者结束。"
+        }
+      ]
+    },
+    "legality": {
+      "assessment": "sufficient",
+      "reason": "必需范围独立于实际分片，物理边界按文件检查，摘要与表示检查职责分开；严格唯一覆盖被明确限定为本章选择。发布、读取保护、持久确认和权限撤销的合法条件与实现选择有明确区别。",
+      "evidence": [
+        {
+          "path": "knowledge/system-semantics/storage-services.md",
+          "quote": "R 必须来自可信配置或独立的必需对象描述，不能由“实际找到的分片集合”反推。"
+        },
+        {
+          "path": "knowledge/system-semantics/storage-services.md",
+          "quote": "合法性要求是不可变内容、完整依赖、统一发布点及清晰完成边界。CAS、外部事务记录或等价排序机制是实现选择。"
+        }
+      ]
+    },
+    "algorithm": {
+      "assessment": "sufficient",
+      "reason": "发布、快照读取、缓存事件和前缀日志均交付了可追踪的输入、分支、更新次序与结束条件。版本取得与回收共同排序，READY 交接先建立读保护，旧 attempt 与真实最后访问分别处理；日志重复查询不会把 PENDING 提升为 DURABLE。权威排序与持久存储是明确的抽象前提。",
+      "evidence": [
+        {
+          "path": "knowledge/system-semantics/storage-services.md",
+          "quote": "固定 (ns,a,d_M)，登记唯一读保护票据，再离开状态域"
+        },
+        {
+          "path": "knowledge/system-semantics/storage-services.md",
+          "quote": "将仍有效 waiters 转成 readers，置 READY，再发送完成通知"
+        },
+        {
+          "path": "knowledge/system-semantics/storage-services.md",
+          "quote": "已有且相同：返回原 PENDING 或 DURABLE 状态，不推进序号"
+        }
+      ]
+    },
+    "cost": {
+      "assessment": "sufficient",
+      "reason": "六类成本落实到具体工作与存活对象，容量按同时存活的唯一 backing 计量，区分逻辑字节与实际流量。共享出口、流水和批同步公式的单位与适用条件成立。独立复算得到并存主项 68 GiB、出口传输 64 s、半字节命中时 32 s，以及批服务约 2.061 ms、理想约 31052 条/s，与正文一致。",
+      "evidence": [
+        {
+          "path": "knowledge/system-semantics/storage-services.md",
+          "quote": "若它们共享不可变 backing，应改为同一时刻物理集合的并集求大小；上述分类不能重复包含同一对象。"
+        },
+        {
+          "path": "knowledge/system-semantics/storage-services.md",
+          "quote": "T_0=0；N_c≥1 时，T_Nc=t_r+t_c+t_d+(N_c−1)max(t_r,t_c,t_d)。"
+        },
+        {
+          "path": "knowledge/system-semantics/storage-services.md",
+          "quote": "批窗口只限制主动凑批等待，不自动约束服务队列。"
+        }
+      ]
+    },
+    "adaptation": {
+      "assessment": "sufficient",
+      "reason": "条件变化表和组合轨迹说明哪些身份、覆盖与最后访问条件必须保留，哪些缓存、批处理、分发和版本切换策略需要重新选择。容量不足及瓶颈迁移均给出具体放弃或调整依据。",
+      "evidence": [
+        {
+          "path": "knowledge/system-semantics/storage-services.md",
+          "quote": "若预算仅 60 GiB，应换路线，不能先删 A 的 v1"
+        },
+        {
+          "path": "knowledge/system-semantics/storage-services.md",
+          "quote": "表示、恢复语义或故障模型改变时，原方案可能不再合法，不能只调整一个性能参数继续使用原结论。"
+        }
+      ]
+    },
+    "diagnosis": {
+      "assessment": "sufficient",
+      "reason": "实验分别干预版本解析、表示、覆盖、读保护、共享取消、旧通知、旧物理写、日志缺口和权限传播，能够使竞争解释产生不同预测，并说明反证后的修正方向。检查具有独立参考、固定预期不变量及实际检出的故障对照，结论没有外推到设备或性能。",
+      "evidence": [
+        {
+          "path": "knowledge/system-semantics/storage-services.md",
+          "quote": "通知拒绝但仍损坏时，修隔离与排空，不只加代次"
+        },
+        {
+          "path": "knowledge/system-semantics/storage-services.md",
+          "quote": "实验应固定版本、有效字节、并发、缓存状态和完成边界，再改变能让竞争解释产生不同预测的中介量。"
+        }
+      ]
+    }
+  },
+  "findings": [],
+  "limitations": [
+    "CPU 模型不证明真实后端事务、fsync、复制故障域、并发线性化、网络或 DMA 排空、GPU 可见性、吞吐、p99 或 Agent 使用效果；正文已准确声明这些边界。",
+    "脚本未实现发布 op 决定的持久重试、日志恢复引用与 GC 的完整组合、检查点压缩、跨文件映射、量化转换和索引删除。正文算法与设定轨迹可供审查，但这些路径没有本次执行覆盖。",
+    "PublishArtifact 第 7 步按其文字解释为包含决定查询、安装与必要持久等待的共同排序操作。若实际实现等待时允许其他调用观察未持久决定，还需单独提供待定状态或等价阻塞保证；现有脚本没有验证该实现条件。",
+    "原始 Ceph、ServerlessLLM 和 Borg 材料仅按所供节选核对，不声称整篇复核。相对链接的路径关系已检查，但本调用没有文件读取工具，未验证磁盘上的链接目标或重新计算文件哈希。",
+    "作者供给范围账本记录的是暴露材料，不证明认知阅读；作者原正文范围与本轮完整候选范围不同，未将两者混同。"
+  ],
+  "checks": [
+    {
+      "script": "tools/check_k_sys_018_full.py",
+      "args": []
+    }
+  ],
+  "no_checks_reason": "",
+  "reading_scope": "全文审阅任务内提供的 AGENTS.md [0,567)、docs/knowledge-method.md [0,2251)、docs/knowledge-review.md [0,3016)、本轮候选 storage-services.md [0,14366)、完整检查脚本和 author_notes、actual_preflight；四份来源说明全文范围分别为 S-CEPH06 [0,748)、S-SERVERLESSLLM [0,781)、S-LINUX-IO [0,850)、S-BORG [0,732)。相关章节全文：tiered-residency [0,4244)、cluster-resource-placement [0,3360)、retrieval-pipeline [0,4507)。相关章节仅节选：checkpoint-loading [0,4000)、[8000,11083)；storage-io [0,4000)、[12000,15083)；distributed-kv-store [0,3083)、[8000,12000)；serving-recovery [0,4000)、[8000,11083)；model-lifecycle [4000,11083)；elastic-serving [0,7083)；cancellation-resource-completion [0,4000)、[12000,15083)；design-synthesis [8000,15083)；failure-evidence [4000,7083)、[8000,12000)。原始来源：Linux I/O 全文 [0,52366)；Ceph 仅 [0,54590)、[56000,60000)、[64000,68000)；ServerlessLLM 仅 [0,28000)、[36000,56000)、[60000,68000)、[76000,82590)；Borg 仅 [0,8000)、[12000,30591)、[40000,64000)、[76000,88000)。范围均为所供提取文本的零基半开字符范围。documents 仅列全文材料及完整脚本，不列节选原文的整文件身份为已全文阅读。作者范围另按 author_material_scopes 核对，没有用本审阅者较短的节选反推作者只收到同样范围；未读取上游实现源码。",
+  "test_assessment": "已检查完整 Python 控制流、断言、参考构造和六个负对照，并审阅实际执行记录。actual_preflight 使用绑定脚本 SHA-256 67062e21ca14f5d02a031b43e4c1a5382cfe19ae612b52b60c46ea79df8c7249，在 remote_bwrap 中由 Python 3.12 以 -I -S -B -X utf8 执行，returncode=0、stderr 为空；输出为区间参考 874 例、日志磁盘子集观察 24 次、流水参考 162 例及六个已检出负对照。因此 campaign-K-SYS-018-r1 的具体 Python 语法失败已由本轮真实执行证据关闭，不能继续沿用旧阻塞。该执行来自所供预检记录，不是作者阶段执行，也不是本审阅调用重新运行。区间排序扫描与逐字节集合比较；Store 另以连续 cursor 拒绝交叠，并以独立 fixture 字节检查摘要、固定版本及缺片、短读、损坏、错误表示、空 schema、未发布读取和 GC。缓存固定轨迹检查共享填充、取消后其他等待者、读者交接、失败重试和旧代通知。日志将恢复结果与已落盘位置集合的首个缺口比较，包含乱序、破损、重复 cid 和冲突。流水递推与独立闭式公式比较，覆盖零块和零阶段耗时。共享取消和提前 durable ack 使用实际错误模型；其余负对照以错误覆盖、混合版本、跳洞回放或串行时间表达式触发不变量失败，能够检出所述具体错误，但不能证明任意实现变体或并发路径。来源核对支持 Ceph ack/commit 与原型 MDS 恢复限制、ServerlessLLM 布局和顺序加载估计、Linux 乱序与直接 I/O 边界、Borg 不可变包局部性和分发；未发现超出 cutoff 的事实外推。本调用另以 JavaScript 独立复算容量、出口和批同步算例。发布重试的初始探针在持久等待期间插入域外读取，违反第 7 步的共同排序解释，未据此登记缺陷；修正为同域串行后，重试等待持久完成。真实后端如何兑现该排序仍属明确未验证范围。"
+}

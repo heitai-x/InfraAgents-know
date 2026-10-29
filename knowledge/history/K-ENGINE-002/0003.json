@@ -1,0 +1,57 @@
+{
+  "id": "K-ENGINE-002",
+  "path": "engine-index/vllm-kv-manager.md",
+  "category": "engine-index",
+  "title": "状态分配决策：命中、预留、发布与回收",
+  "summary": "缓存命中、存储已经分配、数据已经可用与请求已经完成是不同事实。分配器必须把这些事实接到执行与恢复边界，单个“长度”或“空闲显存”无法完整描述可推进性。",
+  "revision": 3,
+  "status": "seed",
+  "tags": [
+    "vLLM",
+    "KVCacheManager",
+    "allocate_slots",
+    "prefix",
+    "allocator-comparison",
+    "tiered-cache"
+  ],
+  "scope": {
+    "model_families": [],
+    "platforms": [],
+    "runtimes": [
+      "vllm"
+    ],
+    "workloads": []
+  },
+  "source_ids": [
+    "S-VLLM-KV",
+    "S-VLLM-CODE",
+    "S-VLLM-HYBRID"
+  ],
+  "related": [
+    "K-ALG-002",
+    "K-ALG-009",
+    "K-ENGINE-001",
+    "K-SYS-012",
+    "K-ALG-017",
+    "K-ALG-018",
+    "K-SYS-013",
+    "K-ALG-021"
+  ],
+  "evidence": [],
+  "updated_at": "2026-10-27",
+  "sha256": "50b09c7a66c1282b7f6f7ac7ef1f265b953b908ae5fba883c9beec4732e1ab89",
+  "questions": [
+    "为什么会出现状态分配决策的问题，输入与状态如何定义？",
+    "哪些依赖与资源条件决定合法性，哪些表示或策略可以更换？",
+    "不同选择怎样改变数据流、状态更新、准备与驻留成本？",
+    "怎样用反例、完成证据和区分实验判断收益与失效？"
+  ],
+  "symptoms": [
+    "空闲显存充足但请求仍因 KV 分配失败无法调度",
+    "请求释放后块长时间未回到可用池"
+  ],
+  "assumes": [
+    "vLLM V1 固定提交的 KV 管理器源码",
+    "按层组和 block pool 管理的分页 KV"
+  ]
+}

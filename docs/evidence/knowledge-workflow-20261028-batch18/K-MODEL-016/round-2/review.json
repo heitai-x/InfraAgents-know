@@ -1,0 +1,129 @@
+{
+  "entry_id": "K-MODEL-016",
+  "body_sha256": "945c7b3c3504a59900edbcec6c00d79e8294a2994a08fdbb55ddc032b47b03fd",
+  "reviewer": "sol-reviewer:K-MODEL-016:round-2",
+  "decision": "accept",
+  "documents": {
+    "AGENTS.md": "b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a",
+    "docs/knowledge-method.md": "69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb",
+    "docs/knowledge-review.md": "f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21",
+    "knowledge/models/graph-inference.md": "945c7b3c3504a59900edbcec6c00d79e8294a2994a08fdbb55ddc032b47b03fd",
+    "knowledge/sources/S-GRAPHSAGE.md": "18bc841af7bbc43c9e0f9534d35f3a62f8cb409c357b40465e3ff2eca51e8953",
+    "knowledge/sources/S-TVM.md": "d75602d9d7690dd48fe0bf97075f6f043094338453854b2dea122e528dd0b4f8",
+    "knowledge/sources/S-TORCH-NUMERIC.md": "cbe91153d9ff7bd2f596d1d6c4e15de1ad68571f3cbde23215891a8ec7f6fab4",
+    "references/S-GRAPHSAGE/fulltext.txt": "26d87ff80046dd8fff649ec5b9c49839a210c9bfc045f28d3bf8cc82ba2dbfeb",
+    "references/S-TVM/fulltext.txt": "395e021c4880ca64c78d6d850f96c654f4867bbcae9f7abcbe752dcfcb0a96a7",
+    "references/S-TORCH-NUMERIC/fulltext.txt": "bb6b2d8154a10f8f3b15e5ae4465cbc8d833067046964fc6b4d66dc036131b45",
+    "tools/check_k_model_016_full.py": "a09d9026af434642ab5cdd92176c6220118128012222349d7ef3025efe2ff9db"
+  },
+  "criteria": {
+    "definition": {
+      "assessment": "sufficient",
+      "reason": "说明归纳式节点表示的动机，定义快照、目标序列、层数、表示维度、参数轴与输出恢复；层身份、采样实例和物理可读状态分别说明。数学路径与 GraphSAGE Algorithm 1 相符，关闭归一化的手算模型也明确区分。",
+      "evidence": [
+        {
+          "path": "knowledge/models/graph-inference.md",
+          "quote": "输出按 T 的原顺序恢复 `z_i=h_{T_i}^K`，重复目标可以共享计算但仍保留多个输出位置。"
+        },
+        {
+          "path": "knowledge/models/graph-inference.md",
+          "quote": "不同层的同名节点代表不同值，不能仅按节点 ID 合并。"
+        }
+      ]
+    },
+    "legality": {
+      "assessment": "sufficient",
+      "reason": "采样方向、出现重数、空域、邻居不足、时间过滤和随机身份都有明确合同。区分模型替换、采样近似、实数线性改写与浮点验证；没有把论文的特定实验或存在性结论推广为部署保证。",
+      "evidence": [
+        {
+          "path": "knowledge/models/graph-inference.md",
+          "quote": "无放回的邻居不足策略选为全取；有放回时非空邻域抽恰好 s 次，空邻域选择空序列并走模型的空聚合合同。"
+        },
+        {
+          "path": "knowledge/models/graph-inference.md",
+          "quote": "投影必须相同且线性；bias 要恰好应用一次，非线性与归一化留在两项合并之后。"
+        }
+      ]
+    },
+    "algorithm": {
+      "assessment": "sufficient",
+      "reason": "部分 Fisher–Yates、反向闭包、逐层 mean 前向和固定计划失效均展开初始化、循环、更新及结束条件。闭包包含自身分支，前向保留边出现次数并隔离新旧层，完整成功后恢复目标输出。流水轨迹还区分取消发布与物理读取结束。",
+      "evidence": [
+        {
+          "path": "knowledge/models/graph-inference.md",
+          "quote": "闭包不变量为 `B_{k−1}=B_k∪⋃_{v∈B_k}set(S_k(v))`。"
+        },
+        {
+          "path": "knowledge/models/graph-inference.md",
+          "quote": "21    prev 的全部读者结束后解除该层保护；prev ← cur"
+        },
+        {
+          "path": "knowledge/models/graph-inference.md",
+          "quote": "请求取消可以撤销输出发布资格，已经提交的读取仍须排空。"
+        }
+      ]
+    },
+    "cost": {
+      "assessment": "sufficient",
+      "reason": "计算、逻辑读取、通信、准备、同步和驻留均有条件化账目。正确区分唯一邻居、边消费与实际事务，投影提前的比较保留自身项及额外缓冲条件。独立核算 C12-E 的节点、边、字节、FLOP、双层表示和索引数字一致；流水时间公式明确要求独立资源和充分缓冲。",
+      "evidence": [
+        {
+          "path": "knowledge/models/graph-inference.md",
+          "quote": "这些是不同计量口径，不能相加成同一份物理事务"
+        },
+        {
+          "path": "knowledge/models/graph-inference.md",
+          "quote": "若时间/类型过滤需现扫 D 条边，固定 fanout 也不能把准备成本界成 O(s)。"
+        },
+        {
+          "path": "knowledge/models/graph-inference.md",
+          "quote": "峰值应在同一时间点对唯一物理分配求和，加入权重、全图存储、工作区及在途批"
+        }
+      ]
+    },
+    "adaptation": {
+      "assessment": "sufficient",
+      "reason": "针对 batch、fanout、偏斜、更新、精度、布局及跨区通信变化给出保留关系和重算项目，并明确何时放弃缓存或改写。固定采样失效递推没有被误用于邻接更新或重采样。",
+      "evidence": [
+        {
+          "path": "knowledge/models/graph-inference.md",
+          "quote": "上述固定计划算法不能单独处理重采样或邻接版本更新。需重新选取受影响行的 S、重建依赖，再传播失效。"
+        },
+        {
+          "path": "knowledge/models/graph-inference.md",
+          "quote": "更新维护超过查询节省时放弃多层预计算缓存"
+        }
+      ]
+    },
+    "diagnosis": {
+      "assessment": "sufficient",
+      "reason": "区分采样质量、索引、版本、重数、方向和数值路径等竞争解释，并指定固定变量、干预、预测及撤回判断的条件。手算和实际错误变体确实触及本章依赖与聚合机制；设备和任务质量实验明确保留为未执行范围。",
+      "evidence": [
+        {
+          "path": "knowledge/models/graph-inference.md",
+          "quote": "先固定同一 S、快照与参数逐层对比；同 S 一致则转查采样质量，撤回仅凭全图差异判 kernel 错的判断"
+        },
+        {
+          "path": "knowledge/models/graph-inference.md",
+          "quote": "局部节省被新增成本抵消时调整或放弃改写"
+        }
+      ]
+    }
+  },
+  "findings": [],
+  "limitations": [
+    "Python 检查限定于关闭归一化的标量 Fraction 模型、有限采样及解析成本；未覆盖多通道权重、真实 checkpoint、LSTM、epsilon、低精度舍入或设备归约。这些边界与正文声明相符。",
+    "没有 GPU、DMA、远端通信、真实图存储、生产随机数发生器、质量或性能测量，不能据此认定设备可见性、实际事务量、服务收益或 Agent 使用效果。",
+    "本次工具未提供文件读取、终端或 Python 接口，资源及模板列表为空；未能加载本地技能文件、重新计算磁盘哈希、核验 reader.html 的物理存在性或执行仓库全量验收。documents 使用供给的字节绑定。",
+    "作者材料账本记录的是供给范围，不证明实际认知阅读；本次仅对完整提供的提取文本作来源核对，未检查 PDF 图像、reader.html 或上游源码。"
+  ],
+  "checks": [
+    {
+      "script": "tools/check_k_model_016_full.py",
+      "args": []
+    }
+  ],
+  "no_checks_reason": "",
+  "reading_scope": "完整阅读供给材料：AGENTS.md [0,567)；docs/knowledge-method.md [0,2251)；docs/knowledge-review.md [0,3016)；当前候选 knowledge/models/graph-inference.md [0,12682)；knowledge/sources/S-GRAPHSAGE.md [0,672)；knowledge/sources/S-TVM.md [0,609)；knowledge/sources/S-TORCH-NUMERIC.md [0,532)；references/S-GRAPHSAGE/fulltext.txt [0,64271)；references/S-TVM/fulltext.txt [0,67763)；references/S-TORCH-NUMERIC/fulltext.txt [0,10998)；完整候选 test_script 和 actual_preflight 执行记录。相关章节仅阅读供给摘录：knowledge/algorithms/operator-primitives.md [0,2625)、[8000,16000)；knowledge/algorithms/heterogeneous-execution.md [0,4138)、[8000,14487)；knowledge/system-semantics/host-runtime.md [0,9229)、[16000,17396)；knowledge/hardware/transport-and-rdma.md [0,6625)、[8000,12000)；knowledge/workloads/input-distribution.md [0,4000)、[8000,11520)、[12000,15105)；knowledge/tools/statistical-experiments.md [0,4195)、[8000,14430)；knowledge/frameworks/compile-dynamic-shapes.md [0,10625)；knowledge/system-semantics/design-synthesis.md [0,3327)、[12000,19298)。范围单位为提取文本零基半开字符区间，摘录章节不列入 documents。作者账本中的原章节绑定为 343135d67c7fd61ed1e7fb82185df7a8f30ebfc86cb5427dfd9e6313046fe6fe、范围 [0,3892)，与本次候选绑定分别记录；作者获得三份完整原文提取文本及八份相关章节摘录的事实不因审阅方式改变。",
+  "test_assessment": "审查了完整脚本而非仅看退出码。前向实现采用去重闭包及逐层缓冲，参考采用直接递归计算树；闭包参考通过路径枚举构造，失效参考通过输出到修改叶特征的路径存在性判断，组织方式与被测实现不同。抽样频数对照 itertools 的排列及笛卡尔积枚举，验证均匀基础抽取条件下的小规模分布；前向采样用确定性前缀，未把随机采样器与随机闭包前向端到端联测。五种错误变体实际改变重数、闭包、方向、非线性位置和失效传播，并由已核对参考或不变量检出，足以检验本章核心机制。4608 个枚举案例覆盖全部三节点有向简单图及自环、深度 0..2、空目标和重复目标；另有平行边、孤立点、零 fanout、邻居不足、共享依赖和负特征案例。C12-E 对照固定数字账，已独立复算其单位和算术。供给 actual_preflight 的脚本哈希与候选一致，remote_bwrap 中实际以 Python 3.12 的 -I -S -B -X utf8 参数运行，returncode=0、stderr 为空、未超时，输出包含 203/12、95/6、4608 个图案例及全部五个负对照名称。本审阅未自行重跑；作者所述当时仅执行 JS 探针，与后续提供的 Python preflight 记录分别认定。完整候选的 15 个显式 Markdown 链接逐一检查后均为仓库内相对路径，未再出现目标 vals；旧 AGG[k](vals) 已由逐通道 mean 前向替换，故关闭 campaign-K-MODEL-016-r1。该结论不冒充磁盘链接检查通过。GraphSAGE 的逐层 L2、聚合器差异、fanout 和度截断条件与所供固定 v1 原文一致；TVM 与数值文档的引用没有越界宣称当前 GraphSAGE kernel 或设备收益。未执行的数值、设备、质量及正式仓库检查保持 limitation，不记为 PASS。"
+}

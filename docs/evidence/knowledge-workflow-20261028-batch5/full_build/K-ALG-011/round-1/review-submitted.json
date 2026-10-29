@@ -1,0 +1,178 @@
+{
+  "entry_id": "K-ALG-011",
+  "body_sha256": "1794c6d3dbd9e2948253b137d5bd7a6f821a2fded968015e0c32dc480771fd29",
+  "reviewer": "sol-reviewer:K-ALG-011:round-1",
+  "decision": "revise",
+  "documents": {
+    "AGENTS.md": "b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a",
+    "docs/knowledge-method.md": "69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb",
+    "docs/knowledge-review.md": "f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21",
+    "knowledge/algorithms/batched-sampling.md": "1794c6d3dbd9e2948253b137d5bd7a6f821a2fded968015e0c32dc480771fd29",
+    "knowledge/sources/S-FI-SAMPLE.md": "ed5a4b98c3c64499022096e8dfd65ff84a1b3d5f9d118783f950a59fc6ecde9c",
+    "knowledge/sources/S-TORCH-REPRO.md": "05f2b5b9819f01363fadadf41987482edfebb130bc134c36c44a00138fd5eb28",
+    "knowledge/sources/S-SPEC.md": "a637c44fe62f12685aed5d022d23eabf949083343dbce9656b0a149e742bfd90",
+    "knowledge/system-semantics/request-batch-identity.md": "4bb364464c1ccab29bf079263a4e80d9d352e1477040fdcaf150a36294e37443",
+    "knowledge/algorithms/structured-output.md": "dd564087bb7df327081ce442368799cb0b27c59e9cbdab314b0a0dac99ca8ade",
+    "knowledge/algorithms/speculation-budget.md": "91a6e60d5151fb5b1155d2ba0ddcb3ba1251e69f7caf79b0ec217c7bf9a74d0d",
+    "knowledge/algorithms/branch-generation.md": "42157d4da17ab8ffd7a0aa2f5cd57a1cacdf1a989757261993f6671ae231de3a",
+    "knowledge/system-semantics/serving-recovery.md": "f551fa1f1e6213469c856a880839eefff504fb39f4dd692000b2df80a20a7f5e",
+    "knowledge/tools/statistical-experiments.md": "908b3588a6fa20bb1f2aed9f5db51c4b462953d79f8944cdbcfea7141c74644f",
+    "knowledge/engine-index/vllm-model-runner.md": "87d1433d4f64d939ff8f137d1c1d4092cfdf2b3d7ebdd011a0f344cc66564714",
+    "knowledge/system-semantics/tokenization-io.md": "1dea61a1f632805cb90873e747cb3079230a7b6bab76b17b4281662b82367565",
+    "references/S-TORCH-REPRO/fulltext.txt": "4f6b1deb38f7f174a2e340674680aaa0484e02a1d18cccd1bb94618df512cc2a",
+    "references/S-SPEC/fulltext.txt": "66ebddbde83df97b2389d7e0e98c844435478aedeec56d024bf52b8cc0d94cec",
+    "tools/check_k_alg_011_full.py": "80899210f3f7e1ca386302d3869b5e121b1a1fde40f37ae3a69de51bc029b161"
+  },
+  "criteria": {
+    "definition": {
+      "assessment": "sufficient",
+      "reason": "动机、条件分布、合法支持集、事件身份、输入行与预测位置、正式状态与暂存状态均有定义。正文明确最后输入位置的 logits 预测下一 token，没有将已有 logits 等同于下一 token 已选定或其 KV 已存在。",
+      "evidence": [
+        {
+          "path": "knowledge/algorithms/batched-sampling.md",
+          "quote": "设请求 r、分支 b、要生成的逻辑位置 t、同一位置的样本序号 s 和请求代次 g 共同标识一个采样事件 o=(r,b,t,s,g)。"
+        },
+        {
+          "path": "knowledge/algorithms/batched-sampling.md",
+          "quote": "最后输入 token 的 logits 预测下一个 token；采样事件的逻辑位置通常是输入有效长度，而不是该 logits 行自身的输入下标。"
+        }
+      ]
+    },
+    "legality": {
+      "assessment": "sufficient",
+      "reason": "声明层面充分区分数学约束与设计选择，包括 mask 时机、温度范围、greedy 平局、截断顺序、随机轨迹要求和物理缓冲生存期。两种截断语义明确作为本章契约，没有冒称归档实现事实；执行路径中的落实缺陷另列于 algorithm。",
+      "evidence": [
+        {
+          "path": "knowledge/algorithms/batched-sampling.md",
+          "quote": "k_then_p 的阈值使用 K_i 上的归一化分布，p_then_k 的阈值使用原分布；只写 top-p＝0.6 而没有说明用哪一份质量，不足以定义算法。"
+        },
+        {
+          "path": "knowledge/algorithms/batched-sampling.md",
+          "quote": "本轮 row map、概率缓冲和随机账本是快照；可复用缓冲必须等最后一个消费者结束后才能覆盖。"
+        }
+      ]
+    },
+    "algorithm": {
+      "assessment": "partial",
+      "reason": "概率变换和逆 CDF 的数学路径基本充分，但批量参考伪代码没有闭合 greedy 与错误返回路径，将请求代次与单个轮次标量比较，并将分支结束提升为整个请求结束。这些问题会直接影响可独立实现性和正式状态正确性。CPU 参考还存在与正文支持集不变量冲突的数值边界。",
+      "evidence": [
+        {
+          "path": "knowledge/algorithms/batched-sampling.md",
+          "quote": "if d.generation != round_generation: continue"
+        },
+        {
+          "path": "knowledge/algorithms/batched-sampling.md",
+          "quote": "staged.append(result(d, token, draws, S))"
+        },
+        {
+          "path": "knowledge/algorithms/batched-sampling.md",
+          "quote": "TERMINATE(result.descriptor.request, finish_reason)"
+        }
+      ]
+    },
+    "cost": {
+      "assessment": "partial",
+      "reason": "六类成本都有实质说明，容量算例约 109.4 MiB 的算术正确，并明确区分容量与实测。不过 row map 的 O(B) 与给出的逐 query 构造算法不一致，且声明支持的 p_then_k 路径缺少对应的全词表 top-p 计算账。",
+      "evidence": [
+        {
+          "path": "knowledge/algorithms/batched-sampling.md",
+          "quote": "设本轮有 B 个有效输出行，词表大小为 V，top-k 上界为 K，最终支持集大小为 S。"
+        },
+        {
+          "path": "knowledge/algorithms/batched-sampling.md",
+          "quote": "准备与状态成本包括：构造 row map 约 O(B)"
+        },
+        {
+          "path": "knowledge/algorithms/batched-sampling.md",
+          "quote": "k_then_p 在 K 上排序约 O(BK log K)"
+        }
+      ]
+    },
+    "adaptation": {
+      "assessment": "sufficient",
+      "reason": "针对参数异构、支持集大小、grammar 稀疏性、分片、精度、分支、取消和 batch 规模，给出了保留条件、调整成本及放弃性质的明确理由，没有宣称统一最优实现。",
+      "evidence": [
+        {
+          "path": "knowledge/algorithms/batched-sampling.md",
+          "quote": "只有当排序长度、mask 密度或分支路径的差异造成明显填充和分歧，且分组开销小于收益时，才按参数分组。"
+        },
+        {
+          "path": "knowledge/algorithms/batched-sampling.md",
+          "quote": "接受率低、目标 batch 已饱和或状态回滚昂贵时，应允许关闭投机"
+        }
+      ]
+    },
+    "diagnosis": {
+      "assessment": "sufficient",
+      "reason": "竞争解释与区分输入具体，支持集、逻辑键重排、共享随机抽取和局部分片归一化的反例能区分相应错误。已提供执行记录中的负对照确实被检测，并非仅重复实现。验证范围没有被扩大为 GPU 或使用效果证明，但 CPU 参考缺陷仍须修复。",
+      "evidence": [
+        {
+          "path": "knowledge/algorithms/batched-sampling.md",
+          "quote": "同一个 seed 下 token 不同，可能是行映射错、随机流错、变换顺序错、数值平局不同，或分布本身已经改变。"
+        },
+        {
+          "path": "knowledge/algorithms/batched-sampling.md",
+          "quote": "对 [0.9,0.05,0.05] 和 u=0.5，正确结果应是第一个 token，错误实现会返回第二个；检查必须能发现这种差异。"
+        }
+      ]
+    }
+  },
+  "findings": [
+    {
+      "id": "K-ALG-011-R1-01",
+      "criterion": "algorithm",
+      "evidence": "正文 GREEDY_TOKEN 分支只赋值 token 和 draws，随后无条件执行「staged.append(result(d, token, draws, S))」；PROBABILITY_ROW 和 GREEDY_TOKEN 均可「return ERROR(empty_legal_set)」，但 BATCH_SAMPLE 未检查返回状态。",
+      "impact": "首行 greedy 会使用未定义的 S；混合行可能沿用上一行 S。空合法集合等失败也没有明确阻止结果暂存与正式提交的路径，违背失败不得推进状态的不变量。",
+      "blocking": true,
+      "required_revision": "让两条路径返回明确的成功或失败结果，初始化 greedy 所需字段，并在抽随机数、暂存和提交之前处理失败；说明失败行如何返回错误及保持 ledger、grammar、长度不变。"
+    },
+    {
+      "id": "K-ALG-011-R1-02",
+      "criterion": "algorithm",
+      "evidence": "正文提交循环包含「if is_terminal(result.descriptor.request): continue」，并在单个结果为 EOS 时执行「TERMINATE(result.descriptor.request, finish_reason)」。正文同时声明「多样本或 beam 会让同一请求有多条分支」。",
+      "impact": "同一请求的一个分支产生 EOS 后，其他尚未完成的分支会被跳过。结果依赖 staged 遍历顺序，无法保持独立样本或分支的终止语义。",
+      "blocking": true,
+      "required_revision": "区分分支终止与请求聚合终止；按分支检查、提交和结束，仅在声明的请求完成条件满足时结束整个请求。说明同一概率行多样本如何拥有独立的后继状态。"
+    },
+    {
+      "id": "K-ALG-011-R1-03",
+      "criterion": "algorithm",
+      "evidence": "正文把 g 定义为「请求代次 g」，但 BATCH_SAMPLE 使用单个 round_generation，并执行「if d.generation != round_generation: continue」。",
+      "impact": "不同请求可以处于不同代次；将它们与一个公共标量比较会丢弃仍有提交权的合法行。批次快照身份与请求尝试身份没有在参考算法中区分。",
+      "blocking": true,
+      "required_revision": "分别表示批次快照或执行轮身份与每请求、分支的当前授权代次。准备和提交时按描述符所属对象检查代次，允许同一 batch 内合法请求具有不同代次。"
+    },
+    {
+      "id": "K-ALG-011-R1-04",
+      "criterion": "cost",
+      "evidence": "正文定义「B 个有效输出行」，却写「构造 row map 约 O(B)」；BUILD_ROW_MAP 实际循环为「for k in 0..query_counts[r]-1」。计算成本只展开「k_then_p 在 K 上排序约 O(BK log K)」，而 p_then_k 调用的是「C = PREFIX_UNTIL(p, context.p, tie=lowest_token_id)」。",
+      "impact": "长 prefill 每请求只采一个输出时，输入 query 行数可远大于 B，准备工作被低估。p_then_k 的 top-p 在原始全词表上确定，不能套用仅在 K 上排序的成本。",
+      "blocking": true,
+      "required_revision": "引入总输入 query 行数 Q，按实际构造过程记 row map 的时间和存储成本；为 p_then_k 补充全词表排序或所选全局阈值算法的条件化成本，并明确小 K 优化适用的路径。"
+    },
+    {
+      "id": "K-ALG-011-R1-05",
+      "criterion": "algorithm",
+      "evidence": "正文要求「零概率 token 不能被选中」及「ρ_i=1 表示保留所有正概率项」。绑定脚本 inverse_cdf 在累计未命中时执行「return len(vals) - 1」；prefix_until 使用「if c >= p - 1e-12:」。",
+      "impact": "CPU 参考本身可违反正文契约。在 binary64 下，[0.1] * 10 + [0.0] 的顺序累计末值为 0.9999999999999999；u 取同一值时循环不命中，回退会选中末尾零概率项。对 [1-5e-13, 5e-13] 且 p=1，容差提前停止会删除正概率尾项。这些是静态推导的反例，本次没有执行新增探针。",
+      "blocking": true,
+      "required_revision": "修复逆 CDF 的尾部舍入处理，使其始终返回正质量类别并遵守声明的边界；对 p=1 明确保留全部正质量项，对其他阈值声明并实现一致的数值契约。用上述独立反例验证修复，避免现有 PASS 掩盖参考算法缺陷。"
+    }
+  ],
+  "limitations": [
+    "GPU 数值、kernel 访存与同步、实际通信量、性能和 Agent 构建效果均未验证；正文对此的限制声明合理。",
+    "S-FI-SAMPLE 仅提供完整来源说明，没有允许阅读的上游散文原文或源码归档；本审查不声称独立核验其设备拒绝采样内循环。",
+    "历史惩罚的具体公式由参数契约提供；本审查仅判断变换位置与契约要求，没有验证某个引擎的惩罚实现。",
+    "审查读取的是消息提供的完整绑定文本、脚本及执行记录；未重新读取磁盘文件或重算文件哈希，未验证 reader.html 等链接目标实际存在，也未独立重跑脚本。",
+    "多层模型前向不是本章采样核心算法的实现范围；本审查没有把 logits 输入接口视作已验证逐层模型计算或 KV 提交实现。"
+  ],
+  "checks": [
+    {
+      "script": "tools/check_k_alg_011_full.py",
+      "args": []
+    }
+  ],
+  "no_checks_reason": "",
+  "reading_scope": "完整阅读所有 supplied materials.files，范围均为提取文本零基半开字符区间：AGENTS.md [0,567)；docs/knowledge-method.md [0,2251)；docs/knowledge-review.md [0,3016)；knowledge/algorithms/batched-sampling.md [0,14433)；knowledge/sources/S-FI-SAMPLE.md [0,943)；knowledge/sources/S-TORCH-REPRO.md [0,501)；knowledge/sources/S-SPEC.md [0,518)；knowledge/system-semantics/request-batch-identity.md [0,2669)；knowledge/algorithms/structured-output.md [0,2517)；knowledge/algorithms/speculation-budget.md [0,3904)；knowledge/algorithms/branch-generation.md [0,3670)；knowledge/system-semantics/serving-recovery.md [0,3834)；knowledge/tools/statistical-experiments.md [0,4269)；knowledge/engine-index/vllm-model-runner.md [0,2207)；knowledge/system-semantics/tokenization-io.md [0,3217)；references/S-TORCH-REPRO/fulltext.txt [0,7936)；references/S-SPEC/fulltext.txt [0,47353)，含所供第 1–13 页全部提取文本。另完整阅读 supplied candidate.test_script，从 shebang 至末尾 main() 调用；该字符串没有单独提供字符区间元数据，未将其冒记为磁盘读取。完整阅读 author_notes、actual_preflight.stdout、stderr 和 execution 记录。没有仅凭节选声称读取完整原件，也没有读取 FlashInfer 源码。",
+  "test_assessment": "提供的实际隔离执行记录绑定脚本 SHA-256 80899210f3f7e1ca386302d3869b5e121b1a1fde40f37ae3a69de51bc029b161，returncode=0、stderr 为空；这支持该次 CPU main 检查确实通过。本审查未独立重跑。独立依据包括手算截断支持集、逆 CDF 区间边界、softmax 平移不变量和逻辑事件行置换不变量。错误等宽逆 CDF、行游标随机流、概率行共享随机抽取及 shard 局部 top-p 的负对照均被实际日志检测，能够检验对应机制，检查并非整体同义反复。作者未声称自己已执行，与后续协调者执行记录相容。但脚本没有执行正文 BUILD_ROW_MAP 或 BATCH_SAMPLE，没有覆盖 greedy 暂存、错误传播、混合请求代次、分支 EOS、取消提交或物理最后使用；也没有运行统计频率、投机接受修正、GPU 或性能检查。prefix_until 的未声明容差和 inverse_cdf 的末索引回退存在具体反例，因此现有退出码 0 不能证明完整采样契约正确。容量算例经独立算术核对成立；准备复杂度与 p_then_k 成本缺口见 findings。"
+}

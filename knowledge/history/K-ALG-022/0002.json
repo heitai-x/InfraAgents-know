@@ -1,0 +1,57 @@
+{
+  "id": "K-ALG-022",
+  "path": "algorithms/context-reuse.md",
+  "category": "algorithms",
+  "title": "非前缀上下文复用：依赖、位置与选择性重算",
+  "summary": "非前缀文本重复不保证逐层状态相同；按上文、位置与可见性判断精确复用，并对选择性重算独立计量质量和加载成本。",
+  "revision": 2,
+  "status": "seed",
+  "tags": [
+    "非前缀复用",
+    "CacheBlend",
+    "上下文依赖",
+    "RoPE",
+    "选择性重算",
+    "RAG"
+  ],
+  "scope": {
+    "model_families": [],
+    "platforms": [],
+    "runtimes": [],
+    "workloads": []
+  },
+  "source_ids": [
+    "S-CACHEBLEND",
+    "S-ROPE",
+    "S-PAGED",
+    "S-SGLANG"
+  ],
+  "related": [
+    "K-ALG-003",
+    "K-ALG-018",
+    "K-ALG-021",
+    "K-SYS-013",
+    "K-SYS-017",
+    "K-FW-006"
+  ],
+  "evidence": [],
+  "updated_at": "2026-10-27",
+  "sha256": "ddd8fa928d5ebd9876aca4971dc357b666ea999be9b148e3e88404c9e271ab13",
+  "questions": [
+    "同一段文本的分词结果、文档 embedding、逐层 KV 和最终回答各依赖什么，哪些可以脱离上文保存？",
+    "RoPE 位置变换能修正什么、不能修正什么，二维反例如何检查实现保留了完整旋转？",
+    "逐层选择性重算中选择集合必须来自什么信息，集合在层间缩小时如何保持可执行性？",
+    "独立片段缓存与某次请求融合后的缓存为什么是不同对象，公共条目如何避免被污染？",
+    "重算比例与耗时为何不成比例，逐层加载与计算流水的理想时间如何估算？"
+  ],
+  "symptoms": [
+    "相同文本换了前序片段后 logits 明显偏离完整 prefill",
+    "重算 10% token 但耗时远不止 10%",
+    "组合缓存数量随复用率上升而容量急剧增加"
+  ],
+  "assumes": [
+    "因果 decoder，深层状态依赖可见上文",
+    "使用 RoPE 或可变换的位置编码",
+    "允许在质量阈值内近似而非精确复用"
+  ]
+}

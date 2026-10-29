@@ -4,8 +4,8 @@
 
 | 条目 | 版本与状态 | 核心认识 |
 |---|---|---|
-| [K-ENGINE-001：vLLM V1：从 Token 进度到调度输出](vllm-scheduler.md) | v2 · seed | vLLM V1 的调度可沿请求 token 进度理解，再追踪预算、缓存分配和执行结果怎样改变下一轮状态。 |
-| [K-ENGINE-002：vLLM KV 管理：命中、分配和延迟释放](vllm-kv-manager.md) | v2 · seed | KVCacheManager 将逻辑 token 进度转换成层组块分配，命中长度、保留容量和可回收块各有独立含义。 |
-| [K-ENGINE-003：vLLM ModelRunner：调度视图到设备状态](vllm-model-runner.md) | v2 · seed | ModelRunner 把逻辑调度结果转成设备输入与持久批状态，并将前向和采样结果按请求归还。 |
-| [K-ENGINE-004：SGLang：Radix 复用与调度状态的连接](sglang-radix-scheduler.md) | v2 · seed | SGLang 将共享前缀组织成 Radix 结构，调度器围绕命中状态和可执行批次推进请求。 |
-| [K-ENGINE-005：TensorRT-LLM：执行器、Overlap 与传输责任](tensorrt-llm.md) | v2 · seed | TensorRT-LLM 的执行器将请求调度、模型执行、采样和资源管理组合成后台迭代，适合研究异步服务的责任划分。 |
+| [K-ENGINE-001：调度决策：进度、就绪与资源承诺](vllm-scheduler.md) | v4 · seed | 动态服务的难点是请求的进度、输入就绪和资源可用性不在同一个时刻变化。调度输出需要表达本轮允许执行的逻辑范围及其资源承诺；按 token、请求、时间片或其他单位选择都是设计点。 |
+| [K-ENGINE-002：状态分配决策：命中、预留、发布与回收](vllm-kv-manager.md) | v4 · seed | 缓存命中、存储已经分配、数据已经可用与请求已经完成是不同事实。分配器必须把这些事实接到执行与恢复边界，单个“长度”或“空闲显存”无法完整描述可推进性。 |
+| [K-ENGINE-003：执行视图决策：压紧、固定槽与结果归属](vllm-model-runner.md) | v4 · seed | 动态请求集合需要转成设备能执行的张量，但逻辑身份不应随物理行号变化。执行器的核心问题是保持请求、query 位置、缓存写入与输出行之间的可逆对应，并管理这些表示的生存期。 |
+| [K-ENGINE-004：前缀复用决策：树、块链与状态保护](sglang-radix-scheduler.md) | v4 · seed | 前缀复用的动机是相同依赖产生的中间状态可以避免重复计算。索引回答在哪里找到可能相同的前缀，恢复与所有权机制回答它是否能被当前请求安全使用；两者不能合并成一个“命中”布尔值。 |
+| [K-ENGINE-005：异步执行决策：结果确认、在途状态与回收](tensorrt-llm.md) | v4 · seed | 主机准备、设备计算、采样与外部状态传输可以部分重叠，但自回归依赖与存储生存期不会因异步提交而消失。设计需要区分业务完成、输出提交、设备完成和各个外部消费者结束。 |

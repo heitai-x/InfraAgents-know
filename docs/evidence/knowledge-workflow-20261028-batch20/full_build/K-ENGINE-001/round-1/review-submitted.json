@@ -1,0 +1,196 @@
+{
+  "entry_id": "K-ENGINE-001",
+  "body_sha256": "e1426498440de49977d74d7a67d043539faed0539a48294796c2f820bc6c6729",
+  "reviewer": "sol-reviewer:K-ENGINE-001:round-1",
+  "decision": "revise",
+  "documents": {
+    "AGENTS.md": "b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a",
+    "docs/knowledge-method.md": "69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb",
+    "docs/knowledge-review.md": "f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21",
+    "knowledge/engine-index/vllm-scheduler.md": "e1426498440de49977d74d7a67d043539faed0539a48294796c2f820bc6c6729",
+    "knowledge/sources/S-VLLM-SCHED.md": "2e9bbe0d29145039d1bcd43bb54d40c4136ef51641a6e33a5d7097eb0500daf0",
+    "knowledge/sources/S-VLLM-CODE.md": "6bb988f700accbd146a39d95800256b89ac5f3914994086394848413aff61a6d",
+    "knowledge/sources/S-ORCA.md": "920ef987a4a019bb4f0e0386e30bf1c1e3bc720d199ae4de22e462db4f41520a",
+    "knowledge/engine-index/vllm-kv-manager.md": "50b09c7a66c1282b7f6f7ac7ef1f265b953b908ae5fba883c9beec4732e1ab89",
+    "knowledge/workloads/session-workloads.md": "0269e1987e1107d0cf0135cb32aa759c67d5266cfa09fb1402f97704c4ab4d78",
+    "references/S-ORCA/fulltext.txt": "2119a53d77b4a933bab56d7e40b5304fa725561c412514459e56729ca6836794",
+    "tools/check_k_engine_001_full.py": "c2d7311ade0542ae0c5bc8bea97550c3fc7b1d8f54081e83ca4c79130c0cc53e"
+  },
+  "criteria": {
+    "definition": {
+      "assessment": "sufficient",
+      "reason": "动机、已知输入、确认 KV、安排前沿、容量和 logits 票据均有明确区分；单请求一个未解析视图的基线及多视图所需扩展也已声明。来源说明与独立推导的身份划分准确。",
+      "evidence": [
+        {
+          "path": "knowledge/engine-index/vllm-scheduler.md",
+          "quote": "已知 token 序列为 x_r[0:n_r)，n_r 是 prompt 与已接受生成 token 的总数。"
+        },
+        {
+          "path": "knowledge/engine-index/vllm-scheduler.md",
+          "quote": "基线模型每请求至多一个未解析视图，且 0≤c_r≤s_r≤n_r≤L_model，s_r≤a_r"
+        }
+      ]
+    },
+    "legality": {
+      "assessment": "partial",
+      "reason": "正文正确区分硬条件与排序策略，也正确区分取消和物理排空；但算法没有兑现全部预算约束，结果提交也未重新验证当前授权，无法保证所声明的合法性。",
+      "evidence": [
+        {
+          "path": "knowledge/engine-index/vllm-scheduler.md",
+          "quote": "未满足这些条件时，高优先级也不能让请求执行。"
+        },
+        {
+          "path": "knowledge/engine-index/vllm-scheduler.md",
+          "quote": "if used_tok=B_tok 或 used_seq=B_seq 或 used_enc=B_enc: break"
+        },
+        {
+          "path": "knowledge/engine-index/vllm-scheduler.md",
+          "quote": "取消撤销未来业务提交资格，但已提交的设备读写必须保留到结束证据"
+        }
+      ]
+    },
+    "algorithm": {
+      "assessment": "partial",
+      "reason": "普通 COMPUTE 路径解释了安排与确认的区别，但新增容量、恢复执行视图、采样后继和提交入口尚未闭合。恢复失败还会直接破坏 c≤s。逐层执行可由已链接 ModelRunner 的所供相关段落支持；这不能补救本章自身的调度与提交错误。",
+      "evidence": [
+        {
+          "path": "knowledge/engine-index/vllm-scheduler.md",
+          "quote": "q_upper←min(n_r−s_r, a_r−s_r, B_tok−used_tok, π 的单请求上限)"
+        },
+        {
+          "path": "knowledge/engine-index/vllm-scheduler.md",
+          "quote": "成功则加入 RECOVER_LAST 候选（start=n_r−1,q=1）"
+        },
+        {
+          "path": "knowledge/engine-index/vllm-scheduler.md",
+          "quote": "若 r.s_r=start+q：r.s_r←start"
+        }
+      ]
+    },
+    "cost": {
+      "assessment": "partial",
+      "reason": "attention 对数、FLOPs 系数和页数算例可复算；正文也区分了逻辑字节、设备事务、容量和关键路径。但 KV 字节公式包含全层系数 J，却被描述为每层字节，且 Q 未定义，单位合同需要修正。",
+      "evidence": [
+        {
+          "path": "knowledge/engine-index/vllm-scheduler.md",
+          "quote": "V_i=q_i h_i+q_i(q_i+1)/2，V=Σ_i V_i。"
+        },
+        {
+          "path": "knowledge/engine-index/vllm-scheduler.md",
+          "quote": "每 token 每层完整 K/V 的逻辑字节为 b_KV=J H_kv (d_k+d_v) s_bytes。新增逻辑写入至少 Q b_KV"
+        },
+        {
+          "path": "knowledge/engine-index/vllm-scheduler.md",
+          "quote": "重合工作时按关键路径计算，不能把全部阶段无条件相加。"
+        }
+      ]
+    },
+    "adaptation": {
+      "assessment": "sufficient",
+      "reason": "已说明条件变化时保留的不变量、需要重算的容量与同步条件，以及切块、预留、恢复隔离和投机身份不足时的调整或放弃。概念层面的选择边界充分；具体恢复实现问题另列为算法缺口。",
+      "evidence": [
+        {
+          "path": "knowledge/engine-index/vllm-scheduler.md",
+          "quote": "页长、模型上限、dtype、encoder 路径、投机分支或策略改变后，重新计算 q、页数、桶和同步边界。"
+        },
+        {
+          "path": "knowledge/engine-index/vllm-scheduler.md",
+          "quote": "若实现无法隔离重算写区，应放弃该恢复路径，而不是原地覆盖共享内容。"
+        }
+      ]
+    },
+    "diagnosis": {
+      "assessment": "partial",
+      "reason": "诊断表提供了竞争解释、受控干预和可反驳预测，验证边界声明正确。但检查脚本没有检验完整调度器，其中零工作停滞负对照会无条件被标为检出，且恢复参考自身违反 token 预算。实际退出码 0 不能支持这些机制已经验证。",
+      "evidence": [
+        {
+          "path": "knowledge/engine-index/vllm-scheduler.md",
+          "quote": "检查应由独立参考从原始 n、c、s 和 q 重建合法范围，不能只比较两个一起被修改的数组。"
+        },
+        {
+          "path": "knowledge/engine-index/vllm-scheduler.md",
+          "quote": "CPU 符号检查可以验证范围、页数、回滚和身份不变量，不能证明 CUDA 可见性、真实 kernel 完成或服务 SLO。"
+        }
+      ]
+    }
+  },
+  "findings": [
+    {
+      "id": "K-ENGINE-001-R1-BUDGET",
+      "criterion": "legality",
+      "evidence": "算法初始化为“初始化 V←空，used_tok←0，used_seq←0，reasons←空，SAMPLE←空”；其后执行“used_enc←used_enc+本段 encoder 需求”和“if used_tok=B_tok 或 used_seq=B_seq 或 used_enc=B_enc: break”。",
+      "impact": "used_enc 未初始化；sequence 和 encoder 预算只在加入工作后比较相等，没有加入前的剩余额度检查。B_seq=0 时仍可加入请求；encoder 需求超过剩余额度时可能直接越界且不触发相等条件。RECOVER_LAST 分支也没有计入 sequence 预算。",
+      "blocking": true,
+      "required_revision": "初始化全部计数，在取得承诺前检查加入候选后的完整 token、sequence 和 encoder 需求不超过预算，并对恢复工作采用一致口径。明确零预算语义，避免 encoder 零需求与零预算使普通扫描错误终止。补充相应边界检查。"
+    },
+    {
+      "id": "K-ENGINE-001-R1-CAPACITY",
+      "criterion": "algorithm",
+      "evidence": "“a_r | 已为请求取得逻辑写入资格的容量，按 token 计”；“q_upper←min(n_r−s_r, a_r−s_r, B_tok−used_tok, π 的单请求上限)”；“若 q_upper≤0：记录 budget 或 capacity；continue”。新增页预留位于这些步骤之后。",
+      "impact": "当 n>s 且 a=s 时，即使页池有空闲页，也会在预留之前得到 q_upper=0，永远到不了新增页分配。算法没有增加 a 的入口，不能实现正文声称的滚动增长；已有容量耗尽后的请求可能永久停滞。",
+      "blocking": true,
+      "required_revision": "区分已持有容量和本轮可尝试取得的容量。先按已知输入与计算预算提出范围，再事务式预留所需增量，成功后更新 a 和 s；或者明确给出由谁扩容及如何唤醒重试的前置算法。验证 a=s、页池充足和预留失败两条轨迹。"
+    },
+    {
+      "id": "K-ENGINE-001-R1-SUCCESSOR",
+      "criterion": "algorithm",
+      "evidence": "“将 r 加入 SAMPLE_READY；不占模型 token 预算；continue”；“成功则加入 RECOVER_LAST 候选（start=n_r−1,q=1）”；“冻结 V 中的请求、代次、起点、q、页承诺、输出目标和执行视图号”；“返回 V；此时尚未提交任何成功边界”。",
+      "impact": "只有 COMPUTE 明确加入 V。恢复候选没有合入返回视图，也没有绑定未解析在途关系；仅有恢复候选时仍返回空 V。SAMPLE_READY 没有返回或通知消费者的步骤，也没有消费票据并追加已确认输入的明确交接，因而声明的生成循环没有完整后继。",
+      "blocking": true,
+      "required_revision": "明确初始化并输出模型执行项、采样就绪项和阻塞原因；把恢复项及其预留、身份和在途记录加入冻结视图。说明采样通知、票据唯一消费、token 追加、n 更新与停止检查，或明确委托给已链接章节的具体完整算法。验证完整 KV 命中后恢复、采样和随后 decode 的连通轨迹。"
+    },
+    {
+      "id": "K-ENGINE-001-R1-COMMIT-AUTH",
+      "criterion": "legality",
+      "evidence": "算法 2 的身份检查为“若 e 的请求、代次、视图、start 或 q 与 a 不匹配”，成功路径为“若 start=r.c_r：r.c_r←start+q”。正文另要求“迟到通知不能修改新的执行视图”。",
+      "impact": "事件与旧冻结条目彼此匹配，并不证明该条目仍属于当前请求授权和当前未解析视图。请求号复用后，旧 a 与旧 e 可以完全匹配，并在当前 c 恰好等于旧 start 时修改新请求。取消后的提交资格也没有在成功安装前重验。此外，身份不匹配和完成证据不足分支没有明确终止，后续独立成功分支存在继续执行的歧义。",
+      "blocking": true,
+      "required_revision": "在状态拥有者的原子提交域内，核对冻结条目与当前授权代次、活跃视图、预期边界、取消状态及唯一提交记录；旧事件只结算旧物理责任。让不匹配、失败和证据不足路径明确返回或等待，不能进入成功安装。用旧事件和旧条目同时匹配、但当前授权已变化的负对照验证。"
+    },
+    {
+      "id": "K-ENGINE-001-R1-RECOVERY-ROLLBACK",
+      "criterion": "algorithm",
+      "evidence": "恢复定义为“start=n_r−1,q=1”，且“完成后只安装 logits 票据，c_r 保持 n_r”；失败路径无条件采用“若 r.s_r=start+q：r.s_r←start”。",
+      "impact": "恢复开始时 c=s=n，start+q=n。恢复失败会把 s 改成 n−1，而 c 仍为 n，直接违反 c≤s。下一轮会被 invalid_state 拒绝。检查脚本的 apply_outcome 则专门让恢复失败保持原状态，因此它没有按正文算法检查这一错误。",
+      "blocking": true,
+      "required_revision": "按 COMPUTE 和 RECOVER_LAST 分开处理失败，或保存并恢复明确的调度前状态。恢复失败保持原 c、s、n，只撤销恢复票据和临时逻辑承诺，物理责任继续排空。让检查模型与修订后的正文一致，并检查失败后的不变量与可重试性。"
+    },
+    {
+      "id": "K-ENGINE-001-R1-KV-UNITS",
+      "criterion": "cost",
+      "evidence": "“每 token 每层完整 K/V 的逻辑字节为 b_KV=J H_kv (d_k+d_v) s_bytes。新增逻辑写入至少 Q b_KV”。",
+      "impact": "右式已经包含 J 层，因此是每 token 全层字节，与“每层”的文字定义冲突。按文字继续乘层数会重复计入 J；Q 在本章未定义，使新增写入的求和范围不明确。",
+      "blocking": true,
+      "required_revision": "将 b_KV 明确定义为每 token 全层字节，或移除公式中的 J 并在总量中补乘。定义 Q=Σ_i q_i，并说明普通新增写入与恢复私有暂存写入的计账范围。"
+    },
+    {
+      "id": "K-ENGINE-001-R1-CHECK-VALIDITY",
+      "criterion": "diagnosis",
+      "evidence": "正文要求“检查应由独立参考从原始 n、c、s 和 q 重建合法范围”。脚本 zero_work_stall 中为“bad = []”及“if len(bad) == 0: fail('zero work accepted as progress')”；reference_actions 的恢复分支直接“out.append(Action(r.rid, r.gen, r.n - 1, 1, 'RECOVERY_LAST'))”，没有检查或扣减 left。",
+      "impact": "零工作负对照没有把缺陷实现送入共同审计器，而是固定触发 AssertionError；参考自身失效时的 AssertionError 也会被 expect_detected 当作缺陷检出。恢复参考在 budget=0 时仍可返回工作，在多个恢复请求下也可超预算。schedule 接收参考生成的 actions，而没有独立实现并核对正文的完整选择过程，实际输出的 5 个检出不能证明预算、恢复与提交算法正确。",
+      "blocking": true,
+      "required_revision": "把零工作缺陷变体与正常实现送入同一后继或进度审计器，区分参考建立失败和预期缺陷检出。修复恢复预算参考，验证累计预算和恢复失败。增加能暴露本轮已指出算法错误的检查，并按真实执行结果报告覆盖；未建模的取消、视图、encoder 和物理责任保留明确边界。"
+    }
+  ],
+  "limitations": [
+    "vLLM 事实仅核对到所供 S-VLLM-SCHED 和 S-VLLM-CODE 机制说明；作者账本和审阅材料均未提供允许读取的上游源码原文。正文已正确声明这一边界，不因此要求增加源码核验。",
+    "Orca 原文 §4.2 支持非 RUNNING 请求选择、首次按 max_tokens 预留及在途批数量控制；正文没有把该保证错误移植到滚动页预留。",
+    "没有 GPU、真实 vLLM 字段、CUDA 可见性、服务 SLO 或 Agent 使用效果证据；这些是已正确声明的验证边界。",
+    "本次审查依据对话提供的绑定全文、摘录、脚本和实际执行记录。未独立复算磁盘文件哈希、检查链接目标存在性或重新执行 Python；所列 documents 哈希逐字采用指定绑定值。",
+    "本会话没有可用的文件读取工具，未能读取已提及技能的 SKILL.md；实际审查依据所供 knowledge-method.md、knowledge-review.md 和任务要求完成。"
+  ],
+  "checks": [
+    {
+      "script": "tools/check_k_engine_001_full.py",
+      "args": [],
+      "execution_source": "supplied actual_preflight",
+      "script_sha256": "c2d7311ade0542ae0c5bc8bea97550c3fc7b1d8f54081e83ca4c79130c0cc53e",
+      "returncode": 0,
+      "reviewer_reran": false,
+      "assessment": "所附 remote_bwrap 记录显示脚本实际执行完成，stderr 为空、未超时，stdout 报告普通前沿轨迹、页数和 5 个负对照检出。这里只确认该执行事实，不把退出码 0 记为章节机制通过。"
+    }
+  ],
+  "no_checks_reason": "",
+  "reading_scope": "审阅范围与作者范围分别判断。审阅者完整读取所供 AGENTS.md[0,567)、docs/knowledge-method.md[0,2251)、docs/knowledge-review.md[0,3016)、当前候选 knowledge/engine-index/vllm-scheduler.md[0,8104)、S-VLLM-SCHED.md[0,760)、S-VLLM-CODE.md[0,612)、S-ORCA.md[0,1394)、vllm-kv-manager.md[0,2189)、session-workloads.md[0,3583)、references/S-ORCA/fulltext.txt 的所供完整文本（清单范围[0,90276)），以及 candidate.test_script 完整脚本和 actual_preflight 执行记录。相关章节只读取所供摘录：vllm-model-runner.md[0,7965)、[8000,10660)；iteration-batching.md[0,4780)、[8000,13845)；chunked-prefill.md[0,4929)、[8000,13696)；host-runtime.md[0,10625)；routing-and-migration.md[0,8528)、[12000,14097)；design-synthesis.md[0,4000)、[8000,14625)。上述区间单位均为提取文本的零基半开字符范围；摘录文件未列入 documents。作者账本记录作者获得的是旧章[0,2314)及其绑定哈希，而当前审阅对象为8104字符候选；作者所获其他完整文件和相关章节摘录范围按 author_material_scopes 记录，不能用审阅者范围替代，也不能把材料暴露记录当作认知阅读证明。作者关于仅使用 vLLM 来源说明、获得 Orca 全文和未在生成阶段执行脚本的说明，与所供账本及随后协调者执行记录没有冲突。",
+  "test_assessment": "实际执行记录有效地表明绑定脚本运行了，但证明范围有限。普通测试手工断言一次3-token、一次2-token的安排与确认，能检查该符号轨迹；pages_for 的31、33、49位置结果支持正文页数算例。duplicate_range 和 overrun_capacity 把非法动作送入约束检查，commit_on_submit 与 stale_generation 也能反驳指定的错误状态更新，因此不能把全部检查说成无效。然而 reference_actions 是动作生成器，schedule 只消费这些动作，二者并未形成对正文完整调度策略的独立对照；页测试也没有独立验证实际分配事务。zero_work_stall 固定设置空列表后直接抛错，且 expect_detected 捕获包括参考失败在内的所有 AssertionError，属于无效检出证据。静态检查还可直接推导：budget=0 的完整KV无logits请求仍会被 reference_actions 安排恢复；两个恢复请求在budget=1时也会返回两行。这些反例未在所附执行中测试，本审阅不声称已执行。脚本缺少 sequence/encoder 预算、真实新增预留、恢复视图登记、票据消费与token追加、视图匹配、取消授权、重复通知和最后物理使用责任；apply_outcome 对恢复失败保持状态，与正文失败回滚不同。应先修复具体算法与检查，再实际重跑；真实设备完成、数值前向、通信和性能仍保持为独立验证边界。"
+}

@@ -1,0 +1,152 @@
+# K-FW-006：Attention Backend：语义、布局与执行契约的交集
+
+选择 attention backend 是匹配可见性、张量几何、状态布局和执行模式，性能排名只对确定的运行点成立。
+
+## 先写出共同函数
+
+backend 接口必须表达 Q/K/V 的 head 数与通道、query 和 KV 各自长度、逻辑位置、mask/偏置、scale、dtype 和输出形状。分页、ragged 和稠密只改变存储表示；如果接口不能表达所需可见性，则速度再高也不是等价替换。
+
+SDPA 是框架级算子，会按条件选择实现；FlashAttention 提供特定融合 attention 路径；FlashInfer 提供面向推理的分页、变长和计划接口；ROCm 上还可能选择 AITER 等目标平台实现。库名不等于模型和平台的完整支持矩阵，具体函数比库总览更有决定性。
+
+## 非等长 causal 是一个具体反例
+
+设 Q 长 2，K 长 5，Q 对应历史尾部位置 3、4。期望第一行可见前 4 个 K、第二行可见 5 个。FlashAttention 文档说明相关版本 causal 对齐改为右下；PyTorch SDPA 的非方形 is_causal 有其上左对齐定义。两者若直接互换同一个布尔参数，可能给第一行只看 1 个、第二行只看 2 个。应以绝对位置关系构造等价 mask，或选择明确支持相应对齐的接口。
+
+另一个常见差别是布尔 mask 的 true 含义：不同算子可能分别表示保留或屏蔽。dropout_p 也可能由算子参数直接控制，不能假定外部 eval 状态自动将它清零。模型语义优先于同名参数。
+
+## 用契约表组织选择
+
+| 场景 | 必须能表达的内容 | 决定额外成本的项 |
+|---|---|---|
+| 稠密 prefill | 因果/非因果、变长 query | padding、tile、是否物化 mask |
+| 分页 decode | 页表、tail、Hq/Hkv | plan、间接读取、split-K |
+| Cross-attention | 独立 Q/KV 分段与源可见性 | 投影缓存、独立几何 |
+| MLA | latent 与位置分量 | 是否展开历史、专用归约 |
+| 图执行 | 稳定地址及允许更新的 metadata | 捕获外 plan、workspace |
+| 窗口/稀疏 | 每 query 合法历史集合 | 索引和无效 tile |
+
+## 适配器应承接什么
+
+一个清晰的适配层可把引擎逻辑状态转换成 backend 输入，说明是否发生 gather、transpose、dtype conversion 或额外 copy。这样的转换可能比 kernel 本身更贵，benchmark 应覆盖它们。fallback 也应保持同一数学契约，不能在不支持窗口时静默改为全 attention。
+
+不同 prefill/decode backend 可共享持久缓存，但布局、量化 scales 和写入约定必须一致。跨 backend 比较使用固定张量与可见关系，再评价端到端成本，才能区分数学接入错误和资源效率差异。
+
+## 固定来源下的具体接口能力
+
+下表绑定本知识版本已经归档的接口范围。能力属于某个函数和配置，不能从一行推出整个库的全部组合均受支持。
+
+| 固定接口 | 已明确的输入/语义 | 接入时必须保留的边界 |
+|---|---|---|
+| PyTorch SDPA，提交 647b6a2，2026-04-30 | Q 为 …×Hq×L×E，K/V 的历史长 S 可不同；bool mask 的 true 参与 attention；显式 dropout_p；GQA 有 head 整除条件 | 普通张量参数不直接解释引擎页表；非方形 is_causal 左上对齐；具体 fused dispatch 还受 dtype、shape 与平台限制 |
+| FlashAttention 的 flash_attn_func 及 varlen 接口，提交 c5f6ff4，2026-04-30 | 文档列出 MQA/GQA、窗口与 ALiBi；v2.1 起非等长 causal 右下对齐 | 常规入口与 KV-cache/分页入口不可混用参数；同名 deterministic 参数的文档针对 backward，不是任意跨批逐位一致性的承诺 |
+| FlashInfer BatchPrefillWithPagedKVCacheWrapper，提交 070fabf，2026-04-30 | query indptr、KV page indptr/indices、末页长度，NHD/HND 布局；自定义 mask、窗口、位置模式和不同 QK/VO head 维 | plan 与 run 分离；plan 不可捕获；提供 custom mask 时普通 causal 选项不再替代它；某些 split 设置不保证图兼容 |
+| FlashInfer 论文 2501.01005v1，2025-01-02 | BSR/ragged 表示、分区 attention 状态合并、动态工作队列与固定 workspace 的方案 | 属于论文中的具体设计和实验版本，不能用来覆盖后来固定源码中更具体的限制 |
+
+不同条目之间需要有明确转换。SDPA 的 H、L 轴与常见 B×L×H×D 接口不同；只调整 shape 而未调整 stride/数据解释会读错。FlashInfer 固定源码说明未预打包的 custom mask 会额外 pack；这一项属于接入开销。AITER 等其他后端的项目总览不能补齐某个具体算子签名，应沿所选版本的实际函数建立同等细度的契约。
+
+## 分区 attention 合并的额外不变量
+
+若同一 query 的合法 K/V 集合拆成互不重叠的 I、J，且每一部分使用相同 score 定义和位置/数值解释，可以保留归一化输出 O 与 log-sum-exp l。取 m=max(l_I,l_J)，权重 a=exp(l_I−m)、b=exp(l_J−m)，合并输出为 (aO_I+bO_J)/(a+b)，新的 l=m+log(a+b)。用 max 做平移避免直接 exponent 大 l 溢出。
+
+互不重叠是必要条件：共享前缀已经在 I 中出现，就不能在 J 的完整历史中再计一次，否则它的概率质量被重复增加。只有输出 O 而没有归一化尺度，通常不能通过普通平均恢复整体 attention。空分区、全 mask 行、LSE 是自然对数还是其他底、scale/softcap 的顺序也必须统一。
+
+共享 prefix 的多个 query 仍有各自 Q，复用主要是 K/V 的读取与存储；不能共享本应不同的 attention 输出。分页表示本身只说明存储间接寻址，稀疏可见性若删除了原函数允许访问的位置，则是另一个质量敏感算法，不能从“同为块稀疏表示”推出精确等价。
+
+## 转换成本与可复算反例
+
+设一层 K/V 各有 L=8,192、Hkv=8、d=128、FP16，合计 2×8,192×8×128×2=32 MiB。若每次调用先完整 gather 到连续布局，需要读取旧布局并写入新布局，单是转换至少产生约 64 MiB 有效字节，之后 attention 还会读取新缓冲。更快的连续 kernel 只有在抵消这些转换、额外驻留与同步后才构成收益。
+
+独立小例中，对同一 query 设两个 logits 都为 0，V 分别为 0、2，则整体输出为 1。各分区输出为 0 和 2、LSE 同为 0，合并得 1；若第二分区同时包含第一个位置，错误合并会重复计数，得到 2/3。对 Q 长 2、K 长 5 的因果输入，再显式验证两行可见集合，而不只比较输出 shape。
+
+接入测试应覆盖 GQA 的 head 映射、QK 与 VO 维度差异、非整页、窗口边界、prefix/suffix 不重叠、无可见 key、位置偏置和 quantization scale。对同一逻辑状态依次记录转换、plan、kernel、合并和输出路由的耗时/内存，并用独立稠密数学参考验证。长历史、低 batch 时分区可能增加并行度；短历史或转换占主导时，简单路径可能更快。选择应由接口交集与完整执行成本决定。
+
+## 一次 attention 调用包含哪些真实工作
+
+接入成本从逻辑请求状态可用时开始，到输出可被下一组件消费时结束。沿固定 FlashInfer 的 BatchPrefillWithPagedKVCacheWrapper 可以看到，plan 与 run 之间还有具体的数据责任：plan 读取或准备 query/KV 分段信息、生成计划、选择模块并更新缓冲；run 消费这些计划和张量，可能分配输出、准备布局，执行设备内核并进行输出缩放。把计时窗口只放在最后一个 attention kernel，不能代表这条路径。
+
+在固定提交 070fabf 的 plan 中，qo_indptr 会转到 CPU 以读取总行数；若未显式给出相关最大长度，KV 分段和末页长度也参与 host 侧长度计算。输入 metadata 已在 CPU 时与必须从设备读取时具有不同成本。custom_mask 未预先打包时，需要形成连续表示并调用 segment_packbits；图模式仍要把更新后的元数据复制到保留缓冲。non_blocking 参数不意味着这些 host 消费、分配和规划工作全部消失。
+
+同一几何和配置的多层 attention 可以在满足接口条件时复用计划，固定文档也说明辅助结构可用于多次 run。但 batch 成员、query 分段、KV 长度、mask 或其他影响计划的条件改变后，旧计划不能凭“还是同一个模型”继续有效。计划是否可重用，需要逐项依据所选函数的规定；不能把 decode 的动态状态误当成只在初始化发生的准备。
+
+run 的辅助工作同样可观察。该固定 wrapper 在未传 out 时分配并清零输出缓冲，return_lse 时可能另分配 FP32 LSE；部分非 cuDNN 路径在主调用后再应用 v_scale。是否使用预分配输出、是否需要 LSE、缩放是否属于该分支的独立设备工作，会影响完整调用时间和临时驻留。这里描述的是归档版本的实际分支，不是对所有 FlashInfer 版本的永久结论。
+
+## metadata 的单位与 backend 实际分派
+
+页表和分段数组不能仅凭名字与 shape 对接。query 的 indptr 可以表示 token 行偏移，另一条接口可能表示元素偏移；page indptr 表示页索引数组中的区间，page index 再指向物理页，末页长度则以有效 token 计。把其中两个量当成同一单位，在小 batch 或某个特殊 head 数下可能偶然不出错，换形状才暴露问题。
+
+固定 FlashInfer paged prefill 的 run 提供一个需要明确分支的例子：普通路径核对 q 的首维与 plan 缓存的 qo_indptr 末项，cuDNN 路径则核对 q 的元素总数，并在报错说明中把其解释为 token×heads×head_dim 的元素偏移。即使共用 wrapper 名称，不同 backend 的适配也不能只替换一个字符串。应结合这一版本的 plan/run 及下游接口检查单位，不把通用形状文档覆盖到特殊分支。
+
+auto 也不是“每次调用都重新寻找当前最佳实现”的保证。该固定 wrapper 在 plan 中遇到 auto 时解析设备、位置模式、reduction、custom mask 和 dtype 条件，并把结果写回内部 backend 字段；后续模块和计划依赖这个选择。当输入能力组合变化时，需要确认既有对象仍适用，必要时建立另一配置的 wrapper 或重新选择明确路径。不能把之前成功运行一次当作对后来所有条件的支持。
+
+可用路径还可能直接拒绝某些组合。固定版本中 paged wrapper 不支持 cute-dsl 构造，cuDNN 分支要求 NHD，trtllm-gen 的 paged plan 对非因果模式给出不支持。这些是函数与版本的边界，不能推导成整个库或整个硬件不支持该语义；替代路径可能是另一接口、另一 backend 或受控的布局适配。反过来，某库存在该能力，也不表示当前调用实际选择了它。
+
+## cache 布局、workspace 与并发必须共同设计
+
+NHD 和 HND 表示页内 token/head 轴顺序，K/V 的容器还可能是合并的五维张量或两个四维张量。逻辑页表中的索引关系不因 transpose 自动改变；变换时必须保持每个逻辑位置对应的 K、V 和 scale 一致。只转换数据、漏掉量化 scale 或末页有效长度，会产生无法用 shape 检查排除的错误。
+
+固定 FlashInfer trtllm-gen 路径在 NHD 输入下先转换轴顺序；对于 NVFP4，还会对 K/V 与 block scales 进行 contiguous 复制。对于普通可接受 stride 的数据，transpose 可以只是视图；对于这一量化分支，完整复制是真实成本。这说明“库支持两种布局”不等于“两种布局的成本相同”。若 prefill 写入一种布局、每步 decode 又转换整段历史，转换量随已驻留 KV 而非本次新增 token 增长。
+
+缓存写入还有接口特定的别名条件。FlashAttention 固定提交 c5f6ff4 的 flash_attn_with_kvcache 在传入新增 K/V 时更新原缓存；文档明确说明，若 cache_batch_idx 含重复索引且提供了 K/V，最终写入值可能来自任意一个重复项。因此共享只读 prefix 与多个逻辑更新写入同一槽位具有不同含义。独立尾槽、依序更新或另一种缓存更新实现可以改变写入依赖，不能从该 API 接受索引数组推断任意重复写入都有确定结果。
+
+workspace 则影响能否同时运行多个批次。固定 wrapper 的 float workspace 用于 split-k 中间结果，并另有整型与 pinned host 工作区和可变计划状态；文档给出的建议容量不是所有形状的硬下界，也不是空闲时没有驻留成本的承诺。共享同一 scratch 或复用同一可变 wrapper 时，需要以实际读写区域和完成顺序解释能否复用；不同 stream 的输出彼此独立并不足以说明内部辅助状态独立。
+
+图模式把这个问题放大。固定 wrapper 要求其生命周期内 batch size 不变，并保留 metadata 缓冲；plan 本身不能被图捕获。模型中的活跃请求数仍可通过显式分桶或其他合法组织方式变化，但引擎必须保证 inactive 槽、实际长度和页表内容的约定一致，不能把固定外形当成固定请求状态。split 配置、输出分配与 workspace 地址也必须满足当前捕获路径，见 [Stream 与分配器](streams-allocator.md) 与 [CUDA Graph](cuda-graph-buffers.md)。
+
+## 两个可复算的接入反例
+
+第一个反例是 GQA 的物化扩展。设 Hq=32、Hkv=8，某层 FP16 K/V 长度 L=8192、d=128，则逻辑 KV 为 32 MiB。若通用路径把 K/V 真正复制为 32 个 head，临时 KV 表示成为 128 MiB，并增加生成该表示的读写。直接消费分组 head 的内核有机会避免这一扩展；但框架文档中的等价数学表达出现 repeat，并不能证明选定 fused backend 实际物化了它。需要通过实际分派、分配与设备流量判断，不能仅按概念公式给库记账。
+
+第二个反例是 plan 的摊销。设两个候选除公共工作外，A 每次 kernel 为 20 μs，B 为 12 μs，但 B 的一次合法 plan 为 160 μs。若同一计划只使用一次，B 为 172 μs；若确实能供 32 次相同几何调用使用，平均为 17 μs，才优于 A。若每次调用还伴随 6 μs 的不可摊销 metadata/输出工作，B 的平均又成为 23 μs。所有时长都是设定值，用于展示成本结构；真实多层或跨步复用是否合法，须先通过接口契约判断。
+
+这两个例子说明适配器需要记录成本发生的频率：每任务、每模型加载、每形状、每层、每 batch 或每 decode 步。把一次准备成本重复计入会错误淘汰方案，把每步成本当成一次初始化则会虚增收益。
+
+## 用同一逻辑状态比较 backend
+
+比较时先固定绝对位置、合法 key 集合、head 映射、K/V 内容和数值策略，使稠密参考与候选表达同一个问题。然后分别测已准备输入上的 kernel、真实适配后的完整调用，以及与投影、cache 更新和输出消费连接后的模型层。让 causal 对齐、GQA 分组、分页尾页和窗口边界逐项改变，可以区分数学接入错误与分派条件变化。
+
+性能变化若只出现在首次形状，优先检查编译、plan、分配与缓存；若随历史长度线性增加而 kernel 时间未相应增加，检查 gather、布局转换及 metadata 路径；若并发执行后正确性失效，检查 workspace、wrapper 状态和缓存写入是否共享。观测应对应可否定的解释，而不是把所有慢路径统称为 backend 性能差。
+
+最后回到完整服务的吞吐、延迟与容量。某路径节省 attention 时间却多占一份历史缓存，可能减少可容纳的并发请求；另一条路径单次略慢却避免 CPU 同步，可能改善调度重叠。结论只能覆盖已测模型、硬件、长度与并发条件。本文补充的是固定来源下可实施的接入设计与区分实验，没有报告新 GPU 运行结果。
+
+<!-- infraagents:provenance -->
+
+## 来源与推导
+
+- [S-SDPA：PyTorch：scaled_dot_product_attention](../sources/S-SDPA.md)：已核对 SDPA 文档：布尔 mask 的 true 表示参与 attention；dropout_p 大于零时执行 dropout；非方形 is_causal 采用文档定义的左上对齐。Q、K/V heads 与通道形状有明确关系。
+  [完整原文](../../references/S-SDPA/reader.html) · [全文文本](../../references/S-SDPA/fulltext.txt)
+
+- [S-FA-IMPL：FlashAttention 官方实现说明](../sources/S-FA-IMPL.md)：FlashAttention 的版本说明记录：2.1 将非等长 Q/K 的 causal 对齐由左上改成右下。示例 Q 长 2、K 长 5 时，右下对齐使两行分别可见前 4、5 个位置。固定 README 的 flash_attn_with_kvcache 还明确缓存原地更新，以及重复 cache_batch_idx 的写入边界。
+  [完整原文](../../references/S-FA-IMPL/reader.html) · [全文文本](../../references/S-FA-IMPL/fulltext.txt)
+
+- [S-FI：FlashInfer：Attention kernels](../sources/S-FI.md)：截止日前的 FlashInfer 固定源码区分 query 分段、KV 页表及末页长度。相关 wrapper 的 plan 安排计算与工作区，run 执行 attention；plan 的捕获限制与图模式缓冲须按该版本接口核对。
+  [完整原文](../../references/S-FI/reader.html) · [全文文本](../../references/S-FI/fulltext.txt)
+
+- [S-AITER：ROCm AITER 官方仓库](../sources/S-AITER.md)：AITER 是 AMD ROCm 的算子实现项目，提供面向相应硬件的 attention、矩阵或相关算子路径。项目覆盖不代表每种形状和设备都有相同实现。
+  [完整原文](../../references/S-AITER/reader.html) · [全文文本](../../references/S-AITER/fulltext.txt)
+
+正文中的公式展开、容量算例与组合设计是基于这些来源的推导；设定算例不冒充实测。来源版本受 2026-04-30 上限约束，编辑日期 2026-10-22 不作为事实发布日期。此独立 base 版本内的章节修订号从 1 开始，原章节身份与版本映射保存在版本清单。
+
+
+
+### 本次扩写补充来源
+
+- [S-FLASHINFERPAPER：FlashInfer: Efficient and Customizable Attention Engine for LLM Inference Serving](../sources/S-FLASHINFERPAPER.md)：固定 v1 描述 BSR/ragged/可组合 KV 表示、attention 状态合并、JIT 变体、动态负载计划与 CUDA Graph workspace，以及 GQA 和 FP8 KV 路径。
+  [完整原文](../../references/S-FLASHINFERPAPER/reader.html) · [全文文本](../../references/S-FLASHINFERPAPER/fulltext.txt)
+
+### 执行路径扩写的定位
+
+本次完整核对固定 FlashInfer prefill.py 中 BatchPrefillWithPagedKVCacheWrapper 的构造、plan 与 run：metadata 的 CPU 读取、mask 打包、auto 的解析与保存、输出/LSE 分配、NHD→HND 及 NVFP4 复制均来自这些具体分支。workspace 并发与适配开销的后果由其数据依赖推导，未声称该 wrapper 提供未写明的并发安全保证。
+
+- [S-TORCH-CUDA：PyTorch CUDA semantics](../sources/S-TORCH-CUDA.md)：固定提交 647b6a2 的异步执行、stream 和 CUDA Graph 章节，用于区分 host 提交、设备完成和稳定缓冲的责任。
+  [完整原文](../../references/S-TORCH-CUDA/reader.html) · [全文文本](../../references/S-TORCH-CUDA/fulltext.txt)
+
+GQA 的存储扩展与 plan 摊销均为设定算例；SDPA 的文档等价表达不被当作其所有 backend 的物理实现证据。
+
+## 延伸阅读
+
+- [Attention 的 IO、在线 softmax 与分块归约](../algorithms/attention-io.md)。
+- [交叉注意力缓存：固定源、独立几何与可见性](../algorithms/cross-attention-cache.md)。
+- [CUDA Graph：捕获边界、计划状态与变长服务](../frameworks/cuda-graph-buffers.md)。
+- [MLA：压缩状态、矩阵吸收与解耦 RoPE](../models/mla.md)。
+
+- [基础算子：从张量布局到合法融合](../algorithms/operator-primitives.md)。

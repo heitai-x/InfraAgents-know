@@ -1,0 +1,166 @@
+{
+  "entry_id": "K-ALG-022",
+  "body_sha256": "f2cefb1f5504ada965f3842011120da0e2e48ddb999baac1c4efc87839b905bf",
+  "reviewer": "sol-reviewer:K-ALG-022:round-2",
+  "decision": "accept",
+  "documents": {
+    "AGENTS.md": "b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a",
+    "docs/knowledge-method.md": "69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb",
+    "docs/knowledge-review.md": "f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21",
+    "knowledge/algorithms/context-reuse.md": "f2cefb1f5504ada965f3842011120da0e2e48ddb999baac1c4efc87839b905bf",
+    "knowledge/sources/S-CACHEBLEND.md": "a26ac906120e992b088b3b7fa8af855c0d1cb1684af65d3b3a363fd096f79574",
+    "knowledge/sources/S-ROPE.md": "4aa6355e80fda16b405b8eab355e3a0efd1e8afa10de5e81431839391b77232a",
+    "knowledge/sources/S-PAGED.md": "50893a22385b0d577980153a9bc9c617acdcb2a9d7be0af655ad49421f06cc09",
+    "knowledge/sources/S-SGLANG.md": "4fd6badbee1df40da422f2866f1536bbe4f5266856b8d97004072a21b9d0e2c9",
+    "knowledge/algorithms/prefix-cache-identity.md": "98389e4a67eb746a52f39d11986256c857a00167f4c989f26dbd2d3f1b3275d9",
+    "knowledge/algorithms/kv-offload-prefetch.md": "a7088eba5c78cd9e96cf011d61946ad7dec4ecb6378ac16e7f2fc3820af38301",
+    "knowledge/system-semantics/distributed-kv-store.md": "77136e70ade22745a885219596c78cc6eb35ab586cc17aa42723c866e49616ef",
+    "knowledge/system-semantics/retrieval-pipeline.md": "bd09460502715f214c20ffdd68bdbc6bb9373668a849ca602b75d5e933ff40d0",
+    "references/S-CACHEBLEND/fulltext.txt": "2a2bded792aec6883f3e3b4d81132f44d84a8c16e05f1b656896edceac598421",
+    "references/S-ROPE/fulltext.txt": "0f7582a0829c2b689e18b8c7f95f03d12135d5de46e526f4f321c13948bd806c",
+    "tools/check_k_alg_022_full.py": "544f127d889c00dea4cf3894409d7824786a299c12d0df3f977d67c7c6145295"
+  },
+  "criteria": {
+    "definition": {
+      "assessment": "sufficient",
+      "reason": "明确区分文本、独立编码表示、逐层 KV 和回答的依赖范围；定义前向条件、隐藏输入及融合输入输出，解释跨片段依赖从首层 attention 进入后续层的原因。",
+      "evidence": [
+        {
+          "path": "knowledge/algorithms/context-reuse.md",
+          "quote": "固定一次前向的条件记为 η，包括模型及权重、adapter、实际 token 序列、位置编码、可见性、前处理与数值合同。"
+        },
+        {
+          "path": "knowledge/algorithms/context-reuse.md",
+          "quote": "输出是当前请求的逐层 fused KV、保留行的隐藏输出或末行 logits、每层选择集合和就绪责任。"
+        }
+      ]
+    },
+    "legality": {
+      "assessment": "sufficient",
+      "reason": "将精确恢复、位置搬移和近似融合分别限定。RoPE 搬移恒等式、相对内积及交叉项符号成立；没有将位置恢复误称为上文依赖恢复，也没有将论文经验比例推广为精确性保证。",
+      "evidence": [
+        {
+          "path": "knowledge/algorithms/context-reuse.md",
+          "quote": "旋转前隐藏状态因上文改变时，搬移旧 K 不能生成新隐藏状态，旧 V 也可能已经错误。"
+        },
+        {
+          "path": "knowledge/algorithms/context-reuse.md",
+          "quote": "选择性重算通常属于需要任务质量验证的近似，不能用少数回答相同证明任意输入精确。"
+        }
+      ]
+    },
+    "algorithm": {
+      "assessment": "sufficient",
+      "reason": "伪代码给出初始化、逐层隐藏输入来源、新旧 KV 合并、完整可见集合归一化、在线评分、嵌套筛选和共同发布。U 被强制保留，未选中行仍有缓存，因而数据流闭合；绝对位置、末行输出、空输入及取消后的物理排空边界均有说明。",
+      "evidence": [
+        {
+          "path": "knowledge/algorithms/context-reuse.md",
+          "quote": "首层来自实际 embedding；其他层来自上一层为同一位置计算的输出"
+        },
+        {
+          "path": "knowledge/algorithms/context-reuse.md",
+          "quote": "建立私有本层 K/V：S_i 用新值，C 中其余位置用校正后的旧值"
+        },
+        {
+          "path": "knowledge/algorithms/context-reuse.md",
+          "quote": "失败或取消：不发布部分融合快照；停止新提交，排空已有读写后释放私有责任"
+        }
+      ]
+    },
+    "cost": {
+      "assessment": "sufficient",
+      "reason": "六类成本均落实到本算法。按实际因果 query-key 对数计算 attention 主项，区别选择行数、缓存加载量和完整融合容量；容量单位与算例正确。流水递推包含启动、收尾及探测层差异，并明确资源独立与缓冲前提。",
+      "evidence": [
+        {
+          "path": "knowledge/algorithms/context-reuse.md",
+          "quote": "定义 E_i=Σ_{j∈S_i}(j+1)，它是每个 query head 的合法 query-key 对数。"
+        },
+        {
+          "path": "knowledge/algorithms/context-reuse.md",
+          "quote": "材料重算比例下降不等于完整 fused KV 容量下降。"
+        },
+        {
+          "path": "knowledge/algorithms/context-reuse.md",
+          "quote": "A_i=A_{i−1}+a_i，C_i=max(A_i,C_{i−1})+c_i。"
+        }
+      ]
+    },
+    "adaptation": {
+      "assessment": "sufficient",
+      "reason": "说明顺序、位置、模型、表示、带宽、强制集合及质量要求变化时哪些依赖仍成立、哪些状态或成本必须重建。没有假定扩大后续预算能够恢复已丢弃的隐藏行，方案比较采用共同输入、输出和质量边界。",
+      "evidence": [
+        {
+          "path": "knowledge/algorithms/context-reuse.md",
+          "quote": "首层偏差全零 | 评分计算可以正确而无区分力 | 推迟筛选、换信号或保留全量"
+        },
+        {
+          "path": "knowledge/algorithms/context-reuse.md",
+          "quote": "选择反转应由相同质量约束下的完整成本决定。"
+        }
+      ]
+    },
+    "diagnosis": {
+      "assessment": "sufficient",
+      "reason": "提供全量边界、首次分歧、同预算策略比较及并发故障干预，能够区分执行错误、信号不足、近似质量损失与资源竞争。原负对照构造错误已具体修复；实际 Python 执行记录与作者 JavaScript 声明明确分开。",
+      "evidence": [
+        {
+          "path": "knowledge/algorithms/context-reuse.md",
+          "quote": "若随机与偏差选择表现相同，当前信号不足以解释收益；若 KV 偏差下降而答案退化，应修改任务重要性假设"
+        },
+        {
+          "path": "knowledge/algorithms/context-reuse.md",
+          "quote": "必须同时测试合法输入被接受和违规输入被拒绝，避免把测试构造错误误报为算法失败。"
+        },
+        {
+          "path": "knowledge/algorithms/context-reuse.md",
+          "quote": "Python 脚本是否真正执行，以协调者执行记录为准。"
+        }
+      ]
+    }
+  },
+  "findings": [],
+  "limitations": [
+    "实际检查仅支持确定性 CPU 标量网络、集合约束、理想流水和数组隔离；不证明完整 Transformer、量化舍入、分页 kernel、GPU 可见性、真实异步排空、多卡通信、设备性能或任务质量。",
+    "本复核读取 CacheBlend、RoFormer 的完整提取文本；PagedAttention、SGLang 原文仅按所供摘录核对，不据此确认作者所述四篇全文阅读经历，也未进行 PDF 视觉复核或源码核验。",
+    "执行结论依据所供 actual_preflight 的隔离 Python 记录，本 reviewer 未重新执行；作者 JavaScript 模型的陈述未作为独立执行证据。",
+    "相对链接指向关系已人工核对；未执行文件存在性、离线 reader 可打开性、冻结读取或登记检查。"
+  ],
+  "checks": [
+    {
+      "script": "tools/check_k_alg_022_full.py",
+      "args": []
+    }
+  ],
+  "no_checks_reason": "",
+  "reading_scope": {
+    "range_unit": "zero-based half-open characters in extracted text",
+    "full_supplied_documents": {
+      "AGENTS.md": [[0, 567]],
+      "docs/knowledge-method.md": [[0, 2251]],
+      "docs/knowledge-review.md": [[0, 3016]],
+      "knowledge/algorithms/context-reuse.md": [[0, 11025]],
+      "knowledge/sources/S-CACHEBLEND.md": [[0, 627]],
+      "knowledge/sources/S-ROPE.md": [[0, 683]],
+      "knowledge/sources/S-PAGED.md": [[0, 2206]],
+      "knowledge/sources/S-SGLANG.md": [[0, 472]],
+      "knowledge/algorithms/prefix-cache-identity.md": [[0, 10003]],
+      "knowledge/algorithms/kv-offload-prefetch.md": [[0, 3710]],
+      "knowledge/system-semantics/distributed-kv-store.md": [[0, 13110]],
+      "knowledge/system-semantics/retrieval-pipeline.md": [[0, 4507]],
+      "references/S-CACHEBLEND/fulltext.txt": [[0, 71699]],
+      "references/S-ROPE/fulltext.txt": [[0, 30520]]
+    },
+    "excerpts_only": {
+      "knowledge/algorithms/kv-compression.md": [[0, 14166]],
+      "knowledge/frameworks/attention-backends.md": [[0, 12000], [16000, 18166]],
+      "references/S-PAGED/fulltext.txt": [[0, 78567]],
+      "references/S-SGLANG/fulltext.txt": [[0, 10567], [12000, 80000]]
+    },
+    "other_supplied_material": [
+      "完整阅读 candidate.test_script，作为 tools/check_k_alg_022_full.py 的交付候选；该字段未提供字符范围。",
+      "阅读 candidate.author_notes、原 campaign-K-ALG-022-r1 失败记录及本轮 actual_preflight 的执行参数、脚本绑定、stdout、stderr 和返回码。"
+    ],
+    "boundary": "documents 仅列完整提供并阅读的文档与完整候选脚本；摘录未登记为全文阅读。哈希采用提供的绑定值，未声称重新计算本地文件哈希。"
+  },
+  "test_assessment": "已逐项检查测试算法及其证据含义。dense_reference 物化完整 causal 分数并归一化，selective 使用在线归约，三种长度的全量选择同时比较输出和各层 K/V，并检查公共缓存未变；零 logits 的独立均值算例实际区分完整 key 集合与仅选中 key 的错误路径。独立片段的三层例观察到 query-only 输出偏差约 0.116207753074，首层投影一致而第二层出现差异，支持正文关于依赖进入层次及探测时序的解释，但不证明偏差筛选的任务有效性。原失败来自把合法集合当成违规输入；新脚本保留两组旧输入作为正例，分别构造只违反嵌套和只违反强制集合的负例，删除对应规则的变体会接受这些负例，并通过位掩码谓词独立核对 256 组集合。RoPE 的位置组合恒等式另有四分之一旋转几何参考，能识别 cos-only 缺陷；容量使用元素枚举核对不同 K/V 宽度，流水以递推与闭式相互核对，所有权检查能识别嵌套数组浅复制污染。所供 actual_preflight 返回码为 0、stderr 为空，脚本 SHA256 与交付绑定一致，正文 SHA256 也在执行输入清单中匹配；最终 PASS 在全部测试返回后输出。因此 campaign-K-ALG-022-r1 的具体 check_execution 失败可关闭。未执行真实评分选择到多层融合的端到端模型、量化位置转换、变长流水资源竞争、并发发布或物理排空测试；这些范围没有被记成 PASS，当前正文也未声称已由该脚本证明。"
+}

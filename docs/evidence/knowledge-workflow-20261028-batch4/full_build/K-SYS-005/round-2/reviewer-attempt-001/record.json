@@ -1,0 +1,310 @@
+{
+  "role": "reviewer",
+  "engine": "sol",
+  "requested_model": "gpt-6.1-sol",
+  "reasoning_effort": "high",
+  "prompt_sha256": "db3f1be6123ea877d5bb5735432c38717d413af8dcaae880033401109dfb059a",
+  "usage": [
+    {
+      "input_tokens": 727093,
+      "cached_input_tokens": 552320,
+      "cache_write_input_tokens": 0,
+      "output_tokens": 7653,
+      "reasoning_output_tokens": 2641
+    }
+  ],
+  "answer": "{\n  \"entry_id\": \"K-SYS-005\",\n  \"body_sha256\": \"03963a50c422d520a6d139e358eaa64addf42335c53360b446b9c143086c318d\",\n  \"reviewer\": \"sol-reviewer:K-SYS-005:round-2\",\n  \"decision\": \"revise\",\n  \"documents\": {\n    \"AGENTS.md\": \"b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a\",\n    \"docs/knowledge-method.md\": \"69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb\",\n    \"docs/knowledge-review.md\": \"f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21\",\n    \"knowledge/system-semantics/collective-ordering.md\": \"03963a50c422d520a6d139e358eaa64addf42335c53360b446b9c143086c318d\",\n    \"knowledge/sources/S-NCCL-GROUP.md\": \"3f5da97ebce75266b8c6644ff49e7fd99780fbac63bc280ac7c7e98ace3759da\",\n    \"knowledge/sources/S-NCCL-COLLECTIVE.md\": \"5d69a053352b0c9d7c72604c338976277e421305a0fdbc740b3fd8d1f09b87e5\",\n    \"knowledge/sources/S-CUDA-TOPOLOGY.md\": \"39d4039179728ce8570c3b9ec3801aaad52108d030f278fb598a4d6d47de1f8e\",\n    \"knowledge/sources/S-CUDA-ASYNC.md\": \"40df9287d0648a8ef55a046ceb1c18dd402619ede6e57ca33d3f90e4ace3da05\",\n    \"knowledge/algorithms/parallelism.md\": \"161a883561e39371ea22a1430c385546c402db2f993d8a37c6f37e03e1e4bd17\",\n    \"knowledge/hardware/topology-parallelism.md\": \"44b63f4291293b51e17b58d64bcfa9fe2bd384534a589c9b74fae0ad157ead29\",\n    \"knowledge/system-semantics/distributed-state-transfer.md\": \"425985efff21e4acbe091ddfa9043cf97b37e550b606f10c0e1560a3c02b1f6f\",\n    \"knowledge/hardware/transport-and-rdma.md\": \"72bcf1d8948eae41c243e422f6b0370462dcc4bf33ef86f5664a09b4e46d3ba2\",\n    \"knowledge/system-semantics/serving-recovery.md\": \"f551fa1f1e6213469c856a880839eefff504fb39f4dd692000b2df80a20a7f5e\",\n    \"knowledge/algorithms/routing-and-migration.md\": \"1b9dcfd5fea499a91611459bb936e1c1c49ceb562171fb0f1ba360a7010f5d32\",\n    \"knowledge/tools/failure-evidence.md\": \"23dfc65dcbd319c1789dcb80b62f6c843bb5db8c076e86a00643cff546700067\",\n    \"references/S-NCCL-GROUP/fulltext.txt\": \"75d2257017fc2e2409f7a672b9f2bc5fc01a54a4c098612f3abf8d83b5691ba5\",\n    \"references/S-NCCL-COLLECTIVE/fulltext.txt\": \"03fee76f12d44b950f31ce903bf28d4268bab2e65f805d62523c6dff3ddc59eb\",\n    \"tools/check_k_sys_005_full.py\": \"b1fece249eb9891b0bccfe6d49fe3d35edee7829fbcfa7ef125903ff2f27e6ae\"\n  },\n  \"criteria\": {\n    \"definition\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"解释了 collective 匹配的动机，定义参与集合、rank 映射、应用身份、描述符和张量解释，并给出五类操作的输入输出及提交、完成、发布状态。库契约与应用推导的归属清楚。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/system-semantics/collective-ordering.md\",\n          \"quote\": \"communicator 写作 C = (P, π, e)。P 是有序的 p 个 communicator ranks，π 把 rank 映射到进程和设备，e 是 communicator 身份或执行上下文。\"\n        },\n        {\n          \"path\": \"knowledge/system-semantics/collective-ordering.md\",\n          \"quote\": \"AllGather 按 communicator rank 排列，若 rank s 贡献第 s 块 N 个值，则 O_r[sN+j] = I_s[j]\"\n        }\n      ]\n    },\n    \"legality\": {\n      \"assessment\": \"partial\",\n      \"reason\": \"相同 count/datatype、root 与 rank 次序等事实符合给定 NCCL 原文，也正确区分 group 选择与合法性。但局部无 payload 分支没有落实全组相同 count，可能把一个 rank 的空工作错误地转成局部零长度调用。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/system-semantics/collective-ordering.md\",\n          \"quote\": \"固定 NCCL Collective Operations 文档要求各 rank 使用相同 count 和相同 datatype，才能组成完整操作\"\n        },\n        {\n          \"path\": \"knowledge/system-semantics/collective-ordering.md\",\n          \"quote\": \"若一个 rank 没有有效 payload，空工作仍要保留共同序列，不能用本地分支删除其他参与者等待的步骤\"\n        },\n        {\n          \"path\": \"knowledge/system-semantics/collective-ordering.md\",\n          \"quote\": \"只有固定 API 允许已声明的空范围时，才可把空工作表示为零长度操作\"\n        }\n      ]\n    },\n    \"algorithm\": {\n      \"assessment\": \"partial\",\n      \"reason\": \"单一 provenance 标记、来源说明和离线链接已恢复，campaign-K-SYS-005-r1 在当前候选上可关闭。完整重读仍发现非 group 异步发起、完成事件生产与 DEVICE_DONE 更新、全组失败处理没有贯通。检查脚本另建的状态表不能证明正文伪代码满足这些不变量。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/system-semantics/collective-ordering.md\",\n          \"quote\": \"if ret is an immediate error then local_error ← ret\"\n        },\n        {\n          \"path\": \"knowledge/system-semantics/collective-ordering.md\",\n          \"quote\": \"wait_state ← WAIT_FOR_DEVICE_OR_EVENT(slot.event, deadline)\"\n        },\n        {\n          \"path\": \"knowledge/system-semantics/collective-ordering.md\",\n          \"quote\": \"任何本地错误或未知超时都会阻止该 seq 的输出进入下一阶段。\"\n        }\n      ]\n    },\n    \"cost\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"在声明的理想通信模型范围内，轮次数、每轮字节数、单向带宽和时间单位一致；独立复算 16 MiB 算例得到 615.9375 µs。区分逻辑通信量、主缓冲容量、packing 准备、提交、等待、共享资源及峰值驻留，明确模型不是设备实测。真实归约计算、HBM 事务及库内部资源仍需另行测量。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/system-semantics/collective-ordering.md\",\n          \"quote\": \"有 2(p−1) 轮，每轮传 Nb/p 字节\"\n        },\n        {\n          \"path\": \"knowledge/system-semantics/collective-ordering.md\",\n          \"quote\": \"T_ring ≈ 2(p−1)α + 2(p−1)Nb/(pβ) + H + S。\"\n        },\n        {\n          \"path\": \"knowledge/system-semantics/collective-ordering.md\",\n          \"quote\": \"峰值容量可能从逐个执行时的 max_i R_i 上升到 Σ_i R_i\"\n        }\n      ]\n    },\n    \"adaptation\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"消息大小、成员与代次、动态请求决定、异步模式、拓扑及数值顺序变化均连接到具体依赖和成本，并给出缩小或放弃 group 的反转条件。空工作规则的具体合法性需按 finding 修复。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/system-semantics/collective-ordering.md\",\n          \"quote\": \"采用 group 聚合多个层时，若关键消费者等待更久、暂存峰值超限或共享链路排队严重，应缩小 group、拆分关键路径或放弃聚合。\"\n        },\n        {\n          \"path\": \"knowledge/system-semantics/collective-ordering.md\",\n          \"quote\": \"动态 batch、EOS、取消和投机接受改变本轮工作，但共同决定必须先形成。\"\n        }\n      ]\n    },\n    \"diagnosis\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"区分顺序错配、对端退出、链路延迟、张量解释错误和消费依赖错误，给出控制变量与预测，保留超时的不确定性。实验设计与 CPU 检查、真实多卡结果明确分开；失败闭包检查的覆盖不足另列为算法 finding。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/system-semantics/collective-ordering.md\",\n          \"quote\": \"超时只说明在时间预算内未完成，不能单独区分网络慢、顺序错和对端已死。\"\n        },\n        {\n          \"path\": \"knowledge/system-semantics/collective-ordering.md\",\n          \"quote\": \"下面的表是区分实验设计，不是已经在目标多卡环境完成的实测。\"\n        },\n        {\n          \"path\": \"knowledge/system-semantics/collective-ordering.md\",\n          \"quote\": \"未完成或被终止的检查保留失败或不确定结果，不能因其他 rank 得到了数值就记为全组通过。\"\n        }\n      ]\n    }\n  },\n  \"findings\": [\n    {\n      \"id\": \"K-SYS-005-empty-count-contract\",\n      \"criterion\": \"legality\",\n      \"evidence\": \"正文同时要求“各 rank 使用相同 count 和相同 datatype”，又按 slot.has_payload(r) 分支允许“把空工作表示为零长度操作”。伪代码只在有 payload 时 reserve input and output ranges，随后所有 rank 都调用 SUBMIT。没有规定零长度必须为全组共同描述，也没有为局部空 rank 构造匹配长度的合法输入。脚本 empty = [[], [], []] 只覆盖所有 rank 同时为空。\",\n      \"impact\": \"一个 rank 无工作而其他 rank 的同槽位 count 为正时，局部 count=0 会破坏 NCCL 契约；若保留正 count 却没有预留输入范围，则可能访问无效缓冲。保留槽位本身不足以保证合法。\",\n      \"blocking\": true,\n      \"required_revision\": \"区分全组零长度与局部无有效数据。全组零长度必须使用共同 count；局部空 rank 必须按操作语义提供匹配长度的合法缓冲，例如数学语义允许时填充归约单位元，否则共同拒绝或重构操作。按 Broadcast/Reduce 等角色分别定义所需输入输出范围。增加能拒绝混合零/非零 count 的检查。\"\n    },\n    {\n      \"id\": \"K-SYS-005-ungrouped-issue-progress\",\n      \"criterion\": \"algorithm\",\n      \"evidence\": \"SUBMIT 后只有“if ret is an immediate error then local_error ← ret”；D.use_group 为 false 时直接设置“close_ret ← SUCCESS”。后续只在 close_ret = IN_PROGRESS 时执行 POLL_ISSUE，因此非 group SUBMIT 返回 IN_PROGRESS 的状态被丢弃，算法仍会继续提交或进入设备事件等待。\",\n      \"impact\": \"正文同时讨论不使用 group 和 nonblocking communicator，却没有保证非 group 路径的发起完成；可能过早调用相关 CUDA 操作，违背本章要求的提交与设备完成分离。\",\n      \"blocking\": true,\n      \"required_revision\": \"明确 SUBMIT 的返回契约，处理非 group 每次调用的 IN_PROGRESS、错误及发起完成后才能进行的后续操作；或者明确将非 group 分支限制为已证明同步完成发起的模式。用同一执行模型覆盖 group/non-group 的成功、pending、错误与超时路径。\"\n    },\n    {\n      \"id\": \"K-SYS-005-completion-event-production\",\n      \"criterion\": \"algorithm\",\n      \"evidence\": \"正文首次使用完成票据的位置是“wait_state ← WAIT_FOR_DEVICE_OR_EVENT(slot.event, deadline)”，此前没有创建或记录 slot.event，也没有说明该事件如何覆盖本 seq 的通信。等待成功后没有 DEVICE_DONE 更新，而发布处要求“require slot is DEVICE_DONE and consumer dependency satisfied”。\",\n      \"impact\": \"读者无法由伪代码建立通信到完成事件的因果链；未记录或旧代次事件可能错误放行，严格按已列更新执行则没有进入 DEVICE_DONE 的步骤。另建 TRANSITIONS 表不能补足正文算法。\",\n      \"blocking\": true,\n      \"required_revision\": \"在发起确认之后明确记录覆盖相应通信的 stream/event 完成票据，绑定 communicator、seq、slot 和代次；说明等待成功的后置条件并更新 DEVICE_DONE。将 publish_set 输出映射到对应槽位，明确消费者等待和最后使用关系。检查应能拒绝未记录、旧代次或未覆盖该通信的事件。\"\n    },\n    {\n      \"id\": \"K-SYS-005-failure-closure-gap\",\n      \"criterion\": \"algorithm\",\n      \"evidence\": \"正文要求“任一 rank 的本地失败、超时或提交路径未知，都必须让受影响执行组进入一致的终止、恢复或共同前缀重建”，但伪代码失败分支只有 record 后 return FAILED/ABORT；成功分支没有接收组级失败或确认提交权的步骤。脚本 failure_closure 的 timeout 分支为 pass，末尾只检查 failed 集合。手工逐分支追踪 failure_closure([(0, 'local_fail'), (0, 'abort'), (1, 'timeout')]) 和 failure_closure([(0, 'timeout'), (1, 'publish')])，两者均返回 None；这不是实际执行结果。\",\n      \"impact\": \"算法没有实现其声称的失败传播不变量，也没有交代已提交通信与预留缓冲如何结算。检查器会接受成员未进入共同终态、超时后仍发布的轨迹，因此现有成功输出不能支持完整失败闭包判断。\",\n      \"blocking\": true,\n      \"required_revision\": \"给出失败与发布的明确时间边界及组级处理步骤，或明确委托给带具体输入输出契约的调用方恢复协议：停止新提交、传播失败、撤销未提交发布资格，并在确认物理最后使用结束前保留在途缓冲。不要将逻辑 abort 当作设备已排空。检查器应接收参与集合，核对所有成员的终态，拒绝未解决的 UNKNOWN 后发布和未结算在途操作，并加入上述漏检轨迹。\"\n    }\n  ],\n  \"limitations\": [\n    \"未测量 GPU、NCCL、网络、真实内存可见性、重叠、性能或知识使用效果；CPU 模型不能证明这些性质。正文对此边界的声明可以保留。\",\n    \"理想 ring 与 group 公式不证明实际算法选择、归约计算吞吐、HBM 事务、内部暂存或共享链路争用；实际选择需要固定版本与目标环境证据。\",\n    \"CUDA 两份原文只读取 supplied excerpts，没有据此声称完整阅读编程指南；部分选段与本章 stream/多 GPU 主题并不直接对应。\",\n    \"当前工具未提供文件读取或 Python 执行能力，本 reviewer 未重算文件哈希、检查离线链接目标存在性或重跑脚本。documents 使用本次提供的完整材料绑定哈希。\",\n    \"docs/knowledge-build-workflow.md 和 round-1 产物未包含在可读材料中；JSON 按本次明确提供的 schema 输出，原问题仅依据当前候选的单一标记与保留来源说明关闭。\"\n  ],\n  \"checks\": [\n    {\n      \"script\": \"tools/check_k_sys_005_full.py\",\n      \"args\": []\n    }\n  ],\n  \"no_checks_reason\": \"\",\n  \"reading_scope\": \"完整阅读用户提供的以下全文，范围为提取文本的零基半开字符区间：AGENTS.md [0,567)；docs/knowledge-method.md [0,2251)；docs/knowledge-review.md [0,3016)；knowledge/system-semantics/collective-ordering.md [0,10910)；knowledge/sources/S-NCCL-GROUP.md [0,452)；knowledge/sources/S-NCCL-COLLECTIVE.md [0,493)；knowledge/sources/S-CUDA-TOPOLOGY.md [0,500)；knowledge/sources/S-CUDA-ASYNC.md [0,1610)；knowledge/algorithms/parallelism.md [0,6115)；knowledge/hardware/topology-parallelism.md [0,3562)；knowledge/system-semantics/distributed-state-transfer.md [0,3216)；knowledge/hardware/transport-and-rdma.md [0,4088)；knowledge/system-semantics/serving-recovery.md [0,3834)；knowledge/algorithms/routing-and-migration.md [0,3228)；knowledge/tools/failure-evidence.md [0,3753)；references/S-NCCL-GROUP/fulltext.txt [0,5326)；references/S-NCCL-COLLECTIVE/fulltext.txt [0,2570)。完整阅读 candidate.test_script 提供的 tools/check_k_sys_005_full.py，以及 author_notes 和 actual_preflight 的执行记录。references/S-CUDA-TOPOLOGY/fulltext.txt 仅阅读给定摘录：[16000,18254)、[68000,72000)、[344000,348000)、[436000,444000)、[448000,464000)、[468000,484000)、[496000,504000)、[516000,524000)、[528000,536000)、[572000,632000)、[752000,756000)、[976000,980000)。references/S-CUDA-ASYNC/fulltext.txt 仅阅读同组摘录，首段为 [16000,18255)，其余区间相同。两份 CUDA 原文均不列入 documents，也未声称阅读完整原文。未读取源码归档、未提供的 workflow 文件或历史产物。\",\n  \"test_assessment\": \"checks 表示本轮审查的已提供 preflight 检查，不表示 reviewer 重新执行。actual_preflight 记录 returncode=0、stderr 为空、未超时，执行脚本哈希与绑定值一致；remote_bwrap 执行使用隔离网络、只读输入和 Python 3.12。作者说明未自行声称执行，与独立提供的 preflight 记录应分别理解。数值参考以逐索引归约和拼接对照闭式整数结果，p=4 的 AllReduce、AllGather、ReduceScatter 与 Broadcast 有实际断言；另覆盖 p=1、全部 rank 同时为空。shape-only 接受同 count 错槽位而身份检查拒绝，确实触及本章匹配机制；缺因子 ring 和缺 p+1 容量负对照能暴露对应模型错误。逐轮求和与闭式 ring 一致只验证给定轮次假设下的代数，不验证真实 ring 实现。状态测试检查独立手写 TRANSITIONS 表，没有执行 COLLECTIVE_STEP 的控制流，因而不能发现非 group IN_PROGRESS 丢失、缺事件记录或缺 DEVICE_DONE 更新。failure_closure 没有参与集合，忽略 timeout，不能证明共同终态；上述手工反例表明其存在漏检。尚未覆盖局部空而其他 rank 非空、正文失败传播与在途资源结算，也没有 Reduce 数值参考、浮点容差或设备执行证据。脚本成功不能消除这些当前算法缺口。\"\n}",
+  "exit_code": 0,
+  "status": "completed",
+  "timeout_seconds": 1800,
+  "response_path": "D:\\桌面\\xdb\\InfraAgents\\InfraAgents-know-astra-new\\InfraAgents-know\\docs\\evidence\\knowledge-workflow-20261028-batch4\\full_build\\K-SYS-005\\round-2\\reviewer-attempt-001\\answer.txt",
+  "record_path": "D:\\桌面\\xdb\\InfraAgents\\InfraAgents-know-astra-new\\InfraAgents-know\\docs\\evidence\\knowledge-workflow-20261028-batch4\\full_build\\K-SYS-005\\round-2\\reviewer-attempt-001\\record.json",
+  "tool_events": [
+    {
+      "type": "item.completed",
+      "item": {
+        "id": "item_1",
+        "type": "mcp_tool_call",
+        "server": "codex",
+        "tool": "list_mcp_resource_templates",
+        "arguments": {},
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"resourceTemplates\":[]}"
+            }
+          ],
+          "structured_content": null
+        },
+        "error": null,
+        "status": "completed"
+      }
+    },
+    {
+      "type": "item.completed",
+      "item": {
+        "id": "item_2",
+        "type": "mcp_tool_call",
+        "server": "codex",
+        "tool": "list_mcp_resources",
+        "arguments": {},
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"resources\":[]}"
+            }
+          ],
+          "structured_content": null
+        },
+        "error": null,
+        "status": "completed"
+      }
+    }
+  ],
+  "inventory_tool_events": [
+    {
+      "type": "item.completed",
+      "item": {
+        "id": "item_1",
+        "type": "mcp_tool_call",
+        "server": "codex",
+        "tool": "list_mcp_resource_templates",
+        "arguments": {},
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"resourceTemplates\":[]}"
+            }
+          ],
+          "structured_content": null
+        },
+        "error": null,
+        "status": "completed"
+      }
+    },
+    {
+      "type": "item.completed",
+      "item": {
+        "id": "item_2",
+        "type": "mcp_tool_call",
+        "server": "codex",
+        "tool": "list_mcp_resources",
+        "arguments": {},
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"resources\":[]}"
+            }
+          ],
+          "structured_content": null
+        },
+        "error": null,
+        "status": "completed"
+      }
+    }
+  ],
+  "rejected_tool_events": [],
+  "tool_policy": "metadata_inventory_only",
+  "tool_policy_version": "2026-10-28-production-v1",
+  "tool_policy_scope": "Only empty-argument codex host plugin/skill-directory descriptors and empty template inventory; inventory is not knowledge evidence. All other tool events reject the call.",
+  "tool_policy_reason": "Production chapter construction allows observed generic capability discovery metadata; this does not claim a zero-tool comparison or external source reading.",
+  "malformed_event_lines": [],
+  "turn_completed": true,
+  "error_events": [],
+  "recovered_transport_events": [],
+  "terminal_error_events": [],
+  "transport_recovered": false,
+  "actual_model": null,
+  "identity_verified": null,
+  "identity_basis": "Explicit CLI model and isolated HTTP provider; CLI events do not expose server model identity.",
+  "provider": "eval-openai-http",
+  "max_output_tokens": null,
+  "cli_version": "codex-cli 0.164.0-alpha.11.1",
+  "cost_scope": "Codex token usage is reported; subscription charge is not exposed.",
+  "parsed": {
+    "entry_id": "K-SYS-005",
+    "body_sha256": "03963a50c422d520a6d139e358eaa64addf42335c53360b446b9c143086c318d",
+    "reviewer": "sol-reviewer:K-SYS-005:round-2",
+    "decision": "revise",
+    "documents": {
+      "AGENTS.md": "b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a",
+      "docs/knowledge-method.md": "69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb",
+      "docs/knowledge-review.md": "f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21",
+      "knowledge/system-semantics/collective-ordering.md": "03963a50c422d520a6d139e358eaa64addf42335c53360b446b9c143086c318d",
+      "knowledge/sources/S-NCCL-GROUP.md": "3f5da97ebce75266b8c6644ff49e7fd99780fbac63bc280ac7c7e98ace3759da",
+      "knowledge/sources/S-NCCL-COLLECTIVE.md": "5d69a053352b0c9d7c72604c338976277e421305a0fdbc740b3fd8d1f09b87e5",
+      "knowledge/sources/S-CUDA-TOPOLOGY.md": "39d4039179728ce8570c3b9ec3801aaad52108d030f278fb598a4d6d47de1f8e",
+      "knowledge/sources/S-CUDA-ASYNC.md": "40df9287d0648a8ef55a046ceb1c18dd402619ede6e57ca33d3f90e4ace3da05",
+      "knowledge/algorithms/parallelism.md": "161a883561e39371ea22a1430c385546c402db2f993d8a37c6f37e03e1e4bd17",
+      "knowledge/hardware/topology-parallelism.md": "44b63f4291293b51e17b58d64bcfa9fe2bd384534a589c9b74fae0ad157ead29",
+      "knowledge/system-semantics/distributed-state-transfer.md": "425985efff21e4acbe091ddfa9043cf97b37e550b606f10c0e1560a3c02b1f6f",
+      "knowledge/hardware/transport-and-rdma.md": "72bcf1d8948eae41c243e422f6b0370462dcc4bf33ef86f5664a09b4e46d3ba2",
+      "knowledge/system-semantics/serving-recovery.md": "f551fa1f1e6213469c856a880839eefff504fb39f4dd692000b2df80a20a7f5e",
+      "knowledge/algorithms/routing-and-migration.md": "1b9dcfd5fea499a91611459bb936e1c1c49ceb562171fb0f1ba360a7010f5d32",
+      "knowledge/tools/failure-evidence.md": "23dfc65dcbd319c1789dcb80b62f6c843bb5db8c076e86a00643cff546700067",
+      "references/S-NCCL-GROUP/fulltext.txt": "75d2257017fc2e2409f7a672b9f2bc5fc01a54a4c098612f3abf8d83b5691ba5",
+      "references/S-NCCL-COLLECTIVE/fulltext.txt": "03fee76f12d44b950f31ce903bf28d4268bab2e65f805d62523c6dff3ddc59eb",
+      "tools/check_k_sys_005_full.py": "b1fece249eb9891b0bccfe6d49fe3d35edee7829fbcfa7ef125903ff2f27e6ae"
+    },
+    "criteria": {
+      "definition": {
+        "assessment": "sufficient",
+        "reason": "解释了 collective 匹配的动机，定义参与集合、rank 映射、应用身份、描述符和张量解释，并给出五类操作的输入输出及提交、完成、发布状态。库契约与应用推导的归属清楚。",
+        "evidence": [
+          {
+            "path": "knowledge/system-semantics/collective-ordering.md",
+            "quote": "communicator 写作 C = (P, π, e)。P 是有序的 p 个 communicator ranks，π 把 rank 映射到进程和设备，e 是 communicator 身份或执行上下文。"
+          },
+          {
+            "path": "knowledge/system-semantics/collective-ordering.md",
+            "quote": "AllGather 按 communicator rank 排列，若 rank s 贡献第 s 块 N 个值，则 O_r[sN+j] = I_s[j]"
+          }
+        ]
+      },
+      "legality": {
+        "assessment": "partial",
+        "reason": "相同 count/datatype、root 与 rank 次序等事实符合给定 NCCL 原文，也正确区分 group 选择与合法性。但局部无 payload 分支没有落实全组相同 count，可能把一个 rank 的空工作错误地转成局部零长度调用。",
+        "evidence": [
+          {
+            "path": "knowledge/system-semantics/collective-ordering.md",
+            "quote": "固定 NCCL Collective Operations 文档要求各 rank 使用相同 count 和相同 datatype，才能组成完整操作"
+          },
+          {
+            "path": "knowledge/system-semantics/collective-ordering.md",
+            "quote": "若一个 rank 没有有效 payload，空工作仍要保留共同序列，不能用本地分支删除其他参与者等待的步骤"
+          },
+          {
+            "path": "knowledge/system-semantics/collective-ordering.md",
+            "quote": "只有固定 API 允许已声明的空范围时，才可把空工作表示为零长度操作"
+          }
+        ]
+      },
+      "algorithm": {
+        "assessment": "partial",
+        "reason": "单一 provenance 标记、来源说明和离线链接已恢复，campaign-K-SYS-005-r1 在当前候选上可关闭。完整重读仍发现非 group 异步发起、完成事件生产与 DEVICE_DONE 更新、全组失败处理没有贯通。检查脚本另建的状态表不能证明正文伪代码满足这些不变量。",
+        "evidence": [
+          {
+            "path": "knowledge/system-semantics/collective-ordering.md",
+            "quote": "if ret is an immediate error then local_error ← ret"
+          },
+          {
+            "path": "knowledge/system-semantics/collective-ordering.md",
+            "quote": "wait_state ← WAIT_FOR_DEVICE_OR_EVENT(slot.event, deadline)"
+          },
+          {
+            "path": "knowledge/system-semantics/collective-ordering.md",
+            "quote": "任何本地错误或未知超时都会阻止该 seq 的输出进入下一阶段。"
+          }
+        ]
+      },
+      "cost": {
+        "assessment": "sufficient",
+        "reason": "在声明的理想通信模型范围内，轮次数、每轮字节数、单向带宽和时间单位一致；独立复算 16 MiB 算例得到 615.9375 µs。区分逻辑通信量、主缓冲容量、packing 准备、提交、等待、共享资源及峰值驻留，明确模型不是设备实测。真实归约计算、HBM 事务及库内部资源仍需另行测量。",
+        "evidence": [
+          {
+            "path": "knowledge/system-semantics/collective-ordering.md",
+            "quote": "有 2(p−1) 轮，每轮传 Nb/p 字节"
+          },
+          {
+            "path": "knowledge/system-semantics/collective-ordering.md",
+            "quote": "T_ring ≈ 2(p−1)α + 2(p−1)Nb/(pβ) + H + S。"
+          },
+          {
+            "path": "knowledge/system-semantics/collective-ordering.md",
+            "quote": "峰值容量可能从逐个执行时的 max_i R_i 上升到 Σ_i R_i"
+          }
+        ]
+      },
+      "adaptation": {
+        "assessment": "sufficient",
+        "reason": "消息大小、成员与代次、动态请求决定、异步模式、拓扑及数值顺序变化均连接到具体依赖和成本，并给出缩小或放弃 group 的反转条件。空工作规则的具体合法性需按 finding 修复。",
+        "evidence": [
+          {
+            "path": "knowledge/system-semantics/collective-ordering.md",
+            "quote": "采用 group 聚合多个层时，若关键消费者等待更久、暂存峰值超限或共享链路排队严重，应缩小 group、拆分关键路径或放弃聚合。"
+          },
+          {
+            "path": "knowledge/system-semantics/collective-ordering.md",
+            "quote": "动态 batch、EOS、取消和投机接受改变本轮工作，但共同决定必须先形成。"
+          }
+        ]
+      },
+      "diagnosis": {
+        "assessment": "sufficient",
+        "reason": "区分顺序错配、对端退出、链路延迟、张量解释错误和消费依赖错误，给出控制变量与预测，保留超时的不确定性。实验设计与 CPU 检查、真实多卡结果明确分开；失败闭包检查的覆盖不足另列为算法 finding。",
+        "evidence": [
+          {
+            "path": "knowledge/system-semantics/collective-ordering.md",
+            "quote": "超时只说明在时间预算内未完成，不能单独区分网络慢、顺序错和对端已死。"
+          },
+          {
+            "path": "knowledge/system-semantics/collective-ordering.md",
+            "quote": "下面的表是区分实验设计，不是已经在目标多卡环境完成的实测。"
+          },
+          {
+            "path": "knowledge/system-semantics/collective-ordering.md",
+            "quote": "未完成或被终止的检查保留失败或不确定结果，不能因其他 rank 得到了数值就记为全组通过。"
+          }
+        ]
+      }
+    },
+    "findings": [
+      {
+        "id": "K-SYS-005-empty-count-contract",
+        "criterion": "legality",
+        "evidence": "正文同时要求“各 rank 使用相同 count 和相同 datatype”，又按 slot.has_payload(r) 分支允许“把空工作表示为零长度操作”。伪代码只在有 payload 时 reserve input and output ranges，随后所有 rank 都调用 SUBMIT。没有规定零长度必须为全组共同描述，也没有为局部空 rank 构造匹配长度的合法输入。脚本 empty = [[], [], []] 只覆盖所有 rank 同时为空。",
+        "impact": "一个 rank 无工作而其他 rank 的同槽位 count 为正时，局部 count=0 会破坏 NCCL 契约；若保留正 count 却没有预留输入范围，则可能访问无效缓冲。保留槽位本身不足以保证合法。",
+        "blocking": true,
+        "required_revision": "区分全组零长度与局部无有效数据。全组零长度必须使用共同 count；局部空 rank 必须按操作语义提供匹配长度的合法缓冲，例如数学语义允许时填充归约单位元，否则共同拒绝或重构操作。按 Broadcast/Reduce 等角色分别定义所需输入输出范围。增加能拒绝混合零/非零 count 的检查。"
+      },
+      {
+        "id": "K-SYS-005-ungrouped-issue-progress",
+        "criterion": "algorithm",
+        "evidence": "SUBMIT 后只有“if ret is an immediate error then local_error ← ret”；D.use_group 为 false 时直接设置“close_ret ← SUCCESS”。后续只在 close_ret = IN_PROGRESS 时执行 POLL_ISSUE，因此非 group SUBMIT 返回 IN_PROGRESS 的状态被丢弃，算法仍会继续提交或进入设备事件等待。",
+        "impact": "正文同时讨论不使用 group 和 nonblocking communicator，却没有保证非 group 路径的发起完成；可能过早调用相关 CUDA 操作，违背本章要求的提交与设备完成分离。",
+        "blocking": true,
+        "required_revision": "明确 SUBMIT 的返回契约，处理非 group 每次调用的 IN_PROGRESS、错误及发起完成后才能进行的后续操作；或者明确将非 group 分支限制为已证明同步完成发起的模式。用同一执行模型覆盖 group/non-group 的成功、pending、错误与超时路径。"
+      },
+      {
+        "id": "K-SYS-005-completion-event-production",
+        "criterion": "algorithm",
+        "evidence": "正文首次使用完成票据的位置是“wait_state ← WAIT_FOR_DEVICE_OR_EVENT(slot.event, deadline)”，此前没有创建或记录 slot.event，也没有说明该事件如何覆盖本 seq 的通信。等待成功后没有 DEVICE_DONE 更新，而发布处要求“require slot is DEVICE_DONE and consumer dependency satisfied”。",
+        "impact": "读者无法由伪代码建立通信到完成事件的因果链；未记录或旧代次事件可能错误放行，严格按已列更新执行则没有进入 DEVICE_DONE 的步骤。另建 TRANSITIONS 表不能补足正文算法。",
+        "blocking": true,
+        "required_revision": "在发起确认之后明确记录覆盖相应通信的 stream/event 完成票据，绑定 communicator、seq、slot 和代次；说明等待成功的后置条件并更新 DEVICE_DONE。将 publish_set 输出映射到对应槽位，明确消费者等待和最后使用关系。检查应能拒绝未记录、旧代次或未覆盖该通信的事件。"
+      },
+      {
+        "id": "K-SYS-005-failure-closure-gap",
+        "criterion": "algorithm",
+        "evidence": "正文要求“任一 rank 的本地失败、超时或提交路径未知，都必须让受影响执行组进入一致的终止、恢复或共同前缀重建”，但伪代码失败分支只有 record 后 return FAILED/ABORT；成功分支没有接收组级失败或确认提交权的步骤。脚本 failure_closure 的 timeout 分支为 pass，末尾只检查 failed 集合。手工逐分支追踪 failure_closure([(0, 'local_fail'), (0, 'abort'), (1, 'timeout')]) 和 failure_closure([(0, 'timeout'), (1, 'publish')])，两者均返回 None；这不是实际执行结果。",
+        "impact": "算法没有实现其声称的失败传播不变量，也没有交代已提交通信与预留缓冲如何结算。检查器会接受成员未进入共同终态、超时后仍发布的轨迹，因此现有成功输出不能支持完整失败闭包判断。",
+        "blocking": true,
+        "required_revision": "给出失败与发布的明确时间边界及组级处理步骤，或明确委托给带具体输入输出契约的调用方恢复协议：停止新提交、传播失败、撤销未提交发布资格，并在确认物理最后使用结束前保留在途缓冲。不要将逻辑 abort 当作设备已排空。检查器应接收参与集合，核对所有成员的终态，拒绝未解决的 UNKNOWN 后发布和未结算在途操作，并加入上述漏检轨迹。"
+      }
+    ],
+    "limitations": [
+      "未测量 GPU、NCCL、网络、真实内存可见性、重叠、性能或知识使用效果；CPU 模型不能证明这些性质。正文对此边界的声明可以保留。",
+      "理想 ring 与 group 公式不证明实际算法选择、归约计算吞吐、HBM 事务、内部暂存或共享链路争用；实际选择需要固定版本与目标环境证据。",
+      "CUDA 两份原文只读取 supplied excerpts，没有据此声称完整阅读编程指南；部分选段与本章 stream/多 GPU 主题并不直接对应。",
+      "当前工具未提供文件读取或 Python 执行能力，本 reviewer 未重算文件哈希、检查离线链接目标存在性或重跑脚本。documents 使用本次提供的完整材料绑定哈希。",
+      "docs/knowledge-build-workflow.md 和 round-1 产物未包含在可读材料中；JSON 按本次明确提供的 schema 输出，原问题仅依据当前候选的单一标记与保留来源说明关闭。"
+    ],
+    "checks": [
+      {
+        "script": "tools/check_k_sys_005_full.py",
+        "args": []
+      }
+    ],
+    "no_checks_reason": "",
+    "reading_scope": "完整阅读用户提供的以下全文，范围为提取文本的零基半开字符区间：AGENTS.md [0,567)；docs/knowledge-method.md [0,2251)；docs/knowledge-review.md [0,3016)；knowledge/system-semantics/collective-ordering.md [0,10910)；knowledge/sources/S-NCCL-GROUP.md [0,452)；knowledge/sources/S-NCCL-COLLECTIVE.md [0,493)；knowledge/sources/S-CUDA-TOPOLOGY.md [0,500)；knowledge/sources/S-CUDA-ASYNC.md [0,1610)；knowledge/algorithms/parallelism.md [0,6115)；knowledge/hardware/topology-parallelism.md [0,3562)；knowledge/system-semantics/distributed-state-transfer.md [0,3216)；knowledge/hardware/transport-and-rdma.md [0,4088)；knowledge/system-semantics/serving-recovery.md [0,3834)；knowledge/algorithms/routing-and-migration.md [0,3228)；knowledge/tools/failure-evidence.md [0,3753)；references/S-NCCL-GROUP/fulltext.txt [0,5326)；references/S-NCCL-COLLECTIVE/fulltext.txt [0,2570)。完整阅读 candidate.test_script 提供的 tools/check_k_sys_005_full.py，以及 author_notes 和 actual_preflight 的执行记录。references/S-CUDA-TOPOLOGY/fulltext.txt 仅阅读给定摘录：[16000,18254)、[68000,72000)、[344000,348000)、[436000,444000)、[448000,464000)、[468000,484000)、[496000,504000)、[516000,524000)、[528000,536000)、[572000,632000)、[752000,756000)、[976000,980000)。references/S-CUDA-ASYNC/fulltext.txt 仅阅读同组摘录，首段为 [16000,18255)，其余区间相同。两份 CUDA 原文均不列入 documents，也未声称阅读完整原文。未读取源码归档、未提供的 workflow 文件或历史产物。",
+    "test_assessment": "checks 表示本轮审查的已提供 preflight 检查，不表示 reviewer 重新执行。actual_preflight 记录 returncode=0、stderr 为空、未超时，执行脚本哈希与绑定值一致；remote_bwrap 执行使用隔离网络、只读输入和 Python 3.12。作者说明未自行声称执行，与独立提供的 preflight 记录应分别理解。数值参考以逐索引归约和拼接对照闭式整数结果，p=4 的 AllReduce、AllGather、ReduceScatter 与 Broadcast 有实际断言；另覆盖 p=1、全部 rank 同时为空。shape-only 接受同 count 错槽位而身份检查拒绝，确实触及本章匹配机制；缺因子 ring 和缺 p+1 容量负对照能暴露对应模型错误。逐轮求和与闭式 ring 一致只验证给定轮次假设下的代数，不验证真实 ring 实现。状态测试检查独立手写 TRANSITIONS 表，没有执行 COLLECTIVE_STEP 的控制流，因而不能发现非 group IN_PROGRESS 丢失、缺事件记录或缺 DEVICE_DONE 更新。failure_closure 没有参与集合，忽略 timeout，不能证明共同终态；上述手工反例表明其存在漏检。尚未覆盖局部空而其他 rank 非空、正文失败传播与在途资源结算，也没有 Reduce 数值参考、浮点容差或设备执行证据。脚本成功不能消除这些当前算法缺口。"
+  },
+  "format_status": "strict_json",
+  "format_error": null,
+  "output_text": "{\n  \"entry_id\": \"K-SYS-005\",\n  \"body_sha256\": \"03963a50c422d520a6d139e358eaa64addf42335c53360b446b9c143086c318d\",\n  \"reviewer\": \"sol-reviewer:K-SYS-005:round-2\",\n  \"decision\": \"revise\",\n  \"documents\": {\n    \"AGENTS.md\": \"b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a\",\n    \"docs/knowledge-method.md\": \"69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb\",\n    \"docs/knowledge-review.md\": \"f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21\",\n    \"knowledge/system-semantics/collective-ordering.md\": \"03963a50c422d520a6d139e358eaa64addf42335c53360b446b9c143086c318d\",\n    \"knowledge/sources/S-NCCL-GROUP.md\": \"3f5da97ebce75266b8c6644ff49e7fd99780fbac63bc280ac7c7e98ace3759da\",\n    \"knowledge/sources/S-NCCL-COLLECTIVE.md\": \"5d69a053352b0c9d7c72604c338976277e421305a0fdbc740b3fd8d1f09b87e5\",\n    \"knowledge/sources/S-CUDA-TOPOLOGY.md\": \"39d4039179728ce8570c3b9ec3801aaad52108d030f278fb598a4d6d47de1f8e\",\n    \"knowledge/sources/S-CUDA-ASYNC.md\": \"40df9287d0648a8ef55a046ceb1c18dd402619ede6e57ca33d3f90e4ace3da05\",\n    \"knowledge/algorithms/parallelism.md\": \"161a883561e39371ea22a1430c385546c402db2f993d8a37c6f37e03e1e4bd17\",\n    \"knowledge/hardware/topology-parallelism.md\": \"44b63f4291293b51e17b58d64bcfa9fe2bd384534a589c9b74fae0ad157ead29\",\n    \"knowledge/system-semantics/distributed-state-transfer.md\": \"425985efff21e4acbe091ddfa9043cf97b37e550b606f10c0e1560a3c02b1f6f\",\n    \"knowledge/hardware/transport-and-rdma.md\": \"72bcf1d8948eae41c243e422f6b0370462dcc4bf33ef86f5664a09b4e46d3ba2\",\n    \"knowledge/system-semantics/serving-recovery.md\": \"f551fa1f1e6213469c856a880839eefff504fb39f4dd692000b2df80a20a7f5e\",\n    \"knowledge/algorithms/routing-and-migration.md\": \"1b9dcfd5fea499a91611459bb936e1c1c49ceb562171fb0f1ba360a7010f5d32\",\n    \"knowledge/tools/failure-evidence.md\": \"23dfc65dcbd319c1789dcb80b62f6c843bb5db8c076e86a00643cff546700067\",\n    \"references/S-NCCL-GROUP/fulltext.txt\": \"75d2257017fc2e2409f7a672b9f2bc5fc01a54a4c098612f3abf8d83b5691ba5\",\n    \"references/S-NCCL-COLLECTIVE/fulltext.txt\": \"03fee76f12d44b950f31ce903bf28d4268bab2e65f805d62523c6dff3ddc59eb\",\n    \"tools/check_k_sys_005_full.py\": \"b1fece249eb9891b0bccfe6d49fe3d35edee7829fbcfa7ef125903ff2f27e6ae\"\n  },\n  \"criteria\": {\n    \"definition\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"解释了 collective 匹配的动机，定义参与集合、rank 映射、应用身份、描述符和张量解释，并给出五类操作的输入输出及提交、完成、发布状态。库契约与应用推导的归属清楚。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/system-semantics/collective-ordering.md\",\n          \"quote\": \"communicator 写作 C = (P, π, e)。P 是有序的 p 个 communicator ranks，π 把 rank 映射到进程和设备，e 是 communicator 身份或执行上下文。\"\n        },\n        {\n          \"path\": \"knowledge/system-semantics/collective-ordering.md\",\n          \"quote\": \"AllGather 按 communicator rank 排列，若 rank s 贡献第 s 块 N 个值，则 O_r[sN+j] = I_s[j]\"\n        }\n      ]\n    },\n    \"legality\": {\n      \"assessment\": \"partial\",\n      \"reason\": \"相同 count/datatype、root 与 rank 次序等事实符合给定 NCCL 原文，也正确区分 group 选择与合法性。但局部无 payload 分支没有落实全组相同 count，可能把一个 rank 的空工作错误地转成局部零长度调用。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/system-semantics/collective-ordering.md\",\n          \"quote\": \"固定 NCCL Collective Operations 文档要求各 rank 使用相同 count 和相同 datatype，才能组成完整操作\"\n        },\n        {\n          \"path\": \"knowledge/system-semantics/collective-ordering.md\",\n          \"quote\": \"若一个 rank 没有有效 payload，空工作仍要保留共同序列，不能用本地分支删除其他参与者等待的步骤\"\n        },\n        {\n          \"path\": \"knowledge/system-semantics/collective-ordering.md\",\n          \"quote\": \"只有固定 API 允许已声明的空范围时，才可把空工作表示为零长度操作\"\n        }\n      ]\n    },\n    \"algorithm\": {\n      \"assessment\": \"partial\",\n      \"reason\": \"单一 provenance 标记、来源说明和离线链接已恢复，campaign-K-SYS-005-r1 在当前候选上可关闭。完整重读仍发现非 group 异步发起、完成事件生产与 DEVICE_DONE 更新、全组失败处理没有贯通。检查脚本另建的状态表不能证明正文伪代码满足这些不变量。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/system-semantics/collective-ordering.md\",\n          \"quote\": \"if ret is an immediate error then local_error ← ret\"\n        },\n        {\n          \"path\": \"knowledge/system-semantics/collective-ordering.md\",\n          \"quote\": \"wait_state ← WAIT_FOR_DEVICE_OR_EVENT(slot.event, deadline)\"\n        },\n        {\n          \"path\": \"knowledge/system-semantics/collective-ordering.md\",\n          \"quote\": \"任何本地错误或未知超时都会阻止该 seq 的输出进入下一阶段。\"\n        }\n      ]\n    },\n    \"cost\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"在声明的理想通信模型范围内，轮次数、每轮字节数、单向带宽和时间单位一致；独立复算 16 MiB 算例得到 615.9375 µs。区分逻辑通信量、主缓冲容量、packing 准备、提交、等待、共享资源及峰值驻留，明确模型不是设备实测。真实归约计算、HBM 事务及库内部资源仍需另行测量。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/system-semantics/collective-ordering.md\",\n          \"quote\": \"有 2(p−1) 轮，每轮传 Nb/p 字节\"\n        },\n        {\n          \"path\": \"knowledge/system-semantics/collective-ordering.md\",\n          \"quote\": \"T_ring ≈ 2(p−1)α + 2(p−1)Nb/(pβ) + H + S。\"\n        },\n        {\n          \"path\": \"knowledge/system-semantics/collective-ordering.md\",\n          \"quote\": \"峰值容量可能从逐个执行时的 max_i R_i 上升到 Σ_i R_i\"\n        }\n      ]\n    },\n    \"adaptation\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"消息大小、成员与代次、动态请求决定、异步模式、拓扑及数值顺序变化均连接到具体依赖和成本，并给出缩小或放弃 group 的反转条件。空工作规则的具体合法性需按 finding 修复。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/system-semantics/collective-ordering.md\",\n          \"quote\": \"采用 group 聚合多个层时，若关键消费者等待更久、暂存峰值超限或共享链路排队严重，应缩小 group、拆分关键路径或放弃聚合。\"\n        },\n        {\n          \"path\": \"knowledge/system-semantics/collective-ordering.md\",\n          \"quote\": \"动态 batch、EOS、取消和投机接受改变本轮工作，但共同决定必须先形成。\"\n        }\n      ]\n    },\n    \"diagnosis\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"区分顺序错配、对端退出、链路延迟、张量解释错误和消费依赖错误，给出控制变量与预测，保留超时的不确定性。实验设计与 CPU 检查、真实多卡结果明确分开；失败闭包检查的覆盖不足另列为算法 finding。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/system-semantics/collective-ordering.md\",\n          \"quote\": \"超时只说明在时间预算内未完成，不能单独区分网络慢、顺序错和对端已死。\"\n        },\n        {\n          \"path\": \"knowledge/system-semantics/collective-ordering.md\",\n          \"quote\": \"下面的表是区分实验设计，不是已经在目标多卡环境完成的实测。\"\n        },\n        {\n          \"path\": \"knowledge/system-semantics/collective-ordering.md\",\n          \"quote\": \"未完成或被终止的检查保留失败或不确定结果，不能因其他 rank 得到了数值就记为全组通过。\"\n        }\n      ]\n    }\n  },\n  \"findings\": [\n    {\n      \"id\": \"K-SYS-005-empty-count-contract\",\n      \"criterion\": \"legality\",\n      \"evidence\": \"正文同时要求“各 rank 使用相同 count 和相同 datatype”，又按 slot.has_payload(r) 分支允许“把空工作表示为零长度操作”。伪代码只在有 payload 时 reserve input and output ranges，随后所有 rank 都调用 SUBMIT。没有规定零长度必须为全组共同描述，也没有为局部空 rank 构造匹配长度的合法输入。脚本 empty = [[], [], []] 只覆盖所有 rank 同时为空。\",\n      \"impact\": \"一个 rank 无工作而其他 rank 的同槽位 count 为正时，局部 count=0 会破坏 NCCL 契约；若保留正 count 却没有预留输入范围，则可能访问无效缓冲。保留槽位本身不足以保证合法。\",\n      \"blocking\": true,\n      \"required_revision\": \"区分全组零长度与局部无有效数据。全组零长度必须使用共同 count；局部空 rank 必须按操作语义提供匹配长度的合法缓冲，例如数学语义允许时填充归约单位元，否则共同拒绝或重构操作。按 Broadcast/Reduce 等角色分别定义所需输入输出范围。增加能拒绝混合零/非零 count 的检查。\"\n    },\n    {\n      \"id\": \"K-SYS-005-ungrouped-issue-progress\",\n      \"criterion\": \"algorithm\",\n      \"evidence\": \"SUBMIT 后只有“if ret is an immediate error then local_error ← ret”；D.use_group 为 false 时直接设置“close_ret ← SUCCESS”。后续只在 close_ret = IN_PROGRESS 时执行 POLL_ISSUE，因此非 group SUBMIT 返回 IN_PROGRESS 的状态被丢弃，算法仍会继续提交或进入设备事件等待。\",\n      \"impact\": \"正文同时讨论不使用 group 和 nonblocking communicator，却没有保证非 group 路径的发起完成；可能过早调用相关 CUDA 操作，违背本章要求的提交与设备完成分离。\",\n      \"blocking\": true,\n      \"required_revision\": \"明确 SUBMIT 的返回契约，处理非 group 每次调用的 IN_PROGRESS、错误及发起完成后才能进行的后续操作；或者明确将非 group 分支限制为已证明同步完成发起的模式。用同一执行模型覆盖 group/non-group 的成功、pending、错误与超时路径。\"\n    },\n    {\n      \"id\": \"K-SYS-005-completion-event-production\",\n      \"criterion\": \"algorithm\",\n      \"evidence\": \"正文首次使用完成票据的位置是“wait_state ← WAIT_FOR_DEVICE_OR_EVENT(slot.event, deadline)”，此前没有创建或记录 slot.event，也没有说明该事件如何覆盖本 seq 的通信。等待成功后没有 DEVICE_DONE 更新，而发布处要求“require slot is DEVICE_DONE and consumer dependency satisfied”。\",\n      \"impact\": \"读者无法由伪代码建立通信到完成事件的因果链；未记录或旧代次事件可能错误放行，严格按已列更新执行则没有进入 DEVICE_DONE 的步骤。另建 TRANSITIONS 表不能补足正文算法。\",\n      \"blocking\": true,\n      \"required_revision\": \"在发起确认之后明确记录覆盖相应通信的 stream/event 完成票据，绑定 communicator、seq、slot 和代次；说明等待成功的后置条件并更新 DEVICE_DONE。将 publish_set 输出映射到对应槽位，明确消费者等待和最后使用关系。检查应能拒绝未记录、旧代次或未覆盖该通信的事件。\"\n    },\n    {\n      \"id\": \"K-SYS-005-failure-closure-gap\",\n      \"criterion\": \"algorithm\",\n      \"evidence\": \"正文要求“任一 rank 的本地失败、超时或提交路径未知，都必须让受影响执行组进入一致的终止、恢复或共同前缀重建”，但伪代码失败分支只有 record 后 return FAILED/ABORT；成功分支没有接收组级失败或确认提交权的步骤。脚本 failure_closure 的 timeout 分支为 pass，末尾只检查 failed 集合。手工逐分支追踪 failure_closure([(0, 'local_fail'), (0, 'abort'), (1, 'timeout')]) 和 failure_closure([(0, 'timeout'), (1, 'publish')])，两者均返回 None；这不是实际执行结果。\",\n      \"impact\": \"算法没有实现其声称的失败传播不变量，也没有交代已提交通信与预留缓冲如何结算。检查器会接受成员未进入共同终态、超时后仍发布的轨迹，因此现有成功输出不能支持完整失败闭包判断。\",\n      \"blocking\": true,\n      \"required_revision\": \"给出失败与发布的明确时间边界及组级处理步骤，或明确委托给带具体输入输出契约的调用方恢复协议：停止新提交、传播失败、撤销未提交发布资格，并在确认物理最后使用结束前保留在途缓冲。不要将逻辑 abort 当作设备已排空。检查器应接收参与集合，核对所有成员的终态，拒绝未解决的 UNKNOWN 后发布和未结算在途操作，并加入上述漏检轨迹。\"\n    }\n  ],\n  \"limitations\": [\n    \"未测量 GPU、NCCL、网络、真实内存可见性、重叠、性能或知识使用效果；CPU 模型不能证明这些性质。正文对此边界的声明可以保留。\",\n    \"理想 ring 与 group 公式不证明实际算法选择、归约计算吞吐、HBM 事务、内部暂存或共享链路争用；实际选择需要固定版本与目标环境证据。\",\n    \"CUDA 两份原文只读取 supplied excerpts，没有据此声称完整阅读编程指南；部分选段与本章 stream/多 GPU 主题并不直接对应。\",\n    \"当前工具未提供文件读取或 Python 执行能力，本 reviewer 未重算文件哈希、检查离线链接目标存在性或重跑脚本。documents 使用本次提供的完整材料绑定哈希。\",\n    \"docs/knowledge-build-workflow.md 和 round-1 产物未包含在可读材料中；JSON 按本次明确提供的 schema 输出，原问题仅依据当前候选的单一标记与保留来源说明关闭。\"\n  ],\n  \"checks\": [\n    {\n      \"script\": \"tools/check_k_sys_005_full.py\",\n      \"args\": []\n    }\n  ],\n  \"no_checks_reason\": \"\",\n  \"reading_scope\": \"完整阅读用户提供的以下全文，范围为提取文本的零基半开字符区间：AGENTS.md [0,567)；docs/knowledge-method.md [0,2251)；docs/knowledge-review.md [0,3016)；knowledge/system-semantics/collective-ordering.md [0,10910)；knowledge/sources/S-NCCL-GROUP.md [0,452)；knowledge/sources/S-NCCL-COLLECTIVE.md [0,493)；knowledge/sources/S-CUDA-TOPOLOGY.md [0,500)；knowledge/sources/S-CUDA-ASYNC.md [0,1610)；knowledge/algorithms/parallelism.md [0,6115)；knowledge/hardware/topology-parallelism.md [0,3562)；knowledge/system-semantics/distributed-state-transfer.md [0,3216)；knowledge/hardware/transport-and-rdma.md [0,4088)；knowledge/system-semantics/serving-recovery.md [0,3834)；knowledge/algorithms/routing-and-migration.md [0,3228)；knowledge/tools/failure-evidence.md [0,3753)；references/S-NCCL-GROUP/fulltext.txt [0,5326)；references/S-NCCL-COLLECTIVE/fulltext.txt [0,2570)。完整阅读 candidate.test_script 提供的 tools/check_k_sys_005_full.py，以及 author_notes 和 actual_preflight 的执行记录。references/S-CUDA-TOPOLOGY/fulltext.txt 仅阅读给定摘录：[16000,18254)、[68000,72000)、[344000,348000)、[436000,444000)、[448000,464000)、[468000,484000)、[496000,504000)、[516000,524000)、[528000,536000)、[572000,632000)、[752000,756000)、[976000,980000)。references/S-CUDA-ASYNC/fulltext.txt 仅阅读同组摘录，首段为 [16000,18255)，其余区间相同。两份 CUDA 原文均不列入 documents，也未声称阅读完整原文。未读取源码归档、未提供的 workflow 文件或历史产物。\",\n  \"test_assessment\": \"checks 表示本轮审查的已提供 preflight 检查，不表示 reviewer 重新执行。actual_preflight 记录 returncode=0、stderr 为空、未超时，执行脚本哈希与绑定值一致；remote_bwrap 执行使用隔离网络、只读输入和 Python 3.12。作者说明未自行声称执行，与独立提供的 preflight 记录应分别理解。数值参考以逐索引归约和拼接对照闭式整数结果，p=4 的 AllReduce、AllGather、ReduceScatter 与 Broadcast 有实际断言；另覆盖 p=1、全部 rank 同时为空。shape-only 接受同 count 错槽位而身份检查拒绝，确实触及本章匹配机制；缺因子 ring 和缺 p+1 容量负对照能暴露对应模型错误。逐轮求和与闭式 ring 一致只验证给定轮次假设下的代数，不验证真实 ring 实现。状态测试检查独立手写 TRANSITIONS 表，没有执行 COLLECTIVE_STEP 的控制流，因而不能发现非 group IN_PROGRESS 丢失、缺事件记录或缺 DEVICE_DONE 更新。failure_closure 没有参与集合，忽略 timeout，不能证明共同终态；上述手工反例表明其存在漏检。尚未覆盖局部空而其他 rank 非空、正文失败传播与在途资源结算，也没有 Reduce 数值参考、浮点容差或设备执行证据。脚本成功不能消除这些当前算法缺口。\"\n}",
+  "elapsed_seconds": 305.219
+}

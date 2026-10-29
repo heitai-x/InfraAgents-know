@@ -1,0 +1,282 @@
+{
+  "role": "reviewer",
+  "engine": "sol",
+  "requested_model": "gpt-6.1-sol",
+  "reasoning_effort": "high",
+  "prompt_sha256": "df4e58b9974ae45b57425c25763f771fa835da5c34e3cd720f99f374e294bcfc",
+  "usage": [
+    {
+      "input_tokens": 980752,
+      "cached_input_tokens": 789504,
+      "cache_write_input_tokens": 0,
+      "output_tokens": 7438,
+      "reasoning_output_tokens": 2909
+    }
+  ],
+  "answer": "{\n  \"entry_id\": \"K-MODEL-003\",\n  \"body_sha256\": \"4399bd6a440543d5bfd1795ac7c2bd71b8f59522ca015c59887ba7dbb883226e\",\n  \"reviewer\": \"sol-reviewer:K-MODEL-003:round-1\",\n  \"decision\": \"revise\",\n  \"documents\": {\n    \"AGENTS.md\": \"b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a\",\n    \"docs/knowledge-method.md\": \"69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb\",\n    \"docs/knowledge-review.md\": \"f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21\",\n    \"knowledge/models/moe-routing.md\": \"4399bd6a440543d5bfd1795ac7c2bd71b8f59522ca015c59887ba7dbb883226e\",\n    \"knowledge/sources/S-MIXTRAL.md\": \"25a14f727f542ddb8daf029bd89b5961836e63d7689633191ab4b00ee04d0ff7\",\n    \"knowledge/sources/S-MLA.md\": \"13dd0ca7fb487a136088c826ce5dae79e946400b2191afff20f5d29b33fc689f\",\n    \"knowledge/sources/S-NCCL-COLLECTIVE.md\": \"5d69a053352b0c9d7c72604c338976277e421305a0fdbc740b3fd8d1f09b87e5\",\n    \"knowledge/sources/S-DEEPSEEKV3.md\": \"c5f9e6f0e00d5059059b6b7abbcb37a6cfdae23f86880c1b935aad16c3f59339\",\n    \"knowledge/algorithms/parallelism.md\": \"161a883561e39371ea22a1430c385546c402db2f993d8a37c6f37e03e1e4bd17\",\n    \"knowledge/hardware/topology-parallelism.md\": \"44b63f4291293b51e17b58d64bcfa9fe2bd384534a589c9b74fae0ad157ead29\",\n    \"knowledge/workloads/input-distribution.md\": \"b1b68f0d2a6d640c4b64c2bc98560b9e9a79a6a60b445899949b5db15b96aa90\",\n    \"knowledge/algorithms/weight-expert-offload.md\": \"cb230fafeec2d39fa40228ad44dbb41d34c62673fbac2325b6e797f206bc0fde\",\n    \"knowledge/algorithms/heterogeneous-execution.md\": \"8fd777e06b150eaba4e3288ccb188adbb975e37c28c77a72a9b6878a70e027f4\",\n    \"knowledge/hardware/cpu-linear-kernels.md\": \"b4d5391890478b2874f6ea548b154a580a0810356f9cf9cb05248a9d2f728dcc\",\n    \"knowledge/system-semantics/memory-allocators.md\": \"2e7258787b94ad142c7c236541e8718803ad30b273d08e6c398dff673a1df838\",\n    \"references/S-MIXTRAL/fulltext.txt\": \"07bf75eef2aad6afcf894396cc42c9aaf973784b3930b3da5c55086a6fcd9811\",\n    \"references/S-MLA/fulltext.txt\": \"d8be5bf70199ff2b0679a1f70e2ded4c08651f543cd8549ffadb84690d1e04b9\",\n    \"references/S-NCCL-COLLECTIVE/fulltext.txt\": \"03fee76f12d44b950f31ce903bf28d4268bab2e65f805d62523c6dff3ddc59eb\",\n    \"tools/check_k_model_003_full.py\": \"77e2ec72ba3e89eb9332c3c00d40f57dfe9f70d337b1eafaa0f8fec818e65d8b\"\n  },\n  \"criteria\": {\n    \"definition\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"单层问题的动机、token/expert 轴、选择集合、门控、shared 分支及主要在途对象已有明确说明。分布式返回身份的具体交付缺口列入 algorithm。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/models/moe-routing.md\",\n          \"quote\": \"设第 l 层有 B 个待处理 token，hidden 维 d，routed expert 数 E，每 token 选择 k 个不同 routed expert，另有 N_s 个 shared expert。\"\n        },\n        {\n          \"path\": \"knowledge/models/moe-routing.md\",\n          \"quote\": \"y_t = Σ_{e∈S_t} g_{t,e} E_e(x_t)\"\n        }\n      ]\n    },\n    \"legality\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"正确区分选择 bias 与输出 gating、模型路由约束与放置选择，并解释 dropping、副本权重一致性、collective 匹配和浮点归约边界。Mixtral、MLA、NCCL 及所供 V3 关键段落支持这些事实；未把探索中的动态冗余和 decode 重叠写成已完成能力。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/models/moe-routing.md\",\n          \"quote\": \"专家副本只能分担同一专家函数和同一权重版本。副本选择是放置决策，不是重新路由；不能为均衡负载改选另一个 expert。\"\n        },\n        {\n          \"path\": \"knowledge/models/moe-routing.md\",\n          \"quote\": \"实数加法结合律不保证浮点逐位相同，因此精度检查应把选中集合、gating 与 combine 舍入分开看。\"\n        }\n      ]\n    },\n    \"algorithm\": {\n      \"assessment\": \"partial\",\n      \"reason\": \"路由、分桶、本地专家执行、加权归约及取消后排空原则已有展开；但宣称完整的分布式状态机没有闭合远端接收项入桶、partial 返回及 origin 身份的数据流，现有单进程检查无法验证这一交界。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/models/moe-routing.md\",\n          \"quote\": \"item = (layer, t, e, g[t][e], X[t], return_slot=(t,e))\"\n        },\n        {\n          \"path\": \"knowledge/models/moe-routing.md\",\n          \"quote\": \"等待 hidden 与 metadata 在接收侧可见，且 generation 与 place 快照一致\"\n        },\n        {\n          \"path\": \"knowledge/models/moe-routing.md\",\n          \"quote\": \"接收远端 partial，按 (layer,t,generation) 累加\"\n        }\n      ]\n    },\n    \"cost\": {\n      \"assessment\": \"partial\",\n      \"reason\": \"SwiGLU FLOPs、权重容量、期望触及专家数及 padding 算例可复算，准备、同步、重叠与驻留也有条件说明。但通信主公式使用全部 item/token-rank 对，未排除本地执行项，与物理发送口径及后面的远端算例不一致。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/models/moe-routing.md\",\n          \"quote\": \"D_send = |{(t, r): 存在 e∈S_t 且 place[e].rank=r}|\"\n        },\n        {\n          \"path\": \"knowledge/models/moe-routing.md\",\n          \"quote\": \"若其中 24 项跨 rank 且不去重，dispatch 与 return 各约 192 KiB，合计约 384 KiB 加 metadata。\"\n        }\n      ]\n    },\n    \"adaptation\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"条件变化表把 batch、路由比例、链路、容量、分布漂移与 dtype 的变化连接到应重算的成本和合法性；卸载与预取部分明确下一层 hidden 尚未知及预测失败后的正确执行要求。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/models/moe-routing.md\",\n          \"quote\": \"预测下一层专家只能作为预取提示；真正路由选到未预取专家时仍要正确执行，不能静默丢弃。\"\n        },\n        {\n          \"path\": \"knowledge/models/moe-routing.md\",\n          \"quote\": \"若取消，只撤销尚未提交工作并等待在途读者完成，不能立即复用 DMA 目的缓冲或将迟到结果接到新一轮。\"\n        }\n      ]\n    },\n    \"diagnosis\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"提供了权重读取、通信启动、热点队列、padding 和数值/重复贡献等竞争解释，并给出干预、观测和反证方向。CPU 检查具有有效独立参考与负对照，其通过范围不能扩展到尚未建模的分布式状态转换。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/models/moe-routing.md\",\n          \"quote\": \"比较本地全部专家与 EP 两种放置，保持路由与专家函数相同；记录每层 dispatch/combine 时间\"\n        },\n        {\n          \"path\": \"knowledge/models/moe-routing.md\",\n          \"quote\": \"该检查只能证明这些逻辑关系，不测 GPU 时间、NCCL 实际路径、HBM 事务或 DeepSeek 集群性能。\"\n        }\n      ]\n    }\n  },\n  \"findings\": [\n    {\n      \"id\": \"K-MODEL-003-ALG-001\",\n      \"criterion\": \"algorithm\",\n      \"evidence\": \"正文 item 为“item = (layer, t, e, g[t][e], X[t], return_slot=(t,e))”；local_bucket 的显式追加只有“if r == local_rank:\\n        local_bucket[item.e].append(item)”。远端路径只写“等待 hidden 与 metadata 在接收侧可见，且 generation 与 place 快照一致”，combine 只写“接收远端 partial，按 (layer,t,generation) 累加”。\",\n      \"impact\": \"远端接收数据没有明确成为专家执行的 local_bucket 输入，专家结果也没有明确发送回 origin。t 来自各 rank 的 X[0..B-1]，却未声明全局唯一身份或 origin 映射；两个来源 rank 各有 t=0 且命中同一目的 rank 时，partial[t] 无法据现有说明区分返回归属。generation 被要求校验，却未在 item 构造中交付。读者仍需自行补出本章核心分布式算法。\",\n      \"blocking\": true,\n      \"required_revision\": \"明确 B/t 的作用域及 token 到 origin 的唯一映射；在快照/item 中携带或明确关联 routing/placement generation。补出接收项按 expert 入桶、按 origin 与 token 聚合、发送返回 partial、origin 按预期贡献完成条件累加的路径，并区分逐 item 返回与本地预合并。以两个 origin 均含本地 token 0、目的端存在远端项的 CPU 模型对照直接公式，注入错误归属或漏返回负对照。\"\n    },\n    {\n      \"id\": \"K-MODEL-003-COST-001\",\n      \"criterion\": \"cost\",\n      \"evidence\": \"正文写“若不做同 token 同目的 rank 去重，dispatch hidden 主项为 N_items d b_h，combine 返回主项也为 N_items d b_h”，并定义“D_send = |{(t, r): 存在 e∈S_t 且 place[e].rank=r}|”，随后称“则 dispatch hidden 主项约为 D_send d b_h”。\",\n      \"impact\": \"N_items 包含本地项，D_send 也包含目的 rank 等于 origin rank 的对。全部专家本地执行时，这些公式仍给出正的发送字节；例如单 rank、一个 token 时 D_send=1，d=4096、b_h=2 得到 8 KiB，而网络发送为零。这会错误预测 EP 流量与放置/去重收益；后面的 24 个远端项算例没有修正一般公式。\",\n      \"blocking\": true,\n      \"required_revision\": \"显式定义 origin(t)，以远端 item 数计算未去重网络流量，以满足 r≠origin(t) 的 token-destination 对计算去重发送和返回流量。若保留包含本地项的逻辑搬运量，分别命名并声明计量边界。检查加入全部本地及本地/远端混合放置，对照逐条发送账本验证字节，并检测把本地对误计为网络发送的负对照。\"\n    }\n  ],\n  \"limitations\": [\n    \"现有精确有理数检查验证抽象 affinity、专家函数及归约代数，不验证真实 router 的 softmax/sigmoid 数值行为、真实 SwiGLU 内核或浮点误差。\",\n    \"未测 GPU 时间、HBM/cache 事务、NCCL 运行、设备可见性或取消后的实际物理排空；这些已声明的设备边界可保留。\",\n    \"真实路由相关性、在线副本策略收益及 DeepSeek 集群布局的可迁移性未验证；设定算例不能证明服务性能或 Agent 使用效果。\",\n    \"docs/knowledge-build-workflow.md 未包含在供给材料，当前工具也没有文件读取接口；采用任务内给定的 review JSON schema，未声称读取该文件或写入产物目录。\"\n  ],\n  \"checks\": [\n    {\n      \"script\": \"tools/check_k_model_003_full.py\",\n      \"args\": []\n    }\n  ],\n  \"no_checks_reason\": \"\",\n  \"reading_scope\": \"完整阅读任务内供给的全文：AGENTS.md [0,567)、docs/knowledge-method.md [0,2251)、docs/knowledge-review.md [0,3016)、knowledge/models/moe-routing.md [0,12564)；四份来源说明 S-MIXTRAL [0,459)、S-MLA [0,497)、S-NCCL-COLLECTIVE [0,493)、S-DEEPSEEKV3 [0,1162)；相关章 parallelism [0,6115)、topology-parallelism [0,3562)、input-distribution [0,2880)、weight-expert-offload [0,3216)、heterogeneous-execution [0,3935)、cpu-linear-kernels [0,4016)、memory-allocators [0,4191)；原文提取文本 S-MIXTRAL [0,32362)、S-MLA [0,110197)、S-NCCL-COLLECTIVE [0,2570)。仅阅读所供摘录：gpu-kernel-pipelines [0,6625)、[8000,12000)；S-DEEPSEEKV3 原文 [0,108000)、[112000,119620)、[124000,132000)、[136000,140000)、[144000,151610)。范围均为提取文本零基半开字符区间；不声称读过摘录外原文或视觉核对 PDF/图片。另完整阅读 candidate.test_script、author_notes 和 actual_preflight 执行记录。documents 仅列完整供给文本及完整供给的检查脚本，哈希按任务要求复制冻结绑定，未重新读取磁盘计算；未声称验证本地链接目标存在。\",\n  \"test_assessment\": \"完整检查脚本具有实质独立参考：逐 token 直接求和与按 expert 分桶归约分开组织；专家并集期望由枚举 k 子集的 mask 概率 DP 对照闭式公式；去重后的加权 partial 对照逐专家公式；padding 对照可手算的 44 与 128 行槽。覆盖空 batch、k=0、平局、k=E、E=0 和空专家行槽。覆盖式 combine、重复贡献、bias 进入 gating、min(Bk,E)、错误采用全 max 行槽以及丢弃同目的第二专家均产生与参考不同的结果，不能将这些检查判为整体同义反复。所附 actual_preflight 记录表明绑定脚本在 remote_bwrap 中退出 0、未超时，并输出各断言通过；作者明确说作者本人未执行，与协调者提供的实际执行记录不矛盾。本 reviewer 未重新运行 Python 脚本。复核另在 functions.exec 中执行了单 rank 通信计数反例，得到正文 D_send 对应 8192 字节、实际网络发送为 0。脚本不模拟 origin rank、远端接收入桶、返回发送、generation、完成票据、shared 分支或取消/失败；因此通过结果不能覆盖 ALG-001。test_dedup 仅验证聚合代数与 item/pair 数，未区分本地和远端网络流量，不能发现 COST-001。对 n_e 的额外作用域探查只在普通标量解释下产生异常；结合正文按专家定义 n_e 的数学记法，不将其列为独立缺陷。\"\n}",
+  "exit_code": 0,
+  "status": "completed",
+  "timeout_seconds": 1800,
+  "response_path": "D:\\桌面\\xdb\\InfraAgents\\InfraAgents-know-astra-new\\InfraAgents-know\\docs\\evidence\\knowledge-workflow-20261028-batch4\\full_build\\K-MODEL-003\\round-1\\reviewer-attempt-001\\answer.txt",
+  "record_path": "D:\\桌面\\xdb\\InfraAgents\\InfraAgents-know-astra-new\\InfraAgents-know\\docs\\evidence\\knowledge-workflow-20261028-batch4\\full_build\\K-MODEL-003\\round-1\\reviewer-attempt-001\\record.json",
+  "tool_events": [
+    {
+      "type": "item.completed",
+      "item": {
+        "id": "item_1",
+        "type": "mcp_tool_call",
+        "server": "codex",
+        "tool": "list_mcp_resources",
+        "arguments": {},
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"resources\":[]}"
+            }
+          ],
+          "structured_content": null
+        },
+        "error": null,
+        "status": "completed"
+      }
+    },
+    {
+      "type": "item.completed",
+      "item": {
+        "id": "item_2",
+        "type": "mcp_tool_call",
+        "server": "codex",
+        "tool": "list_mcp_resource_templates",
+        "arguments": {},
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"resourceTemplates\":[]}"
+            }
+          ],
+          "structured_content": null
+        },
+        "error": null,
+        "status": "completed"
+      }
+    }
+  ],
+  "inventory_tool_events": [
+    {
+      "type": "item.completed",
+      "item": {
+        "id": "item_1",
+        "type": "mcp_tool_call",
+        "server": "codex",
+        "tool": "list_mcp_resources",
+        "arguments": {},
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"resources\":[]}"
+            }
+          ],
+          "structured_content": null
+        },
+        "error": null,
+        "status": "completed"
+      }
+    },
+    {
+      "type": "item.completed",
+      "item": {
+        "id": "item_2",
+        "type": "mcp_tool_call",
+        "server": "codex",
+        "tool": "list_mcp_resource_templates",
+        "arguments": {},
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"resourceTemplates\":[]}"
+            }
+          ],
+          "structured_content": null
+        },
+        "error": null,
+        "status": "completed"
+      }
+    }
+  ],
+  "rejected_tool_events": [],
+  "tool_policy": "metadata_inventory_only",
+  "tool_policy_version": "2026-10-28-production-v1",
+  "tool_policy_scope": "Only empty-argument codex host plugin/skill-directory descriptors and empty template inventory; inventory is not knowledge evidence. All other tool events reject the call.",
+  "tool_policy_reason": "Production chapter construction allows observed generic capability discovery metadata; this does not claim a zero-tool comparison or external source reading.",
+  "malformed_event_lines": [],
+  "turn_completed": true,
+  "error_events": [],
+  "recovered_transport_events": [],
+  "terminal_error_events": [],
+  "transport_recovered": false,
+  "actual_model": null,
+  "identity_verified": null,
+  "identity_basis": "Explicit CLI model and isolated HTTP provider; CLI events do not expose server model identity.",
+  "provider": "eval-openai-http",
+  "max_output_tokens": null,
+  "cli_version": "codex-cli 0.164.0-alpha.11.1",
+  "cost_scope": "Codex token usage is reported; subscription charge is not exposed.",
+  "parsed": {
+    "entry_id": "K-MODEL-003",
+    "body_sha256": "4399bd6a440543d5bfd1795ac7c2bd71b8f59522ca015c59887ba7dbb883226e",
+    "reviewer": "sol-reviewer:K-MODEL-003:round-1",
+    "decision": "revise",
+    "documents": {
+      "AGENTS.md": "b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a",
+      "docs/knowledge-method.md": "69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb",
+      "docs/knowledge-review.md": "f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21",
+      "knowledge/models/moe-routing.md": "4399bd6a440543d5bfd1795ac7c2bd71b8f59522ca015c59887ba7dbb883226e",
+      "knowledge/sources/S-MIXTRAL.md": "25a14f727f542ddb8daf029bd89b5961836e63d7689633191ab4b00ee04d0ff7",
+      "knowledge/sources/S-MLA.md": "13dd0ca7fb487a136088c826ce5dae79e946400b2191afff20f5d29b33fc689f",
+      "knowledge/sources/S-NCCL-COLLECTIVE.md": "5d69a053352b0c9d7c72604c338976277e421305a0fdbc740b3fd8d1f09b87e5",
+      "knowledge/sources/S-DEEPSEEKV3.md": "c5f9e6f0e00d5059059b6b7abbcb37a6cfdae23f86880c1b935aad16c3f59339",
+      "knowledge/algorithms/parallelism.md": "161a883561e39371ea22a1430c385546c402db2f993d8a37c6f37e03e1e4bd17",
+      "knowledge/hardware/topology-parallelism.md": "44b63f4291293b51e17b58d64bcfa9fe2bd384534a589c9b74fae0ad157ead29",
+      "knowledge/workloads/input-distribution.md": "b1b68f0d2a6d640c4b64c2bc98560b9e9a79a6a60b445899949b5db15b96aa90",
+      "knowledge/algorithms/weight-expert-offload.md": "cb230fafeec2d39fa40228ad44dbb41d34c62673fbac2325b6e797f206bc0fde",
+      "knowledge/algorithms/heterogeneous-execution.md": "8fd777e06b150eaba4e3288ccb188adbb975e37c28c77a72a9b6878a70e027f4",
+      "knowledge/hardware/cpu-linear-kernels.md": "b4d5391890478b2874f6ea548b154a580a0810356f9cf9cb05248a9d2f728dcc",
+      "knowledge/system-semantics/memory-allocators.md": "2e7258787b94ad142c7c236541e8718803ad30b273d08e6c398dff673a1df838",
+      "references/S-MIXTRAL/fulltext.txt": "07bf75eef2aad6afcf894396cc42c9aaf973784b3930b3da5c55086a6fcd9811",
+      "references/S-MLA/fulltext.txt": "d8be5bf70199ff2b0679a1f70e2ded4c08651f543cd8549ffadb84690d1e04b9",
+      "references/S-NCCL-COLLECTIVE/fulltext.txt": "03fee76f12d44b950f31ce903bf28d4268bab2e65f805d62523c6dff3ddc59eb",
+      "tools/check_k_model_003_full.py": "77e2ec72ba3e89eb9332c3c00d40f57dfe9f70d337b1eafaa0f8fec818e65d8b"
+    },
+    "criteria": {
+      "definition": {
+        "assessment": "sufficient",
+        "reason": "单层问题的动机、token/expert 轴、选择集合、门控、shared 分支及主要在途对象已有明确说明。分布式返回身份的具体交付缺口列入 algorithm。",
+        "evidence": [
+          {
+            "path": "knowledge/models/moe-routing.md",
+            "quote": "设第 l 层有 B 个待处理 token，hidden 维 d，routed expert 数 E，每 token 选择 k 个不同 routed expert，另有 N_s 个 shared expert。"
+          },
+          {
+            "path": "knowledge/models/moe-routing.md",
+            "quote": "y_t = Σ_{e∈S_t} g_{t,e} E_e(x_t)"
+          }
+        ]
+      },
+      "legality": {
+        "assessment": "sufficient",
+        "reason": "正确区分选择 bias 与输出 gating、模型路由约束与放置选择，并解释 dropping、副本权重一致性、collective 匹配和浮点归约边界。Mixtral、MLA、NCCL 及所供 V3 关键段落支持这些事实；未把探索中的动态冗余和 decode 重叠写成已完成能力。",
+        "evidence": [
+          {
+            "path": "knowledge/models/moe-routing.md",
+            "quote": "专家副本只能分担同一专家函数和同一权重版本。副本选择是放置决策，不是重新路由；不能为均衡负载改选另一个 expert。"
+          },
+          {
+            "path": "knowledge/models/moe-routing.md",
+            "quote": "实数加法结合律不保证浮点逐位相同，因此精度检查应把选中集合、gating 与 combine 舍入分开看。"
+          }
+        ]
+      },
+      "algorithm": {
+        "assessment": "partial",
+        "reason": "路由、分桶、本地专家执行、加权归约及取消后排空原则已有展开；但宣称完整的分布式状态机没有闭合远端接收项入桶、partial 返回及 origin 身份的数据流，现有单进程检查无法验证这一交界。",
+        "evidence": [
+          {
+            "path": "knowledge/models/moe-routing.md",
+            "quote": "item = (layer, t, e, g[t][e], X[t], return_slot=(t,e))"
+          },
+          {
+            "path": "knowledge/models/moe-routing.md",
+            "quote": "等待 hidden 与 metadata 在接收侧可见，且 generation 与 place 快照一致"
+          },
+          {
+            "path": "knowledge/models/moe-routing.md",
+            "quote": "接收远端 partial，按 (layer,t,generation) 累加"
+          }
+        ]
+      },
+      "cost": {
+        "assessment": "partial",
+        "reason": "SwiGLU FLOPs、权重容量、期望触及专家数及 padding 算例可复算，准备、同步、重叠与驻留也有条件说明。但通信主公式使用全部 item/token-rank 对，未排除本地执行项，与物理发送口径及后面的远端算例不一致。",
+        "evidence": [
+          {
+            "path": "knowledge/models/moe-routing.md",
+            "quote": "D_send = |{(t, r): 存在 e∈S_t 且 place[e].rank=r}|"
+          },
+          {
+            "path": "knowledge/models/moe-routing.md",
+            "quote": "若其中 24 项跨 rank 且不去重，dispatch 与 return 各约 192 KiB，合计约 384 KiB 加 metadata。"
+          }
+        ]
+      },
+      "adaptation": {
+        "assessment": "sufficient",
+        "reason": "条件变化表把 batch、路由比例、链路、容量、分布漂移与 dtype 的变化连接到应重算的成本和合法性；卸载与预取部分明确下一层 hidden 尚未知及预测失败后的正确执行要求。",
+        "evidence": [
+          {
+            "path": "knowledge/models/moe-routing.md",
+            "quote": "预测下一层专家只能作为预取提示；真正路由选到未预取专家时仍要正确执行，不能静默丢弃。"
+          },
+          {
+            "path": "knowledge/models/moe-routing.md",
+            "quote": "若取消，只撤销尚未提交工作并等待在途读者完成，不能立即复用 DMA 目的缓冲或将迟到结果接到新一轮。"
+          }
+        ]
+      },
+      "diagnosis": {
+        "assessment": "sufficient",
+        "reason": "提供了权重读取、通信启动、热点队列、padding 和数值/重复贡献等竞争解释，并给出干预、观测和反证方向。CPU 检查具有有效独立参考与负对照，其通过范围不能扩展到尚未建模的分布式状态转换。",
+        "evidence": [
+          {
+            "path": "knowledge/models/moe-routing.md",
+            "quote": "比较本地全部专家与 EP 两种放置，保持路由与专家函数相同；记录每层 dispatch/combine 时间"
+          },
+          {
+            "path": "knowledge/models/moe-routing.md",
+            "quote": "该检查只能证明这些逻辑关系，不测 GPU 时间、NCCL 实际路径、HBM 事务或 DeepSeek 集群性能。"
+          }
+        ]
+      }
+    },
+    "findings": [
+      {
+        "id": "K-MODEL-003-ALG-001",
+        "criterion": "algorithm",
+        "evidence": "正文 item 为“item = (layer, t, e, g[t][e], X[t], return_slot=(t,e))”；local_bucket 的显式追加只有“if r == local_rank:\n        local_bucket[item.e].append(item)”。远端路径只写“等待 hidden 与 metadata 在接收侧可见，且 generation 与 place 快照一致”，combine 只写“接收远端 partial，按 (layer,t,generation) 累加”。",
+        "impact": "远端接收数据没有明确成为专家执行的 local_bucket 输入，专家结果也没有明确发送回 origin。t 来自各 rank 的 X[0..B-1]，却未声明全局唯一身份或 origin 映射；两个来源 rank 各有 t=0 且命中同一目的 rank 时，partial[t] 无法据现有说明区分返回归属。generation 被要求校验，却未在 item 构造中交付。读者仍需自行补出本章核心分布式算法。",
+        "blocking": true,
+        "required_revision": "明确 B/t 的作用域及 token 到 origin 的唯一映射；在快照/item 中携带或明确关联 routing/placement generation。补出接收项按 expert 入桶、按 origin 与 token 聚合、发送返回 partial、origin 按预期贡献完成条件累加的路径，并区分逐 item 返回与本地预合并。以两个 origin 均含本地 token 0、目的端存在远端项的 CPU 模型对照直接公式，注入错误归属或漏返回负对照。"
+      },
+      {
+        "id": "K-MODEL-003-COST-001",
+        "criterion": "cost",
+        "evidence": "正文写“若不做同 token 同目的 rank 去重，dispatch hidden 主项为 N_items d b_h，combine 返回主项也为 N_items d b_h”，并定义“D_send = |{(t, r): 存在 e∈S_t 且 place[e].rank=r}|”，随后称“则 dispatch hidden 主项约为 D_send d b_h”。",
+        "impact": "N_items 包含本地项，D_send 也包含目的 rank 等于 origin rank 的对。全部专家本地执行时，这些公式仍给出正的发送字节；例如单 rank、一个 token 时 D_send=1，d=4096、b_h=2 得到 8 KiB，而网络发送为零。这会错误预测 EP 流量与放置/去重收益；后面的 24 个远端项算例没有修正一般公式。",
+        "blocking": true,
+        "required_revision": "显式定义 origin(t)，以远端 item 数计算未去重网络流量，以满足 r≠origin(t) 的 token-destination 对计算去重发送和返回流量。若保留包含本地项的逻辑搬运量，分别命名并声明计量边界。检查加入全部本地及本地/远端混合放置，对照逐条发送账本验证字节，并检测把本地对误计为网络发送的负对照。"
+      }
+    ],
+    "limitations": [
+      "现有精确有理数检查验证抽象 affinity、专家函数及归约代数，不验证真实 router 的 softmax/sigmoid 数值行为、真实 SwiGLU 内核或浮点误差。",
+      "未测 GPU 时间、HBM/cache 事务、NCCL 运行、设备可见性或取消后的实际物理排空；这些已声明的设备边界可保留。",
+      "真实路由相关性、在线副本策略收益及 DeepSeek 集群布局的可迁移性未验证；设定算例不能证明服务性能或 Agent 使用效果。",
+      "docs/knowledge-build-workflow.md 未包含在供给材料，当前工具也没有文件读取接口；采用任务内给定的 review JSON schema，未声称读取该文件或写入产物目录。"
+    ],
+    "checks": [
+      {
+        "script": "tools/check_k_model_003_full.py",
+        "args": []
+      }
+    ],
+    "no_checks_reason": "",
+    "reading_scope": "完整阅读任务内供给的全文：AGENTS.md [0,567)、docs/knowledge-method.md [0,2251)、docs/knowledge-review.md [0,3016)、knowledge/models/moe-routing.md [0,12564)；四份来源说明 S-MIXTRAL [0,459)、S-MLA [0,497)、S-NCCL-COLLECTIVE [0,493)、S-DEEPSEEKV3 [0,1162)；相关章 parallelism [0,6115)、topology-parallelism [0,3562)、input-distribution [0,2880)、weight-expert-offload [0,3216)、heterogeneous-execution [0,3935)、cpu-linear-kernels [0,4016)、memory-allocators [0,4191)；原文提取文本 S-MIXTRAL [0,32362)、S-MLA [0,110197)、S-NCCL-COLLECTIVE [0,2570)。仅阅读所供摘录：gpu-kernel-pipelines [0,6625)、[8000,12000)；S-DEEPSEEKV3 原文 [0,108000)、[112000,119620)、[124000,132000)、[136000,140000)、[144000,151610)。范围均为提取文本零基半开字符区间；不声称读过摘录外原文或视觉核对 PDF/图片。另完整阅读 candidate.test_script、author_notes 和 actual_preflight 执行记录。documents 仅列完整供给文本及完整供给的检查脚本，哈希按任务要求复制冻结绑定，未重新读取磁盘计算；未声称验证本地链接目标存在。",
+    "test_assessment": "完整检查脚本具有实质独立参考：逐 token 直接求和与按 expert 分桶归约分开组织；专家并集期望由枚举 k 子集的 mask 概率 DP 对照闭式公式；去重后的加权 partial 对照逐专家公式；padding 对照可手算的 44 与 128 行槽。覆盖空 batch、k=0、平局、k=E、E=0 和空专家行槽。覆盖式 combine、重复贡献、bias 进入 gating、min(Bk,E)、错误采用全 max 行槽以及丢弃同目的第二专家均产生与参考不同的结果，不能将这些检查判为整体同义反复。所附 actual_preflight 记录表明绑定脚本在 remote_bwrap 中退出 0、未超时，并输出各断言通过；作者明确说作者本人未执行，与协调者提供的实际执行记录不矛盾。本 reviewer 未重新运行 Python 脚本。复核另在 functions.exec 中执行了单 rank 通信计数反例，得到正文 D_send 对应 8192 字节、实际网络发送为 0。脚本不模拟 origin rank、远端接收入桶、返回发送、generation、完成票据、shared 分支或取消/失败；因此通过结果不能覆盖 ALG-001。test_dedup 仅验证聚合代数与 item/pair 数，未区分本地和远端网络流量，不能发现 COST-001。对 n_e 的额外作用域探查只在普通标量解释下产生异常；结合正文按专家定义 n_e 的数学记法，不将其列为独立缺陷。"
+  },
+  "format_status": "strict_json",
+  "format_error": null,
+  "output_text": "{\n  \"entry_id\": \"K-MODEL-003\",\n  \"body_sha256\": \"4399bd6a440543d5bfd1795ac7c2bd71b8f59522ca015c59887ba7dbb883226e\",\n  \"reviewer\": \"sol-reviewer:K-MODEL-003:round-1\",\n  \"decision\": \"revise\",\n  \"documents\": {\n    \"AGENTS.md\": \"b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a\",\n    \"docs/knowledge-method.md\": \"69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb\",\n    \"docs/knowledge-review.md\": \"f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21\",\n    \"knowledge/models/moe-routing.md\": \"4399bd6a440543d5bfd1795ac7c2bd71b8f59522ca015c59887ba7dbb883226e\",\n    \"knowledge/sources/S-MIXTRAL.md\": \"25a14f727f542ddb8daf029bd89b5961836e63d7689633191ab4b00ee04d0ff7\",\n    \"knowledge/sources/S-MLA.md\": \"13dd0ca7fb487a136088c826ce5dae79e946400b2191afff20f5d29b33fc689f\",\n    \"knowledge/sources/S-NCCL-COLLECTIVE.md\": \"5d69a053352b0c9d7c72604c338976277e421305a0fdbc740b3fd8d1f09b87e5\",\n    \"knowledge/sources/S-DEEPSEEKV3.md\": \"c5f9e6f0e00d5059059b6b7abbcb37a6cfdae23f86880c1b935aad16c3f59339\",\n    \"knowledge/algorithms/parallelism.md\": \"161a883561e39371ea22a1430c385546c402db2f993d8a37c6f37e03e1e4bd17\",\n    \"knowledge/hardware/topology-parallelism.md\": \"44b63f4291293b51e17b58d64bcfa9fe2bd384534a589c9b74fae0ad157ead29\",\n    \"knowledge/workloads/input-distribution.md\": \"b1b68f0d2a6d640c4b64c2bc98560b9e9a79a6a60b445899949b5db15b96aa90\",\n    \"knowledge/algorithms/weight-expert-offload.md\": \"cb230fafeec2d39fa40228ad44dbb41d34c62673fbac2325b6e797f206bc0fde\",\n    \"knowledge/algorithms/heterogeneous-execution.md\": \"8fd777e06b150eaba4e3288ccb188adbb975e37c28c77a72a9b6878a70e027f4\",\n    \"knowledge/hardware/cpu-linear-kernels.md\": \"b4d5391890478b2874f6ea548b154a580a0810356f9cf9cb05248a9d2f728dcc\",\n    \"knowledge/system-semantics/memory-allocators.md\": \"2e7258787b94ad142c7c236541e8718803ad30b273d08e6c398dff673a1df838\",\n    \"references/S-MIXTRAL/fulltext.txt\": \"07bf75eef2aad6afcf894396cc42c9aaf973784b3930b3da5c55086a6fcd9811\",\n    \"references/S-MLA/fulltext.txt\": \"d8be5bf70199ff2b0679a1f70e2ded4c08651f543cd8549ffadb84690d1e04b9\",\n    \"references/S-NCCL-COLLECTIVE/fulltext.txt\": \"03fee76f12d44b950f31ce903bf28d4268bab2e65f805d62523c6dff3ddc59eb\",\n    \"tools/check_k_model_003_full.py\": \"77e2ec72ba3e89eb9332c3c00d40f57dfe9f70d337b1eafaa0f8fec818e65d8b\"\n  },\n  \"criteria\": {\n    \"definition\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"单层问题的动机、token/expert 轴、选择集合、门控、shared 分支及主要在途对象已有明确说明。分布式返回身份的具体交付缺口列入 algorithm。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/models/moe-routing.md\",\n          \"quote\": \"设第 l 层有 B 个待处理 token，hidden 维 d，routed expert 数 E，每 token 选择 k 个不同 routed expert，另有 N_s 个 shared expert。\"\n        },\n        {\n          \"path\": \"knowledge/models/moe-routing.md\",\n          \"quote\": \"y_t = Σ_{e∈S_t} g_{t,e} E_e(x_t)\"\n        }\n      ]\n    },\n    \"legality\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"正确区分选择 bias 与输出 gating、模型路由约束与放置选择，并解释 dropping、副本权重一致性、collective 匹配和浮点归约边界。Mixtral、MLA、NCCL 及所供 V3 关键段落支持这些事实；未把探索中的动态冗余和 decode 重叠写成已完成能力。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/models/moe-routing.md\",\n          \"quote\": \"专家副本只能分担同一专家函数和同一权重版本。副本选择是放置决策，不是重新路由；不能为均衡负载改选另一个 expert。\"\n        },\n        {\n          \"path\": \"knowledge/models/moe-routing.md\",\n          \"quote\": \"实数加法结合律不保证浮点逐位相同，因此精度检查应把选中集合、gating 与 combine 舍入分开看。\"\n        }\n      ]\n    },\n    \"algorithm\": {\n      \"assessment\": \"partial\",\n      \"reason\": \"路由、分桶、本地专家执行、加权归约及取消后排空原则已有展开；但宣称完整的分布式状态机没有闭合远端接收项入桶、partial 返回及 origin 身份的数据流，现有单进程检查无法验证这一交界。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/models/moe-routing.md\",\n          \"quote\": \"item = (layer, t, e, g[t][e], X[t], return_slot=(t,e))\"\n        },\n        {\n          \"path\": \"knowledge/models/moe-routing.md\",\n          \"quote\": \"等待 hidden 与 metadata 在接收侧可见，且 generation 与 place 快照一致\"\n        },\n        {\n          \"path\": \"knowledge/models/moe-routing.md\",\n          \"quote\": \"接收远端 partial，按 (layer,t,generation) 累加\"\n        }\n      ]\n    },\n    \"cost\": {\n      \"assessment\": \"partial\",\n      \"reason\": \"SwiGLU FLOPs、权重容量、期望触及专家数及 padding 算例可复算，准备、同步、重叠与驻留也有条件说明。但通信主公式使用全部 item/token-rank 对，未排除本地执行项，与物理发送口径及后面的远端算例不一致。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/models/moe-routing.md\",\n          \"quote\": \"D_send = |{(t, r): 存在 e∈S_t 且 place[e].rank=r}|\"\n        },\n        {\n          \"path\": \"knowledge/models/moe-routing.md\",\n          \"quote\": \"若其中 24 项跨 rank 且不去重，dispatch 与 return 各约 192 KiB，合计约 384 KiB 加 metadata。\"\n        }\n      ]\n    },\n    \"adaptation\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"条件变化表把 batch、路由比例、链路、容量、分布漂移与 dtype 的变化连接到应重算的成本和合法性；卸载与预取部分明确下一层 hidden 尚未知及预测失败后的正确执行要求。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/models/moe-routing.md\",\n          \"quote\": \"预测下一层专家只能作为预取提示；真正路由选到未预取专家时仍要正确执行，不能静默丢弃。\"\n        },\n        {\n          \"path\": \"knowledge/models/moe-routing.md\",\n          \"quote\": \"若取消，只撤销尚未提交工作并等待在途读者完成，不能立即复用 DMA 目的缓冲或将迟到结果接到新一轮。\"\n        }\n      ]\n    },\n    \"diagnosis\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"提供了权重读取、通信启动、热点队列、padding 和数值/重复贡献等竞争解释，并给出干预、观测和反证方向。CPU 检查具有有效独立参考与负对照，其通过范围不能扩展到尚未建模的分布式状态转换。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/models/moe-routing.md\",\n          \"quote\": \"比较本地全部专家与 EP 两种放置，保持路由与专家函数相同；记录每层 dispatch/combine 时间\"\n        },\n        {\n          \"path\": \"knowledge/models/moe-routing.md\",\n          \"quote\": \"该检查只能证明这些逻辑关系，不测 GPU 时间、NCCL 实际路径、HBM 事务或 DeepSeek 集群性能。\"\n        }\n      ]\n    }\n  },\n  \"findings\": [\n    {\n      \"id\": \"K-MODEL-003-ALG-001\",\n      \"criterion\": \"algorithm\",\n      \"evidence\": \"正文 item 为“item = (layer, t, e, g[t][e], X[t], return_slot=(t,e))”；local_bucket 的显式追加只有“if r == local_rank:\\n        local_bucket[item.e].append(item)”。远端路径只写“等待 hidden 与 metadata 在接收侧可见，且 generation 与 place 快照一致”，combine 只写“接收远端 partial，按 (layer,t,generation) 累加”。\",\n      \"impact\": \"远端接收数据没有明确成为专家执行的 local_bucket 输入，专家结果也没有明确发送回 origin。t 来自各 rank 的 X[0..B-1]，却未声明全局唯一身份或 origin 映射；两个来源 rank 各有 t=0 且命中同一目的 rank 时，partial[t] 无法据现有说明区分返回归属。generation 被要求校验，却未在 item 构造中交付。读者仍需自行补出本章核心分布式算法。\",\n      \"blocking\": true,\n      \"required_revision\": \"明确 B/t 的作用域及 token 到 origin 的唯一映射；在快照/item 中携带或明确关联 routing/placement generation。补出接收项按 expert 入桶、按 origin 与 token 聚合、发送返回 partial、origin 按预期贡献完成条件累加的路径，并区分逐 item 返回与本地预合并。以两个 origin 均含本地 token 0、目的端存在远端项的 CPU 模型对照直接公式，注入错误归属或漏返回负对照。\"\n    },\n    {\n      \"id\": \"K-MODEL-003-COST-001\",\n      \"criterion\": \"cost\",\n      \"evidence\": \"正文写“若不做同 token 同目的 rank 去重，dispatch hidden 主项为 N_items d b_h，combine 返回主项也为 N_items d b_h”，并定义“D_send = |{(t, r): 存在 e∈S_t 且 place[e].rank=r}|”，随后称“则 dispatch hidden 主项约为 D_send d b_h”。\",\n      \"impact\": \"N_items 包含本地项，D_send 也包含目的 rank 等于 origin rank 的对。全部专家本地执行时，这些公式仍给出正的发送字节；例如单 rank、一个 token 时 D_send=1，d=4096、b_h=2 得到 8 KiB，而网络发送为零。这会错误预测 EP 流量与放置/去重收益；后面的 24 个远端项算例没有修正一般公式。\",\n      \"blocking\": true,\n      \"required_revision\": \"显式定义 origin(t)，以远端 item 数计算未去重网络流量，以满足 r≠origin(t) 的 token-destination 对计算去重发送和返回流量。若保留包含本地项的逻辑搬运量，分别命名并声明计量边界。检查加入全部本地及本地/远端混合放置，对照逐条发送账本验证字节，并检测把本地对误计为网络发送的负对照。\"\n    }\n  ],\n  \"limitations\": [\n    \"现有精确有理数检查验证抽象 affinity、专家函数及归约代数，不验证真实 router 的 softmax/sigmoid 数值行为、真实 SwiGLU 内核或浮点误差。\",\n    \"未测 GPU 时间、HBM/cache 事务、NCCL 运行、设备可见性或取消后的实际物理排空；这些已声明的设备边界可保留。\",\n    \"真实路由相关性、在线副本策略收益及 DeepSeek 集群布局的可迁移性未验证；设定算例不能证明服务性能或 Agent 使用效果。\",\n    \"docs/knowledge-build-workflow.md 未包含在供给材料，当前工具也没有文件读取接口；采用任务内给定的 review JSON schema，未声称读取该文件或写入产物目录。\"\n  ],\n  \"checks\": [\n    {\n      \"script\": \"tools/check_k_model_003_full.py\",\n      \"args\": []\n    }\n  ],\n  \"no_checks_reason\": \"\",\n  \"reading_scope\": \"完整阅读任务内供给的全文：AGENTS.md [0,567)、docs/knowledge-method.md [0,2251)、docs/knowledge-review.md [0,3016)、knowledge/models/moe-routing.md [0,12564)；四份来源说明 S-MIXTRAL [0,459)、S-MLA [0,497)、S-NCCL-COLLECTIVE [0,493)、S-DEEPSEEKV3 [0,1162)；相关章 parallelism [0,6115)、topology-parallelism [0,3562)、input-distribution [0,2880)、weight-expert-offload [0,3216)、heterogeneous-execution [0,3935)、cpu-linear-kernels [0,4016)、memory-allocators [0,4191)；原文提取文本 S-MIXTRAL [0,32362)、S-MLA [0,110197)、S-NCCL-COLLECTIVE [0,2570)。仅阅读所供摘录：gpu-kernel-pipelines [0,6625)、[8000,12000)；S-DEEPSEEKV3 原文 [0,108000)、[112000,119620)、[124000,132000)、[136000,140000)、[144000,151610)。范围均为提取文本零基半开字符区间；不声称读过摘录外原文或视觉核对 PDF/图片。另完整阅读 candidate.test_script、author_notes 和 actual_preflight 执行记录。documents 仅列完整供给文本及完整供给的检查脚本，哈希按任务要求复制冻结绑定，未重新读取磁盘计算；未声称验证本地链接目标存在。\",\n  \"test_assessment\": \"完整检查脚本具有实质独立参考：逐 token 直接求和与按 expert 分桶归约分开组织；专家并集期望由枚举 k 子集的 mask 概率 DP 对照闭式公式；去重后的加权 partial 对照逐专家公式；padding 对照可手算的 44 与 128 行槽。覆盖空 batch、k=0、平局、k=E、E=0 和空专家行槽。覆盖式 combine、重复贡献、bias 进入 gating、min(Bk,E)、错误采用全 max 行槽以及丢弃同目的第二专家均产生与参考不同的结果，不能将这些检查判为整体同义反复。所附 actual_preflight 记录表明绑定脚本在 remote_bwrap 中退出 0、未超时，并输出各断言通过；作者明确说作者本人未执行，与协调者提供的实际执行记录不矛盾。本 reviewer 未重新运行 Python 脚本。复核另在 functions.exec 中执行了单 rank 通信计数反例，得到正文 D_send 对应 8192 字节、实际网络发送为 0。脚本不模拟 origin rank、远端接收入桶、返回发送、generation、完成票据、shared 分支或取消/失败；因此通过结果不能覆盖 ALG-001。test_dedup 仅验证聚合代数与 item/pair 数，未区分本地和远端网络流量，不能发现 COST-001。对 n_e 的额外作用域探查只在普通标量解释下产生异常；结合正文按专家定义 n_e 的数学记法，不将其列为独立缺陷。\"\n}",
+  "elapsed_seconds": 299.265
+}

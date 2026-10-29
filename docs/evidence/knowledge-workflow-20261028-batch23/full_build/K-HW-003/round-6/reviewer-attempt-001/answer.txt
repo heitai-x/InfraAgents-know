@@ -1,0 +1,168 @@
+{
+  "entry_id": "K-HW-003",
+  "body_sha256": "05596d68cc74f38c2b85b7321911e8a0c0884c12bd7efc9d6748c9490446aa4f",
+  "reviewer": "sol-reviewer:K-HW-003:round-6",
+  "decision": "accept",
+  "documents": {
+    "AGENTS.md": "b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a",
+    "docs/knowledge-method.md": "69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb",
+    "docs/knowledge-review.md": "f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21",
+    "knowledge/hardware/host-device-transfer.md": "05596d68cc74f38c2b85b7321911e8a0c0884c12bd7efc9d6748c9490446aa4f",
+    "knowledge/sources/S-CUDA-ASYNC.md": "40df9287d0648a8ef55a046ceb1c18dd402619ede6e57ca33d3f90e4ace3da05",
+    "knowledge/sources/S-CUDA-BEST.md": "4b752c1a26f66a195df62be354649f0a6880f733fb365e82e87bdd63bf71d45c",
+    "knowledge/sources/S-CUDA-ALLOC.md": "3ba021c941f2ed8f048be34d1ba0110f37675a3460013f24a239cc43a1e8630a",
+    "knowledge/sources/S-LINUX-IO.md": "786caae53cc1e80173616ce470c481145e285c2176b7cff4777576cc893fc316",
+    "knowledge/sources/S-TORCH-CUDA.md": "8ee61677a1e35d475d9bb122b2c7fa824ccf054acefbe2f12345d72c1fb1b00e",
+    "knowledge/algorithms/tiered-residency.md": "eb3ebc6320d5a32481cf645605d159860dc6d1edb97f1e98afd89ddb24ee82af",
+    "tools/check_k_hw_003_full.py": "d01ea0701ff36f656de9cc45205c1edd4ed241d9d014a2b61b2c5153bd2ef5fb"
+  },
+  "criteria": {
+    "definition": {
+      "assessment": "sufficient",
+      "reason": "明确输入和输出合同、内容身份、半开范围及四池数据流；区分待消费保留、实际访问、业务终态和证据责任。周期与容量符号有单位和适用假设。",
+      "evidence": [
+        {
+          "path": "knowledge/hardware/host-device-transfer.md",
+          "quote": "本章输入是一组有限或受准入限制的载荷，每项携带请求身份、内容版本、有效范围、shape、布局和 dtype；输出是相应计算结果、明确失败或取消状态，以及可核对的资源归还记录。"
+        },
+        {
+          "path": "knowledge/hardware/host-device-transfer.md",
+          "quote": "后文用 hold 表达这项待消费保留，用 writer 和具名 readers 表达已经启动的物理访问。"
+        }
+      ]
+    },
+    "legality": {
+      "assessment": "sufficient",
+      "reason": "覆盖容量、布局、范围完整性、别名冲突、跨 stream 顺序及地址生存期；将 pinned 池、FIFO 和失败策略明确作为参考选择。固定来源摘录支持锁页成本、复制引擎和零复制条件，未把能力或异步提交泛化为并发保证。",
+      "evidence": [
+        {
+          "path": "knowledge/hardware/host-device-transfer.md",
+          "quote": "只写完部分范围，不能把未写区域中的旧字节发布为新 tensor。别名范围若发生读写或写写冲突，也要统一保护，不能因为对象名称不同就视为独立。"
+        },
+        {
+          "path": "knowledge/hardware/host-device-transfer.md",
+          "quote": "执行顺序与地址生存期是两条约束。"
+        }
+      ]
+    },
+    "algorithm": {
+      "assessment": "sufficient",
+      "reason": "初始化、准入、先登记后提交、拒绝回滚、唤醒、完成、取消和排空形成闭合路径。本轮 E 保存物理结算后的不可变分类记录；后到接受或从未接受均能结清分类责任并保持失败终态，不依赖已删除 pending，不重新释放旧槽。K-HW-003-R5-POST-END-ACCEPTANCE-RESOLUTION 已修复，相关 campaign 修订要求可关闭。",
+      "evidence": [
+        {
+          "path": "knowledge/hardware/host-device-transfer.md",
+          "quote": "物理访问结束而接受分类仍未决时，另在待澄清表 E 保存不可变的请求、uid、操作类型、原端点代次/范围和结束证明；E 不保存可变槽对象或待发布载荷，也不重新占用已经证明结束的物理访问责任。"
+        },
+        {
+          "path": "knowledge/hardware/host-device-transfer.md",
+          "quote": "两条路径均保持 FAILED、无响应提交且可以完整排空，不依赖已经删除的 pending，也不触碰可能已复用的新代槽。"
+        }
+      ]
+    },
+    "cost": {
+      "assessment": "sufficient",
+      "reason": "同一方案分别列出六类成本，区分关键路径、资源服务需求、实际流量和预留容量。流水闭式、共享复制下界、槽位上取整及单位换算正确；E 与去重元数据另行记账。独立复算得到 70 ms、34 MiB、61 ms 和 15.625 ms，与正文一致。",
+      "evidence": [
+        {
+          "path": "knowledge/hardware/host-device-transfer.md",
+          "quote": "这是资源下界，未证明某种有限缓冲与命令排序能达到它。"
+        },
+        {
+          "path": "knowledge/hardware/host-device-transfer.md",
+          "quote": "池内活对象已经包含在预留容量中，不再重复加一遍；另计模型、KV、workspace、主机池和 allocator 额外保留区。"
+        },
+        {
+          "path": "knowledge/hardware/host-device-transfer.md",
+          "quote": "待澄清表 E 随物理已结束但分类未决的操作数增长，仅保存固定大小的身份、范围和证据元数据，不保存结果缓冲。"
+        }
+      ]
+    },
+    "adaptation": {
+      "assessment": "sufficient",
+      "reason": "说明复制引擎、锁页预算、准备瓶颈、长度长尾、重用、图地址和取消率变化时保留哪些正确性关系、重算哪些成本以及何时放弃原方案；没有把增加缓冲当作通用性能解法。",
+      "evidence": [
+        {
+          "path": "knowledge/hardware/host-device-transfer.md",
+          "quote": "| 输入长度或消费者时间出现长尾 | 按真实事件回收 | 放弃用平均 L/P 保证容量；按大小分池、限制字节准入 |"
+        },
+        {
+          "path": "knowledge/hardware/host-device-transfer.md",
+          "quote": "另一合法方案可以保留私有结果和阶段续执行记录，在接受证据充分后继续；它必须为保留的数据、后继和取消责任另给完整协议"
+        }
+      ]
+    },
+    "diagnosis": {
+      "assessment": "sufficient",
+      "reason": "竞争解释配有可控干预、预期观察和反证后的修正。迟到分类回归继续实际 UNKNOWN 轨迹，丢失 E 的故障变体也接收真实后到证明，由终态、排空和历史责任判据检出。模型与设备效果边界声明清楚。",
+      "evidence": [
+        {
+          "path": "knowledge/hardware/host-device-transfer.md",
+          "quote": "UNKNOWN 后先给充分 ended、不给接受证明，再分别补给接受和从未接受证明；观察 E、终态、归还和重复通知"
+        },
+        {
+          "path": "knowledge/hardware/host-device-transfer.md",
+          "quote": "历史事件观察器从原 intent、充分结束、待澄清登记和后到证明独立重建 E；丢失 E 的故障仍实际接收两类后到证明，再由相同排空与账务判据检出。"
+        }
+      ]
+    }
+  },
+  "findings": [],
+  "limitations": [
+    "结论限于提供的完整候选、完整检查脚本、来源说明和明确原文摘录；没有通读完整 CUDA 指南、完整 PyTorch 原文或源码归档。",
+    "实际预检记录绑定当前脚本哈希，显示 remote_bwrap 执行返回 0、stderr 为空且未超时；本审阅未重新执行 Python 脚本，也未独立读取作者所述 execution-result-002.json 原件。",
+    "ended、接受分类及身份相关证明仍是模型输入；未验证真实适配层产生这些证明、并发等待注册、epoch 握手、真实身份修复或所有异步交错。",
+    "没有真实 CUDA、DMA、GPU 可见性、物理重叠、性能、服务 SLO 或 Agent 使用效果证据；正文已明确限制相应结论。",
+    "链接目标身份和阅读链按所供材料核对，未进行本地文件存在性、reader 页面渲染或冻结发布检查。"
+  ],
+  "checks": [
+    {
+      "script": "tools/check_k_hw_003_full.py",
+      "args": [],
+      "script_sha256": "d01ea0701ff36f656de9cc45205c1edd4ed241d9d014a2b61b2c5153bd2ef5fb",
+      "execution_evidence": "用户提供的 actual_preflight",
+      "backend": "remote_bwrap",
+      "returncode": 0,
+      "stderr": "",
+      "timed_out": false,
+      "independently_rerun": false,
+      "assessment": "已完整检查脚本逻辑及所供实际执行结果；结果支持声明的有限 CPU 模型范围。"
+    }
+  ],
+  "no_checks_reason": "",
+  "reading_scope": {
+    "basis": "阅读任务内提供文本；范围为零起点、半开提取字符区间。documents 仅列完整提供并阅读的文件，哈希采用指定绑定值，不声称重新计算本地文件哈希。",
+    "full": [
+      "AGENTS.md [0,567)",
+      "docs/knowledge-method.md [0,2251)",
+      "docs/knowledge-review.md [0,3016)",
+      "knowledge/hardware/host-device-transfer.md [0,22408)",
+      "knowledge/sources/S-CUDA-ASYNC.md [0,1610)",
+      "knowledge/sources/S-CUDA-BEST.md [0,992)",
+      "knowledge/sources/S-CUDA-ALLOC.md [0,498)",
+      "knowledge/sources/S-LINUX-IO.md [0,850)",
+      "knowledge/sources/S-TORCH-CUDA.md [0,1468)",
+      "knowledge/algorithms/tiered-residency.md [0,4244)",
+      "tools/check_k_hw_003_full.py：candidate.test_script 完整字符串"
+    ],
+    "excerpts": {
+      "knowledge/algorithms/async-scheduling.md": [[4000,7083],[8000,12000]],
+      "knowledge/frameworks/streams-allocator.md": [[4000,11083]],
+      "knowledge/models/vision-language.md": [[8000,11180],[12000,15903]],
+      "knowledge/hardware/storage-io.md": [[8000,15083]],
+      "knowledge/hardware/shared-memory-paths.md": [[0,4000],[20000,23083]],
+      "knowledge/algorithms/heterogeneous-execution.md": [[0,3083],[4000,8000]],
+      "knowledge/system-semantics/host-device-timing.md": [[4000,11083]],
+      "knowledge/hardware/cpu-serving.md": [[0,4000],[8000,11083]],
+      "knowledge/system-semantics/deployment-environment.md": [[0,7083]],
+      "knowledge/frameworks/checkpoint-loading.md": [[4000,4878],[8000,14205]],
+      "knowledge/hardware/transport-and-rdma.md": [[0,4000],[8000,8269],[12000,14814]],
+      "references/S-CUDA-ASYNC/fulltext.txt": [[260000,264000],[788000,792000],[1020000,1020159],[1032000,1036000],[1040000,1044000],[1056000,1076000],[1080000,1084000],[1100000,1104000]],
+      "references/S-CUDA-BEST/fulltext.txt": [[8000,16000],[36000,60159],[96000,100000],[108000,112000],[176000,180000]],
+      "references/S-CUDA-ALLOC/fulltext.txt": [[260000,264000],[788000,792000],[1020000,1020159],[1032000,1036000],[1040000,1044000],[1056000,1076000],[1080000,1084000],[1100000,1104000]],
+      "references/S-LINUX-IO/fulltext.txt": [[0,36000],[40000,48159]],
+      "references/S-TORCH-CUDA/fulltext.txt": [[16000,48000],[52000,64000],[76000,76159]]
+    },
+    "author_scope_assessment": "另行核对了所供 author_material_scopes 和 author_notes。账本记录作者获得完整三份编写依据、旧候选与旧审查的指定摘录及执行适配器摘录，并声明本轮未重读上游来源。该账本不是认知阅读证明；审阅者获得的来源范围不倒推为作者获得的范围。新增 E 和分类结算属于明确标注的保守协议推导，未发现将其冒充来源事实或设备验证。"
+  },
+  "test_assessment": "算术参考以阶段资源日历核对闭式，以占用区间计数核对槽位上取整；本审阅另用 JavaScript 独立执行 6250 个日历案例、396 个占用案例，并复算正文数值，均一致。载荷参考 direct 从原始输入直接计算响应，不读取流水内部阶段数据。事件观察器按历史 reserve、intent、submission、evidence、settle、free、terminal 和 commit 重建访问责任及结果，对分类记录还核对原始身份、原因及后到证明。迟到接受和从未接受两条路径均先物理结算并进入 FAILED，再结清 E/Q；覆盖错代、重复、未知证明、既有终态及槽复用。drop_post_end_record 实际丢弃记录并继续接收后到证据，由相同排空要求检出，未在故障分支直接制造异常；所供执行日志确认两类故障均被检出。原有 END_UNCONFIRMED 故障对照仍要求恢复成功，不能用保守失败掩盖旧错误。检查具有独立参考和实质负对照，并非仅复述生产者状态。未覆盖任意范围布局、真实证明校验、复杂多消费者调度、真实并发通知或设备执行；这些遗漏与正文声明一致。"
+}

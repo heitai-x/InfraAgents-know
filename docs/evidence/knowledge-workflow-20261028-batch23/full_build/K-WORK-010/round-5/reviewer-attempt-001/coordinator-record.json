@@ -1,0 +1,265 @@
+{
+  "role": "reviewer",
+  "engine": "sol",
+  "requested_model": "gpt-6.1-sol",
+  "reasoning_effort": "high",
+  "prompt_sha256": "543d75c69b0fa5ea795814845c9d474491d3be47e192c9a99a485529e8e1b360",
+  "usage": [
+    {
+      "input_tokens": 909132,
+      "cached_input_tokens": 688768,
+      "cache_write_input_tokens": 0,
+      "output_tokens": 6496,
+      "reasoning_output_tokens": 2576
+    }
+  ],
+  "answer": "{\n  \"entry_id\": \"K-WORK-010\",\n  \"body_sha256\": \"56db1dcb7a4382abe4047d9abe942964e405ee1a6318d8ce5fa1356391a40566\",\n  \"reviewer\": \"sol-reviewer:K-WORK-010:round-5\",\n  \"decision\": \"accept\",\n  \"documents\": {\n    \"AGENTS.md\": \"b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a\",\n    \"docs/knowledge-method.md\": \"69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb\",\n    \"docs/knowledge-review.md\": \"f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21\",\n    \"knowledge/workloads/session-workloads.md\": \"56db1dcb7a4382abe4047d9abe942964e405ee1a6318d8ce5fa1356391a40566\",\n    \"knowledge/sources/S-SGLANG.md\": \"4fd6badbee1df40da422f2866f1536bbe4f5266856b8d97004072a21b9d0e2c9\",\n    \"knowledge/sources/S-ORCA.md\": \"920ef987a4a019bb4f0e0386e30bf1c1e3bc720d199ae4de22e462db4f41520a\",\n    \"knowledge/sources/S-VLLM-PREFIX.md\": \"9e3f16fdac245da8aa97deea55a820642b67e626329748c980eaa2fc0b7656f5\",\n    \"knowledge/sources/S-MLPERF-SCENARIOS.md\": \"e210de2929034d4a6e25a31ee72b81a184412a7e637c979210f91ae02a261b04\",\n    \"references/S-SGLANG/fulltext.txt\": \"7dfb3a43ba73d9d9861c06311005edf12dfafa9f60a268fec327deb4d8e8770d\",\n    \"references/S-ORCA/fulltext.txt\": \"2119a53d77b4a933bab56d7e40b5304fa725561c412514459e56729ca6836794\",\n    \"references/S-VLLM-PREFIX/fulltext.txt\": \"0d6423dca458bb628af7d15961bdba92b0d501660f93690610a354ef68f07353\",\n    \"references/S-MLPERF-SCENARIOS/upstream/loadgen/README.md\": \"074479dbeb369205ccc8800450c647893b4901c247e0e4ee7f321f05254e9305\",\n    \"tools/check_k_work_010_full.py\": \"7bf1b3787a7ceb4b3c0c64a241a517b3d1801f5ad0a541068b0431e60020e6d2\"\n  },\n  \"criteria\": {\n    \"definition\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"说明了独立 prompt 无法表达的跨调用依赖，定义请求尝试、版本化事件、固定输入构造、业务终态与物理责任。明确区分已知 token、已完成 KV、logits 和容量。回合递推、时间门和驻留积分均给出单位及适用条件。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/workloads/session-workloads.md\",\n          \"quote\": \"请求实例记为 r=(s,β,k,g)：β 是分支，k 是逻辑调用序号，g 是尝试代次。\"\n        },\n        {\n          \"path\": \"knowledge/workloads/session-workloads.md\",\n          \"quote\": \"已知 token 长度 n、全层已完成 KV 边界 c、可写容量和末行 logits 是不同状态。\"\n        }\n      ]\n    },\n    \"legality\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"将身份、输入闭包、共同提交和最后访问条件列为合法性要求，并将固定 AND DAG、串行协调、同刻取消屏障及 COW 布局明确限定为所选方案。来源核对支持 SGLang 的共享与调度条件、ORCA 的最大长度预留和 vLLM 的完整块身份；未将这些方案升级为普遍硬条件。LoadGen README 的场景核验边界声明准确。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/workloads/session-workloads.md\",\n          \"quote\": \"合法性要求图无环、边事件及尝试版本确定、必需输入可重建、分支可写状态隔离、失败传播有终止规则、到达模式及完成边界明确。\"\n        },\n        {\n          \"path\": \"knowledge/workloads/session-workloads.md\",\n          \"quote\": \"epoch 能拒绝旧回调修改新元数据，但不能阻止旧 kernel 或 DMA 写同一个地址，因此仍须等待物理排空。\"\n        }\n      ]\n    },\n    \"algorithm\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"伪代码覆盖初始化、依赖通知、时间与容量唤醒、启动、候选保存、提交、失败传播和逐票据回收。当前脚本保存未就绪最终候选，每项唯一完成均进入重查，辅助操作也能触发提交；终态禁止恢复。reference 从静态必需操作集合求最大完成键，审计另从实际 COMPLETE 顺序核对最终原因。原 TAIL/FULL 同刻反例保持原身份，现有成功路径在时刻1发布 TAIL 后恰好一次发布 FULL、安装 output/COMMITTED 并排空；所列阻塞问题已修复。模型逐层推进明确委托已有章节，所供连续批处理摘录解释了逐层数据流及末行采样资格。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/workloads/session-workloads.md\",\n          \"quote\": \"不满足则保留 Candidates[κ] 及其保护，返回 PENDING；不安装 output 或 COMMITTED\"\n        },\n        {\n          \"path\": \"knowledge/workloads/session-workloads.md\",\n          \"quote\": \"每项相关必需操作的成功完成后调用 TRY_PUBLISH_READY(v)，包括无业务事件的辅助操作\"\n        },\n        {\n          \"path\": \"knowledge/workloads/session-workloads.md\",\n          \"quote\": \"只有全部必需结果成功才有最终提交候选，其键取 C=max_u c_u，而非最终载荷操作自己的 c_final。\"\n        }\n      ]\n    },\n    \"cost\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"六类成本落在同一会话和物理对象范围内，区分容量、逻辑流量、实际事务与关键路径。独立复算三轮新增 prefill 为120、21、21；未对齐双分支过渡峰值为5页、源尾页合法释放后为4页，复制有效槽读写各6τ；等待面积14 MB·s除以5秒为2.8 MB。新增候选持有和朴素共同资格扫描的二次成本也已说明，没有用未来释放支付当前预留。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/workloads/session-workloads.md\",\n          \"quote\": \"同一 backing 只计一次。不同物理副本即使内容完全相同，也各计一次。\"\n        },\n        {\n          \"path\": \"knowledge/workloads/session-workloads.md\",\n          \"quote\": \"若 R 项必需结果的每次完成都扫描全部 R 项，共同资格检查可达 O(R²)\"\n        },\n        {\n          \"path\": \"knowledge/workloads/session-workloads.md\",\n          \"quote\": \"物理访问责任清零不表示仍未发布的候选载荷可以提前归还。\"\n        }\n      ]\n    },\n    \"adaptation\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"解释了模型、模板、状态格式、等待时间、页长、分支宽度和容量变化如何影响身份、恢复、COW 与驻留选择；保留不可变事件和最后访问原则。失败后恢复、动态操作集合及其他 join 合同均要求显式扩展协议，没有沿用原方案的保证。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/workloads/session-workloads.md\",\n          \"quote\": \"容量紧张且重用遥远时，可以放弃驻留而选择换出或重算，但目的容量、恢复计算与传输必须另计。\"\n        },\n        {\n          \"path\": \"knowledge/workloads/session-workloads.md\",\n          \"quote\": \"若要从失败转入恢复，必须增加恢复状态、尝试/提交授权、可用旧快照、重试预算及实际唤醒\"\n        }\n      ]\n    },\n    \"diagnosis\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"给出可区分的竞争解释、受控事件干预和反证后的具体修正。检查不仅比较终态，还重建发布、依赖、候选及资源责任；实际故障版本进入同一审计器并被拒绝。成功候选遗失、最终资格绕过、失败延迟和取消间额外启动有不同见证。CPU符号验证与设备、工具及质量验证的边界明确，未以执行成功替代内容判断。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/workloads/session-workloads.md\",\n          \"quote\": \"检查完整比较 starts、publication、state、output 和首次 terminal，另外逐记录核对责任；仅终态相同不能通过。\"\n        },\n        {\n          \"path\": \"knowledge/workloads/session-workloads.md\",\n          \"quote\": \"对相同 TAIL/FULL 身份分别测试失败和全成功；再使辅助完成同刻或更晚。\"\n        }\n      ]\n    }\n  },\n  \"findings\": [],\n  \"limitations\": [\n    \"本结论依据所供完整文本、明确摘录和 actual_preflight 记录；当前工具没有文件读取或 Python 执行能力，未独立重算磁盘文件哈希、检查链接目标存在性或重新执行脚本。documents 使用指定绑定值。\",\n    \"真实执行核验依据本轮所供 actual_preflight：remote_bwrap、Python 3.12、当前脚本和正文摘要、returncode=0、stderr为空、未超时。作者 execution-002 原始文件未另行打开，不能将作者说明视为本独审读取了该文件。\",\n    \"检查限于固定 DAG、固定尝试及版本、声明完成偏移、可靠重复通知、无资源争用和指定同刻取消合同。辅助操作只设成功；未验证动态扩图、真实内部操作依赖或生产排队。\",\n    \"物理资源检查的 O/B/Q 为空，发布载荷与操作缓冲分开；候选逻辑保护、真实输出借用、GPU全层完成、跨 stream 可见性及 DMA/网络最后访问仍需相应实现证据。\",\n    \"未读取源码归档、原始PDF或图片资产；MLPerf具体场景沿用来源说明，README仅直接支持职责边界及相关入口。未验证模型数值、工具副作用、质量证书真实性、服务性能或 Agent 使用效果。\",\n    \"本轮已尝试发现可读取资源，但没有可用资源或本地文件读取工具，因此未读取 infraagents-knowledge-build/SKILL.md；未声称执行该技能的本地流程。\"\n  ],\n  \"checks\": [\n    {\n      \"script\": \"tools/check_k_work_010_full.py\",\n      \"args\": []\n    }\n  ],\n  \"no_checks_reason\": \"\",\n  \"reading_scope\": \"完整阅读本轮提供的候选 chapter、test_script、author_notes、actual_preflight，以及 materials 中标为 full 的 AGENTS.md、docs/knowledge-method.md、docs/knowledge-review.md、knowledge/workloads/session-workloads.md、四份指定来源说明和四份指定来源原文文本。相关章节仅阅读所供提取字符范围，均为零基半开区间：arrival-and-concurrency.md [0,4000)、[8000,9000)；input-distribution.md [0,5000)；prefix-cache-identity.md [0,5000)；tokenization-io.md [0,1025)、[8000,11975)；cancellation-resource-completion.md [0,5000)；iteration-batching.md [0,4000)、[12000,13000)；chunked-prefill.md [8000,11304)、[12000,13696)；vllm-scheduler.md [0,4000)、[8000,9000)；omni-multimodal.md [12000,17000)；request-batch-identity.md [4000,5929)、[16000,19071)；design-synthesis.md [0,1000)、[12000,16000)；correctness-oracles.md [0,1000)、[8000,12000)；metric-events.md [4000,5000)、[8000,12000)；measurement-comparability.md [0,4000)、[12000,13000)；slo-goodput.md [0,5000)；capacity-planning.md [4000,8000)、[12000,13000)；branch-generation.md [4000,8000)、[12000,13000)。这些摘录未列入 documents。作者材料范围单独依据用户提供的 author_material_scopes 账本核对：它记录作者获得完整前轮候选、指定前轮审查片段和其他列明材料，不证明实际认知阅读；本独审没有据自己的摘录范围缩减作者曝光范围，也没有打开其账本文件或前轮原文件。\",\n  \"test_assessment\": \"本独审完整检查算法与所供真实执行输出，未重新执行 Python，未把未执行的检查记为独立PASS。reference 不读取 replay 的堆、依赖计数或候选状态，而从静态DAG递归求启动约束、缺失事件的终止原因和最终最大完成键；共享 operations 仅提供声明的操作合同。audit_events 从逐记录证据重建完成集合、候选、发布和责任，并核对报告安装值及最终因果见证。手工期望进一步同时约束 reference 与 replay，因此不是二者自洽即通过。原TAIL/FULL成功反例明确检查 COMPLETE 顺序为 FULL、TAIL，发布顺序为 TAIL、FULL，提交时刻1、唯一最终发布、output安装及空责任和候选账；FIRST和辅助身份在FULL前后、辅助更晚完成、候选等待期间取消均有覆盖。所供执行保留16条主轨迹、1440组时间门与取消组合、6条资格及2条取消顺序回归，并运行新增6条成功和2条取消路径。新增5个故障对照实际被拒绝，分别破坏候选保留、当前事件外重查、辅助重查和参考最终完成键。需要精确说明：TAIL/FULL同刻错误参考会先漏掉TAIL局部发布，因完整结果比较被拒绝，输出并不证明该条负对照单独触发了后面的顺序见证断言；审计代码本身另有最后证据键比较。资源检查使用独立手工责任检查点；回合参考枚举token身份，布局参考构造物理槽副本，驻留参考用窗口交集与整数区间面积核对，均具有对应已检出的错误版本。现有证据足以关闭 K-WORK-010-FINAL-CANDIDATE-RECONSIDER 及其关联修订要求，未发现当前候选中的未解决阻塞缺口。上述通过仅支持声明的有限CPU模型。\"\n}",
+  "exit_code": 0,
+  "status": "completed",
+  "timeout_seconds": 1800,
+  "response_path": "D:\\桌面\\xdb\\InfraAgents\\InfraAgents-know-astra-new\\InfraAgents-know\\docs\\evidence\\knowledge-workflow-20261028-batch23\\full_build\\K-WORK-010\\round-5\\reviewer-attempt-001\\answer.txt",
+  "record_path": "D:\\桌面\\xdb\\InfraAgents\\InfraAgents-know-astra-new\\InfraAgents-know\\docs\\evidence\\knowledge-workflow-20261028-batch23\\full_build\\K-WORK-010\\round-5\\reviewer-attempt-001\\record.json",
+  "tool_events": [
+    {
+      "type": "item.completed",
+      "item": {
+        "id": "item_1",
+        "type": "mcp_tool_call",
+        "server": "codex",
+        "tool": "list_mcp_resources",
+        "arguments": {},
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"resources\":[]}"
+            }
+          ],
+          "structured_content": null
+        },
+        "error": null,
+        "status": "completed"
+      }
+    },
+    {
+      "type": "item.completed",
+      "item": {
+        "id": "item_2",
+        "type": "mcp_tool_call",
+        "server": "codex",
+        "tool": "list_mcp_resource_templates",
+        "arguments": {},
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"resourceTemplates\":[]}"
+            }
+          ],
+          "structured_content": null
+        },
+        "error": null,
+        "status": "completed"
+      }
+    }
+  ],
+  "inventory_tool_events": [
+    {
+      "type": "item.completed",
+      "item": {
+        "id": "item_1",
+        "type": "mcp_tool_call",
+        "server": "codex",
+        "tool": "list_mcp_resources",
+        "arguments": {},
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"resources\":[]}"
+            }
+          ],
+          "structured_content": null
+        },
+        "error": null,
+        "status": "completed"
+      }
+    },
+    {
+      "type": "item.completed",
+      "item": {
+        "id": "item_2",
+        "type": "mcp_tool_call",
+        "server": "codex",
+        "tool": "list_mcp_resource_templates",
+        "arguments": {},
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"resourceTemplates\":[]}"
+            }
+          ],
+          "structured_content": null
+        },
+        "error": null,
+        "status": "completed"
+      }
+    }
+  ],
+  "rejected_tool_events": [],
+  "tool_policy": "metadata_inventory_only",
+  "tool_policy_version": "metadata-inventory-v1",
+  "tool_policy_scope": "Only empty-argument codex host plugin/skill-directory descriptors and empty template inventory; inventory is not knowledge evidence. All other tool events reject the call.",
+  "tool_policy_reason": "Production chapter construction allows observed generic capability discovery metadata; this does not claim a zero-tool comparison or external source reading.",
+  "malformed_event_lines": [],
+  "turn_completed": true,
+  "error_events": [],
+  "recovered_transport_events": [],
+  "terminal_error_events": [],
+  "transport_recovered": false,
+  "actual_model": null,
+  "identity_verified": null,
+  "identity_basis": "Explicit CLI model and isolated HTTP provider; CLI events do not expose server model identity.",
+  "provider": "eval-openai-http",
+  "max_output_tokens": null,
+  "cli_version": "codex-cli 0.164.0-alpha.11.1",
+  "cost_scope": "Codex token usage is reported; subscription charge is not exposed.",
+  "parsed": {
+    "entry_id": "K-WORK-010",
+    "body_sha256": "56db1dcb7a4382abe4047d9abe942964e405ee1a6318d8ce5fa1356391a40566",
+    "reviewer": "sol-reviewer:K-WORK-010:round-5",
+    "decision": "accept",
+    "documents": {
+      "AGENTS.md": "b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a",
+      "docs/knowledge-method.md": "69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb",
+      "docs/knowledge-review.md": "f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21",
+      "knowledge/workloads/session-workloads.md": "56db1dcb7a4382abe4047d9abe942964e405ee1a6318d8ce5fa1356391a40566",
+      "knowledge/sources/S-SGLANG.md": "4fd6badbee1df40da422f2866f1536bbe4f5266856b8d97004072a21b9d0e2c9",
+      "knowledge/sources/S-ORCA.md": "920ef987a4a019bb4f0e0386e30bf1c1e3bc720d199ae4de22e462db4f41520a",
+      "knowledge/sources/S-VLLM-PREFIX.md": "9e3f16fdac245da8aa97deea55a820642b67e626329748c980eaa2fc0b7656f5",
+      "knowledge/sources/S-MLPERF-SCENARIOS.md": "e210de2929034d4a6e25a31ee72b81a184412a7e637c979210f91ae02a261b04",
+      "references/S-SGLANG/fulltext.txt": "7dfb3a43ba73d9d9861c06311005edf12dfafa9f60a268fec327deb4d8e8770d",
+      "references/S-ORCA/fulltext.txt": "2119a53d77b4a933bab56d7e40b5304fa725561c412514459e56729ca6836794",
+      "references/S-VLLM-PREFIX/fulltext.txt": "0d6423dca458bb628af7d15961bdba92b0d501660f93690610a354ef68f07353",
+      "references/S-MLPERF-SCENARIOS/upstream/loadgen/README.md": "074479dbeb369205ccc8800450c647893b4901c247e0e4ee7f321f05254e9305",
+      "tools/check_k_work_010_full.py": "7bf1b3787a7ceb4b3c0c64a241a517b3d1801f5ad0a541068b0431e60020e6d2"
+    },
+    "criteria": {
+      "definition": {
+        "assessment": "sufficient",
+        "reason": "说明了独立 prompt 无法表达的跨调用依赖，定义请求尝试、版本化事件、固定输入构造、业务终态与物理责任。明确区分已知 token、已完成 KV、logits 和容量。回合递推、时间门和驻留积分均给出单位及适用条件。",
+        "evidence": [
+          {
+            "path": "knowledge/workloads/session-workloads.md",
+            "quote": "请求实例记为 r=(s,β,k,g)：β 是分支，k 是逻辑调用序号，g 是尝试代次。"
+          },
+          {
+            "path": "knowledge/workloads/session-workloads.md",
+            "quote": "已知 token 长度 n、全层已完成 KV 边界 c、可写容量和末行 logits 是不同状态。"
+          }
+        ]
+      },
+      "legality": {
+        "assessment": "sufficient",
+        "reason": "将身份、输入闭包、共同提交和最后访问条件列为合法性要求，并将固定 AND DAG、串行协调、同刻取消屏障及 COW 布局明确限定为所选方案。来源核对支持 SGLang 的共享与调度条件、ORCA 的最大长度预留和 vLLM 的完整块身份；未将这些方案升级为普遍硬条件。LoadGen README 的场景核验边界声明准确。",
+        "evidence": [
+          {
+            "path": "knowledge/workloads/session-workloads.md",
+            "quote": "合法性要求图无环、边事件及尝试版本确定、必需输入可重建、分支可写状态隔离、失败传播有终止规则、到达模式及完成边界明确。"
+          },
+          {
+            "path": "knowledge/workloads/session-workloads.md",
+            "quote": "epoch 能拒绝旧回调修改新元数据，但不能阻止旧 kernel 或 DMA 写同一个地址，因此仍须等待物理排空。"
+          }
+        ]
+      },
+      "algorithm": {
+        "assessment": "sufficient",
+        "reason": "伪代码覆盖初始化、依赖通知、时间与容量唤醒、启动、候选保存、提交、失败传播和逐票据回收。当前脚本保存未就绪最终候选，每项唯一完成均进入重查，辅助操作也能触发提交；终态禁止恢复。reference 从静态必需操作集合求最大完成键，审计另从实际 COMPLETE 顺序核对最终原因。原 TAIL/FULL 同刻反例保持原身份，现有成功路径在时刻1发布 TAIL 后恰好一次发布 FULL、安装 output/COMMITTED 并排空；所列阻塞问题已修复。模型逐层推进明确委托已有章节，所供连续批处理摘录解释了逐层数据流及末行采样资格。",
+        "evidence": [
+          {
+            "path": "knowledge/workloads/session-workloads.md",
+            "quote": "不满足则保留 Candidates[κ] 及其保护，返回 PENDING；不安装 output 或 COMMITTED"
+          },
+          {
+            "path": "knowledge/workloads/session-workloads.md",
+            "quote": "每项相关必需操作的成功完成后调用 TRY_PUBLISH_READY(v)，包括无业务事件的辅助操作"
+          },
+          {
+            "path": "knowledge/workloads/session-workloads.md",
+            "quote": "只有全部必需结果成功才有最终提交候选，其键取 C=max_u c_u，而非最终载荷操作自己的 c_final。"
+          }
+        ]
+      },
+      "cost": {
+        "assessment": "sufficient",
+        "reason": "六类成本落在同一会话和物理对象范围内，区分容量、逻辑流量、实际事务与关键路径。独立复算三轮新增 prefill 为120、21、21；未对齐双分支过渡峰值为5页、源尾页合法释放后为4页，复制有效槽读写各6τ；等待面积14 MB·s除以5秒为2.8 MB。新增候选持有和朴素共同资格扫描的二次成本也已说明，没有用未来释放支付当前预留。",
+        "evidence": [
+          {
+            "path": "knowledge/workloads/session-workloads.md",
+            "quote": "同一 backing 只计一次。不同物理副本即使内容完全相同，也各计一次。"
+          },
+          {
+            "path": "knowledge/workloads/session-workloads.md",
+            "quote": "若 R 项必需结果的每次完成都扫描全部 R 项，共同资格检查可达 O(R²)"
+          },
+          {
+            "path": "knowledge/workloads/session-workloads.md",
+            "quote": "物理访问责任清零不表示仍未发布的候选载荷可以提前归还。"
+          }
+        ]
+      },
+      "adaptation": {
+        "assessment": "sufficient",
+        "reason": "解释了模型、模板、状态格式、等待时间、页长、分支宽度和容量变化如何影响身份、恢复、COW 与驻留选择；保留不可变事件和最后访问原则。失败后恢复、动态操作集合及其他 join 合同均要求显式扩展协议，没有沿用原方案的保证。",
+        "evidence": [
+          {
+            "path": "knowledge/workloads/session-workloads.md",
+            "quote": "容量紧张且重用遥远时，可以放弃驻留而选择换出或重算，但目的容量、恢复计算与传输必须另计。"
+          },
+          {
+            "path": "knowledge/workloads/session-workloads.md",
+            "quote": "若要从失败转入恢复，必须增加恢复状态、尝试/提交授权、可用旧快照、重试预算及实际唤醒"
+          }
+        ]
+      },
+      "diagnosis": {
+        "assessment": "sufficient",
+        "reason": "给出可区分的竞争解释、受控事件干预和反证后的具体修正。检查不仅比较终态，还重建发布、依赖、候选及资源责任；实际故障版本进入同一审计器并被拒绝。成功候选遗失、最终资格绕过、失败延迟和取消间额外启动有不同见证。CPU符号验证与设备、工具及质量验证的边界明确，未以执行成功替代内容判断。",
+        "evidence": [
+          {
+            "path": "knowledge/workloads/session-workloads.md",
+            "quote": "检查完整比较 starts、publication、state、output 和首次 terminal，另外逐记录核对责任；仅终态相同不能通过。"
+          },
+          {
+            "path": "knowledge/workloads/session-workloads.md",
+            "quote": "对相同 TAIL/FULL 身份分别测试失败和全成功；再使辅助完成同刻或更晚。"
+          }
+        ]
+      }
+    },
+    "findings": [],
+    "limitations": [
+      "本结论依据所供完整文本、明确摘录和 actual_preflight 记录；当前工具没有文件读取或 Python 执行能力，未独立重算磁盘文件哈希、检查链接目标存在性或重新执行脚本。documents 使用指定绑定值。",
+      "真实执行核验依据本轮所供 actual_preflight：remote_bwrap、Python 3.12、当前脚本和正文摘要、returncode=0、stderr为空、未超时。作者 execution-002 原始文件未另行打开，不能将作者说明视为本独审读取了该文件。",
+      "检查限于固定 DAG、固定尝试及版本、声明完成偏移、可靠重复通知、无资源争用和指定同刻取消合同。辅助操作只设成功；未验证动态扩图、真实内部操作依赖或生产排队。",
+      "物理资源检查的 O/B/Q 为空，发布载荷与操作缓冲分开；候选逻辑保护、真实输出借用、GPU全层完成、跨 stream 可见性及 DMA/网络最后访问仍需相应实现证据。",
+      "未读取源码归档、原始PDF或图片资产；MLPerf具体场景沿用来源说明，README仅直接支持职责边界及相关入口。未验证模型数值、工具副作用、质量证书真实性、服务性能或 Agent 使用效果。",
+      "本轮已尝试发现可读取资源，但没有可用资源或本地文件读取工具，因此未读取 infraagents-knowledge-build/SKILL.md；未声称执行该技能的本地流程。"
+    ],
+    "checks": [
+      {
+        "script": "tools/check_k_work_010_full.py",
+        "args": []
+      }
+    ],
+    "no_checks_reason": "",
+    "reading_scope": "完整阅读本轮提供的候选 chapter、test_script、author_notes、actual_preflight，以及 materials 中标为 full 的 AGENTS.md、docs/knowledge-method.md、docs/knowledge-review.md、knowledge/workloads/session-workloads.md、四份指定来源说明和四份指定来源原文文本。相关章节仅阅读所供提取字符范围，均为零基半开区间：arrival-and-concurrency.md [0,4000)、[8000,9000)；input-distribution.md [0,5000)；prefix-cache-identity.md [0,5000)；tokenization-io.md [0,1025)、[8000,11975)；cancellation-resource-completion.md [0,5000)；iteration-batching.md [0,4000)、[12000,13000)；chunked-prefill.md [8000,11304)、[12000,13696)；vllm-scheduler.md [0,4000)、[8000,9000)；omni-multimodal.md [12000,17000)；request-batch-identity.md [4000,5929)、[16000,19071)；design-synthesis.md [0,1000)、[12000,16000)；correctness-oracles.md [0,1000)、[8000,12000)；metric-events.md [4000,5000)、[8000,12000)；measurement-comparability.md [0,4000)、[12000,13000)；slo-goodput.md [0,5000)；capacity-planning.md [4000,8000)、[12000,13000)；branch-generation.md [4000,8000)、[12000,13000)。这些摘录未列入 documents。作者材料范围单独依据用户提供的 author_material_scopes 账本核对：它记录作者获得完整前轮候选、指定前轮审查片段和其他列明材料，不证明实际认知阅读；本独审没有据自己的摘录范围缩减作者曝光范围，也没有打开其账本文件或前轮原文件。",
+    "test_assessment": "本独审完整检查算法与所供真实执行输出，未重新执行 Python，未把未执行的检查记为独立PASS。reference 不读取 replay 的堆、依赖计数或候选状态，而从静态DAG递归求启动约束、缺失事件的终止原因和最终最大完成键；共享 operations 仅提供声明的操作合同。audit_events 从逐记录证据重建完成集合、候选、发布和责任，并核对报告安装值及最终因果见证。手工期望进一步同时约束 reference 与 replay，因此不是二者自洽即通过。原TAIL/FULL成功反例明确检查 COMPLETE 顺序为 FULL、TAIL，发布顺序为 TAIL、FULL，提交时刻1、唯一最终发布、output安装及空责任和候选账；FIRST和辅助身份在FULL前后、辅助更晚完成、候选等待期间取消均有覆盖。所供执行保留16条主轨迹、1440组时间门与取消组合、6条资格及2条取消顺序回归，并运行新增6条成功和2条取消路径。新增5个故障对照实际被拒绝，分别破坏候选保留、当前事件外重查、辅助重查和参考最终完成键。需要精确说明：TAIL/FULL同刻错误参考会先漏掉TAIL局部发布，因完整结果比较被拒绝，输出并不证明该条负对照单独触发了后面的顺序见证断言；审计代码本身另有最后证据键比较。资源检查使用独立手工责任检查点；回合参考枚举token身份，布局参考构造物理槽副本，驻留参考用窗口交集与整数区间面积核对，均具有对应已检出的错误版本。现有证据足以关闭 K-WORK-010-FINAL-CANDIDATE-RECONSIDER 及其关联修订要求，未发现当前候选中的未解决阻塞缺口。上述通过仅支持声明的有限CPU模型。"
+  },
+  "format_status": "strict_json",
+  "format_error": null,
+  "output_text": "{\n  \"entry_id\": \"K-WORK-010\",\n  \"body_sha256\": \"56db1dcb7a4382abe4047d9abe942964e405ee1a6318d8ce5fa1356391a40566\",\n  \"reviewer\": \"sol-reviewer:K-WORK-010:round-5\",\n  \"decision\": \"accept\",\n  \"documents\": {\n    \"AGENTS.md\": \"b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a\",\n    \"docs/knowledge-method.md\": \"69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb\",\n    \"docs/knowledge-review.md\": \"f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21\",\n    \"knowledge/workloads/session-workloads.md\": \"56db1dcb7a4382abe4047d9abe942964e405ee1a6318d8ce5fa1356391a40566\",\n    \"knowledge/sources/S-SGLANG.md\": \"4fd6badbee1df40da422f2866f1536bbe4f5266856b8d97004072a21b9d0e2c9\",\n    \"knowledge/sources/S-ORCA.md\": \"920ef987a4a019bb4f0e0386e30bf1c1e3bc720d199ae4de22e462db4f41520a\",\n    \"knowledge/sources/S-VLLM-PREFIX.md\": \"9e3f16fdac245da8aa97deea55a820642b67e626329748c980eaa2fc0b7656f5\",\n    \"knowledge/sources/S-MLPERF-SCENARIOS.md\": \"e210de2929034d4a6e25a31ee72b81a184412a7e637c979210f91ae02a261b04\",\n    \"references/S-SGLANG/fulltext.txt\": \"7dfb3a43ba73d9d9861c06311005edf12dfafa9f60a268fec327deb4d8e8770d\",\n    \"references/S-ORCA/fulltext.txt\": \"2119a53d77b4a933bab56d7e40b5304fa725561c412514459e56729ca6836794\",\n    \"references/S-VLLM-PREFIX/fulltext.txt\": \"0d6423dca458bb628af7d15961bdba92b0d501660f93690610a354ef68f07353\",\n    \"references/S-MLPERF-SCENARIOS/upstream/loadgen/README.md\": \"074479dbeb369205ccc8800450c647893b4901c247e0e4ee7f321f05254e9305\",\n    \"tools/check_k_work_010_full.py\": \"7bf1b3787a7ceb4b3c0c64a241a517b3d1801f5ad0a541068b0431e60020e6d2\"\n  },\n  \"criteria\": {\n    \"definition\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"说明了独立 prompt 无法表达的跨调用依赖，定义请求尝试、版本化事件、固定输入构造、业务终态与物理责任。明确区分已知 token、已完成 KV、logits 和容量。回合递推、时间门和驻留积分均给出单位及适用条件。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/workloads/session-workloads.md\",\n          \"quote\": \"请求实例记为 r=(s,β,k,g)：β 是分支，k 是逻辑调用序号，g 是尝试代次。\"\n        },\n        {\n          \"path\": \"knowledge/workloads/session-workloads.md\",\n          \"quote\": \"已知 token 长度 n、全层已完成 KV 边界 c、可写容量和末行 logits 是不同状态。\"\n        }\n      ]\n    },\n    \"legality\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"将身份、输入闭包、共同提交和最后访问条件列为合法性要求，并将固定 AND DAG、串行协调、同刻取消屏障及 COW 布局明确限定为所选方案。来源核对支持 SGLang 的共享与调度条件、ORCA 的最大长度预留和 vLLM 的完整块身份；未将这些方案升级为普遍硬条件。LoadGen README 的场景核验边界声明准确。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/workloads/session-workloads.md\",\n          \"quote\": \"合法性要求图无环、边事件及尝试版本确定、必需输入可重建、分支可写状态隔离、失败传播有终止规则、到达模式及完成边界明确。\"\n        },\n        {\n          \"path\": \"knowledge/workloads/session-workloads.md\",\n          \"quote\": \"epoch 能拒绝旧回调修改新元数据，但不能阻止旧 kernel 或 DMA 写同一个地址，因此仍须等待物理排空。\"\n        }\n      ]\n    },\n    \"algorithm\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"伪代码覆盖初始化、依赖通知、时间与容量唤醒、启动、候选保存、提交、失败传播和逐票据回收。当前脚本保存未就绪最终候选，每项唯一完成均进入重查，辅助操作也能触发提交；终态禁止恢复。reference 从静态必需操作集合求最大完成键，审计另从实际 COMPLETE 顺序核对最终原因。原 TAIL/FULL 同刻反例保持原身份，现有成功路径在时刻1发布 TAIL 后恰好一次发布 FULL、安装 output/COMMITTED 并排空；所列阻塞问题已修复。模型逐层推进明确委托已有章节，所供连续批处理摘录解释了逐层数据流及末行采样资格。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/workloads/session-workloads.md\",\n          \"quote\": \"不满足则保留 Candidates[κ] 及其保护，返回 PENDING；不安装 output 或 COMMITTED\"\n        },\n        {\n          \"path\": \"knowledge/workloads/session-workloads.md\",\n          \"quote\": \"每项相关必需操作的成功完成后调用 TRY_PUBLISH_READY(v)，包括无业务事件的辅助操作\"\n        },\n        {\n          \"path\": \"knowledge/workloads/session-workloads.md\",\n          \"quote\": \"只有全部必需结果成功才有最终提交候选，其键取 C=max_u c_u，而非最终载荷操作自己的 c_final。\"\n        }\n      ]\n    },\n    \"cost\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"六类成本落在同一会话和物理对象范围内，区分容量、逻辑流量、实际事务与关键路径。独立复算三轮新增 prefill 为120、21、21；未对齐双分支过渡峰值为5页、源尾页合法释放后为4页，复制有效槽读写各6τ；等待面积14 MB·s除以5秒为2.8 MB。新增候选持有和朴素共同资格扫描的二次成本也已说明，没有用未来释放支付当前预留。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/workloads/session-workloads.md\",\n          \"quote\": \"同一 backing 只计一次。不同物理副本即使内容完全相同，也各计一次。\"\n        },\n        {\n          \"path\": \"knowledge/workloads/session-workloads.md\",\n          \"quote\": \"若 R 项必需结果的每次完成都扫描全部 R 项，共同资格检查可达 O(R²)\"\n        },\n        {\n          \"path\": \"knowledge/workloads/session-workloads.md\",\n          \"quote\": \"物理访问责任清零不表示仍未发布的候选载荷可以提前归还。\"\n        }\n      ]\n    },\n    \"adaptation\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"解释了模型、模板、状态格式、等待时间、页长、分支宽度和容量变化如何影响身份、恢复、COW 与驻留选择；保留不可变事件和最后访问原则。失败后恢复、动态操作集合及其他 join 合同均要求显式扩展协议，没有沿用原方案的保证。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/workloads/session-workloads.md\",\n          \"quote\": \"容量紧张且重用遥远时，可以放弃驻留而选择换出或重算，但目的容量、恢复计算与传输必须另计。\"\n        },\n        {\n          \"path\": \"knowledge/workloads/session-workloads.md\",\n          \"quote\": \"若要从失败转入恢复，必须增加恢复状态、尝试/提交授权、可用旧快照、重试预算及实际唤醒\"\n        }\n      ]\n    },\n    \"diagnosis\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"给出可区分的竞争解释、受控事件干预和反证后的具体修正。检查不仅比较终态，还重建发布、依赖、候选及资源责任；实际故障版本进入同一审计器并被拒绝。成功候选遗失、最终资格绕过、失败延迟和取消间额外启动有不同见证。CPU符号验证与设备、工具及质量验证的边界明确，未以执行成功替代内容判断。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/workloads/session-workloads.md\",\n          \"quote\": \"检查完整比较 starts、publication、state、output 和首次 terminal，另外逐记录核对责任；仅终态相同不能通过。\"\n        },\n        {\n          \"path\": \"knowledge/workloads/session-workloads.md\",\n          \"quote\": \"对相同 TAIL/FULL 身份分别测试失败和全成功；再使辅助完成同刻或更晚。\"\n        }\n      ]\n    }\n  },\n  \"findings\": [],\n  \"limitations\": [\n    \"本结论依据所供完整文本、明确摘录和 actual_preflight 记录；当前工具没有文件读取或 Python 执行能力，未独立重算磁盘文件哈希、检查链接目标存在性或重新执行脚本。documents 使用指定绑定值。\",\n    \"真实执行核验依据本轮所供 actual_preflight：remote_bwrap、Python 3.12、当前脚本和正文摘要、returncode=0、stderr为空、未超时。作者 execution-002 原始文件未另行打开，不能将作者说明视为本独审读取了该文件。\",\n    \"检查限于固定 DAG、固定尝试及版本、声明完成偏移、可靠重复通知、无资源争用和指定同刻取消合同。辅助操作只设成功；未验证动态扩图、真实内部操作依赖或生产排队。\",\n    \"物理资源检查的 O/B/Q 为空，发布载荷与操作缓冲分开；候选逻辑保护、真实输出借用、GPU全层完成、跨 stream 可见性及 DMA/网络最后访问仍需相应实现证据。\",\n    \"未读取源码归档、原始PDF或图片资产；MLPerf具体场景沿用来源说明，README仅直接支持职责边界及相关入口。未验证模型数值、工具副作用、质量证书真实性、服务性能或 Agent 使用效果。\",\n    \"本轮已尝试发现可读取资源，但没有可用资源或本地文件读取工具，因此未读取 infraagents-knowledge-build/SKILL.md；未声称执行该技能的本地流程。\"\n  ],\n  \"checks\": [\n    {\n      \"script\": \"tools/check_k_work_010_full.py\",\n      \"args\": []\n    }\n  ],\n  \"no_checks_reason\": \"\",\n  \"reading_scope\": \"完整阅读本轮提供的候选 chapter、test_script、author_notes、actual_preflight，以及 materials 中标为 full 的 AGENTS.md、docs/knowledge-method.md、docs/knowledge-review.md、knowledge/workloads/session-workloads.md、四份指定来源说明和四份指定来源原文文本。相关章节仅阅读所供提取字符范围，均为零基半开区间：arrival-and-concurrency.md [0,4000)、[8000,9000)；input-distribution.md [0,5000)；prefix-cache-identity.md [0,5000)；tokenization-io.md [0,1025)、[8000,11975)；cancellation-resource-completion.md [0,5000)；iteration-batching.md [0,4000)、[12000,13000)；chunked-prefill.md [8000,11304)、[12000,13696)；vllm-scheduler.md [0,4000)、[8000,9000)；omni-multimodal.md [12000,17000)；request-batch-identity.md [4000,5929)、[16000,19071)；design-synthesis.md [0,1000)、[12000,16000)；correctness-oracles.md [0,1000)、[8000,12000)；metric-events.md [4000,5000)、[8000,12000)；measurement-comparability.md [0,4000)、[12000,13000)；slo-goodput.md [0,5000)；capacity-planning.md [4000,8000)、[12000,13000)；branch-generation.md [4000,8000)、[12000,13000)。这些摘录未列入 documents。作者材料范围单独依据用户提供的 author_material_scopes 账本核对：它记录作者获得完整前轮候选、指定前轮审查片段和其他列明材料，不证明实际认知阅读；本独审没有据自己的摘录范围缩减作者曝光范围，也没有打开其账本文件或前轮原文件。\",\n  \"test_assessment\": \"本独审完整检查算法与所供真实执行输出，未重新执行 Python，未把未执行的检查记为独立PASS。reference 不读取 replay 的堆、依赖计数或候选状态，而从静态DAG递归求启动约束、缺失事件的终止原因和最终最大完成键；共享 operations 仅提供声明的操作合同。audit_events 从逐记录证据重建完成集合、候选、发布和责任，并核对报告安装值及最终因果见证。手工期望进一步同时约束 reference 与 replay，因此不是二者自洽即通过。原TAIL/FULL成功反例明确检查 COMPLETE 顺序为 FULL、TAIL，发布顺序为 TAIL、FULL，提交时刻1、唯一最终发布、output安装及空责任和候选账；FIRST和辅助身份在FULL前后、辅助更晚完成、候选等待期间取消均有覆盖。所供执行保留16条主轨迹、1440组时间门与取消组合、6条资格及2条取消顺序回归，并运行新增6条成功和2条取消路径。新增5个故障对照实际被拒绝，分别破坏候选保留、当前事件外重查、辅助重查和参考最终完成键。需要精确说明：TAIL/FULL同刻错误参考会先漏掉TAIL局部发布，因完整结果比较被拒绝，输出并不证明该条负对照单独触发了后面的顺序见证断言；审计代码本身另有最后证据键比较。资源检查使用独立手工责任检查点；回合参考枚举token身份，布局参考构造物理槽副本，驻留参考用窗口交集与整数区间面积核对，均具有对应已检出的错误版本。现有证据足以关闭 K-WORK-010-FINAL-CANDIDATE-RECONSIDER 及其关联修订要求，未发现当前候选中的未解决阻塞缺口。上述通过仅支持声明的有限CPU模型。\"\n}",
+  "elapsed_seconds": 184.531
+}

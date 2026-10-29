@@ -1,0 +1,7190 @@
+{
+  "schema_version": 1,
+  "entries": [
+    {
+      "id": "K-ALG-001",
+      "path": "algorithms/iteration-batching.md",
+      "category": "algorithms",
+      "title": "连续批处理：从自回归依赖到迭代调度",
+      "summary": "从已知token与连续KV边界推导就绪性，完整预算/执行视图/采样提交算法连接混合调度、取消、资源与SLO成本。",
+      "revision": 4,
+      "status": "seed",
+      "tags": [
+        "continuous batching",
+        "连续批处理",
+        "迭代",
+        "scheduler",
+        "FCFS",
+        "公平调度",
+        "deadline",
+        "抢占",
+        "未知输出长度",
+        "执行快照",
+        "预算预留",
+        "采样边界",
+        "结果提交"
+      ],
+      "scope": {
+        "model_families": [
+          "transformer"
+        ],
+        "platforms": [],
+        "runtimes": [],
+        "workloads": [
+          "text-generation"
+        ]
+      },
+      "source_ids": [
+        "S-ORCA",
+        "S-SARATHI",
+        "S-VLLM-SCHED"
+      ],
+      "related": [
+        "K-ALG-007",
+        "K-ALG-008",
+        "K-SYS-002",
+        "K-WORK-002",
+        "K-SYS-012",
+        "K-WORK-005",
+        "K-WORK-010",
+        "K-SYS-015",
+        "K-ALG-014",
+        "K-ENGINE-001",
+        "K-ENGINE-004",
+        "K-SYS-010",
+        "K-WORK-007"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-28",
+      "sha256": "08f5ebb413f0a054e97302e5b080df44005de6c5704d0a24747085a5246e647a",
+      "questions": [
+        "为什么一轮调度不能只用一个长度描述请求，已确认、已计算、本轮 token 数和分配容量各自回答什么？",
+        "token 预算、页预算和最长历史分别限制一轮的哪部分成本，为什么同样 256 tokens 不是相同成本？",
+        "按到达顺序、估计剩余工作、deadline 和公平份额排序时，各自还缺哪些约束才能避免饥饿？",
+        "暂停保留页、换出状态和丢弃重算三种抢占方式的代价分别由什么决定，怎样比较它们？",
+        "输出长度未知时，如何在逐轮修正预留的同时保证不越过硬容量上限？",
+        "已知token、已完成KV与可采样位置怎样分别推进，为什么采到的下一token还没有自己的KV？",
+        "怎样在token、页和时间预算同时受限时预留与回滚，再把packed结果按原请求身份提交？"
+      ],
+      "symptoms": [
+        "持续到达的短请求使等待中的长请求长期得不到服务",
+        "高优先级请求占据队首却因状态未就绪无法推进，阻塞其他请求",
+        "平均吞吐上升但已有请求的 ITL 分布变差"
+      ],
+      "assumes": [
+        "自回归 decoder 模型",
+        "单实例内的迭代级调度",
+        "KV 以页或块为单位分配"
+      ]
+    },
+    {
+      "id": "K-ALG-002",
+      "path": "algorithms/paged-kv-capacity.md",
+      "category": "algorithms",
+      "title": "分页 KV：逻辑位置、物理布局与共享所有权",
+      "summary": "从逻辑位置到NHD/HND字节地址，完整追加/COW/发布/失败回滚/在途回收算法连接共享页、容量和页长取舍。",
+      "revision": 5,
+      "status": "seed",
+      "tags": [
+        "paged attention",
+        "KV cache",
+        "页表",
+        "NHD",
+        "HND",
+        "容量",
+        "字节地址",
+        "COW",
+        "发布回滚",
+        "在途读者"
+      ],
+      "scope": {
+        "model_families": [
+          "transformer"
+        ],
+        "platforms": [],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-PAGED",
+        "S-FI",
+        "S-VLLM-KV",
+        "S-VATTENTION",
+        "S-KIVI"
+      ],
+      "related": [
+        "K-ALG-003",
+        "K-ALG-009",
+        "K-MODEL-002",
+        "K-SYS-004",
+        "K-SYS-012",
+        "K-ALG-018",
+        "K-ALG-021",
+        "K-SYS-013",
+        "K-ALG-010",
+        "K-ENGINE-002",
+        "K-FW-006",
+        "K-FW-009",
+        "K-ALG-024"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-28",
+      "sha256": "66e1dedfb6aafe349721e7b2c050028e64f4668a83bfb7d9962604499bf02859",
+      "questions": [
+        "页长 P 变化时，页表长度、尾部浪费和共享分叉粒度如何此消彼长？",
+        "多请求共享物理页后，哪些状态转换需要同时满足逻辑引用归零和设备完成事件？",
+        "分页与片上分块 attention 组合时，kernel 需要满足什么前提才不付出额外 gather 成本？",
+        "用理论 KV/token 除剩余显存得到的驻留数为何只是上界，还需要扣除哪些项？",
+        "应用层 token 页长与设备映射页长为何不能等同，二者的碎片账有什么差别？",
+        "怎样把逻辑token、head和通道变成NHD/HND物理地址，并核对非连续页和有效尾部？",
+        "共享半满页追加时，复制、发布、取消和旧快照完成怎样组合，容量与COW交通分别是多少？"
+      ],
+      "symptoms": [
+        "实际可驻留请求数远低于按显存和每 token KV 估算的值",
+        "共享前缀分叉后一个请求的输出被另一个请求的写入污染",
+        "回收页后仍被排队中的 graph 读取导致结果错误"
+      ],
+      "assumes": [
+        "自回归 decoder 模型，KV 随长度增长",
+        "KV 以固定 token 数的物理页管理",
+        "单设备内由页表映射物理页"
+      ]
+    },
+    {
+      "id": "K-ALG-003",
+      "path": "algorithms/prefix-cache-identity.md",
+      "category": "algorithms",
+      "title": "前缀缓存：计算等价类、Radix 与淘汰收益",
+      "summary": "可复用前缀是能产生等价中间状态的一组输入和执行条件；字符串相同只是其中一个投影。",
+      "revision": 5,
+      "status": "seed",
+      "tags": [
+        "prefix caching",
+        "Radix",
+        "前缀",
+        "身份",
+        "cache key"
+      ],
+      "scope": {
+        "model_families": [
+          "transformer"
+        ],
+        "platforms": [],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-SGLANG",
+        "S-VLLM-PREFIX",
+        "S-HF-CACHE",
+        "S-MOONCAKE"
+      ],
+      "related": [
+        "K-ALG-002",
+        "K-ALG-009",
+        "K-ALG-014",
+        "K-SYS-007",
+        "K-SYS-013",
+        "K-ALG-023",
+        "K-ALG-021",
+        "K-HW-014",
+        "K-WORK-010",
+        "K-ENGINE-004",
+        "K-FW-006",
+        "K-MODEL-004",
+        "K-SYS-010",
+        "K-WORK-003",
+        "K-SYS-012",
+        "K-ALG-018",
+        "K-SYS-016",
+        "K-ALG-022"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-28",
+      "sha256": "98389e4a67eb746a52f39d11986256c857a00167f4c989f26dbd2d3f1b3275d9",
+      "questions": [
+        "缓存身份需要包含哪些依赖才不会让命中跨越不同计算，哪些配置不必混入 key？",
+        "链式块哈希与 Radix 树在发现最长共享路径和管理物理状态上各承担什么角色？",
+        "逻辑最长匹配长度与内核可跳过的 token 数为什么不同，尾块如何影响实际收益？",
+        "混合模型中各类状态的恢复位置集合不一致时，全模型可继续的位置怎样确定？",
+        "淘汰排序如何同时考虑再访问概率、重算成本和驻留字节，为什么 token 命中率会误导？"
+      ],
+      "symptoms": [
+        "前缀命中率上升但热门实例排队更长",
+        "相同文本不同模板或 adapter 的请求出现错误命中",
+        "容量允许保留全部会话但同时 decode 时 ITL 远超目标"
+      ],
+      "assumes": [
+        "因果模型，状态只依赖可见前缀",
+        "有块或树形索引的 KV 缓存",
+        "多请求共享公共前缀的负载"
+      ]
+    },
+    {
+      "id": "K-ALG-004",
+      "path": "algorithms/attention-io.md",
+      "category": "algorithms",
+      "title": "Attention 的 IO、在线 softmax 与分块归约",
+      "summary": "精确 attention 可以通过改变数据流避免存储完整分数矩阵；算法复杂度、HBM 流量与数值归约顺序分别决定成本。",
+      "revision": 4,
+      "status": "seed",
+      "tags": [
+        "FlashAttention",
+        "online softmax",
+        "IO",
+        "split-K"
+      ],
+      "scope": {
+        "model_families": [
+          "transformer"
+        ],
+        "platforms": [],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-FLASH",
+        "S-TRITON",
+        "S-TORCH-NUMERIC",
+        "S-FLASHATTENTION3"
+      ],
+      "related": [
+        "K-HW-001",
+        "K-FW-006",
+        "K-MODEL-006",
+        "K-HW-011",
+        "K-ALG-018",
+        "K-HW-013",
+        "K-ALG-007",
+        "K-FW-002",
+        "K-FW-007",
+        "K-FW-010",
+        "K-HW-005",
+        "K-MODEL-002",
+        "K-MODEL-007",
+        "K-ALG-016"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-28",
+      "sha256": "63cb995ae9a462f6a65387e3acdc339335f39df7b44f8b444ec72f09368a9431",
+      "questions": [
+        "消除 M×N 分数矩阵减少的是哪类成本，为什么 QK 和 PV 的 FLOPs 并不随之消失？",
+        "分块处理 K/V 时需要保留哪些可合并统计量，为什么直接平均各块归一化输出是错误的？",
+        "沿 query 切分与沿 KV 切分各自在什么历史长度和 batch 下更有利，合并成本如何计入？",
+        "因果、窗口和块稀疏 mask 在什么条件下才能转化为真实的 FLOPs 节省？",
+        "改变分块大小或累加精度后，怎样区分数学等价重排的舍入差异与真正的实现错误？"
+      ],
+      "symptoms": [
+        "长 prefill 的 attention 受显存带宽限制而非算力限制",
+        "全 mask 行产生 NaN 或 split-K 合并后输出超出 V 的取值范围",
+        "短历史 decode 启用 split-K 后反而变慢"
+      ],
+      "assumes": [
+        "精确 softmax attention，不改变模型函数",
+        "GPU 分层存储结构下的 kernel 执行"
+      ]
+    },
+    {
+      "id": "K-ALG-005",
+      "path": "algorithms/quantization-contract.md",
+      "category": "algorithms",
+      "title": "量化：误差传播、分组尺度与执行格式",
+      "summary": "权重/激活/KV 的校准、缩放与执行格式共同决定量化收益；分别验证制品解释、真实 kernel 和任务质量。",
+      "revision": 4,
+      "status": "seed",
+      "tags": [
+        "quantization",
+        "GPTQ",
+        "W4A16",
+        "量化",
+        "scale",
+        "AWQ",
+        "SmoothQuant",
+        "校准集",
+        "FP8",
+        "重打包",
+        "dispatch"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-GPTQ",
+        "S-TORCH-NUMERIC",
+        "S-CUDA-CAPABILITY",
+        "S-AWQ",
+        "S-SMOOTHQUANT",
+        "S-FLASHINFERPAPER"
+      ],
+      "related": [
+        "K-HW-004",
+        "K-FW-002",
+        "K-MODEL-002",
+        "K-FW-012",
+        "K-ALG-021",
+        "K-HW-010",
+        "K-HW-011",
+        "K-TOOLS-007",
+        "K-HW-001",
+        "K-SYS-025"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-28",
+      "sha256": "47d84fe50702d71f068e70e109941b6cb622111dbf103c04dfe10c8d99b2b8be",
+      "questions": [
+        "权重、激活和 KV 三种量化对象各自减少哪类字节，哪类成本可能仍然占主导？",
+        "分组 scale 与 zero point 占多少额外容量，小分组在拟合与元数据开销之间如何权衡？",
+        "校准集的分布覆盖、静态与动态尺度各自如何影响实际输出误差？",
+        "GPTQ、AWQ 与 SmoothQuant 各自改变的是量化目标、网格还是激活分布？",
+        "量化回归如何依次区分打包解释错误、kernel 数值误差与算法近似误差？"
+      ],
+      "symptoms": [
+        "权重位宽减半但端到端 decode 时间几乎不变",
+        "短文本输出正常而长上下文或稀有 token 上质量明显下降",
+        "量化模型加载时峰值显存远高于制品大小"
+      ],
+      "assumes": [
+        "训练后量化，不重新训练模型",
+        "目标硬件存在对应的低位执行路径",
+        "有可用于校准和独立验证的目标分布样本"
+      ]
+    },
+    {
+      "id": "K-ALG-006",
+      "path": "algorithms/speculation-budget.md",
+      "category": "algorithms",
+      "title": "投机解码：分布保持、状态提交与收益模型",
+      "summary": "投机用便宜候选换取目标模型的并行验证；真正推进系统的是被确认的前缀，而非写入过缓存的全部 token。",
+      "revision": 4,
+      "status": "seed",
+      "tags": [
+        "speculative decoding",
+        "投机",
+        "rejection sampling",
+        "rollback"
+      ],
+      "scope": {
+        "model_families": [
+          "transformer"
+        ],
+        "platforms": [],
+        "runtimes": [],
+        "workloads": [
+          "text-generation"
+        ]
+      },
+      "source_ids": [
+        "S-SPEC",
+        "S-HF-CACHE",
+        "S-TORCH-REPRO",
+        "S-EAGLE"
+      ],
+      "related": [
+        "K-ALG-011",
+        "K-ALG-008",
+        "K-MODEL-004",
+        "K-SYS-003",
+        "K-ALG-024",
+        "K-SYS-014",
+        "K-TOOLS-007",
+        "K-ALG-012",
+        "K-SYS-024",
+        "K-SYS-025"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-27",
+      "sha256": "91a6e60d5151fb5b1155d2ba0ddcb3ba1251e69f7caf79b0ec217c7bf9a74d0d",
+      "questions": [
+        "greedy 验证与随机采样验证的接受规则有何不同，为什么直接比较采样 token 会改变分布？",
+        "被拒绝候选的 KV 已写入缓存后，已保留容量、已写入状态与已确认长度如何分别推进？",
+        "投机的单位 token 成本由哪些项构成，在什么 batch 条件下会比普通 decode 更慢？",
+        "链式接受率与树形候选通过比例为什么不是同一指标，哪些指标更能反映收益？",
+        "递归状态、grammar 状态和随机状态在接受边界处需要怎样共同提交或回滚？"
+      ],
+      "symptoms": [
+        "接受率看起来不低但整体 goodput 反而下降",
+        "bonus token 被当作已有 KV 导致后续位置错位",
+        "batch 增大后投机配置从加速变为减速"
+      ],
+      "assumes": [
+        "自回归目标模型可对多个位置并行验证",
+        "存在独立于目标模型的草稿来源",
+        "KV 可按已确认边界截断或回滚"
+      ]
+    },
+    {
+      "id": "K-ALG-007",
+      "path": "algorithms/chunked-prefill.md",
+      "category": "algorithms",
+      "title": "分块 Prefill：服务时间切片与历史可见性",
+      "summary": "分块 prefill 将长输入的执行切成可调度时间片；每块仍读取其之前完整且有效的上下文。",
+      "revision": 5,
+      "status": "seed",
+      "tags": [
+        "chunked prefill",
+        "分块",
+        "时间片",
+        "TTFT"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-SARATHI",
+        "S-ORCA",
+        "S-HF-CACHE"
+      ],
+      "related": [
+        "K-ALG-001",
+        "K-ALG-004",
+        "K-WORK-005",
+        "K-HW-001",
+        "K-WORK-010",
+        "K-SYS-012",
+        "K-TOOLS-007",
+        "K-ALG-013",
+        "K-ENGINE-001",
+        "K-FW-004",
+        "K-SYS-003",
+        "K-SYS-010",
+        "K-SYS-025"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-28",
+      "sha256": "03b6d44832fc28541db158d2a1d897eee0880bc179153e421b54f267d0ba16b6",
+      "questions": [
+        "一个长 prompt 的 prefill 被切成时间片后，每块仍要读取哪些历史，哪些成本随块数增加？",
+        "在给定 ITL 预算和已有 decode 负载下，怎样从剩余时间反求可接受的块长？",
+        "token 预算与时间预算分别限制什么，为什么同样的 token 数在不同历史长度下成本不同？",
+        "混合批里 prefill 块和 decode 行的数据形态有什么差别，这对 kernel 选择意味着什么？",
+        "时间模型的预测残差、图桶约束和多个长 prompt 竞争如何共同改变块长选择？"
+      ],
+      "symptoms": [
+        "首 token 快但已有请求的输出间隔突然变长",
+        "分块后 logits 与整段 prefill 不一致",
+        "块减小后 ITL 好转但 TTFT 和总服务成本明显恶化"
+      ],
+      "assumes": [
+        "自回归 decoder 模型",
+        "连续批或迭代级调度已存在"
+      ]
+    },
+    {
+      "id": "K-ALG-008",
+      "path": "algorithms/async-scheduling.md",
+      "category": "algorithms",
+      "title": "异步调度：依赖图、代次与双缓冲",
+      "summary": "异步调度只重叠彼此独立的工作；自回归 token、缓存映射和资源回收仍由明确依赖连接。",
+      "revision": 4,
+      "status": "seed",
+      "tags": [
+        "async scheduling",
+        "异步调度",
+        "epoch",
+        "double buffer"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-CUDA-ASYNC",
+        "S-CUDA-ALLOC",
+        "S-VLLM-SCHED",
+        "S-FLASHATTENTION3",
+        "S-POWERINFER"
+      ],
+      "related": [
+        "K-FW-003",
+        "K-FW-005",
+        "K-SYS-002",
+        "K-SYS-004",
+        "K-HW-011",
+        "K-ALG-017",
+        "K-ALG-020",
+        "K-SYS-015",
+        "K-ALG-001",
+        "K-ALG-006",
+        "K-ENGINE-005",
+        "K-FW-008",
+        "K-HW-003",
+        "K-SYS-001"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-28",
+      "sha256": "834e18046b9ab1b5921a8d4b05f8d5bcfa3318006d81389679317a605585acdb",
+      "questions": [
+        "主机准备、设备执行和结果处理中哪些工作可以重叠，下一 token 的依赖把什么留在关键路径？",
+        "一个执行代次的快照包含哪些内容，双缓冲在什么条件下才允许旧组复用？",
+        "取消一个在途请求后，结果迟到时如何既丢弃业务输出又完成资源账务？",
+        "流水深度增加时，容量占用和取消、切换、高优先级请求的响应延迟如何变化？",
+        "怎样区分代码能异步提交与关键路径已经缩短这两种不同结论？"
+      ],
+      "symptoms": [
+        "读取输出或检查 EOS 的位置导致主机设备重叠消失",
+        "取消的请求结果被路由到复用同一 slot 的新请求",
+        "增加主机线程后设备利用率不变而排队更长"
+      ],
+      "assumes": [
+        "自回归 token 依赖",
+        "主机与设备通过异步队列提交工作",
+        "单实例内的迭代级调度"
+      ]
+    },
+    {
+      "id": "K-ALG-009",
+      "path": "algorithms/heterogeneous-state-cache.md",
+      "category": "algorithms",
+      "title": "异构状态缓存：层组、恢复位置与联合分配",
+      "summary": "混合模型的缓存是多类状态的联合系统，统一的是逻辑恢复位置，物理块形状可以不同。",
+      "revision": 4,
+      "status": "seed",
+      "tags": [
+        "heterogeneous KV",
+        "混合缓存",
+        "SSM",
+        "LCM",
+        "层组",
+        "joint state bundle",
+        "state migration",
+        "transactional reservation"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-VLLM-HYBRID",
+        "S-MAMBA",
+        "S-PAGED"
+      ],
+      "related": [
+        "K-MODEL-004",
+        "K-MODEL-006",
+        "K-MODEL-007",
+        "K-ALG-003",
+        "K-ALG-017",
+        "K-ALG-018",
+        "K-SYS-012",
+        "K-SYS-014",
+        "K-ALG-024",
+        "K-ALG-002",
+        "K-ENGINE-002",
+        "K-FW-009",
+        "K-HW-008",
+        "K-SYS-003",
+        "K-SYS-009",
+        "K-SYS-010"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-28",
+      "sha256": "268efd94fdf7c091765d06e5542070e6da19ac9e18892ad56dc3632335bdcfa5",
+      "questions": [
+        "全注意力、窗口、MLA 和递归状态在长度、形状和更新方式上有何差异，为何不能统一成同样 KV 页？",
+        "独立池、统一字节块池和大块内子分配各自在容量调剂与元数据账上付出什么代价？",
+        "各状态族的可恢复位置集合如何取交集，为什么前缀哈希命中不构成全模型恢复资格？",
+        "多个池需要同时预留时，怎样避免容量僵局，淘汰单池对象对整个恢复包有何影响？",
+        "跨层卸载和恢复的提交边界在哪里，哪些失败窗口需要独立验证？"
+      ],
+      "symptoms": [
+        "某一状态池耗尽而其他池大量闲置",
+        "attention KV 命中很长但模型只能从很早的检查点继续",
+        "两个请求各占住一个池互相等待导致无法推进"
+      ],
+      "assumes": [
+        "混合模型包含多种状态族",
+        "有块或页形式的状态分配",
+        "状态按逻辑恢复位置对齐"
+      ]
+    },
+    {
+      "id": "K-ALG-010",
+      "path": "algorithms/cross-attention-cache.md",
+      "category": "algorithms",
+      "title": "交叉注意力缓存：固定源、独立几何与可见性",
+      "summary": "当 encoder 输出和投影权重固定时，cross-attention 的 K/V 与 decoder 步数无关，可以一次生成、多次读取。",
+      "revision": 4,
+      "status": "seed",
+      "tags": [
+        "cross attention",
+        "encoder decoder",
+        "交叉注意力",
+        "context KV",
+        "source revision",
+        "cross KV residency",
+        "stage handoff"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-TRANSFORMER",
+        "S-WHISPER",
+        "S-FI"
+      ],
+      "related": [
+        "K-MODEL-005",
+        "K-ALG-002",
+        "K-FW-006",
+        "K-MODEL-008",
+        "K-ALG-017",
+        "K-ALG-018",
+        "K-SYS-015",
+        "K-SYS-014",
+        "K-SYS-012",
+        "K-FW-005",
+        "K-MODEL-009",
+        "K-SYS-003"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-28",
+      "sha256": "9bf5802ad24d06fcea9a327ea73bce8a03d75b82fe330cbf3ab20a87ca04b7f7",
+      "questions": [
+        "固定源下 cross-attention 的 K/V 为何与 decoder 步数无关，缓存消除了哪部分重复成本？",
+        "缓存全部 cross 层 K/V 与只保留 E 再重投影，在什么源长度和内存条件下各自更合适？",
+        "decoder self-attention 与 cross-attention 有哪些独立几何维度，分页批如何编码？",
+        "流式源更新时，旧 E 在什么条件下才是新 E 的稳定前缀，否则缓存应如何按版本区分？",
+        "encoder 领先 decoder 时，源表示、cross KV 与 self KV 的持有时间如何进入阶段间准入？"
+      ],
+      "symptoms": [
+        "待解码请求堆积使特征或 cross 缓存先于 decode 容量耗尽",
+        "追加音频后已交付文本需要修订或 cross KV 与新源版本不一致",
+        "每个目标步都从主存取回全部 cross KV 使传输覆盖投影节省"
+      ],
+      "assumes": [
+        "encoder-decoder 结构，源表示固定或分段更新",
+        "cross-attention 的投影权重在生成期间不变"
+      ]
+    },
+    {
+      "id": "K-ALG-011",
+      "path": "algorithms/batched-sampling.md",
+      "category": "algorithms",
+      "title": "批量采样：概率变换、请求随机性与行映射",
+      "summary": "采样器消费每个请求自己的条件分布；向量化改变执行形态，不能改变参数、随机状态或输出归属。",
+      "revision": 4,
+      "status": "seed",
+      "tags": [
+        "sampling",
+        "top-p",
+        "top-k",
+        "RNG",
+        "采样"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-FI-SAMPLE",
+        "S-TORCH-REPRO",
+        "S-SPEC"
+      ],
+      "related": [
+        "K-SYS-002",
+        "K-ALG-012",
+        "K-ALG-006",
+        "K-ALG-024",
+        "K-SYS-014",
+        "K-TOOLS-007",
+        "K-ENGINE-003",
+        "K-SYS-007"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-29",
+      "sha256": "a3a4653b05916a7b9dd86cd2ad74716a304312e5209879acae94f51685e6f142",
+      "questions": [
+        "prefill、投机验证和并行候选下，请求与 logits 行的映射如何先于采样参数确定？",
+        "temperature、grammar mask、top-k 和 top-p 的顺序为何不可交换，空合法集合如何处理？",
+        "按 batch 行连续消耗随机流会带来什么问题，调度无关的可复现性需要把随机流绑定到什么？",
+        "词表沿设备分片时，argmax、top-k 和归一化为何不能在各片独立完成后拼接？",
+        "greedy 与随机采样各自的验证目标是什么，相同 seed 文本不同能否证明分布错误？"
+      ],
+      "symptoms": [
+        "同一请求的输出随其他请求加入或取消而改变",
+        "分支重排后 token 行更新了但采样参数仍对应旧分支",
+        "约束采样下抽出了非法 token 或概率质量丢失"
+      ],
+      "assumes": [
+        "自回归模型每步输出完整词表 logits",
+        "多个请求在同一轮合批采样"
+      ]
+    },
+    {
+      "id": "K-ALG-012",
+      "path": "algorithms/structured-output.md",
+      "category": "algorithms",
+      "title": "结构化生成：语言状态、token 边界与约束采样",
+      "summary": "结构化生成将语法状态与语言模型状态同步推进，合法 token 是从当前语法状态仍可完成目标语言的延伸。",
+      "revision": 4,
+      "status": "seed",
+      "tags": [
+        "structured output",
+        "grammar",
+        "XGrammar",
+        "JSON"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-XGRAMMAR",
+        "S-FI-SAMPLE",
+        "S-CHAT"
+      ],
+      "related": [
+        "K-ALG-011",
+        "K-ALG-006",
+        "K-SYS-007",
+        "K-ALG-024",
+        "K-SYS-014",
+        "K-TOOLS-006"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-28",
+      "sha256": "8cf3458d737ea8a601546d25adf3b03aab920da110fde4b8e790a4f5f923c14e",
+      "questions": [
+        "字符级语法与 token 级生成之间的边界如何处理，跨多个语法边界或半个 UTF-8 字节的 token 何时合法？",
+        "约束 mask 怎样改变模型分布，提前计算 mask 与 GPU 前向重叠需要满足什么状态条件？",
+        "哪些 token 的合法性可以脱离栈上下文预计算，预计算结果与 tokenizer 和语法版本有何依赖？",
+        "投机树的每条分支需要怎样的解析状态快照，接受与拒绝时如何与 KV 和随机状态共同提交？",
+        "结构化输出的性能应如何拆成规则编译、每 token mask 生成、传输和设备计算？"
+      ],
+      "symptoms": [
+        "JSON 格式合法但字段类型或跨字段约束不满足 schema",
+        "带语法约束的首次请求延迟远高于稳态",
+        "更换 tokenizer 后沿用旧 mask 缓存产生非法输出"
+      ],
+      "assumes": [
+        "模型按 token 生成而目标语言按字符或字节定义",
+        "每请求维护独立的语法解析状态"
+      ]
+    },
+    {
+      "id": "K-ALG-013",
+      "path": "algorithms/disaggregated-serving.md",
+      "category": "algorithms",
+      "title": "Prefill/Decode 分离：状态传输与队列耦合",
+      "summary": "分离式服务把两个阶段的资源策略解耦，同时引入 KV 传输、布局转换和跨节点状态提交。",
+      "revision": 4,
+      "status": "seed",
+      "tags": [
+        "disaggregation",
+        "PD split",
+        "prefill decode",
+        "KV transfer"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-DISTSERVE",
+        "S-CUDA-TOPOLOGY",
+        "S-PAGED",
+        "S-MOONCAKE"
+      ],
+      "related": [
+        "K-HW-002",
+        "K-SYS-009",
+        "K-WORK-005",
+        "K-ALG-007",
+        "K-SYS-013",
+        "K-HW-014",
+        "K-ALG-023",
+        "K-SYS-014",
+        "K-ALG-015",
+        "K-ENGINE-005",
+        "K-SYS-010",
+        "K-WORK-006"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-28",
+      "sha256": "9daeb3f4331ffa764fc91e0f7f4d408c0c7ee61bae57ce740cfd1fe49616a5c5",
+      "questions": [
+        "分离后首 token 路径由哪些段组成，为什么缩短 prefill kernel 不能同时改善 TTFT 和 ITL？",
+        "从模型形状推导一次 KV 传输的字节和下界时，TP 布局、dtype 和位置规则如何进入传输格式？",
+        "目标侧预留、分块传输与提交点之间的关系是什么，中断时未提交页如何回滚？",
+        "在什么 prompt 长度、到达率和互联条件下共置可能优于分离，P/D 配比由什么决定？",
+        "P 侧提前发送首 token 与等待 D 接管就绪，各自如何影响 TTFT 与第一次间隔？"
+      ],
+      "symptoms": [
+        "TTFT 改善但第一次输出间隔远超后续 ITL",
+        "P 池吞吐很高而 D 侧接管排队使整体 goodput 不升",
+        "平均传输带宽充足但尾部请求因传输拥塞超时"
+      ],
+      "assumes": [
+        "prefill 与 decode 运行在不同实例池",
+        "阶段间存在可测量带宽的 KV 传输链路",
+        "两侧模型、adapter 和位置规则一致"
+      ]
+    },
+    {
+      "id": "K-ALG-014",
+      "path": "algorithms/lora-serving.md",
+      "category": "algorithms",
+      "title": "多 LoRA 服务：低秩计算、驻留与缓存身份",
+      "summary": "LoRA 为共享基座增加低秩映射；多适配器服务将模型复用问题转换成按请求选择增量权重的问题。",
+      "revision": 4,
+      "status": "seed",
+      "tags": [
+        "LoRA",
+        "adapter",
+        "低秩",
+        "多租户",
+        "共同内存池",
+        "异 rank",
+        "adapter 预取",
+        "公平等待",
+        "热切换"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-LORA",
+        "S-VLLM-PREFIX",
+        "S-TORCH-NUMERIC",
+        "S-SLORA"
+      ],
+      "related": [
+        "K-ALG-003",
+        "K-ALG-001",
+        "K-FW-005",
+        "K-SYS-012",
+        "K-WORK-007",
+        "K-SYS-011",
+        "K-SYS-016",
+        "K-ALG-018",
+        "K-TOOLS-007"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-28",
+      "sha256": "ca03b0859aa6ee60a42d690d0d8f8d70a7539db44313875b4210368ebace5a3d",
+      "questions": [
+        "单 adapter 合并进基座与多 adapter 运行时低秩分支在内存和数值上各有什么差别？",
+        "混合 batch 中按 adapter 分组、按 rank 分桶或统一最大 rank 补齐，各自改变哪些成本？",
+        "为什么同 token 前缀在不同 adapter 下的 KV 不能共享，缓存 key 需要包含什么？",
+        "adapter 与 KV 共用分页池时，多保留一个冷 adapter 的机会成本如何用 token 数表达？",
+        "热切换 adapter 版本时，哪些对象必须一起发布，旧版本在途引用如何保持有效？"
+      ],
+      "symptoms": [
+        "低频 adapter 请求的首 token 延迟远高于热租户平均值",
+        "加载新 adapter 后 KV 可驻留请求数明显减少",
+        "同文本在不同 adapter 下返回了相同的缓存状态"
+      ],
+      "assumes": [
+        "多个 LoRA adapter 共享同一基座模型",
+        "存在前缀缓存或分页 KV 管理"
+      ]
+    },
+    {
+      "id": "K-ALG-015",
+      "path": "algorithms/parallelism.md",
+      "category": "algorithms",
+      "title": "推理并行：张量分解、流水、专家与上下文",
+      "summary": "并行策略改变张量归属和同步边界；选择依据是每阶段的计算、状态与通信分解。",
+      "revision": 4,
+      "status": "seed",
+      "tags": [
+        "TP",
+        "PP",
+        "DP",
+        "EP",
+        "CP",
+        "parallelism",
+        "并行",
+        "per-layer ledger",
+        "parallel groups",
+        "MLA MoE scenario"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-NCCL-COLLECTIVE",
+        "S-CUDA-TOPOLOGY",
+        "S-MIXTRAL",
+        "S-DEEPSEEKV3"
+      ],
+      "related": [
+        "K-HW-002",
+        "K-MODEL-003",
+        "K-ALG-013",
+        "K-SYS-005",
+        "K-HW-014",
+        "K-ALG-019",
+        "K-MODEL-006",
+        "K-SYS-012",
+        "K-TOOLS-007",
+        "K-HW-008",
+        "K-MODEL-002",
+        "K-MODEL-009",
+        "K-MODEL-010",
+        "K-SYS-010",
+        "K-WORK-011"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-28",
+      "sha256": "46875292ee131f4d9ee24132e4f8c4685026c4136d21799d3ef700393a600c03",
+      "questions": [
+        "按输出通道与按输入通道切分线性层各自需要什么通信，TP 在小 batch decode 下为何容易被启动延迟主导？",
+        "PP、DP、EP 和 CP 分别扩展哪一轴，各自的气泡、复制和热点代价由什么决定？",
+        "怎样按张量所有者逐层记录本地内容、归约流量和额外缓冲，才能比较不同组合策略？",
+        "多个并行组复用同一批设备时，如何从 rank 映射推出实际设备数而不是简单相乘？",
+        "非整除的 hidden、head、专家或词表维度在分片时允许哪些处理方式，padding 不能进入哪些计算？"
+      ],
+      "symptoms": [
+        "增加 TP 卡数后 decode 单步时间反而上升",
+        "某个 rank 因热点专家成为每层慢端",
+        "PP 下每卡状态占用更低但单请求 ITL 更差"
+      ],
+      "assumes": [
+        "多 GPU 且具有可测量的互联带宽和启动延迟",
+        "Transformer 结构可按通道、层、专家或序列切分",
+        "单请求的 token 仍需串行自回归"
+      ]
+    },
+    {
+      "id": "K-ENGINE-001",
+      "path": "engine-index/vllm-scheduler.md",
+      "category": "engine-index",
+      "title": "调度决策：进度、就绪与资源承诺",
+      "summary": "动态服务的难点是请求的进度、输入就绪和资源可用性不在同一个时刻变化。调度输出需要表达本轮允许执行的逻辑范围及其资源承诺；按 token、请求、时间片或其他单位选择都是设计点。",
+      "revision": 3,
+      "status": "seed",
+      "tags": [
+        "vLLM",
+        "Scheduler",
+        "schedule",
+        "token budget",
+        "independent-design",
+        "scheduling-contract"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [],
+        "runtimes": [
+          "vllm"
+        ],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-VLLM-SCHED",
+        "S-VLLM-CODE",
+        "S-ORCA"
+      ],
+      "related": [
+        "K-ENGINE-002",
+        "K-ENGINE-003",
+        "K-ALG-001",
+        "K-ALG-007",
+        "K-SYS-015",
+        "K-ALG-023",
+        "K-WORK-010",
+        "K-SYS-010"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-27",
+      "sha256": "9e576ff7711ed5e448a4bedfe7ab69949a79bc3f61417bf258f7a3b56caf1fe5",
+      "questions": [
+        "为什么会出现调度决策的问题，输入与状态如何定义？",
+        "哪些依赖与资源条件决定合法性，哪些表示或策略可以更换？",
+        "不同选择怎样改变数据流、状态更新、准备与驻留成本？",
+        "怎样用反例、完成证据和区分实验判断收益与失效？"
+      ],
+      "symptoms": [
+        "请求有空闲显存却未被调度进入执行",
+        "前缀完全命中但仍有模型工作被调度"
+      ],
+      "assumes": [
+        "vLLM V1 固定提交的调度器源码",
+        "自回归 token 进度模型"
+      ]
+    },
+    {
+      "id": "K-ENGINE-002",
+      "path": "engine-index/vllm-kv-manager.md",
+      "category": "engine-index",
+      "title": "状态分配决策：命中、预留、发布与回收",
+      "summary": "缓存命中、存储已经分配、数据已经可用与请求已经完成是不同事实。分配器必须把这些事实接到执行与恢复边界，单个“长度”或“空闲显存”无法完整描述可推进性。",
+      "revision": 3,
+      "status": "seed",
+      "tags": [
+        "vLLM",
+        "KVCacheManager",
+        "allocate_slots",
+        "prefix",
+        "allocator-comparison",
+        "tiered-cache"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [],
+        "runtimes": [
+          "vllm"
+        ],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-VLLM-KV",
+        "S-VLLM-CODE",
+        "S-VLLM-HYBRID"
+      ],
+      "related": [
+        "K-ALG-002",
+        "K-ALG-009",
+        "K-ENGINE-001",
+        "K-SYS-012",
+        "K-ALG-017",
+        "K-ALG-018",
+        "K-SYS-013",
+        "K-ALG-021"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-27",
+      "sha256": "50b09c7a66c1282b7f6f7ac7ef1f265b953b908ae5fba883c9beec4732e1ab89",
+      "questions": [
+        "为什么会出现状态分配决策的问题，输入与状态如何定义？",
+        "哪些依赖与资源条件决定合法性，哪些表示或策略可以更换？",
+        "不同选择怎样改变数据流、状态更新、准备与驻留成本？",
+        "怎样用反例、完成证据和区分实验判断收益与失效？"
+      ],
+      "symptoms": [
+        "空闲显存充足但请求仍因 KV 分配失败无法调度",
+        "请求释放后块长时间未回到可用池"
+      ],
+      "assumes": [
+        "vLLM V1 固定提交的 KV 管理器源码",
+        "按层组和 block pool 管理的分页 KV"
+      ]
+    },
+    {
+      "id": "K-ENGINE-003",
+      "path": "engine-index/vllm-model-runner.md",
+      "category": "engine-index",
+      "title": "执行视图决策：压紧、固定槽与结果归属",
+      "summary": "动态请求集合需要转成设备能执行的张量，但逻辑身份不应随物理行号变化。执行器的核心问题是保持请求、query 位置、缓存写入与输出行之间的可逆对应，并管理这些表示的生存期。",
+      "revision": 3,
+      "status": "seed",
+      "tags": [
+        "vLLM",
+        "GPUModelRunner",
+        "execute_model",
+        "sample_tokens",
+        "executor-contract",
+        "state-generation"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [],
+        "runtimes": [
+          "vllm"
+        ],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-VLLM-RUNNER",
+        "S-VLLM-CODE",
+        "S-TORCH-CUDA"
+      ],
+      "related": [
+        "K-SYS-002",
+        "K-FW-005",
+        "K-ALG-011",
+        "K-ENGINE-001",
+        "K-FW-011",
+        "K-SYS-012",
+        "K-ALG-020",
+        "K-ALG-024"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-27",
+      "sha256": "87d1433d4f64d939ff8f137d1c1d4092cfdf2b3d7ebdd011a0f344cc66564714",
+      "questions": [
+        "为什么会出现执行视图决策的问题，输入与状态如何定义？",
+        "哪些依赖与资源条件决定合法性，哪些表示或策略可以更换？",
+        "不同选择怎样改变数据流、状态更新、准备与驻留成本？",
+        "怎样用反例、完成证据和区分实验判断收益与失效？"
+      ],
+      "symptoms": [
+        "只有混合批出错而单请求执行正确",
+        "图重放地址稳定但上一轮内容尚未消费就被覆盖"
+      ],
+      "assumes": [
+        "vLLM V1 固定提交的 ModelRunner 源码",
+        "调度输出与执行结果通过持久批状态交接"
+      ]
+    },
+    {
+      "id": "K-ENGINE-004",
+      "path": "engine-index/sglang-radix-scheduler.md",
+      "category": "engine-index",
+      "title": "前缀复用决策：树、块链与状态保护",
+      "summary": "前缀复用的动机是相同依赖产生的中间状态可以避免重复计算。索引回答在哪里找到可能相同的前缀，恢复与所有权机制回答它是否能被当前请求安全使用；两者不能合并成一个“命中”布尔值。",
+      "revision": 3,
+      "status": "seed",
+      "tags": [
+        "SGLang",
+        "RadixCache",
+        "prefix",
+        "scheduler",
+        "prefix-index",
+        "distributed-cache-boundary"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [],
+        "runtimes": [
+          "sglang"
+        ],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-SGLANG",
+        "S-SGLANG-CODE"
+      ],
+      "related": [
+        "K-ALG-003",
+        "K-ALG-001",
+        "K-SYS-004",
+        "K-SYS-013",
+        "K-ALG-023",
+        "K-ALG-018",
+        "K-ALG-021"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-27",
+      "sha256": "abf1eb7040f1f6ba697822719094f8cc26172a329d6003a027862ef89de03374",
+      "questions": [
+        "为什么会出现前缀复用决策的问题，输入与状态如何定义？",
+        "哪些依赖与资源条件决定合法性，哪些表示或策略可以更换？",
+        "不同选择怎样改变数据流、状态更新、准备与驻留成本？",
+        "怎样用反例、完成证据和区分实验判断收益与失效？"
+      ],
+      "symptoms": [
+        "前缀命中率高但 TTFT 未改善",
+        "Radix 淘汰后请求重算量突增"
+      ],
+      "assumes": [
+        "固定提交的 SGLang 源码",
+        "以前缀复用为中心的调度"
+      ]
+    },
+    {
+      "id": "K-ENGINE-005",
+      "path": "engine-index/tensorrt-llm.md",
+      "category": "engine-index",
+      "title": "异步执行决策：结果确认、在途状态与回收",
+      "summary": "主机准备、设备计算、采样与外部状态传输可以部分重叠，但自回归依赖与存储生存期不会因异步提交而消失。设计需要区分业务完成、输出提交、设备完成和各个外部消费者结束。",
+      "revision": 3,
+      "status": "seed",
+      "tags": [
+        "TensorRT-LLM",
+        "PyExecutor",
+        "overlap",
+        "KV transfer",
+        "async-ownership",
+        "transfer-boundary"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [
+          "cuda"
+        ],
+        "runtimes": [
+          "tensorrt-llm"
+        ],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-TRTLLM",
+        "S-TRTLLM-CODE"
+      ],
+      "related": [
+        "K-ALG-008",
+        "K-ALG-013",
+        "K-FW-005",
+        "K-SYS-004",
+        "K-ALG-017",
+        "K-ALG-019",
+        "K-HW-014",
+        "K-SYS-014",
+        "K-SYS-012"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-27",
+      "sha256": "6ade1253f3747041bef4a816d82387c3771bff3459a153719cfbd571c2454c0b",
+      "questions": [
+        "为什么会出现异步执行决策的问题，输入与状态如何定义？",
+        "哪些依赖与资源条件决定合法性，哪些表示或策略可以更换？",
+        "不同选择怎样改变数据流、状态更新、准备与驻留成本？",
+        "怎样用反例、完成证据和区分实验判断收益与失效？"
+      ],
+      "symptoms": [
+        "overlap 开启后偶发读到上一轮状态",
+        "传输完成但接收方仍无法消费 KV"
+      ],
+      "assumes": [
+        "固定提交的 TensorRT-LLM 源码",
+        "异步执行器与传输解耦"
+      ]
+    },
+    {
+      "id": "K-FW-001",
+      "path": "frameworks/inference-eval.md",
+      "category": "frameworks",
+      "title": "PyTorch 推理：模块模式、Autograd 与状态突变",
+      "summary": "推理行为由模型模式、梯度记录、dtype/device、模块状态与执行路径共同决定。",
+      "revision": 4,
+      "status": "seed",
+      "tags": [
+        "PyTorch",
+        "inference_mode",
+        "eval",
+        "autograd"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [],
+        "runtimes": [
+          "pytorch"
+        ],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-TORCH-INFERENCE",
+        "S-TORCH-CUDA",
+        "S-TORCH-REPRO",
+        "S-TORCH-DYNAMIC",
+        "S-TORCH-NUMERIC"
+      ],
+      "related": [
+        "K-FW-002",
+        "K-FW-004",
+        "K-SYS-003",
+        "K-FW-011",
+        "K-ALG-016",
+        "K-SYS-015",
+        "K-TOOLS-006",
+        "K-SYS-012",
+        "K-HW-009",
+        "K-TOOLS-004"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-27",
+      "sha256": "9381e25cf021f5338aef4311ba5c95ca2255fead917335c292b79347acf6b4b9",
+      "questions": [
+        "推理模式、梯度记录与模块 eval 状态分别控制什么，为什么它们不能互相替代？",
+        "权重、buffer 与请求状态在前向中的生命期有何不同，哪些可以跨请求共享？",
+        "动态 Python 控制流在什么条件下会阻止设备侧执行被摊薄或被图捕获？",
+        "把模型接入拆成哪些可独立检查的边界，才能把首次分歧定位到某一层？",
+        "eager、编译与图执行在同一模型上的差异来自哪些执行语义，如何用对照区分？"
+      ],
+      "symptoms": [
+        "开启推理模式后显存仍随请求增长",
+        "同一权重在两次调用间输出不同"
+      ],
+      "assumes": [
+        "PyTorch 风格的模块与张量语义",
+        "单进程内加载的模型实例"
+      ]
+    },
+    {
+      "id": "K-FW-002",
+      "path": "frameworks/numerical-reference.md",
+      "category": "frameworks",
+      "title": "数值参考：误差尺度、条件数与首次分歧",
+      "summary": "一个有解释力的数值参考保持任务函数和输入一致，再分层衡量实现重排与近似产生的差异。",
+      "revision": 4,
+      "status": "seed",
+      "tags": [
+        "numerical",
+        "atol",
+        "rtol",
+        "logits",
+        "参考"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [],
+        "runtimes": [
+          "pytorch"
+        ],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-TORCH-NUMERIC",
+        "S-TORCH-REPRO",
+        "S-GPTQ",
+        "S-INT8"
+      ],
+      "related": [
+        "K-ALG-004",
+        "K-ALG-005",
+        "K-TOOLS-006",
+        "K-ALG-016",
+        "K-FW-012",
+        "K-TOOLS-007",
+        "K-SYS-012",
+        "K-FW-001",
+        "K-SYS-006",
+        "K-ALG-021"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-28",
+      "sha256": "1fd41f50cb0f9d425312194896e73373be5be2fe723b7f7c5f4baf49932c797a",
+      "questions": [
+        "数值等价有哪些层次，逐位一致、容差一致与任务质量一致分别对应什么检查？",
+        "怎样从 logits margin 推导输出对误差的敏感性，为什么同一误差在不同位置后果不同？",
+        "首次分歧为什么是因果线索，怎样沿前向定位它而不被后续累积误差误导？",
+        "容差应当从误差尺度推导，为什么它不能用来掩盖状态或索引错误？",
+        "质量与性能结论各自保留哪些不确定性，才能避免把一次通过当作普遍成立？"
+      ],
+      "symptoms": [
+        "参考实现与候选在长序列末尾出现系统性偏差",
+        "改变 batch 大小后数值对比不再通过"
+      ],
+      "assumes": [
+        "存在可独立运行的高精度参考路径",
+        "任务函数与输入可固定"
+      ]
+    },
+    {
+      "id": "K-FW-003",
+      "path": "frameworks/streams-allocator.md",
+      "category": "frameworks",
+      "title": "Stream 与分配器：依赖顺序和对象生存期",
+      "summary": "stream 解决执行顺序，内存生存期解决地址何时可重用；正确的异步程序需要同时满足两种关系。",
+      "revision": 4,
+      "status": "seed",
+      "tags": [
+        "stream",
+        "allocator",
+        "record_stream",
+        "event",
+        "生命周期"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [
+          "cuda",
+          "rocm"
+        ],
+        "runtimes": [
+          "pytorch"
+        ],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-TORCH-CUDA",
+        "S-CUDA-ASYNC",
+        "S-CUDA-ALLOC"
+      ],
+      "related": [
+        "K-ALG-008",
+        "K-FW-005",
+        "K-SYS-004",
+        "K-HW-011",
+        "K-HW-013",
+        "K-ALG-018",
+        "K-SYS-012",
+        "K-FW-006",
+        "K-HW-003",
+        "K-SYS-001",
+        "K-SYS-015",
+        "K-HW-014"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-28",
+      "sha256": "cd6a3f20b72a017afe63af8d1d071f345048b79c8697b504482977539f40b4c3",
+      "questions": [
+        "执行顺序正确的异步程序为什么仍可能地址失效，stream 与分配器各自负责哪一半？",
+        "生产者与消费者跨 stream 时，哪些依赖必须显式表达，哪些由分配器隐式承担？",
+        "共享 workspace 在并发 kernel 之间引入了什么隐式依赖，如何把它显式化？",
+        "多个消费者使用同一缓冲时，完成关系如何汇合后才允许释放？",
+        "取消一个操作与保证其执行顺序为什么是两件事，各自需要什么机制？"
+      ],
+      "symptoms": [
+        "偶发的结果串扰只在多 stream 下出现",
+        "释放后被覆盖的数据被迟到 kernel 读取"
+      ],
+      "assumes": [
+        "CUDA 风格的 stream 与事件模型",
+        "异步提交与延迟释放的分配器"
+      ]
+    },
+    {
+      "id": "K-FW-004",
+      "path": "frameworks/compile-dynamic-shapes.md",
+      "category": "frameworks",
+      "title": "编译与动态形状：Guard、分桶和变体成本",
+      "summary": "图获取、IR/lowering、布局和 guard 将函数映射到目标程序；编译缓存及在线变体必须保持副作用、容量与生命周期契约。",
+      "revision": 4,
+      "status": "seed",
+      "tags": [
+        "compile",
+        "dynamic shapes",
+        "guard",
+        "重编译",
+        "bucketing",
+        "IR",
+        "lowering",
+        "布局传播",
+        "融合",
+        "编译缓存",
+        "TVM",
+        "Ansor"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [],
+        "runtimes": [
+          "pytorch"
+        ],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-TORCH-DYNAMIC",
+        "S-NXDI",
+        "S-TRITON",
+        "S-TVM",
+        "S-ANSOR"
+      ],
+      "related": [
+        "K-FW-005",
+        "K-ALG-007",
+        "K-WORK-003",
+        "K-FW-011",
+        "K-SYS-011",
+        "K-FW-007",
+        "K-MODEL-013",
+        "K-MODEL-014",
+        "K-MODEL-016",
+        "K-FW-001",
+        "K-FW-009",
+        "K-FW-010",
+        "K-MODEL-009",
+        "K-TOOLS-004"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-29",
+      "sha256": "3ccbe7826d55f9b69d57379088f5886eb194cfafda06f091dac30f00107eb812",
+      "questions": [
+        "编译特化到底固定了哪些条件，guard 失效时重编译的成本由什么决定？",
+        "分桶的优化目标是什么，桶的数量与粒度如何在编译成本、padding 与命中率之间权衡？",
+        "编译与 CUDA Graph 分别摊薄什么成本，二者组合时哪些约束必须同时满足？",
+        "从模型函数到 IR、lowering 与执行计划的每一步各自引入哪些布局与融合决定？",
+        "编译缓存与在线变体的身份由哪些条件构成，为什么 shape 相等不足以判定可复用？"
+      ],
+      "symptoms": [
+        "新长度请求触发长时间停顿后才开始执行",
+        "编译后的程序在某些 stride 下结果错误"
+      ],
+      "assumes": [
+        "存在图获取或编译阶段的执行路径",
+        "服务形状在有限集合内变化"
+      ]
+    },
+    {
+      "id": "K-FW-005",
+      "path": "frameworks/cuda-graph-buffers.md",
+      "category": "frameworks",
+      "title": "CUDA Graph：捕获边界、计划状态与变长服务",
+      "summary": "CUDA Graph 的固定地址、动态计划和在途内容所有权需共同验证；卸载、adapter 切换和图池竞争改变合法性与收益。",
+      "revision": 4,
+      "status": "seed",
+      "tags": [
+        "CUDA Graph",
+        "稳定地址",
+        "capture",
+        "replay",
+        "workspace",
+        "graph pool",
+        "LoRA",
+        "offload",
+        "fixed_split_size",
+        "并发重放"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [
+          "cuda"
+        ],
+        "runtimes": [
+          "pytorch"
+        ],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-TORCH-CUDA",
+        "S-CUDA-ASYNC",
+        "S-FI",
+        "S-TRTLLM",
+        "S-FLASHINFERPAPER"
+      ],
+      "related": [
+        "K-ALG-008",
+        "K-ALG-010",
+        "K-FW-006",
+        "K-SYS-004",
+        "K-ALG-019",
+        "K-ALG-014",
+        "K-ALG-017",
+        "K-SYS-012",
+        "K-SYS-011",
+        "K-ENGINE-003",
+        "K-ENGINE-005",
+        "K-FW-003",
+        "K-FW-004",
+        "K-HW-005",
+        "K-SYS-010",
+        "K-TOOLS-008",
+        "K-SYS-024",
+        "K-SYS-025"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-28",
+      "sha256": "1c08b6a70f287162611caabe1d7061b3b5195f72a59664778a1ef83d2d052272",
+      "questions": [
+        "CUDA Graph 实际固定了哪些东西，地址、形状、计划与内容各自属于哪一层约束？",
+        "完整捕获与分段捕获各自把哪些动态工作留在图外，代价如何比较？",
+        "变长批怎样进入静态容量，桶、填充与 mask 各自承担什么？",
+        "attention 的 plan/run 边界为什么不能全部进入图，计划失效的条件是什么？",
+        "图池、工作区与多桶驻留如何挤占 KV 容量，收益与容量账怎样联合计算？"
+      ],
+      "symptoms": [
+        "重放后输出混入上一批请求的内容",
+        "增加图桶后可容纳并发下降"
+      ],
+      "assumes": [
+        "设备支持图捕获与重放",
+        "存在稳定地址的输入输出缓冲"
+      ]
+    },
+    {
+      "id": "K-FW-006",
+      "path": "frameworks/attention-backends.md",
+      "category": "frameworks",
+      "title": "Attention 执行：数学语义、分块归约、低精度与硬件数据流",
+      "summary": "从数学不变量到FA2/FA3、低精度与成本；完整warp映射及共享前缀/量化尾块/图快照案例连接算法、地址与状态生命周期。",
+      "revision": 8,
+      "status": "seed",
+      "tags": [
+        "attention interface",
+        "可见性",
+        "causal 对齐",
+        "分区合并",
+        "LSE",
+        "准备与执行",
+        "摊销边界",
+        "metadata 单位",
+        "KV 布局",
+        "workspace",
+        "图执行",
+        "GQA 物化",
+        "SDPA",
+        "FlashAttention",
+        "FlashInfer",
+        "FlashAttention-2",
+        "FlashAttention2",
+        "FA2",
+        "FlashAttention-3",
+        "FlashAttention3",
+        "FA3",
+        "sliced-Q",
+        "warp specialization",
+        "FP8",
+        "块量化",
+        "概率尺度",
+        "缓冲代次",
+        "GQA 成本模型",
+        "竞争解释",
+        "warp 映射",
+        "共享 bank",
+        "状态快照",
+        "尾块封存",
+        "在途读者"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-FLASH",
+        "S-FLASHATTENTION3",
+        "S-PAGED",
+        "S-SDPA",
+        "S-FA-IMPL",
+        "S-FI",
+        "S-FLASHINFERPAPER",
+        "S-TORCH-CUDA",
+        "S-AITER",
+        "S-FLASHATTENTION2",
+        "S-TRITON",
+        "S-CUDA-CAPABILITY",
+        "S-CUDA-BEST"
+      ],
+      "related": [
+        "K-ALG-004",
+        "K-ALG-010",
+        "K-FW-005",
+        "K-MODEL-006",
+        "K-ALG-022",
+        "K-ALG-021",
+        "K-HW-011",
+        "K-ALG-003",
+        "K-TOOLS-006",
+        "K-FW-003",
+        "K-ALG-016",
+        "K-SYS-003",
+        "K-SYS-012",
+        "K-ALG-002",
+        "K-HW-006",
+        "K-HW-001",
+        "K-TOOLS-008",
+        "K-TOOLS-007",
+        "K-FW-007",
+        "K-ALG-005"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-27",
+      "sha256": "ead758e413f2fd59119e77ce8a91eddd5e5fe6468a315109554d78013df3b4f5",
+      "questions": [
+        "一个 attention backend 接口至少要表达哪些语义，才能判断它是否是等价替换？",
+        "非等长 causal 的对齐约定不同会怎样改变可见集合，如何用绝对位置构造等价 mask？",
+        "分区 attention 合并必须满足哪些不变量，为什么分区重叠会重复计入概率质量？",
+        "一次 attention 调用从逻辑状态可用到输出可消费之间包含哪些真实工作，成本在哪些频率上发生？",
+        "怎样用同一逻辑状态比较不同 backend，才能区分数学接入错误与资源效率差异？",
+        "FA2为何推迟归一化、沿query并行并采用sliced-Q，分别减少什么成本？",
+        "FA3如何合法重叠搬运、QK、softmax与PV，何时因资源或低精度误差反转？",
+        "FP8中Q/K/V与概率的尺度怎样进入分数、归一化和PV，如何分离各阶段误差？",
+        "GQA复用与KV分区分别怎样改变任务数、流量、部分结果、驻留和完整调用时间？",
+        "三级流水更慢时，怎样区分首尾、spill、驻留、编译重叠与准备转换的解释？",
+        "异步加载和矩阵读取各在哪个完成点发布或释放缓冲，如何拒绝旧代事件？",
+        "怎样把16×16 Attention从全局地址映射到lane、共享矩阵、行归约和输出，同时避免猜测fragment内部布局？",
+        "共享前缀、量化尾块与图执行组合时，怎样发布一致快照、取消请求并等待在途读者后复用资源？"
+      ],
+      "symptoms": [
+        "换 backend 后短序列正确但长序列输出漂移",
+        "首次形状调用远慢于后续调用"
+      ],
+      "assumes": [
+        "模型的可见集合、位置规则和head映射已定义",
+        "数值域与允许误差由任务定义，目标设备能力可核对或测量"
+      ]
+    },
+    {
+      "id": "K-FW-007",
+      "path": "frameworks/triton-kernels.md",
+      "category": "frameworks",
+      "title": "Triton Kernel：块程序、布局与融合边界",
+      "summary": "块程序、布局与融合边界连接固定Triton实现；解释descriptor、log2统计、索引范围与调优成本的适用条件。",
+      "revision": 6,
+      "status": "seed",
+      "tags": [
+        "Triton",
+        "tile",
+        "autotune",
+        "fusion",
+        "register spill",
+        "线程布局",
+        "pipeline stages",
+        "调优预算",
+        "split-K",
+        "tensor descriptor",
+        "log2 LSE",
+        "合法域",
+        "index width",
+        "调优摊销",
+        "side effects"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [
+          "cuda",
+          "rocm"
+        ],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-TRITON",
+        "S-CUDA-BEST",
+        "S-ROCM",
+        "S-TVM",
+        "S-ANSOR",
+        "S-TORCH-NUMERIC",
+        "S-TORCH-CUDA"
+      ],
+      "related": [
+        "K-ALG-004",
+        "K-HW-005",
+        "K-HW-006",
+        "K-HW-011",
+        "K-HW-010",
+        "K-HW-004",
+        "K-FW-004",
+        "K-TOOLS-003",
+        "K-TOOLS-007",
+        "K-ALG-016"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-28",
+      "sha256": "819b8ac73ece58b7f1c052416f63fde808d96e68b2c661d83d27379c9c251a65",
+      "questions": [
+        "块程序的 tile 形状与实际线程、寄存器布局之间是什么关系，为什么不能把它们等同？",
+        "融合边界如何从数据流推导，什么情况下融合反而让矩阵路径失效？",
+        "autotune key 应包含哪些条件，调优成本在何种调用频率下才能被收回？",
+        "在线归约的底数与中间统计量的单位为什么是跨内核的契约？",
+        "寄存器、共享存储、spill 与驻留数怎样解释 tile 增大后变慢，各自的观测有何不同？"
+      ],
+      "symptoms": [
+        "更大 tile 在小矩阵上反而更慢",
+        "自动调优后的内核在另一形状上结果错误"
+      ],
+      "assumes": [
+        "块级张量程序语言的执行模型",
+        "目标 GPU 的资源上限可查"
+      ]
+    },
+    {
+      "id": "K-FW-008",
+      "path": "frameworks/mlx-serving.md",
+      "category": "frameworks",
+      "title": "MLX 服务：惰性求值、编译与请求状态",
+      "summary": "MLX 的数组表达式可以延迟执行，服务循环必须明确计算何时提交、何时完成和何时释放状态。",
+      "revision": 4,
+      "status": "seed",
+      "tags": [
+        "MLX",
+        "lazy evaluation",
+        "惰性求值",
+        "explicit state",
+        "compile cache",
+        "stream dependency"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [
+          "metal"
+        ],
+        "runtimes": [
+          "mlx"
+        ],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-MLX",
+        "S-MLX-MEM",
+        "S-MLX-EXEC"
+      ],
+      "related": [
+        "K-HW-007",
+        "K-ALG-008",
+        "K-SYS-004",
+        "K-SYS-012",
+        "K-SYS-015",
+        "K-FW-011",
+        "K-HW-013"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-28",
+      "sha256": "f16f8287e7fd632c26f479dc90c88d0c4468852e86eac1a654ac0914a0958d4e",
+      "questions": [
+        "惰性求值把计算提交与完成分开后，服务循环必须在哪些点显式求值？",
+        "统一内存下数组的所有权与释放时机如何与 stream 依赖一起确定？",
+        "编译、形状与量化在 MLX 中怎样组合，变体数量由什么控制？",
+        "求值、stream 与释放为什么必须放在同一条时序上分析？",
+        "何时值得为固定形状特化，特化的代价落在哪里？"
+      ],
+      "symptoms": [
+        "内存占用在请求结束后不回落",
+        "首次请求延迟远高于稳态"
+      ],
+      "assumes": [
+        "Apple Silicon 统一内存平台",
+        "惰性求值的数组框架"
+      ]
+    },
+    {
+      "id": "K-FW-009",
+      "path": "frameworks/neuron-serving.md",
+      "category": "frameworks",
+      "title": "Neuron/NxD：静态程序承接动态生成",
+      "summary": "Neuron 服务通过形状桶、设备驻留状态和分布式执行组，把可变请求映射到编译后的程序族。",
+      "revision": 4,
+      "status": "seed",
+      "tags": [
+        "Neuron",
+        "NxD",
+        "NEFF",
+        "bucketing",
+        "NEFF lifecycle",
+        "bucket transition",
+        "block to flat"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [
+          "trainium"
+        ],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-NXDI",
+        "S-NKI"
+      ],
+      "related": [
+        "K-HW-008",
+        "K-FW-004",
+        "K-ALG-009",
+        "K-FW-011",
+        "K-SYS-011",
+        "K-SYS-014",
+        "K-ALG-002",
+        "K-MODEL-002"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-28",
+      "sha256": "764904cd51c3f3f766dfccf1be2dff5d71119e858f42b180aa6d9e2fbbb07cd2",
+      "questions": [
+        "静态编译产物的身份由哪些条件构成，桶切换时哪些状态必须延续？",
+        "KV 驻留与状态别名在静态程序中如何表达，与动态分页有何不同？",
+        "编译与服务的联合成本怎样估计，桶数量的上限由什么决定？",
+        "从制品到可接入执行组需要哪些步骤，并行与采样如何进入编译边界？",
+        "桶选择为什么不能替代状态延续，异步执行的组合边界在哪里？"
+      ],
+      "symptoms": [
+        "超出桶范围的请求被拒绝或退化到慢路径",
+        "切换桶后历史状态丢失"
+      ],
+      "assumes": [
+        "静态形状编译的加速器平台",
+        "可执行程序族按桶预编译"
+      ]
+    },
+    {
+      "id": "K-FW-010",
+      "path": "frameworks/nki-tiling.md",
+      "category": "frameworks",
+      "title": "NKI：Partition 轴、片上生存期与 Attention 数据流",
+      "summary": "NKI 的 tile 是带硬件轴语义的片上对象；布局与生存期共同决定 DMA、矩阵和归约引擎的供给。",
+      "revision": 4,
+      "status": "seed",
+      "tags": [
+        "NKI",
+        "partition",
+        "tiling",
+        "PSUM",
+        "SBUF footprint",
+        "PSUM lifetime",
+        "tile legality"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [
+          "trainium"
+        ],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-NKI",
+        "S-FLASH"
+      ],
+      "related": [
+        "K-HW-008",
+        "K-ALG-004",
+        "K-HW-001",
+        "K-ALG-016",
+        "K-HW-011",
+        "K-FW-004"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-28",
+      "sha256": "8ed8c71df2bc2a72671faa7aadbee09a8e52d255cab10370e54eed483c9c3a01",
+      "questions": [
+        "带硬件轴语义的 tile 布局为什么不是抽象转置，partition 轴限制了什么？",
+        "一个 tile 的片上生存期如何推导，PSUM 与 SBUF 的占用怎样决定流水深度？",
+        "矩阵 tile 的可复算资源账包含哪些项，与 GPU 的寄存器账有何不同？",
+        "归约与 attention 的活跃集合在片上如何组织，哪些指令能力限制形状？",
+        "指令能力与形状分支如何影响内核是否合法，而不仅是是否最快？"
+      ],
+      "symptoms": [
+        "内核在某些 head 维度下无法编译",
+        "DMA 供给跟不上矩阵引擎"
+      ],
+      "assumes": [
+        "Trainium 的 SBUF/PSUM 存储层级",
+        "NKI 风格的显式 tile 编程"
+      ]
+    },
+    {
+      "id": "K-HW-001",
+      "path": "hardware/memory-and-roofline.md",
+      "category": "hardware",
+      "title": "容量、算术强度与服务 Roofline",
+      "summary": "容量决定系统能容纳哪些状态，带宽与计算能力决定搬运和处理这些状态的下界，关键路径决定哪些下界实际显现。",
+      "revision": 4,
+      "status": "seed",
+      "tags": [
+        "roofline",
+        "算术强度",
+        "capacity",
+        "bandwidth"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-CUDA-BEST",
+        "S-PAGED",
+        "S-FLASH",
+        "S-CPU-TUNING",
+        "S-SERVERLESSLLM"
+      ],
+      "related": [
+        "K-ALG-005",
+        "K-MODEL-001",
+        "K-WORK-006",
+        "K-HW-010",
+        "K-SYS-012",
+        "K-SYS-015",
+        "K-TOOLS-007",
+        "K-ALG-004",
+        "K-ALG-007",
+        "K-FW-010",
+        "K-HW-007",
+        "K-HW-009",
+        "K-MODEL-002",
+        "K-MODEL-010",
+        "K-TOOLS-003",
+        "K-HW-011",
+        "K-TOOLS-008",
+        "K-SYS-025"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-28",
+      "sha256": "7d0e6ef2eda6c43f6023bb4322438d512179e88ec2df3307621b8882f28da64b",
+      "questions": [
+        "容量账、流量账与计算账分别回答什么问题，为什么分配字节不能当作访存流量？",
+        "权重与 KV 的流量在什么 batch 与历史长度下交换主导地位？",
+        "内存层级如何改变边界流量 D，不同优化作用于哪一项而不能把加速比相乘？",
+        "多条资源边界共享链路或有顺序依赖时，理想下界怎样合并？",
+        "可持续带宽与算力参数应在什么条件下测得，与峰值的差距怎样进入模型？"
+      ],
+      "symptoms": [
+        "优化 kernel 后端到端延迟几乎不变",
+        "按峰值估算的 ITL 预算在真机上无法达到"
+      ],
+      "assumes": [
+        "计算与搬运可部分重叠的执行模型",
+        "单实例内的资源边界可分别计量"
+      ]
+    },
+    {
+      "id": "K-HW-002",
+      "path": "hardware/topology-parallelism.md",
+      "category": "hardware",
+      "title": "通信拓扑：从 Rank 组到瓶颈链路",
+      "summary": "拓扑、方向与共享链路决定通信成本；将理想ring启动项和发送流量放到具体带宽假设中解释。",
+      "revision": 5,
+      "status": "seed",
+      "tags": [
+        "topology",
+        "NUMA",
+        "NVLink",
+        "PCIe",
+        "通信拓扑",
+        "ring latency",
+        "startup cost"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [
+          "cuda"
+        ],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-CUDA-TOPOLOGY",
+        "S-NCCL-COLLECTIVE",
+        "S-NCCL-GROUP",
+        "S-RDMA",
+        "S-GPUDIRECT"
+      ],
+      "related": [
+        "K-ALG-015",
+        "K-ALG-013",
+        "K-SYS-005",
+        "K-HW-014",
+        "K-SYS-013",
+        "K-ALG-023",
+        "K-MODEL-003",
+        "K-WORK-011",
+        "K-SYS-019"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-28",
+      "sha256": "455699479a05ea3eae706aa46d07081f70ff4e2623b6504507d046ac5365353a",
+      "questions": [
+        "把拓扑看作带容量的图后，一次集合操作沿哪些边发送多少字节？",
+        "ring 的启动项与发送流量在不同消息大小下谁主导，怎样放进具体带宽假设？",
+        "NUMA 与网卡亲和如何改变主机到设备与跨节点传输的实际路径？",
+        "共享链路的流量为什么要按方向分别计数，相加峰值会高估什么？",
+        "用真实消息形态校准时，哪些条件必须与服务一致？"
+      ],
+      "symptoms": [
+        "集合通信时间随卡数增加远超线性",
+        "同机两卡之间带宽低于标称"
+      ],
+      "assumes": [
+        "多设备或多节点的执行组",
+        "链路带宽与延迟可测"
+      ]
+    },
+    {
+      "id": "K-HW-003",
+      "path": "hardware/host-device-transfer.md",
+      "category": "hardware",
+      "title": "主机准备、DMA 与流水缓冲",
+      "summary": "主机准备、DMA、计算与消费按对象依赖连接；量化有限批、各池槽位与共享带宽，允许不同放置与传输方式。",
+      "revision": 5,
+      "status": "seed",
+      "tags": [
+        "DMA",
+        "pinned memory",
+        "H2D",
+        "D2H",
+        "流水",
+        "API contract",
+        "可执行设计",
+        "wait_stream",
+        "record_stream",
+        "CPU GPU overlap",
+        "buffer lifetime",
+        "双缓冲",
+        "槽位",
+        "共享带宽"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [
+          "cuda"
+        ],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-CUDA-ASYNC",
+        "S-CUDA-BEST",
+        "S-CUDA-ALLOC",
+        "S-LINUX-IO",
+        "S-TORCH-CUDA"
+      ],
+      "related": [
+        "K-ALG-008",
+        "K-FW-003",
+        "K-MODEL-008",
+        "K-HW-012",
+        "K-HW-013",
+        "K-ALG-020",
+        "K-ALG-017",
+        "K-SYS-001",
+        "K-HW-009",
+        "K-SYS-019",
+        "K-FW-011",
+        "K-HW-014"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-27",
+      "sha256": "e4921a0714af21f7ab1a336f40af662f716f2c64a42dd598eb2cede548c858d2",
+      "questions": [
+        "主机准备为什么不是一次复制，从对象可用到设备可消费之间有哪些阶段？",
+        "流水周期与有限批的完成时间如何由各阶段时间与槽位数共同决定？",
+        "何时减少传输次数比提高单次带宽更有效，判断依据是什么？",
+        "多级输入共享主存或 PCIe 带宽时，每级可用份额怎样分配？",
+        "缓冲池的槽位与代次如何防止迟到 DMA 覆盖新一轮数据？"
+      ],
+      "symptoms": [
+        "CPU 与 GPU 都忙但总延迟没有降低",
+        "增加预取深度后主存带宽先于设备饱和"
+      ],
+      "assumes": [
+        "主机与设备通过 PCIe 类链路连接",
+        "存在可钉住的主机缓冲"
+      ]
+    },
+    {
+      "id": "K-HW-004",
+      "path": "hardware/precision-and-kernel-support.md",
+      "category": "hardware",
+      "title": "数值格式、打包布局与矩阵指令",
+      "summary": "固定架构/指令能力、量化参数布局与实际 dispatch 分别核验，防止把存储格式、指令支持和目标内核性能混为一谈。",
+      "revision": 4,
+      "status": "seed",
+      "tags": [
+        "FP8",
+        "BF16",
+        "INT4",
+        "Tensor Core",
+        "dtype",
+        "WMMA",
+        "scale layout",
+        "INT32 overflow",
+        "CPU dispatch",
+        "FP8 KV"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [
+          "cuda"
+        ],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-CUDA-CAPABILITY",
+        "S-TORCH-NUMERIC",
+        "S-GPTQ",
+        "S-SMOOTHQUANT",
+        "S-AWQ",
+        "S-FLASHINFERPAPER"
+      ],
+      "related": [
+        "K-ALG-005",
+        "K-HW-005",
+        "K-HW-006",
+        "K-FW-012",
+        "K-HW-010",
+        "K-HW-011",
+        "K-TOOLS-003",
+        "K-ALG-021",
+        "K-FW-007",
+        "K-MODEL-014"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-28",
+      "sha256": "3957cd54253b59d24ff704c16020f1627a05ff43295e29ce9e53f78a90f2abe2",
+      "questions": [
+        "一种数值格式可表示并不意味着某算子形态有高效实现，这两件事如何分别核验？",
+        "矩阵指令的形状约束怎样限制 tile 与打包布局的选择？",
+        "量化 scale 的布局、尾部处理与累加范围各自可能在哪里出错？",
+        "固定平台能力表应落到哪一级接口，才能避免把代际能力误用到另一代？",
+        "CPU 与 GPU 的实际 dispatch 怎样核验，仅看库版本为何不够？"
+      ],
+      "symptoms": [
+        "FP8 路径在某张卡上静默回退到更慢实现",
+        "INT32 累加在长归约中溢出"
+      ],
+      "assumes": [
+        "目标设备的 compute capability 已知",
+        "权重与激活格式已固定"
+      ]
+    },
+    {
+      "id": "K-HW-005",
+      "path": "hardware/cuda-execution.md",
+      "category": "hardware",
+      "title": "CUDA 平台：SM 数据流、占用率与执行粒度",
+      "summary": "CUDA 优化应把算法的数据复用映射到 SM 的寄存器、共享存储和 warp 执行，再判断主机提交是否成为瓶颈。",
+      "revision": 4,
+      "status": "seed",
+      "tags": [
+        "CUDA",
+        "SM",
+        "warp",
+        "occupancy"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [
+          "cuda"
+        ],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-CUDA-BEST",
+        "S-CUDA-CAPABILITY",
+        "S-CUDA-ASYNC",
+        "S-FLASHATTENTION3",
+        "S-NCU"
+      ],
+      "related": [
+        "K-ALG-004",
+        "K-FW-005",
+        "K-FW-007",
+        "K-HW-011",
+        "K-SYS-012",
+        "K-ALG-017",
+        "K-TOOLS-007",
+        "K-HW-004",
+        "K-SYS-010",
+        "K-TOOLS-008"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-28",
+      "sha256": "bde91ba4ab599a1d10631aebfde84a91e365ca5165bf30253d89a623c6c20748",
+      "questions": [
+        "执行层级与数据层级如何对应，更高 occupancy 为什么不必然更快？",
+        "按 compute capability 的驻留上限与共享存储上限怎样约束 tile 与流水级数？",
+        "L2 保留区与访问策略窗口适合哪些对象，什么条件下它会把流式访问挤出去？",
+        "从 eager 到图再到常驻 kernel 这一轴上，提交成本与灵活性如何交换？",
+        "时钟控制、ECC 与功耗上限怎样改变可持续参数的含义，测量时应声明什么？"
+      ],
+      "symptoms": [
+        "profiler 内 kernel 时间与服务稳态不一致",
+        "同一配置在另一代 GPU 上共享存储不足"
+      ],
+      "assumes": [
+        "NVIDIA GPU 与 CUDA 执行模型",
+        "目标 compute capability 已确定"
+      ]
+    },
+    {
+      "id": "K-HW-006",
+      "path": "hardware/rocm-execution.md",
+      "category": "hardware",
+      "title": "ROCm 平台：CU、Wave 与 AMD 算子路径",
+      "summary": "ROCm 移植应保持模型语义，同时按 AMD 的执行资源、矩阵指令和库 dispatch 重新推导数据布局与粒度。",
+      "revision": 4,
+      "status": "seed",
+      "tags": [
+        "ROCm",
+        "HIP",
+        "AITER",
+        "AMD",
+        "LDS"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [
+          "rocm"
+        ],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-ROCM",
+        "S-AITER",
+        "S-TRITON"
+      ],
+      "related": [
+        "K-FW-006",
+        "K-FW-007",
+        "K-HW-004",
+        "K-HW-011",
+        "K-HW-013",
+        "K-ALG-020"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-28",
+      "sha256": "b04d187e5f1987418b5c5cc8ae2723fc07d4877b220265eac6ed79fa32f7673a",
+      "questions": [
+        "可移植 API 背后 CU、wave 与 LDS 的资源参数如何改变数据布局与粒度选择？",
+        "算子库与引擎的接口在 AMD 平台上有哪些不同的能力边界？",
+        "移植时语义、布局与资源三层应如何拆开，各层的验证依据是什么？",
+        "哪些性能信号可以区分指令布局不匹配与资源不足？",
+        "同一 dtype 在 CUDA 与 ROCm 上的矩阵指令布局差异会带来什么转换成本？"
+      ],
+      "symptoms": [
+        "移植后结果正确但性能远低于预期",
+        "同名参数在 AMD 上含义不同"
+      ],
+      "assumes": [
+        "AMD GPU 与 ROCm/HIP 执行模型",
+        "模型语义已在另一平台验证"
+      ]
+    },
+    {
+      "id": "K-HW-007",
+      "path": "hardware/metal-unified-memory.md",
+      "category": "hardware",
+      "title": "Apple Silicon：统一内存、带宽与交互式推理",
+      "summary": "统一内存减少显式设备间搬运，但 CPU/GPU 仍共享容量、带宽并通过依赖控制可见性。",
+      "revision": 4,
+      "status": "seed",
+      "tags": [
+        "metal",
+        "Apple Silicon",
+        "unified memory"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [
+          "metal"
+        ],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-MLX-MEM",
+        "S-MLX"
+      ],
+      "related": [
+        "K-FW-008",
+        "K-HW-001",
+        "K-WORK-001",
+        "K-HW-013",
+        "K-ALG-020",
+        "K-SYS-012"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-28",
+      "sha256": "2150baabf2d5caf5240b610924420e1a92de8d802f90e7af41681c5b30a4a348",
+      "questions": [
+        "共享地址空间消除了哪些搬运，CPU 与 GPU 仍在哪些资源上竞争？",
+        "小设备上容量如何转化为可用性，哪些对象必须常驻？",
+        "放置计算而不复制数组时，可见性由什么依赖保证？",
+        "求值边界与内存压力怎样检查，统一内存下的峰值由什么决定？",
+        "交互式推理在这类设备上的服务策略受哪些带宽与容量约束？"
+      ],
+      "symptoms": [
+        "没有显式复制仍出现等待",
+        "内存压力触发后吞吐骤降"
+      ],
+      "assumes": [
+        "CPU/GPU 共享物理内存的平台",
+        "单用户或少量并发"
+      ]
+    },
+    {
+      "id": "K-HW-008",
+      "path": "hardware/trainium-dataflow.md",
+      "category": "hardware",
+      "title": "Trainium：HBM、SBUF、PSUM 与编译执行",
+      "summary": "Trainium 的高效执行来自把张量分块映射到片上存储和专用引擎，同时让静态可执行程序承接动态服务状态。",
+      "revision": 4,
+      "status": "seed",
+      "tags": [
+        "trainium",
+        "Neuron",
+        "SBUF",
+        "PSUM",
+        "NKI",
+        "HBM traffic",
+        "executable residency",
+        "bank contention"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [
+          "trainium"
+        ],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-NKI",
+        "S-NXDI"
+      ],
+      "related": [
+        "K-FW-009",
+        "K-FW-010",
+        "K-ALG-009",
+        "K-FW-011",
+        "K-HW-014",
+        "K-ALG-015",
+        "K-SYS-012"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-28",
+      "sha256": "d96f2356e2b46635f74d2c916dd469397fbfd4b8fa78c0e6659bd3df360b5137",
+      "questions": [
+        "HBM、SBUF 与 PSUM 三层存储和专用引擎如何分工，数据流由什么驱动？",
+        "attention 在这种数据流上怎样组织，哪些中间量必须留在片上？",
+        "编译形状与服务形状之间的差距怎样承接，桶与填充的代价是什么？",
+        "存储层级为什么需要容量与流量两本账，可执行程序驻留如何计入？",
+        "从单算子到一个服务实例需要补齐哪些状态与调度关系？"
+      ],
+      "symptoms": [
+        "片上存储 bank 冲突导致引擎空转",
+        "可执行程序驻留挤占状态容量"
+      ],
+      "assumes": [
+        "Trainium 类静态编译加速器",
+        "专用引擎按张量块执行"
+      ]
+    },
+    {
+      "id": "K-HW-009",
+      "path": "hardware/cpu-serving.md",
+      "category": "hardware",
+      "title": "CPU 推理：线程、缓存层级与 NUMA 分区",
+      "summary": "CPU 服务优化需要同时管理向量算术、内存带宽、线程调度与请求级并发，更多线程不等于更多有效工作。",
+      "revision": 4,
+      "status": "seed",
+      "tags": [
+        "cpu",
+        "NUMA",
+        "线程",
+        "vectorization",
+        "绑核",
+        "线程池",
+        "TLB",
+        "CPU bandwidth"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [
+          "cpu"
+        ],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-CPU-TUNING",
+        "S-TORCH-NUMERIC",
+        "S-GOTO",
+        "S-INT8",
+        "S-PERF"
+      ],
+      "related": [
+        "K-HW-001",
+        "K-WORK-002",
+        "K-FW-001",
+        "K-HW-010",
+        "K-FW-012",
+        "K-SYS-015",
+        "K-SYS-012",
+        "K-TOOLS-003",
+        "K-HW-003",
+        "K-TOOLS-001",
+        "K-WORK-011",
+        "K-SYS-019",
+        "K-MODEL-015"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-28",
+      "sha256": "6bfd47de1fea8fc2d1ec69e876f47b33bd945a22df8a21de8840346b53eee5f9",
+      "questions": [
+        "工作粒度与线程、缓存、带宽资源如何匹配，更多线程为何不等于更多有效工作？",
+        "NUMA 归属怎样推导，内存放置错误会在哪些指标上显现？",
+        "低成本原型可以验证哪些关系，哪些结论不能外推到完整服务？",
+        "建立 CPU 执行能力表需要测哪些项，测量条件如何声明？",
+        "绑核、线程池、等待与预取各自解释哪类退化，如何用信号区分？"
+      ],
+      "symptoms": [
+        "增加线程后吞吐不升反降",
+        "跨 NUMA 访问使带宽减半"
+      ],
+      "assumes": [
+        "多核 CPU 与可查询的缓存层级",
+        "单机内的服务实例"
+      ]
+    },
+    {
+      "id": "K-MODEL-001",
+      "path": "models/prefill-decode-state.md",
+      "category": "models",
+      "title": "从模型计算图推导 Prefill、Decode 与持久状态",
+      "summary": "模型计算图和状态语义解释 token、位置、请求与执行阶段的依赖；参考边界帮助验证实现，不规定构建顺序。",
+      "revision": 7,
+      "status": "seed",
+      "tags": [
+        "prefill",
+        "decode",
+        "计算图",
+        "模型结构",
+        "模型接入",
+        "checkpoint",
+        "forward",
+        "状态契约"
+      ],
+      "scope": {
+        "model_families": [
+          "transformer"
+        ],
+        "platforms": [],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-TRANSFORMER",
+        "S-HF-CACHE",
+        "S-SARATHI",
+        "S-MISTRAL",
+        "S-MLA",
+        "S-MAMBA",
+        "S-WHISPER",
+        "S-QWEN-VL"
+      ],
+      "related": [
+        "K-MODEL-002",
+        "K-MODEL-004",
+        "K-MODEL-006",
+        "K-SYS-007",
+        "K-FW-011",
+        "K-ALG-016",
+        "K-SYS-012",
+        "K-HW-001"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-28",
+      "sha256": "81edc95498ce71ea7d4b7d92e0f2faafe531e39a57ef38d56d045a8c9fd9a39d",
+      "questions": [
+        "自回归前向在 prefill 与 decode 阶段各自计算什么，哪些量跨 token 持久、哪些只在层内临时存在？",
+        "怎样用算术强度解释两个阶段的瓶颈差异，为什么同一 kernel 不能同时对两者最优？",
+        "模型档案应还原哪些语义（位置、可见性、head 映射、归一化约定），才足以独立实现一个 forward？",
+        "持久状态、临时激活与输出提交各自的生命期如何划分，混淆它们会造成什么错误？",
+        "从固定制品还原最小 forward 时，哪些结构事实要从来源坐标核对而不能靠名字推断？"
+      ],
+      "symptoms": [
+        "短 prompt 的首 token 慢于预期",
+        "decode 吞吐随 batch 增大而非线性增长"
+      ],
+      "assumes": [
+        "含 decoder 的 transformer 模型",
+        "权重以标准制品格式提供"
+      ]
+    },
+    {
+      "id": "K-MODEL-002",
+      "path": "models/gqa-kv-heads.md",
+      "category": "models",
+      "title": "MHA、GQA 与 MQA：头映射和带宽复用",
+      "summary": "GQA 让多个 query heads 读取同一组 K/V；逻辑共享可以减少状态，但是否减少实际访存取决于 kernel。",
+      "revision": 5,
+      "status": "seed",
+      "tags": [
+        "GQA",
+        "MQA",
+        "KV heads",
+        "缓存头数",
+        "uneven heads",
+        "quantized pages",
+        "replicated KV"
+      ],
+      "scope": {
+        "model_families": [
+          "transformer"
+        ],
+        "platforms": [],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-GQA",
+        "S-HF-CACHE",
+        "S-FI",
+        "S-KIVI",
+        "S-NXDI"
+      ],
+      "related": [
+        "K-ALG-002",
+        "K-ALG-004",
+        "K-MODEL-006",
+        "K-HW-001",
+        "K-ALG-021",
+        "K-ALG-015",
+        "K-SYS-009",
+        "K-ALG-005",
+        "K-FW-009",
+        "K-MODEL-001"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-28",
+      "sha256": "5299d5dbc7bca963628149a1fd4331c8feadf1d799eb787051e98f0b73801e80",
+      "questions": [
+        "query head、KV head 与分组比之间的关系怎样决定缓存大小与读取量？",
+        "逻辑共享 K/V 能减少容量，为什么实际访存是否减少取决于 kernel？",
+        "张量并行下 KV head 怎样归属到各 rank，非整除时如何写完整映射？",
+        "从错误的输出形态怎样回到 head 映射错误，哪些检查能区分它与数值误差？",
+        "分页与量化为什么不能改变 head 身份，页内布局与 head 轴如何共同约束？"
+      ],
+      "symptoms": [
+        "GQA 模型显存占用与 MHA 相同",
+        "TP 切分后某些 head 输出错位"
+      ],
+      "assumes": [
+        "使用 GQA 或 MQA 的 transformer",
+        "KV 以 head 为轴存储"
+      ]
+    },
+    {
+      "id": "K-MODEL-003",
+      "path": "models/moe-routing.md",
+      "category": "models",
+      "title": "MoE：路由、Dispatch/Combine 与专家负载",
+      "summary": "MoE 的条件计算节省激活 FLOPs，但全部专家的驻留和路由后的不均衡决定真实服务成本。",
+      "revision": 5,
+      "status": "seed",
+      "tags": [
+        "MoE",
+        "routing",
+        "dispatch",
+        "combine",
+        "expert parallel",
+        "grouped GEMM",
+        "expert replicas",
+        "routing skew"
+      ],
+      "scope": {
+        "model_families": [
+          "moe"
+        ],
+        "platforms": [],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-MIXTRAL",
+        "S-MLA",
+        "S-NCCL-COLLECTIVE",
+        "S-DEEPSEEKV3"
+      ],
+      "related": [
+        "K-ALG-015",
+        "K-HW-002",
+        "K-WORK-003",
+        "K-ALG-019",
+        "K-ALG-020",
+        "K-HW-010",
+        "K-HW-011",
+        "K-SYS-012"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-28",
+      "sha256": "d1d638c247eafc9010d29796544397e196fd7dfd7d74374d4c7bd6b56203393a",
+      "questions": [
+        "一次 MoE 层中路由、dispatch、专家计算与 combine 之间的数据关系是什么？",
+        "激活参数与驻留参数为何不同，服务成本由哪一个决定？",
+        "专家并行的通信形态随 batch 与路由分布怎样变化，慢端如何出现？",
+        "grouped GEMM 处理的是一组形状不同的矩阵，这对 kernel 与调度意味着什么？",
+        "专家副本改变放置而不改变函数，驻留、卸载与通信重叠如何共同选择？"
+      ],
+      "symptoms": [
+        "MoE 某些 batch 特别慢",
+        "每 token 稀疏但权重仍频繁加载"
+      ],
+      "assumes": [
+        "稀疏门控的专家混合层",
+        "专家总量超过单设备驻留"
+      ]
+    },
+    {
+      "id": "K-MODEL-004",
+      "path": "models/recurrent-hybrid-state.md",
+      "category": "models",
+      "title": "SSM 与混合模型：递归状态、扫描与恢复",
+      "summary": "递归状态是前缀的压缩摘要；它支持低增长成本的 decode，却改变了前缀复用、回滚和批次管理方式。",
+      "revision": 5,
+      "status": "seed",
+      "tags": [
+        "Mamba",
+        "SSM",
+        "recurrent",
+        "混合模型",
+        "state checkpoint",
+        "associative scan",
+        "speculative rollback",
+        "joint checkpoint"
+      ],
+      "scope": {
+        "model_families": [
+          "ssm",
+          "hybrid"
+        ],
+        "platforms": [],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-MAMBA",
+        "S-VLLM-HYBRID",
+        "S-HF-CACHE"
+      ],
+      "related": [
+        "K-ALG-009",
+        "K-ALG-006",
+        "K-ALG-003",
+        "K-ALG-017",
+        "K-ALG-024",
+        "K-HW-011",
+        "K-SYS-014",
+        "K-MODEL-001"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-28",
+      "sha256": "5783c56358962d2a76342003d5d252d9b55441e9ff70a776c4d9b250a7c24f15",
+      "questions": [
+        "递归状态作为前缀的压缩摘要，它的存储复杂度与 KV 有何不同？",
+        "混合模型的状态包包含哪些内容，前缀缓存为什么从连续页变成检查点？",
+        "scan 的并行依据是什么，片上收益来自何处？",
+        "投机接受位置必须能恢复，递归状态被覆盖后如何回滚？",
+        "分层迁移为什么仍以完整快照为边界，部分迁移会破坏什么？"
+      ],
+      "symptoms": [
+        "前缀命中后递归层输出不一致",
+        "投机拒绝后无法回到正确状态"
+      ],
+      "assumes": [
+        "含 SSM 或线性递归层的模型",
+        "状态按请求持久"
+      ]
+    },
+    {
+      "id": "K-MODEL-005",
+      "path": "models/encoder-decoder-streaming.md",
+      "category": "models",
+      "title": "Encoder-decoder：源表示、两套 Attention 与流式边界",
+      "summary": "Encoder-decoder 将源编码和目标生成分开；固定源复用、流式追加和目标自回归具有不同的依赖结构。",
+      "revision": 4,
+      "status": "seed",
+      "tags": [
+        "encoder decoder",
+        "Whisper",
+        "Moonshine",
+        "ASR",
+        "streaming",
+        "ASR commit",
+        "WER latency",
+        "streaming scenario"
+      ],
+      "scope": {
+        "model_families": [
+          "encoder-decoder"
+        ],
+        "platforms": [],
+        "runtimes": [],
+        "workloads": [
+          "speech",
+          "multimodal"
+        ]
+      },
+      "source_ids": [
+        "S-TRANSFORMER",
+        "S-WHISPER",
+        "S-MOONSHINE"
+      ],
+      "related": [
+        "K-ALG-010",
+        "K-MODEL-011",
+        "K-SYS-007",
+        "K-SYS-015",
+        "K-SYS-004",
+        "K-WORK-005",
+        "K-MODEL-012",
+        "K-TOOLS-007",
+        "K-SYS-010"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-28",
+      "sha256": "94911222370093000a93b5ba9a2c95376edc09741df865056067ffbe613ad2a8",
+      "questions": [
+        "源编码、目标生成与交叉读取三段计算各自依赖什么，一次编码为何还不足以描述缓存？",
+        "离线切块与真正流式的差别在哪里，双向 encoder 的切片为什么会改变表示？",
+        "服务目标怎样从用户时间尺度推导，首字延迟与稳定输出各由什么决定？",
+        "从声音采集到稳定文字的提交链有哪些阶段，哪些输出可以撤回？",
+        "多路低延迟转写的资源预算如何在 encoder 与 decoder 之间分配？"
+      ],
+      "symptoms": [
+        "decode 随源长异常增长",
+        "流式转写末尾文字频繁改写"
+      ],
+      "assumes": [
+        "encoder-decoder 结构",
+        "源输入可分段到达"
+      ]
+    },
+    {
+      "id": "K-MODEL-006",
+      "path": "models/mla.md",
+      "category": "models",
+      "title": "MLA：压缩状态、矩阵吸收与解耦 RoPE",
+      "summary": "MLA 通过缓存低维 latent 改变 KV 的表示；真正节省 decode 流量需要执行内核沿压缩表示计算。",
+      "revision": 5,
+      "status": "seed",
+      "tags": [
+        "MLA",
+        "DeepSeek",
+        "latent",
+        "矩阵吸收",
+        "latent quantization",
+        "TP replicated latent",
+        "workspace audit"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-MLA",
+        "S-FI",
+        "S-TORCH-NUMERIC",
+        "S-DEEPSEEKV3",
+        "S-KIVI"
+      ],
+      "related": [
+        "K-MODEL-002",
+        "K-ALG-004",
+        "K-ALG-009",
+        "K-ALG-021",
+        "K-ALG-015",
+        "K-HW-011",
+        "K-SYS-009",
+        "K-FW-006",
+        "K-MODEL-001"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-28",
+      "sha256": "59f1239c511007cd148286fe31f7a3b968cebda5c2e6c6c7464512cc59e2d368",
+      "questions": [
+        "MLA 压缩的对象是什么，为什么可以不展开历史 K/V 就完成 attention？",
+        "prefill 与 decode 为什么可以采用不同实现，吸收是否落实如何验证？",
+        "量化放在 latent 还是展开后，被验证的函数有何不同？",
+        "TP 与 EP 下 latent 状态的归属为何不同，复制 latent 的代价是什么？",
+        "怎样观察展开发生在哪里，容量变小但带宽未降说明什么？"
+      ],
+      "symptoms": [
+        "MLA 容量小但带宽未降",
+        "吸收后数值与参考偏差增大"
+      ],
+      "assumes": [
+        "使用多头潜在注意力的模型",
+        "latent 维度远小于展开 KV"
+      ]
+    },
+    {
+      "id": "K-MODEL-007",
+      "path": "models/sliding-window-attention.md",
+      "category": "models",
+      "title": "窗口与稀疏 Attention：可见性、位置和状态保留",
+      "summary": "窗口限制的是每个 query 的直接可见历史；逻辑位置与跨层信息传播仍然持续演进。",
+      "revision": 5,
+      "status": "seed",
+      "tags": [
+        "sliding window",
+        "稀疏注意力",
+        "ring buffer",
+        "SWA",
+        "native sparsity",
+        "approximate pruning",
+        "sparse index cost"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-MISTRAL",
+        "S-HF-CACHE",
+        "S-VLLM-HYBRID",
+        "S-KIVI",
+        "S-H2O"
+      ],
+      "related": [
+        "K-SYS-003",
+        "K-ALG-009",
+        "K-ALG-004",
+        "K-ALG-021",
+        "K-ALG-018",
+        "K-HW-011"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-28",
+      "sha256": "03cb4add0c40866b2e94b8967be096cece92e1634e817e21c38c5784ab6fc2e6",
+      "questions": [
+        "窗口限制的是什么，逻辑位置与跨层信息传播为什么仍持续演进？",
+        "环形存储如何与绝对位置对应，窗口移动时哪些状态可以覆盖？",
+        "稀疏规则怎样变成性能，什么条件下索引开销主导？",
+        "原生可见性与运行时近似为什么要分开验证，各自的质量边界在哪？",
+        "索引构造进入关键路径后，质量与压力的联合边界如何测？"
+      ],
+      "symptoms": [
+        "窗口层缓存未随长度封顶",
+        "稀疏 attention 在短序列上更慢"
+      ],
+      "assumes": [
+        "含滑动窗口或稀疏注意力层的模型",
+        "逻辑位置连续"
+      ]
+    },
+    {
+      "id": "K-MODEL-008",
+      "path": "models/vision-language.md",
+      "category": "models",
+      "title": "视觉语言模型：Patch、模态桥接与联合位置",
+      "summary": "VLM 的真实输入规模由处理器生成的视觉 token 决定，文本长度只描述其中一部分。",
+      "revision": 5,
+      "status": "seed",
+      "tags": [
+        "VLM",
+        "vision language",
+        "MRoPE",
+        "Qwen2.5-VL",
+        "多模态",
+        "media pipeline",
+        "visual cache",
+        "VLM scenario"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-QWEN-VL",
+        "S-TRANSFORMER",
+        "S-HF-CACHE"
+      ],
+      "related": [
+        "K-ALG-010",
+        "K-SYS-007",
+        "K-WORK-003",
+        "K-SYS-015",
+        "K-SYS-012",
+        "K-ALG-023",
+        "K-WORK-005",
+        "K-HW-003",
+        "K-MODEL-012",
+        "K-SYS-010",
+        "K-MODEL-014"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-29",
+      "sha256": "9840acf19c6453c5ba8e660d274d1b50b3d8a6d256a87f426ecba836aae2ec65",
+      "questions": [
+        "VLM 的真实输入规模由什么决定，文本长度为何只描述其中一部分？",
+        "一次输入的几何账本包含哪些项，分辨率与 patch 规则如何改变 token 数？",
+        "batch 与缓存在视觉 token 上有哪些不同于文本的约束？",
+        "从结构怎样推导服务指标，预处理与编码各占多少？",
+        "媒体、视觉与语言三段容量如何分别计量，两种缓存与三阶段队列怎样组织？"
+      ],
+      "symptoms": [
+        "高分辨率图片使 TTFT 远超文本",
+        "视觉缓存命中率低于前缀缓存"
+      ],
+      "assumes": [
+        "视觉编码器加语言模型的结构",
+        "媒体处理器生成视觉 token"
+      ]
+    },
+    {
+      "id": "K-MODEL-009",
+      "path": "models/image-diffusion.md",
+      "category": "models",
+      "title": "图像扩散：迭代求解、条件复用与 CFG",
+      "summary": "扩散服务围绕不断变化的 latent 做多步求解；可复用对象由每步依赖决定，不能沿用自回归 KV 的全部规则。",
+      "revision": 4,
+      "status": "seed",
+      "tags": [
+        "diffusion",
+        "DiT",
+        "CFG",
+        "图像生成",
+        "VAE",
+        "scheduler numerics",
+        "diffusion cache",
+        "CFG batching"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-LDM",
+        "S-DIT",
+        "S-DIFFUSERS",
+        "S-WAN"
+      ],
+      "related": [
+        "K-MODEL-010",
+        "K-ALG-010",
+        "K-FW-004",
+        "K-WORK-005",
+        "K-HW-011",
+        "K-ALG-015",
+        "K-SYS-012",
+        "K-TOOLS-007",
+        "K-MODEL-011",
+        "K-SYS-010"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-28",
+      "sha256": "a1f61a56e552feda7c61d20be283b32fc415277e2e0427a1c883e8662684c33c",
+      "questions": [
+        "扩散服务的状态与执行链是什么，哪些对象可以跨步复用？",
+        "CFG 的计算形态如何影响 batch 组织与成本？",
+        "步数、质量与缓存的共同目标如何权衡，跨步近似的边界在哪？",
+        "scheduler 为什么是数值执行契约，更换它会改变什么？",
+        "在固定显存预算下，分辨率、batch 与步数的可行组合由什么决定？"
+      ],
+      "symptoms": [
+        "减少步数后质量断崖下降",
+        "CFG 使显存翻倍"
+      ],
+      "assumes": [
+        "迭代去噪的生成模型",
+        "latent 空间的 DiT 或 UNet"
+      ]
+    },
+    {
+      "id": "K-MODEL-010",
+      "path": "models/video-generation.md",
+      "category": "models",
+      "title": "视频生成：时空 Token、全局耦合与分块解码",
+      "summary": "视频生成把时间加入 latent 几何，时间压缩、时空 attention 和输出解码共同决定可服务规模。",
+      "revision": 4,
+      "status": "seed",
+      "tags": [
+        "video generation",
+        "视频生成",
+        "时空",
+        "3D VAE",
+        "spatiotemporal sharding",
+        "causal VAE state",
+        "video scenario"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-WAN",
+        "S-DIT",
+        "S-DIFFUSERS"
+      ],
+      "related": [
+        "K-MODEL-009",
+        "K-ALG-015",
+        "K-HW-001",
+        "K-HW-014",
+        "K-SYS-015",
+        "K-SYS-012",
+        "K-WORK-005",
+        "K-SYS-010"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-28",
+      "sha256": "505efc65a61e7f3db1f548b61692791ca2b6743f188a41fa5556be63047ff599",
+      "questions": [
+        "时间轴为什么迅速放大成本，时空 token 数由哪些因子相乘？",
+        "计算分块与语义分块有何不同，各自的通信与质量代价是什么？",
+        "多卡下时空切分有哪两种通信路径，选择依据是什么？",
+        "时间压缩为什么不能忽略首帧规则，causal VAE 的状态如何延续？",
+        "长视频跨多卡完整交付需要哪些阶段，输出解码的瓶颈在哪？"
+      ],
+      "symptoms": [
+        "视频长度翻倍而延迟增长数倍",
+        "分块解码出现边界伪影"
+      ],
+      "assumes": [
+        "时空 latent 的视频生成模型",
+        "3D VAE 编解码"
+      ]
+    },
+    {
+      "id": "K-MODEL-011",
+      "path": "models/speech-generation.md",
+      "category": "models",
+      "title": "语音生成：Codec Token、声学块与播放时钟",
+      "summary": "语音服务需要把模型生成时钟转换为音频播放时钟，首包和稳定供给由多个阶段共同决定。",
+      "revision": 3,
+      "status": "seed",
+      "tags": [
+        "TTS",
+        "speech generation",
+        "codec",
+        "音频",
+        "首包",
+        "audio chunk deadlines",
+        "codec lookahead",
+        "playback cancellation"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-OMNI",
+        "S-MOONSHINE",
+        "S-WHISPER"
+      ],
+      "related": [
+        "K-MODEL-005",
+        "K-WORK-001",
+        "K-SYS-008",
+        "K-SYS-015",
+        "K-SYS-004",
+        "K-SYS-014",
+        "K-WORK-005",
+        "K-MODEL-009",
+        "K-MODEL-012",
+        "K-SYS-010"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-27",
+      "sha256": "9cab040f27f77dc8040a6cc6f0ae96a175542e4379e2262ca2cdb53fb9aee3a4",
+      "questions": [
+        "常见语音生成链的状态有哪些，模型时钟如何转换为播放时钟？",
+        "流式解码的边界在哪里，codec 的前瞻需求如何影响首包？",
+        "用缓冲模型推导服务目标时，首包与稳定供给各由什么决定？",
+        "不同生成链为什么需要各自的执行预算，一个声学块的算例说明什么？",
+        "打断、抖动与质量为什么要一起测，播放取消如何回收资源？"
+      ],
+      "symptoms": [
+        "首包快但播放中途卡顿",
+        "打断后旧音频继续输出"
+      ],
+      "assumes": [
+        "codec token 驱动的 TTS 结构",
+        "客户端按实时播放消费"
+      ]
+    },
+    {
+      "id": "K-MODEL-012",
+      "path": "models/omni-multimodal.md",
+      "category": "models",
+      "title": "全模态系统：多时钟、分支依赖与背压",
+      "summary": "全模态推理是多个有依赖的计算分支组成的系统；文本、视频和音频不能压成同一个 token 长度。",
+      "revision": 4,
+      "status": "seed",
+      "tags": [
+        "omni",
+        "Thinker",
+        "Talker",
+        "多时钟",
+        "全模态",
+        "full duplex system",
+        "multimodal resource budget",
+        "branch backpressure"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-OMNI",
+        "S-QWEN-VL",
+        "S-OTEL"
+      ],
+      "related": [
+        "K-MODEL-008",
+        "K-MODEL-011",
+        "K-SYS-008",
+        "K-WORK-003",
+        "K-SYS-015",
+        "K-SYS-014",
+        "K-WORK-005",
+        "K-WORK-010",
+        "K-SYS-012",
+        "K-MODEL-005",
+        "K-SYS-010"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-28",
+      "sha256": "44c0a3c2a8b19dd82a82072e05449b66e2b0b92ed276151df734020d08f1becb",
+      "questions": [
+        "全模态系统的分支与时钟如何划分，为什么不能压成同一 token 长度？",
+        "用数据流图安排资源时，分支依赖与背压如何表达？",
+        "请求身份扩展到模态块后，取消与恢复的粒度是什么？",
+        "完整质量和性能关系如何定义，哪个分支的延迟决定用户体验？",
+        "双向语音交互中领先距离、优先级与可恢复状态如何共同设计？"
+      ],
+      "symptoms": [
+        "视频分支拖慢语音响应",
+        "取消后其他分支继续消耗资源"
+      ],
+      "assumes": [
+        "多分支多模态模型",
+        "分支之间存在数据依赖"
+      ]
+    },
+    {
+      "id": "K-SYS-001",
+      "path": "system-semantics/host-device-timing.md",
+      "category": "system-semantics",
+      "title": "主机与设备时间：偏序、区间并集和关键路径",
+      "summary": "服务延迟来自生产、提交、执行与消费之间的依赖路径；主机 API 区间与设备工作区间可以重叠。",
+      "revision": 4,
+      "status": "seed",
+      "tags": [
+        "timing",
+        "异步",
+        "区间并集",
+        "关键路径",
+        "clock-domain",
+        "critical-path",
+        "uncertainty",
+        "io-timeline"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-CUDA-ASYNC",
+        "S-NSYS",
+        "S-OTEL",
+        "S-RDMA",
+        "S-LINUX-IO"
+      ],
+      "related": [
+        "K-TOOLS-002",
+        "K-FW-003",
+        "K-ALG-008",
+        "K-HW-012",
+        "K-HW-014",
+        "K-SYS-009",
+        "K-TOOLS-007",
+        "K-HW-003",
+        "K-TOOLS-001",
+        "K-WORK-001"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-28",
+      "sha256": "54ecd16989b483f0b68d255439c5443baf6553c0bcd895adc7f0f91ebfb37e71",
+      "questions": [
+        "主机 API 区间与设备工作区间可以重叠，延迟为什么不等于累计时长？",
+        "累计时长、忙碌时长与延迟三个口径各自回答什么问题？",
+        "怎样由时间线选择改动，关键路径如何从依赖图而非热点得到？",
+        "跨节点时钟如何判断可比较，等待怎样计算？",
+        "加载、传输与计算的完整路径怎样用相反预测核对瓶颈？"
+      ],
+      "symptoms": [
+        "kernel 总时长远小于端到端延迟",
+        "跨节点时间戳出现负等待"
+      ],
+      "assumes": [
+        "主机与设备异步执行",
+        "事件可带时间戳采集"
+      ]
+    },
+    {
+      "id": "K-SYS-002",
+      "path": "system-semantics/request-batch-identity.md",
+      "category": "system-semantics",
+      "title": "请求身份：逻辑序列、批次视图与结果归属",
+      "summary": "请求是长期语义对象，batch 行与物理槽是临时执行位置；正确性依赖它们之间可追溯的映射。",
+      "revision": 3,
+      "status": "seed",
+      "tags": [
+        "request",
+        "batch index",
+        "请求归属",
+        "identity",
+        "epoch",
+        "会话",
+        "分支",
+        "模型版本",
+        "租户",
+        "恢复代次"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-ORCA",
+        "S-VLLM-SCHED",
+        "S-OTEL"
+      ],
+      "related": [
+        "K-ALG-001",
+        "K-ALG-011",
+        "K-ALG-008",
+        "K-ALG-024",
+        "K-WORK-010",
+        "K-SYS-011",
+        "K-SYS-014",
+        "K-SYS-016",
+        "K-ALG-023",
+        "K-ENGINE-003",
+        "K-SYS-008",
+        "K-TOOLS-006",
+        "K-SYS-015"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-27",
+      "sha256": "4bb364464c1ccab29bf079263a4e80d9d352e1477040fdcaf150a36294e37443",
+      "questions": [
+        "请求身份的四个层次是什么，批次行与物理槽为什么只是临时位置？",
+        "压紧和逆映射如何保证结果归属，什么时候会错位？",
+        "晚到输出与槽位重用如何冲突，代次如何保护？",
+        "会话、模型版本与恢复代次怎样进入身份，混用会造成什么？",
+        "贯穿重排、取消和迁移的验证应检查哪些守恒关系？"
+      ],
+      "symptoms": [
+        "单请求正确，混合批错误",
+        "取消后输出串到另一请求"
+      ],
+      "assumes": [
+        "多请求共享批次执行",
+        "请求可被重排与迁移"
+      ]
+    },
+    {
+      "id": "K-SYS-003",
+      "path": "system-semantics/position-mask-cache.md",
+      "category": "system-semantics",
+      "title": "位置、Mask 与缓存：同一可见性关系的三种表示",
+      "summary": "缓存中的内容必须对应模型定义的逻辑位置；mask 决定读取集合，物理布局只决定这些内容放在哪里。",
+      "revision": 5,
+      "status": "seed",
+      "tags": [
+        "position",
+        "mask",
+        "cache_position",
+        "RoPE",
+        "可见性",
+        "logical-position",
+        "representation",
+        "partition-invariance"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-HF-CACHE",
+        "S-TRANSFORMER",
+        "S-SDPA",
+        "S-FA-IMPL",
+        "S-ROPE",
+        "S-KIVI"
+      ],
+      "related": [
+        "K-ALG-007",
+        "K-MODEL-007",
+        "K-FW-006",
+        "K-FW-011",
+        "K-ALG-021",
+        "K-ALG-009",
+        "K-ALG-010",
+        "K-SYS-009",
+        "K-ALG-006",
+        "K-FW-001",
+        "K-TOOLS-006"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-28",
+      "sha256": "6b67a872fa27f0103230c6d43975ae5bab20597d4618fbb4513cc6df6527a4e8",
+      "questions": [
+        "位置、mask 与缓存为什么是同一可见性关系的三种表示？",
+        "从绝对位置定义因果关系后，一个位置算例如何检查接口对齐？",
+        "KV 内容是否已带位置，两种约定各自要求什么？",
+        "等价分区如何形成验证依据，分区不变量是什么？",
+        "表示等价为什么不意味着缓存可以直接互换？"
+      ],
+      "symptoms": [
+        "分块后 logits 分歧",
+        "换 backend 后首 token 正确、后续偏移"
+      ],
+      "assumes": [
+        "使用位置编码的 attention",
+        "缓存按逻辑位置组织"
+      ]
+    },
+    {
+      "id": "K-SYS-004",
+      "path": "system-semantics/cancellation-resource-completion.md",
+      "category": "system-semantics",
+      "title": "取消与完成：业务终止、设备排空和资源回收",
+      "summary": "取消撤销未来服务意图，完成证明既有工作已结束；物理资源重用必须等待最后一个使用者。",
+      "revision": 4,
+      "status": "seed",
+      "tags": [
+        "取消请求",
+        "资源释放",
+        "异步完成",
+        "cancellation",
+        "lifetime",
+        "传输取消",
+        "部分 I/O",
+        "进程退出",
+        "资源守恒",
+        "排空"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-ASGI",
+        "S-CUDA-ALLOC",
+        "S-CUDA-ASYNC",
+        "S-RDMA",
+        "S-LINUX-IO",
+        "S-SERVERLESSLLM"
+      ],
+      "related": [
+        "K-ALG-008",
+        "K-FW-003",
+        "K-SYS-008",
+        "K-SYS-011",
+        "K-SYS-012",
+        "K-SYS-014",
+        "K-SYS-018",
+        "K-HW-014",
+        "K-TOOLS-005",
+        "K-ALG-002",
+        "K-ENGINE-004",
+        "K-ENGINE-005",
+        "K-FW-005",
+        "K-FW-008",
+        "K-MODEL-005",
+        "K-MODEL-011",
+        "K-TOOLS-006",
+        "K-SYS-015",
+        "K-WORK-010",
+        "K-ALG-017",
+        "K-ALG-020",
+        "K-SYS-016"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-28",
+      "sha256": "50dd6f59586f6fd0f45f332436df258c97768a80321ab6e2c04ff643d6fe2f5a",
+      "questions": [
+        "请求终止为什么不是一个瞬间，业务终止、设备排空与资源回收如何分开？",
+        "三种引用（逻辑、物理、在途）各自由什么机制管理？",
+        "代次保护与所有权转移怎样防止迟到事件破坏新对象？",
+        "不同失败阶段的回收条件有何不同，超时与卸载如何交互？",
+        "压力下的最终守恒检查应验证什么？"
+      ],
+      "symptoms": [
+        "取消后显存不回落",
+        "图重放或取消后串请求"
+      ],
+      "assumes": [
+        "异步执行与延迟完成",
+        "资源在请求之间复用"
+      ]
+    },
+    {
+      "id": "K-SYS-005",
+      "path": "system-semantics/collective-ordering.md",
+      "category": "system-semantics",
+      "title": "集合通信：参与集合、操作顺序与失败传播",
+      "summary": "集合通信连接参与者、张量解释、count和完成关系；固定NCCL组提交语义及可辨识反例支持所选边界的验证。",
+      "revision": 6,
+      "status": "seed",
+      "tags": [
+        "NCCL",
+        "collective",
+        "rank",
+        "死锁",
+        "分布式",
+        "API contract",
+        "nonblocking communicator",
+        "ncclInProgress",
+        "rank layout",
+        "共同完成",
+        "collective count",
+        "nonblocking group"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [
+          "cuda"
+        ],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-NCCL-GROUP",
+        "S-NCCL-COLLECTIVE",
+        "S-CUDA-TOPOLOGY",
+        "S-CUDA-ASYNC"
+      ],
+      "related": [
+        "K-ALG-015",
+        "K-HW-002",
+        "K-SYS-009",
+        "K-HW-014",
+        "K-SYS-014",
+        "K-ALG-023",
+        "K-TOOLS-005"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-28",
+      "sha256": "300ba9b28dc03226747ed94d01cbe1adacd0a0c7853cb1c5b2d7ad14ecc54aa3",
+      "questions": [
+        "集体操作的语义对象是什么，参与集合与顺序如何共同视图？",
+        "动态请求如何保持共同视图，调度代次与通信代次为何同步推进？",
+        "失败是什么状态转换，错误如何传播与恢复？",
+        "张量解释、count 与每 rank 容量之间的关系是什么？",
+        "group 的提交完成为什么不同于通信完成，可辨识反例怎样检查边界？"
+      ],
+      "symptoms": [
+        "某 rank 卡住导致全组死锁",
+        "count 不一致使结果错位"
+      ],
+      "assumes": [
+        "NCCL 类集合通信库",
+        "多 rank 同步执行"
+      ]
+    },
+    {
+      "id": "K-SYS-006",
+      "path": "system-semantics/evidence-and-independent-checks.md",
+      "category": "system-semantics",
+      "title": "工程认识如何成为可迁移的专家知识",
+      "summary": "知识的增量是对系统机制与设计关系的新增解释；运行结果为这些解释提供事实、区分和修正。",
+      "revision": 3,
+      "status": "seed",
+      "tags": [
+        "RSI",
+        "专家知识",
+        "mechanism",
+        "可迁移",
+        "因果",
+        "claim-scope",
+        "independent-oracle",
+        "knowledge-ablation",
+        "counterexample"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-ACE",
+        "S-GEPA",
+        "S-SELF-CORRECTION",
+        "S-REFLEXION",
+        "S-STATS"
+      ],
+      "related": [
+        "K-TOOLS-006",
+        "K-TOOLS-005",
+        "K-SYS-010",
+        "K-TOOLS-007",
+        "K-FW-002",
+        "K-WORK-003",
+        "K-SYS-009"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-27",
+      "sha256": "50b7c97de928be322713ef149fb734c0c20acda17c4a321c46a198b0019831be",
+      "questions": [
+        "从现象走到解释需要哪些步骤，什么内容值得进入正文？",
+        "独立核对的作用是什么，修订为何应保留推导能力？",
+        "论断怎样定位到它真正得到支持的位置？",
+        "冲突时如何先分辨函数、条件与证据层次？",
+        "怎样检验知识对设计过程的帮助，而不是只看结论是否正确？"
+      ],
+      "symptoms": [
+        "同一现象被写成多个互斥解释",
+        "知识更新后旧推导无法复现"
+      ],
+      "assumes": [
+        "有运行证据的工程循环",
+        "知识以可修订章节组织"
+      ]
+    },
+    {
+      "id": "K-SYS-007",
+      "path": "system-semantics/tokenization-io.md",
+      "category": "system-semantics",
+      "title": "输入输出语义：Tokenizer、Chat Template 与流式文本",
+      "summary": "模型处理的是规范化后的 token/特征序列，服务协议必须精确保存从用户输入到模型输入再到输出文本的映射。",
+      "revision": 5,
+      "status": "seed",
+      "tags": [
+        "tokenizer",
+        "chat template",
+        "detokenization",
+        "stop string",
+        "I/O"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-CHAT",
+        "S-HF-CACHE",
+        "S-ASGI"
+      ],
+      "related": [
+        "K-ALG-003",
+        "K-MODEL-008",
+        "K-ALG-011",
+        "K-FW-011",
+        "K-WORK-010",
+        "K-SYS-015",
+        "K-TOOLS-006",
+        "K-ALG-012",
+        "K-MODEL-001",
+        "K-MODEL-005",
+        "K-SYS-008",
+        "K-WORK-003",
+        "K-MODEL-013"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-28",
+      "sha256": "0b77648f37c484324124f6ae9c3652c5955282ff2f8f9c76024078f15e503b87",
+      "questions": [
+        "文本序列化为什么是模型输入的一部分，模板差异会改变什么？",
+        "padding 与长度如何影响计算与可见性？",
+        "增量 detokenization 的边界在哪里，何时不能提交字符？",
+        "多模态输入如何沿用同一原则，制品一致性如何跨过文本与模型边界？",
+        "优化 CPU 路径时必须保持哪些映射关系？"
+      ],
+      "symptoms": [
+        "流式输出出现乱码或重复字符",
+        "相同 prompt 不同模板结果不同"
+      ],
+      "assumes": [
+        "子词 tokenizer",
+        "聊天模板定义输入格式"
+      ]
+    },
+    {
+      "id": "K-SYS-008",
+      "path": "system-semantics/service-protocol.md",
+      "category": "system-semantics",
+      "title": "服务协议：接收、流式背压与终止语义",
+      "summary": "对外协议、发送缓冲、背压与终止语义依Task和具体接口解释；结果交付与资源完成分别核对。",
+      "revision": 6,
+      "status": "seed",
+      "tags": [
+        "HTTP",
+        "SSE",
+        "ASGI",
+        "backpressure",
+        "服务协议",
+        "执行域",
+        "配额",
+        "滚动发布",
+        "故障状态测试",
+        "重试语义",
+        "使用场景",
+        "协议选择",
+        "流式内容",
+        "慢客户端",
+        "请求守恒",
+        "首响应与首内容"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-ASGI",
+        "S-OTEL",
+        "S-GENAI-PERF",
+        "S-BORG",
+        "S-NVIDIA-PLUGIN"
+      ],
+      "related": [
+        "K-SYS-004",
+        "K-WORK-001",
+        "K-MODEL-011",
+        "K-SYS-015",
+        "K-SYS-011",
+        "K-SYS-014",
+        "K-SYS-016",
+        "K-WORK-008",
+        "K-TOOLS-005",
+        "K-SYS-002",
+        "K-SYS-007",
+        "K-SYS-010",
+        "K-MODEL-012",
+        "K-TOOLS-006"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-28",
+      "sha256": "0d23dbe9d544bb72ef95669e96cda78ecf30ac1462092d038abd2ab64cfa620b",
+      "questions": [
+        "一条请求在外部有哪些可观察状态，各自映射到哪个内部事件？",
+        "背压的资源含义是什么，慢客户端如何约束内部缓冲与设备进度？",
+        "取消、错误和重试的语义如何定义，重试身份由什么构成？",
+        "接收协议如何连接实际执行域，滚动发布与连接生命周期怎样交互？",
+        "验收为什么必须包含未完成和被拒绝的请求，参数计数与内容如何保持同一语义？"
+      ],
+      "symptoms": [
+        "客户端断开后服务端仍继续生成",
+        "慢客户端拖慢其他请求"
+      ],
+      "assumes": [
+        "HTTP/SSE 类流式协议",
+        "单实例对外服务"
+      ]
+    },
+    {
+      "id": "K-SYS-009",
+      "path": "system-semantics/distributed-state-transfer.md",
+      "category": "system-semantics",
+      "title": "分布式状态迁移：身份、传输与提交点",
+      "summary": "状态迁移是一项所有权和可见性协议；字节到达只有在布局和版本被共同解释后才成为可用模型状态。",
+      "revision": 4,
+      "status": "seed",
+      "tags": [
+        "KV transfer",
+        "migration",
+        "commit",
+        "分布式状态"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-DISTSERVE",
+        "S-CUDA-TOPOLOGY",
+        "S-VLLM-PREFIX",
+        "S-RDMA",
+        "S-GPUDIRECT",
+        "S-LLUMNIX"
+      ],
+      "related": [
+        "K-ALG-013",
+        "K-SYS-005",
+        "K-ALG-009",
+        "K-HW-014",
+        "K-SYS-013",
+        "K-SYS-014",
+        "K-ALG-023",
+        "K-MODEL-002",
+        "K-MODEL-006",
+        "K-SYS-001",
+        "K-SYS-003",
+        "K-SYS-006",
+        "K-TOOLS-002",
+        "K-ALG-018"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-28",
+      "sha256": "ee40de53b4ef61a20dc99a9c0fb213cbacabb009f9952e09e6bdc76c2754a285",
+      "questions": [
+        "迁移对象应如何描述，字节到达为什么还不是可用状态？",
+        "从预留到发布经过哪些步骤，提交点在哪里？",
+        "内容复用与重试如何避免重复消费，身份由什么保证？",
+        "网络完成怎样接到模型消费之前，可见性如何保证？",
+        "活跃状态与失败窗口怎样处理，唯一提交权如何维持？"
+      ],
+      "symptoms": [
+        "迁移后目标节点读到不完整 KV",
+        "重试导致同一状态被两次消费"
+      ],
+      "assumes": [
+        "多节点之间传输模型状态",
+        "传输与计算异步"
+      ]
+    },
+    {
+      "id": "K-SYS-010",
+      "path": "system-semantics/design-synthesis.md",
+      "category": "system-semantics",
+      "title": "系统设计推导：把模型、缓存、执行与目标组合起来",
+      "summary": "在声明条件下推导模型、状态、资源与执行关系；场景不穷尽候选，不规定组件划分、研发顺序或任务外功能。",
+      "revision": 7,
+      "status": "seed",
+      "tags": [
+        "系统设计",
+        "design synthesis",
+        "专家指导",
+        "组合推导",
+        "完整系统",
+        "组合场景",
+        "设计入口",
+        "十二类场景",
+        "使用场景",
+        "工程决策",
+        "API contract",
+        "engine construction",
+        "from scratch",
+        "设计空间",
+        "适用条件",
+        "布局转换"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-PAGED",
+        "S-SARATHI",
+        "S-DISTSERVE",
+        "S-MLA",
+        "S-NXDI",
+        "S-CPU-TUNING",
+        "S-GOTO",
+        "S-INT8",
+        "S-STATS"
+      ],
+      "related": [
+        "K-ALG-001",
+        "K-ALG-009",
+        "K-FW-005",
+        "K-WORK-006",
+        "K-FW-011",
+        "K-ALG-016",
+        "K-HW-010",
+        "K-FW-012",
+        "K-SYS-012",
+        "K-SYS-015",
+        "K-WORK-010",
+        "K-TOOLS-007",
+        "K-ALG-003",
+        "K-HW-005",
+        "K-ALG-017",
+        "K-ALG-020",
+        "K-ALG-015",
+        "K-ALG-013",
+        "K-WORK-007",
+        "K-MODEL-005",
+        "K-MODEL-008",
+        "K-MODEL-009",
+        "K-MODEL-010",
+        "K-MODEL-011",
+        "K-MODEL-012",
+        "K-MODEL-013",
+        "K-SYS-017",
+        "K-MODEL-014",
+        "K-MODEL-015",
+        "K-MODEL-016",
+        "K-WORK-011",
+        "K-SYS-018",
+        "K-SYS-019",
+        "K-ALG-007",
+        "K-ENGINE-001",
+        "K-SYS-006",
+        "K-SYS-008",
+        "K-SYS-024"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-28",
+      "sha256": "8fce90e6b259f26310f6d16a5de40c4435f49d94d47da3831473af9e96376181",
+      "questions": [
+        "在声明的任务条件下，模型、状态、资源与执行关系如何逐步推导成完整系统？",
+        "候选空间、依赖和反证如何组织，场景为什么不穷尽候选？",
+        "十二类完整场景如何连成知识体系，各自约束哪些机制组合？",
+        "实例方案要落到服务和平台时，哪些关系必须贯穿？",
+        "布局改变后的完整成本与反转条件怎样计算？"
+      ],
+      "symptoms": [
+        "局部优化后系统目标反而恶化",
+        "设计在换硬件后无法复用"
+      ],
+      "assumes": [
+        "任务条件（模型、负载、平台）已声明",
+        "完整系统交付为目标"
+      ]
+    },
+    {
+      "id": "K-TOOLS-001",
+      "path": "tools/trace-observability.md",
+      "category": "tools",
+      "title": "可观测性：执行事件与采集事件的映射",
+      "summary": "trace 是由采集范围和工具机制生成的观测，不是系统全部执行事实的无损副本。",
+      "revision": 5,
+      "status": "seed",
+      "tags": [
+        "trace",
+        "nsys",
+        "缺表",
+        "观测覆盖",
+        "coverage",
+        "queue-boundary",
+        "numa",
+        "storage-observation"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-NSYS",
+        "S-TORCH-PROFILER",
+        "S-PERF",
+        "S-LINUX-IO",
+        "S-RDMA"
+      ],
+      "related": [
+        "K-TOOLS-002",
+        "K-SYS-001",
+        "K-TOOLS-005",
+        "K-HW-012",
+        "K-HW-014",
+        "K-HW-009",
+        "K-SYS-015",
+        "K-TOOLS-007"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-28",
+      "sha256": "2df9df7f070e651cffe447ee5601dc398cac9795893b46f66f7b2e3f90fef84b",
+      "questions": [
+        "trace 为什么只是采集范围与工具机制生成的观测，而不是执行事实的无损副本？",
+        "覆盖矩阵怎样帮助判断某个阶段是否真的没有工作，缺表意味着什么？",
+        "推理全路径需要哪些信号，队列边界、NUMA 与存储观测如何进入同一视图？",
+        "逻辑请求与物理工作如何区分，一次采集怎样设计才能反驳假设？",
+        "缺失的观测如何转化为下一步信息，而不是被解释为不存在？"
+      ],
+      "symptoms": [
+        "trace 中看不到某阶段但延迟仍存在",
+        "采集后系统行为与未采集时不同"
+      ],
+      "assumes": [
+        "存在可用的系统级 trace 工具",
+        "请求路径跨主机与设备"
+      ]
+    },
+    {
+      "id": "K-TOOLS-002",
+      "path": "tools/timeline-attribution.md",
+      "category": "tools",
+      "title": "时间线分析：从请求路径定位执行瓶颈",
+      "summary": "时间线分析先建立关联和依赖，再用区间与关键路径解释延迟；热点累计时长只是入口。",
+      "revision": 4,
+      "status": "seed",
+      "tags": [
+        "timeline",
+        "Nsight Systems",
+        "critical path",
+        "归因",
+        "critical-path",
+        "shared-work",
+        "migration-attribution"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [
+          "cuda"
+        ],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-NSYS",
+        "S-OTEL",
+        "S-CUDA-ASYNC",
+        "S-LINUX-IO",
+        "S-RDMA"
+      ],
+      "related": [
+        "K-SYS-001",
+        "K-TOOLS-003",
+        "K-WORK-004",
+        "K-HW-012",
+        "K-HW-014",
+        "K-ALG-018",
+        "K-SYS-009",
+        "K-TOOLS-001",
+        "K-TOOLS-004",
+        "K-TOOLS-007"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-28",
+      "sha256": "5f79ce878ac9fe0e0fb141c17c8af5f249e99fadb0391eab2c3c0a148d9a78c2",
+      "questions": [
+        "时间线分析为什么要先建立关联与依赖，热点累计时长为何只是入口？",
+        "三种时间线形态各自说明什么，怎样从聚合回到原始事件？",
+        "跨主机与 I/O 队列的时间线如何对齐，等待在哪一侧？",
+        "共享工作怎样分配成本，正反归因算例揭示哪些常见错误？",
+        "反事实预测如何在改动前估计收益，最终确认需要什么？"
+      ],
+      "symptoms": [
+        "最热 kernel 优化后延迟不变",
+        "归因后各阶段之和超过端到端时间"
+      ],
+      "assumes": [
+        "可获得带时间戳的事件序列",
+        "请求可关联到设备工作"
+      ]
+    },
+    {
+      "id": "K-TOOLS-003",
+      "path": "tools/kernel-counter-replay.md",
+      "category": "tools",
+      "title": "Kernel 计数器：吞吐、访存与 Replay 语境",
+      "summary": "硬件计数器帮助识别单 kernel 的资源限制，但它测到的执行可能与正常并发服务具有不同环境。",
+      "revision": 4,
+      "status": "seed",
+      "tags": [
+        "Nsight Compute",
+        "counter",
+        "replay",
+        "roofline",
+        "cpu-pmu",
+        "counter-multiplexing",
+        "spill",
+        "traffic-accounting"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [
+          "cuda"
+        ],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-NCU",
+        "S-CUDA-BEST",
+        "S-ROCM",
+        "S-PERF",
+        "S-LINUX-IO"
+      ],
+      "related": [
+        "K-HW-001",
+        "K-FW-007",
+        "K-TOOLS-002",
+        "K-HW-010",
+        "K-FW-012",
+        "K-HW-011",
+        "K-HW-012",
+        "K-HW-014",
+        "K-HW-004",
+        "K-HW-009",
+        "K-TOOLS-008"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-28",
+      "sha256": "5802edc860b6a95350eefacc6ae41e98651f8141101d806c929b5f400f3f649e",
+      "questions": [
+        "硬件计数器连接哪种资源模型，单 kernel 的限制如何推到服务？",
+        "replay 改变了什么环境，cache 与并发为何与正常服务不同？",
+        "CPU 计数为什么必须固定运行范围与分母，否则会得出什么？",
+        "从计算与访存结构怎样选择计数，流量账与计数器为何要在同一层次？",
+        "怎样保持 replay 与正常服务的对应，哪些结论不能外推？"
+      ],
+      "symptoms": [
+        "profiler 下 kernel 显示访存受限而服务中不是",
+        "计数器复用导致指标互相矛盾"
+      ],
+      "assumes": [
+        "可访问 kernel 级硬件计数器",
+        "单 kernel 可被重放"
+      ]
+    },
+    {
+      "id": "K-TOOLS-004",
+      "path": "tools/framework-profiler-scope.md",
+      "category": "tools",
+      "title": "框架 Profiler：算子归属、内存与图边界",
+      "summary": "框架 profiler 解释模型操作怎样落到设备工作，并通过 shape、调用栈与内存事件连接两层视图。",
+      "revision": 4,
+      "status": "seed",
+      "tags": [
+        "torch.profiler",
+        "operator",
+        "shape",
+        "memory",
+        "框架分析",
+        "observation-design",
+        "profiler-limits",
+        "shape-memory"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [],
+        "runtimes": [
+          "pytorch"
+        ],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-TORCH-PROFILER",
+        "S-MLX",
+        "S-NKI",
+        "S-ROCPROF",
+        "S-METAL-TOOLS",
+        "S-NEURON-EXPLORER",
+        "S-PERF"
+      ],
+      "related": [
+        "K-TOOLS-002",
+        "K-FW-004",
+        "K-FW-001",
+        "K-HW-010",
+        "K-HW-011",
+        "K-SYS-015",
+        "K-TOOLS-007"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-28",
+      "sha256": "5988e3c4193ad460c13eb8faea45de9f7b7bfe0be976926db95a3178e087113c",
+      "questions": [
+        "框架算子与设备 kernel 为什么不是一一对应，归属如何建立？",
+        "观测开销来自哪些机制，shape 与内存事件采集会延长什么？",
+        "五类平台的观测落点有何不同，工具不可用时仍能保留哪些结论？",
+        "从框架视图怎样提出可检验解释，采集层如何按待裁决问题选择？",
+        "内存事件如何接到状态生命周期，分层测量怎样控制扰动？"
+      ],
+      "symptoms": [
+        "开启 profiler 后显存占用上升",
+        "算子时长之和远超 kernel 时长"
+      ],
+      "assumes": [
+        "框架级 profiler 可用",
+        "模型以算子图形式执行"
+      ]
+    },
+    {
+      "id": "K-TOOLS-005",
+      "path": "tools/failure-evidence.md",
+      "category": "tools",
+      "title": "失败分析：最早偏离、最小复现与机制归因",
+      "summary": "失败记录的价值在于还原系统从哪一个状态开始偏离预期，并区分输入、实现、资源和外部环境。",
+      "revision": 4,
+      "status": "seed",
+      "tags": [
+        "failure",
+        "reproducer",
+        "OOM",
+        "timeout",
+        "最小复现",
+        "故障注入",
+        "I/O 超时",
+        "部分 rank",
+        "恢复",
+        "长期压力"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-PY-SUBPROCESS",
+        "S-CUDA-ASYNC",
+        "S-TORCH-NUMERIC",
+        "S-LINUX-RESOURCES",
+        "S-RDMA",
+        "S-LINUX-IO"
+      ],
+      "related": [
+        "K-SYS-006",
+        "K-SYS-005",
+        "K-TOOLS-006",
+        "K-SYS-004",
+        "K-SYS-014",
+        "K-SYS-018",
+        "K-SYS-019",
+        "K-TOOLS-007",
+        "K-SYS-008",
+        "K-TOOLS-001",
+        "K-SYS-016"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-28",
+      "sha256": "fa54dc2a72a12e562c76a8c8fdaf8fe12e3937c9520c47e5d180986fcc1d0229",
+      "questions": [
+        "不同失败类型各自有什么语义，输入、实现、资源与环境如何区分？",
+        "最小复现应保留什么，丢掉哪些条件会让失败消失？",
+        "修复形成什么知识，最早偏离如何定位？",
+        "故障注入怎样绑定到状态边界，才能验证恢复路径？",
+        "重复、压力与恢复的证据各自证明什么？"
+      ],
+      "symptoms": [
+        "失败只在长时间运行后出现",
+        "复现脚本在隔离环境中不再失败"
+      ],
+      "assumes": [
+        "失败可被记录并重放部分条件",
+        "系统有可识别的状态边界"
+      ]
+    },
+    {
+      "id": "K-TOOLS-006",
+      "path": "tools/correctness-oracles.md",
+      "category": "tools",
+      "title": "正确性 Oracle：函数参考、状态变形与服务契约",
+      "summary": "独立数值、身份与协议参考及负对照按Task和所选机制检查；缺失、重复或空集不能冒充完整结果。",
+      "revision": 7,
+      "status": "seed",
+      "tags": [
+        "correctness",
+        "oracle",
+        "metamorphic",
+        "checker",
+        "正确性",
+        "验证器",
+        "负对照",
+        "缺失请求",
+        "重复身份",
+        "oracle false positive",
+        "negative control"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-TORCH-NUMERIC",
+        "S-TORCH-REPRO",
+        "S-HF-CACHE",
+        "S-ASGI",
+        "S-INT8"
+      ],
+      "related": [
+        "K-FW-002",
+        "K-SYS-003",
+        "K-SYS-008",
+        "K-SYS-006",
+        "K-ALG-016",
+        "K-SYS-012",
+        "K-WORK-010",
+        "K-TOOLS-007",
+        "K-FW-011",
+        "K-SYS-002",
+        "K-SYS-004",
+        "K-FW-006",
+        "K-ALG-012",
+        "K-FW-001",
+        "K-SYS-007",
+        "K-TOOLS-005",
+        "K-WORK-004",
+        "K-MODEL-013",
+        "K-MODEL-014"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-29",
+      "sha256": "c0b3c3490d96d4e8cef8030d3f02b3b0d9a55fa676a6dd8f9afac3aa10b6da50",
+      "questions": [
+        "函数参考与实现独立性为什么是 oracle 的前提，共享代码会掩盖什么？",
+        "变形关系怎样覆盖状态，哪些状态边界相交处最容易出错？",
+        "概率输出与协议行为为什么需要另外的 oracle？",
+        "验证器怎样证明它能拒绝已知错误，负对照如何设计？",
+        "长时间运行应检查哪些守恒关系，检查缺陷如何影响旧证据？"
+      ],
+      "symptoms": [
+        "验证全部通过但线上结果异常",
+        "缺失请求未被计为失败"
+      ],
+      "assumes": [
+        "存在可独立实现的参考路径",
+        "任务要求可派生成检查"
+      ]
+    },
+    {
+      "id": "K-WORK-001",
+      "path": "workloads/metric-events.md",
+      "category": "workloads",
+      "title": "服务指标：事件边界、Token 间隔与用户时间",
+      "summary": "一个延迟指标是两个明确事件的时间差；指标名字相同而事件定义不同，会导致不同结论。",
+      "revision": 4,
+      "status": "seed",
+      "tags": [
+        "TTFT",
+        "TPOT",
+        "ITL",
+        "latency",
+        "首包"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-GENAI-PERF",
+        "S-MLPERF-LLM",
+        "S-ASGI"
+      ],
+      "related": [
+        "K-SYS-008",
+        "K-MODEL-011",
+        "K-SYS-001",
+        "K-WORK-010",
+        "K-TOOLS-007",
+        "K-SYS-015",
+        "K-WORK-005",
+        "K-HW-007",
+        "K-WORK-009"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-28",
+      "sha256": "338c4b41baec0a1f5fbda6cfbfe3d14e64ac9299c12d3ac8dbaa784f1d87c30e",
+      "questions": [
+        "一个延迟指标是哪两个事件的时间差，同名指标为何会得出不同结论？",
+        "聚合顺序怎样改变含义，先按请求平均再按时间与反之有何不同？",
+        "非文本输出的事件如何定义，首包对应什么？",
+        "为不同任务选择完成事件时应考虑什么，未完成样本怎样计入？",
+        "成本与能量的分母如何与指标事件对齐？"
+      ],
+      "symptoms": [
+        "两套工具报告的 TTFT 相差数倍",
+        "首 token 快但输出经常停顿"
+      ],
+      "assumes": [
+        "流式生成服务",
+        "客户端与服务端事件可对齐"
+      ]
+    },
+    {
+      "id": "K-WORK-002",
+      "path": "workloads/arrival-and-concurrency.md",
+      "category": "workloads",
+      "title": "到达过程与并发：排队、反馈和饱和点",
+      "summary": "负载生成器定义了系统受到的压力；闭环并发和独立到达率回答不同容量问题。",
+      "revision": 4,
+      "status": "seed",
+      "tags": [
+        "arrival",
+        "open loop",
+        "closed loop",
+        "并发",
+        "queue"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-MLPERF-LLM",
+        "S-MLPERF-SCENARIOS",
+        "S-GENAI-PERF"
+      ],
+      "related": [
+        "K-WORK-005",
+        "K-ALG-001",
+        "K-WORK-006",
+        "K-WORK-010",
+        "K-TOOLS-007",
+        "K-HW-009",
+        "K-WORK-004"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-28",
+      "sha256": "7d90b609f04b6d9e132e8a3adbc7ce96c812071af4a3166073a10aa6fe4ef0ef",
+      "questions": [
+        "闭环与开环负载各自回答什么容量问题，混用会得出什么？",
+        "Little 关系的使用条件是什么，何时不成立？",
+        "coordinated omission 的机制是什么，怎样避免它低估尾延迟？",
+        "突发会消耗多少排队预算，稳态指标为何掩盖它？",
+        "重放真实 trace 时有哪三个时间，会话依赖如何影响稳定性观察？"
+      ],
+      "symptoms": [
+        "多轮压测越慢到达越少",
+        "平均吞吐达标但队列持续增长"
+      ],
+      "assumes": [
+        "可控的负载生成器",
+        "到达过程可记录"
+      ]
+    },
+    {
+      "id": "K-WORK-003",
+      "path": "workloads/input-distribution.md",
+      "category": "workloads",
+      "title": "工作负载分布：长度、复用、模态与相关性",
+      "summary": "系统成本由输入输出的联合分布决定；平均长度会丢失影响缓存、批次和尾部行为的结构。",
+      "revision": 4,
+      "status": "seed",
+      "tags": [
+        "workload",
+        "length distribution",
+        "prefix reuse",
+        "多模态负载"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-GENAI-PERF",
+        "S-PAGED",
+        "S-QWEN-VL"
+      ],
+      "related": [
+        "K-ALG-003",
+        "K-FW-004",
+        "K-MODEL-008",
+        "K-WORK-010",
+        "K-TOOLS-007",
+        "K-WORK-005",
+        "K-SYS-007",
+        "K-MODEL-003",
+        "K-MODEL-012",
+        "K-SYS-006",
+        "K-MODEL-013",
+        "K-MODEL-015",
+        "K-MODEL-016"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-28",
+      "sha256": "d6c1913849bb4051c631cdf505b883709487eac590832ef608f1402a8fe7b58b",
+      "questions": [
+        "为什么平均长度不足以描述负载，联合分布丢失了哪些结构？",
+        "复用的时间结构怎样影响缓存收益，合成负载如何保持问题结构？",
+        "输出长度为什么是实现结果的一部分，怎样避免循环依赖？",
+        "不同推理家族的负载档案应包含哪些维度？",
+        "开发、校准与保留集合如何划分，相关性如何保留？"
+      ],
+      "symptoms": [
+        "合成负载上表现好但真实流量差",
+        "前缀命中率随时间漂移"
+      ],
+      "assumes": [
+        "有可采样的真实或代表性流量",
+        "负载可按维度分层"
+      ]
+    },
+    {
+      "id": "K-WORK-004",
+      "path": "workloads/measurement-comparability.md",
+      "category": "workloads",
+      "title": "性能实验：稳定态、对照与不确定性",
+      "summary": "可比较的性能结果来自相同任务函数与负载条件，以及能够解释波动的测量窗口。",
+      "revision": 4,
+      "status": "seed",
+      "tags": [
+        "benchmark",
+        "warmup",
+        "variance",
+        "可比性"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-GENAI-PERF",
+        "S-TORCH-PROFILER",
+        "S-NCU",
+        "S-STATS",
+        "S-TORCH-REPRO"
+      ],
+      "related": [
+        "K-WORK-002",
+        "K-WORK-005",
+        "K-TOOLS-002",
+        "K-TOOLS-007",
+        "K-FW-011",
+        "K-WORK-010",
+        "K-TOOLS-006",
+        "K-WORK-009"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-28",
+      "sha256": "bfb3fd1d686964025a9aeb29aa8d31b86078f2724ba31f200a41dc9e6c06cf62",
+      "questions": [
+        "冷路径与稳定路径怎样区分，预热规则如何事先确定？",
+        "可解释的对照需要固定哪些条件，采集本身如何改变系统？",
+        "比较怎样写成一个可否定的问题？",
+        "不确定性属于哪个重复层级，层级错配会怎样？",
+        "搜索预算与确认实验如何分开？"
+      ],
+      "symptoms": [
+        "同一配置两次测量相差很大",
+        "开启采集后瓶颈位置改变"
+      ],
+      "assumes": [
+        "任务函数与负载条件可固定",
+        "可重复运行"
+      ]
+    },
+    {
+      "id": "K-WORK-005",
+      "path": "workloads/slo-goodput.md",
+      "category": "workloads",
+      "title": "Goodput：联合 SLO、拒绝和容量前沿",
+      "summary": "服务能力是单位时间内完成有效任务且满足约束的数量，不能用总生成速度替代。",
+      "revision": 4,
+      "status": "seed",
+      "tags": [
+        "goodput",
+        "SLO",
+        "capacity",
+        "有效吞吐"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-MLPERF-LLM",
+        "S-DISTSERVE",
+        "S-GENAI-PERF"
+      ],
+      "related": [
+        "K-WORK-001",
+        "K-WORK-002",
+        "K-WORK-006",
+        "K-ALG-001",
+        "K-WORK-010",
+        "K-TOOLS-007",
+        "K-SYS-015",
+        "K-ALG-007",
+        "K-ALG-013",
+        "K-MODEL-005",
+        "K-MODEL-008",
+        "K-MODEL-009",
+        "K-MODEL-010",
+        "K-MODEL-011",
+        "K-MODEL-012",
+        "K-WORK-003",
+        "K-WORK-004",
+        "K-ALG-023",
+        "K-WORK-008",
+        "K-SYS-017"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-29",
+      "sha256": "4381a8535d9a94e984ee1ba1399b643add33a9cce6b07775421fee75992445e8",
+      "questions": [
+        "goodput 的明确定义是什么，为何不能用总生成速度替代？",
+        "准入控制在容量前沿上扮演什么角色，拒绝与延后有何不同？",
+        "容量为什么是一条曲线而不是一个数，曲线由什么条件参数化？",
+        "多租户与优先级怎样进入目标，降质的协议结果是什么？",
+        "成本前沿与稳健运行点如何选择？"
+      ],
+      "symptoms": [
+        "吞吐上升但 SLO 达标率下降",
+        "拒绝率为零而尾延迟失控"
+      ],
+      "assumes": [
+        "有明确的 SLO 定义",
+        "请求可被拒绝或延后"
+      ]
+    },
+    {
+      "id": "K-WORK-006",
+      "path": "workloads/capacity-planning.md",
+      "category": "workloads",
+      "title": "容量设计：驻留、服务率与阶段配比",
+      "summary": "容量设计把每请求资源需求和阶段服务时间连接到到达过程，得出实例数、并发和缓存预算。",
+      "revision": 5,
+      "status": "seed",
+      "tags": [
+        "capacity planning",
+        "容量规划",
+        "admission",
+        "服务率"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-PAGED",
+        "S-DISTSERVE",
+        "S-MLPERF-LLM",
+        "S-SERVERLESSLLM"
+      ],
+      "related": [
+        "K-HW-001",
+        "K-ALG-013",
+        "K-WORK-002",
+        "K-SYS-010",
+        "K-SYS-012",
+        "K-FW-011",
+        "K-SYS-015",
+        "K-WORK-010",
+        "K-TOOLS-007",
+        "K-WORK-005",
+        "K-ALG-017"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-29",
+      "sha256": "6c3029e0cdac372e8aa41840ebe016ec0d5e7d144798ef72d6a2ba3a887873fa",
+      "questions": [
+        "驻留约束与服务率约束如何分别求解，哪个先成为瓶颈？",
+        "网络与主机为什么也是容量约束？",
+        "从估算到决策要补哪些校准，吞吐常数为何应变成服务曲面？",
+        "阶段配比为什么必须包括状态交换？",
+        "冷启动、故障与弹性迟滞如何进入容量设计，选择何时反转？"
+      ],
+      "symptoms": [
+        "按 KV 容量估算的并发在负载下达不到",
+        "阶段配比变化后传输成为瓶颈"
+      ],
+      "assumes": [
+        "每请求资源需求可估计",
+        "到达过程已知"
+      ]
+    },
+    {
+      "id": "K-FW-011",
+      "path": "frameworks/checkpoint-loading.md",
+      "category": "frameworks",
+      "title": "权重加载：从制品身份到可执行布局",
+      "summary": "加载必须同时建立张量语义、执行布局、完整参数与就绪边界；流式流水的价值由启动关键路径和峰值副本决定。",
+      "revision": 3,
+      "status": "seed",
+      "tags": [
+        "checkpoint",
+        "权重加载",
+        "冷启动",
+        "mmap",
+        "tied weights",
+        "流式加载"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-SERVERLESSLLM",
+        "S-TORCH-INFERENCE",
+        "S-TORCH-CUDA"
+      ],
+      "related": [
+        "K-MODEL-001",
+        "K-FW-001",
+        "K-FW-012",
+        "K-SYS-012",
+        "K-HW-003",
+        "K-ENGINE-003",
+        "K-FW-004",
+        "K-FW-008",
+        "K-FW-009",
+        "K-HW-008",
+        "K-SYS-003",
+        "K-SYS-007",
+        "K-SYS-010",
+        "K-TOOLS-006",
+        "K-WORK-004",
+        "K-WORK-006",
+        "K-ALG-016",
+        "K-HW-012",
+        "K-ALG-019",
+        "K-SYS-011",
+        "K-SYS-018",
+        "K-SYS-019"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-28",
+      "sha256": "1f556d7d85821ed9d3fc2e0868902909105476503f3e9bb40e2c862f40bfe5d8",
+      "questions": [
+        "加载必须同时建立哪些关系，张量语义、执行布局与参数完整性为何分开判断？",
+        "两条加载路径（整体映射与流式流水）的成本与峰值副本各落在哪里？",
+        "发布可执行版本的边界在哪里，加载完成与就绪为什么不是同一事件？",
+        "tied weights 与别名在加载时怎样保持，错误处理会带来什么后果？",
+        "在什么条件下流式加载的价值反转，冷启动关键路径由什么决定？"
+      ],
+      "symptoms": [
+        "权重大小能容纳但加载时 OOM",
+        "加载完成后首请求仍长时间等待"
+      ],
+      "assumes": [
+        "制品以文件形式存在于本地或远端存储",
+        "目标执行布局已由后端确定"
+      ]
+    },
+    {
+      "id": "K-ALG-016",
+      "path": "algorithms/operator-primitives.md",
+      "category": "algorithms",
+      "title": "基础算子：从张量契约到合法融合",
+      "summary": "从函数、张量地址与别名推导合法执行；展开QKV、归一化、RoPE和融合成本，按所选机制检查数值与真实消费者。",
+      "revision": 6,
+      "status": "seed",
+      "tags": [
+        "GEMM",
+        "GEMV",
+        "embedding",
+        "RMSNorm",
+        "LayerNorm",
+        "RoPE",
+        "softmax",
+        "gather",
+        "scatter",
+        "融合",
+        "QKV布局",
+        "统计域",
+        "residual lifetime",
+        "算子适配",
+        "端到端成本",
+        "tensor stride",
+        "storage offset",
+        "alias"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-TRANSFORMER",
+        "S-RMSNORM",
+        "S-ROPE",
+        "S-TORCH-NUMERIC",
+        "S-FLASH",
+        "S-CPU-TUNING",
+        "S-SDPA",
+        "S-FA-IMPL",
+        "S-CUDA-BEST",
+        "S-TRITON"
+      ],
+      "related": [
+        "K-MODEL-001",
+        "K-ALG-004",
+        "K-FW-002",
+        "K-HW-010",
+        "K-FW-011",
+        "K-FW-007",
+        "K-FW-006",
+        "K-FW-001",
+        "K-FW-010",
+        "K-SYS-010",
+        "K-TOOLS-006",
+        "K-MODEL-013",
+        "K-MODEL-014",
+        "K-MODEL-015",
+        "K-MODEL-016"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-28",
+      "sha256": "664ed35987656ab046defe938db6c289fea83d9b75f0737f3599ac5fbc8f3e03",
+      "questions": [
+        "一个 strided 张量的逻辑下标如何映射到地址，为什么只改 shape 或 stride 不等于完成了物理重排？",
+        "RMSNorm 与 LayerNorm 的统计域和 ε 位置有什么区别，tile 对齐填充为何会改变整行函数？",
+        "RoPE 的相对位置关系依赖哪些约定，缓存保存旋转前还是旋转后的 K 对后续 append 有何影响？",
+        "residual 与 norm 融合在 residual 仍活跃与不再活跃两种情况下分别省掉多少读写？",
+        "融合或自定义 kernel 的局部收益如何连接到完整 forward 的关键路径上限？"
+      ],
+      "symptoms": [
+        "算子融合后小矩阵变快而大矩阵变慢",
+        "归一化输出整体被放大约一个固定比例",
+        "从位置零开始的短序列正确但跨 chunk 长序列出错"
+      ],
+      "assumes": [
+        "Transformer 的线性、归一化、位置旋转和激活算子",
+        "存在固定数值契约的参考实现可对照"
+      ]
+    },
+    {
+      "id": "K-HW-010",
+      "path": "hardware/cpu-linear-kernels.md",
+      "category": "hardware",
+      "title": "CPU GEMM/GEMV：寄存器、缓存与线程划分",
+      "summary": "CPU 线性层需把 shape 的重用机会落实到寄存器、cache/TLB、打包和线程分区；同一配置不适用于全部 GEMV/GEMM。",
+      "revision": 4,
+      "status": "seed",
+      "tags": [
+        "CPU",
+        "GEMM",
+        "GEMV",
+        "SIMD",
+        "cache",
+        "TLB",
+        "预打包",
+        "NUMA",
+        "线程"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [
+          "cpu"
+        ],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-GOTO",
+        "S-CPU-TUNING",
+        "S-TORCH-NUMERIC",
+        "S-PERF"
+      ],
+      "related": [
+        "K-HW-009",
+        "K-HW-001",
+        "K-ALG-016",
+        "K-FW-012",
+        "K-SYS-015",
+        "K-ALG-005",
+        "K-FW-007",
+        "K-HW-004",
+        "K-MODEL-003",
+        "K-SYS-010",
+        "K-TOOLS-003",
+        "K-TOOLS-004",
+        "K-ALG-020"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-29",
+      "sha256": "de45d05e1f6a846476521fffc28266253a3d86cbbb34c12c72a29d520d60168d",
+      "questions": [
+        "由 shape 决定主要资源时，GEMV 与 GEMM 的瓶颈分别落在哪里？",
+        "分块如何把重用落到寄存器、cache 与 TLB 各层，打包的摊销条件是什么？",
+        "向量通道、尾部与累加链如何影响正确性与吞吐？",
+        "线程沿哪个轴切分取决于什么，切错轴的代价怎样显现？",
+        "小 M 与较大 M 的候选配置为何不同，如何用信号区分瓶颈并调整？"
+      ],
+      "symptoms": [
+        "CPU 小 batch 快而 prefill 退化",
+        "预打包后首请求变慢"
+      ],
+      "assumes": [
+        "CPU 上执行的线性层",
+        "SIMD 指令集已知"
+      ]
+    },
+    {
+      "id": "K-FW-012",
+      "path": "frameworks/cpu-quantized-kernels.md",
+      "category": "frameworks",
+      "title": "CPU 低位执行：解包、补偿与累加路径",
+      "summary": "低位存储、解包和实际乘加是不同执行路径；补偿、组尺度、累加宽度和舍入共同决定正确性与收益。",
+      "revision": 3,
+      "status": "seed",
+      "tags": [
+        "CPU",
+        "INT4",
+        "INT8",
+        "zero point",
+        "解包",
+        "量化",
+        "累加",
+        "requantization"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [
+          "cpu"
+        ],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-INT8",
+        "S-GPTQ",
+        "S-CPU-TUNING",
+        "S-TORCH-NUMERIC"
+      ],
+      "related": [
+        "K-ALG-005",
+        "K-HW-010",
+        "K-HW-004",
+        "K-FW-002",
+        "K-FW-011",
+        "K-HW-009",
+        "K-SYS-010",
+        "K-TOOLS-003",
+        "K-ALG-019"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-28",
+      "sha256": "fde46e2f00a6363d8a6c6b14823de335c749c0dfce0a2868c940eca41c62c474",
+      "questions": [
+        "低位存储、解包与实际乘加是哪三条执行路径，各自的收益条件是什么？",
+        "从仿射量化推导点积时，零点补偿项如何进入累加，省略会产生什么偏差？",
+        "低位布局与算术宽度如何匹配，窄累加何时溢出？",
+        "字节减少在什么条件下才转化为时间减少，解包成本何时主导？",
+        "怎样区分实现错误与量化本身的损失，需要哪些独立参考？"
+      ],
+      "symptoms": [
+        "低位内核结果有系统偏差而非随机噪声",
+        "量化后 CPU 路径反而更慢"
+      ],
+      "assumes": [
+        "CPU 上的整数向量指令可用",
+        "权重以分组量化格式存储"
+      ]
+    },
+    {
+      "id": "K-SYS-012",
+      "path": "system-semantics/memory-allocators.md",
+      "category": "system-semantics",
+      "title": "内存分配：地址、容量与在途所有权",
+      "summary": "分配器同时管理地址、物理容量与异步所有权；比较连续池、块表和虚拟映射时必须计入碎片、工作区和在途页。",
+      "revision": 2,
+      "status": "seed",
+      "tags": [
+        "allocator",
+        "内存分配",
+        "虚拟内存",
+        "KV cache",
+        "碎片",
+        "workspace",
+        "生命周期"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-VATTENTION",
+        "S-PAGED",
+        "S-CUDA-ALLOC",
+        "S-TORCH-CUDA"
+      ],
+      "related": [
+        "K-ALG-002",
+        "K-ALG-003",
+        "K-SYS-004",
+        "K-FW-003",
+        "K-FW-005",
+        "K-ALG-001",
+        "K-ALG-007",
+        "K-ALG-009",
+        "K-ALG-010",
+        "K-ALG-014",
+        "K-ALG-015",
+        "K-ENGINE-002",
+        "K-ENGINE-003",
+        "K-ENGINE-005",
+        "K-FW-001",
+        "K-FW-002",
+        "K-FW-006",
+        "K-FW-008",
+        "K-HW-001",
+        "K-HW-005",
+        "K-HW-007",
+        "K-HW-008",
+        "K-HW-009",
+        "K-MODEL-001",
+        "K-MODEL-003",
+        "K-MODEL-008",
+        "K-MODEL-009",
+        "K-MODEL-010",
+        "K-MODEL-012",
+        "K-SYS-010",
+        "K-TOOLS-006",
+        "K-WORK-006",
+        "K-FW-011",
+        "K-ALG-017",
+        "K-ALG-018",
+        "K-HW-013",
+        "K-WORK-007"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-27",
+      "sha256": "2e7258787b94ad142c7c236541e8718803ad30b273d08e6c398dff673a1df838",
+      "questions": [
+        "按对象生命期划分空间时，池之间过硬的划分会造成什么问题？",
+        "连续缓冲、块表与虚拟映射在粒度、连续性与所有权轴上各处什么位置？",
+        "分配、提交与回收的每个转换必须满足什么关系，部分失败如何撤销？",
+        "工作区复用与容量调度如何交互，并发改变了哪些生命期重叠？",
+        "怎样用设定负载验证物理使用守恒与写时复制独立性？"
+      ],
+      "symptoms": [
+        "总空闲足够但分配失败",
+        "回收后迟到事件写入新对象"
+      ],
+      "assumes": [
+        "固定容量的设备内存",
+        "异步消费者持有引用"
+      ]
+    },
+    {
+      "id": "K-SYS-015",
+      "path": "system-semantics/host-runtime.md",
+      "category": "system-semantics",
+      "title": "服务主机运行时：执行域、队列与缓冲所有权",
+      "summary": "执行域、队列与缓冲的成本和完成关系；资源有界要求可由准入、额度或队列等不同机制实现。",
+      "revision": 4,
+      "status": "seed",
+      "tags": [
+        "host runtime",
+        "事件循环",
+        "线程池",
+        "进程",
+        "IPC",
+        "背压",
+        "tokenizer",
+        "有界队列",
+        "CPU quota",
+        "cpuset",
+        "线程预算",
+        "队列容量",
+        "执行域选择",
+        "进程排空",
+        "管道死锁"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-ASGI",
+        "S-CPU-TUNING",
+        "S-OTEL",
+        "S-PY-SUBPROCESS",
+        "S-LINUX-RESOURCES",
+        "S-TORCH-CUDA"
+      ],
+      "related": [
+        "K-HW-009",
+        "K-SYS-008",
+        "K-SYS-004",
+        "K-SYS-002",
+        "K-TOOLS-001",
+        "K-FW-003",
+        "K-ALG-008",
+        "K-SYS-010",
+        "K-ALG-001",
+        "K-ALG-010",
+        "K-ENGINE-001",
+        "K-FW-001",
+        "K-FW-008",
+        "K-HW-001",
+        "K-MODEL-005",
+        "K-MODEL-008",
+        "K-MODEL-010",
+        "K-MODEL-011",
+        "K-MODEL-012",
+        "K-SYS-007",
+        "K-TOOLS-004",
+        "K-WORK-001",
+        "K-WORK-005",
+        "K-WORK-006",
+        "K-HW-010",
+        "K-HW-012",
+        "K-SYS-019",
+        "K-MODEL-014",
+        "K-MODEL-016",
+        "K-SYS-025"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-27",
+      "sha256": "005342b6131acdd072d5cf35456a5b01e5630f764b614e7090639fde01a5b36a",
+      "questions": [
+        "哪些主机工作应放在哪个执行域，域之间的通信与容量由什么决定？",
+        "有界队列的容量怎样连接对象大小与同时存活范围？",
+        "统一的 CPU 与内存预算下，线程、进程与原生库线程如何分配？",
+        "取消如何到达等待中的阶段并变为可回收？",
+        "背压怎样连接到模型调度，进程输出、超时与关闭为何也是运行时路径？"
+      ],
+      "symptoms": [
+        "模型空闲但请求仍堆积",
+        "增加 worker 后尾延迟反而上升"
+      ],
+      "assumes": [
+        "单机服务进程",
+        "主机资源有实际额度限制"
+      ]
+    },
+    {
+      "id": "K-WORK-010",
+      "path": "workloads/session-workloads.md",
+      "category": "workloads",
+      "title": "多轮与分支负载：依赖、状态驻留和到达过程",
+      "summary": "会话依赖、思考时间和分支决定真实到达与状态驻留；前缀复用收益需要和会话成功、容量及重用距离一起衡量。",
+      "revision": 3,
+      "status": "seed",
+      "tags": [
+        "multi-turn",
+        "多轮",
+        "会话",
+        "Agent workload",
+        "fork",
+        "join",
+        "思考时间",
+        "前缀复用"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [],
+        "runtimes": [],
+        "workloads": [
+          "text-generation"
+        ]
+      },
+      "source_ids": [
+        "S-SGLANG",
+        "S-ORCA",
+        "S-VLLM-PREFIX",
+        "S-MLPERF-SCENARIOS"
+      ],
+      "related": [
+        "K-WORK-002",
+        "K-WORK-003",
+        "K-ALG-003",
+        "K-SYS-007",
+        "K-SYS-004",
+        "K-ALG-001",
+        "K-ALG-007",
+        "K-ENGINE-001",
+        "K-MODEL-012",
+        "K-SYS-002",
+        "K-SYS-010",
+        "K-TOOLS-006",
+        "K-WORK-001",
+        "K-WORK-004",
+        "K-WORK-005",
+        "K-WORK-006",
+        "K-ALG-024"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-27",
+      "sha256": "0269e1987e1107d0cf0135cb32aa759c67d5266cfa09fb1402f97704c4ab4d78",
+      "questions": [
+        "会话与请求为什么是两层身份，思考时间如何影响到达？",
+        "回合长度和重用距离如何决定状态驻留与前缀收益？",
+        "闭环和开放到达在多轮负载下为什么不可混用，各自回答什么问题？",
+        "分支预算怎样与系统目标对齐，分叉数增加会挤占哪些资源？",
+        "怎样设计能区分前缀收益与会话成功率变化的对照？"
+      ],
+      "symptoms": [
+        "前缀命中率上升但队列更长",
+        "会话中断后状态无法回收"
+      ],
+      "assumes": [
+        "多轮对话或 Agent 负载",
+        "会话状态可持久"
+      ]
+    },
+    {
+      "id": "K-TOOLS-007",
+      "path": "tools/statistical-experiments.md",
+      "category": "tools",
+      "title": "性能实验：独立重复、效应量与尾部证据",
+      "summary": "重复层级、效应量和结论范围；可选知识条件实验区分交付失败、成本与删失，不向Agent规定构建流程。",
+      "revision": 4,
+      "status": "seed",
+      "tags": [
+        "统计",
+        "confidence interval",
+        "bootstrap",
+        "p99",
+        "配对实验",
+        "尾延迟",
+        "选择偏差",
+        "保留验证",
+        "知识库对照",
+        "固定预算",
+        "交付率",
+        "右删失",
+        "knowledge evaluation"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-STATS",
+        "S-MLPERF-SCENARIOS",
+        "S-GENAI-PERF",
+        "S-TORCH-REPRO"
+      ],
+      "related": [
+        "K-WORK-004",
+        "K-WORK-005",
+        "K-TOOLS-006",
+        "K-SYS-006",
+        "K-TOOLS-002",
+        "K-ALG-005",
+        "K-ALG-006",
+        "K-ALG-007",
+        "K-ALG-011",
+        "K-ALG-014",
+        "K-ALG-015",
+        "K-FW-002",
+        "K-FW-007",
+        "K-HW-001",
+        "K-HW-005",
+        "K-MODEL-005",
+        "K-MODEL-009",
+        "K-SYS-001",
+        "K-SYS-010",
+        "K-TOOLS-001",
+        "K-TOOLS-004",
+        "K-TOOLS-005",
+        "K-WORK-001",
+        "K-WORK-002",
+        "K-WORK-003",
+        "K-WORK-006",
+        "K-ALG-021",
+        "K-WORK-009",
+        "K-SYS-017",
+        "K-MODEL-016",
+        "K-TOOLS-008"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-27",
+      "sha256": "908b3588a6fa20bb1f2aed9f5db51c4b462953d79f8944cdbcfea7141c74644f",
+      "questions": [
+        "一次性能比较先要固定哪些对象，均值比、比值均值与分位数比为何不同？",
+        "重复的层级有哪些，为什么进程内反复采样不能替代重启与跨时段重复？",
+        "配对、区组与区间如何控制漂移，相关样本怎样影响区间宽度？",
+        "尾延迟与失败为何不能被均值掩盖，零超限的上界说明什么？",
+        "搜索后验证与停止条件如何设计，才能避免挑中噪声？"
+      ],
+      "symptoms": [
+        "多次试验挑出提升但复测消失",
+        "p99 在重复实验间差异巨大"
+      ],
+      "assumes": [
+        "实验可独立重复",
+        "测量事件定义已固定"
+      ]
+    },
+    {
+      "id": "K-HW-011",
+      "path": "hardware/gpu-kernel-pipelines.md",
+      "category": "hardware",
+      "title": "GPU 矩阵与归约流水：布局、资源和完成依赖",
+      "summary": "完整SIMT GEMM映射和带代次多读者缓冲算法，联立有限流水时序、资源驻留与网格成本，区分同步合法性与实际重叠。",
+      "revision": 4,
+      "status": "seed",
+      "tags": [
+        "GPU",
+        "Tensor Core",
+        "MFMA",
+        "TMA",
+        "WGMMA",
+        "tile",
+        "warp specialization",
+        "寄存器",
+        "LDS",
+        "spill",
+        "SIMT GEMM",
+        "缓冲读者",
+        "有限流水",
+        "驻留反转"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [
+          "cuda",
+          "rocm"
+        ],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-FLASHATTENTION3",
+        "S-FLASH",
+        "S-CUDA-BEST",
+        "S-CUDA-ASYNC",
+        "S-ROCM",
+        "S-TORCH-NUMERIC",
+        "S-CUDA-CAPABILITY"
+      ],
+      "related": [
+        "K-HW-005",
+        "K-HW-006",
+        "K-ALG-004",
+        "K-FW-007",
+        "K-FW-003",
+        "K-HW-001",
+        "K-ALG-005",
+        "K-ALG-008",
+        "K-FW-006",
+        "K-FW-010",
+        "K-HW-004",
+        "K-MODEL-003",
+        "K-MODEL-004",
+        "K-MODEL-006",
+        "K-MODEL-007",
+        "K-MODEL-009",
+        "K-TOOLS-003",
+        "K-TOOLS-004"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-28",
+      "sha256": "4db609a35cae2c7bd05603e026fc76d3e1281111ca2dad54d1a319851b3b498a",
+      "questions": [
+        "GEMM 的数据依赖与片上资源账如何建立，哪些项常被漏算？",
+        "为什么要先适配矩阵指令布局再安排线程，swizzle 的代价落在哪里？",
+        "生产者与消费者分工下，环形缓冲的代次与完成依赖必须满足什么？",
+        "attention 中归约与矩阵流水怎样连接，缩放方向错误如何用反例检查？",
+        "缺少 TMA 与线程块簇时，同一依赖由哪些替代机制承担，代价如何测？",
+        "怎样把非整除GEMM的逻辑tile落到全局/共享地址、线程累加和保护写回？",
+        "增加缓冲级数后，单CTA时序与全网格驻留为何可能给出相反选择，哪些观测能区分原因？"
+      ],
+      "symptoms": [
+        "GPU 增加流水级数反而变慢",
+        "在另一代 GPU 上共享存储超限无法启动"
+      ],
+      "assumes": [
+        "具有矩阵指令的 GPU",
+        "tile 级的 kernel 组织"
+      ]
+    },
+    {
+      "id": "K-ALG-017",
+      "path": "algorithms/tiered-residency.md",
+      "category": "algorithms",
+      "title": "多级驻留：有效副本、预取、淘汰与重算",
+      "summary": "多级驻留维护有效版本与在途副本，并联合比较保留、预取、淘汰和重算；三级容量可行不等于在线延迟可行。",
+      "revision": 2,
+      "status": "seed",
+      "tags": [
+        "HBM",
+        "DRAM",
+        "SSD",
+        "分层存储",
+        "驻留",
+        "卸载",
+        "预取",
+        "淘汰",
+        "重算"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-FLEXGEN",
+        "S-SERVERLESSLLM",
+        "S-PAGED",
+        "S-CUDA-ASYNC"
+      ],
+      "related": [
+        "K-SYS-012",
+        "K-HW-012",
+        "K-ALG-018",
+        "K-ALG-019",
+        "K-ALG-020",
+        "K-SYS-004",
+        "K-WORK-006",
+        "K-ALG-008",
+        "K-ALG-009",
+        "K-ALG-010",
+        "K-ENGINE-002",
+        "K-ENGINE-005",
+        "K-FW-005",
+        "K-HW-003",
+        "K-HW-005",
+        "K-MODEL-004",
+        "K-SYS-010",
+        "K-SYS-013",
+        "K-SYS-018",
+        "K-MODEL-015"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-27",
+      "sha256": "eb3ebc6320d5a32481cf645605d159860dc6d1edb97f1e98afd89ddb24ee82af",
+      "questions": [
+        "只读权重、已封闭 KV 前缀和正在追加的尾块各自允许多少有效副本，可变状态换出时如何冻结版本？",
+        "从未驻留到可回收的状态转换各需要什么条件，失败时每一步保留什么责任？",
+        "每层容量除有效副本外还要计入哪些项，为什么准备淘汰的对象不能立即扣减？",
+        "保留、重新取得与重算三者如何比较，p 乘避免时间除字节为什么不能作为统一淘汰规则？",
+        "预取在什么时间关系下才能完全隐藏，为什么提前固定层数不保证满足条件？"
+      ],
+      "symptoms": [
+        "每个 decode 迭代都重新从主存搬运同一批权重",
+        "容量看似足够但同时存活的源副本和目的预留导致过度准入",
+        "远期预取长期占用带宽使近期请求的 deadline 被违反"
+      ],
+      "assumes": [
+        "HBM、DRAM 与 SSD 的多级存储",
+        "对象身份含模型版本与逻辑范围",
+        "传输与计算可以部分重叠"
+      ]
+    },
+    {
+      "id": "K-HW-012",
+      "path": "hardware/storage-io.md",
+      "category": "hardware",
+      "title": "存储 I/O：请求粒度、队列和加载流水",
+      "summary": "实际存储供给由布局、pagecache/直接 I/O、请求粒度、队列和 staging 共同决定；提交、可读、持久化和可回收分开建模。",
+      "revision": 3,
+      "status": "seed",
+      "tags": [
+        "SSD",
+        "NVMe",
+        "storage I/O",
+        "直接 I/O",
+        "pagecache",
+        "mmap",
+        "IOPS",
+        "队列深度",
+        "DMA"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-LINUX-IO",
+        "S-SERVERLESSLLM",
+        "S-CUDA-ASYNC",
+        "S-GPUDIRECT"
+      ],
+      "related": [
+        "K-FW-011",
+        "K-ALG-017",
+        "K-ALG-018",
+        "K-HW-003",
+        "K-SYS-015",
+        "K-SYS-001",
+        "K-TOOLS-001",
+        "K-TOOLS-002",
+        "K-TOOLS-003",
+        "K-SYS-018",
+        "K-SYS-017"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-28",
+      "sha256": "91090dd01691a14870245a3e4a7a5288d2ee28de487016933e1d61dc7066707b",
+      "questions": [
+        "文件范围与张量布局为什么不是一回事，转换发生在哪一层？",
+        "页缓存、mmap 与直接 I/O 各自在什么条件下更合适，代价是什么？",
+        "请求大小、IOPS 与队列深度如何共同决定实际供给？",
+        "SSD 到 DRAM 到 GPU 的一块数据经过哪些阶段，哪些边界决定缓冲可复用？",
+        "绕过主机中转的直通路径改变了哪些成本，不改变哪些？"
+      ],
+      "symptoms": [
+        "SSD 标称很快但模型供给不足",
+        "冷启动时主存带宽先于 SSD 饱和"
+      ],
+      "assumes": [
+        "本地 NVMe 类存储",
+        "Linux I/O 栈的页缓存语义"
+      ]
+    },
+    {
+      "id": "K-ALG-018",
+      "path": "algorithms/kv-offload-prefetch.md",
+      "category": "algorithms",
+      "title": "KV 卸载与预取：读集合、恢复点与迁移预算",
+      "summary": "KV 卸载按实际可见集合与共同恢复点组织；暂停恢复、前缀命中和活跃 decode 的持续传输需要不同预算。",
+      "revision": 3,
+      "status": "seed",
+      "tags": [
+        "KV offload",
+        "KV 卸载",
+        "预取",
+        "重算",
+        "恢复点",
+        "HBM",
+        "DRAM",
+        "SSD"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-FLEXGEN",
+        "S-PAGED",
+        "S-HF-CACHE",
+        "S-CUDA-ASYNC"
+      ],
+      "related": [
+        "K-ALG-017",
+        "K-ALG-002",
+        "K-ALG-003",
+        "K-ALG-009",
+        "K-SYS-009",
+        "K-ALG-020",
+        "K-SYS-012",
+        "K-ALG-004",
+        "K-ALG-010",
+        "K-ALG-014",
+        "K-ENGINE-002",
+        "K-ENGINE-004",
+        "K-FW-003",
+        "K-MODEL-007",
+        "K-TOOLS-002",
+        "K-HW-012",
+        "K-ALG-021",
+        "K-ALG-022"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-27",
+      "sha256": "a7088eba5c78cd9e96cf011d61946ad7dec4ecb6378ac16e7f2fc3820af38301",
+      "questions": [
+        "暂停请求换出、跨请求前缀缓存和活跃 decode 历史卸载三种使用各支付什么成本，收益为何不能互推？",
+        "按层、按 token 块和按 head 分片存放 KV 各自便于什么，与设备布局不同时引入哪些转换代价？",
+        "恢复状态的传输时延与重算时间在什么条件下可比较，带宽从 DRAM 换到 SSD 时结论如何反转？",
+        "逐层预取的提前量由什么决定，每步都读整段历史时链路带宽如何给出 ITL 下界？",
+        "恢复过程中哪些对象必须齐备才能发布可执行视图，取消后迟到的 DMA 如何结算？"
+      ],
+      "symptoms": [
+        "显存释放成功但 decode 间隔变长",
+        "卸载的前缀缓存命中却比直接重算更慢",
+        "某一层读取失败后其他层的新映射进入了下一次 forward"
+      ],
+      "assumes": [
+        "KV 可以按块导出到主存或 SSD",
+        "模型可见历史集合由模型结构决定",
+        "有可校准的传输带宽与重算成本"
+      ]
+    },
+    {
+      "id": "K-ALG-019",
+      "path": "algorithms/weight-expert-offload.md",
+      "category": "algorithms",
+      "title": "权重与专家卸载：重用、路由与在途版本",
+      "summary": "权重与专家卸载同时依赖批次重用、专家并集、热点和版本；按 token 稀疏不能直接推断 batch 读取稀疏。",
+      "revision": 3,
+      "status": "seed",
+      "tags": [
+        "weight offload",
+        "专家卸载",
+        "MoE",
+        "热点",
+        "预取",
+        "权重",
+        "激活稀疏"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-FLEXGEN",
+        "S-POWERINFER",
+        "S-MIXTRAL",
+        "S-CUDA-ASYNC"
+      ],
+      "related": [
+        "K-ALG-017",
+        "K-ALG-020",
+        "K-MODEL-003",
+        "K-FW-011",
+        "K-ALG-015",
+        "K-FW-012",
+        "K-ENGINE-005",
+        "K-FW-005"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-28",
+      "sha256": "45741ae4271010aa6cb0e088dd2d70cf2f185daa839f6d0eddbff3a6bf25dab5",
+      "questions": [
+        "稠密层按层轮流处理多个微批以摊薄权重读取，摊到每 token 的传输下界为什么不能替代 ITL？",
+        "每 token 只用 k 个专家时，一个 batch 实际触及多少专家，热点非均匀时该估计如何失效？",
+        "固定热门专家、按近期路由更新、需求加载与预测预取各自在什么条件下更合适？",
+        "新版本权重发布后，旧版本在途计算和部分加载的专家应如何处理所有权？",
+        "激活稀疏的热点神经元路线与确定性 MoE 路由在验证上有什么本质区别？"
+      ],
+      "symptoms": [
+        "batch 扩大后几乎每轮都要加载全部专家",
+        "缓存命中率很高但每轮唯一加载字节仍不下降",
+        "预取的专家大量未被使用而链路持续繁忙"
+      ],
+      "assumes": [
+        "权重不能全部常驻设备",
+        "MoE 或激活稀疏模型的路由在运行时决定",
+        "权重按模型版本和分片有稳定身份"
+      ]
+    },
+    {
+      "id": "K-ALG-020",
+      "path": "algorithms/heterogeneous-execution.md",
+      "category": "algorithms",
+      "title": "CPU–GPU 计算放置：传数据、传结果与共同提交",
+      "summary": "CPU–GPU 分工比较冷权重搬运、CPU 计算与分片合并的完整关键路径；激活稀疏预测须有独立质量契约。",
+      "revision": 4,
+      "status": "seed",
+      "tags": [
+        "CPU GPU",
+        "异构计算",
+        "协同",
+        "计算放置",
+        "激活稀疏",
+        "PowerInfer",
+        "结果合并"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-POWERINFER",
+        "S-FLEXGEN",
+        "S-CPU-TUNING",
+        "S-TORCH-NUMERIC"
+      ],
+      "related": [
+        "K-HW-010",
+        "K-HW-003",
+        "K-HW-013",
+        "K-ALG-018",
+        "K-ALG-019",
+        "K-ALG-008",
+        "K-SYS-004",
+        "K-ENGINE-003",
+        "K-HW-006",
+        "K-HW-007",
+        "K-MODEL-003",
+        "K-SYS-010",
+        "K-ALG-017",
+        "K-MODEL-015",
+        "K-MODEL-016"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-29",
+      "sha256": "dc4c827b6bbe3e104a317b0f7a8ba9abf713506a3ce2776c7ba915b5c4921fbc",
+      "questions": [
+        "搬权重到 GPU、计算留在 CPU 和双方分工三种候选如何在同一函数下比较完整依赖路径？",
+        "按输出通道与按归约轴切分一层时，结果拼接和部分和合并各需要什么数值契约？",
+        "长历史 KV 已在主存时，交换 query 和结果为什么可能比搬整段历史更省，何时不成立？",
+        "热点神经元在 GPU、冷部分在 CPU 的路线依赖什么稀疏性前提，误预测如何影响函数？",
+        "CPU 与 GPU 结果共同提交时，完成顺序、空分片和迟到结果如何进入验证？"
+      ],
+      "symptoms": [
+        "GPU 空闲等待 CPU 冷部分完成，batch 增大后放置选择反转",
+        "CPU 计算与 tokenization、DMA 竞争主存带宽使两边都变慢",
+        "一轮中旧的 CPU 结果被拼接到新一轮 GPU 输出上"
+      ],
+      "assumes": [
+        "设备容量不足以容纳全部权重或 KV",
+        "主机与设备间链路带宽可测量",
+        "两侧执行同一数值契约"
+      ]
+    },
+    {
+      "id": "K-HW-013",
+      "path": "hardware/shared-memory-paths.md",
+      "category": "hardware",
+      "title": "共享内存路径：统一地址、物理驻留与显式迁移",
+      "summary": "统一地址、可迁移驻留和物理共享内存是不同访问关系；重用、页放大、可见性和带宽竞争共同决定复制选择。",
+      "revision": 2,
+      "status": "seed",
+      "tags": [
+        "统一内存",
+        "Unified Memory",
+        "zero copy",
+        "共享内存",
+        "mapped memory",
+        "页迁移",
+        "MLX"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-MLX-MEM",
+        "S-CUDA-ASYNC",
+        "S-TORCH-CUDA"
+      ],
+      "related": [
+        "K-HW-003",
+        "K-HW-007",
+        "K-ALG-020",
+        "K-SYS-012",
+        "K-FW-003",
+        "K-FW-008",
+        "K-ALG-004",
+        "K-HW-006"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-27",
+      "sha256": "9471f29d33a5821b00e11b6d08fb69fe31288087d558f05c5f9234350efe8b0d",
+      "questions": [
+        "统一地址、可迁移驻留与物理共享内存是哪四种不同关系，各自的可见性由什么保证？",
+        "显式搬运与远端读取的临界点由重用次数与页粒度如何决定？",
+        "页粒度与来回迁移怎样放大流量，什么访问模式会触发抖动？",
+        "可见性与所有权在共享路径下如何表达，谁负责同步？",
+        "如何在候选之间选择并用可区分信号验证？"
+      ],
+      "symptoms": [
+        "没有显式复制仍出现传输或等待",
+        "缺页迁移使带宽远低于链路能力"
+      ],
+      "assumes": [
+        "支持统一地址或映射内存的平台",
+        "CPU 与设备共同访问同一对象"
+      ]
+    },
+    {
+      "id": "K-ALG-021",
+      "path": "algorithms/kv-compression.md",
+      "category": "algorithms",
+      "title": "KV 压缩：表示、近似保留与传输格式",
+      "summary": "KV 量化、历史裁剪与传输编码改变不同成本与语义；分组轴、残余区、元数据和质量必须分别计入。",
+      "revision": 5,
+      "status": "seed",
+      "tags": [
+        "KV compression",
+        "KIVI",
+        "H2O",
+        "KV 量化",
+        "per-channel",
+        "残余区",
+        "压缩传输",
+        "质量"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-KIVI",
+        "S-H2O",
+        "S-CACHEGEN",
+        "S-INT8",
+        "S-TORCH-NUMERIC"
+      ],
+      "related": [
+        "K-ALG-005",
+        "K-ALG-002",
+        "K-ALG-018",
+        "K-MODEL-007",
+        "K-FW-002",
+        "K-TOOLS-007",
+        "K-ALG-003",
+        "K-ENGINE-002",
+        "K-ENGINE-004",
+        "K-FW-006",
+        "K-HW-004",
+        "K-MODEL-002",
+        "K-MODEL-006",
+        "K-SYS-003",
+        "K-SYS-013",
+        "K-ALG-022"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-28",
+      "sha256": "6a90b569f9fd1b74ca2e8ede11f1094bcb15df5ff6918d4c2d357b9c5dbc1e68",
+      "questions": [
+        "KV 量化、重要 token 保留、压缩传输和模型原生窗口各自改变什么对象，需要验证什么关系？",
+        "K 与 V 的分组轴为什么不同，跨 token 分组的封组时机和高精度残余区如何影响容量与追加？",
+        "有效位宽如何把 scale、偏移和残余区算进去，为什么按位比例估算会低估驻留？",
+        "压缩传输在什么带宽下优于直接传输，与传文本重算相比需要保持哪些相同语义？",
+        "累计 attention 分数保留历史存在什么偏置和反馈，接入 GQA 和融合 kernel 时有哪些额外成本？"
+      ],
+      "symptoms": [
+        "量化后驻留字节远高于按位宽比例预期",
+        "长时间低关注后查询早期实体或数字答案错误",
+        "链路升级后压缩传输反而比直接传输慢"
+      ],
+      "assumes": [
+        "KV 为可分组量化的张量",
+        "有完整历史参考可用于质量对照",
+        "压缩与解压的时间和峰值可测"
+      ]
+    },
+    {
+      "id": "K-SYS-013",
+      "path": "system-semantics/distributed-kv-store.md",
+      "category": "system-semantics",
+      "title": "分布式 KV 存储：目录、有效副本与可恢复状态",
+      "summary": "分布式 KV 目录只定位候选状态；有效副本、共同恢复点、目标可见性与排队/传输成本决定真实可复用性。",
+      "revision": 3,
+      "status": "seed",
+      "tags": [
+        "distributed KV",
+        "分布式缓存",
+        "目录",
+        "副本",
+        "前缀",
+        "远端命中",
+        "失效"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-MOONCAKE",
+        "S-CACHEGEN",
+        "S-PAGED",
+        "S-SGLANG"
+      ],
+      "related": [
+        "K-ALG-003",
+        "K-ALG-017",
+        "K-ALG-021",
+        "K-HW-014",
+        "K-SYS-009",
+        "K-SYS-014",
+        "K-ALG-023",
+        "K-ALG-002",
+        "K-ALG-013",
+        "K-ENGINE-002",
+        "K-ENGINE-004",
+        "K-HW-002",
+        "K-SYS-018",
+        "K-ALG-022"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-28",
+      "sha256": "77136e70ade22745a885219596c78cc6eb35ab586cc17aa42723c866e49616ef",
+      "questions": [
+        "对象身份与目录为什么分开，目录命中为何不等于可复用？",
+        "发布完整副本再允许消费的条件是什么，部分写入如何隔离？",
+        "本地命中、远端命中和重算的成本如何比较？",
+        "副本数、热点与缓存预算怎样共同决定一个前缀放在哪几个节点？",
+        "在什么链路带宽与排队条件下，远端命中会比本地重算更慢？"
+      ],
+      "symptoms": [
+        "远端缓存命中却比重算慢",
+        "目录指向已失效的副本"
+      ],
+      "assumes": [
+        "跨节点共享的 KV 存储",
+        "目录与数据分离"
+      ]
+    },
+    {
+      "id": "K-HW-014",
+      "path": "hardware/transport-and-rdma.md",
+      "category": "hardware",
+      "title": "通信传输：注册、完成、可见与回收",
+      "summary": "网络提交、CQE、消费者可见与应用接管是不同事件；注册、代次和完成协议共同决定缓冲何时可回收。",
+      "revision": 3,
+      "status": "seed",
+      "tags": [
+        "RDMA",
+        "GPUDirect",
+        "verbs",
+        "CQE",
+        "注册",
+        "NIC",
+        "通信",
+        "可见性",
+        "完成"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-RDMA",
+        "S-GPUDIRECT",
+        "S-NCCL-COLLECTIVE",
+        "S-NCCL-GROUP",
+        "S-CUDA-TOPOLOGY"
+      ],
+      "related": [
+        "K-HW-002",
+        "K-HW-003",
+        "K-FW-003",
+        "K-SYS-009",
+        "K-SYS-013",
+        "K-SYS-014",
+        "K-ALG-003",
+        "K-ALG-013",
+        "K-ALG-015",
+        "K-ENGINE-005",
+        "K-HW-008",
+        "K-MODEL-010",
+        "K-SYS-001",
+        "K-SYS-004",
+        "K-SYS-005",
+        "K-TOOLS-001",
+        "K-TOOLS-002",
+        "K-TOOLS-003",
+        "K-ALG-023",
+        "K-SYS-019",
+        "K-MODEL-015",
+        "K-MODEL-016"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-29",
+      "sha256": "550d07393ad94cc174a954f773835c1c3e242d839888f90263230f878b121958",
+      "questions": [
+        "注册与操作类型怎样限定远端可访问的内存，未注册访问会怎样失败？",
+        "一次传输的逐事件时序中，提交、完成、可见与接管各自在哪一刻发生？",
+        "CQE、通知与应用确认之间有什么差别，缓冲何时才能回收？",
+        "GPUDirect 为什么还需要 GPU 侧可见性保证，缺失会读到什么？",
+        "小消息与大状态在共享拓扑下如何分别优化，取消与失败如何验证？"
+      ],
+      "symptoms": [
+        "NIC 完成后 GPU 偶发读到旧数据",
+        "注册内存不足导致传输失败"
+      ],
+      "assumes": [
+        "RDMA 类传输与完成队列模型",
+        "多节点之间的状态传输"
+      ]
+    },
+    {
+      "id": "K-SYS-014",
+      "path": "system-semantics/serving-recovery.md",
+      "category": "system-semantics",
+      "title": "推理服务恢复：提交边界、执行组与重试身份",
+      "summary": "恢复需要明确计算、确认与外部提交边界，以及唯一提交权；可重算 KV 不等于可恢复整个请求或恰好一次交付。",
+      "revision": 2,
+      "status": "seed",
+      "tags": [
+        "故障恢复",
+        "rank failure",
+        "重试",
+        "提交",
+        "恢复点",
+        "取消",
+        "状态重建"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-LLUMNIX",
+        "S-ASGI",
+        "S-NCCL-GROUP",
+        "S-TORCH-REPRO",
+        "S-SERVERLESSLLM"
+      ],
+      "related": [
+        "K-SYS-004",
+        "K-SYS-005",
+        "K-SYS-009",
+        "K-ALG-009",
+        "K-HW-014",
+        "K-ALG-023",
+        "K-TOOLS-005",
+        "K-ALG-006",
+        "K-ALG-010",
+        "K-ALG-011",
+        "K-ALG-012",
+        "K-ALG-013",
+        "K-ENGINE-005",
+        "K-FW-009",
+        "K-MODEL-004",
+        "K-MODEL-011",
+        "K-MODEL-012",
+        "K-SYS-002",
+        "K-SYS-008",
+        "K-SYS-013",
+        "K-SYS-011",
+        "K-WORK-008",
+        "K-SYS-018",
+        "K-SYS-019"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-27",
+      "sha256": "f551fa1f1e6213469c856a880839eefff504fb39f4dd692000b2df80a20a7f5e",
+      "questions": [
+        "计算、确认与外部提交三个边界为什么要分别记录？",
+        "故障矩阵如何决定恢复路线，哪些故障可局部恢复？",
+        "执行组恢复与单请求恢复有何不同？",
+        "迁移期间为什么只允许一份提交权，违反会产生什么？",
+        "重试预算与过载反馈如何设计，可观察的不变量有哪些？"
+      ],
+      "symptoms": [
+        "断线重试后重复或遗漏输出",
+        "单 rank 故障导致全部请求失败"
+      ],
+      "assumes": [
+        "请求有外部可观察的提交点",
+        "存在重试与故障转移"
+      ]
+    },
+    {
+      "id": "K-ALG-023",
+      "path": "algorithms/routing-and-migration.md",
+      "category": "algorithms",
+      "title": "请求路由与迁移：命中收益、排队和追赶条件",
+      "summary": "缓存亲和与动态迁移需要同时比较排队、状态增长、网络和提交责任；局部命中与低迁移停顿不保证整体收益。",
+      "revision": 2,
+      "status": "seed",
+      "tags": [
+        "routing",
+        "路由",
+        "迁移",
+        "负载均衡",
+        "前缀亲和",
+        "Llumnix",
+        "热点"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-LLUMNIX",
+        "S-MOONCAKE",
+        "S-SGLANG",
+        "S-DISTSERVE"
+      ],
+      "related": [
+        "K-ALG-003",
+        "K-SYS-013",
+        "K-SYS-014",
+        "K-HW-014",
+        "K-ALG-013",
+        "K-WORK-005",
+        "K-ENGINE-001",
+        "K-ENGINE-004",
+        "K-HW-002",
+        "K-MODEL-008",
+        "K-SYS-002",
+        "K-SYS-005",
+        "K-SYS-009",
+        "K-WORK-007"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-27",
+      "sha256": "1b9dcfd5fea499a91611459bb936e1c1c49ceb562171fb0f1ba360a7010f5d32",
+      "questions": [
+        "候选节点的完整估计成本包含哪些项，为什么命中最多的节点未必最早完成？",
+        "全局实例配对与本地请求选择分开后，稀疏负载报告和多路由器竞争带来什么决策误差？",
+        "活跃迁移的追赶条件是什么，复制速度低于新增速度时应如何停止？",
+        "迁移释放的空间与占用的目的容量和网络如何比较，怎样避免围绕预测噪声来回迁移？",
+        "热点前缀副本和优先级迁移在改善命中与排队的同时可能挤出什么？"
+      ],
+      "symptoms": [
+        "前缀亲和路由把热点请求集中到排队最严重的实例",
+        "多个路由器同时把请求送到同一个刚空闲的节点",
+        "迁移总时间远长于最后停顿，带宽下降后迁移追不上"
+      ],
+      "assumes": [
+        "多实例服务且各实例持有不同缓存状态",
+        "请求状态可冻结旧前缀并追加新状态",
+        "存在可估计的队列与传输成本"
+      ]
+    },
+    {
+      "id": "K-ALG-024",
+      "path": "algorithms/branch-generation.md",
+      "category": "algorithms",
+      "title": "多样本与搜索分支：父子状态、评分与共同提交",
+      "summary": "beam、多样本与投机树共享存储机制但优化目标不同；父子路径、logits 行、随机/语法状态与提交边界必须一致。",
+      "revision": 3,
+      "status": "seed",
+      "tags": [
+        "beam search",
+        "分支生成",
+        "tree attention",
+        "多样本",
+        "RNG",
+        "EAGLE",
+        "共同提交"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-EAGLE",
+        "S-SPEC",
+        "S-PAGED",
+        "S-TORCH-REPRO",
+        "S-SGLANG"
+      ],
+      "related": [
+        "K-ALG-006",
+        "K-ALG-011",
+        "K-ALG-012",
+        "K-ALG-002",
+        "K-SYS-002",
+        "K-WORK-010",
+        "K-ALG-009",
+        "K-ENGINE-003",
+        "K-MODEL-004"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-28",
+      "sha256": "f179ed71f0de2ec4d2ae2acf80fed0fce8c4677ee48674d61d9db5a881854e55",
+      "questions": [
+        "多样本采样、beam search 和投机树各自的目标是什么，哪些推断不能从一种迁移到另一种？",
+        "每个分支需要记录哪些身份与状态，共享只读前缀后追加如何处理尾页所有权？",
+        "树形 attention 中每个 query 的可见集合由什么决定，物理行连续为何不等于同一序列？",
+        "保留一条路径时，KV、递归状态、grammar、随机状态和评分如何转移到同一边界？",
+        "分支宽度和深度增加时，哪些资源随之扩展，成本应按什么单位衡量？"
+      ],
+      "symptoms": [
+        "同一请求的多个样本输出重复相同随机轨迹",
+        "树形验证中兄弟分支之间发生 attention 泄漏",
+        "流式已发布的内容被后续搜索替换"
+      ],
+      "assumes": [
+        "单请求产生多条候选前缀",
+        "KV 以页管理且支持共享与写时复制",
+        "每分支有独立随机与语法状态"
+      ]
+    },
+    {
+      "id": "K-SYS-011",
+      "path": "system-semantics/model-lifecycle.md",
+      "category": "system-semantics",
+      "title": "模型生命周期：加载、就绪、排空与版本切换",
+      "summary": "模型就绪需要完整制品、执行路径和容量；请求绑定版本，新旧并存、排空和卸载由共同生命周期约束。",
+      "revision": 3,
+      "status": "seed",
+      "tags": [
+        "模型生命周期",
+        "readiness",
+        "冷启动",
+        "滚动更新",
+        "版本切换",
+        "预热",
+        "排空"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-SERVERLESSLLM",
+        "S-BORG",
+        "S-NVIDIA-PLUGIN",
+        "S-TORCH-INFERENCE"
+      ],
+      "related": [
+        "K-FW-011",
+        "K-SYS-004",
+        "K-SYS-008",
+        "K-SYS-014",
+        "K-WORK-008",
+        "K-SYS-018",
+        "K-SYS-019",
+        "K-ALG-014",
+        "K-FW-004",
+        "K-FW-005",
+        "K-FW-009",
+        "K-SYS-002"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-29",
+      "sha256": "335c2727a23059a696ee9419d167058c3937c130ddfafaa39b1932ea32d5011a",
+      "questions": [
+        "从制品到可接收请求经过哪些状态，加载完成为什么不等于就绪？",
+        "三种切换策略（并存、排空、原地）各自的容量与延迟代价是什么？",
+        "启动与容量账如何合并，新旧版本并存的峰值由什么决定？",
+        "请求绑定版本后，排空与卸载受哪些共同约束？",
+        "在什么条件下并存切换比排空切换更差，预热成本如何改变这个比较？"
+      ],
+      "symptoms": [
+        "权重加载结束但服务仍不能接收请求",
+        "切换模型后旧请求结果混入新版本"
+      ],
+      "assumes": [
+        "模型版本可在线更换",
+        "单实例内的生命周期管理"
+      ]
+    },
+    {
+      "id": "K-WORK-007",
+      "path": "workloads/multi-model-placement.md",
+      "category": "workloads",
+      "title": "多模型放置：共同容量、混合执行与租户公平",
+      "summary": "多模型与 LoRA 的共享条件决定共同容量、混合执行和公平等待；完整场景联合比较合并、共享及分组路径。",
+      "revision": 3,
+      "status": "seed",
+      "tags": [
+        "多模型",
+        "LoRA",
+        "adapter",
+        "多租户",
+        "放置",
+        "共同内存池",
+        "公平",
+        "rank",
+        "C08"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-ALPASERVE",
+        "S-SLORA",
+        "S-LORA",
+        "S-VLLM-PREFIX"
+      ],
+      "related": [
+        "K-ALG-014",
+        "K-SYS-012",
+        "K-ALG-001",
+        "K-ALG-023",
+        "K-WORK-008",
+        "K-SYS-016",
+        "K-WORK-011",
+        "K-SYS-010",
+        "K-WORK-009"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-29",
+      "sha256": "0d7872b7823ecd01b49950d97431db0f4f8ef61da18208492d88c07955720400",
+      "questions": [
+        "多模型共享的对象有哪些，共享条件如何决定共同容量？",
+        "驻留、并行与路由三类候选在多模型放置中各自改变什么成本？",
+        "共享基座的多租户 LoRA 服务应如何组织混合执行与公平等待？",
+        "贯穿状态、质量和公平性的验证应检查什么？",
+        "合并、共享与分组三条路径各自的代价是什么？"
+      ],
+      "symptoms": [
+        "多 adapter 合批后小租户长期等待",
+        "共享基座后单模型延迟上升"
+      ],
+      "assumes": [
+        "多个模型或 adapter 共享实例",
+        "存在租户划分"
+      ]
+    },
+    {
+      "id": "K-WORK-008",
+      "path": "workloads/elastic-serving.md",
+      "category": "workloads",
+      "title": "弹性服务：启动延迟、可用容量与排空",
+      "summary": "扩缩容要以实际就绪容量和启动/排空延迟解释队列；冷启动流量、故障余量与状态所有权决定策略是否可行。",
+      "revision": 3,
+      "status": "seed",
+      "tags": [
+        "弹性服务",
+        "autoscale",
+        "冷启动",
+        "热备用",
+        "扩缩容",
+        "滚动发布",
+        "排空",
+        "突发"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-SERVERLESSLLM",
+        "S-ALPASERVE",
+        "S-BORG"
+      ],
+      "related": [
+        "K-SYS-011",
+        "K-WORK-007",
+        "K-WORK-009",
+        "K-WORK-011",
+        "K-SYS-018",
+        "K-SYS-014",
+        "K-WORK-005",
+        "K-SYS-008"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-29",
+      "sha256": "bdbfa8db6478580340c3d41e722726e39ae0143e5ca3a954761842974930284e",
+      "questions": [
+        "启动延迟怎样放进请求时间轴，排队由什么决定？",
+        "冷启动、热备用与预扩容三条路线各自把成本放在哪里？",
+        "突发算例如何复算可用容量与冷启动流量？",
+        "缩容和滚动更新时状态所有权如何处理？",
+        "在什么突发形态与启动延迟下，弹性扩缩容不如固定容量？"
+      ],
+      "symptoms": [
+        "扩容数量增加而队列继续变长",
+        "缩容后在途请求丢失"
+      ],
+      "assumes": [
+        "实例可动态增减",
+        "启动与排空有可测延迟"
+      ]
+    },
+    {
+      "id": "K-WORK-009",
+      "path": "workloads/cost-and-energy.md",
+      "category": "workloads",
+      "title": "服务成本与能耗：按合格结果计算资源代价",
+      "summary": "成本与能耗以相同质量/SLO 的合格结果为分母，计入闲置、加载和失败，并区分计量域、积分与价格假设。",
+      "revision": 2,
+      "status": "seed",
+      "tags": [
+        "成本",
+        "能耗",
+        "energy",
+        "goodput",
+        "RAPL",
+        "功率",
+        "计量域",
+        "资源效率"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-LINUX-RESOURCES",
+        "S-MLPERF-SCENARIOS",
+        "S-MLPERF-LLM"
+      ],
+      "related": [
+        "K-WORK-001",
+        "K-WORK-004",
+        "K-WORK-008",
+        "K-WORK-007",
+        "K-TOOLS-007",
+        "K-SYS-019"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-27",
+      "sha256": "e68e30bc7b68d554863044fe495751d95fc53993fb21c755ab89ef5d0ea4fd1b",
+      "questions": [
+        "成本的系统边界包含什么，闲置、加载与失败为何计入？",
+        "能量、功率与计量域如何区分，不同口径为何不能相加？",
+        "频率、批量与冗余如何影响每合格结果的代价？",
+        "成本与能量在什么条件下同时反转？",
+        "哪些结论可迁移，哪些依赖价格假设？"
+      ],
+      "symptoms": [
+        "每请求成本下降但合格结果也减少",
+        "功率读数与整机能耗对不上"
+      ],
+      "assumes": [
+        "能耗可按计量域读取",
+        "合格结果有明确定义"
+      ]
+    },
+    {
+      "id": "K-SYS-016",
+      "path": "system-semantics/tenant-isolation.md",
+      "category": "system-semantics",
+      "title": "租户隔离：资源份额、缓存命名空间与故障边界",
+      "summary": "租户身份、缓存权限、资源限额和故障域需要分别约束；固定文档区分 cgroup、time-slicing、MPS 与 MIG 资源契约。",
+      "revision": 2,
+      "status": "seed",
+      "tags": [
+        "租户隔离",
+        "MIG",
+        "MPS",
+        "time-slicing",
+        "cgroup",
+        "缓存命名空间",
+        "配额",
+        "故障域"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-LINUX-RESOURCES",
+        "S-NVIDIA-PLUGIN",
+        "S-BORG",
+        "S-VLLM-PREFIX"
+      ],
+      "related": [
+        "K-SYS-002",
+        "K-SYS-004",
+        "K-SYS-008",
+        "K-ALG-003",
+        "K-WORK-007",
+        "K-WORK-011",
+        "K-SYS-019",
+        "K-TOOLS-005",
+        "K-ALG-014"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-27",
+      "sha256": "0ca7501a80e750152a5fb3b9815c77f9e3f9aa393ff7546b3f05375958f88606",
+      "questions": [
+        "租户身份如何从入口传到状态拥有者，缓存命名空间为什么要隔离？",
+        "主机限额（cgroup、cpuset）的实际含义是什么？",
+        "GPU 共享为什么要绑定具体机制，时间片、MPS 与 MIG 的契约有何不同？",
+        "容量、公平与故障预算在多租户下如何分别约束，谁为超额付出？",
+        "在什么负载与隔离机制组合下，共享实例比独占实例更划算？"
+      ],
+      "symptoms": [
+        "配额相同但租户互相干扰",
+        "跨租户复用了不该共享的缓存"
+      ],
+      "assumes": [
+        "多租户共享实例或设备",
+        "存在资源隔离机制"
+      ]
+    },
+    {
+      "id": "K-WORK-011",
+      "path": "workloads/cluster-resource-placement.md",
+      "category": "workloads",
+      "title": "集群放置：资源向量、拓扑、执行组与故障域",
+      "summary": "集群放置先检查逐 rank 资源和拓扑，再比较装箱、局部性、共同启动与故障后容量；总空闲量不保证可部署。",
+      "revision": 2,
+      "status": "seed",
+      "tags": [
+        "集群",
+        "放置",
+        "gang",
+        "资源向量",
+        "碎片",
+        "故障域",
+        "拓扑",
+        "超售"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-BORG",
+        "S-ALPASERVE",
+        "S-CUDA-TOPOLOGY"
+      ],
+      "related": [
+        "K-ALG-015",
+        "K-HW-002",
+        "K-HW-009",
+        "K-WORK-007",
+        "K-WORK-008",
+        "K-SYS-016",
+        "K-SYS-018",
+        "K-SYS-019",
+        "K-SYS-010"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-27",
+      "sha256": "235de985ced67e21bfe6727ff2e91be680e8def602ad02a3f3e9de2b3ca1b8a1",
+      "questions": [
+        "资源向量与可行集合如何定义，总空闲为何不保证可部署？",
+        "共同启动与控制状态对放置施加什么约束，部分启动会怎样？",
+        "装箱与局部性两种放置策略在碎片与通信上怎样比较？",
+        "故障域怎样影响故障后可用容量，备用容量应放在哪里？",
+        "可区分方案的验证应覆盖哪些资源与故障条件？"
+      ],
+      "symptoms": [
+        "集群总空闲充足但执行组无法启动",
+        "单故障域失效后容量骤降"
+      ],
+      "assumes": [
+        "多节点集群调度",
+        "执行组需要共同启动"
+      ]
+    },
+    {
+      "id": "K-SYS-018",
+      "path": "system-semantics/storage-services.md",
+      "category": "system-semantics",
+      "title": "推理存储服务：制品、缓存、索引与提交记录",
+      "summary": "权重、KV、索引和提交记录具有不同持久性；版本清单、对象可见性、分发与恢复竞争共同决定推理存储契约。",
+      "revision": 2,
+      "status": "seed",
+      "tags": [
+        "存储服务",
+        "对象存储",
+        "文件存储",
+        "块存储",
+        "制品分发",
+        "版本发布",
+        "持久性",
+        "故障恢复"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-CEPH06",
+        "S-SERVERLESSLLM",
+        "S-LINUX-IO",
+        "S-BORG"
+      ],
+      "related": [
+        "K-FW-011",
+        "K-HW-012",
+        "K-ALG-017",
+        "K-SYS-013",
+        "K-SYS-014",
+        "K-SYS-011",
+        "K-WORK-008",
+        "K-WORK-011",
+        "K-SYS-004",
+        "K-SYS-010",
+        "K-TOOLS-005",
+        "K-SYS-017"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-27",
+      "sha256": "283ceab23fbbf5c27bbb4486b56c2123459a19a00229c5baae70d09c18062661",
+      "questions": [
+        "权重、KV、索引与提交记录的持久性要求有何不同？",
+        "对象、文件与块接口如何选择，各自的可见性语义是什么？",
+        "完整版本如何发布与读取，部分可见会造成什么？",
+        "分发、复制与恢复如何共享带宽，竞争时谁优先？",
+        "在什么故障模式下存储选择会反转，验证应注入哪些故障？"
+      ],
+      "symptoms": [
+        "文件存在却读到不完整模型",
+        "扩容时制品分发成为瓶颈"
+      ],
+      "assumes": [
+        "制品存储于共享或对象存储",
+        "多实例读取同一制品"
+      ]
+    },
+    {
+      "id": "K-SYS-019",
+      "path": "system-semantics/deployment-environment.md",
+      "category": "system-semantics",
+      "title": "部署环境：版本契约、可见设备与真实资源边界",
+      "summary": "镜像、宿主驱动、设备身份与有效 quota 共同定义部署环境；就绪、资源峰值和代表路径验证才能支持服务可用性。",
+      "revision": 2,
+      "status": "seed",
+      "tags": [
+        "部署环境",
+        "驱动",
+        "容器",
+        "设备可见性",
+        "CPU quota",
+        "NUMA",
+        "readiness",
+        "资源边界"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-NVIDIA-PLUGIN",
+        "S-LINUX-RESOURCES",
+        "S-TORCH-CUDA",
+        "S-BORG"
+      ],
+      "related": [
+        "K-HW-009",
+        "K-HW-002",
+        "K-HW-014",
+        "K-FW-011",
+        "K-SYS-011",
+        "K-SYS-015",
+        "K-SYS-016",
+        "K-SYS-014",
+        "K-TOOLS-005",
+        "K-HW-003",
+        "K-SYS-010",
+        "K-WORK-009",
+        "K-WORK-011"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-27",
+      "sha256": "1b47e39a7f36c9f1cba4dc1792ad9243fd69d083ae1d6a7bb13bfd80dae1a8a5",
+      "questions": [
+        "镜像、宿主驱动、设备身份与 quota 如何共同定义环境相容关系？",
+        "CPU、内存与拓扑限制在容器内怎样生效，实际可用量如何查？",
+        "健康、就绪与可接收容量为什么是三个不同状态？",
+        "更新驱动或镜像后，哪些验证不能沿用旧环境的结果？",
+        "同一镜像在不同节点行为不同的原因有哪些？"
+      ],
+      "symptoms": [
+        "同一镜像在另一节点性能或可用性不同",
+        "容器内看到的核数与实际额度不符"
+      ],
+      "assumes": [
+        "容器化部署",
+        "宿主驱动与用户态库分离"
+      ]
+    },
+    {
+      "id": "K-ALG-022",
+      "path": "algorithms/context-reuse.md",
+      "category": "algorithms",
+      "title": "非前缀上下文复用：依赖、位置与选择性重算",
+      "summary": "非前缀文本重复不保证逐层状态相同；按上文、位置与可见性判断精确复用，并对选择性重算独立计量质量和加载成本。",
+      "revision": 3,
+      "status": "seed",
+      "tags": [
+        "非前缀复用",
+        "CacheBlend",
+        "上下文依赖",
+        "RoPE",
+        "选择性重算",
+        "RAG"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-CACHEBLEND",
+        "S-ROPE",
+        "S-PAGED",
+        "S-SGLANG"
+      ],
+      "related": [
+        "K-ALG-003",
+        "K-ALG-018",
+        "K-ALG-021",
+        "K-SYS-013",
+        "K-SYS-017",
+        "K-FW-006"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-29",
+      "sha256": "f2cefb1f5504ada965f3842011120da0e2e48ddb999baac1c4efc87839b905bf",
+      "questions": [
+        "同一段文本的分词结果、文档 embedding、逐层 KV 和最终回答各依赖什么，哪些可以脱离上文保存？",
+        "RoPE 位置变换能修正什么、不能修正什么，二维反例如何检查实现保留了完整旋转？",
+        "逐层选择性重算中选择集合必须来自什么信息，集合在层间缩小时如何保持可执行性？",
+        "独立片段缓存与某次请求融合后的缓存为什么是不同对象，公共条目如何避免被污染？",
+        "重算比例与耗时为何不成比例，逐层加载与计算流水的理想时间如何估算？"
+      ],
+      "symptoms": [
+        "相同文本换了前序片段后 logits 明显偏离完整 prefill",
+        "重算 10% token 但耗时远不止 10%",
+        "组合缓存数量随复用率上升而容量急剧增加"
+      ],
+      "assumes": [
+        "因果 decoder，深层状态依赖可见上文",
+        "使用 RoPE 或可变换的位置编码",
+        "允许在质量阈值内近似而非精确复用"
+      ]
+    },
+    {
+      "id": "K-MODEL-013",
+      "path": "models/embedding-reranking.md",
+      "category": "models",
+      "title": "Embedding 与重排：编码函数、批量与评分契约",
+      "summary": "编码器、pooling、normalize 与句对评分共同定义 embedding/重排函数；长度聚批、padding 与输入版本决定成本及结果。",
+      "revision": 2,
+      "status": "seed",
+      "tags": [
+        "embedding",
+        "reranking",
+        "encoder-only",
+        "BERT",
+        "pooling",
+        "normalize",
+        "非生成推理",
+        "C12"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-BERT",
+        "S-FAISS",
+        "S-TORCH-NUMERIC"
+      ],
+      "related": [
+        "K-SYS-007",
+        "K-ALG-016",
+        "K-FW-004",
+        "K-WORK-003",
+        "K-SYS-017",
+        "K-TOOLS-006",
+        "K-SYS-010"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-27",
+      "sha256": "44f22a27c9b4a11579bed108952f18722d90cd0d4c326db189c865d7e51aef38",
+      "questions": [
+        "输出向量由整个编码函数定义，pooling 与 normalize 的差异会改变什么？",
+        "双塔检索与交叉编码器重排的成本结构有何不同？",
+        "padding、packing 与计算形状如何影响结果与吞吐？",
+        "驻留、缓存与阶段预算在非生成负载中怎样分配？",
+        "embedding 与重排的完整验证场景应覆盖哪些输入版本与批量条件？"
+      ],
+      "symptoms": [
+        "单条正确但合批后向量变化",
+        "重排延迟随候选数线性增长"
+      ],
+      "assumes": [
+        "encoder-only 模型",
+        "非自回归的批量推理"
+      ]
+    },
+    {
+      "id": "K-SYS-017",
+      "path": "system-semantics/retrieval-pipeline.md",
+      "category": "system-semantics",
+      "title": "向量检索与 RAG：索引、版本与端到端质量",
+      "summary": "检索的距离契约、候选过滤和索引版本共同决定合法结果；Flat/IVF/图搜索与压缩需连接材料相关性和完整 RAG 时间预算。",
+      "revision": 2,
+      "status": "seed",
+      "tags": [
+        "向量检索",
+        "RAG",
+        "Faiss",
+        "IVF",
+        "PQ",
+        "HNSW",
+        "recall",
+        "索引更新",
+        "C12"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-FAISS",
+        "S-CACHEBLEND",
+        "S-BERT"
+      ],
+      "related": [
+        "K-MODEL-013",
+        "K-ALG-022",
+        "K-SYS-018",
+        "K-HW-012",
+        "K-WORK-005",
+        "K-TOOLS-007",
+        "K-SYS-010"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-27",
+      "sha256": "bd09460502715f214c20ffdd68bdbc6bb9373668a849ca602b75d5e933ff40d0",
+      "questions": [
+        "查询函数和候选集合为什么先于索引选择，距离契约如何约束结果？",
+        "搜索空间裁剪与向量压缩是哪两条轴，各自影响什么？",
+        "构建、发布、更新和查询的生命周期如何组织，版本如何约束？",
+        "分片、缓存与设备放置怎样决定延迟与吞吐？",
+        "RAG 的时间与质量链包含哪些阶段，端到端预算如何分配？"
+      ],
+      "symptoms": [
+        "recall 尚可但过滤后为空",
+        "索引更新后结果不一致"
+      ],
+      "assumes": [
+        "向量索引与 LLM 组合的 RAG",
+        "材料与索引有版本"
+      ]
+    },
+    {
+      "id": "K-MODEL-014",
+      "path": "models/vision-inference.md",
+      "category": "models",
+      "title": "视觉识别与卷积：空间布局、预处理与任务输出",
+      "summary": "视觉识别把图像变换、卷积布局、残差生命周期与分类/检测输出连接；按分辨率、工作区和几何契约验证完整请求。",
+      "revision": 2,
+      "status": "seed",
+      "tags": [
+        "CNN",
+        "卷积",
+        "ResNet",
+        "vision",
+        "检测",
+        "NMS",
+        "im2col",
+        "C12"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-RESNET",
+        "S-TVM",
+        "S-TORCH-NUMERIC"
+      ],
+      "related": [
+        "K-ALG-016",
+        "K-FW-004",
+        "K-HW-004",
+        "K-SYS-015",
+        "K-MODEL-008",
+        "K-TOOLS-006",
+        "K-SYS-010"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-27",
+      "sha256": "a3b95c24c3838a54df90db945066257c0960e20a24929ed2812838fc5a3528a0",
+      "questions": [
+        "原始图像到模型张量的契约包含哪些变换，坐标系如何保持？",
+        "卷积的计算与中间表示有哪些选择，im2col 的代价是什么？",
+        "残差、归一化与合法融合的边界在哪里？",
+        "分类与检测为什么是不同的输出链，NMS 的顺序如何影响结果？",
+        "按分辨率、工作区与几何契约验证完整请求需要哪些检查？"
+      ],
+      "symptoms": [
+        "分类正常但检测框偏移",
+        "换布局后精度下降"
+      ],
+      "assumes": [
+        "卷积网络的视觉模型",
+        "固定或有限的输入分辨率"
+      ]
+    },
+    {
+      "id": "K-MODEL-015",
+      "path": "models/recommendation-inference.md",
+      "category": "models",
+      "title": "推荐推理：稀疏表、特征交互与请求批量",
+      "summary": "推荐推理分别计量稀疏表 lookup、bag 聚合、特征交互与 dense 计算，并以特征/参数版本约束分片、缓存和更新。",
+      "revision": 2,
+      "status": "seed",
+      "tags": [
+        "推荐",
+        "DLRM",
+        "embedding table",
+        "EmbeddingBag",
+        "稀疏特征",
+        "表分片",
+        "C12"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-DLRM",
+        "S-TORCH-NUMERIC"
+      ],
+      "related": [
+        "K-ALG-016",
+        "K-ALG-017",
+        "K-ALG-020",
+        "K-HW-009",
+        "K-HW-014",
+        "K-WORK-003",
+        "K-SYS-010"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-27",
+      "sha256": "a36b0addea05174460d8f51179643665f98c51c6aa4a4d9dec235535948dd06d",
+      "questions": [
+        "输入特征与表怎样共同定义函数，特征版本变化会改变什么？",
+        "从 lookup 到交互的形状账包含哪些项，bag 聚合如何归约？",
+        "放置策略为什么取决于表大小与访问偏斜？",
+        "持续更新、缓存和请求状态如何共存，参数版本如何约束？",
+        "大表推荐服务的完整验证场景应覆盖哪些稀疏与分片条件？"
+      ],
+      "symptoms": [
+        "lookup 看似正确但最终评分异常",
+        "热表分片成为瓶颈"
+      ],
+      "assumes": [
+        "稀疏特征驱动的推荐模型",
+        "embedding 表远大于单设备"
+      ]
+    },
+    {
+      "id": "K-MODEL-016",
+      "path": "models/graph-inference.md",
+      "category": "models",
+      "title": "图模型推理：邻居依赖、采样与不规则执行",
+      "summary": "图推理先展开邻居依赖再逐层聚合；采样、图/特征版本、去重语义和不规则搬运共同决定质量与资源上界。",
+      "revision": 2,
+      "status": "seed",
+      "tags": [
+        "GNN",
+        "GraphSAGE",
+        "邻居采样",
+        "聚合",
+        "图分片",
+        "特征缓存",
+        "C12"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-GRAPHSAGE",
+        "S-TVM",
+        "S-TORCH-NUMERIC"
+      ],
+      "related": [
+        "K-ALG-016",
+        "K-ALG-020",
+        "K-SYS-015",
+        "K-HW-014",
+        "K-WORK-003",
+        "K-TOOLS-007",
+        "K-FW-004",
+        "K-SYS-010"
+      ],
+      "evidence": [],
+      "updated_at": "2026-10-27",
+      "sha256": "343135d67c7fd61ed1e7fb82185df7a8f30ebfc86cb5427dfd9e6313046fe6fe",
+      "questions": [
+        "图、特征和聚合器如何组成输入函数，图版本如何影响结果？",
+        "依赖展开与特征收集的成本由什么决定，去重语义是什么？",
+        "采样为什么是质量与资源之间的选择，不同采样策略的误差来源？",
+        "算术、带宽与分片账在不规则执行中怎样建立？",
+        "采样图推理的完整验证场景应覆盖哪些图结构与特征缺失条件？"
+      ],
+      "symptoms": [
+        "同样多目标节点耗时波动很大",
+        "特征 miss 使延迟尾部拉长"
+      ],
+      "assumes": [
+        "邻居聚合的图神经网络",
+        "图与特征可分片存储"
+      ]
+    },
+    {
+      "id": "K-TOOLS-008",
+      "path": "tools/gpu-characterization.md",
+      "category": "tools",
+      "title": "GPU 从零表征：可持续带宽、矩阵吞吐与测量条件",
+      "summary": "用带条件的微基准建立 HBM/L2、矩阵、launch/图、PCIe、时钟功耗与多消费者参数包，并对接资源模型；峰值与异形态结果不能直接代入。",
+      "tags": [
+        "GPU表征",
+        "有效带宽",
+        "HBM",
+        "L2",
+        "矩阵吞吐",
+        "CUDA Graph",
+        "PCIe",
+        "功耗墙",
+        "并发干扰",
+        "资源模型"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [
+          "cuda"
+        ],
+        "runtimes": [],
+        "workloads": []
+      },
+      "source_ids": [
+        "S-CUDA-BEST",
+        "S-CUDA-ASYNC",
+        "S-NCU",
+        "S-NSYS",
+        "S-CUDA-TOPOLOGY"
+      ],
+      "related": [
+        "K-HW-001",
+        "K-HW-005",
+        "K-TOOLS-003",
+        "K-TOOLS-007",
+        "K-FW-005",
+        "K-SYS-024"
+      ],
+      "questions": [
+        "顺序与随机 HBM 测量差在哪些条件，怎样分别写入流量账？",
+        "工作集越过 L2 后表观带宽如何变化，怎样避免把命中当 HBM？",
+        "各 dtype 与 shape 族的矩阵吞吐如何对应 roofline 的算力项？",
+        "launch 与图重放成本在何时进入关键路径，计时边界如何选？",
+        "多消费者共享 HBM 时，单进程表征怎样折算为可用份额？"
+      ],
+      "symptoms": [
+        "按铭牌带宽估的 ITL 下界远低于实测",
+        "短窗微基准很快、长服务明显降频变慢",
+        "同卡第二进程后有效带宽近乎减半"
+      ],
+      "assumes": [
+        "目标为可独占或可声明共置的 GPU",
+        "资源模型区分容量、流量与计算账"
+      ],
+      "revision": 1,
+      "status": "seed",
+      "evidence": [],
+      "updated_at": "2026-10-27",
+      "sha256": "b31dd621ab293e8cb26d65dce51ec87b66e86a614dc91fff508c71182529cc3f"
+    },
+    {
+      "id": "K-SYS-024",
+      "path": "system-semantics/specialization-levers.md",
+      "category": "system-semantics",
+      "title": "专用化杠杆：固定模型、负载与硬件时多出的自由度",
+      "summary": "模型、workload 或硬件冻结时，预转换、分桶、离线定参与单一路径等杠杆的收益来源、前提、失效条件与代价；非施工清单。",
+      "tags": [
+        "专用化",
+        "固定模型",
+        "固定workload",
+        "固定硬件",
+        "预转换",
+        "离线分桶",
+        "fallback",
+        "变更成本"
+      ],
+      "scope": {
+        "model_families": [],
+        "platforms": [],
+        "runtimes": [],
+        "workloads": [
+          "text-generation"
+        ]
+      },
+      "source_ids": [
+        "S-ORCA",
+        "S-SARATHI",
+        "S-SPEC",
+        "S-CUDA-BEST",
+        "S-TORCH-CUDA"
+      ],
+      "related": [
+        "K-SYS-010",
+        "K-TOOLS-008",
+        "K-FW-005",
+        "K-ALG-006",
+        "K-SYS-025"
+      ],
+      "questions": [
+        "固定模型后权重预转换与形状静态化各省哪类成本，何时失效？",
+        "workload 离线分桶和准入表依赖哪些分布假设，漂移如何暴露？",
+        "按实测而非峰值定参改变哪些设计输入，共置变化时怎样作废？",
+        "放弃广泛 fallback 的收益与移植/硬失败代价如何对照？",
+        "模型、负载与硬件三类杠杆组合时，哪些表会级联失效？"
+      ],
+      "symptoms": [
+        "通用探测分支占满路径但目标机能力已知",
+        "离线批表示在分布漂移后大面积越 SLO",
+        "驱动升级后原静态图桶与带宽表同时失效"
+      ],
+      "assumes": [
+        "任务已冻结模型、负载或硬件之一",
+        "仍须满足质量与 SLO 不变量"
+      ],
+      "revision": 1,
+      "status": "seed",
+      "evidence": [],
+      "updated_at": "2026-10-27",
+      "sha256": "3b316014be245e02a12d9aaf841d5a6518918d47685edb127865369dee1e37d6"
+    },
+    {
+      "id": "K-SYS-025",
+      "path": "system-semantics/known-tensions.md",
+      "category": "system-semantics",
+      "title": "已知张力：单实例交互式服务中的机制冲突",
+      "summary": "decode 带宽与 ITL、prefill/decode 干扰、投机与批、KV 量化悬崖、图/workspace 挤 KV、小批主机占比：机制、来源、可观测与反转。",
+      "tags": [
+        "设计张力",
+        "ITL",
+        "prefill",
+        "decode",
+        "投机",
+        "KV量化",
+        "CUDA Graph",
+        "主机占比",
+        "单实例服务"
+      ],
+      "scope": {
+        "model_families": [
+          "transformer"
+        ],
+        "platforms": [],
+        "runtimes": [],
+        "workloads": [
+          "text-generation"
+        ]
+      },
+      "source_ids": [
+        "S-ORCA",
+        "S-SARATHI",
+        "S-SPEC",
+        "S-KIVI",
+        "S-TORCH-CUDA",
+        "S-PAGED"
+      ],
+      "related": [
+        "K-HW-001",
+        "K-ALG-007",
+        "K-ALG-006",
+        "K-ALG-005",
+        "K-FW-005",
+        "K-SYS-015",
+        "K-SYS-024"
+      ],
+      "questions": [
+        "decode 流量下界接近 ITL 时，增大同轮批会怎样改变间隔？",
+        "长 prefill 与活跃 decode 同实例交错时，可观测干扰是什么？",
+        "批变大后投机从加速变减速的成本项如何对照？",
+        "KV 量化质量悬崖与平滑误差曲线在观测上如何区分？",
+        "图桶与 workspace 增大时，KV 并发与上下文怎样被挤占？"
+      ],
+      "symptoms": [
+        "新长大请求到达后无关会话 ITL 同步变差",
+        "小批投机加速、大批后关闭反而更快",
+        "加图桶后计算变快但最大并发明显下降"
+      ],
+      "assumes": [
+        "单实例交互式自回归服务",
+        "设备内存上权重与 KV 共存"
+      ],
+      "revision": 1,
+      "status": "seed",
+      "evidence": [],
+      "updated_at": "2026-10-27",
+      "sha256": "e7e30a27ff5b42d93b55bc6e36a008ce6f5c100410fbe357ee3870a4ad601f90"
+    }
+  ]
+}

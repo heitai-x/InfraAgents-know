@@ -1,0 +1,62 @@
+{
+  "id": "K-ALG-024",
+  "path": "algorithms/branch-generation.md",
+  "category": "algorithms",
+  "title": "多样本与搜索分支：父子状态、评分与共同提交",
+  "summary": "beam、多样本与投机树共享存储机制但优化目标不同；父子路径、logits 行、随机/语法状态与提交边界必须一致。",
+  "revision": 2,
+  "status": "seed",
+  "tags": [
+    "beam search",
+    "分支生成",
+    "tree attention",
+    "多样本",
+    "RNG",
+    "EAGLE",
+    "共同提交"
+  ],
+  "scope": {
+    "model_families": [],
+    "platforms": [],
+    "runtimes": [],
+    "workloads": []
+  },
+  "source_ids": [
+    "S-EAGLE",
+    "S-SPEC",
+    "S-PAGED",
+    "S-TORCH-REPRO",
+    "S-SGLANG"
+  ],
+  "related": [
+    "K-ALG-006",
+    "K-ALG-011",
+    "K-ALG-012",
+    "K-ALG-002",
+    "K-SYS-002",
+    "K-WORK-010",
+    "K-ALG-009",
+    "K-ENGINE-003",
+    "K-MODEL-004"
+  ],
+  "evidence": [],
+  "updated_at": "2026-10-27",
+  "sha256": "42157d4da17ab8ffd7a0aa2f5cd57a1cacdf1a989757261993f6671ae231de3a",
+  "questions": [
+    "多样本采样、beam search 和投机树各自的目标是什么，哪些推断不能从一种迁移到另一种？",
+    "每个分支需要记录哪些身份与状态，共享只读前缀后追加如何处理尾页所有权？",
+    "树形 attention 中每个 query 的可见集合由什么决定，物理行连续为何不等于同一序列？",
+    "保留一条路径时，KV、递归状态、grammar、随机状态和评分如何转移到同一边界？",
+    "分支宽度和深度增加时，哪些资源随之扩展，成本应按什么单位衡量？"
+  ],
+  "symptoms": [
+    "同一请求的多个样本输出重复相同随机轨迹",
+    "树形验证中兄弟分支之间发生 attention 泄漏",
+    "流式已发布的内容被后续搜索替换"
+  ],
+  "assumes": [
+    "单请求产生多条候选前缀",
+    "KV 以页管理且支持共享与写时复制",
+    "每分支有独立随机与语法状态"
+  ]
+}

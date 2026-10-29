@@ -1,0 +1,74 @@
+{
+  "id": "K-FW-007",
+  "path": "frameworks/triton-kernels.md",
+  "category": "frameworks",
+  "title": "Triton Kernel：块程序、布局与融合边界",
+  "summary": "块程序、布局与融合边界连接固定Triton实现；解释descriptor、log2统计、索引范围与调优成本的适用条件。",
+  "revision": 5,
+  "status": "seed",
+  "tags": [
+    "Triton",
+    "tile",
+    "autotune",
+    "fusion",
+    "register spill",
+    "线程布局",
+    "pipeline stages",
+    "调优预算",
+    "split-K",
+    "tensor descriptor",
+    "log2 LSE",
+    "合法域",
+    "index width",
+    "调优摊销",
+    "side effects"
+  ],
+  "scope": {
+    "model_families": [],
+    "platforms": [
+      "cuda",
+      "rocm"
+    ],
+    "runtimes": [],
+    "workloads": []
+  },
+  "source_ids": [
+    "S-TRITON",
+    "S-CUDA-BEST",
+    "S-ROCM",
+    "S-TVM",
+    "S-ANSOR",
+    "S-TORCH-NUMERIC",
+    "S-TORCH-CUDA"
+  ],
+  "related": [
+    "K-ALG-004",
+    "K-HW-005",
+    "K-HW-006",
+    "K-HW-011",
+    "K-HW-010",
+    "K-HW-004",
+    "K-FW-004",
+    "K-TOOLS-003",
+    "K-TOOLS-007",
+    "K-ALG-016"
+  ],
+  "evidence": [],
+  "updated_at": "2026-10-27",
+  "sha256": "4f22ff425d383743410ce23431532f8096c633aea86a63bd6e7c7ae2e5304652",
+  "questions": [
+    "块程序的 tile 形状与实际线程、寄存器布局之间是什么关系，为什么不能把它们等同？",
+    "融合边界如何从数据流推导，什么情况下融合反而让矩阵路径失效？",
+    "autotune key 应包含哪些条件，调优成本在何种调用频率下才能被收回？",
+    "在线归约的底数与中间统计量的单位为什么是跨内核的契约？",
+    "寄存器、共享存储、spill 与驻留数怎样解释 tile 增大后变慢，各自的观测有何不同？"
+  ],
+  "symptoms": [
+    "更大 tile 在小矩阵上反而更慢",
+    "自动调优后的内核在另一形状上结果错误"
+  ],
+  "assumes": [
+    "块级张量程序语言的执行模型",
+    "目标 GPU 的资源上限可查"
+  ]
+}

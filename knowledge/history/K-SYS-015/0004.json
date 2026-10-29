@@ -1,0 +1,90 @@
+{
+  "id": "K-SYS-015",
+  "path": "system-semantics/host-runtime.md",
+  "category": "system-semantics",
+  "title": "服务主机运行时：执行域、队列与缓冲所有权",
+  "summary": "执行域、队列与缓冲的成本和完成关系；资源有界要求可由准入、额度或队列等不同机制实现。",
+  "revision": 4,
+  "status": "seed",
+  "tags": [
+    "host runtime",
+    "事件循环",
+    "线程池",
+    "进程",
+    "IPC",
+    "背压",
+    "tokenizer",
+    "有界队列",
+    "CPU quota",
+    "cpuset",
+    "线程预算",
+    "队列容量",
+    "执行域选择",
+    "进程排空",
+    "管道死锁"
+  ],
+  "scope": {
+    "model_families": [],
+    "platforms": [],
+    "runtimes": [],
+    "workloads": []
+  },
+  "source_ids": [
+    "S-ASGI",
+    "S-CPU-TUNING",
+    "S-OTEL",
+    "S-PY-SUBPROCESS",
+    "S-LINUX-RESOURCES",
+    "S-TORCH-CUDA"
+  ],
+  "related": [
+    "K-HW-009",
+    "K-SYS-008",
+    "K-SYS-004",
+    "K-SYS-002",
+    "K-TOOLS-001",
+    "K-FW-003",
+    "K-ALG-008",
+    "K-SYS-010",
+    "K-ALG-001",
+    "K-ALG-010",
+    "K-ENGINE-001",
+    "K-FW-001",
+    "K-FW-008",
+    "K-HW-001",
+    "K-MODEL-005",
+    "K-MODEL-008",
+    "K-MODEL-010",
+    "K-MODEL-011",
+    "K-MODEL-012",
+    "K-SYS-007",
+    "K-TOOLS-004",
+    "K-WORK-001",
+    "K-WORK-005",
+    "K-WORK-006",
+    "K-HW-010",
+    "K-HW-012",
+    "K-SYS-019",
+    "K-MODEL-014",
+    "K-MODEL-016",
+    "K-SYS-025"
+  ],
+  "evidence": [],
+  "updated_at": "2026-10-27",
+  "sha256": "005342b6131acdd072d5cf35456a5b01e5630f764b614e7090639fde01a5b36a",
+  "questions": [
+    "哪些主机工作应放在哪个执行域，域之间的通信与容量由什么决定？",
+    "有界队列的容量怎样连接对象大小与同时存活范围？",
+    "统一的 CPU 与内存预算下，线程、进程与原生库线程如何分配？",
+    "取消如何到达等待中的阶段并变为可回收？",
+    "背压怎样连接到模型调度，进程输出、超时与关闭为何也是运行时路径？"
+  ],
+  "symptoms": [
+    "模型空闲但请求仍堆积",
+    "增加 worker 后尾延迟反而上升"
+  ],
+  "assumes": [
+    "单机服务进程",
+    "主机资源有实际额度限制"
+  ]
+}

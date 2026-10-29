@@ -1,0 +1,204 @@
+{
+  "role": "reviewer",
+  "engine": "sol",
+  "requested_model": "gpt-6.1-sol",
+  "reasoning_effort": "high",
+  "prompt_sha256": "b969b1d30b009ddfc54ac8e82d4c3a8ed83c5d56eaface064200d857970760bf",
+  "usage": [
+    {
+      "input_tokens": 967203,
+      "cached_input_tokens": 732544,
+      "cache_write_input_tokens": 0,
+      "output_tokens": 6777,
+      "reasoning_output_tokens": 1979
+    }
+  ],
+  "answer": "{\n  \"entry_id\": \"K-HW-012\",\n  \"body_sha256\": \"a0337c14a3c42f1415c97fc807fc5917b19b23591c02d32a72261d427b19b7bd\",\n  \"reviewer\": \"sol-reviewer:K-HW-012:round-2\",\n  \"decision\": \"revise\",\n  \"documents\": {\n    \"AGENTS.md\": \"b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a\",\n    \"docs/knowledge-method.md\": \"69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb\",\n    \"docs/knowledge-review.md\": \"f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21\",\n    \"knowledge/hardware/storage-io.md\": \"a0337c14a3c42f1415c97fc807fc5917b19b23591c02d32a72261d427b19b7bd\",\n    \"knowledge/sources/S-LINUX-IO.md\": \"786caae53cc1e80173616ce470c481145e285c2176b7cff4777576cc893fc316\",\n    \"knowledge/sources/S-SERVERLESSLLM.md\": \"aff9202b72fffcdf3145d0f014888070d2e12995b04f9c259930ad90a806473d\",\n    \"knowledge/sources/S-CUDA-ASYNC.md\": \"40df9287d0648a8ef55a046ceb1c18dd402619ede6e57ca33d3f90e4ace3da05\",\n    \"knowledge/sources/S-GPUDIRECT.md\": \"7a14b2ca6cdf1f54e79fc02dbf10739305b285a6d454f08cf03594249ffd36f1\",\n    \"knowledge/algorithms/tiered-residency.md\": \"eb3ebc6320d5a32481cf645605d159860dc6d1edb97f1e98afd89ddb24ee82af\",\n    \"knowledge/algorithms/kv-offload-prefetch.md\": \"a7088eba5c78cd9e96cf011d61946ad7dec4ecb6378ac16e7f2fc3820af38301\",\n    \"knowledge/hardware/host-device-transfer.md\": \"e4921a0714af21f7ab1a336f40af662f716f2c64a42dd598eb2cede548c858d2\",\n    \"knowledge/system-semantics/host-runtime.md\": \"005342b6131acdd072d5cf35456a5b01e5630f764b614e7090639fde01a5b36a\",\n    \"knowledge/system-semantics/storage-services.md\": \"283ceab23fbbf5c27bbb4486b56c2123459a19a00229c5baae70d09c18062661\",\n    \"knowledge/system-semantics/retrieval-pipeline.md\": \"bd09460502715f214c20ffdd68bdbc6bb9373668a849ca602b75d5e933ff40d0\",\n    \"references/S-LINUX-IO/fulltext.txt\": \"d6da925f1c90da275de1e6aa94a179a3273ad342fe77b61608a8b77fa75c3495\",\n    \"references/S-GPUDIRECT/fulltext.txt\": \"657c37b1e20c78292dddfc81c172f676ec5868c3f39884127f0f636082fced8e\",\n    \"tools/check_k_hw_012_full.py\": \"e8c4a8ff6ce5469368f0928265db7f8708c19cabccbd71d13df57b94c7765e89\"\n  },\n  \"criteria\": {\n    \"definition\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"明确了制品、张量表示、文件身份、加载尝试、槽租约和读取范围，区分提交、部分完成、可读、消费结束与回收。坐标映射、队列量及流水量的单位和假设明确。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/hardware/storage-io.md\",\n          \"quote\": \"一次读取可记为 X=(a,t,f,g,z,o,l,dest,request_id)。其中 [o,o+l) 是半开字节区间，dest 是该范围对应的目的位置。\"\n        },\n        {\n          \"path\": \"knowledge/hardware/storage-io.md\",\n          \"quote\": \"另记排队 W，提交到完成的驻留时间为 R=W+S。三者必须使用相同请求人群和边界。\"\n        }\n      ]\n    },\n    \"legality\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"正确区分身份、覆盖、表示、物理排空和可见性条件与缓存、整组预留、队列策略等方案选择。Linux 内部接口语义未泛化为全部用户 API；GPUDirect 拓扑、注册和 CPU 发起提交的顺序要求与固定原文相符。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/hardware/storage-io.md\",\n          \"quote\": \"重试若覆盖同一目的范围，必须先结束旧写者，或使用隔离槽；否则按代次忽略旧通知也阻止不了旧 DMA 实际覆盖新内容。\"\n        },\n        {\n          \"path\": \"knowledge/hardware/storage-io.md\",\n          \"quote\": \"所需 DMA 写必须先相对于将提交依赖工作的 CPU 线程完成，再由该线程发起依赖 CUDA 工作。\"\n        }\n      ]\n    },\n    \"algorithm\": {\n      \"assessment\": \"partial\",\n      \"reason\": \"范围合并、游标保留、身份筛选、布局路径及正常流水已充分展开，上一轮范围异常已修复。但 LoadBlocks 在阻塞接收之后才检查无后继事件，未完整处理同步提交拒绝后的推进；检查器的起始取消顺序也与正文不一致。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/hardware/storage-io.md\",\n          \"quote\": \"接收下一完成或控制事件，控制路径不得被满数据队列阻断\"\n        },\n        {\n          \"path\": \"knowledge/hardware/storage-io.md\",\n          \"quote\": \"若 waiting 仍存在，但没有可接纳块、在途操作或可到达的释放事件：\"\n        },\n        {\n          \"path\": \"knowledge/hardware/storage-io.md\",\n          \"quote\": \"处理已到达的取消：关闭未来接纳和新的业务阶段提交\"\n        }\n      ]\n    },\n    \"cost\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"六类成本覆盖完整，区分有效字节、实际事务、唯一 backing 和同时峰值。独立阶段递推、有限槽组时间、Little 关系和共享带宽账的数值与条件一致；没有把均值关系解释为尾延迟保证或把条件有效速率当作硬件能力上界。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/hardware/storage-io.md\",\n          \"quote\": \"同一 backing 的多个视图只计一次，确实复制的两份分别计；池 reserved 已包含 active 槽时不能再次相加。\"\n        },\n        {\n          \"path\": \"knowledge/hardware/storage-io.md\",\n          \"quote\": \"资源 r 每块累计 Q_r 字节，在该并发下可持续带宽为 B_r，则周期须满足 P≥Q_r/B_r；CPU 转换和 DMA 共用 DRAM 时，需要把实际读写流量合计。\"\n        }\n      ]\n    },\n    \"adaptation\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"解释了缓存复用、存储变快、目标表示变化、随机专家路由、常驻权重和活跃 KV 等条件如何改变选择。缩短池生存期后重算容量与时间，避免沿用不同释放方案的结果。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/hardware/storage-io.md\",\n          \"quote\": \"若缩短某池的持有时间，容量和时序都要按新方案重算。\"\n        },\n        {\n          \"path\": \"knowledge/hardware/storage-io.md\",\n          \"quote\": \"模型常驻时，SSD 优化主要影响启动；活跃 KV 每步往返 SSD 时，容量可行仍可能无法满足 ITL。\"\n        }\n      ]\n    },\n    \"diagnosis\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"为吞吐、范围错误、池停滞、取消滞后和直通问题给出竞争解释、可控干预及反证后的修正，明确同步干预不能唯一定位依赖缺失。实验建议充分，但交付推进算法仍需落实其自身提出的无事件停滞诊断。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/hardware/storage-io.md\",\n          \"quote\": \"分别延迟操作完成和完成处理；实际访问已结束却迟迟不回收时转查控制路径，在途访问仍存在时继续保护\"\n        },\n        {\n          \"path\": \"knowledge/hardware/storage-io.md\",\n          \"quote\": \"全设备同步使错误消失，只能说明某些执行关系被改变，不能唯一定位缺失哪条依赖边。\"\n        }\n      ]\n    }\n  },\n  \"findings\": [\n    {\n      \"id\": \"K-HW-012-r2-wait-before-quiescence\",\n      \"criterion\": \"algorithm\",\n      \"evidence\": \"knowledge/hardware/storage-io.md 的 LoadBlocks 先执行“提交读取；仅撤回明确未被接受的操作责任”，之后无条件“接收下一完成或控制事件”，再执行“若 waiting 仍存在，但没有可接纳块、在途操作或可到达的释放事件：”。该无事件检查位于可能永久阻塞的接收之后，且未覆盖 waiting 为空但 active 已无可推进操作的情形。\",\n      \"impact\": \"两个块、一个槽组时，首块读取若被同步明确拒绝，撤回责任后没有任何完成会到达；第二块又因首块持有槽而无法接纳。算法在接收处等待，无法到达停滞检查或失败回收。单块同类失败也不满足现有 waiting 非空的检查条件。因此正文关于部分提交、失败排空及不等待不存在完成的保证尚未形成完整算法。\",\n      \"blocking\": true,\n      \"required_revision\": \"明确同步提交结果到块状态的转换；全部未接受且失败时关闭未来授权并回收无访问责任的槽。每次推进后、阻塞接收前检查本地可执行工作、终态和真实在途责任，覆盖 waiting 为空而 active 无后继的情况。取消排空完成后直接返回取消及未提交范围。增加一个明确同步拒绝、无外部完成事件的有限轨迹，检查能返回且容量守恒。\"\n    },\n    {\n      \"id\": \"K-HW-012-r2-initial-cancel-order\",\n      \"criterion\": \"algorithm\",\n      \"evidence\": \"正文要求“处理已到达的取消：关闭未来接纳和新的业务阶段提交”。tools/check_k_hw_012_full.py 的 pump 先 enqueue(cancel_at, 0, 'cancel', -1, -1)，但循环先执行“while not cancelled and next_job < blocks and free:”，之后才 heappop(events)。故 cancel_at=0 时仍先 reserve 和 submit；取消事件的 priority=0 只影响堆内事件排序。\",\n      \"impact\": \"检查模型允许合法输入 cancel_at=0，却在已到达取消时继续接纳。按交付控制顺序进行的 JavaScript 边界复现中，pump(5,2,(8,3,2,5),cancel_at=0) 接纳两块并到 16 ms 才排空；正文顺序应不接纳任何块。现有 9 ms 案例和返回码 0 没有检出这一模型偏离。\",\n      \"blocking\": true,\n      \"required_revision\": \"在接纳新块前处理当前时刻已经到达的取消，并明确同刻控制事件与新提交的先后关系。用起始即取消的轨迹验证零接纳、零新提交和无遗留责任，再实际执行修订后的交付 Python 文件。\"\n    }\n  ],\n  \"limitations\": [\n    \"本审阅依据任务提供的绑定文本和实际预检记录；未重新从磁盘计算哈希，也未在本审阅会话执行 Python。审阅者额外执行的是明确标注的 JavaScript 控制顺序复现。\",\n    \"CPU 模型不执行真实文件、O_DIRECT、页缓存、锁页、CUDA、PCIe 或 GPUDirect；不能证明实际接口完成范围、设备可见性、物理重叠、吞吐、尾延迟或 Agent 使用收益。\",\n    \"范围穷举限小整数端点；布局检查限未打包的 2×3 转置；有限流水采用整组保守预留和独立 FIFO 阶段，未实现任意格式、一般资源调度或完整恢复协议。\",\n    \"ServerlessLLM 与 CUDA 原文仅阅读所供摘录；CUDA 摘录没有直接覆盖来源说明所述全部异步章节。没有独立源码归档或 reader.html 版面核验。\"\n  ],\n  \"checks\": [\n    {\n      \"script\": \"tools/check_k_hw_012_full.py\",\n      \"args\": []\n    }\n  ],\n  \"no_checks_reason\": \"\",\n  \"reading_scope\": \"全部阅读的是任务内供应的文本，而非本地原文件。完整供应并阅读：AGENTS.md [0,567)、docs/knowledge-method.md [0,2251)、docs/knowledge-review.md [0,3016)、knowledge/hardware/storage-io.md [0,14535)、四份来源说明 S-LINUX-IO [0,850)、S-SERVERLESSLLM [0,781)、S-CUDA-ASYNC [0,1610)、S-GPUDIRECT [0,615)、tiered-residency.md [0,4244)、kv-offload-prefetch.md [0,3710)、host-device-transfer.md [0,6485)、host-runtime.md [0,7559)、storage-services.md [0,3922)、retrieval-pipeline.md [0,4507)、references/S-LINUX-IO/fulltext.txt [0,52366)、references/S-GPUDIRECT/fulltext.txt [0,55368)，以及 candidate.test_script 完整内容、author_notes、上一轮失败和本轮 actual_preflight。其余仅阅读供应摘录，范围均为提取文本零基半开字符区间：checkpoint-loading.md [0,1630)、[8000,14097)；host-device-timing.md [4000,11727)；trace-observability.md [0,4000)、[8000,8885)、[16000,18842)；timeline-attribution.md [4000,6503)、[8000,13224)；kernel-counter-replay.md [4000,11727)；ServerlessLLM 原文 [0,28000)、[32000,69278)、[76000,80000)；CUDA 原文 [4000,8000)、[260000,264000)、[324000,328000)、[744000,752000)、[772000,776000)、[788000,789279)、[808000,812000)、[1020000,1024000)、[1040000,1044000)、[1060000,1076000)、[1080000,1084000)、[1100000,1112000)。documents 只列完整供应材料和完整交付脚本。链接的目标身份与供应材料相容，但未执行文件存在性或 HTML 渲染检查。\",\n  \"test_assessment\": \"本轮实际预检 returncode=0、stderr 为空，script_sha256=e8c4a8ff6ce5469368f0928265db7f8708c19cabccbd71d13df57b94c7765e89，与交付脚本绑定一致。原始三元记录现在被显式形状校验拒绝，完整身份筛选投影后的重复完整范围通过；campaign-K-HW-012-r1 的具体执行失败可以关闭。检查不是整体同义反复：范围算法与逐字节集合参考比较，并检出错误消耗完成区间和丢弃身份；转置目标反查与源坐标散射比较；流水事件、阶段递推与闭式公式相互核对；槽位使用两两区间重叠参考；责任观察器从事件重建未完成访问并拒绝提前归还；顺序图可达性与全部合法排列比较并检出缺边。实际输出覆盖 12,321 组范围、16 组流水、54 组槽位和所列负对照，数值与正文一致。局限在于 pump 始终接受操作并产生成功完成，不执行 LoadBlocks 的同步拒绝、短读重提和无事件停滞分支，因而成功预检不能验证完整加载伪代码。审阅者额外执行了交付 pump 控制顺序的 JavaScript 边界复现，发现 cancel_at=0 时接纳两块、16 ms 排空；这不是 Python 重跑结果。需修复上述两个当前缺口后重新检查完整候选。\"\n}",
+  "exit_code": 0,
+  "status": "completed",
+  "timeout_seconds": 1800,
+  "response_path": "D:\\桌面\\xdb\\InfraAgents\\InfraAgents-know-astra-new\\InfraAgents-know\\docs\\evidence\\knowledge-workflow-20261028-batch11\\full_build\\K-HW-012\\round-2\\reviewer-attempt-001\\answer.txt",
+  "record_path": "D:\\桌面\\xdb\\InfraAgents\\InfraAgents-know-astra-new\\InfraAgents-know\\docs\\evidence\\knowledge-workflow-20261028-batch11\\full_build\\K-HW-012\\round-2\\reviewer-attempt-001\\record.json",
+  "tool_events": [],
+  "inventory_tool_events": [],
+  "rejected_tool_events": [],
+  "tool_policy": "metadata_inventory_only",
+  "tool_policy_version": "metadata-inventory-v1",
+  "tool_policy_scope": "Only empty-argument codex host plugin/skill-directory descriptors and empty template inventory; inventory is not knowledge evidence. All other tool events reject the call.",
+  "tool_policy_reason": "Production chapter construction allows observed generic capability discovery metadata; this does not claim a zero-tool comparison or external source reading.",
+  "malformed_event_lines": [],
+  "turn_completed": true,
+  "error_events": [
+    {
+      "type": "error",
+      "message": "Reconnecting... 1/5 (exceeded retry limit, last status: 429 Too Many Requests, request id: f2a031ec-b5b4-4b86-a04f-5c303ca19850)"
+    }
+  ],
+  "recovered_transport_events": [
+    {
+      "type": "error",
+      "message": "Reconnecting... 1/5 (exceeded retry limit, last status: 429 Too Many Requests, request id: f2a031ec-b5b4-4b86-a04f-5c303ca19850)"
+    }
+  ],
+  "terminal_error_events": [],
+  "transport_recovered": true,
+  "actual_model": null,
+  "identity_verified": null,
+  "identity_basis": "Explicit CLI model and isolated HTTP provider; CLI events do not expose server model identity.",
+  "provider": "eval-openai-http",
+  "max_output_tokens": null,
+  "cli_version": "codex-cli 0.164.0-alpha.11.1",
+  "cost_scope": "Codex token usage is reported; subscription charge is not exposed.",
+  "parsed": {
+    "entry_id": "K-HW-012",
+    "body_sha256": "a0337c14a3c42f1415c97fc807fc5917b19b23591c02d32a72261d427b19b7bd",
+    "reviewer": "sol-reviewer:K-HW-012:round-2",
+    "decision": "revise",
+    "documents": {
+      "AGENTS.md": "b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a",
+      "docs/knowledge-method.md": "69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb",
+      "docs/knowledge-review.md": "f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21",
+      "knowledge/hardware/storage-io.md": "a0337c14a3c42f1415c97fc807fc5917b19b23591c02d32a72261d427b19b7bd",
+      "knowledge/sources/S-LINUX-IO.md": "786caae53cc1e80173616ce470c481145e285c2176b7cff4777576cc893fc316",
+      "knowledge/sources/S-SERVERLESSLLM.md": "aff9202b72fffcdf3145d0f014888070d2e12995b04f9c259930ad90a806473d",
+      "knowledge/sources/S-CUDA-ASYNC.md": "40df9287d0648a8ef55a046ceb1c18dd402619ede6e57ca33d3f90e4ace3da05",
+      "knowledge/sources/S-GPUDIRECT.md": "7a14b2ca6cdf1f54e79fc02dbf10739305b285a6d454f08cf03594249ffd36f1",
+      "knowledge/algorithms/tiered-residency.md": "eb3ebc6320d5a32481cf645605d159860dc6d1edb97f1e98afd89ddb24ee82af",
+      "knowledge/algorithms/kv-offload-prefetch.md": "a7088eba5c78cd9e96cf011d61946ad7dec4ecb6378ac16e7f2fc3820af38301",
+      "knowledge/hardware/host-device-transfer.md": "e4921a0714af21f7ab1a336f40af662f716f2c64a42dd598eb2cede548c858d2",
+      "knowledge/system-semantics/host-runtime.md": "005342b6131acdd072d5cf35456a5b01e5630f764b614e7090639fde01a5b36a",
+      "knowledge/system-semantics/storage-services.md": "283ceab23fbbf5c27bbb4486b56c2123459a19a00229c5baae70d09c18062661",
+      "knowledge/system-semantics/retrieval-pipeline.md": "bd09460502715f214c20ffdd68bdbc6bb9373668a849ca602b75d5e933ff40d0",
+      "references/S-LINUX-IO/fulltext.txt": "d6da925f1c90da275de1e6aa94a179a3273ad342fe77b61608a8b77fa75c3495",
+      "references/S-GPUDIRECT/fulltext.txt": "657c37b1e20c78292dddfc81c172f676ec5868c3f39884127f0f636082fced8e",
+      "tools/check_k_hw_012_full.py": "e8c4a8ff6ce5469368f0928265db7f8708c19cabccbd71d13df57b94c7765e89"
+    },
+    "criteria": {
+      "definition": {
+        "assessment": "sufficient",
+        "reason": "明确了制品、张量表示、文件身份、加载尝试、槽租约和读取范围，区分提交、部分完成、可读、消费结束与回收。坐标映射、队列量及流水量的单位和假设明确。",
+        "evidence": [
+          {
+            "path": "knowledge/hardware/storage-io.md",
+            "quote": "一次读取可记为 X=(a,t,f,g,z,o,l,dest,request_id)。其中 [o,o+l) 是半开字节区间，dest 是该范围对应的目的位置。"
+          },
+          {
+            "path": "knowledge/hardware/storage-io.md",
+            "quote": "另记排队 W，提交到完成的驻留时间为 R=W+S。三者必须使用相同请求人群和边界。"
+          }
+        ]
+      },
+      "legality": {
+        "assessment": "sufficient",
+        "reason": "正确区分身份、覆盖、表示、物理排空和可见性条件与缓存、整组预留、队列策略等方案选择。Linux 内部接口语义未泛化为全部用户 API；GPUDirect 拓扑、注册和 CPU 发起提交的顺序要求与固定原文相符。",
+        "evidence": [
+          {
+            "path": "knowledge/hardware/storage-io.md",
+            "quote": "重试若覆盖同一目的范围，必须先结束旧写者，或使用隔离槽；否则按代次忽略旧通知也阻止不了旧 DMA 实际覆盖新内容。"
+          },
+          {
+            "path": "knowledge/hardware/storage-io.md",
+            "quote": "所需 DMA 写必须先相对于将提交依赖工作的 CPU 线程完成，再由该线程发起依赖 CUDA 工作。"
+          }
+        ]
+      },
+      "algorithm": {
+        "assessment": "partial",
+        "reason": "范围合并、游标保留、身份筛选、布局路径及正常流水已充分展开，上一轮范围异常已修复。但 LoadBlocks 在阻塞接收之后才检查无后继事件，未完整处理同步提交拒绝后的推进；检查器的起始取消顺序也与正文不一致。",
+        "evidence": [
+          {
+            "path": "knowledge/hardware/storage-io.md",
+            "quote": "接收下一完成或控制事件，控制路径不得被满数据队列阻断"
+          },
+          {
+            "path": "knowledge/hardware/storage-io.md",
+            "quote": "若 waiting 仍存在，但没有可接纳块、在途操作或可到达的释放事件："
+          },
+          {
+            "path": "knowledge/hardware/storage-io.md",
+            "quote": "处理已到达的取消：关闭未来接纳和新的业务阶段提交"
+          }
+        ]
+      },
+      "cost": {
+        "assessment": "sufficient",
+        "reason": "六类成本覆盖完整，区分有效字节、实际事务、唯一 backing 和同时峰值。独立阶段递推、有限槽组时间、Little 关系和共享带宽账的数值与条件一致；没有把均值关系解释为尾延迟保证或把条件有效速率当作硬件能力上界。",
+        "evidence": [
+          {
+            "path": "knowledge/hardware/storage-io.md",
+            "quote": "同一 backing 的多个视图只计一次，确实复制的两份分别计；池 reserved 已包含 active 槽时不能再次相加。"
+          },
+          {
+            "path": "knowledge/hardware/storage-io.md",
+            "quote": "资源 r 每块累计 Q_r 字节，在该并发下可持续带宽为 B_r，则周期须满足 P≥Q_r/B_r；CPU 转换和 DMA 共用 DRAM 时，需要把实际读写流量合计。"
+          }
+        ]
+      },
+      "adaptation": {
+        "assessment": "sufficient",
+        "reason": "解释了缓存复用、存储变快、目标表示变化、随机专家路由、常驻权重和活跃 KV 等条件如何改变选择。缩短池生存期后重算容量与时间，避免沿用不同释放方案的结果。",
+        "evidence": [
+          {
+            "path": "knowledge/hardware/storage-io.md",
+            "quote": "若缩短某池的持有时间，容量和时序都要按新方案重算。"
+          },
+          {
+            "path": "knowledge/hardware/storage-io.md",
+            "quote": "模型常驻时，SSD 优化主要影响启动；活跃 KV 每步往返 SSD 时，容量可行仍可能无法满足 ITL。"
+          }
+        ]
+      },
+      "diagnosis": {
+        "assessment": "sufficient",
+        "reason": "为吞吐、范围错误、池停滞、取消滞后和直通问题给出竞争解释、可控干预及反证后的修正，明确同步干预不能唯一定位依赖缺失。实验建议充分，但交付推进算法仍需落实其自身提出的无事件停滞诊断。",
+        "evidence": [
+          {
+            "path": "knowledge/hardware/storage-io.md",
+            "quote": "分别延迟操作完成和完成处理；实际访问已结束却迟迟不回收时转查控制路径，在途访问仍存在时继续保护"
+          },
+          {
+            "path": "knowledge/hardware/storage-io.md",
+            "quote": "全设备同步使错误消失，只能说明某些执行关系被改变，不能唯一定位缺失哪条依赖边。"
+          }
+        ]
+      }
+    },
+    "findings": [
+      {
+        "id": "K-HW-012-r2-wait-before-quiescence",
+        "criterion": "algorithm",
+        "evidence": "knowledge/hardware/storage-io.md 的 LoadBlocks 先执行“提交读取；仅撤回明确未被接受的操作责任”，之后无条件“接收下一完成或控制事件”，再执行“若 waiting 仍存在，但没有可接纳块、在途操作或可到达的释放事件：”。该无事件检查位于可能永久阻塞的接收之后，且未覆盖 waiting 为空但 active 已无可推进操作的情形。",
+        "impact": "两个块、一个槽组时，首块读取若被同步明确拒绝，撤回责任后没有任何完成会到达；第二块又因首块持有槽而无法接纳。算法在接收处等待，无法到达停滞检查或失败回收。单块同类失败也不满足现有 waiting 非空的检查条件。因此正文关于部分提交、失败排空及不等待不存在完成的保证尚未形成完整算法。",
+        "blocking": true,
+        "required_revision": "明确同步提交结果到块状态的转换；全部未接受且失败时关闭未来授权并回收无访问责任的槽。每次推进后、阻塞接收前检查本地可执行工作、终态和真实在途责任，覆盖 waiting 为空而 active 无后继的情况。取消排空完成后直接返回取消及未提交范围。增加一个明确同步拒绝、无外部完成事件的有限轨迹，检查能返回且容量守恒。"
+      },
+      {
+        "id": "K-HW-012-r2-initial-cancel-order",
+        "criterion": "algorithm",
+        "evidence": "正文要求“处理已到达的取消：关闭未来接纳和新的业务阶段提交”。tools/check_k_hw_012_full.py 的 pump 先 enqueue(cancel_at, 0, 'cancel', -1, -1)，但循环先执行“while not cancelled and next_job < blocks and free:”，之后才 heappop(events)。故 cancel_at=0 时仍先 reserve 和 submit；取消事件的 priority=0 只影响堆内事件排序。",
+        "impact": "检查模型允许合法输入 cancel_at=0，却在已到达取消时继续接纳。按交付控制顺序进行的 JavaScript 边界复现中，pump(5,2,(8,3,2,5),cancel_at=0) 接纳两块并到 16 ms 才排空；正文顺序应不接纳任何块。现有 9 ms 案例和返回码 0 没有检出这一模型偏离。",
+        "blocking": true,
+        "required_revision": "在接纳新块前处理当前时刻已经到达的取消，并明确同刻控制事件与新提交的先后关系。用起始即取消的轨迹验证零接纳、零新提交和无遗留责任，再实际执行修订后的交付 Python 文件。"
+      }
+    ],
+    "limitations": [
+      "本审阅依据任务提供的绑定文本和实际预检记录；未重新从磁盘计算哈希，也未在本审阅会话执行 Python。审阅者额外执行的是明确标注的 JavaScript 控制顺序复现。",
+      "CPU 模型不执行真实文件、O_DIRECT、页缓存、锁页、CUDA、PCIe 或 GPUDirect；不能证明实际接口完成范围、设备可见性、物理重叠、吞吐、尾延迟或 Agent 使用收益。",
+      "范围穷举限小整数端点；布局检查限未打包的 2×3 转置；有限流水采用整组保守预留和独立 FIFO 阶段，未实现任意格式、一般资源调度或完整恢复协议。",
+      "ServerlessLLM 与 CUDA 原文仅阅读所供摘录；CUDA 摘录没有直接覆盖来源说明所述全部异步章节。没有独立源码归档或 reader.html 版面核验。"
+    ],
+    "checks": [
+      {
+        "script": "tools/check_k_hw_012_full.py",
+        "args": []
+      }
+    ],
+    "no_checks_reason": "",
+    "reading_scope": "全部阅读的是任务内供应的文本，而非本地原文件。完整供应并阅读：AGENTS.md [0,567)、docs/knowledge-method.md [0,2251)、docs/knowledge-review.md [0,3016)、knowledge/hardware/storage-io.md [0,14535)、四份来源说明 S-LINUX-IO [0,850)、S-SERVERLESSLLM [0,781)、S-CUDA-ASYNC [0,1610)、S-GPUDIRECT [0,615)、tiered-residency.md [0,4244)、kv-offload-prefetch.md [0,3710)、host-device-transfer.md [0,6485)、host-runtime.md [0,7559)、storage-services.md [0,3922)、retrieval-pipeline.md [0,4507)、references/S-LINUX-IO/fulltext.txt [0,52366)、references/S-GPUDIRECT/fulltext.txt [0,55368)，以及 candidate.test_script 完整内容、author_notes、上一轮失败和本轮 actual_preflight。其余仅阅读供应摘录，范围均为提取文本零基半开字符区间：checkpoint-loading.md [0,1630)、[8000,14097)；host-device-timing.md [4000,11727)；trace-observability.md [0,4000)、[8000,8885)、[16000,18842)；timeline-attribution.md [4000,6503)、[8000,13224)；kernel-counter-replay.md [4000,11727)；ServerlessLLM 原文 [0,28000)、[32000,69278)、[76000,80000)；CUDA 原文 [4000,8000)、[260000,264000)、[324000,328000)、[744000,752000)、[772000,776000)、[788000,789279)、[808000,812000)、[1020000,1024000)、[1040000,1044000)、[1060000,1076000)、[1080000,1084000)、[1100000,1112000)。documents 只列完整供应材料和完整交付脚本。链接的目标身份与供应材料相容，但未执行文件存在性或 HTML 渲染检查。",
+    "test_assessment": "本轮实际预检 returncode=0、stderr 为空，script_sha256=e8c4a8ff6ce5469368f0928265db7f8708c19cabccbd71d13df57b94c7765e89，与交付脚本绑定一致。原始三元记录现在被显式形状校验拒绝，完整身份筛选投影后的重复完整范围通过；campaign-K-HW-012-r1 的具体执行失败可以关闭。检查不是整体同义反复：范围算法与逐字节集合参考比较，并检出错误消耗完成区间和丢弃身份；转置目标反查与源坐标散射比较；流水事件、阶段递推与闭式公式相互核对；槽位使用两两区间重叠参考；责任观察器从事件重建未完成访问并拒绝提前归还；顺序图可达性与全部合法排列比较并检出缺边。实际输出覆盖 12,321 组范围、16 组流水、54 组槽位和所列负对照，数值与正文一致。局限在于 pump 始终接受操作并产生成功完成，不执行 LoadBlocks 的同步拒绝、短读重提和无事件停滞分支，因而成功预检不能验证完整加载伪代码。审阅者额外执行了交付 pump 控制顺序的 JavaScript 边界复现，发现 cancel_at=0 时接纳两块、16 ms 排空；这不是 Python 重跑结果。需修复上述两个当前缺口后重新检查完整候选。"
+  },
+  "format_status": "strict_json",
+  "format_error": null,
+  "output_text": "{\n  \"entry_id\": \"K-HW-012\",\n  \"body_sha256\": \"a0337c14a3c42f1415c97fc807fc5917b19b23591c02d32a72261d427b19b7bd\",\n  \"reviewer\": \"sol-reviewer:K-HW-012:round-2\",\n  \"decision\": \"revise\",\n  \"documents\": {\n    \"AGENTS.md\": \"b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a\",\n    \"docs/knowledge-method.md\": \"69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb\",\n    \"docs/knowledge-review.md\": \"f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21\",\n    \"knowledge/hardware/storage-io.md\": \"a0337c14a3c42f1415c97fc807fc5917b19b23591c02d32a72261d427b19b7bd\",\n    \"knowledge/sources/S-LINUX-IO.md\": \"786caae53cc1e80173616ce470c481145e285c2176b7cff4777576cc893fc316\",\n    \"knowledge/sources/S-SERVERLESSLLM.md\": \"aff9202b72fffcdf3145d0f014888070d2e12995b04f9c259930ad90a806473d\",\n    \"knowledge/sources/S-CUDA-ASYNC.md\": \"40df9287d0648a8ef55a046ceb1c18dd402619ede6e57ca33d3f90e4ace3da05\",\n    \"knowledge/sources/S-GPUDIRECT.md\": \"7a14b2ca6cdf1f54e79fc02dbf10739305b285a6d454f08cf03594249ffd36f1\",\n    \"knowledge/algorithms/tiered-residency.md\": \"eb3ebc6320d5a32481cf645605d159860dc6d1edb97f1e98afd89ddb24ee82af\",\n    \"knowledge/algorithms/kv-offload-prefetch.md\": \"a7088eba5c78cd9e96cf011d61946ad7dec4ecb6378ac16e7f2fc3820af38301\",\n    \"knowledge/hardware/host-device-transfer.md\": \"e4921a0714af21f7ab1a336f40af662f716f2c64a42dd598eb2cede548c858d2\",\n    \"knowledge/system-semantics/host-runtime.md\": \"005342b6131acdd072d5cf35456a5b01e5630f764b614e7090639fde01a5b36a\",\n    \"knowledge/system-semantics/storage-services.md\": \"283ceab23fbbf5c27bbb4486b56c2123459a19a00229c5baae70d09c18062661\",\n    \"knowledge/system-semantics/retrieval-pipeline.md\": \"bd09460502715f214c20ffdd68bdbc6bb9373668a849ca602b75d5e933ff40d0\",\n    \"references/S-LINUX-IO/fulltext.txt\": \"d6da925f1c90da275de1e6aa94a179a3273ad342fe77b61608a8b77fa75c3495\",\n    \"references/S-GPUDIRECT/fulltext.txt\": \"657c37b1e20c78292dddfc81c172f676ec5868c3f39884127f0f636082fced8e\",\n    \"tools/check_k_hw_012_full.py\": \"e8c4a8ff6ce5469368f0928265db7f8708c19cabccbd71d13df57b94c7765e89\"\n  },\n  \"criteria\": {\n    \"definition\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"明确了制品、张量表示、文件身份、加载尝试、槽租约和读取范围，区分提交、部分完成、可读、消费结束与回收。坐标映射、队列量及流水量的单位和假设明确。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/hardware/storage-io.md\",\n          \"quote\": \"一次读取可记为 X=(a,t,f,g,z,o,l,dest,request_id)。其中 [o,o+l) 是半开字节区间，dest 是该范围对应的目的位置。\"\n        },\n        {\n          \"path\": \"knowledge/hardware/storage-io.md\",\n          \"quote\": \"另记排队 W，提交到完成的驻留时间为 R=W+S。三者必须使用相同请求人群和边界。\"\n        }\n      ]\n    },\n    \"legality\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"正确区分身份、覆盖、表示、物理排空和可见性条件与缓存、整组预留、队列策略等方案选择。Linux 内部接口语义未泛化为全部用户 API；GPUDirect 拓扑、注册和 CPU 发起提交的顺序要求与固定原文相符。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/hardware/storage-io.md\",\n          \"quote\": \"重试若覆盖同一目的范围，必须先结束旧写者，或使用隔离槽；否则按代次忽略旧通知也阻止不了旧 DMA 实际覆盖新内容。\"\n        },\n        {\n          \"path\": \"knowledge/hardware/storage-io.md\",\n          \"quote\": \"所需 DMA 写必须先相对于将提交依赖工作的 CPU 线程完成，再由该线程发起依赖 CUDA 工作。\"\n        }\n      ]\n    },\n    \"algorithm\": {\n      \"assessment\": \"partial\",\n      \"reason\": \"范围合并、游标保留、身份筛选、布局路径及正常流水已充分展开，上一轮范围异常已修复。但 LoadBlocks 在阻塞接收之后才检查无后继事件，未完整处理同步提交拒绝后的推进；检查器的起始取消顺序也与正文不一致。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/hardware/storage-io.md\",\n          \"quote\": \"接收下一完成或控制事件，控制路径不得被满数据队列阻断\"\n        },\n        {\n          \"path\": \"knowledge/hardware/storage-io.md\",\n          \"quote\": \"若 waiting 仍存在，但没有可接纳块、在途操作或可到达的释放事件：\"\n        },\n        {\n          \"path\": \"knowledge/hardware/storage-io.md\",\n          \"quote\": \"处理已到达的取消：关闭未来接纳和新的业务阶段提交\"\n        }\n      ]\n    },\n    \"cost\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"六类成本覆盖完整，区分有效字节、实际事务、唯一 backing 和同时峰值。独立阶段递推、有限槽组时间、Little 关系和共享带宽账的数值与条件一致；没有把均值关系解释为尾延迟保证或把条件有效速率当作硬件能力上界。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/hardware/storage-io.md\",\n          \"quote\": \"同一 backing 的多个视图只计一次，确实复制的两份分别计；池 reserved 已包含 active 槽时不能再次相加。\"\n        },\n        {\n          \"path\": \"knowledge/hardware/storage-io.md\",\n          \"quote\": \"资源 r 每块累计 Q_r 字节，在该并发下可持续带宽为 B_r，则周期须满足 P≥Q_r/B_r；CPU 转换和 DMA 共用 DRAM 时，需要把实际读写流量合计。\"\n        }\n      ]\n    },\n    \"adaptation\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"解释了缓存复用、存储变快、目标表示变化、随机专家路由、常驻权重和活跃 KV 等条件如何改变选择。缩短池生存期后重算容量与时间，避免沿用不同释放方案的结果。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/hardware/storage-io.md\",\n          \"quote\": \"若缩短某池的持有时间，容量和时序都要按新方案重算。\"\n        },\n        {\n          \"path\": \"knowledge/hardware/storage-io.md\",\n          \"quote\": \"模型常驻时，SSD 优化主要影响启动；活跃 KV 每步往返 SSD 时，容量可行仍可能无法满足 ITL。\"\n        }\n      ]\n    },\n    \"diagnosis\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"为吞吐、范围错误、池停滞、取消滞后和直通问题给出竞争解释、可控干预及反证后的修正，明确同步干预不能唯一定位依赖缺失。实验建议充分，但交付推进算法仍需落实其自身提出的无事件停滞诊断。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/hardware/storage-io.md\",\n          \"quote\": \"分别延迟操作完成和完成处理；实际访问已结束却迟迟不回收时转查控制路径，在途访问仍存在时继续保护\"\n        },\n        {\n          \"path\": \"knowledge/hardware/storage-io.md\",\n          \"quote\": \"全设备同步使错误消失，只能说明某些执行关系被改变，不能唯一定位缺失哪条依赖边。\"\n        }\n      ]\n    }\n  },\n  \"findings\": [\n    {\n      \"id\": \"K-HW-012-r2-wait-before-quiescence\",\n      \"criterion\": \"algorithm\",\n      \"evidence\": \"knowledge/hardware/storage-io.md 的 LoadBlocks 先执行“提交读取；仅撤回明确未被接受的操作责任”，之后无条件“接收下一完成或控制事件”，再执行“若 waiting 仍存在，但没有可接纳块、在途操作或可到达的释放事件：”。该无事件检查位于可能永久阻塞的接收之后，且未覆盖 waiting 为空但 active 已无可推进操作的情形。\",\n      \"impact\": \"两个块、一个槽组时，首块读取若被同步明确拒绝，撤回责任后没有任何完成会到达；第二块又因首块持有槽而无法接纳。算法在接收处等待，无法到达停滞检查或失败回收。单块同类失败也不满足现有 waiting 非空的检查条件。因此正文关于部分提交、失败排空及不等待不存在完成的保证尚未形成完整算法。\",\n      \"blocking\": true,\n      \"required_revision\": \"明确同步提交结果到块状态的转换；全部未接受且失败时关闭未来授权并回收无访问责任的槽。每次推进后、阻塞接收前检查本地可执行工作、终态和真实在途责任，覆盖 waiting 为空而 active 无后继的情况。取消排空完成后直接返回取消及未提交范围。增加一个明确同步拒绝、无外部完成事件的有限轨迹，检查能返回且容量守恒。\"\n    },\n    {\n      \"id\": \"K-HW-012-r2-initial-cancel-order\",\n      \"criterion\": \"algorithm\",\n      \"evidence\": \"正文要求“处理已到达的取消：关闭未来接纳和新的业务阶段提交”。tools/check_k_hw_012_full.py 的 pump 先 enqueue(cancel_at, 0, 'cancel', -1, -1)，但循环先执行“while not cancelled and next_job < blocks and free:”，之后才 heappop(events)。故 cancel_at=0 时仍先 reserve 和 submit；取消事件的 priority=0 只影响堆内事件排序。\",\n      \"impact\": \"检查模型允许合法输入 cancel_at=0，却在已到达取消时继续接纳。按交付控制顺序进行的 JavaScript 边界复现中，pump(5,2,(8,3,2,5),cancel_at=0) 接纳两块并到 16 ms 才排空；正文顺序应不接纳任何块。现有 9 ms 案例和返回码 0 没有检出这一模型偏离。\",\n      \"blocking\": true,\n      \"required_revision\": \"在接纳新块前处理当前时刻已经到达的取消，并明确同刻控制事件与新提交的先后关系。用起始即取消的轨迹验证零接纳、零新提交和无遗留责任，再实际执行修订后的交付 Python 文件。\"\n    }\n  ],\n  \"limitations\": [\n    \"本审阅依据任务提供的绑定文本和实际预检记录；未重新从磁盘计算哈希，也未在本审阅会话执行 Python。审阅者额外执行的是明确标注的 JavaScript 控制顺序复现。\",\n    \"CPU 模型不执行真实文件、O_DIRECT、页缓存、锁页、CUDA、PCIe 或 GPUDirect；不能证明实际接口完成范围、设备可见性、物理重叠、吞吐、尾延迟或 Agent 使用收益。\",\n    \"范围穷举限小整数端点；布局检查限未打包的 2×3 转置；有限流水采用整组保守预留和独立 FIFO 阶段，未实现任意格式、一般资源调度或完整恢复协议。\",\n    \"ServerlessLLM 与 CUDA 原文仅阅读所供摘录；CUDA 摘录没有直接覆盖来源说明所述全部异步章节。没有独立源码归档或 reader.html 版面核验。\"\n  ],\n  \"checks\": [\n    {\n      \"script\": \"tools/check_k_hw_012_full.py\",\n      \"args\": []\n    }\n  ],\n  \"no_checks_reason\": \"\",\n  \"reading_scope\": \"全部阅读的是任务内供应的文本，而非本地原文件。完整供应并阅读：AGENTS.md [0,567)、docs/knowledge-method.md [0,2251)、docs/knowledge-review.md [0,3016)、knowledge/hardware/storage-io.md [0,14535)、四份来源说明 S-LINUX-IO [0,850)、S-SERVERLESSLLM [0,781)、S-CUDA-ASYNC [0,1610)、S-GPUDIRECT [0,615)、tiered-residency.md [0,4244)、kv-offload-prefetch.md [0,3710)、host-device-transfer.md [0,6485)、host-runtime.md [0,7559)、storage-services.md [0,3922)、retrieval-pipeline.md [0,4507)、references/S-LINUX-IO/fulltext.txt [0,52366)、references/S-GPUDIRECT/fulltext.txt [0,55368)，以及 candidate.test_script 完整内容、author_notes、上一轮失败和本轮 actual_preflight。其余仅阅读供应摘录，范围均为提取文本零基半开字符区间：checkpoint-loading.md [0,1630)、[8000,14097)；host-device-timing.md [4000,11727)；trace-observability.md [0,4000)、[8000,8885)、[16000,18842)；timeline-attribution.md [4000,6503)、[8000,13224)；kernel-counter-replay.md [4000,11727)；ServerlessLLM 原文 [0,28000)、[32000,69278)、[76000,80000)；CUDA 原文 [4000,8000)、[260000,264000)、[324000,328000)、[744000,752000)、[772000,776000)、[788000,789279)、[808000,812000)、[1020000,1024000)、[1040000,1044000)、[1060000,1076000)、[1080000,1084000)、[1100000,1112000)。documents 只列完整供应材料和完整交付脚本。链接的目标身份与供应材料相容，但未执行文件存在性或 HTML 渲染检查。\",\n  \"test_assessment\": \"本轮实际预检 returncode=0、stderr 为空，script_sha256=e8c4a8ff6ce5469368f0928265db7f8708c19cabccbd71d13df57b94c7765e89，与交付脚本绑定一致。原始三元记录现在被显式形状校验拒绝，完整身份筛选投影后的重复完整范围通过；campaign-K-HW-012-r1 的具体执行失败可以关闭。检查不是整体同义反复：范围算法与逐字节集合参考比较，并检出错误消耗完成区间和丢弃身份；转置目标反查与源坐标散射比较；流水事件、阶段递推与闭式公式相互核对；槽位使用两两区间重叠参考；责任观察器从事件重建未完成访问并拒绝提前归还；顺序图可达性与全部合法排列比较并检出缺边。实际输出覆盖 12,321 组范围、16 组流水、54 组槽位和所列负对照，数值与正文一致。局限在于 pump 始终接受操作并产生成功完成，不执行 LoadBlocks 的同步拒绝、短读重提和无事件停滞分支，因而成功预检不能验证完整加载伪代码。审阅者额外执行了交付 pump 控制顺序的 JavaScript 边界复现，发现 cancel_at=0 时接纳两块、16 ms 排空；这不是 Python 重跑结果。需修复上述两个当前缺口后重新检查完整候选。\"\n}",
+  "elapsed_seconds": 312.375
+}

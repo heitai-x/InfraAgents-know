@@ -1,0 +1,74 @@
+{
+  "id": "K-ALG-017",
+  "path": "algorithms/tiered-residency.md",
+  "category": "algorithms",
+  "title": "多级驻留：有效副本、预取、淘汰与重算",
+  "summary": "多级驻留维护有效版本与在途副本，并联合比较保留、预取、淘汰和重算；三级容量可行不等于在线延迟可行。",
+  "revision": 2,
+  "status": "seed",
+  "tags": [
+    "HBM",
+    "DRAM",
+    "SSD",
+    "分层存储",
+    "驻留",
+    "卸载",
+    "预取",
+    "淘汰",
+    "重算"
+  ],
+  "scope": {
+    "model_families": [],
+    "platforms": [],
+    "runtimes": [],
+    "workloads": []
+  },
+  "source_ids": [
+    "S-FLEXGEN",
+    "S-SERVERLESSLLM",
+    "S-PAGED",
+    "S-CUDA-ASYNC"
+  ],
+  "related": [
+    "K-SYS-012",
+    "K-HW-012",
+    "K-ALG-018",
+    "K-ALG-019",
+    "K-ALG-020",
+    "K-SYS-004",
+    "K-WORK-006",
+    "K-ALG-008",
+    "K-ALG-009",
+    "K-ALG-010",
+    "K-ENGINE-002",
+    "K-ENGINE-005",
+    "K-FW-005",
+    "K-HW-003",
+    "K-HW-005",
+    "K-MODEL-004",
+    "K-SYS-010",
+    "K-SYS-013",
+    "K-SYS-018",
+    "K-MODEL-015"
+  ],
+  "evidence": [],
+  "updated_at": "2026-10-27",
+  "sha256": "eb3ebc6320d5a32481cf645605d159860dc6d1edb97f1e98afd89ddb24ee82af",
+  "questions": [
+    "只读权重、已封闭 KV 前缀和正在追加的尾块各自允许多少有效副本，可变状态换出时如何冻结版本？",
+    "从未驻留到可回收的状态转换各需要什么条件，失败时每一步保留什么责任？",
+    "每层容量除有效副本外还要计入哪些项，为什么准备淘汰的对象不能立即扣减？",
+    "保留、重新取得与重算三者如何比较，p 乘避免时间除字节为什么不能作为统一淘汰规则？",
+    "预取在什么时间关系下才能完全隐藏，为什么提前固定层数不保证满足条件？"
+  ],
+  "symptoms": [
+    "每个 decode 迭代都重新从主存搬运同一批权重",
+    "容量看似足够但同时存活的源副本和目的预留导致过度准入",
+    "远期预取长期占用带宽使近期请求的 deadline 被违反"
+  ],
+  "assumes": [
+    "HBM、DRAM 与 SSD 的多级存储",
+    "对象身份含模型版本与逻辑范围",
+    "传输与计算可以部分重叠"
+  ]
+}

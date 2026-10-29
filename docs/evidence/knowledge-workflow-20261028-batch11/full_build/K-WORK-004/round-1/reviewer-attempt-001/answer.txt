@@ -1,0 +1,172 @@
+{
+  "entry_id": "K-WORK-004",
+  "body_sha256": "46d98a2cbe3143506575e7b06c14a5e4fb9680795f92730f6140814d8e0c1410",
+  "reviewer": "sol-reviewer:K-WORK-004:round-1",
+  "decision": "revise",
+  "documents": {
+    "AGENTS.md": "b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a",
+    "docs/knowledge-method.md": "69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb",
+    "docs/knowledge-review.md": "f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21",
+    "knowledge/workloads/measurement-comparability.md": "46d98a2cbe3143506575e7b06c14a5e4fb9680795f92730f6140814d8e0c1410",
+    "knowledge/sources/S-GENAI-PERF.md": "1db17462a3ae4cd41dcb58a78f3f9fa9e71ff3a51614e56855be07bcb95618e0",
+    "knowledge/sources/S-TORCH-PROFILER.md": "e103ff98986d0d266fe73736277d24afc57aa5892fd55d204bed2d84c6f7b050",
+    "knowledge/sources/S-NCU.md": "1bec5edf1e9343ad79094b2772466c3132597f8f83085d1d8959683c187f9f17",
+    "knowledge/sources/S-STATS.md": "70aaa597c5ab44b118296fe0527f0b510b7c8e4fb2e62170ce6547c0f7457f8e",
+    "knowledge/sources/S-TORCH-REPRO.md": "05f2b5b9819f01363fadadf41987482edfebb130bc134c36c44a00138fd5eb28",
+    "knowledge/workloads/slo-goodput.md": "5aa9b71cddb7d896ffa1fe6d78ac61cf0bb92d76279ae4d563f1110ed9dbedb4",
+    "knowledge/tools/statistical-experiments.md": "908b3588a6fa20bb1f2aed9f5db51c4b462953d79f8944cdbcfea7141c74644f",
+    "knowledge/workloads/session-workloads.md": "0269e1987e1107d0cf0135cb32aa759c67d5266cfa09fb1402f97704c4ab4d78",
+    "knowledge/tools/correctness-oracles.md": "c2f88bc9746ac25586fc6700aaf0f5a8d043a1b1f4aee99dfdee02e1ef468aab",
+    "knowledge/workloads/cost-and-energy.md": "e68e30bc7b68d554863044fe495751d95fc53993fb21c755ab89ef5d0ea4fd1b",
+    "references/S-GENAI-PERF/fulltext.txt": "357d6fcaafc41f2954ea87da567cd2b41ec8a146f8e4f19cb976acf39f539ddc",
+    "references/S-TORCH-PROFILER/upstream/docs/source/profiler.md": "6ac1b9178129e968ce7b03f56c78498fec2545c09ce0ca7f9b937b93ec91e772",
+    "references/S-TORCH-REPRO/fulltext.txt": "4f6b1deb38f7f174a2e340674680aaa0484e02a1d18cccd1bb94618df512cc2a",
+    "tools/check_k_work_004_full.py": "c6dd03656b340f55ff68306017291445892ef9aaf5672476a809bfb77dfba989"
+  },
+  "criteria": {
+    "definition": {
+      "assessment": "sufficient",
+      "reason": "动机、测量计划各分量、请求身份、事件边界、单位和状态含义均有展开；能够区分工具响应、模型 token、业务完成与物理排空。",
+      "evidence": [
+        {
+          "path": "knowledge/workloads/measurement-comparability.md",
+          "quote": "$M=(c,e,w,s,b,i,a,r)$。"
+        },
+        {
+          "path": "knowledge/workloads/measurement-comparability.md",
+          "quote": "它们表示已经完成了什么准备，不表示系统一定达到物理稳态。"
+        },
+        {
+          "path": "knowledge/workloads/measurement-comparability.md",
+          "quote": "客户端收到的 chunk 数不等于模型生成的 token 数。"
+        }
+      ]
+    },
+    "legality": {
+      "assessment": "partial",
+      "reason": "任务、负载、状态、采集和分母的可比性条件充分，来源适用范围也有声明；但配对 t 区间将独立同分布和无 carryover 写成充分条件，遗漏小样本正态性或有效近似条件。16 区组的代数正确不能补足区间覆盖率前提。",
+      "evidence": [
+        {
+          "path": "knowledge/workloads/measurement-comparability.md",
+          "quote": "可比较性要求除被研究的处理外，测量对象相同或已按设计随机化。"
+        },
+        {
+          "path": "knowledge/workloads/measurement-comparability.md",
+          "quote": "在独立区组、差值近似独立同分布且无 carryover 的条件下，平均差值的区间可写成"
+        }
+      ]
+    },
+    "algorithm": {
+      "assessment": "partial",
+      "reason": "伪代码贯通身份校验、预热覆盖、测量、窗口冻结、排空和独立确认，并保存失败与物理责任；但冷启动分支在建立实例后才开启窗口，没有把正文要求计入的首次加载连接到冷启动估计量。",
+      "evidence": [
+        {
+          "path": "knowledge/workloads/measurement-comparability.md",
+          "quote": "1 建立候选实例和状态记录；置 COLD；保留环境与版本身份"
+        },
+        {
+          "path": "knowledge/workloads/measurement-comparability.md",
+          "quote": "3 置 READY；检查队列基线、缓存状态、采集配置和时钟起点"
+        },
+        {
+          "path": "knowledge/workloads/measurement-comparability.md",
+          "quote": "业务完成与物理排空分别保存"
+        }
+      ]
+    },
+    "cost": {
+      "assessment": "sufficient",
+      "reason": "在声明的测量方法范围内，解释了准备、采集计算、日志与内存访问、连接和序列化、replay 保存恢复及主机传输、同步和驻留成本。时间项采用同一墙钟域，明确关键路径和重叠去重；容量按唯一物理对象计算。冷启动成本未进入算法输出的问题另列算法缺口。",
+      "evidence": [
+        {
+          "path": "knowledge/workloads/measurement-comparability.md",
+          "quote": "$T_{run}=T_{setup}+T_{warm}+T_{measure}+T_{drain}+T_{export}$。"
+        },
+        {
+          "path": "knowledge/workloads/measurement-comparability.md",
+          "quote": "只有位于关键路径上的部分才增加墙钟，重叠工作不能重复相加。"
+        },
+        {
+          "path": "knowledge/workloads/measurement-comparability.md",
+          "quote": "唯一物理对象只计一次，日志字节数约为事件数乘每条记录大小，压缩和索引另计。"
+        }
+      ]
+    },
+    "adaptation": {
+      "assessment": "sufficient",
+      "reason": "说明改变 batch、缓存状态、采集方式、随机性设置和重复层级后应重新建立哪些条件；持续漂移、carryover 和确认区间跨阈值时，分别要求调整设计、隔离状态或保留未决。没有把局部算例外推为设备收益。",
+      "evidence": [
+        {
+          "path": "knowledge/workloads/measurement-comparability.md",
+          "quote": "共享缓存无法隔离时，应使用独立实例或显式重置，并在结果中声明共享状态。"
+        },
+        {
+          "path": "knowledge/workloads/measurement-comparability.md",
+          "quote": "若系统持续漂移，正确做法是报告漂移和条件，而不是挑一段最快区间称为稳态。"
+        },
+        {
+          "path": "knowledge/workloads/measurement-comparability.md",
+          "quote": "若区间跨过最小有意义效果，证据未定；应增加有效重复或报告未区分"
+        }
+      ]
+    },
+    "diagnosis": {
+      "assessment": "sufficient",
+      "reason": "竞争解释均连接了干预、观测与可反驳预测，覆盖冷路径、缓存继承、工具扰动、搜索偏差、输出工作量和队列增长；明确要求预测失败时修改机制解释，并限定同步干预的归因能力。",
+      "evidence": [
+        {
+          "path": "knowledge/workloads/measurement-comparability.md",
+          "quote": "独立实例或显式重置后差异消失，支持 carryover 解释。"
+        },
+        {
+          "path": "knowledge/workloads/measurement-comparability.md",
+          "quote": "若总时间改善而预测没有出现，应修改机制解释，即使候选本身仍可保留。"
+        },
+        {
+          "path": "knowledge/workloads/measurement-comparability.md",
+          "quote": "一次全设备同步使异常消失，同时改变多项关系，不能唯一定位缺哪条边。"
+        }
+      ]
+    }
+  },
+  "findings": [
+    {
+      "id": "K-WORK-004-R1-COLD-WINDOW",
+      "criterion": "algorithm",
+      "evidence": "正文要求“研究冷启动时，目标路径的首次加载、编译、autotune、图捕获和缓存填充必须计入”；RunOneArm 却先执行“1 建立候选实例和状态记录；置 COLD；保留环境与版本身份”，随后才“记录窗口起点；不得把 READY 前的请求计入测量窗口”。冷启动分支只禁止 warmup，未记录实例建立的计时边界，也未将其成本并入冷启动估计量。",
+      "impact": "建立实例时发生的首次加载可以全部落在目标窗口之外。例如加载 10 秒、首次请求 1 秒的实现，可按当前步骤只产生 1 秒的请求测量；另列 T_setup 的成本公式不能自动恢复冷启动目标的完整时间链。",
+      "blocking": true,
+      "required_revision": "为冷启动目标声明起止事件，在实例建立或目标加载之前启动相应计时，并明确加载、首次准备与首次请求如何进入冷启动估计量。稳定态窗口可继续从 READY 后开始；若仅研究已加载实例的冷执行，则明确收窄目标，并将加载时间作为独立启动指标交付。用一条包含非零加载时间的设定轨迹核对该边界。"
+    },
+    {
+      "id": "K-WORK-004-R1-T-INTERVAL-CONDITIONS",
+      "criterion": "legality",
+      "evidence": "“在独立区组、差值近似独立同分布且无 carryover 的条件下，平均差值的区间可写成”之后直接给出“$mean(D) ± t_{1-α/2,n-1}·s_D/√n$”，并使用 16 个独立区组演算。这里没有说明差值正态性或学生化均值近似有效的条件。",
+      "impact": "独立同分布本身不能保证小样本 t 区间具有声明覆盖率。反例：差值以 0.99 概率为 −2 ms、以 0.01 概率为 98 ms，总体均值为 −1 ms，方差有限且可无 carryover。16 次全为 −2 的概率约 85.15%，此时样本标准差为零，所给区间为 [−2,−2]，不覆盖总体均值；覆盖率至多约 14.85%。",
+      "blocking": true,
+      "required_revision": "区分正态独立差值下的精确 t 区间与满足相应矩和样本规模条件时的近似区间，声明 n≥2、置信水平和有限方差等适用前提；明确 16 区组算例仅核对代数，不保证偏态或稀有长尾数据的覆盖率。遇到近似依据不足时保留未决或重新设计有效重复，不能仅凭 iid 标签套用区间。"
+    }
+  ],
+  "limitations": [
+    "没有目标 GPU、真实服务、GenAI-Perf、torch.profiler 或 Nsight Compute 的运行证据；采集扰动、缓存、功率漂移和设备性能保持未测边界。",
+    "S-NCU 和 S-STATS 原文仅按所供摘录核对，不代表通读完整指南或论文；没有读取源码归档或核验其实现。",
+    "所供 profiler.md 是文档生成指令页，不包含展开后的 API 说明；schedule 和张量引用机制主要依据完整来源说明，不能称为独立核验了展开后的上游 API 文档。",
+    "非平衡重复、配对层级 bootstrap、任意非平稳 p99、强自相关和序贯推断没有获得一般有效性证明；正文对此声明的范围可以保留。",
+    "未独立访问磁盘原文件、reader.html、来源复核记录或验证链接可达性；文档身份绑定使用任务提供的哈希，未声称重新计算磁盘哈希。",
+    "未执行 Agent 使用效果或知识版本对照实验，不能据内容审查及离线检查声称构建能力或性能改善。"
+  ],
+  "checks": [
+    {
+      "script": "tools/check_k_work_004_full.py",
+      "args": [],
+      "execution_basis": "任务提供的 actual_preflight 执行记录；本审阅者未重新执行 Python 文件。",
+      "script_sha256": "c6dd03656b340f55ff68306017291445892ef9aaf5672476a809bfb77dfba989",
+      "returncode": 0,
+      "stderr": "",
+      "assessment": "所供隔离执行记录显示脚本完成，stdout 与脚本断言及设定算例一致；结论限于其 CPU 离线检查范围。"
+    }
+  ],
+  "no_checks_reason": "",
+  "reading_scope": "完整阅读任务所供全文，字符范围均为零基半开区间：AGENTS.md [0,567)；docs/knowledge-method.md [0,2251)；docs/knowledge-review.md [0,3016)；knowledge/workloads/measurement-comparability.md [0,12364)；knowledge/sources/S-GENAI-PERF.md [0,506)；knowledge/sources/S-TORCH-PROFILER.md [0,779)；knowledge/sources/S-NCU.md [0,477)；knowledge/sources/S-STATS.md [0,983)；knowledge/sources/S-TORCH-REPRO.md [0,501)；knowledge/workloads/slo-goodput.md [0,2616)；knowledge/tools/statistical-experiments.md [0,4269)；knowledge/workloads/session-workloads.md [0,3583)；knowledge/tools/correctness-oracles.md [0,5245)；knowledge/workloads/cost-and-energy.md [0,3169)；references/S-GENAI-PERF/fulltext.txt [0,46825)；references/S-TORCH-PROFILER/upstream/docs/source/profiler.md [0,1055)；references/S-TORCH-REPRO/fulltext.txt [0,7936)。完整阅读 candidate.test_script 所供 tools/check_k_work_004_full.py 全部内容，以及 author_notes 和 actual_preflight 的执行范围与输出。仅阅读以下摘录，不在 documents 中登记其整文件哈希：knowledge/workloads/arrival-and-concurrency.md [0,9511)、[12000,13114)；knowledge/tools/timeline-attribution.md [0,5401)、[8000,13224)；knowledge/frameworks/checkpoint-loading.md [0,8528)、[12000,14097)；references/S-NCU/fulltext.txt [0,20000)、[24000,40000)、[48000,60603)、[64000,68000)、[72000,100000)、[108000,112000)、[116000,136000)；references/S-STATS/fulltext.txt [0,4000)、[20000,28000)、[32000,36000)、[56000,80000)、[88000,92000)、[100000,104000)、[108000,128000)、[132000,168602)。上述均指任务暴露的材料范围，不表示访问原始磁盘文件、PDF 图片、reader.html 或源码归档。",
+  "test_assessment": "独立检查了脚本算法及所供实际执行记录。可比性检查依据预定字段合同，事件边界负对照证明 legacy_validator 会接受应拒绝的比较；warmup 检查依据必需桶全覆盖不变量，能区分全覆盖与只预热部分桶；两个比值使用独立可手算的 1 和 13/16 作为参考；层级方差检查利用 n=1 两种口径相等、增加同一运行内重复不能消除运行间差异以及零运行差异等关系，区分平铺替代量。审阅者另用 JavaScript 独立复算得到运行均值样本方差 5000、均值方差 2500、平铺均值方差 2500/1999、配对算例区间 [−2.53275,−1.46725] 及零超限上界约 2.9513%，与交付数值一致。这些检查有实际辨别力，不是仅凭退出码接受；但 stdout 的 negative_controls_detected=4 是固定打印，不能作为额外覆盖证据。脚本实际覆盖空样本、逐请求零分母、单运行，以及空必需桶的集合恒真边界；未覆盖完整状态机、待完成准备事件、冷启动计时、窗口终态、物理排空、区组执行顺序、置信区间覆盖率或 profiler 成本。层级检查也没有直接断言 2500 的绝对参考值，数值由本次独立复算补核。作者明确未执行脚本，与协调者随后提供的成功 preflight 可以并存；不能将后者改写为作者已经运行。现有成功检查不能关闭本次发现的冷启动计时和 t 区间条件问题。"
+}

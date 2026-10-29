@@ -1,0 +1,67 @@
+{
+  "id": "K-HW-004",
+  "path": "hardware/precision-and-kernel-support.md",
+  "category": "hardware",
+  "title": "数值格式、打包布局与矩阵指令",
+  "summary": "固定架构/指令能力、量化参数布局与实际 dispatch 分别核验，防止把存储格式、指令支持和目标内核性能混为一谈。",
+  "revision": 3,
+  "status": "seed",
+  "tags": [
+    "FP8",
+    "BF16",
+    "INT4",
+    "Tensor Core",
+    "dtype",
+    "WMMA",
+    "scale layout",
+    "INT32 overflow",
+    "CPU dispatch",
+    "FP8 KV"
+  ],
+  "scope": {
+    "model_families": [],
+    "platforms": [
+      "cuda"
+    ],
+    "runtimes": [],
+    "workloads": []
+  },
+  "source_ids": [
+    "S-CUDA-CAPABILITY",
+    "S-TORCH-NUMERIC",
+    "S-GPTQ",
+    "S-SMOOTHQUANT",
+    "S-AWQ",
+    "S-FLASHINFERPAPER"
+  ],
+  "related": [
+    "K-ALG-005",
+    "K-HW-005",
+    "K-HW-006",
+    "K-FW-012",
+    "K-HW-010",
+    "K-HW-011",
+    "K-TOOLS-003",
+    "K-ALG-021",
+    "K-FW-007",
+    "K-MODEL-014"
+  ],
+  "evidence": [],
+  "updated_at": "2026-10-27",
+  "sha256": "7185979b8429b7d44fd34ec0910bbe85c617a457cc4d9d9055920e73d07bc5d3",
+  "questions": [
+    "一种数值格式可表示并不意味着某算子形态有高效实现，这两件事如何分别核验？",
+    "矩阵指令的形状约束怎样限制 tile 与打包布局的选择？",
+    "量化 scale 的布局、尾部处理与累加范围各自可能在哪里出错？",
+    "固定平台能力表应落到哪一级接口，才能避免把代际能力误用到另一代？",
+    "CPU 与 GPU 的实际 dispatch 怎样核验，仅看库版本为何不够？"
+  ],
+  "symptoms": [
+    "FP8 路径在某张卡上静默回退到更慢实现",
+    "INT32 累加在长归约中溢出"
+  ],
+  "assumes": [
+    "目标设备的 compute capability 已知",
+    "权重与激活格式已固定"
+  ]
+}

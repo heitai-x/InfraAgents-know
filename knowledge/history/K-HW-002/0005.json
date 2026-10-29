@@ -1,0 +1,62 @@
+{
+  "id": "K-HW-002",
+  "path": "hardware/topology-parallelism.md",
+  "category": "hardware",
+  "title": "通信拓扑：从 Rank 组到瓶颈链路",
+  "summary": "拓扑、方向与共享链路决定通信成本；将理想ring启动项和发送流量放到具体带宽假设中解释。",
+  "revision": 5,
+  "status": "seed",
+  "tags": [
+    "topology",
+    "NUMA",
+    "NVLink",
+    "PCIe",
+    "通信拓扑",
+    "ring latency",
+    "startup cost"
+  ],
+  "scope": {
+    "model_families": [],
+    "platforms": [
+      "cuda"
+    ],
+    "runtimes": [],
+    "workloads": []
+  },
+  "source_ids": [
+    "S-CUDA-TOPOLOGY",
+    "S-NCCL-COLLECTIVE",
+    "S-NCCL-GROUP",
+    "S-RDMA",
+    "S-GPUDIRECT"
+  ],
+  "related": [
+    "K-ALG-015",
+    "K-ALG-013",
+    "K-SYS-005",
+    "K-HW-014",
+    "K-SYS-013",
+    "K-ALG-023",
+    "K-MODEL-003",
+    "K-WORK-011",
+    "K-SYS-019"
+  ],
+  "evidence": [],
+  "updated_at": "2026-10-28",
+  "sha256": "455699479a05ea3eae706aa46d07081f70ff4e2623b6504507d046ac5365353a",
+  "questions": [
+    "把拓扑看作带容量的图后，一次集合操作沿哪些边发送多少字节？",
+    "ring 的启动项与发送流量在不同消息大小下谁主导，怎样放进具体带宽假设？",
+    "NUMA 与网卡亲和如何改变主机到设备与跨节点传输的实际路径？",
+    "共享链路的流量为什么要按方向分别计数，相加峰值会高估什么？",
+    "用真实消息形态校准时，哪些条件必须与服务一致？"
+  ],
+  "symptoms": [
+    "集合通信时间随卡数增加远超线性",
+    "同机两卡之间带宽低于标称"
+  ],
+  "assumes": [
+    "多设备或多节点的执行组",
+    "链路带宽与延迟可测"
+  ]
+}

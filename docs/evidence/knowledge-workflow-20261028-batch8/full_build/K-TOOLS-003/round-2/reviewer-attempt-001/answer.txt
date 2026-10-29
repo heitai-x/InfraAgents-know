@@ -1,0 +1,146 @@
+{
+  "entry_id": "K-TOOLS-003",
+  "body_sha256": "5802edc860b6a95350eefacc6ae41e98651f8141101d806c929b5f400f3f649e",
+  "reviewer": "sol-reviewer:K-TOOLS-003:round-2",
+  "decision": "accept",
+  "documents": {
+    "AGENTS.md": "b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a",
+    "docs/knowledge-method.md": "69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb",
+    "docs/knowledge-review.md": "f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21",
+    "knowledge/tools/kernel-counter-replay.md": "5802edc860b6a95350eefacc6ae41e98651f8141101d806c929b5f400f3f649e",
+    "knowledge/sources/S-NCU.md": "1bec5edf1e9343ad79094b2772466c3132597f8f83085d1d8959683c187f9f17",
+    "knowledge/sources/S-CUDA-BEST.md": "4b752c1a26f66a195df62be354649f0a6880f733fb365e82e87bdd63bf71d45c",
+    "knowledge/sources/S-ROCM.md": "a781dedf1327b2478e84466832a80e9bb81605e10ec2535450f472d6dd1d0483",
+    "knowledge/sources/S-PERF.md": "7922a67299140d65ac00f048a5fa47684c48ea6da1b595181b1ace4b42c9b725",
+    "knowledge/sources/S-LINUX-IO.md": "786caae53cc1e80173616ce470c481145e285c2176b7cff4777576cc893fc316",
+    "knowledge/tools/timeline-attribution.md": "cf4b01a8ca5cb35e653b65fbe2bc018d3ae5cc42788a77688524fb29c7da817d",
+    "knowledge/hardware/cpu-linear-kernels.md": "b4d5391890478b2874f6ea548b154a580a0810356f9cf9cb05248a9d2f728dcc",
+    "knowledge/frameworks/cpu-quantized-kernels.md": "fcb634a208ad9c814cc9b3228aee7082ca77091c7a385b3d3d57618f14aba310",
+    "knowledge/hardware/storage-io.md": "cec95f0a908c9abf7e9f7b83a5c930d044709d06c479d3c82967241edb49ff31",
+    "knowledge/hardware/transport-and-rdma.md": "72bcf1d8948eae41c243e422f6b0370462dcc4bf33ef86f5664a09b4e46d3ba2",
+    "knowledge/tools/gpu-characterization.md": "b31dd621ab293e8cb26d65dce51ec87b66e86a614dc91fff508c71182529cc3f",
+    "references/S-ROCM/fulltext.txt": "f5364f72aaaf3149705e29af60d62c448b0f60b6da9e69a470090c68236af29e",
+    "references/S-PERF/fulltext.txt": "ef44c989c480f2a943047cb9f39f95cf1c2752113696e7cc08fe0ef6b1fcfc67",
+    "references/S-LINUX-IO/fulltext.txt": "d6da925f1c90da275de1e6aa94a179a3273ad342fe77b61608a8b77fa75c3495",
+    "tools/check_k_tools_003_full.py": "47f6a503a1c99c625356841771e67792af1b7f603e84253f348432318c6d264d"
+  },
+  "criteria": {
+    "definition": {
+      "assessment": "sufficient",
+      "reason": "定义了逻辑实例、范围、样本身份、输入输出及派生量边界。明确区分墙钟、逻辑启用和实际运行时间，正确限定复用缩放的目标、代表性、零时间及重复缩放处理；原 DEFINITION-001 关闭。",
+      "evidence": [
+        {
+          "path": "knowledge/tools/kernel-counter-replay.md",
+          "quote": "C_hat_enabled = C_raw × T_enabled / T_running，r_mux = T_running / T_enabled。"
+        },
+        {
+          "path": "knowledge/tools/kernel-counter-replay.md",
+          "quote": "perf 的输出可以已经缩放；导入时必须保存 raw/scaled 标志及运行比例，已缩放值不再乘一次 T_enabled/T_running。"
+        }
+      ]
+    },
+    "legality": {
+      "assessment": "sufficient",
+      "reason": "直接比率、有条件的跨 pass 估计和不可合并样本已分开，与所供 S-NCU 的合并及误差说明一致。经验包络明确不是置信区间；硬件不能同采时也不再承诺单组重跑可解决。四模式的匹配、并发、API、上下文及地址生命周期条件充分；原 LEGALITY-001 关闭。",
+      "evidence": [
+        {
+          "path": "knowledge/tools/kernel-counter-replay.md",
+          "quote": "因此，hits 来自 pass 1、queries 来自 pass 2，并不自动非法。"
+        },
+        {
+          "path": "knowledge/tools/kernel-counter-replay.md",
+          "quote": "它不是统计置信区间，也不包含未观察到的状态。"
+        },
+        {
+          "path": "knowledge/tools/kernel-counter-replay.md",
+          "quote": "被设备写入、工具随后要恢复的主机地址必须仍然有效，且没有释放或改作其他对象；普通堆/栈分配生命周期并不全由工具截获。"
+        }
+      ]
+    },
+    "algorithm": {
+      "assessment": "sufficient",
+      "reason": "完整伪代码分别展开四种模式的初始化、执行对象、后续 pass 推进及失败停止。kernel 使用原始备份而非前次输出；application 两模式重跑应用；range 恢复范围状态并重放完整序列。后处理保留身份、缩放状态和稳定性证据，完成边界明确；原 ALGORITHM-001 关闭。",
+      "evidence": [
+        {
+          "path": "knowledge/tools/kernel-counter-replay.md",
+          "quote": "若 p>0：从 B_0 恢复首 pass 确定的写集；等待恢复完成"
+        },
+        {
+          "path": "knowledge/tools/kernel-counter-replay.md",
+          "quote": "重放捕获的完整 API/kernel 序列，保留范围内完成依赖与并发"
+        },
+        {
+          "path": "knowledge/tools/kernel-counter-replay.md",
+          "quote": "工作完成前不能把 host API 返回当作计数窗口结束；匹配成功也不能跳过状态与稳定性核验。"
+        }
+      ]
+    },
+    "cost": {
+      "assessment": "sufficient",
+      "reason": "串行公式已改为带假设的近似预算，区分逐 pass 时间、保存与恢复路径、单 pass 特例、完整应用和范围成本，并给出合法重叠反例。六类资源账及驻留上界可复算。160/128 字节放大与来源的相对吞吐已正确区分；原 COST-001、COST-002 关闭。",
+      "evidence": [
+        {
+          "path": "knowledge/tools/kernel-counter-replay.md",
+          "quote": "此式是给定串行假设的预算模型，不是经证明的必要下界；可持续速率也不是硬件能力上界。"
+        },
+        {
+          "path": "knowledge/tools/kernel-counter-replay.md",
+          "quote": "该单次请求在这个段边界上有 D_use=128 B、D_tx=160 B，因此 A=160/128=5/4，E=4/5。"
+        },
+        {
+          "path": "knowledge/tools/kernel-counter-replay.md",
+          "quote": "它们不是事务放大，9/10 也不是从计数器测得的 DRAM 字节效率。"
+        }
+      ]
+    },
+    "adaptation": {
+      "assessment": "sufficient",
+      "reason": "条件变化表说明事件计划、cache、时钟、必要并发、外部响应、捕获失败、分区及跨平台变化后保留哪些关系、重算哪些成本和何时停止推断。修订后的选择与四模式算法一致，没有继续固化旧的跨 pass 禁令。",
+      "evidence": [
+        {
+          "path": "knowledge/tools/kernel-counter-replay.md",
+          "quote": "重算 pass、保存恢复与重复应用成本；不能同采时评估跨 pass 估计，不保证单组重跑可行"
+        },
+        {
+          "path": "knowledge/tools/kernel-counter-replay.md",
+          "quote": "停止捕获恢复；缩窄范围或改用合法的 application-range"
+        }
+      ]
+    },
+    "diagnosis": {
+      "assessment": "sufficient",
+      "reason": "对低利用率、高命中率、跨 pass 漂移、采集干预、spill 和 perf 偏置给出竞争解释、区分干预及反证修正。组合轨迹贯通 I/O 完成、复制可见、必要并发和恢复生命周期。脚本的独立参考及实际负对照支持声明的标量机制，未扩张为设备或服务效果证明。",
+      "evidence": [
+        {
+          "path": "knowledge/tools/kernel-counter-replay.md",
+          "quote": "核对实例序号，重复关键事件和共同锚点，交换组顺序；能同采时作直接对照"
+        },
+        {
+          "path": "knowledge/tools/kernel-counter-replay.md",
+          "quote": "若强行单 kernel replay，即使正确恢复写集，并发伙伴缺失仍会改变工作或导致停滞。"
+        },
+        {
+          "path": "knowledge/tools/kernel-counter-replay.md",
+          "quote": "差异只在采集环境成立时，限制结论范围"
+        }
+      ]
+    }
+  },
+  "findings": [],
+  "limitations": [
+    "结论限于所供固定材料及明确节选；未读取完整 S-NCU、S-CUDA-BEST 原文、上游实现源码或实际打开 reader.html，未执行文件存在性、离线链接可达性及磁盘哈希复算。",
+    "有限共同锚点不能证明隐藏工作完全平稳；跨 pass 包络仅覆盖已观察样本，不是统计置信区间。",
+    "四模式检查是简化标量状态机，不验证真实 CUDA 捕获、并发调度、工具写集追踪、主机地址恢复或内存可见性。",
+    "没有目标 GPU replay、CPU PMU、实际缓存事务、采集速率、正常服务性能或 Agent 使用效果的测量。预算参数仍需目标环境校准。",
+    "作者声明其交付时尚未运行 Python；随后提供的协调者 actual_preflight 记录支持绑定脚本已隔离执行成功。本审阅未重新执行 Python，也未独立重现作者所述 V8 调用。",
+    "当前工具没有文件读取或 shell 入口，资源发现返回空，未能读取本地 infraagents-knowledge-build/SKILL.md；本结论依据消息所供审查方法、材料和执行记录。"
+  ],
+  "checks": [
+    {
+      "script": "tools/check_k_tools_003_full.py",
+      "args": []
+    }
+  ],
+  "reading_scope": "完整阅读消息所供文件：AGENTS.md [0,567)；docs/knowledge-method.md [0,2251)；docs/knowledge-review.md [0,3016)；knowledge/tools/kernel-counter-replay.md [0,15164)；knowledge/sources/S-NCU.md [0,477)；knowledge/sources/S-CUDA-BEST.md [0,992)；knowledge/sources/S-ROCM.md [0,514)；knowledge/sources/S-PERF.md [0,503)；knowledge/sources/S-LINUX-IO.md [0,850)；knowledge/tools/timeline-attribution.md [0,3485)；knowledge/hardware/cpu-linear-kernels.md [0,4016)；knowledge/frameworks/cpu-quantized-kernels.md [0,3369)；knowledge/hardware/storage-io.md [0,3886)；knowledge/hardware/transport-and-rdma.md [0,4088)；knowledge/tools/gpu-characterization.md [0,5952)；references/S-ROCM/fulltext.txt [0,32330)；references/S-PERF/fulltext.txt [0,25043)；references/S-LINUX-IO/fulltext.txt [0,52366)。完整阅读 candidate.test_script 中交付的 tools/check_k_tools_003_full.py、author_notes 和 actual_preflight。仅阅读以下原文节选：references/S-NCU/fulltext.txt [0,28000)、[32000,40000)、[56000,64000)、[96000,100000)、[104000,124000)、[136000,137767)；references/S-CUDA-BEST/fulltext.txt [44000,73768)、[76000,80000)、[84000,104000)、[108000,112000)、[128000,132000)、[160000,164000)、[176000,180000)。相关章节仅阅读：knowledge/hardware/memory-and-roofline.md [0,3727)、[8000,12000)；knowledge/frameworks/triton-kernels.md [0,1159)、[8000,14568)；knowledge/hardware/gpu-kernel-pipelines.md [4000,7727)、[8000,12000)；knowledge/hardware/precision-and-kernel-support.md [0,368)、[8000,15359)；knowledge/hardware/cpu-serving.md [0,547)、[8000,15180)。以上范围均为所供提取文本的零起点半开字符区间，节选文件未列入 documents。不递归展开 include、kernel-doc 或其他引用；作者另述阅读范围不作为本审阅已读范围。",
+  "test_assessment": "独立检查了脚本全部算法和所供实际执行记录，而非仅采信退出码。perf 使用分段时间线积分作为启用期间真值，覆盖 enabled/running 不等、墙钟目标变化、重复缩放、零时间和 burst 偏置。比率检查以笛卡尔组合独立核对经验包络，稳定样本得到 81/101、[40/51,41/50]，并实际拒绝错误 launch、范围、状态、单位、缺锚点及非平稳样本；5% 门限只是夹具策略，不能验证真实采集平稳性。四模式以不调用 replay 的单次状态公式作参考；遗漏恢复、滚动备份、应用不重启和 range 只恢复一个 kernel 的故障均进入执行路径并产生可辨差异。段集合以逐字节枚举核对，驻留以资源累加枚举核对；串行预算与独立时间账一致，独立可行调度以 8 对 12 反驳无条件加和下界。部分 differs 检查只证明特定错误数值可被反例区分，不构成真实工具故障检测。actual_preflight 的 script_sha256 与交付绑定一致，记录 Python 3.12 以 -I -S -B -X utf8 在 remote_bwrap 隔离环境运行，returncode=0、stderr 为空、未超时，并输出上述结果和 36 项已检测负对照。该记录支持本次标量检查成功；不支持真实 CUDA、PMU、缓存、同步或性能结论。正文的 Python 未执行声明对应作者交付时点，后续协调者执行证据在此单独登记。完整候选重新评估后，前轮五项具体问题及 workflow 修订请求均可关闭。"
+}

@@ -1,0 +1,290 @@
+{
+  "role": "reviewer",
+  "engine": "sol",
+  "requested_model": "gpt-6.1-sol",
+  "reasoning_effort": "high",
+  "prompt_sha256": "52a7e79424d3279e52c3686a5d2163e64932ebdabfd398e54b5ea13cf9f9abba",
+  "usage": [
+    {
+      "input_tokens": 922253,
+      "cached_input_tokens": 738688,
+      "cache_write_input_tokens": 0,
+      "output_tokens": 8149,
+      "reasoning_output_tokens": 2752
+    }
+  ],
+  "answer": "{\n  \"entry_id\": \"K-ALG-005\",\n  \"body_sha256\": \"acb66d0fe64720bae253cb10f5049e7d38c5cbb1c8c837698787ef8dedc905f5\",\n  \"reviewer\": \"sol-reviewer:K-ALG-005:round-1\",\n  \"decision\": \"revise\",\n  \"documents\": {\n    \"AGENTS.md\": \"b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a\",\n    \"docs/knowledge-method.md\": \"69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb\",\n    \"docs/knowledge-review.md\": \"f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21\",\n    \"knowledge/algorithms/quantization-contract.md\": \"acb66d0fe64720bae253cb10f5049e7d38c5cbb1c8c837698787ef8dedc905f5\",\n    \"knowledge/sources/S-GPTQ.md\": \"ab4b597c9d425e72b110a2be5ee56d98542a61f02630e542886d8c1afc15d1cb\",\n    \"knowledge/sources/S-TORCH-NUMERIC.md\": \"cbe91153d9ff7bd2f596d1d6c4e15de1ad68571f3cbde23215891a8ec7f6fab4\",\n    \"knowledge/sources/S-CUDA-CAPABILITY.md\": \"b01baba1d2826b0682b2b58c6a0d23bf0f6e616a758e41c74b4688b55417f286\",\n    \"knowledge/sources/S-AWQ.md\": \"4fa268a183cc1613919704d3c22d474531694c316309b8a0c97e5a9aaee596ae\",\n    \"knowledge/sources/S-SMOOTHQUANT.md\": \"d12a23d411ca8f41f7ed608ceef68c7f53e7fd540a336a626a7e87e8e1ea3a52\",\n    \"knowledge/sources/S-FLASHINFERPAPER.md\": \"0e4c6f197789b08bbd5d0f35b202ce316bbe788bdc6a3f67ca0c27e19e256437\",\n    \"knowledge/hardware/precision-and-kernel-support.md\": \"7185979b8429b7d44fd34ec0910bbe85c617a457cc4d9d9055920e73d07bc5d3\",\n    \"knowledge/frameworks/numerical-reference.md\": \"a70beff4c73683f897d9c0c1fb291539051e20b2c31adfd90a3f6677c411596f\",\n    \"knowledge/models/gqa-kv-heads.md\": \"9b51a72ccc9c86095f9c8a37e234893fe93068938390f69513c6ff90dd22da1d\",\n    \"knowledge/frameworks/cpu-quantized-kernels.md\": \"fcb634a208ad9c814cc9b3228aee7082ca77091c7a385b3d3d57618f14aba310\",\n    \"knowledge/algorithms/kv-compression.md\": \"b106cc93bcd9d5acfce5e7766eb25f5c1fbd4ba7844dd1fe6454fc08cc1d99f4\",\n    \"knowledge/hardware/cpu-linear-kernels.md\": \"b4d5391890478b2874f6ea548b154a580a0810356f9cf9cb05248a9d2f728dcc\",\n    \"knowledge/tools/statistical-experiments.md\": \"908b3588a6fa20bb1f2aed9f5db51c4b462953d79f8944cdbcfea7141c74644f\",\n    \"knowledge/hardware/memory-and-roofline.md\": \"2bebeecbaa625667b8ad8c2fbc13449f0da31ac24b0abd6289127be1150c7d0c\",\n    \"knowledge/system-semantics/known-tensions.md\": \"e7e30a27ff5b42d93b55bc6e36a008ce6f5c100410fbe357ee3870a4ad601f90\",\n    \"references/S-TORCH-NUMERIC/fulltext.txt\": \"bb6b2d8154a10f8f3b15e5ae4465cbc8d833067046964fc6b4d66dc036131b45\",\n    \"references/S-SMOOTHQUANT/fulltext.txt\": \"9c3f806adae8774873b8a24edb740c8b42879b94c5d76f99b68ad9d9d1ab0096\",\n    \"tools/check_k_alg_005_full.py\": \"c8c6b4d06b96881feeabfc38ad032dba67059961cc9d9d31dc15cd95a1b85161\"\n  },\n  \"criteria\": {\n    \"definition\": {\n      \"assessment\": \"partial\",\n      \"reason\": \"动机、制品输出、动态与静态状态及层输出误差展开充分。但两种编码公式在允许的舍入方式下并非无条件等价：最近偶数舍入不总能与整数零点平移交换。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/algorithms/quantization-contract.md\",\n          \"quote\": \"于是 q＝clip(round(x/s)＋z, q_min, q_max)，x̂＝s(q−z)。两种写法在实数上等价\"\n        },\n        {\n          \"path\": \"knowledge/algorithms/quantization-contract.md\",\n          \"quote\": \"静态尺度在离线校准时确定；动态尺度在每次调用或每个 token 上求取\"\n        }\n      ]\n    },\n    \"legality\": {\n      \"assessment\": \"partial\",\n      \"reason\": \"符号、分组覆盖、布局、消费者补偿和设备 dispatch 条件有实质解释。但允许实数偏移的 QPACK 没有闭合该模式的解码与精确零填充规则，检查脚本还把不能精确表示零的码当作零填充正例。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/algorithms/quantization-contract.md\",\n          \"quote\": \"b 与 z 不能混存在同一个字段里，加载器、迁移器和内核必须使用同一种解释\"\n        },\n        {\n          \"path\": \"knowledge/algorithms/quantization-contract.md\",\n          \"quote\": \"若某位置代表实数零且会被消费，其码必须是 z_g，不能默认填 0\"\n        }\n      ]\n    },\n    \"algorithm\": {\n      \"assessment\": \"partial\",\n      \"reason\": \"校准、打包、消费及权重补偿的数据流已经展开，但 GPTQ 的核心 Hfac 构造未定义为逆 Hessian 的上三角 Cholesky 因子；最后不足 B 列时 E 与更新切片的形状也未闭合。QPACK 两种偏移模式的解码交付不完整。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/algorithms/quantization-contract.md\",\n          \"quote\": \"2 Hfac ← 以 Cholesky 形式预计算后续所需行；不把 Hfac 当作普通逆矩阵另行解释\"\n        },\n        {\n          \"path\": \"knowledge/algorithms/quantization-contract.md\",\n          \"quote\": \"3 Q ← 0；E ← 0^{d_out×B}\"\n        },\n        {\n          \"path\": \"knowledge/algorithms/quantization-contract.md\",\n          \"quote\": \"对应解码为 x̂_i＝s_g(q_i−z_g)\"\n        }\n      ]\n    },\n    \"cost\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"在声明的模型推导范围内，容量、元数据、完整展开副本、计算补偿、校准准备、广播与同步成本均有解释。8 MiB 码流、0.5 MiB 元数据、40.5 MiB 双副本及 64 MiB Hessian 算术成立。性能上界须按关键路径和相同带宽假设理解，未得到设备验证。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/algorithms/quantization-contract.md\",\n          \"quote\": \"若加载时同时保留原副本与打包制品，至少已占 40.5 MiB\"\n        },\n        {\n          \"path\": \"knowledge/algorithms/quantization-contract.md\",\n          \"quote\": \"若两个阶段共享同一带宽或同一组 SM，不能把各自理想时间直接相加或直接取最大值，而要沿真实依赖图判断\"\n        }\n      ]\n    },\n    \"adaptation\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"batch、上下文、校准漂移、分组大小、敏感层及设备能力变化均连接到保留的依赖、改变的成本和放弃条件，没有把低位格式等同于普遍加速。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/algorithms/quantization-contract.md\",\n          \"quote\": \"动态 reduction 与同步成本超过收益时，改回更粗粒度但更稳的路径\"\n        },\n        {\n          \"path\": \"knowledge/algorithms/quantization-contract.md\",\n          \"quote\": \"质量阈值收紧、尺度统计漂移或目标设备缺少高效 dispatch 时，保留高精度或采用更粗粒度的成熟路径可能反而获得更低的合格请求成本\"\n        }\n      ]\n    },\n    \"diagnosis\": {\n      \"assessment\": \"partial\",\n      \"reason\": \"分层参考、竞争解释和反证修正设计充分，已有 signedness、组尺度和修正方向的有效负对照。但零填充正例未检查精确零不变量，GPTQ 检查只覆盖二变量逆矩阵修正，没有验证本章 Cholesky 与分块算法，当前 PASS 无法关闭这些实际缺口。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/algorithms/quantization-contract.md\",\n          \"quote\": \"第一层固定同一量化码及参数，用独立公式解码\"\n        },\n        {\n          \"path\": \"knowledge/algorithms/quantization-contract.md\",\n          \"quote\": \"只有这些负对照被检查发现，正向通过才有区分力\"\n        }\n      ]\n    }\n  },\n  \"findings\": [\n    {\n      \"id\": \"K-ALG-005-R1-001\",\n      \"criterion\": \"definition\",\n      \"evidence\": \"正文写“q＝clip(round(x/s)＋z, q_min, q_max)”，QPACK 却写“若使用整数零点：v_i ← x_i / s_g ＋ z_g”，随后“q_i ← clip(R(v_i), q_min, q_max)”。输入允许指定舍入方式，没有排除最近偶数舍入。\",\n      \"impact\": \"取 s=1、z=1、x=0.5，码域包含 1 和 2，最近偶数舍入下前一公式得到 q=1，QPACK 得到 q=2。即使 b=-sz，两条宣称等价的编码路径也会产生不同码及重建值，加载器与参考实现无法共享唯一契约。\",\n      \"blocking\": true,\n      \"required_revision\": \"明确舍入发生的位置及 tie 规则。可以统一采用先对 x/s 舍入再加整数零点，并同步修改实数偏移路径的等价性说明；也可以限制并解释满足整数平移不变性的舍入规则。增加能区分上述两种结果的半整数检查。\"\n    },\n    {\n      \"id\": \"K-ALG-005-R1-002\",\n      \"criterion\": \"algorithm\",\n      \"evidence\": \"GPTQ-LAYER 第 1 步为“H ← 2 X Xᵀ ＋ λ I”，第 2 步仅为“Hfac ← 以 Cholesky 形式预计算后续所需行”；随后直接以 Hfac[j,j] 和 Hfac[j,j:] 更新权重。E 固定为 d_out×B，但内层循环允许最后一块少于 B 列。给定 GPTQ 原文 Algorithm 1 明确从逆 Hessian 开始，并执行“Cholesky(H−1)⊤”。\",\n      \"impact\": \"分解 H 与分解 H 的逆会产生不同补偿方向。独立复算 H=[[2,0.4],[0.4,1]]、固定量化误差 e=-0.3 时，正确上三角逆因子的行比为 -0.4，得到修正 0.12，二次目标从 0.18 降至 0.1656；若对 H 本身取上三角 Cholesky，行比为 0.2，修正为 -0.06，目标升至 0.198。现有脚本没有构造 Hfac，不能发现此错误。最后短块还会使固定宽度 E 与截短因子切片无法直接相乘。\",\n      \"blocking\": true,\n      \"required_revision\": \"给出精确定义，例如 R 为满足 RᵀR=H⁻¹ 的上三角因子，并说明正定性条件及构造方式。逐块定义 end=min(i+B,d_in)，按有效块宽初始化或截取 E，并统一全部更新边界。用独立的逐列受约束二次优化参考验证实际 Cholesky 分块流程，覆盖短末块并注入错误分解对象。正文对 GPTQ 的固定版本称为 v1，而提供的来源说明和原文均为 2210.17323v2，也应统一该归属。\"\n    },\n    {\n      \"id\": \"K-ALG-005-R1-003\",\n      \"criterion\": \"legality\",\n      \"evidence\": \"QPACK 输出允许“每组 zero 或实数偏移”，但紧接着只给出“对应解码为 x̂_i＝s_g(q_i−z_g)”。脚本 test_zero_padding_negative_control 使用 lo=-2、hi=6、levels=16，得到 z=4，并只要求“zero_error <= step / 2 + EPS”；实际执行输出为“zero code 4 error 0.133333333333”。\",\n      \"impact\": \"该测试实际使用 x̂=lo+s q 的实数偏移网格，s=8/15，网格中没有精确零；q=4 解码为 2/15，而不是零。若此填充被点积消费，乘以 15 就额外贡献 2。把近零舍入误差作为精确零填充通过，不能验证正文要求的归约不变性；对实数偏移制品使用唯一给出的整数零点解码公式也无法恢复原契约。\",\n      \"blocking\": true,\n      \"required_revision\": \"明确任意实数偏移只有在 -b/s 是合法整数时才能无损改写为整数零点。按模式分别给出 b+s q 与 s(q-z) 解码；实数偏移网格没有精确零时，必须屏蔽无效位置或采用明确的其他中性处理。将填充正例改为确实满足 b=-sz 的整数零点契约，并断言填充不改变有效归约；保留当前网格作为必须屏蔽的反例。\"\n    }\n  ],\n  \"limitations\": [\n    \"没有目标 GPU/CPU 内核、设备事务、吞吐、峰值驻留或模型任务质量实测；这些已声明的边界本身不构成阻塞问题。\",\n    \"本次检查实际执行依据用户提供的 remote_bwrap preflight 记录：脚本哈希匹配、returncode=0、未超时。本审阅调用没有重新运行 Python；额外仅在内存中独立复算了三个数值反例。\",\n    \"提供的 CUDA 原文选段没有覆盖所引用的 WMMA §7.24，FlashInfer 原文选段也未提供可直接定位的 FP8 KV/FP16 query-output 具体段落；相应原始文档事实未记为本次独立全文核验通过。\",\n    \"当前工具没有文件读取或命令执行能力，可用资源列表为空，因此未读取未提供的 docs/knowledge-build-workflow.md，采用用户明确提供的 review JSON schema。绑定哈希按 supplied manifest 原样保留，未声称重新计算磁盘文件哈希。\"\n  ],\n  \"checks\": [\n    {\n      \"script\": \"tools/check_k_alg_005_full.py\",\n      \"args\": []\n    }\n  ],\n  \"no_checks_reason\": \"\",\n  \"reading_scope\": \"完整阅读了用户提供的候选正文、完整测试脚本、author_notes 及 actual_preflight 的脚本身份、argv、stdout、stderr、退出状态和沙箱执行范围。以下范围均为提取文本的零基半开字符区间。完整提供并完整阅读：AGENTS.md [0,567)；docs/knowledge-method.md [0,2251)；docs/knowledge-review.md [0,3016)；knowledge/algorithms/quantization-contract.md [0,10955)；knowledge/sources/S-GPTQ.md [0,527)；S-TORCH-NUMERIC.md [0,532)；S-CUDA-CAPABILITY.md [0,1097)；S-AWQ.md [0,590)；S-SMOOTHQUANT.md [0,597)；S-FLASHINFERPAPER.md [0,2811)；knowledge/hardware/precision-and-kernel-support.md [0,5068)；knowledge/frameworks/numerical-reference.md [0,3374)；knowledge/models/gqa-kv-heads.md [0,3902)；knowledge/frameworks/cpu-quantized-kernels.md [0,3369)；knowledge/algorithms/kv-compression.md [0,5839)；knowledge/hardware/cpu-linear-kernels.md [0,4016)；knowledge/tools/statistical-experiments.md [0,4269)；knowledge/hardware/memory-and-roofline.md [0,4009)；knowledge/system-semantics/known-tensions.md [0,5454)；references/S-TORCH-NUMERIC/fulltext.txt [0,10998)；references/S-SMOOTHQUANT/fulltext.txt [0,44126)。仅阅读提供的摘录：knowledge/hardware/gpu-kernel-pipelines.md [0,4500)、[8000,12000)；references/S-GPTQ/fulltext.txt [0,40260)、[44000,56000)；references/S-CUDA-CAPABILITY/fulltext.txt [48000,52000)、[76000,80000)、[88000,92000)、[156000,164000)、[284000,288000)、[312000,312260)、[548000,556000)、[648000,652000)、[692000,696000)、[940000,944000)、[972000,976000)、[1080000,1084000)；references/S-AWQ/fulltext.txt [0,44000)、[52000,52957)、[56000,63304)；references/S-FLASHINFERPAPER/fulltext.txt [0,4000)、[8000,52000)、[80000,84000)、[88000,88260)。摘录文件未加入 documents，也不声称读过其完整原文。没有读取源码归档或未提供的论文页段。\",\n  \"test_assessment\": \"作者明确说脚本未在作者环境执行；协调者随后提供了真实隔离执行记录，两者并不矛盾。记录中的 PASS 仅成立于该脚本的断言范围。误差界检查覆盖有限区间样本及一个饱和点；容量检查独立核对了组数、元数据和一个非整除组数；signed INT4 检查覆盖最小码、负数、最大码、奇数尾部，并检测无符号解释；两组尺度检查能区分错误全局缩放。GPTQ 的二变量检查把逆矩阵修正与直接二次最优解比较，并确实检测反向修正，具有独立参考价值，但没有执行正文 Hfac 构造、逐列量化、分块更新或组参数保存，不能证明 GPTQ-LAYER 正确。零填充负对照能发现字节零在当前实数偏移网格中解码为 -2，但其正例只检查近零，实际留下 2/15 的非零填充值，因此没有检查正文的精确中性填充机制。脚本没有覆盖最近偶数舍入平移差异、实数偏移与整数零点模式切换、常数组规则、实际尾部掩码消费或短末块 GPTQ；也没有运行目标 kernel、完整量化模型或设备性能。审阅中的独立算术复算确认了 findings 所列反例，不能替代修订后的可执行回归。\"\n}",
+  "exit_code": 0,
+  "status": "completed",
+  "timeout_seconds": 1800,
+  "response_path": "D:\\桌面\\xdb\\InfraAgents\\InfraAgents-know-astra-new\\InfraAgents-know\\docs\\evidence\\knowledge-workflow-20261028-batch3\\full_build\\K-ALG-005\\round-1\\reviewer-attempt-001\\answer.txt",
+  "record_path": "D:\\桌面\\xdb\\InfraAgents\\InfraAgents-know-astra-new\\InfraAgents-know\\docs\\evidence\\knowledge-workflow-20261028-batch3\\full_build\\K-ALG-005\\round-1\\reviewer-attempt-001\\record.json",
+  "tool_events": [
+    {
+      "type": "item.completed",
+      "item": {
+        "id": "item_1",
+        "type": "mcp_tool_call",
+        "server": "codex",
+        "tool": "list_mcp_resources",
+        "arguments": {},
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"resources\":[]}"
+            }
+          ],
+          "structured_content": null
+        },
+        "error": null,
+        "status": "completed"
+      }
+    },
+    {
+      "type": "item.completed",
+      "item": {
+        "id": "item_2",
+        "type": "mcp_tool_call",
+        "server": "codex",
+        "tool": "list_mcp_resource_templates",
+        "arguments": {},
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"resourceTemplates\":[]}"
+            }
+          ],
+          "structured_content": null
+        },
+        "error": null,
+        "status": "completed"
+      }
+    }
+  ],
+  "inventory_tool_events": [
+    {
+      "type": "item.completed",
+      "item": {
+        "id": "item_1",
+        "type": "mcp_tool_call",
+        "server": "codex",
+        "tool": "list_mcp_resources",
+        "arguments": {},
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"resources\":[]}"
+            }
+          ],
+          "structured_content": null
+        },
+        "error": null,
+        "status": "completed"
+      }
+    },
+    {
+      "type": "item.completed",
+      "item": {
+        "id": "item_2",
+        "type": "mcp_tool_call",
+        "server": "codex",
+        "tool": "list_mcp_resource_templates",
+        "arguments": {},
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"resourceTemplates\":[]}"
+            }
+          ],
+          "structured_content": null
+        },
+        "error": null,
+        "status": "completed"
+      }
+    }
+  ],
+  "rejected_tool_events": [],
+  "tool_policy": "metadata_inventory_only",
+  "tool_policy_version": "2026-10-28-production-v1",
+  "tool_policy_scope": "Only empty-argument codex host plugin/skill-directory descriptors and empty template inventory; inventory is not knowledge evidence. All other tool events reject the call.",
+  "tool_policy_reason": "Production chapter construction allows observed generic capability discovery metadata; this does not claim a zero-tool comparison or external source reading.",
+  "malformed_event_lines": [],
+  "turn_completed": true,
+  "error_events": [],
+  "actual_model": null,
+  "identity_verified": null,
+  "identity_basis": "Explicit CLI model and isolated HTTP provider; CLI events do not expose server model identity.",
+  "provider": "eval-openai-http",
+  "max_output_tokens": null,
+  "cli_version": "codex-cli 0.164.0-alpha.11.1",
+  "cost_scope": "Codex token usage is reported; subscription charge is not exposed.",
+  "parsed": {
+    "entry_id": "K-ALG-005",
+    "body_sha256": "acb66d0fe64720bae253cb10f5049e7d38c5cbb1c8c837698787ef8dedc905f5",
+    "reviewer": "sol-reviewer:K-ALG-005:round-1",
+    "decision": "revise",
+    "documents": {
+      "AGENTS.md": "b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a",
+      "docs/knowledge-method.md": "69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb",
+      "docs/knowledge-review.md": "f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21",
+      "knowledge/algorithms/quantization-contract.md": "acb66d0fe64720bae253cb10f5049e7d38c5cbb1c8c837698787ef8dedc905f5",
+      "knowledge/sources/S-GPTQ.md": "ab4b597c9d425e72b110a2be5ee56d98542a61f02630e542886d8c1afc15d1cb",
+      "knowledge/sources/S-TORCH-NUMERIC.md": "cbe91153d9ff7bd2f596d1d6c4e15de1ad68571f3cbde23215891a8ec7f6fab4",
+      "knowledge/sources/S-CUDA-CAPABILITY.md": "b01baba1d2826b0682b2b58c6a0d23bf0f6e616a758e41c74b4688b55417f286",
+      "knowledge/sources/S-AWQ.md": "4fa268a183cc1613919704d3c22d474531694c316309b8a0c97e5a9aaee596ae",
+      "knowledge/sources/S-SMOOTHQUANT.md": "d12a23d411ca8f41f7ed608ceef68c7f53e7fd540a336a626a7e87e8e1ea3a52",
+      "knowledge/sources/S-FLASHINFERPAPER.md": "0e4c6f197789b08bbd5d0f35b202ce316bbe788bdc6a3f67ca0c27e19e256437",
+      "knowledge/hardware/precision-and-kernel-support.md": "7185979b8429b7d44fd34ec0910bbe85c617a457cc4d9d9055920e73d07bc5d3",
+      "knowledge/frameworks/numerical-reference.md": "a70beff4c73683f897d9c0c1fb291539051e20b2c31adfd90a3f6677c411596f",
+      "knowledge/models/gqa-kv-heads.md": "9b51a72ccc9c86095f9c8a37e234893fe93068938390f69513c6ff90dd22da1d",
+      "knowledge/frameworks/cpu-quantized-kernels.md": "fcb634a208ad9c814cc9b3228aee7082ca77091c7a385b3d3d57618f14aba310",
+      "knowledge/algorithms/kv-compression.md": "b106cc93bcd9d5acfce5e7766eb25f5c1fbd4ba7844dd1fe6454fc08cc1d99f4",
+      "knowledge/hardware/cpu-linear-kernels.md": "b4d5391890478b2874f6ea548b154a580a0810356f9cf9cb05248a9d2f728dcc",
+      "knowledge/tools/statistical-experiments.md": "908b3588a6fa20bb1f2aed9f5db51c4b462953d79f8944cdbcfea7141c74644f",
+      "knowledge/hardware/memory-and-roofline.md": "2bebeecbaa625667b8ad8c2fbc13449f0da31ac24b0abd6289127be1150c7d0c",
+      "knowledge/system-semantics/known-tensions.md": "e7e30a27ff5b42d93b55bc6e36a008ce6f5c100410fbe357ee3870a4ad601f90",
+      "references/S-TORCH-NUMERIC/fulltext.txt": "bb6b2d8154a10f8f3b15e5ae4465cbc8d833067046964fc6b4d66dc036131b45",
+      "references/S-SMOOTHQUANT/fulltext.txt": "9c3f806adae8774873b8a24edb740c8b42879b94c5d76f99b68ad9d9d1ab0096",
+      "tools/check_k_alg_005_full.py": "c8c6b4d06b96881feeabfc38ad032dba67059961cc9d9d31dc15cd95a1b85161"
+    },
+    "criteria": {
+      "definition": {
+        "assessment": "partial",
+        "reason": "动机、制品输出、动态与静态状态及层输出误差展开充分。但两种编码公式在允许的舍入方式下并非无条件等价：最近偶数舍入不总能与整数零点平移交换。",
+        "evidence": [
+          {
+            "path": "knowledge/algorithms/quantization-contract.md",
+            "quote": "于是 q＝clip(round(x/s)＋z, q_min, q_max)，x̂＝s(q−z)。两种写法在实数上等价"
+          },
+          {
+            "path": "knowledge/algorithms/quantization-contract.md",
+            "quote": "静态尺度在离线校准时确定；动态尺度在每次调用或每个 token 上求取"
+          }
+        ]
+      },
+      "legality": {
+        "assessment": "partial",
+        "reason": "符号、分组覆盖、布局、消费者补偿和设备 dispatch 条件有实质解释。但允许实数偏移的 QPACK 没有闭合该模式的解码与精确零填充规则，检查脚本还把不能精确表示零的码当作零填充正例。",
+        "evidence": [
+          {
+            "path": "knowledge/algorithms/quantization-contract.md",
+            "quote": "b 与 z 不能混存在同一个字段里，加载器、迁移器和内核必须使用同一种解释"
+          },
+          {
+            "path": "knowledge/algorithms/quantization-contract.md",
+            "quote": "若某位置代表实数零且会被消费，其码必须是 z_g，不能默认填 0"
+          }
+        ]
+      },
+      "algorithm": {
+        "assessment": "partial",
+        "reason": "校准、打包、消费及权重补偿的数据流已经展开，但 GPTQ 的核心 Hfac 构造未定义为逆 Hessian 的上三角 Cholesky 因子；最后不足 B 列时 E 与更新切片的形状也未闭合。QPACK 两种偏移模式的解码交付不完整。",
+        "evidence": [
+          {
+            "path": "knowledge/algorithms/quantization-contract.md",
+            "quote": "2 Hfac ← 以 Cholesky 形式预计算后续所需行；不把 Hfac 当作普通逆矩阵另行解释"
+          },
+          {
+            "path": "knowledge/algorithms/quantization-contract.md",
+            "quote": "3 Q ← 0；E ← 0^{d_out×B}"
+          },
+          {
+            "path": "knowledge/algorithms/quantization-contract.md",
+            "quote": "对应解码为 x̂_i＝s_g(q_i−z_g)"
+          }
+        ]
+      },
+      "cost": {
+        "assessment": "sufficient",
+        "reason": "在声明的模型推导范围内，容量、元数据、完整展开副本、计算补偿、校准准备、广播与同步成本均有解释。8 MiB 码流、0.5 MiB 元数据、40.5 MiB 双副本及 64 MiB Hessian 算术成立。性能上界须按关键路径和相同带宽假设理解，未得到设备验证。",
+        "evidence": [
+          {
+            "path": "knowledge/algorithms/quantization-contract.md",
+            "quote": "若加载时同时保留原副本与打包制品，至少已占 40.5 MiB"
+          },
+          {
+            "path": "knowledge/algorithms/quantization-contract.md",
+            "quote": "若两个阶段共享同一带宽或同一组 SM，不能把各自理想时间直接相加或直接取最大值，而要沿真实依赖图判断"
+          }
+        ]
+      },
+      "adaptation": {
+        "assessment": "sufficient",
+        "reason": "batch、上下文、校准漂移、分组大小、敏感层及设备能力变化均连接到保留的依赖、改变的成本和放弃条件，没有把低位格式等同于普遍加速。",
+        "evidence": [
+          {
+            "path": "knowledge/algorithms/quantization-contract.md",
+            "quote": "动态 reduction 与同步成本超过收益时，改回更粗粒度但更稳的路径"
+          },
+          {
+            "path": "knowledge/algorithms/quantization-contract.md",
+            "quote": "质量阈值收紧、尺度统计漂移或目标设备缺少高效 dispatch 时，保留高精度或采用更粗粒度的成熟路径可能反而获得更低的合格请求成本"
+          }
+        ]
+      },
+      "diagnosis": {
+        "assessment": "partial",
+        "reason": "分层参考、竞争解释和反证修正设计充分，已有 signedness、组尺度和修正方向的有效负对照。但零填充正例未检查精确零不变量，GPTQ 检查只覆盖二变量逆矩阵修正，没有验证本章 Cholesky 与分块算法，当前 PASS 无法关闭这些实际缺口。",
+        "evidence": [
+          {
+            "path": "knowledge/algorithms/quantization-contract.md",
+            "quote": "第一层固定同一量化码及参数，用独立公式解码"
+          },
+          {
+            "path": "knowledge/algorithms/quantization-contract.md",
+            "quote": "只有这些负对照被检查发现，正向通过才有区分力"
+          }
+        ]
+      }
+    },
+    "findings": [
+      {
+        "id": "K-ALG-005-R1-001",
+        "criterion": "definition",
+        "evidence": "正文写“q＝clip(round(x/s)＋z, q_min, q_max)”，QPACK 却写“若使用整数零点：v_i ← x_i / s_g ＋ z_g”，随后“q_i ← clip(R(v_i), q_min, q_max)”。输入允许指定舍入方式，没有排除最近偶数舍入。",
+        "impact": "取 s=1、z=1、x=0.5，码域包含 1 和 2，最近偶数舍入下前一公式得到 q=1，QPACK 得到 q=2。即使 b=-sz，两条宣称等价的编码路径也会产生不同码及重建值，加载器与参考实现无法共享唯一契约。",
+        "blocking": true,
+        "required_revision": "明确舍入发生的位置及 tie 规则。可以统一采用先对 x/s 舍入再加整数零点，并同步修改实数偏移路径的等价性说明；也可以限制并解释满足整数平移不变性的舍入规则。增加能区分上述两种结果的半整数检查。"
+      },
+      {
+        "id": "K-ALG-005-R1-002",
+        "criterion": "algorithm",
+        "evidence": "GPTQ-LAYER 第 1 步为“H ← 2 X Xᵀ ＋ λ I”，第 2 步仅为“Hfac ← 以 Cholesky 形式预计算后续所需行”；随后直接以 Hfac[j,j] 和 Hfac[j,j:] 更新权重。E 固定为 d_out×B，但内层循环允许最后一块少于 B 列。给定 GPTQ 原文 Algorithm 1 明确从逆 Hessian 开始，并执行“Cholesky(H−1)⊤”。",
+        "impact": "分解 H 与分解 H 的逆会产生不同补偿方向。独立复算 H=[[2,0.4],[0.4,1]]、固定量化误差 e=-0.3 时，正确上三角逆因子的行比为 -0.4，得到修正 0.12，二次目标从 0.18 降至 0.1656；若对 H 本身取上三角 Cholesky，行比为 0.2，修正为 -0.06，目标升至 0.198。现有脚本没有构造 Hfac，不能发现此错误。最后短块还会使固定宽度 E 与截短因子切片无法直接相乘。",
+        "blocking": true,
+        "required_revision": "给出精确定义，例如 R 为满足 RᵀR=H⁻¹ 的上三角因子，并说明正定性条件及构造方式。逐块定义 end=min(i+B,d_in)，按有效块宽初始化或截取 E，并统一全部更新边界。用独立的逐列受约束二次优化参考验证实际 Cholesky 分块流程，覆盖短末块并注入错误分解对象。正文对 GPTQ 的固定版本称为 v1，而提供的来源说明和原文均为 2210.17323v2，也应统一该归属。"
+      },
+      {
+        "id": "K-ALG-005-R1-003",
+        "criterion": "legality",
+        "evidence": "QPACK 输出允许“每组 zero 或实数偏移”，但紧接着只给出“对应解码为 x̂_i＝s_g(q_i−z_g)”。脚本 test_zero_padding_negative_control 使用 lo=-2、hi=6、levels=16，得到 z=4，并只要求“zero_error <= step / 2 + EPS”；实际执行输出为“zero code 4 error 0.133333333333”。",
+        "impact": "该测试实际使用 x̂=lo+s q 的实数偏移网格，s=8/15，网格中没有精确零；q=4 解码为 2/15，而不是零。若此填充被点积消费，乘以 15 就额外贡献 2。把近零舍入误差作为精确零填充通过，不能验证正文要求的归约不变性；对实数偏移制品使用唯一给出的整数零点解码公式也无法恢复原契约。",
+        "blocking": true,
+        "required_revision": "明确任意实数偏移只有在 -b/s 是合法整数时才能无损改写为整数零点。按模式分别给出 b+s q 与 s(q-z) 解码；实数偏移网格没有精确零时，必须屏蔽无效位置或采用明确的其他中性处理。将填充正例改为确实满足 b=-sz 的整数零点契约，并断言填充不改变有效归约；保留当前网格作为必须屏蔽的反例。"
+      }
+    ],
+    "limitations": [
+      "没有目标 GPU/CPU 内核、设备事务、吞吐、峰值驻留或模型任务质量实测；这些已声明的边界本身不构成阻塞问题。",
+      "本次检查实际执行依据用户提供的 remote_bwrap preflight 记录：脚本哈希匹配、returncode=0、未超时。本审阅调用没有重新运行 Python；额外仅在内存中独立复算了三个数值反例。",
+      "提供的 CUDA 原文选段没有覆盖所引用的 WMMA §7.24，FlashInfer 原文选段也未提供可直接定位的 FP8 KV/FP16 query-output 具体段落；相应原始文档事实未记为本次独立全文核验通过。",
+      "当前工具没有文件读取或命令执行能力，可用资源列表为空，因此未读取未提供的 docs/knowledge-build-workflow.md，采用用户明确提供的 review JSON schema。绑定哈希按 supplied manifest 原样保留，未声称重新计算磁盘文件哈希。"
+    ],
+    "checks": [
+      {
+        "script": "tools/check_k_alg_005_full.py",
+        "args": []
+      }
+    ],
+    "no_checks_reason": "",
+    "reading_scope": "完整阅读了用户提供的候选正文、完整测试脚本、author_notes 及 actual_preflight 的脚本身份、argv、stdout、stderr、退出状态和沙箱执行范围。以下范围均为提取文本的零基半开字符区间。完整提供并完整阅读：AGENTS.md [0,567)；docs/knowledge-method.md [0,2251)；docs/knowledge-review.md [0,3016)；knowledge/algorithms/quantization-contract.md [0,10955)；knowledge/sources/S-GPTQ.md [0,527)；S-TORCH-NUMERIC.md [0,532)；S-CUDA-CAPABILITY.md [0,1097)；S-AWQ.md [0,590)；S-SMOOTHQUANT.md [0,597)；S-FLASHINFERPAPER.md [0,2811)；knowledge/hardware/precision-and-kernel-support.md [0,5068)；knowledge/frameworks/numerical-reference.md [0,3374)；knowledge/models/gqa-kv-heads.md [0,3902)；knowledge/frameworks/cpu-quantized-kernels.md [0,3369)；knowledge/algorithms/kv-compression.md [0,5839)；knowledge/hardware/cpu-linear-kernels.md [0,4016)；knowledge/tools/statistical-experiments.md [0,4269)；knowledge/hardware/memory-and-roofline.md [0,4009)；knowledge/system-semantics/known-tensions.md [0,5454)；references/S-TORCH-NUMERIC/fulltext.txt [0,10998)；references/S-SMOOTHQUANT/fulltext.txt [0,44126)。仅阅读提供的摘录：knowledge/hardware/gpu-kernel-pipelines.md [0,4500)、[8000,12000)；references/S-GPTQ/fulltext.txt [0,40260)、[44000,56000)；references/S-CUDA-CAPABILITY/fulltext.txt [48000,52000)、[76000,80000)、[88000,92000)、[156000,164000)、[284000,288000)、[312000,312260)、[548000,556000)、[648000,652000)、[692000,696000)、[940000,944000)、[972000,976000)、[1080000,1084000)；references/S-AWQ/fulltext.txt [0,44000)、[52000,52957)、[56000,63304)；references/S-FLASHINFERPAPER/fulltext.txt [0,4000)、[8000,52000)、[80000,84000)、[88000,88260)。摘录文件未加入 documents，也不声称读过其完整原文。没有读取源码归档或未提供的论文页段。",
+    "test_assessment": "作者明确说脚本未在作者环境执行；协调者随后提供了真实隔离执行记录，两者并不矛盾。记录中的 PASS 仅成立于该脚本的断言范围。误差界检查覆盖有限区间样本及一个饱和点；容量检查独立核对了组数、元数据和一个非整除组数；signed INT4 检查覆盖最小码、负数、最大码、奇数尾部，并检测无符号解释；两组尺度检查能区分错误全局缩放。GPTQ 的二变量检查把逆矩阵修正与直接二次最优解比较，并确实检测反向修正，具有独立参考价值，但没有执行正文 Hfac 构造、逐列量化、分块更新或组参数保存，不能证明 GPTQ-LAYER 正确。零填充负对照能发现字节零在当前实数偏移网格中解码为 -2，但其正例只检查近零，实际留下 2/15 的非零填充值，因此没有检查正文的精确中性填充机制。脚本没有覆盖最近偶数舍入平移差异、实数偏移与整数零点模式切换、常数组规则、实际尾部掩码消费或短末块 GPTQ；也没有运行目标 kernel、完整量化模型或设备性能。审阅中的独立算术复算确认了 findings 所列反例，不能替代修订后的可执行回归。"
+  },
+  "format_status": "strict_json",
+  "format_error": null,
+  "output_text": "{\n  \"entry_id\": \"K-ALG-005\",\n  \"body_sha256\": \"acb66d0fe64720bae253cb10f5049e7d38c5cbb1c8c837698787ef8dedc905f5\",\n  \"reviewer\": \"sol-reviewer:K-ALG-005:round-1\",\n  \"decision\": \"revise\",\n  \"documents\": {\n    \"AGENTS.md\": \"b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a\",\n    \"docs/knowledge-method.md\": \"69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb\",\n    \"docs/knowledge-review.md\": \"f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21\",\n    \"knowledge/algorithms/quantization-contract.md\": \"acb66d0fe64720bae253cb10f5049e7d38c5cbb1c8c837698787ef8dedc905f5\",\n    \"knowledge/sources/S-GPTQ.md\": \"ab4b597c9d425e72b110a2be5ee56d98542a61f02630e542886d8c1afc15d1cb\",\n    \"knowledge/sources/S-TORCH-NUMERIC.md\": \"cbe91153d9ff7bd2f596d1d6c4e15de1ad68571f3cbde23215891a8ec7f6fab4\",\n    \"knowledge/sources/S-CUDA-CAPABILITY.md\": \"b01baba1d2826b0682b2b58c6a0d23bf0f6e616a758e41c74b4688b55417f286\",\n    \"knowledge/sources/S-AWQ.md\": \"4fa268a183cc1613919704d3c22d474531694c316309b8a0c97e5a9aaee596ae\",\n    \"knowledge/sources/S-SMOOTHQUANT.md\": \"d12a23d411ca8f41f7ed608ceef68c7f53e7fd540a336a626a7e87e8e1ea3a52\",\n    \"knowledge/sources/S-FLASHINFERPAPER.md\": \"0e4c6f197789b08bbd5d0f35b202ce316bbe788bdc6a3f67ca0c27e19e256437\",\n    \"knowledge/hardware/precision-and-kernel-support.md\": \"7185979b8429b7d44fd34ec0910bbe85c617a457cc4d9d9055920e73d07bc5d3\",\n    \"knowledge/frameworks/numerical-reference.md\": \"a70beff4c73683f897d9c0c1fb291539051e20b2c31adfd90a3f6677c411596f\",\n    \"knowledge/models/gqa-kv-heads.md\": \"9b51a72ccc9c86095f9c8a37e234893fe93068938390f69513c6ff90dd22da1d\",\n    \"knowledge/frameworks/cpu-quantized-kernels.md\": \"fcb634a208ad9c814cc9b3228aee7082ca77091c7a385b3d3d57618f14aba310\",\n    \"knowledge/algorithms/kv-compression.md\": \"b106cc93bcd9d5acfce5e7766eb25f5c1fbd4ba7844dd1fe6454fc08cc1d99f4\",\n    \"knowledge/hardware/cpu-linear-kernels.md\": \"b4d5391890478b2874f6ea548b154a580a0810356f9cf9cb05248a9d2f728dcc\",\n    \"knowledge/tools/statistical-experiments.md\": \"908b3588a6fa20bb1f2aed9f5db51c4b462953d79f8944cdbcfea7141c74644f\",\n    \"knowledge/hardware/memory-and-roofline.md\": \"2bebeecbaa625667b8ad8c2fbc13449f0da31ac24b0abd6289127be1150c7d0c\",\n    \"knowledge/system-semantics/known-tensions.md\": \"e7e30a27ff5b42d93b55bc6e36a008ce6f5c100410fbe357ee3870a4ad601f90\",\n    \"references/S-TORCH-NUMERIC/fulltext.txt\": \"bb6b2d8154a10f8f3b15e5ae4465cbc8d833067046964fc6b4d66dc036131b45\",\n    \"references/S-SMOOTHQUANT/fulltext.txt\": \"9c3f806adae8774873b8a24edb740c8b42879b94c5d76f99b68ad9d9d1ab0096\",\n    \"tools/check_k_alg_005_full.py\": \"c8c6b4d06b96881feeabfc38ad032dba67059961cc9d9d31dc15cd95a1b85161\"\n  },\n  \"criteria\": {\n    \"definition\": {\n      \"assessment\": \"partial\",\n      \"reason\": \"动机、制品输出、动态与静态状态及层输出误差展开充分。但两种编码公式在允许的舍入方式下并非无条件等价：最近偶数舍入不总能与整数零点平移交换。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/algorithms/quantization-contract.md\",\n          \"quote\": \"于是 q＝clip(round(x/s)＋z, q_min, q_max)，x̂＝s(q−z)。两种写法在实数上等价\"\n        },\n        {\n          \"path\": \"knowledge/algorithms/quantization-contract.md\",\n          \"quote\": \"静态尺度在离线校准时确定；动态尺度在每次调用或每个 token 上求取\"\n        }\n      ]\n    },\n    \"legality\": {\n      \"assessment\": \"partial\",\n      \"reason\": \"符号、分组覆盖、布局、消费者补偿和设备 dispatch 条件有实质解释。但允许实数偏移的 QPACK 没有闭合该模式的解码与精确零填充规则，检查脚本还把不能精确表示零的码当作零填充正例。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/algorithms/quantization-contract.md\",\n          \"quote\": \"b 与 z 不能混存在同一个字段里，加载器、迁移器和内核必须使用同一种解释\"\n        },\n        {\n          \"path\": \"knowledge/algorithms/quantization-contract.md\",\n          \"quote\": \"若某位置代表实数零且会被消费，其码必须是 z_g，不能默认填 0\"\n        }\n      ]\n    },\n    \"algorithm\": {\n      \"assessment\": \"partial\",\n      \"reason\": \"校准、打包、消费及权重补偿的数据流已经展开，但 GPTQ 的核心 Hfac 构造未定义为逆 Hessian 的上三角 Cholesky 因子；最后不足 B 列时 E 与更新切片的形状也未闭合。QPACK 两种偏移模式的解码交付不完整。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/algorithms/quantization-contract.md\",\n          \"quote\": \"2 Hfac ← 以 Cholesky 形式预计算后续所需行；不把 Hfac 当作普通逆矩阵另行解释\"\n        },\n        {\n          \"path\": \"knowledge/algorithms/quantization-contract.md\",\n          \"quote\": \"3 Q ← 0；E ← 0^{d_out×B}\"\n        },\n        {\n          \"path\": \"knowledge/algorithms/quantization-contract.md\",\n          \"quote\": \"对应解码为 x̂_i＝s_g(q_i−z_g)\"\n        }\n      ]\n    },\n    \"cost\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"在声明的模型推导范围内，容量、元数据、完整展开副本、计算补偿、校准准备、广播与同步成本均有解释。8 MiB 码流、0.5 MiB 元数据、40.5 MiB 双副本及 64 MiB Hessian 算术成立。性能上界须按关键路径和相同带宽假设理解，未得到设备验证。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/algorithms/quantization-contract.md\",\n          \"quote\": \"若加载时同时保留原副本与打包制品，至少已占 40.5 MiB\"\n        },\n        {\n          \"path\": \"knowledge/algorithms/quantization-contract.md\",\n          \"quote\": \"若两个阶段共享同一带宽或同一组 SM，不能把各自理想时间直接相加或直接取最大值，而要沿真实依赖图判断\"\n        }\n      ]\n    },\n    \"adaptation\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"batch、上下文、校准漂移、分组大小、敏感层及设备能力变化均连接到保留的依赖、改变的成本和放弃条件，没有把低位格式等同于普遍加速。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/algorithms/quantization-contract.md\",\n          \"quote\": \"动态 reduction 与同步成本超过收益时，改回更粗粒度但更稳的路径\"\n        },\n        {\n          \"path\": \"knowledge/algorithms/quantization-contract.md\",\n          \"quote\": \"质量阈值收紧、尺度统计漂移或目标设备缺少高效 dispatch 时，保留高精度或采用更粗粒度的成熟路径可能反而获得更低的合格请求成本\"\n        }\n      ]\n    },\n    \"diagnosis\": {\n      \"assessment\": \"partial\",\n      \"reason\": \"分层参考、竞争解释和反证修正设计充分，已有 signedness、组尺度和修正方向的有效负对照。但零填充正例未检查精确零不变量，GPTQ 检查只覆盖二变量逆矩阵修正，没有验证本章 Cholesky 与分块算法，当前 PASS 无法关闭这些实际缺口。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/algorithms/quantization-contract.md\",\n          \"quote\": \"第一层固定同一量化码及参数，用独立公式解码\"\n        },\n        {\n          \"path\": \"knowledge/algorithms/quantization-contract.md\",\n          \"quote\": \"只有这些负对照被检查发现，正向通过才有区分力\"\n        }\n      ]\n    }\n  },\n  \"findings\": [\n    {\n      \"id\": \"K-ALG-005-R1-001\",\n      \"criterion\": \"definition\",\n      \"evidence\": \"正文写“q＝clip(round(x/s)＋z, q_min, q_max)”，QPACK 却写“若使用整数零点：v_i ← x_i / s_g ＋ z_g”，随后“q_i ← clip(R(v_i), q_min, q_max)”。输入允许指定舍入方式，没有排除最近偶数舍入。\",\n      \"impact\": \"取 s=1、z=1、x=0.5，码域包含 1 和 2，最近偶数舍入下前一公式得到 q=1，QPACK 得到 q=2。即使 b=-sz，两条宣称等价的编码路径也会产生不同码及重建值，加载器与参考实现无法共享唯一契约。\",\n      \"blocking\": true,\n      \"required_revision\": \"明确舍入发生的位置及 tie 规则。可以统一采用先对 x/s 舍入再加整数零点，并同步修改实数偏移路径的等价性说明；也可以限制并解释满足整数平移不变性的舍入规则。增加能区分上述两种结果的半整数检查。\"\n    },\n    {\n      \"id\": \"K-ALG-005-R1-002\",\n      \"criterion\": \"algorithm\",\n      \"evidence\": \"GPTQ-LAYER 第 1 步为“H ← 2 X Xᵀ ＋ λ I”，第 2 步仅为“Hfac ← 以 Cholesky 形式预计算后续所需行”；随后直接以 Hfac[j,j] 和 Hfac[j,j:] 更新权重。E 固定为 d_out×B，但内层循环允许最后一块少于 B 列。给定 GPTQ 原文 Algorithm 1 明确从逆 Hessian 开始，并执行“Cholesky(H−1)⊤”。\",\n      \"impact\": \"分解 H 与分解 H 的逆会产生不同补偿方向。独立复算 H=[[2,0.4],[0.4,1]]、固定量化误差 e=-0.3 时，正确上三角逆因子的行比为 -0.4，得到修正 0.12，二次目标从 0.18 降至 0.1656；若对 H 本身取上三角 Cholesky，行比为 0.2，修正为 -0.06，目标升至 0.198。现有脚本没有构造 Hfac，不能发现此错误。最后短块还会使固定宽度 E 与截短因子切片无法直接相乘。\",\n      \"blocking\": true,\n      \"required_revision\": \"给出精确定义，例如 R 为满足 RᵀR=H⁻¹ 的上三角因子，并说明正定性条件及构造方式。逐块定义 end=min(i+B,d_in)，按有效块宽初始化或截取 E，并统一全部更新边界。用独立的逐列受约束二次优化参考验证实际 Cholesky 分块流程，覆盖短末块并注入错误分解对象。正文对 GPTQ 的固定版本称为 v1，而提供的来源说明和原文均为 2210.17323v2，也应统一该归属。\"\n    },\n    {\n      \"id\": \"K-ALG-005-R1-003\",\n      \"criterion\": \"legality\",\n      \"evidence\": \"QPACK 输出允许“每组 zero 或实数偏移”，但紧接着只给出“对应解码为 x̂_i＝s_g(q_i−z_g)”。脚本 test_zero_padding_negative_control 使用 lo=-2、hi=6、levels=16，得到 z=4，并只要求“zero_error <= step / 2 + EPS”；实际执行输出为“zero code 4 error 0.133333333333”。\",\n      \"impact\": \"该测试实际使用 x̂=lo+s q 的实数偏移网格，s=8/15，网格中没有精确零；q=4 解码为 2/15，而不是零。若此填充被点积消费，乘以 15 就额外贡献 2。把近零舍入误差作为精确零填充通过，不能验证正文要求的归约不变性；对实数偏移制品使用唯一给出的整数零点解码公式也无法恢复原契约。\",\n      \"blocking\": true,\n      \"required_revision\": \"明确任意实数偏移只有在 -b/s 是合法整数时才能无损改写为整数零点。按模式分别给出 b+s q 与 s(q-z) 解码；实数偏移网格没有精确零时，必须屏蔽无效位置或采用明确的其他中性处理。将填充正例改为确实满足 b=-sz 的整数零点契约，并断言填充不改变有效归约；保留当前网格作为必须屏蔽的反例。\"\n    }\n  ],\n  \"limitations\": [\n    \"没有目标 GPU/CPU 内核、设备事务、吞吐、峰值驻留或模型任务质量实测；这些已声明的边界本身不构成阻塞问题。\",\n    \"本次检查实际执行依据用户提供的 remote_bwrap preflight 记录：脚本哈希匹配、returncode=0、未超时。本审阅调用没有重新运行 Python；额外仅在内存中独立复算了三个数值反例。\",\n    \"提供的 CUDA 原文选段没有覆盖所引用的 WMMA §7.24，FlashInfer 原文选段也未提供可直接定位的 FP8 KV/FP16 query-output 具体段落；相应原始文档事实未记为本次独立全文核验通过。\",\n    \"当前工具没有文件读取或命令执行能力，可用资源列表为空，因此未读取未提供的 docs/knowledge-build-workflow.md，采用用户明确提供的 review JSON schema。绑定哈希按 supplied manifest 原样保留，未声称重新计算磁盘文件哈希。\"\n  ],\n  \"checks\": [\n    {\n      \"script\": \"tools/check_k_alg_005_full.py\",\n      \"args\": []\n    }\n  ],\n  \"no_checks_reason\": \"\",\n  \"reading_scope\": \"完整阅读了用户提供的候选正文、完整测试脚本、author_notes 及 actual_preflight 的脚本身份、argv、stdout、stderr、退出状态和沙箱执行范围。以下范围均为提取文本的零基半开字符区间。完整提供并完整阅读：AGENTS.md [0,567)；docs/knowledge-method.md [0,2251)；docs/knowledge-review.md [0,3016)；knowledge/algorithms/quantization-contract.md [0,10955)；knowledge/sources/S-GPTQ.md [0,527)；S-TORCH-NUMERIC.md [0,532)；S-CUDA-CAPABILITY.md [0,1097)；S-AWQ.md [0,590)；S-SMOOTHQUANT.md [0,597)；S-FLASHINFERPAPER.md [0,2811)；knowledge/hardware/precision-and-kernel-support.md [0,5068)；knowledge/frameworks/numerical-reference.md [0,3374)；knowledge/models/gqa-kv-heads.md [0,3902)；knowledge/frameworks/cpu-quantized-kernels.md [0,3369)；knowledge/algorithms/kv-compression.md [0,5839)；knowledge/hardware/cpu-linear-kernels.md [0,4016)；knowledge/tools/statistical-experiments.md [0,4269)；knowledge/hardware/memory-and-roofline.md [0,4009)；knowledge/system-semantics/known-tensions.md [0,5454)；references/S-TORCH-NUMERIC/fulltext.txt [0,10998)；references/S-SMOOTHQUANT/fulltext.txt [0,44126)。仅阅读提供的摘录：knowledge/hardware/gpu-kernel-pipelines.md [0,4500)、[8000,12000)；references/S-GPTQ/fulltext.txt [0,40260)、[44000,56000)；references/S-CUDA-CAPABILITY/fulltext.txt [48000,52000)、[76000,80000)、[88000,92000)、[156000,164000)、[284000,288000)、[312000,312260)、[548000,556000)、[648000,652000)、[692000,696000)、[940000,944000)、[972000,976000)、[1080000,1084000)；references/S-AWQ/fulltext.txt [0,44000)、[52000,52957)、[56000,63304)；references/S-FLASHINFERPAPER/fulltext.txt [0,4000)、[8000,52000)、[80000,84000)、[88000,88260)。摘录文件未加入 documents，也不声称读过其完整原文。没有读取源码归档或未提供的论文页段。\",\n  \"test_assessment\": \"作者明确说脚本未在作者环境执行；协调者随后提供了真实隔离执行记录，两者并不矛盾。记录中的 PASS 仅成立于该脚本的断言范围。误差界检查覆盖有限区间样本及一个饱和点；容量检查独立核对了组数、元数据和一个非整除组数；signed INT4 检查覆盖最小码、负数、最大码、奇数尾部，并检测无符号解释；两组尺度检查能区分错误全局缩放。GPTQ 的二变量检查把逆矩阵修正与直接二次最优解比较，并确实检测反向修正，具有独立参考价值，但没有执行正文 Hfac 构造、逐列量化、分块更新或组参数保存，不能证明 GPTQ-LAYER 正确。零填充负对照能发现字节零在当前实数偏移网格中解码为 -2，但其正例只检查近零，实际留下 2/15 的非零填充值，因此没有检查正文的精确中性填充机制。脚本没有覆盖最近偶数舍入平移差异、实数偏移与整数零点模式切换、常数组规则、实际尾部掩码消费或短末块 GPTQ；也没有运行目标 kernel、完整量化模型或设备性能。审阅中的独立算术复算确认了 findings 所列反例，不能替代修订后的可执行回归。\"\n}",
+  "elapsed_seconds": 145.688
+}

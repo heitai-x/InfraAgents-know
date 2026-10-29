@@ -1,0 +1,145 @@
+{
+  "entry_id": "K-MODEL-015",
+  "body_sha256": "bc084b2f6d432c974a9d9346977249e21e6d7e2924cfee0ae6481aacce76c7cf",
+  "reviewer": "sol-reviewer:K-MODEL-015:round-1",
+  "decision": "revise",
+  "documents": {
+    "AGENTS.md": "b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a",
+    "docs/knowledge-method.md": "69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb",
+    "docs/knowledge-review.md": "f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21",
+    "knowledge/models/recommendation-inference.md": "bc084b2f6d432c974a9d9346977249e21e6d7e2924cfee0ae6481aacce76c7cf",
+    "knowledge/sources/S-DLRM.md": "71df2a168b066bc1f93f0922f6152a216790fe4c2c89803636d77e866ef0a4dd",
+    "knowledge/sources/S-TORCH-NUMERIC.md": "cbe91153d9ff7bd2f596d1d6c4e15de1ad68571f3cbde23215891a8ec7f6fab4",
+    "knowledge/algorithms/tiered-residency.md": "eb3ebc6320d5a32481cf645605d159860dc6d1edb97f1e98afd89ddb24ee82af",
+    "references/S-DLRM/fulltext.txt": "85570fe602c66c3dd186e05769557f5d6c3d23a03f6df655ba9d790507e77d2a",
+    "references/S-TORCH-NUMERIC/fulltext.txt": "bb6b2d8154a10f8f3b15e5ae4465cbc8d833067046964fc6b4d66dc036131b45",
+    "tools/check_k_model_015_full.py": "bd4c622981850503c7f74d04e64060c8f4f36f1bcf3b94f5390b073768add059"
+  },
+  "criteria": {
+    "definition": {
+      "assessment": "sufficient",
+      "reason": "解释了大容量与稀疏读取的区别，定义制品、表轴、请求输入、bag 三种模式、重复次数、交互维度及请求状态。DLRM 结构与所供固定论文一致，均值及版本协议明确属于本库推导。",
+      "evidence": [
+        {
+          "path": "knowledge/models/recommendation-inference.md",
+          "quote": "S_b=Σ_k w_(b,k)·E_(t_b)[i_(b,k)]，N_b=Σ_k 1，W_b=Σ_k w_(b,k)。"
+        },
+        {
+          "path": "knowledge/models/recommendation-inference.md",
+          "quote": "单请求状态至少包括：NEW、FEATURES_FROZEN、LOOKUP_PENDING、BAGS_READY、DENSE_READY、COMMITTED，以及 FAILED 和 CANCELED。"
+        }
+      ]
+    },
+    "legality": {
+      "assessment": "sufficient",
+      "reason": "对制品兼容、行范围、OOV、空 bag、权重、唯一贡献、pair 顺序和请求边界给出明确条件；区分数学等价与浮点一致。取消后的物理保留条件也已说明。",
+      "evidence": [
+        {
+          "path": "knowledge/models/recommendation-inference.md",
+          "quote": "bag 边界单调且总长度一致；权重有限并满足所选均值模式；分片对每个逻辑行有且只有一个贡献副本。"
+        },
+        {
+          "path": "knowledge/models/recommendation-inference.md",
+          "quote": "π_pair 改变而 top MLP 对应列不重排，形状仍可能正确，函数却已改变。"
+        }
+      ]
+    },
+    "algorithm": {
+      "assessment": "partial",
+      "reason": "bag 去重读取、计数合并、完整集合门控和发布轨迹已展开；但完整前向中的 bottom/top MLP 仍是未解释的函数调用，没有逐层输入、仿射变换、bias、激活和输出头边界，也未明确委托到现有完整算法的具体说明。",
+      "evidence": [
+        {
+          "path": "knowledge/models/recommendation-inference.md",
+          "quote": "6 只在所有 bag 的必需分片完成、版本匹配且通过 AggregateBag 后，状态=BAGS_READY"
+        },
+        {
+          "path": "knowledge/models/recommendation-inference.md",
+          "quote": "9 h=[z,p]；logits=f_top(h)；输出按 head 计算"
+        }
+      ]
+    },
+    "cost": {
+      "assessment": "partial",
+      "reason": "容量、逻辑读取、聚合向量通信及 C12-D 的整数计算正确，并声明了放置假设和未测边界。但把传原始行描述成节省聚合，遗漏目标侧仍须完成同一 bag 聚合，影响完整候选比较。",
+      "evidence": [
+        {
+          "path": "knowledge/models/recommendation-inference.md",
+          "quote": "前者的聚合本身需要 Σ_t n_t·d 次加法和必要的除法，后者节省聚合但增加传输。"
+        },
+        {
+          "path": "knowledge/models/recommendation-inference.md",
+          "quote": "则整批 MAC 为 256×(415×512+512×256+256×1)=88,014,848；这是设定算例，不是目标硬件测量。"
+        }
+      ]
+    },
+    "adaptation": {
+      "assessment": "sufficient",
+      "reason": "说明热点、均匀访问、热点迁移、batch、容量和尾延迟变化如何反转放置选择；版本切换保留旧读者需要的内容，未把 TTL 当作兼容证明。",
+      "evidence": [
+        {
+          "path": "knowledge/models/recommendation-inference.md",
+          "quote": "当热门行稳定且缓存足够时，B 可能以更低显存获得可接受时延；当访问均匀、batch 很小或尾延迟收紧时，A 或更高复制率可能更合适。"
+        },
+        {
+          "path": "knowledge/models/recommendation-inference.md",
+          "quote": "更新期间可以保留旧版本供在途读者使用，新请求切换到新版本；旧缓存行不能在仍有读者时被原地覆盖。"
+        }
+      ]
+    },
+    "diagnosis": {
+      "assessment": "partial",
+      "reason": "诊断表提供了竞争解释、受控干预和修正方向；然而检查脚本未实际验证成功的跨分片合并，且漏 pair 负对照只是硬编码不等式，不能支持当前覆盖声明。",
+      "evidence": [
+        {
+          "path": "knowledge/models/recommendation-inference.md",
+          "quote": "用不等分片计数的精确参考和重复 bag；局部均值等权、只合 partial sum、旧行版本应被同一检查拒绝"
+        },
+        {
+          "path": "knowledge/models/recommendation-inference.md",
+          "quote": "采用整数和 Fraction 精确参考核对 bag 求和/均值/加权均值、重复 ID、跨分片合并、缺失分片、CSR 边界、交互 pair 顺序、版本混用、浮点非结合性和 C12-D 的整数成本账。"
+        }
+      ]
+    }
+  },
+  "findings": [
+    {
+      "id": "K-MODEL-015-R1",
+      "criterion": "algorithm",
+      "evidence": "正文算法使用“7 z=f_bottom(x_cont)”和“9 h=[z,p]；logits=f_top(h)；输出按 head 计算”，没有展开两个多层网络。所供 S-DLRM 原文 §2.1.4 已给出逐层仿射与激活公式，但正文没有明确将该公式作为这两个调用的算法委托。",
+      "impact": "读者无法仅据本章所定义的调用恢复各层中间输入、bias 和激活顺序，也无法确定 sigmoid 是否只在 head 应用一次；完整请求提交前的 dense 路径仍存在黑箱。",
+      "blocking": true,
+      "required_revision": "补充一个共享的逐层 MLP 算法，定义初始输入、每层权重/bias 形状、激活及最终层处理，并分别绑定 bottom 输出 d 维与 top 输出 head 输入；或明确链接并委托到已有完整算法的具体段落，同时交代本章参数与输出边界。"
+    },
+    {
+      "id": "K-MODEL-015-R2",
+      "criterion": "cost",
+      "evidence": "“前者的聚合本身需要 Σ_t n_t·d 次加法和必要的除法，后者节省聚合但增加传输。”",
+      "impact": "传原始行只是将 bag 聚合移到计算侧。为了产生同一 y_b，目标侧仍须进行加权求和及所选均值归一化；将其当作省掉聚合会低估该候选计算和工作区需求。加权模式还需计权重乘法或其明确替代路径。",
+      "blocking": true,
+      "required_revision": "分别列出表侧聚合与传原始行后在目标侧聚合的数据流，说明聚合工作发生的位置、权重乘法/加法/除法、传输和中间驻留。若声称某一融合路径减少额外成本，明确其减少的中间读写或阶段开销。"
+    },
+    {
+      "id": "K-MODEL-015-R3",
+      "criterion": "diagnosis",
+      "evidence": "脚本三个成功的 aggregate_sharded 调用均使用 ids=[0,0,1]，owner_map 将 0、1 都映射到分片 0。唯一使用 [0,1,2] 的 aggregate_sharded 调用传 completed={0}，在合并前抛出 incomplete shard。漏 pair 负对照为 require((0, 0, 0, 2, 3) != ref_i, 'omitted dense pair')。",
+      "impact": "即使成功合并循环在多个分片均完成时漏掉分片 1，现有成功路径也不会发现。硬编码元组不等式没有执行漏 dense-category pair 的机制，不能证明同一参考能够检测这种实现缺陷。退出码 0 因此不支持全部覆盖声明。",
+      "blocking": true,
+      "required_revision": "让正确 aggregate_sharded 在至少两个已完成分片上执行 SUM、无权均值和加权均值，并与逐出现项的独立参考比较，包含不等分片计数及重复项。执行实际漏分片和漏 dense-category pair 的错误变体，用同一比较判据检出；保留实际执行记录，并据实际覆盖修正正文及作者说明。"
+    }
+  ],
+  "limitations": [
+    "本次审查使用用户提供的完整文本和指定摘录；未检查磁盘文件是否与给定哈希一致，也未验证链接目标实际存在。",
+    "未读取 PDF 图像、reader.html、外链或上游源码。两份完整提取原文支持正文采用的 DLRM 结构和数值边界；来源 cutoff 的版本身份依据所供材料，未另行联网核验。",
+    "作者材料账记录其收到完整旧正文和两份完整来源提取文本，相关章节部分为摘录；这与作者来源核对声明的材料范围相容，但不证明实际认知阅读。",
+    "目标 GPU 数值、缓存事务、真实分片调度、内存可见性、并发更新、尾延迟、任务质量及 Agent 使用效果均未验证；正文对这些边界的声明可以保留。",
+    "本会话没有文件读取或命令执行工具，未能打开 infraagents-knowledge-build 的 SKILL.md，也未独立重跑 Python 脚本。所供 actual_preflight 是实际执行证据，不能记作本审阅者重新执行。"
+  ],
+  "checks": [
+    {
+      "script": "tools/check_k_model_015_full.py",
+      "args": []
+    }
+  ],
+  "reading_scope": "完整阅读所供 AGENTS.md [0,567)、docs/knowledge-method.md [0,2251)、docs/knowledge-review.md [0,3016)、当前候选 knowledge/models/recommendation-inference.md [0,9935)、knowledge/sources/S-DLRM.md [0,592)、knowledge/sources/S-TORCH-NUMERIC.md [0,532)、knowledge/algorithms/tiered-residency.md [0,4244)、references/S-DLRM/fulltext.txt [0,31893)、references/S-TORCH-NUMERIC/fulltext.txt [0,10998)，以及完整候选检查脚本、作者说明和所供执行记录。相关章仅阅读所供字符范围：operator-primitives.md [0,142)、[4000,16000)；heterogeneous-execution.md [0,5655)、[8000,14487)；cpu-serving.md [0,4916)、[8000,15226)；transport-and-rdma.md [0,12142)；input-distribution.md [0,5037)、[8000,15105)；design-synthesis.md [0,844)、[8000,19298)。这些摘录文件未列入 documents。作者账中的旧正文 a36b0addea05174460d8f51179643665f98c51c6aa4a4d9dec235535948dd06d 与当前候选不同，本结论只绑定当前候选。",
+  "test_assessment": "所供 actual_preflight 绑定脚本 bd4c622981850503c7f74d04e64060c8f4f36f1bcf3b94f5390b073768add059，以 Python 3.12 隔离执行，returncode=0、stderr 为空且未超时；作者明确声明其阶段未运行脚本，没有把预期结果写成 PASS。算法检查有实质内容：direct_bag 逐出现项累加，与 aggregate_sharded 的按分片及唯一 ID 分组路径不同，并用手算 Fraction 结果约束重复 SUM、无权均值和加权均值。bad_dedup、bad_mean_of_means、bad_completed_only 实际产生错误结果并与参考区分；CSR 检查确实拒绝尾随索引，版本检查确实拒绝不一致身份。C12-D 容量、读取、聚合字节、交互 MAC 和 top MAC 可复算且正确。主要遗漏是所有成功 aggregate_sharded 测试都只用一个分片，不能证明成功的跨分片归约；漏 dense pair 检查仅为固定元组不等式，具有同义反复性质。本审阅者另用 JavaScript 独立重算跨分片反例：ids=[0,1,2]、owners=[0,0,1] 时 SUM=(9,12,3)，漏分片 1 得 (4,6,1)；整体均值=(3,4,1)，局部均值等权平均=(3.5,4.5,1.25)。这是反例重算，没有执行候选 Python 或其变异版。脚本也未执行 bottom/top MLP、输出 head、OOV 映射、padding 污染和请求取消/回收状态机；字符串版本比较不构成完整有限状态协议验证。设备与质量检查仍属明确未测范围。"
+}

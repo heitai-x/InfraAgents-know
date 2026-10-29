@@ -1,0 +1,157 @@
+{
+  "entry_id": "K-HW-005",
+  "body_sha256": "6aecfd02cd6f295c0a284434d555c67fd5bafc532ed1ac498b2c1d87cce69d30",
+  "reviewer": "sol-reviewer:K-HW-005:round-1",
+  "decision": "revise",
+  "documents": {
+    "AGENTS.md": "b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a",
+    "docs/knowledge-method.md": "69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb",
+    "docs/knowledge-review.md": "f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21",
+    "knowledge/hardware/cuda-execution.md": "6aecfd02cd6f295c0a284434d555c67fd5bafc532ed1ac498b2c1d87cce69d30",
+    "knowledge/sources/S-CUDA-BEST.md": "4b752c1a26f66a195df62be354649f0a6880f733fb365e82e87bdd63bf71d45c",
+    "knowledge/sources/S-CUDA-CAPABILITY.md": "b01baba1d2826b0682b2b58c6a0d23bf0f6e616a758e41c74b4688b55417f286",
+    "knowledge/sources/S-CUDA-ASYNC.md": "40df9287d0648a8ef55a046ceb1c18dd402619ede6e57ca33d3f90e4ace3da05",
+    "knowledge/sources/S-FLASHATTENTION3.md": "1c03e7e0674d15ce246c297a814e946774d476c2de6fb073a29a47c323b56121",
+    "knowledge/sources/S-NCU.md": "1bec5edf1e9343ad79094b2772466c3132597f8f83085d1d8959683c187f9f17",
+    "knowledge/system-semantics/memory-allocators.md": "2e7258787b94ad142c7c236541e8718803ad30b273d08e6c398dff673a1df838",
+    "knowledge/algorithms/tiered-residency.md": "eb3ebc6320d5a32481cf645605d159860dc6d1edb97f1e98afd89ddb24ee82af",
+    "knowledge/tools/statistical-experiments.md": "908b3588a6fa20bb1f2aed9f5db51c4b462953d79f8944cdbcfea7141c74644f",
+    "knowledge/tools/gpu-characterization.md": "b31dd621ab293e8cb26d65dce51ec87b66e86a614dc91fff508c71182529cc3f",
+    "tools/check_k_hw_005_full.py": "a5a806bc37a9913261ebfc44f4b8b65164c5ca3e28b9043d1044129947e38bad"
+  },
+  "criteria": {
+    "definition": {
+      "assessment": "sufficient",
+      "reason": "清楚区分发射、驻留、请求流量与提交关键路径，并定义逻辑、执行和可见性状态；attention 的输入输出、归约状态及空行输出也已给出。",
+      "evidence": [
+        {
+          "path": "knowledge/hardware/cuda-execution.md",
+          "quote": "一个 launch 能否执行、能驻留多少 block、实际搬运多少字节、主机是否成为关键路径，是四个不同问题"
+        },
+        {
+          "path": "knowledge/hardware/cuda-execution.md",
+          "quote": "数学上已经算出一个值，不等于异步复制已经完成；复制完成，也不等于最后一个消费者已经读完。"
+        }
+      ]
+    },
+    "legality": {
+      "assessment": "partial",
+      "reason": "线程、寄存器、共享存储和代际限制已有实质展开，但零资源用量被错误判为不可发射，且持久核的跨 CTA 等待缺少保证推进的执行契约。",
+      "evidence": [
+        {
+          "path": "knowledge/hardware/cuda-execution.md",
+          "quote": "若任一分母为零或某项小于 1，则 A_model=0，表示在该模型下不可发射。"
+        },
+        {
+          "path": "knowledge/hardware/cuda-execution.md",
+          "quote": "持久 kernel 把 kernel 边界移入 kernel 内部，必须用 block 间 barrier、标志或工作队列表达层间依赖"
+        }
+      ]
+    },
+    "algorithm": {
+      "assessment": "partial",
+      "reason": "在线 attention 的初始化、更新、空块与尾部处理正确且可实现；但声明为完整选择的多层服务轨迹仍把模型执行作为黑箱，未解释逐层 KV 生成、采样所得 token 与下一步输入之间的状态关系，也未明确委托给完整解释。",
+      "evidence": [
+        {
+          "path": "knowledge/hardware/cuda-execution.md",
+          "quote": "若 C 为空：保持 m[r]、ℓ[r]、U[r] 不变"
+        },
+        {
+          "path": "knowledge/hardware/cuda-execution.md",
+          "quote": "重放图，线性层和 attention kernel 读取权重与 KV → 写 logits → 采样并提交输出 → 最后消费者结束后释放槽位和页。"
+        }
+      ]
+    },
+    "cost": {
+      "assessment": "sufficient",
+      "reason": "128.5 KiB tile 明细、额外 FP32 分数片段、分区状态、服务 KV 容量及 16 GiB/1 TiB/s 的 15.625 ms 算例均可复算。正文区分片上总预算与共享存储、唯一驻留与逻辑读取、请求段与 HBM 事务，并声明下界和未测量条件。",
+      "evidence": [
+        {
+          "path": "knowledge/hardware/cuda-execution.md",
+          "quote": "必须按实际放置分别计入寄存器和共享存储，不能把同一个对象重复相加"
+        },
+        {
+          "path": "knowledge/hardware/cuda-execution.md",
+          "quote": "30−3−15.625=11.375 ms 是其他开销的剩余预算上限，不是已经可供 prefill 使用的时间"
+        }
+      ]
+    },
+    "adaptation": {
+      "assessment": "sufficient",
+      "reason": "说明 tile、流水深度、KV 分区、图执行、L2 策略、低精度和硬件变化怎样改变容量与关键路径；给出了饱和、质量门槛及设备能力变化后的改选条件。",
+      "evidence": [
+        {
+          "path": "knowledge/hardware/cuda-execution.md",
+          "quote": "若 query 块已经足够多、SM 已饱和，继续增加分区可能只增加合并成本。"
+        },
+        {
+          "path": "knowledge/hardware/cuda-execution.md",
+          "quote": "超长历史会把重心移向 attention 和容量；质量门槛收紧可能排除 C。"
+        }
+      ]
+    },
+    "diagnosis": {
+      "assessment": "partial",
+      "reason": "竞争解释表有预测、干预和反证修正，设备验证边界也清楚；但实际脚本遗漏每 block 线程上限，且部分声称已检测的负对照只是必然成立的数值不等式，未经过所声明的缺陷检测路径。",
+      "evidence": [
+        {
+          "path": "knowledge/hardware/cuda-execution.md",
+          "quote": "负对照必须真正进入被检路径：忽略寄存器粒度、把广播当冲突、漏算 P 缓冲、把图收益直接加到设备工作上，都应被检查拒绝。"
+        },
+        {
+          "path": "knowledge/hardware/cuda-execution.md",
+          "quote": "驻留未降且无 spill 仍变慢，应查尾部、同步、布局转换或并行度"
+        }
+      ]
+    }
+  },
+  "findings": [
+    {
+      "id": "K-HW-005-R1-001",
+      "criterion": "legality",
+      "evidence": "正文写“若任一分母为零或某项小于 1，则 A_model=0”，紧接着却用“T=128、R=37、S=0”计算出“A_model=min(16,16,32,12)=12”。脚本对 S_b==0 则令 shared_blocks=p['maxB']。",
+      "impact": "合法且常见的零共享存储 kernel 按正文规则会被判为不可发射，公式、算例与检查语义不一致。",
+      "blocking": true,
+      "required_revision": "对零用量资源明确采用“不构成限制”的分支；T、W 等结构性分母仍须为正。同步修正公式解释，并检查 S=0 及模型允许的 R=0 分支与算例一致。"
+    },
+    {
+      "id": "K-HW-005-R1-002",
+      "criterion": "diagnosis",
+      "evidence": "occupancy_model 的入口只检查“if T > p['maxT'] or R > p['maxR'] or S > p['maxS_block']:”，其中 p['maxT']=2048 是每 SM 上限；occupancy_reference 复用同一条件。容量负对照为“neg_omit_p = C - 2 * 64 * 64 * 2”和“require(neg_omit_p != C, 'omitting P buffer was not detected')”。",
+      "impact": "独立复算得到 T=1025、R=1、S=0 时模型返回 A=1、launchable=True，违反正文每 block 最多 1024 线程的条件，枚举参考也无法发现。容量负对照只证明减去了非零数，不能证明漏算实现经过比较器后被拒绝；退出码 0 和“detected”输出夸大了实际验证范围。",
+      "blocking": true,
+      "required_revision": "增加独立的每 block 线程上限参数，检查 1024/1025 边界，并使参考依据完整合法条件判断。把漏算 P、少一级 KV 等缺陷实现实际送入同一容量验证器，以独立对象明细为参考确认失败；其他负对照的报告也应与实际检测路径一致。"
+    },
+    {
+      "id": "K-HW-005-R1-003",
+      "criterion": "algorithm",
+      "evidence": "场景声明“模型状态设为 32 层”，执行轨迹却仅为“重放图，线性层和 attention kernel 读取权重与 KV → 写 logits → 采样并提交输出 → 最后消费者结束后释放槽位和页。”",
+      "impact": "轨迹没有说明本轮已知 token、每层输入激活、当前 token 的 K/V 写入及其可消费条件，不能据此恢复 32 层推进与整步提交。采样后的输出 token 尚无自身 KV；活跃请求历史页也不能仅因本轮读者结束就回收。",
+      "blocking": true,
+      "required_revision": "补充简短的逐层状态链，或明确链接并委托给已有完整解释：已知输入 token 产生各层激活和该层 K/V，逐层完成后生成 logits，再采样输出；新采样 token 在后续 forward 才产生 KV。区分本轮临时槽释放、历史 KV 保留及请求终止后的引用与在途访问排空。"
+    },
+    {
+      "id": "K-HW-005-R1-004",
+      "criterion": "legality",
+      "evidence": "正文先说明“grid 可以大于同时驻留的 block 总数，未驻留的 block 等待调度”，后又要求持久核“用 block 间 barrier、标志或工作队列表达层间依赖”，没有给出该持久执行组织的驻留和推进前提。",
+      "impact": "普通超额 grid 中，已驻留 CTA 若等待尚未调度 CTA 的到达或结果，可能占满资源而永久等待。原子标志只能表达状态，不能单独保证生产者获得执行机会。",
+      "blocking": true,
+      "required_revision": "说明一种保证推进的持久执行契约，例如满足目标协作发射限制并使用合法网格同步，或采用有明确驻留预算且不等待未调度生产者的工作队列组织。分别说明完成发布的内存顺序与调度推进条件；无法满足时保留 kernel 边界。"
+    }
+  ],
+  "limitations": [
+    "没有目标 GPU 的编译、数值、可见性、barrier、重叠、spill、事务或性能证据；正文对此已有明确限定，这些未测量效果本身不构成拒收理由。",
+    "原文仅阅读所供摘录。摘录未覆盖完整能力表、L2 hitRatio、ECC 与 Nsight Compute 时钟控制相关段落，不能宣称这些事实已逐项对照固定原文核验。S-CUDA-CAPABILITY 和 S-NCU 来源说明本身也未包含正文声称其补充说明的全部资源或时钟细节。",
+    "当前工具没有文件读取或 shell 能力，技能文件未能打开；审查依据为用户完整提供的方法、标准、正文、脚本及材料范围。绑定哈希照录提供值，未独立重算磁盘文件哈希。",
+    "未取得 Agent 使用效果或跨设备迁移效果证据，不作相关结论。"
+  ],
+  "checks": [
+    {
+      "script": "tools/check_k_hw_005_full.py",
+      "args": []
+    }
+  ],
+  "no_checks_reason": "",
+  "reading_scope": "完整阅读用户提供的 AGENTS.md [0,567)、docs/knowledge-method.md [0,2251)、docs/knowledge-review.md [0,3016)、knowledge/hardware/cuda-execution.md [0,14277)、五份来源说明：S-CUDA-BEST [0,992)、S-CUDA-CAPABILITY [0,1097)、S-CUDA-ASYNC [0,1610)、S-FLASHATTENTION3 [0,3331)、S-NCU [0,477)；完整阅读 memory-allocators.md [0,4191)、tiered-residency.md [0,4244)、statistical-experiments.md [0,4269)、gpu-characterization.md [0,5952)，以及 candidate.test_script 所供完整脚本。相关章节仅阅读所供摘录：attention-io.md [0,4000)、[8000,12500)；cuda-graph-buffers.md [0,5346)、[12000,15154)；triton-kernels.md [0,1932)、[8000,14568)；gpu-kernel-pipelines.md [0,2422)、[8000,14078)；precision-and-kernel-support.md [4000,5141)、[8000,15359)；design-synthesis.md [0,8500)。原文仅阅读所供 extracted-character 摘录：S-CUDA-BEST/fulltext.txt [48000,52000)、[56000,59944)、[60000,68000)、[76000,80000)、[96000,112000)、[128000,132000)、[140000,144000)、[160000,164000)；S-CUDA-CAPABILITY/fulltext.txt 与 S-CUDA-ASYNC/fulltext.txt 各为 [84000,88000)、[280000,284000)、[292000,300000)、[524000,528000)、[676000,680000)、[728000,732000)、[956000,975944)；S-FLASHATTENTION3/fulltext.txt [0,32000)、[36000,43944)、[56000,64000)；S-NCU/fulltext.txt [0,20000)、[28000,32000)、[60000,75943)、[108000,112000)、[120000,124000)。以上范围均为零基、左闭右开字符范围。未通读这些原始全文、reader.html 或 PDF，未读取源码归档；摘录文件未加入 documents。",
+  "test_assessment": "已检查完整脚本和用户提供的 actual_preflight：远端隔离执行返回 0、stderr 为空、未超时，所报 script_sha256 与绑定值相同；这属于所供实际执行证据，本审阅者未重新运行 Python 文件。作者未声称自行执行，与随后提供的预检记录可以并存。枚举驻留数量相对于 min 公式具有一定独立性，但与被测函数共用 block_regs、round_up 和入口合法性判断，不能独立核验寄存器舍入或每 block 上限。固定 5120、12、75%、4/5 个段、1/8/1 bank 冲突以及 131584 字节等解析期望提供了有用算例；覆盖部分 warp、零共享存储、超寄存器、超共享存储和 wave 台阶。缺少每 block 线程上限导致具体漏检，已独立用 JavaScript 按所供模型复算确认 T=1025 会获准。tile 各对象也独立复算为 16384、65536、16384、32768、512 字节。寄存器和段大小的错误模型实际计算了不同结果，但 tile 的 C-常数!=C、广播的硬编码 32 对比不能等同于缺陷注入并被验证器拒绝，尤其容量负对照是恒真的差值检查。脚本没有实现 attention softmax、不检查逐块 m/ℓ/U、没有多层请求或持久队列执行模型，也未测试持久核同步成本；因此不能把预检退出 0 扩展为这些机制通过。正文列出的整行 softmax、服务取消复用与设备实验属于待执行验证，未记为 PASS。"
+}

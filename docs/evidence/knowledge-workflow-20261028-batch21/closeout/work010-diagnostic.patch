@@ -1,0 +1,132 @@
+--- retained-round-3-test_script
++++ isolated-diagnostic-contract_fix
+@@ -105,7 +105,7 @@
+             result = dict(start=None, pub={}, terminal=own_cancel)
+         else:
+             final, offset = n['events'][-1]
+-            choices = [((t + offset, 1, v, final), 'COMMITTED')]
++            choices = [] if n['bad'] else [((t + offset, 1, v, final), 'COMMITTED')]
+             choices.extend(((t + off, 1, v, event), 'FAILED')
+                            for event, off in n['events'] if event in n['bad'])
+             if own_cancel:
+@@ -114,7 +114,7 @@
+             publications = {}
+             for event, off in n['events']:
+                 ek = (t + off, 1, v, event)
+-                if event not in n['bad'] and (ek < terminal[0] or
++                if event not in n['bad'] and (event != final or terminal[1] == 'COMMITTED') and (ek < terminal[0] or
+                         (ek == terminal[0] and terminal[1] == 'COMMITTED')):
+                     publications[event] = t + off
+             result = dict(start=t, pub=publications, terminal=terminal)
+@@ -291,7 +291,8 @@
+         elif action != 'wake':
+             raise AssertionError('unknown queue action')
+         propagate(t)
+-        reconsider(t)
++        if fault == 'dispatch_between_cancels' or not (queue and queue[0][0] == t and queue[0][1] == 0):
++            reconsider(t)
+         for v in held:
+             if states[v] in TERMINAL and not pending[v]:
+                 held[v] = False
+@@ -756,5 +757,101 @@
+     print('scope: deterministic CPU symbolic models; no model forward, GPU, DMA, network or quality measurement')
+ 
+ 
++
++def reference_old(spec, cancellations, fault=''):
++    # Independent DAG constraints: no heap, delivery counters or replay state.
++    # A terminal retains its originating ordered cause, including propagation.
++    memo = {}
++
++    def visit(v):
++        if v in memo:
++            return memo[v]
++        n = spec[v]
++        bounds = [n['a']]
++        impossible = []
++        own_cancel = None
++        if v in cancellations:
++            own_cancel = ((cancellations[v], 0, v, ''), 'CANCELLED')
++        for u, event, wait in n['deps']:
++            upstream = visit(u)
++            if event not in upstream['pub']:
++                impossible.append((upstream['terminal'][0], 'FAILED'))
++            else:
++                pt = upstream['pub'][event]
++                if fault == 'serial_wait':
++                    bounds.append(pt + spec[u]['lag'] + wait)
++                else:
++                    bounds.extend((pt + wait, pt + spec[u]['lag']))
++        t = max(bounds)
++        if impossible:
++            choices = impossible + ([own_cancel] if own_cancel else [])
++            terminal = min(choices, key=lambda x: x[0])
++            result = dict(start=None, pub={}, terminal=terminal)
++        elif own_cancel and own_cancel[0][0] <= t:
++            result = dict(start=None, pub={}, terminal=own_cancel)
++        else:
++            final, offset = n['events'][-1]
++            choices = [((t + offset, 1, v, final), 'COMMITTED')]
++            choices.extend(((t + off, 1, v, event), 'FAILED')
++                           for event, off in n['events'] if event in n['bad'])
++            if own_cancel:
++                choices.append(own_cancel)
++            terminal = min(choices, key=lambda x: x[0])
++            publications = {}
++            for event, off in n['events']:
++                ek = (t + off, 1, v, event)
++                if event not in n['bad'] and (ek < terminal[0] or
++                        (ek == terminal[0] and terminal[1] == 'COMMITTED')):
++                    publications[event] = t + off
++            result = dict(start=t, pub=publications, terminal=terminal)
++        memo[v] = result
++        return result
++
++    for v in spec:
++        visit(v)
++    starts, pub, states, outputs, terminals = {}, {}, {}, {}, {}
++    for v, n in spec.items():
++        r = memo[v]
++        if r['start'] is not None:
++            starts[v] = r['start']
++        pub.update({key(v, e): t for e, t in r['pub'].items()})
++        states[v] = r['terminal'][1]
++        terminals[v] = (r['terminal'][0][0], states[v])
++        if states[v] == 'COMMITTED':
++            outputs[v] = (v, n['events'][-1][0], 1)
++        if fault == 'cancel_plan_wins' and v in cancellations and states[v] != 'COMMITTED':
++            states[v] = 'CANCELLED'
++            terminals[v] = (cancellations[v], 'CANCELLED')
++    return starts, pub, states, outputs, terminals
++
++
+ if __name__ == '__main__':
+     run_checks()
++    repaired_reference = reference
++    for label, spec, cancels in [
++        ('failed-final', {'U': node(bad=('FULL',))}, {}),
++        ('same-time-bad-required-before-final', {'U': node(events=(('FIRST', 1), ('FULL', 1)), bad=('FIRST',))}, {}),
++        ('same-time-bad-required-after-final-key', {'U': node(events=(('TAIL', 1), ('FULL', 1)), bad=('TAIL',))}, {}),
++        ('cancel-before-failed-final', {'U': node(bad=('FULL',))}, {'U': 0}),
++        ('same-time-cancel-before-failed-final', {'U': node(bad=('FULL',))}, {'U': 1}),
++    ]:
++        result = replay(spec, cancels)
++        audit_events(spec, cancels, result)
++        print('DIAG_FIXED_CASE', label, result['states'], result['pub'], result['terminals'])
++    spec = {'U': node(bad=('FULL',))}
++    result = replay(spec, {})
++    reference = reference_old
++    rejected('old oracle commits failed final', lambda: audit_events(spec, {}, result))
++    reference = repaired_reference
++    print('DIAG_REFERENCE_FIX_CONFIRMED')
++
++    spec = {'U': node(lag=0), 'V': node(a=2, deps=(('U', 'FULL', 0),))}
++    cancels = {'U': 2, 'V': 2}
++    result = replay(spec, cancels)
++    audit_events(spec, cancels, result)
++    check(result['starts'] == {'U': 0}, 'same-time cancellation phase must prevent V launch')
++    check(result['terminals'] == {'U': (1, 'COMMITTED'), 'V': (2, 'CANCELLED')}, 'first terminals changed')
++    print('DIAG_CANCEL_PHASE', result['starts'], result['terminals'])
++    rejected('dispatch between same-time cancellations',
++             lambda: audit_events(spec, cancels, replay(spec, cancels, 'dispatch_between_cancels')))
++    print('DIAG_TWO_SCOPED_FIXES_CONFIRMED')

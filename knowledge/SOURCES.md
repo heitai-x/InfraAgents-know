@@ -116,3 +116,5 @@
 | [S-TVM](sources/S-TVM.md) | 1802.04799v1 | 2018-02-12 |
 | [S-ANSOR](sources/S-ANSOR.md) | 2006.06762v1 | 2020-06-11 |
 | [S-FLASHINFERPAPER](sources/S-FLASHINFERPAPER.md) | 2501.01005v1 | 2025-01-02 |
+
+- [S-FLASHATTENTION2：FlashAttention-2](sources/S-FLASHATTENTION2.md)：非矩阵运算、query并行与warp工作划分。

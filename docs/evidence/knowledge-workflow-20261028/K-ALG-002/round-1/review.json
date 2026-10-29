@@ -1,0 +1,154 @@
+{
+  "entry_id": "K-ALG-002",
+  "body_sha256": "66e1dedfb6aafe349721e7b2c050028e64f4668a83bfb7d9962604499bf02859",
+  "reviewer": "/root/workflow_forward_test",
+  "decision": "accept",
+  "reviewed_at": "2026-10-28",
+  "scope": "普通未量化分页KV的取址、跨页warp加载、不可变与混合原地/COW更新、共享快照生命周期和条件化成本；不是完整GPU实现的验收。",
+  "documents": {
+    "knowledge/algorithms/paged-kv-capacity.md": "66e1dedfb6aafe349721e7b2c050028e64f4668a83bfb7d9962604499bf02859",
+    "knowledge/frameworks/attention-backends.md": "ead758e413f2fd59119e77ce8a91eddd5e5fe6468a315109554d78013df3b4f5",
+    "knowledge/sources/S-PAGED.md": "50893a22385b0d577980153a9bc9c617acdcb2a9d7be0af655ad49421f06cc09",
+    "knowledge/sources/S-VATTENTION.md": "c841eab45685791bc135d2641ec49661c122c2d8c36fa88f055db1f79b8f1f5d",
+    "knowledge/sources/S-FI.md": "bc0a19124be4e05621f93ff9c2f35ed8cccfee0465383f4df1671e1dcec9bfc9",
+    "knowledge/sources/S-VLLM-KV.md": "b131f32897dbe7385a3a51ba1190e831268aa2d6bc2ed90c27bb59b3eb69a7f3",
+    "knowledge/sources/S-CUDA-BEST.md": "4b752c1a26f66a195df62be354649f0a6880f733fb365e82e87bdd63bf71d45c",
+    "knowledge/sources/S-CUDA-CAPABILITY.md": "b01baba1d2826b0682b2b58c6a0d23bf0f6e616a758e41c74b4688b55417f286",
+    "docs/knowledge-method.md": "69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb",
+    "docs/knowledge-review.md": "f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21",
+    "tools/check_paged_execution.py": "d2cac617e8cfe78e8bc2cbf202bfcba68e7a2d33cdceeff288e1c9e3d95f7cec",
+    "tools/check_paged_state.py": "d4b007e6d4bc833a77a00c627f61ab548db0f6143f899cb7ae351ad9c63a956c",
+    "docs/evidence/knowledge-workflow-20261028/paged/author-review.md": "393695f3bb8e72f407111a3493189a5880a306ce591adb48b01ddf224120cae7"
+  },
+  "reading_scope": {
+    "knowledge/algorithms/paged-kv-capacity.md": "完整当前正文，含新增两节、原有容量/诊断与来源块",
+    "knowledge/frameworks/attention-backends.md": "完整warp映射一节，核对共享矩阵契约、lane映射、mask和输出交接",
+    "knowledge/sources/S-PAGED.md": "完整来源说明；本次未重新阅读全文PDF，不用来源说明替代论文复核声明",
+    "knowledge/sources/S-VATTENTION.md": "完整来源说明",
+    "knowledge/sources/S-FI.md": "完整来源说明",
+    "knowledge/sources/S-VLLM-KV.md": "完整来源说明",
+    "knowledge/sources/S-CUDA-BEST.md": "完整来源说明，核对32字节请求段与共享bank模型",
+    "knowledge/sources/S-CUDA-CAPABILITY.md": "完整来源说明，核对WMMA对齐和未公开fragment边界",
+    "docs/knowledge-method.md": "完整构建方法",
+    "docs/knowledge-review.md": "完整六标准审查逻辑",
+    "tools/check_paged_execution.py": "完整新检查脚本，核对独立物理轴写入与逻辑期望、负对照和串行主机事件假设",
+    "tools/check_paged_state.py": "完整原有检查脚本在继承上下文已提供；本次实际重跑，未声称重新逐行审计",
+    "docs/evidence/knowledge-workflow-20261028/paged/author-review.md": "完整作者记录，检查叙述与真实范围一致"
+  },
+  "criteria": {
+    "definition": {
+      "assessment": "sufficient",
+      "reason": "L是已提交完成的逻辑KV边界；页号、页内位置、布局轴、K/V独立维度和O/R/W责任均有清楚定义。分页改变表示而保持逻辑读取集合。",
+      "evidence": [
+        {
+          "path": "knowledge/algorithms/paged-kv-capacity.md",
+          "quote": "这里的 Lᵣ 表示已完成 KV，不等于已输出 token 数、分配槽数或投机容量。"
+        }
+      ]
+    },
+    "legality": {
+      "assessment": "sufficient",
+      "reason": "新增原地方案按实际字节读取范围而不是仅逻辑有效值判定冲突，明确O=1不足、共享/写入协调、设备就绪及失败可见性边界；矩阵内部fragment未被臆造。",
+      "evidence": [
+        {
+          "path": "knowledge/algorithms/paged-kv-capacity.md",
+          "quote": "原地写入需要同时证明：尾页只由当前请求拥有；没有另一写者；所有在途消费者实际触碰的字节与本轮写入范围不相交。"
+        }
+      ]
+    },
+    "algorithm": {
+      "assessment": "sufficient",
+      "reason": "跨页例在P=3、k0=2和有效长度17下逐行给物理地址，lane四轮加载将离散源拼成紧密共享tile，再接既有矩阵归约与输出；混合更新完整覆盖预留、构造、提交、取消和放弃。",
+      "evidence": [
+        {
+          "path": "knowledge/algorithms/paged-kv-capacity.md",
+          "quote": "页表只改变源地址，片上矩阵仍是紧密的 [16,16]。"
+        },
+        {
+          "path": "knowledge/algorithms/paged-kv-capacity.md",
+          "quote": "以后重新追加必须重写将被发布的每个新位置，不能把残留当成已完成KV"
+        }
+      ]
+    },
+    "cost": {
+      "assessment": "sufficient",
+      "reason": "新增取址请求段、metadata请求、共享写入与同轨迹更新流量/峰值连接原有容量和关键路径账。数值明确为逻辑/设定模型，未当作实际DRAM事务或设备时间。原地方案没有被写成无条件更快。",
+      "evidence": [
+        {
+          "path": "knowledge/algorithms/paged-kv-capacity.md",
+          "quote": "P=16 时两者分别为 256τ 与 16τ，均为逻辑交通，尚未计缓存、事务、metadata 和等待。"
+        },
+        {
+          "path": "knowledge/algorithms/paged-kv-capacity.md",
+          "quote": "物理跳转在这里没有增加有效数据字节或该模型的段数"
+        }
+      ]
+    },
+    "adaptation": {
+      "assessment": "sufficient",
+      "reason": "对齐/奇数维度会改变向量加载合法性；宽读会使原地分支失效；共享、失败隔离、量化尺度和容量又改变方案。原有alpha变化与预算示例给出时间排序反转与先排除不合法候选。",
+      "evidence": [
+        {
+          "path": "knowledge/algorithms/paged-kv-capacity.md",
+          "quote": "若旧读者实际宽读整个页，后一列的前两次原地写不再合法"
+        },
+        {
+          "path": "knowledge/algorithms/paged-kv-capacity.md",
+          "quote": "应改为受保护的标量加载、padding 或另一布局，不能继续宣称每个字都可向量读。"
+        }
+      ]
+    },
+    "diagnosis": {
+      "assessment": "sufficient",
+      "reason": "消费/准备/准入的分离干预和布局/尾部/生命周期竞争解释已经具体；新增负对照分别触发物理连续假设错误与实际宽读冲突，实际重跑两脚本通过。仍把设备可见性与完整并发验证留给具体实现。",
+      "evidence": [
+        {
+          "path": "knowledge/algorithms/paged-kv-capacity.md",
+          "quote": "先固定已准入请求、有效 KV、query 和 kernel 数据流，测消费阶段；再独立固定消费者比较准备与复制；最后放开准入，比较端到端 SLO 和拒绝。"
+        }
+      ]
+    }
+  },
+  "findings": [],
+  "closed_findings": [
+    {
+      "id": "paged-input-mapping",
+      "result": "closed_in_declared_scope",
+      "evidence": "新增P=3跨页warp到共享tile映射；后续矩阵与写回沿已有完整Attention实例，不再仅停留于地址公式。"
+    },
+    {
+      "id": "inplace-versus-cow",
+      "result": "closed_in_declared_scope",
+      "evidence": "新增完整混合更新算法与同轨迹480/288字节、4/2页峰值对照，明确实际读取范围和失败回滚条件。"
+    }
+  ],
+  "limitations": [
+    "本审查人继承父对话且可读取实现；这是实际非作者复核，不是盲审或受控知识版本效果实验。",
+    "新检查的140映射与864更新组合是CPU字节/串行主机事件模型，不能证明真实GPU可见性、全并发allocator、生成指令或性能。",
+    "页池操作、请求协调和读取范围是当前候选声明的契约；真实实现须兑现它们，尤其不能用逻辑mask替代实际访问范围检查。",
+    "混合更新限定普通未量化KV；共享scale重编码、远端传输和异构恢复由相关知识链承担，未由本章通用证明。",
+    "本次没有新增独立learner构建任务；内容验收不推出Agent已能可靠构建完整引擎。"
+  ],
+  "checks": [
+    {
+      "script": "tools/check_paged_state.py",
+      "args": []
+    },
+    {
+      "script": "tools/check_paged_execution.py",
+      "args": []
+    }
+  ],
+  "reviewer_executed_checks": [
+    {
+      "command": "python -X utf8 tools/check_paged_state.py",
+      "exit_code": 0,
+      "observed": "PASS:55 checks,132 byte-layout cases,24 declared event permutations"
+    },
+    {
+      "command": "python -X utf8 tools/check_paged_execution.py",
+      "exit_code": 0,
+      "observed": "PASS:28 checks,140 mapping cases,864 append cases"
+    }
+  ]
+}

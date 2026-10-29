@@ -1,0 +1,140 @@
+{
+  "entry_id": "K-SYS-008",
+  "body_sha256": "19d2afef1956ec86a36a975a92ed83b1dcd1480816168b2d61bd70a6e9a7d6bc",
+  "reviewer": "sol-reviewer:K-SYS-008:round-2",
+  "decision": "revise",
+  "documents": {
+    "AGENTS.md": "b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a",
+    "docs/knowledge-method.md": "69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb",
+    "docs/knowledge-review.md": "f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21",
+    "knowledge/system-semantics/service-protocol.md": "19d2afef1956ec86a36a975a92ed83b1dcd1480816168b2d61bd70a6e9a7d6bc",
+    "knowledge/sources/S-ASGI.md": "ca77c63e9a95b8be934ae485d89245f895dc7fa49fdf7fcce03b139346127ed9",
+    "knowledge/sources/S-OTEL.md": "b68ba3b2833dc7f9f5ad7f49ae395fa70cc31b94252dd1741149e1fd1eca4068",
+    "knowledge/sources/S-GENAI-PERF.md": "1db17462a3ae4cd41dcb58a78f3f9fa9e71ff3a51614e56855be07bcb95618e0",
+    "knowledge/sources/S-BORG.md": "2efc1ae7dfd3d9751a94b3ce8ee9426cb4943197fa2afc80c344f009d52c7331",
+    "knowledge/sources/S-NVIDIA-PLUGIN.md": "dcbdcae57ae70346efc20ed1421becee1f358d7a650a2929031aac05993cef91",
+    "knowledge/models/speech-generation.md": "9cab040f27f77dc8040a6cc6f0ae96a175542e4379e2262ca2cdb53fb9aee3a4",
+    "knowledge/system-semantics/model-lifecycle.md": "bf15950cafcbb584f031cc3a1ea9eaf3331d2816819c6e468ae333d70a3c7c0e",
+    "knowledge/system-semantics/serving-recovery.md": "f551fa1f1e6213469c856a880839eefff504fb39f4dd692000b2df80a20a7f5e",
+    "knowledge/system-semantics/tenant-isolation.md": "0ca7501a80e750152a5fb3b9815c77f9e3f9aa393ff7546b3f05375958f88606",
+    "knowledge/workloads/elastic-serving.md": "782ba12ac9d0af5f8dbdd477e0c706230ae14e7f54d2795ab3b385eaeb8b39f4",
+    "knowledge/tools/failure-evidence.md": "23dfc65dcbd319c1789dcb80b62f6c843bb5db8c076e86a00643cff546700067",
+    "knowledge/system-semantics/request-batch-identity.md": "4bb364464c1ccab29bf079263a4e80d9d352e1477040fdcaf150a36294e37443",
+    "knowledge/tools/correctness-oracles.md": "c2f88bc9746ac25586fc6700aaf0f5a8d043a1b1f4aee99dfdee02e1ef468aab",
+    "references/S-ASGI/fulltext.txt": "ba273c91f3e7b8c32f863e8b57145798c3b5c9275073f758a41e1cb0a6f5bee3",
+    "references/S-OTEL/fulltext.txt": "f00d2f265bdd7aceff39c2d3c52f7cd3ab12b061e1f02cefaf84d6e12afa34a4",
+    "references/S-GENAI-PERF/fulltext.txt": "357d6fcaafc41f2954ea87da567cd2b41ec8a146f8e4f19cb976acf39f539ddc",
+    "references/S-BORG/fulltext.txt": "aa4f1887c9622e8f8759524f9b12a036027b70d635bb7efb11116be882246fe9",
+    "references/S-NVIDIA-PLUGIN/fulltext.txt": "0f86c2073119311977b39a773e3c98790682ae1c8269720fe6dda15447d74a94",
+    "tools/check_k_sys_008_full.py": "595b76d2703b9a6cea8b0ff6f16c548687174db106e4639eeddacce1379fef14"
+  },
+  "criteria": {
+    "definition": {
+      "assessment": "sufficient",
+      "reason": "明确请求、尝试、流和版本身份，区分累计接受、服务器发送提交、客户端确认与播放，以及业务终止和结束帧状态。失败发送的未知交付范围与前沿守恒含义一致。",
+      "evidence": [
+        {
+          "path": "knowledge/system-semantics/service-protocol.md",
+          "quote": "A 是累计历史，不因取消丢弃队列而回退。发送前沿只在对应发送成功返回时推进。"
+        },
+        {
+          "path": "knowledge/system-semantics/service-protocol.md",
+          "quote": "还要区分两个终止对象：业务决定 `terminal` 与终止帧发送状态 `end_state`。"
+        }
+      ]
+    },
+    "legality": {
+      "assessment": "sufficient",
+      "reason": "ASGI 的 scope、响应开始、body 提交、trailers、断开竞争和 WebSocket 握手说明符合所供固定原文；明确区分规范约束与本章选择的协议子集。幂等、版本绑定、停止判断和物理回收边界没有被扩大为恰好一次交付保证。",
+      "evidence": [
+        {
+          "path": "knowledge/system-semantics/service-protocol.md",
+          "quote": "本章算法选择无 trailers、应用结束标记随最终 body 发送的协议子集。"
+        },
+        {
+          "path": "knowledge/system-semantics/service-protocol.md",
+          "quote": "取消停止未来生成与提交资格，不证明已提交 kernel、DMA、发送或借用缓冲的最后访问已经结束。"
+        }
+      ]
+    },
+    "algorithm": {
+      "assessment": "partial",
+      "reason": "准入回滚、发送票据、终止稳定性、失败交付分类和 FINAL 屏障已有具体步骤；但 Offer 成功后没有触发 Drive，也未给出统一事件分派后的推进规则。首批内容因此不能自行开始发送，队列满后可永久停滞。同步测试驱动主动 flush，未检查这条推进依赖。",
+      "evidence": [
+        {
+          "path": "knowledge/system-semantics/service-protocol.md",
+          "quote": "    pending.Append(e)\n    accepted_end += b\n    返回 ACCEPTED"
+        },
+        {
+          "path": "knowledge/system-semantics/service-protocol.md",
+          "quote": "最后一块必须先被接受，再发布 ProducerDone；被 PAUSED 拒绝的块仍归生产者，等待恢复后重试，不分配新 seq。"
+        }
+      ]
+    },
+    "cost": {
+      "assessment": "sufficient",
+      "reason": "准备、计算、同步、复制访存、封装通信和暂停驻留分别列账。流体近似使用同队列边界的 B/s，10.92 s、8 MiB 和 768 MiB 算例可复算；区分逻辑搬运、设备事务、墙钟与 CPU 服务需求，并说明编码副本和共享存储的重复计数条件。",
+      "evidence": [
+        {
+          "path": "knowledge/system-semantics/service-protocol.md",
+          "quote": "若背压传播延迟为 τ，且额外生产速率有界为 r_p，还需容纳约 `r_p τ` 加最大在途突发的结果，或在启动前取得信用额度；没有这项上界，就不能从本地 Q 推出全路径内存有界。"
+        },
+        {
+          "path": "knowledge/system-semantics/service-protocol.md",
+          "quote": "若每事件 CPU 时间为 c_e、每字节处理时间为 c_b，则串行编码服务需求约为 `N c_e+D_enc c_b`。"
+        }
+      ]
+    },
+    "adaptation": {
+      "assessment": "sufficient",
+      "reason": "依据恢复时间、状态压力和交付契约解释保留暂停、调整准入与期限或终止慢流的条件；还说明多路连接、媒体输出和滚动发布需要增加的预算及身份约束。Borg 和插件文档没有被用于推断网络交付或自动清理能力。",
+      "evidence": [
+        {
+          "path": "knowledge/system-semantics/service-protocol.md",
+          "quote": "快速恢复且状态充裕时可保留暂停；大量暂停请求挤占 KV 并伤害正常请求时，应调整准入、暂停期限或交付方式。"
+        },
+        {
+          "path": "knowledge/system-semantics/service-protocol.md",
+          "quote": "输出变成音频或视频时，保留字节预算还不够，需增加可播放区间和时间额度；改用双向连接时，需增加回合与打断身份。"
+        }
+      ]
+    },
+    "diagnosis": {
+      "assessment": "sufficient",
+      "reason": "竞争解释表给出可控干预、不同预测和反证后的归因修正，覆盖滞回、代理缓冲、取消在途、重复输出和驻留增长。检查的同步投影与真实适配器实验边界声明清楚；这些声明不能消除当前伪代码自身的推进缺口。",
+      "evidence": [
+        {
+          "path": "knowledge/system-semantics/service-protocol.md",
+          "quote": "5 时暂停、4 时恢复支持滞回；4 时仍不恢复再查状态或通知"
+        },
+        {
+          "path": "knowledge/system-semantics/service-protocol.md",
+          "quote": "原票据可结算，后者必须拒绝；不能只按完成时间判定违规"
+        }
+      ]
+    }
+  },
+  "findings": [
+    {
+      "id": "K-SYS-008-r2-offer-drive-liveness",
+      "criterion": "algorithm",
+      "evidence": "当前 Offer 的成功尾部为「pending.Append(e)」「accepted_end += b」「返回 ACCEPTED」，没有调用 Drive。正文只在 ProducerDone、OnSendComplete 和取消等控制处理处显式调用 Drive，未声明每次 Offer 后统一调度 Drive。同时要求「最后一块必须先被接受，再发布 ProducerDone」。",
+      "impact": "取正文参数 Q=8 B、L=4 B，依次 Offer 3、3、2、1 B：前三块接受，第四块 PAUSED，但 inflight 仍为 NONE，尚未启动任何发送。生产者必须等待排空后重试，发送完成事件却无从产生，最后一块又未接受而不能发布 ProducerDone。有限长合法输出因此停滞；较短输出也会等待生成结束才启动发送。审阅者在 V8 中执行上述调用路径投影，实际得到 pending=[3,3,2]、occupancy=8、paused=true、inflight=null、launches=0。",
+      "blocking": true,
+      "required_revision": "明确接受事件后的发送推进：在 Offer 成功入队后调用 Drive，或给出保证每次相关状态变化后调用 Drive 的串行事件分派规则，并与返回结果及所有权更新顺序保持一致。增加针对该调用链的有限逻辑回归：生产者尚未完成时，第一次接受必须能够启动 DATA；容量暂停后由已启动发送的完成推进排空和恢复。检查不得通过测试驱动额外直接 flush 来代替正文缺失的启动步骤。"
+    }
+  ],
+  "limitations": [
+    "Python 检查只验证单流、原子 flush 的同步投影；真实异步发送竞争、借用缓冲最后访问、分布式幂等与崩溃恢复均未验证，正文对此声明清楚。",
+    "没有 ASGI、代理、HTTP/2、WebSocket、客户端播放、GPU/KV 回收、性能或 Agent 构建效果实测；设定算例不能支持这些结论。",
+    "本次使用用户提供的正文、材料及哈希绑定，没有重新读取磁盘或检查链接目标存在性。审阅者另行执行的是 V8 调用路径投影，没有独立重跑 Python。"
+  ],
+  "checks": [
+    {
+      "script": "tools/check_k_sys_008_full.py",
+      "args": []
+    }
+  ],
+  "reading_scope": "完整阅读用户提供的 AGENTS.md [0,567)、docs/knowledge-method.md [0,2251)、docs/knowledge-review.md [0,3016)、候选正文 [0,15195) 和全部 test_script。完整来源说明：S-ASGI [0,491)、S-OTEL [0,520)、S-GENAI-PERF [0,506)、S-BORG [0,732)、S-NVIDIA-PLUGIN [0,890)。完整相关章节：speech-generation [0,3599)、model-lifecycle [0,3556)、serving-recovery [0,3834)、tenant-isolation [0,4131)、elastic-serving [0,3284)、failure-evidence [0,3753)、request-batch-identity [0,2669)、correctness-oracles [0,5245)。完整提供的原文归档：references/S-ASGI/fulltext.txt [0,23566)、S-OTEL [0,8256)、S-GENAI-PERF [0,46825)、S-BORG [0,89088)、S-NVIDIA-PLUGIN [0,52241)。只阅读以下摘录，不登记为整文件：cancellation-resource-completion [0,2071)、[12000,16000)；metric-events [4000,8000)、[12000,14071)；host-runtime [0,6071)；tokenization-io [0,2096)、[8000,11975)；design-synthesis [0,6071)；omni-multimodal [0,4000)、[8000,8010)、[20000,22061)。以上均为材料标明的零基、左闭右开提取字符范围；完整原文归档阅读不延伸至其外链或上游源码。",
+  "test_assessment": "已完整检查 Publisher、audit、drive、固定预期轨迹和各负对照。audit 从接受、提交及丢弃历史重建存活内容，不使用被测 FIFO 或 occupied 决定参考占用；固定七块预期序列另外约束滞回行为，具备相应维度的独立性。所供 actual_preflight 的 script_sha256 与候选 595b76d2703b9a6cea8b0ff6f16c548687174db106e4639eeddacce1379fef14 一致，正文摘要也匹配，remote_bwrap/Python 3.12 实际 returncode=0、stderr 为空，输出确认 2660 组组合、四次暂停、取消已提交 3 B/丢弃 5 B，以及空输出、零字节事件、FINAL 屏障和超大块检查通过。重复提交、丢块、实际超限接受、忽略滞回和提前 FINAL 均执行故障变体，并要求同一审计命中目标错误；不是仅比较预写常数。因此 campaign-K-SYS-008-r1 的原具体检查失败可以关闭。作者说明中的 Python 待执行状态已由随后提供的真实 preflight 补足，不能继续视作未运行。覆盖限制在于 drive 遇到 PAUSED 时主动调用 publisher.flush，正常结束前也主动排空，它没有消费正文 StreamAttempt 的 Launch/Drive 调用链，故通过不能证明正文有发送启动和持续推进能力。审阅者实际执行的 V8 局部投影复现了上述停滞，并比较接受后调用 Drive 时会启动一个 DATA；此实验仅支持该调用依赖判断，不是完整状态机、Python 或网络集成通过记录。"
+}

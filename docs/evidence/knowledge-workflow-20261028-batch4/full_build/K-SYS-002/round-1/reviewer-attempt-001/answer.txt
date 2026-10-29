@@ -1,0 +1,158 @@
+{
+  "entry_id": "K-SYS-002",
+  "body_sha256": "627205b4e255f61250b91061e21270ac0e6e0ea867fa45ec7baab4195205403f",
+  "reviewer": "sol-reviewer:K-SYS-002:round-1",
+  "decision": "revise",
+  "documents": {
+    "AGENTS.md": "b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a",
+    "docs/knowledge-method.md": "69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb",
+    "docs/knowledge-review.md": "f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21",
+    "knowledge/system-semantics/request-batch-identity.md": "627205b4e255f61250b91061e21270ac0e6e0ea867fa45ec7baab4195205403f",
+    "knowledge/sources/S-ORCA.md": "920ef987a4a019bb4f0e0386e30bf1c1e3bc720d199ae4de22e462db4f41520a",
+    "knowledge/sources/S-VLLM-SCHED.md": "2e9bbe0d29145039d1bcd43bb54d40c4136ef51641a6e33a5d7097eb0500daf0",
+    "knowledge/sources/S-OTEL.md": "b68ba3b2833dc7f9f5ad7f49ae395fa70cc31b94252dd1741149e1fd1eca4068",
+    "knowledge/algorithms/batched-sampling.md": "eedef73ece886112211c643f263add7644e5bd2018f2043c1716a172368aa6f2",
+    "knowledge/algorithms/branch-generation.md": "42157d4da17ab8ffd7a0aa2f5cd57a1cacdf1a989757261993f6671ae231de3a",
+    "knowledge/workloads/session-workloads.md": "0269e1987e1107d0cf0135cb32aa759c67d5266cfa09fb1402f97704c4ab4d78",
+    "knowledge/system-semantics/model-lifecycle.md": "bf15950cafcbb584f031cc3a1ea9eaf3331d2816819c6e468ae333d70a3c7c0e",
+    "knowledge/system-semantics/serving-recovery.md": "f551fa1f1e6213469c856a880839eefff504fb39f4dd692000b2df80a20a7f5e",
+    "knowledge/system-semantics/tenant-isolation.md": "0ca7501a80e750152a5fb3b9815c77f9e3f9aa393ff7546b3f05375958f88606",
+    "knowledge/algorithms/routing-and-migration.md": "1b9dcfd5fea499a91611459bb936e1c1c49ceb562171fb0f1ba360a7010f5d32",
+    "knowledge/engine-index/vllm-model-runner.md": "87d1433d4f64d939ff8f137d1c1d4092cfdf2b3d7ebdd011a0f344cc66564714",
+    "knowledge/tools/correctness-oracles.md": "c2f88bc9746ac25586fc6700aaf0f5a8d043a1b1f4aee99dfdee02e1ef468aab",
+    "references/S-ORCA/fulltext.txt": "2119a53d77b4a933bab56d7e40b5304fa725561c412514459e56729ca6836794",
+    "references/S-OTEL/fulltext.txt": "f00d2f265bdd7aceff39c2d3c52f7cd3ab12b061e1f02cefaf84d6e12afa34a4",
+    "tools/check_k_sys_002_full.py": "b43eef823bd9bc719afadba8771feedb978161961278f1e808412bcb1e336ed8"
+  },
+  "criteria": {
+    "definition": {
+      "assessment": "partial",
+      "reason": "动机、请求生命期、逻辑位置、双射、输入输出以及已知 token 与全层 KV 边界解释清楚；但分支身份元组不能区分同父、同分叉位置的多个兄弟分支，与本章明确支持的多样本、beam 和投机候选冲突。",
+      "evidence": [
+        {
+          "path": "knowledge/system-semantics/request-batch-identity.md",
+          "quote": "分支身份记为 b=(r,parent_branch,fork_position)"
+        },
+        {
+          "path": "knowledge/system-semantics/request-batch-identity.md",
+          "quote": "已知 token 与已完成 KV 不是同一个量；采样得到的最后一个 token 也可能尚未计算自己的 KV。"
+        }
+      ]
+    },
+    "legality": {
+      "assessment": "sufficient",
+      "reason": "在分支键修复的前提下，正文区分了双射、输入已知、因果可见性、版本与授权这些合法条件，以及压紧、固定槽和预留策略这些实现选择。普通生成没有把尚未采样的 token 当作输入。ORCA 与 OTel 的事实和本库推导划分符合所给原文；vLLM 实现事实的独立核验边界也已声明。",
+      "evidence": [
+        {
+          "path": "knowledge/system-semantics/request-batch-identity.md",
+          "quote": "分块 prefill 取 [k_r,k_r+q_r)，且 k_r+q_r≤n_r，范围中的输入必须已经由模型输入契约确定。"
+        },
+        {
+          "path": "knowledge/system-semantics/request-batch-identity.md",
+          "quote": "混合版本只有在执行器确实逐行支持时才合法。"
+        }
+      ]
+    },
+    "algorithm": {
+      "assessment": "partial",
+      "reason": "构造、冻结、逐行映射、共同提交和取消后的最后使用边界已有实质算法；但完成处理没有首次完成与重复通知的状态门，既不能保证业务提交至多一次，也不能保证引用只释放一次。算法还从逻辑原子读取定义中不存在的 slot、epoch 字段，需要把完成凭据与不可变执行记录明确连接。",
+      "evidence": [
+        {
+          "path": "knowledge/system-semantics/request-batch-identity.md",
+          "quote": "对每个请求按逻辑键原子提交：所有必要行通过且位置连续，才更新 k_r、n_r、分支、RNG、grammar 与输出序号"
+        },
+        {
+          "path": "knowledge/system-semantics/request-batch-identity.md",
+          "quote": "释放本视图引用；当槽引用为零且结果缓冲不再被读取时："
+        }
+      ]
+    },
+    "cost": {
+      "assessment": "sufficient",
+      "reason": "对本章的视图与身份机制，已给出准备复杂度、逐字段逻辑搬运量、映射存储、在途缓冲和 trace 成本，并区分逻辑字节、设备事务、容量与关键路径。固定槽的填充比例没有被冒充耗时比例。这里支持的是条件化成本账，不能据此得到设备或分布式执行的实测收益。",
+      "evidence": [
+        {
+          "path": "knowledge/system-semantics/request-batch-identity.md",
+          "quote": "C_prep = O(L_t·F + R_t·G)"
+        },
+        {
+          "path": "knowledge/system-semantics/request-batch-identity.md",
+          "quote": "实际设备事务量还要按布局、对齐、合并和缓存层级重新计算，不能把逻辑字节直接当成设备耗时。"
+        },
+        {
+          "path": "knowledge/system-semantics/request-batch-identity.md",
+          "quote": "若它们有依赖，应沿关键路径相加；若能重叠，只能把共享资源和同步约束计入"
+        }
+      ]
+    },
+    "adaptation": {
+      "assessment": "sufficient",
+      "reason": "说明了图重放、活跃集合变化、分支、迁移、恢复、前缀共享和跨服务观测条件下，应保留哪些身份与授权约束，以及何时调整视图表示。允许单请求简化索引，也明确槽重用和重试出现后不能删除生命期信息。",
+      "evidence": [
+        {
+          "path": "knowledge/system-semantics/request-batch-identity.md",
+          "quote": "稳定请求、分支和逻辑位置身份在所有表示变化下保留。可调整的是视图表示"
+        },
+        {
+          "path": "knowledge/system-semantics/request-batch-identity.md",
+          "quote": "迁移或恢复改变的是尝试与执行地点，不应改变已经向用户承诺的请求身份"
+        }
+      ]
+    },
+    "diagnosis": {
+      "assessment": "partial",
+      "reason": "正文提供了竞争解释、受控重排、迟到消息和完整身份集合反例，且明确没有 GPU 实验。所给执行确实检测到了参数未重排的负对照，但检查器对参数、版本与 attempt 的参考主要来自被测 row_atoms 自身，不能兑现正文要求的从独立请求账重建这些字段。",
+      "evidence": [
+        {
+          "path": "knowledge/system-semantics/request-batch-identity.md",
+          "quote": "参考从逻辑原子和请求账重建每行的 owner、位置、参数、版本和采样目标，而不是调用被测视图自己的构造逻辑。"
+        },
+        {
+          "path": "knowledge/system-semantics/request-batch-identity.md",
+          "quote": "以上是诊断设计，不声称已经执行 GPU 实验或获得目标系统数据。"
+        }
+      ]
+    }
+  },
+  "findings": [
+    {
+      "id": "K-SYS-002-F01",
+      "criterion": "definition",
+      "evidence": "正文定义“分支身份记为 b=(r,parent_branch,fork_position)”，又规定“A_t 中不出现同一 (r,b,p) 的重复行”。",
+      "impact": "同一请求在同一父分支、同一位置 fork 出的两个独立样本或两个不同候选得到完全相同的 b；即使两个样本选择了相同 token，它们仍可能需要独立 RNG 和输出。当前定义会把合法兄弟分支判成重复原子，或合并它们的 KV、grammar、随机状态和结果。",
+      "blocking": true,
+      "required_revision": "为每个分支实例增加稳定且能区分兄弟的 branch_id 或分叉序号，把父分支与分叉位置作为关系字段；统一原子键、去重键、结果归属及分支重排说明。用同父同位置的两个分支验证身份不同，且允许不同样本具有相同 token 内容。"
+    },
+    {
+      "id": "K-SYS-002-F02",
+      "criterion": "algorithm",
+      "evidence": "算法 2 仅检查“a.attempt ≠ current_attempt(a.r)、a.epoch ≠ current_epoch(a.slot)”及取消/失败状态，随后执行“对每个请求按逻辑键原子提交”和“释放本视图引用”。所定义原子为“(r,b,g,p,model_revision,adapter_revision,processor_revision,output_ordinal)”，其中没有 slot、epoch。脚本 accept_result 在检查通过后直接执行“state.output.append(result['value'])”。",
+      "impact": "同一有效完成通知在尝试和槽生命期未改变时重复到达，仍能通过现有条件，再次推进输出、RNG 或释放引用。原子提交只能避免一次更新内部的部分提交，不能防止重放。缺少明确的执行记录也使槽凭据的实际读取来源不完整。",
+      "blocking": true,
+      "required_revision": "在不可变视图或执行记录中明确保存请求生命期、分支、尝试、槽及 epoch，并以唯一视图/提交记录维护首次完成、业务已提交和引用已释放状态。原子地判定并消费提交权；重复完成不得再次提交或释放，独立消费者仍按各自最后使用证据清理。补充有效通知重复到达的检查，确认输出和资源账均只变化一次。"
+    },
+    {
+      "id": "K-SYS-002-F03",
+      "criterion": "diagnosis",
+      "evidence": "verify_view 的独立覆盖比较是“expected = Counter(atom_key(a) for a in atoms)”与实际键集合；字段检查则是“for i, atom in enumerate(view.row_atoms)”下的“if view.param_by_row[i] != atom.param”，model、adapter 同样如此，采样 attempt 也与该 row_atoms 比较。",
+      "impact": "独立参考只覆盖 request/branch/pos 和采样目标键集合。若构造器把 row_atoms 的 param 错误地增加 100，并据这些错误原子同时生成参数数组和采样目标，所有内部比较仍一致，原始 atoms 中的正确参数不会参与字段比较。现有负对照只破坏参数数组，因而能被检测，但没有排除整个视图一致地绑定错误参数的情况。",
+      "blocking": true,
+      "required_revision": "用原始 atoms 或独立请求账按逻辑键建立权威记录，逐行核对完整身份、attempt、参数、版本和采样资格；再据权威记录校验采样目标。保留当前负对照，并增加 row_atoms 与派生数组一致地携带错误参数的负对照，要求其被独立参考拒绝。"
+    }
+  ],
+  "limitations": [
+    "所给 CPU 检查不验证 GPU 内存可见性、全层实际写入完成、DMA/通信排空、真实网络消费者或实际引擎正确性；这些边界已明确声明，可以保留。",
+    "没有目标设备性能、真实请求 trace 或 Agent 使用效果证据，成本结论仅限正文中的条件化推导。",
+    "S-VLLM-SCHED 仅提供来源说明，没有暴露上游源码归档；没有独立核验其固定提交的实现。",
+    "docs/knowledge-build-workflow.md 未随材料提供，当前工具也没有可用文件读取接口；本次采用用户明确给出的 review JSON schema，未宣称已读取该 workflow。"
+  ],
+  "checks": [
+    {
+      "script": "tools/check_k_sys_002_full.py",
+      "args": []
+    }
+  ],
+  "no_checks_reason": "",
+  "reading_scope": "完整阅读用户所给候选正文、test_script、author_notes 和 actual_preflight。完整材料范围均为提取文本的零基半开字符区间：AGENTS.md [0,567)；docs/knowledge-method.md [0,2251)；docs/knowledge-review.md [0,3016)；knowledge/system-semantics/request-batch-identity.md [0,10459)；knowledge/sources/S-ORCA.md [0,1394)；knowledge/sources/S-VLLM-SCHED.md [0,760)；knowledge/sources/S-OTEL.md [0,520)；knowledge/algorithms/batched-sampling.md [0,2567)；knowledge/algorithms/branch-generation.md [0,3670)；knowledge/workloads/session-workloads.md [0,3583)；knowledge/system-semantics/model-lifecycle.md [0,3556)；knowledge/system-semantics/serving-recovery.md [0,3834)；knowledge/system-semantics/tenant-isolation.md [0,4131)；knowledge/algorithms/routing-and-migration.md [0,3228)；knowledge/engine-index/vllm-model-runner.md [0,2207)；knowledge/tools/correctness-oracles.md [0,5245)；references/S-ORCA/fulltext.txt 所供完整提取文本 [0,90276)；references/S-OTEL/fulltext.txt [0,8256)。tools/check_k_sys_002_full.py 阅读范围为所给完整 test_script，从 import json 至 main() 入口。仅阅读摘录：knowledge/algorithms/iteration-batching.md [0,5867)、[12000,12671)；knowledge/algorithms/async-scheduling.md [0,4598)、[12000,13940)；knowledge/system-semantics/service-protocol.md [0,6538)；knowledge/system-semantics/host-runtime.md [0,2979)、[4000,7559)。这些摘录未列入 documents，也不代表阅读完整文件。未读取原 PDF、reader.html、未提供区间或源码归档。哈希沿用用户提供的绑定值，未在本次环境重新计算。",
+  "test_assessment": "已逐函数检查所给脚本，并审阅真实预检记录：脚本哈希匹配绑定值，remote_bwrap 中 Python 3.12 以 -I -S -B 执行，returncode=0、stderr 为空、未超时；输出确认参数未重排的负对照被 param mismatch 拒绝。该记录证明这次合成 CPU 检查实际运行成功；作者备注中的“本轮未在该环境实际执行”不能替代这份外部执行记录，也不构成作者亲自执行的证明。本 reviewer 没有可用 Python/命令执行工具，未新增运行。独立参考有效覆盖逻辑键多重集合、行数、逆映射和采样目标键集合；现有边界覆盖空视图、单原子、重复位置、q=0、分支重排、压紧，以及取消、旧 epoch、旧 attempt 的拒绝。参数数组负对照确实针对本章字段重排机制，具有辨别力，但完整字段参考仍有 F03 的自引用缺口。按代码逐项推演，把原始 atoms 的 param 全部增加 100，使用这些错误原子构造视图，再调用 verify_view(原始 atoms, 错误视图)，现有函数会返回空错误列表；这属于静态反例，未实际执行。accept_result 对同一有效结果调用两次也没有去重门，第二次仍会 append；当前检查没有覆盖这一轨迹。脚本没有模拟请求生命期重用、真实兄弟分支身份生成、共同状态提交、引用最后使用或重复完成后的资源守恒，因此 PASS 不能关闭上述 blocking findings。"
+}

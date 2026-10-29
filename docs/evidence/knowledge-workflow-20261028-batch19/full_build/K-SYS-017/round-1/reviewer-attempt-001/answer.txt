@@ -1,0 +1,145 @@
+{
+  "entry_id": "K-SYS-017",
+  "body_sha256": "d2bb3bab95ff1500d97853125c93c7e3fcb71a09b2ca6f6b4806a58e5ec051a1",
+  "reviewer": "sol-reviewer:K-SYS-017:round-1",
+  "decision": "revise",
+  "documents": {
+    "AGENTS.md": "b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a",
+    "docs/knowledge-method.md": "69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb",
+    "docs/knowledge-review.md": "f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21",
+    "knowledge/system-semantics/retrieval-pipeline.md": "d2bb3bab95ff1500d97853125c93c7e3fcb71a09b2ca6f6b4806a58e5ec051a1",
+    "knowledge/sources/S-FAISS.md": "489ade1bcdeff58bb9d127906459c2744c325776a499fe74fcb71c6a695856e9",
+    "knowledge/sources/S-CACHEBLEND.md": "a26ac906120e992b088b3b7fa8af855c0d1cb1684af65d3b3a363fd096f79574",
+    "knowledge/sources/S-BERT.md": "d473455fadc6c189eb073c7b5a365e9e6b009508f6b7f7f67e4d153859cb57bc",
+    "knowledge/algorithms/context-reuse.md": "0485c8784053c34a28ad3a3b626e3b86c3b1f6faf0e6e6ab86503c86893c6395",
+    "references/S-FAISS/fulltext.txt": "3edbb8a664dc83428e65859b9745f7c248ca4fccbdd2da6cc9382ded51550c12",
+    "references/S-CACHEBLEND/fulltext.txt": "2a2bded792aec6883f3e3b4d81132f44d84a8c16e05f1b656896edceac598421",
+    "references/S-BERT/fulltext.txt": "51466f36c8fe55e9f6ecc95fd753f8034106bbd435fb6d75fe16812a3e62ec8e",
+    "tools/check_k_sys_017_full.py": "2697efd951ea7625b849f9b2b398772eacbb9829aa759f1aa8231926bdf0ea0a"
+  },
+  "criteria": {
+    "definition": {
+      "assessment": "sufficient",
+      "reason": "明确区分编码相关性、近邻准确率与回答质量，定义编码身份、合法候选集合、距离方向、排序和版本依赖。内积与余弦反例及单位向量恒等式正确。",
+      "evidence": [
+        {
+          "path": "knowledge/system-semantics/retrieval-pipeline.md",
+          "quote": "维度相同只说明张量能相乘，不证明两个坐标空间相容。"
+        },
+        {
+          "path": "knowledge/system-semantics/retrieval-pipeline.md",
+          "quote": "对查询 q、索引版本 V 和主体/租户 u，合法候选集记为 C_V(u,q)。"
+        }
+      ]
+    },
+    "legality": {
+      "assessment": "partial",
+      "reason": "发布完整性、快照保护、权限撤销及精确分片合并的条件清楚；但删除优先与更新版本优先没有确定适用顺序，正文和检查脚本实际采用的规则不能保证一致。",
+      "evidence": [
+        {
+          "path": "knowledge/system-semantics/retrieval-pipeline.md",
+          "quote": "若业务要求权限撤销立即生效，则固定旧索引仍不足以授权返回旧材料，必须在返回前核对当前权威过滤状态。"
+        },
+        {
+          "path": "knowledge/system-semantics/retrieval-pipeline.md",
+          "quote": "按 ID 合并：删除优先于未删除；同 ID 取更新版本；同版本冲突报告错误。"
+        }
+      ]
+    },
+    "algorithm": {
+      "assessment": "partial",
+      "reason": "Flat、发布、快照及检索到生成的主要数据流可追踪，非前缀 KV 的多层细节也有完整的关联章节承接。但主索引与 delta 分别截取候选后才处理版本覆盖，缺少防止失效旧版本占用候选配额的步骤，可能漏掉当前快照真正的最佳结果。",
+      "evidence": [
+        {
+          "path": "knowledge/system-semantics/retrieval-pipeline.md",
+          "quote": "若有 delta 索引，分别搜索后按 ID 去重、删除语义和版本优先级合并，再取全局 top-k。"
+        },
+        {
+          "path": "knowledge/system-semantics/retrieval-pipeline.md",
+          "quote": "对所有存活记录按 (score,id) 全序排序，取前 k。"
+        }
+      ]
+    },
+    "cost": {
+      "assessment": "sufficient",
+      "reason": "覆盖六类成本，明确串行与重叠条件，区分压缩容量与额外原向量副本。独立复算得到 Flat 主体 3072000000 字节、列出的 IVF/PQ 主体合计 117369344 字节、均匀扫描账 8002.25 与 11908.5，以及串行时序 142/152 ms，均与设定一致。距离比较次数只能作为逻辑工作量，不能把粗中心距离与 PQ 查表当作等成本运行时间。",
+      "evidence": [
+        {
+          "path": "knowledge/system-semantics/retrieval-pipeline.md",
+          "quote": "各阶段只有在依赖允许且资源不冲突时才能重叠；串行阶段必须相加，共享带宽或算力不能把全部耗时简单取最大值。"
+        },
+        {
+          "path": "knowledge/system-semantics/retrieval-pipeline.md",
+          "quote": "合计 117,369,344 字节，尚未含列表结构、变换、过滤、工作区与高精度精排副本。"
+        }
+      ]
+    },
+    "adaptation": {
+      "assessment": "sufficient",
+      "reason": "随规模、过滤选择性、批量、更新频率和质量要求改变，说明保留的合同与重新选择依据；没有把 GPU、增加候选或 KV 复用写成无条件收益。CacheBlend 的近似边界与固定来源一致。",
+      "evidence": [
+        {
+          "path": "knowledge/system-semantics/retrieval-pipeline.md",
+          "quote": "高复用稳定库可以承担较重索引构建；频繁更新、小库或严格 recall 可能让 Flat、简单增量或不可变快照更合适。"
+        },
+        {
+          "path": "knowledge/system-semantics/retrieval-pipeline.md",
+          "quote": "文档向量可独立缓存，不传递为 decoder KV 可独立组合。"
+        }
+      ]
+    },
+    "diagnosis": {
+      "assessment": "sufficient",
+      "reason": "提供过滤、分片、版本、质量与阶段时延的竞争解释和受控对照，要求负对照实际改变观察值。现有检查确实能揭示其构造的后过滤、局部预算和提前 GC 错误；这些结果不能关闭本次发现的版本覆盖组合缺陷。",
+      "evidence": [
+        {
+          "path": "knowledge/system-semantics/retrieval-pipeline.md",
+          "quote": "先固定精确合法近邻，再固定 shortlist 比较重排，最后单列端到端答案"
+        },
+        {
+          "path": "knowledge/system-semantics/retrieval-pipeline.md",
+          "quote": "负对照必须真的改变被观察量。"
+        }
+      ]
+    }
+  },
+  "findings": [
+    {
+      "id": "K-SYS-017-R1-001",
+      "criterion": "algorithm",
+      "evidence": "SearchIVF 写道：“若有 delta 索引，分别搜索后按 ID 去重、删除语义和版本优先级合并，再取全局 top-k。”MergeShardResults 随后才“按 ID 合并”并取前 k。没有规定旧版本在各路 top-k 截断前已失效，也没有候选耗尽后的补取步骤。",
+      "impact": "即使两路都精确搜索，仍可能错误。设内积查询 q=(1)，k=1，主索引含 a@v1=(1.0)、b@v1=(0.9)，delta 含 a@v2=(0.1)。两路 top-1 都返回 a；合并保留新版 a 后返回分数 0.1，而当前有效集合的正确 top-1 是 b，分数 0.9。后续重排无法恢复未进入候选的 b。若删除 a，类似路径也会错误返回空集合。",
+      "blocking": true,
+      "required_revision": "明确在每路选择前使用权威可见版本表排除被更新或删除的记录，使 top-k 对当前有效记录计算；或给出能够继续读取候选并保证相应结果合同的补取算法。说明跨路记录身份与逻辑 ID 的关系。检查中加入上述降分更新和删除轨迹，以先解析全部记录的可见版本、再全量精确排序为独立参考，并让当前先截断后覆盖的负对照实际被检出。"
+    },
+    {
+      "id": "K-SYS-017-R1-002",
+      "criterion": "legality",
+      "evidence": "正文规定：“按 ID 合并：删除优先于未删除；同 ID 取更新版本；同版本冲突报告错误。”脚本 check_tombstone 则只按更大的 ver 替换已有记录，最后检查最新记录的 tomb 标志。",
+      "impact": "旧删除记录与较新存活记录并存时，正文的无条件删除优先可能要求删除，脚本却保留较新存活记录。该状态究竟是合法重新加入、必须拒绝的非法复活，还是永久删除，当前合同没有说明。现有测试仅覆盖新删除覆盖旧存活，无法区分两套规则，也没有检查正文承诺的同版本冲突。",
+      "blocking": true,
+      "required_revision": "确定版本与删除的比较顺序。例如先选快照内最新版本，再由该版本的删除状态决定是否存活，同版本载荷或删除状态冲突则报错；若选择永久删除，明确禁止重新加入并在检查中拒绝该输入。让伪代码和检查使用同一合同，覆盖旧删除/新存活及同版本冲突，并保留违反所选规则的可检出负对照。"
+    }
+  ],
+  "limitations": [
+    "本次仅核验提供的文本与执行记录，没有重新计算文件字节哈希；documents 中的身份值按要求原样绑定。",
+    "作者明确声明未自行执行脚本；提供的 actual_preflight 是协调者远端隔离执行记录。本审阅未新增执行，不把作者未执行的检查记为作者 PASS。",
+    "确定性 CPU 检查不证明真实 ANN recall、模型或材料质量、设备性能、服务并发、持久化、物理访问完成或 Agent 使用效果；正文对此声明清楚，可保留这些边界。",
+    "未读取上游源码、动态文档或新增 PDF 视觉证据。相对链接的文本目标与所供材料对应，但未独立执行文件存在性或 reader.html 渲染检查。"
+  ],
+  "checks": [
+    {
+      "script": "tools/check_k_sys_017_full.py",
+      "args": [],
+      "execution_source": "supplied actual_preflight",
+      "script_sha256": "2697efd951ea7625b849f9b2b398772eacbb9829aa759f1aa8231926bdf0ea0a",
+      "backend": "remote_bwrap",
+      "returncode": 0,
+      "observed_result": "提供的记录显示脚本正常结束、stderr 为空，输出包含过滤、分片预算和 naive GC 负对照检测。该执行结果仅支持脚本实际断言覆盖的有限输入，不证明正文全部算法正确。",
+      "reviewer_rerun": false
+    }
+  ],
+  "no_checks_reason": "",
+  "reading_scope": "审阅完整阅读所供 AGENTS.md [0,567)、docs/knowledge-method.md [0,2251)、docs/knowledge-review.md [0,3016)、当前候选 retrieval-pipeline.md [0,9454)、S-FAISS.md [0,601)、S-CACHEBLEND.md [0,627)、S-BERT.md [0,583)、context-reuse.md [0,11060)，以及所供三篇标为 full 的提取原文：S-FAISS [0,102262)、S-CACHEBLEND [0,71699)、S-BERT [0,55144)。完整阅读候选 test_script、author_notes 和 actual_preflight 执行记录。关联章节仅阅读所供摘录：embedding-reranking.md [0,12142)；storage-services.md [0,9776)、[12000,14366)；storage-io.md [0,8000)、[12000,16142)；slo-goodput.md [0,12142)；statistical-experiments.md [0,12142)；design-synthesis.md [0,844)、[8000,19298)。摘录文件未列入 documents。作者材料账与审阅范围分开解释：作者账记录三篇原文及 context-reuse 为 full，关联章节为相应摘录；其 retrieval-pipeline.md 的 bd094605… 是作者收到的旧正文，不能与本次 d2bb3bab… 候选混为同一版本。材料供应记录不证明作者实际认知阅读程度。",
+  "test_assessment": "已逐函数检查脚本与真实执行输出。过滤检查用明确的手算合法 top-1 和单位向量恒等式，后过滤负对照实际得到空集合；分片检查比较全库排序与各片排序后合并，局部预算 1 的错误实际产生不同结果；快照检查以被保护版本仍可读取为不变量，naive_gc 实际造成 KeyError。这些负对照具有机制上的区分力，不能整体判作纯打印或恒真检查。容量和时序属于固定算术核对，IVF 检查没有执行真实倒排检索，PQ 检查没有执行编码或查表距离。topk_exact 是排序参考，没有另行实现正文堆路径；脚本没有覆盖完整发布状态机、并发打开快照、权限撤销、分片失败或完整 MergeShardResults。现有 tombstone 检查只验证较新删除覆盖旧存活，不验证旧删除遇到新存活、同版本冲突，也不把版本解析与各路候选截断组合起来，因此不能检测 findings 中的缺陷。未实际覆盖 k=0、负 k 拒绝、同分决胜和空合法集合等分支，不能宣称这些边界已测试。作者关于未执行及设备边界的说明诚实，但其“完整”合并算法判断需要按上述反例修正。"
+}

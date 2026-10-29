@@ -1,0 +1,148 @@
+{
+  "entry_id": "K-SYS-003",
+  "body_sha256": "6b67a872fa27f0103230c6d43975ae5bab20597d4618fbb4513cc6df6527a4e8",
+  "reviewer": "sol-reviewer:K-SYS-003:round-2",
+  "decision": "accept",
+  "documents": {
+    "AGENTS.md": "b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a",
+    "docs/knowledge-method.md": "69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb",
+    "docs/knowledge-review.md": "f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21",
+    "knowledge/system-semantics/position-mask-cache.md": "6b67a872fa27f0103230c6d43975ae5bab20597d4618fbb4513cc6df6527a4e8",
+    "knowledge/sources/S-HF-CACHE.md": "1a4afcf0d800ba3f42836445874d620ae9f7ba8ab4c361caa505376cc471595c",
+    "knowledge/sources/S-TRANSFORMER.md": "e1858681f1645209756f7eb640dcdfe3a786f5af3e529fb61bce6de0212a82d7",
+    "knowledge/sources/S-SDPA.md": "f209595c61cf92d30cf44312522d64ac6585ed259653722dae2874b61b170d77",
+    "knowledge/sources/S-FA-IMPL.md": "8f68d299f331833caeea6f0ca366e0dbd2559744f50f546bd089a2dbc8079ad6",
+    "knowledge/sources/S-ROPE.md": "4aa6355e80fda16b405b8eab355e3a0efd1e8afa10de5e81431839391b77232a",
+    "knowledge/sources/S-KIVI.md": "79161876fab16fe335430a8d38d01de97bb0e17bee0cb9d29c6ba2dfa598998e",
+    "knowledge/frameworks/checkpoint-loading.md": "5205ab97f77cdb821e5a0c3f6685a99cfc12ccc8474f96c6de82375372cb59bf",
+    "knowledge/algorithms/kv-compression.md": "b106cc93bcd9d5acfce5e7766eb25f5c1fbd4ba7844dd1fe6454fc08cc1d99f4",
+    "knowledge/system-semantics/distributed-state-transfer.md": "425985efff21e4acbe091ddfa9043cf97b37e550b606f10c0e1560a3c02b1f6f",
+    "knowledge/algorithms/speculation-budget.md": "91a6e60d5151fb5b1155d2ba0ddcb3ba1251e69f7caf79b0ec217c7bf9a74d0d",
+    "knowledge/frameworks/inference-eval.md": "9381e25cf021f5338aef4311ba5c95ca2255fead917335c292b79347acf6b4b9",
+    "knowledge/tools/correctness-oracles.md": "c2f88bc9746ac25586fc6700aaf0f5a8d043a1b1f4aee99dfdee02e1ef468aab",
+    "references/S-HF-CACHE/fulltext.txt": "373837b8ac246d43867eb21de168cc59e5e6e78f5f3b9c27bee54740c4a635b4",
+    "references/S-TRANSFORMER/fulltext.txt": "7bae85f4505c924b16d6c601c744b9665f245a20ea84258aa86bb51036a16805",
+    "references/S-FA-IMPL/fulltext.txt": "64ac6b9a0dd03fcf4c75426b81f879f53dadf066e12277691d9764f8b58a8dbc",
+    "references/S-ROPE/fulltext.txt": "0f7582a0829c2b689e18b8c7f95f03d12135d5de46e526f4f321c13948bd806c",
+    "references/S-KIVI/fulltext.txt": "399fb46e139f4cda57cbcd18c7b75fb1ddeb7dd6957d4a059efe8e40081438f3",
+    "tools/check_k_sys_003_full.py": "174bc78614a0fabfbfb1b6d39e7549b5381c7eac7d03a4b08ec85fb1ed3d10f1"
+  },
+  "criteria": {
+    "definition": {
+      "assessment": "sufficient",
+      "reason": "明确了缓存、可见性与物理布局必须共同实现同一函数的动机；分别定义逻辑位置、编码坐标、局部行列、有效性、层映射、已知输入和已提交状态。稳定 softmax、head 映射、输入输出及空行约定足以核对数学对象。",
+      "evidence": [
+        {
+          "path": "knowledge/system-semantics/position-mask-cache.md",
+          "quote": "缓存中的内容必须对应模型定义的逻辑位置；mask 决定读取集合，物理布局决定这些内容放在哪里。"
+        },
+        {
+          "path": "knowledge/system-semantics/position-mask-cache.md",
+          "quote": "高层 KV 来源于该层输入；不能从原始 token 一次生成所有层 KV。"
+        }
+      ]
+    },
+    "legality": {
+      "assessment": "sufficient",
+      "reason": "从绝对逻辑集合推导非方形对齐，明确连续有效区间与共同终点前提；正确区分 padding、RoPE 坐标和槽号，限制表示转换的等价域。SDPA 与 FlashAttention 的差异符合所供固定来源，HF 文档乘 mask 的示意得到明确纠正。",
+      "evidence": [
+        {
+          "path": "knowledge/system-semantics/position-mask-cache.md",
+          "quote": "右下对齐的合法性来自共同终点，不能仅由 L≠S 推断。"
+        },
+        {
+          "path": "knowledge/system-semantics/position-mask-cache.md",
+          "quote": "这个局部恒等式不证明整个多层模型缓存可复用：修改位置规则可能已经改变前层 attention 和高层未旋转 K/V。"
+        }
+      ]
+    },
+    "algorithm": {
+      "assessment": "sufficient",
+      "reason": "逐层 staging 算法交代确认输入、旧对象保护、容量预留、Q/K/V 产生、合法集合归约、下一层输入、共同发布及失败排空。raw/rotated 的消费规则由前节补足；分页地址、非整页 COW 和 ring 提前覆盖轨迹可具体复算。末行恢复没有把可用长度误当成下一 token 已存在。",
+      "evidence": [
+        {
+          "path": "knowledge/system-semantics/position-mask-cache.md",
+          "quote": "X ← 本层完整输出，作为下一层输入"
+        },
+        {
+          "path": "knowledge/system-semantics/position-mask-cache.md",
+          "quote": "在同一提交点重新核对请求代次，发布全部必要层视图与 c←c+q"
+        },
+        {
+          "path": "knowledge/system-semantics/position-mask-cache.md",
+          "quote": "若 A=c 且没有可用 logits，位置 c 的 token 尚不存在，不能安排一个零输入的 decode 来解决。"
+        },
+        {
+          "path": "knowledge/system-semantics/position-mask-cache.md",
+          "quote": "P₂ 也不能在迟到写入结束前分配给其他请求。"
+        }
+      ]
+    },
+    "cost": {
+      "assessment": "sufficient",
+      "reason": "区分每层有效对数与 FLOP、全层 KV 内容字节、条件化扫描请求量、真实事务、物理容量和关键路径；六类成本及 staging、COW、共享页和量化组的附加成本均有说明。独立复算得到 13 对、212992 FLOP/层、131072 B/token、524288 B/page 和 524288 B 的示例内容流量，与正文一致。",
+      "evidence": [
+        {
+          "path": "knowledge/system-semantics/position-mask-cache.md",
+          "quote": "Ctok=Nℓ·Hkv·(dₖbK+dᵥbV)。"
+        },
+        {
+          "path": "knowledge/system-semantics/position-mask-cache.md",
+          "quote": "它们是给定数据流的逻辑请求字节，不是 DRAM 事务实测。"
+        },
+        {
+          "path": "knowledge/system-semantics/position-mask-cache.md",
+          "quote": "同一共享页计一次，预留额度不再与其中已物化页面重复相加。"
+        }
+      ]
+    },
+    "adaptation": {
+      "assessment": "sufficient",
+      "reason": "条件变化表明确指出哪些内容依赖仍成立、哪些映射和表示需要重建，以及历史丢失、模型变更或近似保留时何时放弃原结论；结合短历史准备成本、重复旋转和迁移格式解释方案选择可能反转的原因。",
+      "evidence": [
+        {
+          "path": "knowledge/system-semantics/position-mask-cache.md",
+          "quote": "已覆盖历史无法靠改长度恢复，应重算或取回副本"
+        },
+        {
+          "path": "knowledge/system-semantics/position-mask-cache.md",
+          "quote": "未旋转 K 若被多步重复旋转可能不合算；旋转后缓存若带来迁移格式不兼容，也可能使整体成本反转。"
+        }
+      ]
+    },
+    "diagnosis": {
+      "assessment": "sufficient",
+      "reason": "诊断表为增量、padding、窗口覆盖、COW、表示迁移及取消分别列出竞争解释和可区分干预。检查器具有独立的逻辑扫描及相对角参考，负对照实际修改被测执行路径；提供的真实执行记录支持其声明的单层 CPU 范围，没有被扩大成设备协议或性能证明。",
+      "evidence": [
+        {
+          "path": "knowledge/system-semantics/position-mask-cache.md",
+          "quote": "两个集合可以大小相等但成员不同"
+        },
+        {
+          "path": "knowledge/system-semantics/position-mask-cache.md",
+          "quote": "独立参考直接扫描逻辑序列，用上文相对旋转内积公式计算整行 softmax，不读取被测页表，也不调用被测旋转函数。"
+        },
+        {
+          "path": "knowledge/system-semantics/position-mask-cache.md",
+          "quote": "需要真实平台验证物理可见性，CPU 次序模型不足以证明设备协议"
+        }
+      ]
+    }
+  },
+  "findings": [],
+  "limitations": [
+    "检查模型限单层、单 query/KV head、四通道全旋转和三通道 V；不验证完整 Transformer、多层共同提交、末行 logits 恢复、真实量化、异步回收、GPU 可见性、性能或 Agent 使用效果。正文已声明这些边界。",
+    "SDPA 仅核对所供完整来源说明，未提供可读原始文档；五份其他原文按完整提取文本审阅，未进行 PDF 或图片视觉核验，未读取上游源码。",
+    "Python 结果来自用户提供的 actual_preflight 执行记录，本审阅未重新运行 Python。作者所述未执行 Python 与其作者侧验证范围一致；协调者后续执行应单独记账。",
+    "当前工具未提供本地文件读取或命令执行入口，技能文件未能读取；文件哈希使用任务给定绑定，未重新计算，也未核验磁盘产物及全部离线链接的实际存在性。"
+  ],
+  "checks": [
+    {
+      "script": "tools/check_k_sys_003_full.py",
+      "args": []
+    }
+  ],
+  "no_checks_reason": "",
+  "reading_scope": "完整阅读任务内所供文本，未声称读取未提供内容。全文范围采用零基、半开提取字符区间：AGENTS.md [0,567)；docs/knowledge-method.md [0,2251)；docs/knowledge-review.md [0,3016)；knowledge/system-semantics/position-mask-cache.md [0,13359)；knowledge/sources/S-HF-CACHE.md [0,827)；S-TRANSFORMER.md [0,550)；S-SDPA.md [0,1619)；S-FA-IMPL.md [0,1318)；S-ROPE.md [0,683)；S-KIVI.md [0,713)。完整相关章：knowledge/frameworks/checkpoint-loading.md [0,3354)；knowledge/algorithms/kv-compression.md [0,5839)；knowledge/system-semantics/distributed-state-transfer.md [0,3216)；knowledge/algorithms/speculation-budget.md [0,3904)；knowledge/frameworks/inference-eval.md [0,3779)；knowledge/tools/correctness-oracles.md [0,5245)。完整原文提取文件：references/S-HF-CACHE/fulltext.txt [0,7977)；references/S-TRANSFORMER/fulltext.txt [0,39757)；references/S-FA-IMPL/fulltext.txt [0,24478)；references/S-ROPE/fulltext.txt [0,30520)；references/S-KIVI/fulltext.txt [0,44977)。另完整阅读 candidate.test_script、author_notes 及 actual_preflight 的执行与输出记录。仅阅读的相关章摘录为：knowledge/algorithms/chunked-prefill.md [0,4000)、[8000,10031)、[12000,13696)；knowledge/models/sliding-window-attention.md [0,3846)、[12000,15881)；knowledge/frameworks/attention-backends.md [0,4000)、[16000,19727)；knowledge/algorithms/heterogeneous-state-cache.md [0,3727)、[8000,12000)；knowledge/algorithms/cross-attention-cache.md [0,3727)、[12000,16000)。这些摘录文件未列入 documents。未读取 source-reading.json、catalog 或 sources 的全文，给出的摘要和哈希不构成全文阅读。",
+  "test_assessment": "独立检查了完整 Python 代码及所供真实执行记录。reference 从完整逻辑 token 序列直接枚举因果/窗口成员，采用相对角三角展开计算分数；它不调用 rotate、Store、页表或被测 mask。共用 qkv 仅用于定义固定原始输入，因此对位置变换、存储定位和可见性具有所需独立性，不代表真实模型投影验证。被测路径实际维护页池、物理槽、位置/坐标/身份标签、raw/rotated 表示、ring、冻结页 COW 与物理重排；COW 从旧物理尾页复制有效槽，随后用后续 attention 消费，没有通过全量逻辑重打包补齐复制遗漏。正向覆盖空新增、首行、非方形块、多种切分、偏移及非单调坐标、padding 和无效容量、W=1、q>W、跨页与分叉后继续。upper_left、multiply_zero、ignore_valid、double_rotate、block_reset、slot_coord、future、duplicate_self 实际改变执行并由独立输出比较拒绝；early_ring 先真实覆盖旧槽，再由读取标签不变量拒绝，确实检验块内覆盖机制。另有 logical、coord、identity 三类破坏的读取拒绝。expect_rejected 捕获 AssertionError/ValueError，未细分异常原因，但当前具体注入与检查顺序可定位到相应机制。所供 remote_bwrap 记录绑定脚本哈希 174bc78614a0fabfbfb1b6d39e7549b5381c7eac7d03a4b08ec85fb1ed3d10f1，returncode=0、stderr 为空、未超时；报告 2688 条路径、14688 行参考比较、2 个 COW/重排案例及 12 个被检出负对照。本审阅另外实际执行 JavaScript 算术复核：由循环组合独立计算出 2688 和 14688，并核对正文的 KV、COW、FLOP 和 mask 元素算例；这不是 Python 重跑。非方形集合常量和等分数均值属于辅助算例，整体检查的辨别力来自独立数值参考及实际存储/负对照执行。未覆盖多头映射、部分旋转、多层事务、失败与取消时序、量化误差及设备执行，接受仅限声明范围。上一轮严格 JSON 失败不提供任何语义或测试通过证据；本轮提供了可解析候选对象及独立绑定的执行记录，未发现需要延续的当前阻塞问题，但未检查旧失败目录的磁盘修复状态。"
+}

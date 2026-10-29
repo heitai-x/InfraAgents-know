@@ -1,0 +1,150 @@
+{
+  "entry_id": "K-ALG-010",
+  "body_sha256": "9bf5802ad24d06fcea9a327ea73bce8a03d75b82fe330cbf3ab20a87ca04b7f7",
+  "reviewer": "sol-reviewer:K-ALG-010:round-3",
+  "decision": "accept",
+  "documents": {
+    "AGENTS.md": "b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a",
+    "docs/knowledge-method.md": "69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb",
+    "docs/knowledge-review.md": "f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21",
+    "knowledge/algorithms/cross-attention-cache.md": "9bf5802ad24d06fcea9a327ea73bce8a03d75b82fe330cbf3ab20a87ca04b7f7",
+    "knowledge/sources/S-TRANSFORMER.md": "e1858681f1645209756f7eb640dcdfe3a786f5af3e529fb61bce6de0212a82d7",
+    "knowledge/sources/S-WHISPER.md": "3983e829fbc2948712af3a9aab931917271565753f83cb0e89f1cfad2a4b36e1",
+    "knowledge/sources/S-FI.md": "bc0a19124be4e05621f93ff9c2f35ed8cccfee0465383f4df1671e1dcec9bfc9",
+    "knowledge/models/vision-language.md": "5ce873c82e975be23aedfebbdeeda5acc0cf55d35b51ef24f744af9d174fe55c",
+    "knowledge/algorithms/tiered-residency.md": "eb3ebc6320d5a32481cf645605d159860dc6d1edb97f1e98afd89ddb24ee82af",
+    "knowledge/algorithms/kv-offload-prefetch.md": "a7088eba5c78cd9e96cf011d61946ad7dec4ecb6378ac16e7f2fc3820af38301",
+    "knowledge/system-semantics/serving-recovery.md": "f551fa1f1e6213469c856a880839eefff504fb39f4dd692000b2df80a20a7f5e",
+    "knowledge/system-semantics/memory-allocators.md": "2e7258787b94ad142c7c236541e8718803ad30b273d08e6c398dff673a1df838",
+    "knowledge/system-semantics/position-mask-cache.md": "91641b10a52209747af8d9fa83f822bedb01c583cede42a58550ad87ffe14ad6",
+    "references/S-TRANSFORMER/fulltext.txt": "7bae85f4505c924b16d6c601c744b9665f245a20ea84258aa86bb51036a16805",
+    "references/S-WHISPER/fulltext.txt": "74d3fc9a7877dd5ff86ac147cb73f4a88d9443aec76f79f12fed602d351eb7de",
+    "tools/check_k_alg_010_full.py": "f9c254f404903b5c58fc9a529c707282af14a609ae352915fd23beb2ac960fa9"
+  },
+  "criteria": {
+    "definition": {
+      "assessment": "sufficient",
+      "reason": "动机与优化范围明确；区分投影前隐藏状态、query、逐 head 输出、拼接和最终输出，定义有效源集合、逻辑位置、请求绑定及执行代次。独立核对形状与数学公式相容；Transformer §3.2.1–3.2.3 支持其 attention 与输出投影定义。",
+      "evidence": [
+        {
+          "path": "knowledge/algorithms/cross-attention-cache.md",
+          "quote": "缓存消除重复源投影；每次调用的 query 投影、QKᵀ、softmax、PV 和输出投影仍然存在。"
+        },
+        {
+          "path": "knowledge/algorithms/cross-attention-cache.md",
+          "quote": "逐 head 输出 U_t 的形状为 n_q×H_q×d_v。按规定 head 顺序拼接得到 Z_t∈R^{n_q×(H_q d_v)}。"
+        }
+      ]
+    },
+    "legality": {
+      "assessment": "sufficient",
+      "reason": "固定复用依赖闭包、稳定追加证明、量化解释及目标状态继续条件均有实质限定。前驱索引与完整身份分离，请求期望身份来自独立 SourceView；不可变页是明确的方案选择。Whisper 窗口推进没有被误归为任意流式追加能力，S-FI 的实现范围也未被扩大。",
+      "evidence": [
+        {
+          "path": "knowledge/algorithms/cross-attention-cache.md",
+          "quote": "可以逐行比较规范化 E，或使用源生产者提供的、绑定这两个完整快照的不可变前缀证明。"
+        },
+        {
+          "path": "knowledge/algorithms/cross-attention-cache.md",
+          "quote": "本章下面的直接复制追加路径只处理旧编码与解释均稳定的情况。"
+        },
+        {
+          "path": "knowledge/algorithms/cross-attention-cache.md",
+          "quote": "调度器从这个 SourceView 构造读取快照，不从传入的缓存对象反向生成期望身份。"
+        }
+      ]
+    },
+    "algorithm": {
+      "assessment": "sufficient",
+      "reason": "构建算法贯通逐层预留、共享完整页、隔离尾页、复制旧有效槽及解释元数据、新增投影、一致发布和失败清理。读取算法给出身份门控、页表取址、恢复尺度、在线归约和最终输出。取消明确等待物理最后使用；模块读取不冒充目标状态推进，外层逐层关系可由所链 encoder-decoder 章节的已供摘录核对。K-ALG-010-R2-001 的缺失生产者已补齐，物理页模型也实际检测省略复制，原阻塞问题关闭。",
+      "evidence": [
+        {
+          "path": "knowledge/algorithms/cross-attention-cache.md",
+          "quote": "从旧页复制该槽的全部 K/V heads 与通道到新页同一逻辑槽"
+        },
+        {
+          "path": "knowledge/algorithms/cross-attention-cache.md",
+          "quote": "同时复制有效性、逻辑位置及解释这些编码必需的表示元数据"
+        },
+        {
+          "path": "knowledge/algorithms/cross-attention-cache.md",
+          "quote": "将 copy_done 加入新版本 ready 依赖，并令后续尾页写入依赖它"
+        },
+        {
+          "path": "knowledge/algorithms/cross-attention-cache.md",
+          "quote": "未提交工作立即撤销；已提交异步工作、复制源和目的缓冲排空后才释放。"
+        }
+      ]
+    },
+    "cost": {
+      "assessment": "sufficient",
+      "reason": "计算、访存、通信、准备、同步和驻留均按条件列账。独立复算构建 MAC、E/cross 容量、重复读取流量、尾页复制读写和四个唯一物理页成立；分页地址例的 6/10 字节偏移正确。逻辑容量、条件化 HBM 流量、过渡峰值和关键路径没有混为一谈。",
+      "evidence": [
+        {
+          "path": "knowledge/algorithms/cross-attention-cache.md",
+          "quote": "M_build＝S_v Σ_c d_e(D_Kc＋D_Vc) MAC。"
+        },
+        {
+          "path": "knowledge/algorithms/cross-attention-cache.md",
+          "quote": "理想直接复制至少涉及这些有效字节的一次读取和一次写入，合计约 2B_copy,c"
+        },
+        {
+          "path": "knowledge/algorithms/cross-attention-cache.md",
+          "quote": "同时保留旧快照时唯一物理页合计 4 页：A、B、C、D。"
+        },
+        {
+          "path": "knowledge/algorithms/cross-attention-cache.md",
+          "quote": "关键路径应按依赖和共享资源计算，已经重叠的投影、复制、传输与计算不能无条件相加。"
+        }
+      ]
+    },
+    "adaptation": {
+      "assessment": "sufficient",
+      "reason": "明确区分 query/mask 改变时保留内容、稳定源增长时追加、旧表示或尺度改变时重建，以及容量约束下改变放置。组合轨迹同时保留旧读者、处理新源与目标状态决策，并解释过渡峰值如何改变可行方案。",
+      "evidence": [
+        {
+          "path": "knowledge/algorithms/cross-attention-cache.md",
+          "quote": "可见集合或 query 改变可以保留 K/V 内容，但要重新计算分数、归一化和加权和。"
+        },
+        {
+          "path": "knowledge/algorithms/cross-attention-cache.md",
+          "quote": "若预算容不下，选择等待旧读者、分层构建或重算放置，而不是提前回收仍在用的 v。"
+        }
+      ]
+    },
+    "diagnosis": {
+      "assessment": "sufficient",
+      "reason": "竞争解释与可区分输入相连，能分别定位串源、错误前驱、遗漏尾槽、元数据缺失、多头、mask、末页和生命周期问题。独立参考直接从源与权重计算；本轮实际执行包含可触发机制缺陷的负对照，未以退出码代替语义审查。",
+      "evidence": [
+        {
+          "path": "knowledge/algorithms/cross-attention-cache.md",
+          "quote": "独立数值参考应直接从 E、X_t、投影权重和逻辑可见性构造完整 attention，不借待测页表定义期望值。"
+        },
+        {
+          "path": "knowledge/algorithms/cross-attention-cache.md",
+          "quote": "不能先拼接完整逻辑 K/V，再全量 pack，以免自动补好缺失的旧槽。"
+        },
+        {
+          "path": "knowledge/algorithms/cross-attention-cache.md",
+          "quote": "旧快照正确但新快照的 j＝2 留 poison，能区分“漏复制”与“旧源投影本来就错”"
+        }
+      ]
+    }
+  },
+  "findings": [],
+  "limitations": [
+    "结论基于供应文本和绑定执行记录。本审阅调用没有文件读取或 Python 执行入口；未重新核验磁盘哈希、链接目标存在性或重跑脚本，也未读取本地技能文件。",
+    "S-FI 仅供应作者核验后的机制说明；未供应源码归档或完整原始接口文档，不能据此确认具体 wrapper 的全部支持组合。论文阅读限于完整提取文本，未核对 PDF 图像。",
+    "CPU 模型只验证同步物理页数据路径及事件顺序；未验证真实异步取消排空、回收复用、并发引用取得、多层原子发布或 GPU 内存可见性。",
+    "仿射编码不舍入，未验证 BF16、INT8 或实际块量化误差；源内容登记作为可信输入，未实现摘要冲突处理。",
+    "未测真实 HBM 事务、通信重叠、图捕获、checkpoint 全模型、端到端性能或知识对 Agent 的使用效果。"
+  ],
+  "checks": [
+    {
+      "script": "tools/check_k_alg_010_full.py",
+      "args": []
+    }
+  ],
+  "reading_scope": "完整阅读本轮供应文本，范围均为提取文本中从零开始的半开字符区间：AGENTS.md [0,567)；docs/knowledge-method.md [0,2251)；docs/knowledge-review.md [0,3016)；knowledge/algorithms/cross-attention-cache.md [0,17361)；knowledge/sources/S-TRANSFORMER.md [0,550)；knowledge/sources/S-WHISPER.md [0,518)；knowledge/sources/S-FI.md [0,1582)；knowledge/models/vision-language.md [0,4050)；knowledge/algorithms/tiered-residency.md [0,4244)；knowledge/algorithms/kv-offload-prefetch.md [0,3710)；knowledge/system-semantics/serving-recovery.md [0,3834)；knowledge/system-semantics/memory-allocators.md [0,4191)；knowledge/system-semantics/position-mask-cache.md [0,4078)；references/S-TRANSFORMER/fulltext.txt [0,39757)；references/S-WHISPER/fulltext.txt [0,112336)。完整阅读 candidate.test_script 提供的 tools/check_k_alg_010_full.py，以及 author_notes、待处理问题和 actual_preflight。相关章节仅阅读供应摘录：encoder-decoder-streaming.md [0,4000)、[8000,11083)；paged-kv-capacity.md [0,3658)、[12000,15425)；attention-backends.md [0,3083)、[24000,28000)；host-runtime.md [0,3524)、[4000,7559)；cuda-graph-buffers.md [4000,7929)、[12000,15154)；image-diffusion.md [4000,8000)、[12000,15083)。摘录文件未列入 documents，不声称通读其原章；documents 的身份字段按要求保留供应绑定值，未声称独立从磁盘计算。",
+  "test_assessment": "已检查完整脚本及实际执行记录。绑定脚本 SHA256 为 f9c254f404903b5c58fc9a529c707282af14a609ae352915fd23beb2ac960fa9；actual_preflight 记录 remote_bwrap 中 Python 3.12 以 -I -S -B -X utf8 执行，returncode=0、stderr 为空、未超时。本审阅没有另行执行。参考投影采用直接标量 fsum；dense_reference 从完整 E、X 和权重重建 attention，不使用被测 mm、页池、offset、token reader 或在线递推。追加路径直接共享完整物理页、分配 poison 尾页、复制旧槽、只投影新增有效行，未通过全量 pack 补齐缺失数据。P=2、3→5 同时检查新旧快照、旧页指纹、共享/独占关系、复制责任及 ready 集合。省略旧槽复制与省略位置/尺度两项负对照均实际在 row 2 的 missing position/scale/zero-point 不变量失败；前者没有继续到 NaN 数值检查，但确实揭示新地址缺少完整生产结果，符合本轮修复机制。正确路径随后再次通过。执行还覆盖 24 组长度/页长/布局与置换、96 组追加边界和有效性空洞，以及多头/GQA、前驱与前缀、请求身份、空输入、mask、末页和大有限分数。其他负对照实际出现形状或数值拒绝，负对照仅捕获 Mismatch，没有把任意异常算成成功。范围不足处明确保留：ready 仅检查同步完成集合及事件顺序，没有遗漏依赖的异步调度负对照；布局写读共用 offset，置换测试不能独立证明外部字节 ABI，本审阅另手算了正文地址例；未覆盖并发回收、多层事务或实际量化。作者未自行执行的说明与协调者随后提供的真实 preflight 是不同证据主体，不将作者陈述记为其本人执行 PASS。K-ALG-010-R2-001 及其 workflow 阻塞项可关闭。"
+}

@@ -1,0 +1,191 @@
+{
+  "entry_id": "K-SYS-012",
+  "body_sha256": "c4f366269bf155ef220c077b5b041f169b88eba43de3ee034a1c5d997508e7e5",
+  "reviewer": "sol-reviewer:K-SYS-012:round-1",
+  "decision": "revise",
+  "documents": {
+    "AGENTS.md": "b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a",
+    "docs/knowledge-method.md": "69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb",
+    "docs/knowledge-review.md": "f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21",
+    "knowledge/system-semantics/memory-allocators.md": "c4f366269bf155ef220c077b5b041f169b88eba43de3ee034a1c5d997508e7e5",
+    "knowledge/sources/S-VATTENTION.md": "c841eab45685791bc135d2641ec49661c122c2d8c36fa88f055db1f79b8f1f5d",
+    "knowledge/sources/S-PAGED.md": "50893a22385b0d577980153a9bc9c617acdcb2a9d7be0af655ad49421f06cc09",
+    "knowledge/sources/S-CUDA-ALLOC.md": "3ba021c941f2ed8f048be34d1ba0110f37675a3460013f24a239cc43a1e8630a",
+    "knowledge/sources/S-TORCH-CUDA.md": "8ee61677a1e35d475d9bb122b2c7fa824ccf054acefbe2f12345d72c1fb1b00e",
+    "knowledge/engine-index/vllm-kv-manager.md": "50b09c7a66c1282b7f6f7ac7ef1f265b953b908ae5fba883c9beec4732e1ab89",
+    "knowledge/engine-index/tensorrt-llm.md": "6ade1253f3747041bef4a816d82387c3771bff3459a153719cfbd571c2454c0b",
+    "tools/check_k_sys_012_full.py": "dc21fc9ae1e2fa965228c919f0df8daa9b7addae615396a0e83d286046b288cb"
+  },
+  "criteria": {
+    "definition": {
+      "assessment": "sufficient",
+      "reason": "明确了分配动机、物理与逻辑身份、页映射、代次、输入输出以及容量和访问责任。状态转换中的问题另列算法缺口。",
+      "evidence": [
+        {
+          "path": "knowledge/system-semantics/memory-allocators.md",
+          "quote": "把物理分配记为 p=(space, base, length, epoch, kind)。"
+        },
+        {
+          "path": "knowledge/system-semantics/memory-allocators.md",
+          "quote": "逻辑对象记为 o=(owner, kind, range, version)，逻辑页 j 到物理页 f 的映射记为 M_t(j)=f 或 ⊥。"
+        }
+      ]
+    },
+    "legality": {
+      "assessment": "sufficient",
+      "reason": "条件说明区分了正确性约束与粒度、池划分、映射时机等设计选择；明确了地址稳定、跨 stream 顺序、最后物理访问和小页驱动能力的边界。这些合法条件本身充分，但伪代码未一致落实。",
+      "evidence": [
+        {
+          "path": "knowledge/system-semantics/memory-allocators.md",
+          "quote": "仅递增 epoch 可以拒绝旧结果提交，不能阻止旧 DMA 物理写入；地址必须保持隔离到最后访问结束，或通过平台明确支持的停止/撤销路径解除旧访问权。"
+        },
+        {
+          "path": "knowledge/system-semantics/memory-allocators.md",
+          "quote": "设备支持、映射粒度和同步条件必须由目标版本确认。小页能力不能推断为任意 CUDA 环境都有。"
+        }
+      ]
+    },
+    "algorithm": {
+      "assessment": "partial",
+      "reason": "四段伪代码交付了主要步骤，也解释了跨层分配的整体发布门；但完成操作无条件转入 DRAINING，会阻断活跃对象及其他共享拥有者的后续访问。COW 在发布前撤销旧引用，失败和取消路径又缺少事务引用恢复与已提交初始化、复制的排空，不能维持所声明的旧视图和回收不变量。",
+      "evidence": [
+        {
+          "path": "knowledge/system-semantics/memory-allocators.md",
+          "quote": "4. 当 U=∅ 且 L=0 且 B=∅ 且 Q=∅ 时，页才进入可回收；否则保持 DRAINING。"
+        },
+        {
+          "path": "knowledge/system-semantics/memory-allocators.md",
+          "quote": "建立新映射；旧页引用减一；复制完成前不发布新页。"
+        },
+        {
+          "path": "knowledge/system-semantics/memory-allocators.md",
+          "quote": "解除 tx 已建立的映射，归还 tx 已取得的页帧，保留旧视图，返回 FAILED。"
+        }
+      ]
+    },
+    "cost": {
+      "assessment": "partial",
+      "reason": "六类成本、逐区域舍入、尾部算例、复制读写和重叠条件基本展开正确；128 KiB 与 130154496 字节的算例可复算。核心准入式却把已持有的 CACHED_FREE 与将从这些页取得的对象容量相加，混淆对象需求和新增物理 backing，导致合法缓存复用被拒绝。块表准备的 30%/10% 数字还应明确归于 vAttention 对 vLLM 的观察。",
+      "evidence": [
+        {
+          "path": "knowledge/system-semantics/memory-allocators.md",
+          "quote": "2. 检查 C_active + C_reserved + C_cached + I + W + G_graph + D + C_new + M_margin ≤ C_cap。"
+        },
+        {
+          "path": "knowledge/system-semantics/memory-allocators.md",
+          "quote": "记 C_cached 为 CACHED_FREE 页的字节数"
+        },
+        {
+          "path": "knowledge/system-semantics/memory-allocators.md",
+          "quote": "复制期间源页和目的页同时存活，容量峰值增加一个复制粒度；复制读和写各自进入访存账。"
+        }
+      ]
+    },
+    "adaptation": {
+      "assessment": "partial",
+      "reason": "已说明层数、区域数、驱动能力、共享需求、池划分和可重叠时间改变后的方案反转；但短请求反转句将尾部浪费的变化方向写反，需纠正。",
+      "evidence": [
+        {
+          "path": "knowledge/system-semantics/memory-allocators.md",
+          "quote": "块长大于短请求长度时，块池的尾部浪费和共享概率下降，连续池可能重新占优"
+        },
+        {
+          "path": "knowledge/system-semantics/memory-allocators.md",
+          "quote": "映射延迟若不能在 slack 内隐藏，同步成本可能超过间接寻址节省。"
+        }
+      ]
+    },
+    "diagnosis": {
+      "assessment": "partial",
+      "reason": "竞争解释和干预表有实质内容，正确区分容量收益、kernel 时间、准备和物理早回收。验证材料仍不足以支持正文声明的回滚及完整状态机覆盖：正常部分失败没有实际进入部分取得后的回滚，代次负对照直接删除新票据，迟到写示例没有在途旧写责任。这些检查不能发现当前算法的关键缺陷。",
+      "evidence": [
+        {
+          "path": "knowledge/system-semantics/memory-allocators.md",
+          "quote": "先固定权重、有效请求集、逻辑位置、数值策略和完成边界，再改变一个轴。"
+        },
+        {
+          "path": "knowledge/system-semantics/memory-allocators.md",
+          "quote": "检查共享页唯一容量、写时复制隔离、部分分配失败回滚、回收门、旧代完成事件和页表重建。"
+        },
+        {
+          "path": "knowledge/system-semantics/memory-allocators.md",
+          "quote": "这些错误必须被独立检查器或状态不变量检出，而不是只检查一个标签。"
+        }
+      ]
+    }
+  },
+  "findings": [
+    {
+      "id": "K-SYS-012-R1-001",
+      "criterion": "cost",
+      "evidence": "正文先定义“C_cached 为 CACHED_FREE 页的字节数”，AllocateAndPublish 第 1 步令“C_new = Σ n_g G_g”，第 2 步再检查“C_active + C_reserved + C_cached + I + W + G_graph + D + C_new + M_margin ≤ C_cap”。",
+      "impact": "设容量 128 KiB，全部为两个可复用的 64 KiB 缓存空闲页，其他项及余量均为零。申请一页时公式得到 128+64>128 KiB，于是在实际取得缓存页之前拒绝；正确转换只是 C_cached 减少 64 KiB、C_reserved 增加 64 KiB，物理持有量仍为 128 KiB。预分配整池后因此可能永远无法服务请求。脚本 allocate 实际允许此复用，却没有执行正文的准入式。",
+      "blocking": true,
+      "required_revision": "区分本次对象页需求、可兼容复用的缓存页和必须新增的物理 backing；使用事务后的唯一物理页集合检查容量，并将缓存复用记为分类转移。明确 COW、新目的缓冲与余量的计量关系。以缓存已占满预算但可满足请求的轨迹检查正文准入算法。"
+    },
+    {
+      "id": "K-SYS-012-R1-002",
+      "criterion": "algorithm",
+      "evidence": "状态表写“IN_USE | 至少一个已登记访问未结束 | 票据清空后进入 DRAINING”，DRAINING 的含义为“停止新访问”；Complete 第 4 步写“否则保持 DRAINING”，BeginAccess 则只接受 PUBLISHED/IN_USE。RetireAndReclaim 在共享引用仍存在时也写“不满足则保持 DRAINING”。",
+      "impact": "一个仍有 L=1 的正常请求完成一次读取后进入 DRAINING，下一轮 BeginAccess 被拒绝；多个访问中仅一个完成也会触发同一问题。A、B 共享页时，退役 A 后 L 仍为 1，却把物理页转为 DRAINING，阻断 B 的合法新访问。这与保留其他拥有者的承诺冲突。",
+      "blocking": true,
+      "required_revision": "将对象或拥有者的停止资格与物理页当前访问状态分开。活跃对象在 U 清空后回到可登记状态；仅在相应分配生命期确实关闭后进入排空。退役共享对象只撤销该拥有者的资格和引用。说明访问登记、最后引用撤销和回收检查的串行化或原子边界，并检查正常重复访问及共享拥有者独立退役。"
+    },
+    {
+      "id": "K-SYS-012-R1-003",
+      "criterion": "algorithm",
+      "evidence": "AllocateAndPublish 第 5 步写“建立新映射；旧页引用减一；复制完成前不发布新页”；第 7 步承诺“失败或取消时禁止发布；旧对象和旧读者继续有效”。第 4 步失败处理直接“解除 tx 已建立的映射，归还 tx 已取得的页帧”。",
+      "impact": "复制完成前或发布前取消时，旧视图仍应持有旧页，但算法已经扣除了它的逻辑引用，且事务记录没有引用撤销的恢复步骤。初始化或复制已有异步访问后失败，也没有先排空再归还的分支。复制所需源、目的访问责任如何登记亦未交付：BeginAccess 只接受已发布页，不能直接保护尚在准备的新目的页。",
+      "blocking": true,
+      "required_revision": "把 COW 目的页和复制责任纳入同一预留事务；在发布成功时转换旧、新逻辑持有，或明确完整的撤销日志。为未发布事务页提供受控初始化、复制访问登记。失败和取消时撤销未提交工作，保留已提交访问的源、目的及映射，取得最后访问证据后再回收；无法确认时隔离。补充复制后取消和已取得部分资源后失败的实际状态检查。"
+    },
+    {
+      "id": "K-SYS-012-R1-004",
+      "criterion": "diagnosis",
+      "evidence": "脚本 check_partial_failure 的正常路径仅执行“assert a.allocate(3) is None”，而 allocate 在取得任何页前检查空闲数量。check_generation 的负对照为“a.frames[p2].tickets.discard((e1, 20, 'read'))”后断言该票据不存在。check_late_write_corruption 未登记旧写票据，先合法回收，再连续赋值 5、7，最后打印“generation required”。",
+      "impact": "退出码 0 证明这些断言执行成功，但没有证明部分取得后的回滚实现正确，也没有让错误完成处理器消费旧事件并由独立责任账发现误删。迟到写示例没有验证在途访问阻止复用，且输出暗示代次足以修复物理覆盖，与正文明确边界不符。脚本还没有实现正文的发布、取消和 DRAINING 状态，因此成功执行不能反驳前述算法缺陷。",
+      "blocking": true,
+      "required_revision": "让检查模型实现修订后的准入、准备、发布与退役路径。使用独立事件责任账或逻辑拥有者参考检查状态；在取得页、建立映射或提交复制后注入失败并核对回滚与排空。将正常处理器和忽略 epoch 的错误处理器作用于同一旧完成事件，由同一 oracle 检查新责任保留。迟到写应保留真实旧写责任，比较安全等待与提前复用导致的实际污染，并明确 epoch 不能阻止物理写入。同步收窄无法验证的正文覆盖声明。"
+    },
+    {
+      "id": "K-SYS-012-R1-005",
+      "criterion": "adaptation",
+      "evidence": "正文写“块长大于短请求长度时，块池的尾部浪费和共享概率下降，连续池可能重新占优”；所供 S-PAGED 原文 §7.2 则写“If the block size is too large, internal fragmentation increases and the probability of sharing decreases.”",
+      "impact": "将尾部浪费与共享概率都表述为下降，与本章 W_block 公式及来源结论冲突，会误导短请求下的粒度选择。",
+      "blocking": false,
+      "required_revision": "改为在固定短请求长度下，块长增大会增加尾部浪费，并可能降低共享机会；保留连续池重新占优所需的其他条件。"
+    },
+    {
+      "id": "K-SYS-012-R1-006",
+      "criterion": "cost",
+      "evidence": "正文在以“[PagedAttention]”开头的来源段落中写“来源报告在其实验中曾观察到块表准备占 decode 迭代约 30%，后续修复后仍可到约 10%”；所供 references/S-VATTENTION/fulltext.txt 的 §3.3.2 包含这两个观察，所供 S-PAGED 材料不支持该出处归属。",
+      "impact": "读者会把 2024 年 vAttention 作者对当时 vLLM 的 CPU 开销观察归到 2023 年 PagedAttention 论文，混淆实现版本和测量出处。",
+      "blocking": false,
+      "required_revision": "在这两个数字旁明确引用 S-VATTENTION §3.3.2，说明是其对当时 vLLM 的观察，保持现有非本章实测的限定。"
+    }
+  ],
+  "limitations": [
+    "复核依据任务内提供的完整文本、指定原文摘录、脚本及执行记录；未访问本地原文件、reader.html、PDF 图版或源码归档，也未独立重算文件哈希或检查磁盘链接是否存在。",
+    "作者材料账记录了作者被提供的范围，不证明实际认知阅读。该账中的原章节为 2e7258787b94ad142c7c236541e8718803ad30b273d08e6c398dff673a1df838；本次审查绑定的是完整候选 c4f366269bf155ef220c077b5b041f169b88eba43de3ee034a1c5d997508e7e5，二者未混用。",
+    "作者未运行检查的说明与协调者后来提供真实执行记录可以同时成立。审阅者本轮没有 Python 执行工具，未重跑脚本；退出码与耗时仅引用所供 actual_preflight。",
+    "所供 CUDA 原文摘录在 §11.3 的关键跨 stream 使用与释放规则之前截断，也未完整提供 §11.9；相关判断依据来源说明及 streams-allocator 已供摘录，不能声称本轮已从 CUDA 原文独立核验全部规则。",
+    "CPU 符号模型不证明真实 GPU 页表/TLB、驱动能力、DMA 或 stream/event 可见性、CUDA Graph 捕获及端到端性能。正文对这些未测范围的限定可以保留，也没有 Agent 使用效果证据。"
+  ],
+  "checks": [
+    {
+      "script": "tools/check_k_sys_012_full.py",
+      "args": [],
+      "script_sha256": "dc21fc9ae1e2fa965228c919f0df8daa9b7addae615396a0e83d286046b288cb",
+      "evidence_origin": "用户提供的 actual_preflight",
+      "reviewer_reran": false,
+      "returncode": 0,
+      "stderr": "",
+      "timed_out": false,
+      "elapsed_seconds": 0.1163615956902504,
+      "assessment": "已检查完整脚本与实际执行记录。记录绑定当前脚本及候选正文，报告 remote_bwrap 隔离执行完成；成功范围仅为脚本实际断言，不能作为完整算法正确性的结论。"
+    }
+  ],
+  "no_checks_reason": "",
+  "reading_scope": "完整阅读任务内提供的全文：AGENTS.md [0,567)；docs/knowledge-method.md [0,2251)；docs/knowledge-review.md [0,3016)；knowledge/system-semantics/memory-allocators.md [0,13701)；knowledge/sources/S-VATTENTION.md [0,1375)；knowledge/sources/S-PAGED.md [0,2206)；knowledge/sources/S-CUDA-ALLOC.md [0,498)；knowledge/sources/S-TORCH-CUDA.md [0,1468)；knowledge/engine-index/vllm-kv-manager.md [0,2189)；knowledge/engine-index/tensorrt-llm.md [0,2145)；candidate.test_script 所给 tools/check_k_sys_012_full.py 全文。另完整检查所供 author_notes、author_material_scopes 与 actual_preflight，不把执行记录中的 input_digests 清单视为阅读证明。相关章节仅阅读如下摘录，单位均为抽取文本零基半开字符区间：knowledge/algorithms/paged-kv-capacity.md [12000,14297)；knowledge/algorithms/prefix-cache-identity.md [0,2297)；knowledge/system-semantics/cancellation-resource-completion.md [0,2297)；knowledge/frameworks/streams-allocator.md [4000,6297)；knowledge/frameworks/cuda-graph-buffers.md [0,2297)；knowledge/algorithms/iteration-batching.md [0,2297)；knowledge/algorithms/chunked-prefill.md [4000,4601)、[12000,13696)；knowledge/algorithms/heterogeneous-state-cache.md [0,2297)；knowledge/algorithms/cross-attention-cache.md [4000,6297)；knowledge/algorithms/lora-serving.md [8000,10297)；knowledge/algorithms/parallelism.md [0,2297)；knowledge/engine-index/vllm-model-runner.md [8000,10297)；knowledge/frameworks/inference-eval.md [16000,18297)；knowledge/frameworks/numerical-reference.md [4000,6297)；knowledge/frameworks/attention-backends.md [0,2297)；knowledge/frameworks/mlx-serving.md [8000,8662)、[12000,13635)；knowledge/hardware/memory-and-roofline.md [4000,6297)；knowledge/hardware/cuda-execution.md [12000,14297)；knowledge/hardware/metal-unified-memory.md [0,2297)；knowledge/hardware/trainium-dataflow.md [12000,14297)；knowledge/hardware/cpu-serving.md [8000,10297)；knowledge/models/prefill-decode-state.md [16000,18297)；knowledge/models/moe-routing.md [8000,10297)；knowledge/models/vision-language.md [4000,6297)；knowledge/models/image-diffusion.md [4000,5113)、[16000,17184)；knowledge/models/video-generation.md [4000,6297)；knowledge/models/omni-multimodal.md [8000,10297)；knowledge/system-semantics/design-synthesis.md [4000,6297)；knowledge/tools/correctness-oracles.md [0,2297)；knowledge/workloads/capacity-planning.md [4000,6297)；knowledge/frameworks/checkpoint-loading.md [0,92)、[12000,14205)；knowledge/algorithms/tiered-residency.md [0,2297)；knowledge/algorithms/kv-offload-prefetch.md [8000,10297)；knowledge/hardware/shared-memory-paths.md [0,2297)；knowledge/workloads/multi-model-placement.md [0,2297)。原文仅阅读审阅者实际所供范围：references/S-VATTENTION/fulltext.txt [0,45101)、[52000,64000)；references/S-PAGED/fulltext.txt [0,12000)、[16000,33101)、[36000,48000)、[52000,68000)；references/S-CUDA-ALLOC/fulltext.txt [44000,60000)、[260000,264000)、[296000,300000)、[308000,312000)、[756000,760000)、[768000,769101)、[940000,952000)、[960000,972000)；references/S-TORCH-CUDA/fulltext.txt [0,5101)、[12000,52000)、[56000,64000)、[76000,80000)。这些范围与作者账中的范围分别处理，摘录均未记入 documents，也不构成原文通读声明。",
+  "test_assessment": "算术检查使用具体字节期望，能区分逐区域舍入与汇总舍入、ceil 与 floor；共享计量和 COW 检查通过实际内容与引用变化提供有限但有效的反例。回收门检查确实证明一个已登记票据可以阻止 try_reclaim。然而该模型只有 active/cached_free，未实现正文 RESERVED、MAPPED、PUBLISHED、IN_USE、DRAINING 及事务发布，所以不能验证正常反复访问、共享拥有者退役或准备失败排空。check_capacity_unique_count 比较 active 字节而绕过正文包含 cached 的准入式；held_physical_bytes 始终等于预分配整池容量，未被用于准入。正常部分失败仅在取得资源前拒绝；错误部分取得分支暴露占用，但没有对应正确回滚路径。代次负对照直接 discard 新票据，没有通过错误完成处理器消费旧事件并让独立 oracle 拒绝。页表检查以固定 A=7、B=9 检出错误映射，仅覆盖静态单槽映射，未从 token 历史重建状态。迟到写检查只是合法复用后的第二次赋值，没有旧在途写责任或安全等待对照，其 generation required 输出还与正文物理隔离边界冲突。future_binding、quarantine 拒绝路径、普通重复完成、空区域、整页边界、映射/权限失败、复制后取消和发布原子性未实际检查。所供执行记录可信地表明当前脚本断言完成，不能补足这些机制与覆盖缺口。"
+}

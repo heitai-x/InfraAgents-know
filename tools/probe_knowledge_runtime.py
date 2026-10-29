@@ -293,6 +293,19 @@ def probe_view(root, records_root, name, config, models, uses, catalog, registry
             result["negative_checks"].append(rejection(lambda: validate_public_uses(bank, "planner", [
                 {"entry_id": first["id"], "purpose": "unread negative control"}
             ], api), "Declare an unread current chapter"))
+            structure=bank.read(first['id'],view='structure')
+            require(structure['recorded_as_chapter_read'] is False,'Structure was counted as a chapter read')
+            result['negative_checks'].append(rejection(lambda: validate_public_uses(bank,'planner',[
+                {'entry_id':first['id'],'purpose':'structure-only negative control'}],api),
+                'Structure navigation alone must not permit adoption'))
+            if structure['sections']:
+                title=structure['sections'][0]['title']
+                section=bank.read(first['id'],section=title)
+                expected=revision_body(root,first,current).decode('utf-8')
+                bounds=section['chapter_range']
+                require(section['content']==expected[bounds[0]:bounds[1]],'Section returned incorrect frozen character range')
+                result['section_navigation']={'entry_id':first['id'],'section':title,'chapter_range':bounds}
+            require(len(bank.index(limit=1)['chapters'])==1,'Catalog paging ignored the requested limit')
         reads = []
         for entry in entries:
             identifier = entry["id"]
@@ -366,6 +379,26 @@ def probe_view(root, records_root, name, config, models, uses, catalog, registry
             restrictions.append({"source_id": sid, "card_read": card, "blocked_reads": blocked,
                                  "all_archive_members_excluded_from_snapshot": True})
         result["restricted_originals"] = restrictions
+        reading_path=root/'knowledge/source-reading.json'
+        if reading_path.is_file():
+            reading=read_json(reading_path)['sources']
+            checks=[]
+            for sid,source in exposed_sources.items():
+                if sid in config.get('restricted_originals',[]):continue
+                prefix='references/'+sid+'/'
+                if prefix+'fulltext.txt' in reading[sid]['paths']:continue
+                _,note=paged_read(bank,source['local_path'])
+                require(note['sha256']==source['local_sha256'],'Algorithm source note lost its identity')
+                manifest=read_json(root/source['archive_manifest'])
+                names=[prefix+'reader.html',prefix+'fulltext.txt']
+                implementation=next((prefix+x['path'] for x in manifest['files'] if x['path'].startswith('upstream/')
+                    and Path(x['path']).suffix in {'.py','.h','.cu','.cpp','.c','.hpp','.sh'}),None)
+                if implementation:names.append(implementation)
+                blocked=[rejection(lambda name=name:bank.read(name),name) for name in names]
+                primary=reading[sid]['primary']
+                if primary:paged_read(bank,primary)
+                checks.append({'source_id':sid,'blocked':blocked,'readable_document':primary})
+            result['curated_source_reading']=checks
         if empty:
             exemplar = catalog["entries"][0]
             source = registry["sources"][0]

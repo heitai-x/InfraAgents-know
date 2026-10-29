@@ -1,0 +1,152 @@
+{
+  "entry_id": "K-ENGINE-005",
+  "body_sha256": "3738790ea0b3111208648c394c70573d5b8aa7e7cd8496ed64f9da8bba8ea1d5",
+  "reviewer": "sol-reviewer:K-ENGINE-005:round-1",
+  "decision": "revise",
+  "documents": {
+    "AGENTS.md": "b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a",
+    "docs/knowledge-method.md": "69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb",
+    "docs/knowledge-review.md": "f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21",
+    "knowledge/engine-index/tensorrt-llm.md": "3738790ea0b3111208648c394c70573d5b8aa7e7cd8496ed64f9da8bba8ea1d5",
+    "knowledge/sources/S-TRTLLM.md": "0d3a0b8dcfb6f7c0975080c5fbecb4c36e0c647e93185d7cb2df3b08999dfc97",
+    "knowledge/sources/S-TRTLLM-CODE.md": "19f7e47ee4001e3d262f3eb7274c8c4880baa7a5a52a71ed129520eebfaf90a4",
+    "knowledge/algorithms/tiered-residency.md": "eb3ebc6320d5a32481cf645605d159860dc6d1edb97f1e98afd89ddb24ee82af",
+    "references/S-TRTLLM/fulltext.txt": "5ab2e4a7ee9b15bdbad3624a17f5f67e3b3c078d346e95328322cbac8b66b39d",
+    "tools/check_k_engine_005_full.py": "24a342f9a4985cfebd19cf20475ec8e7ad288fb036dbfdba9bd6dd09fbd195e0"
+  },
+  "criteria": {
+    "definition": {
+      "assessment": "partial",
+      "reason": "已区分设备候选、业务提交和物理回收，但没有闭合输入位置、已计算KV边界与采样状态链。尤其未明确本步KV对应输入token而非刚采样的c_g，也未说明下一设备包怎样在前驱主机尚未提交时取得正确RNG及其他影响采样的状态。逐层执行与整请求提交之间也缺少明确展开或定向委托。",
+      "evidence": [
+        {
+          "path": "knowledge/engine-index/tensorrt-llm.md",
+          "quote": "设备包 P_g 消费输入 token 与已有 KV，执行模型前向和采样，产生候选 token c_g、采样后 RNG/停止判断所需状态以及本步 KV 写入"
+        },
+        {
+          "path": "knowledge/engine-index/tensorrt-llm.md",
+          "quote": "输入 token 取 candidate[g−1] 的临时副本，标记 provisional_input=true"
+        }
+      ]
+    },
+    "legality": {
+      "assessment": "sufficient",
+      "reason": "必要条件覆盖输入身份、完成范围、有序提交、临时后继失效、消费者封闭和最后使用门控；Dmax深度被正确限定为设计选择。实现这些条件的状态机仍有algorithm项所列缺口。",
+      "evidence": [
+        {
+          "path": "knowledge/engine-index/tensorrt-llm.md",
+          "quote": "业务终止、设备完成、输出消费者结束、传输消费者结束和地址可复用分别是不同事件；旧代完成不能释放新代存储。"
+        },
+        {
+          "path": "knowledge/engine-index/tensorrt-llm.md",
+          "quote": "它对应“多一个解码步骤”的一种有界实现，不是 TensorRT-LLM 的唯一深度。"
+        }
+      ]
+    },
+    "algorithm": {
+      "assessment": "partial",
+      "reason": "传输保护给出了封闭和按身份结算的主要路径，但执行状态机不能按所写条件持续推进：提交改变phase后，后继仍要求前驱为DEVICE_DONE；停止后的DISCARD也没有独立结算游标、责任清空和排空完成条件。检查模型绕过了前一问题，且未实现后一过程。",
+      "evidence": [
+        {
+          "path": "knowledge/engine-index/tensorrt-llm.md",
+          "quote": "前一步必须 DEVICE_DONE 且 candidate[g−1] 存在"
+        },
+        {
+          "path": "knowledge/engine-index/tensorrt-llm.md",
+          "quote": "phase=COMMITTED；next_commit 加一"
+        },
+        {
+          "path": "knowledge/engine-index/tensorrt-llm.md",
+          "quote": "若 active=false：将 g 置 DISCARDED，继续结算设备完成"
+        }
+      ]
+    },
+    "cost": {
+      "assessment": "sufficient",
+      "reason": "两阶段理想公式与所列数值一致，明确了常数阶段时间、独立资源及有限缓冲的适用条件。六类成本区分了物理共享容量、重复传输流量和关键路径；传输驻留乘积按字节乘时间理解，正文另列保护字节峰值，没有将其混加为容量。",
+      "evidence": [
+        {
+          "path": "knowledge/engine-index/tensorrt-llm.md",
+          "quote": "T_pipe(N)=N·max(D,H)+min(D,H)，N≥1，T_pipe(0)=0。"
+        },
+        {
+          "path": "knowledge/engine-index/tensorrt-llm.md",
+          "quote": "共享块只计一次物理容量；预留池与其中对象不能重复相加。"
+        },
+        {
+          "path": "knowledge/engine-index/tensorrt-llm.md",
+          "quote": "若 `D` 与 `H` 都受同一 HBM 或 PCIe 共享资源限制，`max(D,H)` 下界也可能达不到。"
+        }
+      ]
+    },
+    "adaptation": {
+      "assessment": "sufficient",
+      "reason": "能够依据主机或设备瓶颈、短生成、取消、传输长尾和图桶失配调整深度及执行方式，并说明容量与额外拷贝的代价，没有把增加缓冲视为普遍收益。",
+      "evidence": [
+        {
+          "path": "knowledge/engine-index/tensorrt-llm.md",
+          "quote": "继续加深缓冲不能改变稳定瓶颈；缺证据时不要声称加速"
+        },
+        {
+          "path": "knowledge/engine-index/tensorrt-llm.md",
+          "quote": "若设备工作有长尾，少量缓冲可以减少空闲，但必须用真实到达轨迹验证。"
+        }
+      ]
+    },
+    "diagnosis": {
+      "assessment": "sufficient",
+      "reason": "给出了竞争解释、独立控制变量、可观察预测和反证后的调整。CPU检查的两种负对照确实暴露顺序与保护不变量的违反；不过停止丢弃的覆盖声明超出实际脚本，须随算法修订一并纠正。",
+      "evidence": [
+        {
+          "path": "knowledge/engine-index/tensorrt-llm.md",
+          "quote": "固定到达轨迹，比较 `Dmax=1` 与 `Dmax=2`，同时记录峰值状态和尾延迟"
+        },
+        {
+          "path": "knowledge/engine-index/tensorrt-llm.md",
+          "quote": "一次墙钟时间不能区分“设备变快”“主机等待被隐藏”“padding 更有利”三种解释；至少要改变一个独立条件并观察其不同预测。"
+        }
+      ]
+    }
+  },
+  "findings": [
+    {
+      "id": "K-ENGINE-005-R1-001",
+      "criterion": "algorithm",
+      "evidence": "正文SUBMIT_NEXT要求“前一步必须 DEVICE_DONE 且 candidate[g−1] 存在”，但COMMIT_NEXT执行“phase=COMMITTED；next_commit 加一”。",
+      "impact": "正常提交后前驱不再处于DEVICE_DONE，后继无法提交。即使预先提交了两步，二者提交后也无法继续第三步。脚本用独立device_done布尔值保留完成事实，因此其“submit after commit frees capacity”通过并未验证正文状态机。",
+      "blocking": true,
+      "required_revision": "分离物理完成事实与业务提交状态，或明确后继可接受的已完成状态集合及候选保存期限。同步检查模型与正文状态表示，实际覆盖前驱先提交再提交后继，以及超过Dmax的持续生成轨迹。"
+    },
+    {
+      "id": "K-ENGINE-005-R1-002",
+      "criterion": "algorithm",
+      "evidence": "正文写“若 active=false：将 g 置 DISCARDED，继续结算设备完成”，但只有成功提交分支推进next_commit；同时先检查“若 g>0 且 steps[g−1] 未 COMMITTED：等待”。验证范围声称检查“停止后的候选丢弃”。",
+      "impact": "停止后当前步骤被改为DISCARDED而游标不动，下一轮又因该步骤不是DEVICE_DONE而等待；失败前驱还可能使后继在提交资格检查处阻断。正文没有给出遍历并结清全部后继责任的可执行路径。脚本中的discarded字段和列表从未被更新，实际记录仅证明停止后拒绝提交，不能证明候选丢弃或资源排空。",
+      "blocking": true,
+      "required_revision": "为终止后的物理结算定义独立推进路径，避免受业务前驱必须COMMITTED的条件阻断；说明完成责任如何逐项撤销、私有段何时回收及何时报告排空。检查应实际断言额外候选进入丢弃终态、在途责任在真实结束前保留，并在结算后清空；按实际覆盖修正文中的验证声明。"
+    },
+    {
+      "id": "K-ENGINE-005-R1-003",
+      "criterion": "definition",
+      "evidence": "正文将P_g概括为“消费输入 token 与已有 KV，执行模型前向和采样”，后继仅明确“输入 token 取 candidate[g−1] 的临时副本”，而正式RNG更新位于主机提交事务“追加 token，更新 RNG、停止状态和输出序号”。",
+      "impact": "读者无法确定g=0的完整起始输入、每步实际计算到哪个KV位置，以及前驱尚未提交时后继采样应消费哪一版RNG或约束状态。只转发token并在事后检查票据，不能构成完整的自回归采样状态链。正文也未明确逐层hidden/KV如何产生并汇合为完整设备完成证据。",
+      "blocking": true,
+      "required_revision": "明确起始契约和输入位置，区分已知token边界、全层有效KV边界与候选确认边界，说明c_g自身KV由消费它的后继前向产生。展开或明确委托到已有完整解释的逐层输入、私有KV写入及整步完成关系；给出临时RNG及其他影响采样状态的继承、提交校验和失效规则，或限制可重叠的采样配置。"
+    }
+  ],
+  "limitations": [
+    "原始文档支持所述架构循环、overlap和KV传输概览；S-TRTLLM-CODE仅核对所供机制说明，没有独立读取上游源码归档。",
+    "作者材料台账记录的是供给范围，不证明认知阅读。其正文记录绑定2145字符的基线版本；本次审查对象为9978字符的新候选，未把二者混作同一修订。",
+    "CPU模型不验证CUDA完成、设备可见性、真实传输排空、并发原子性、图捕获合法性、硬件性能或Agent使用效果；正文对此的限制声明可以保留。",
+    "本会话没有可用的本地文件读取或Python执行接口；未读取本地SKILL.md、未独立核验磁盘字节及离线链接目标存在性，也未本地重跑脚本。判断依据为任务提供的完整材料、脚本文本和绑定执行记录。"
+  ],
+  "checks": [
+    {
+      "script": "tools/check_k_engine_005_full.py",
+      "args": []
+    }
+  ],
+  "no_checks_reason": "",
+  "reading_scope": "完整阅读任务所供AGENTS.md[0,567)、docs/knowledge-method.md[0,2251)、docs/knowledge-review.md[0,3016)、当前候选knowledge/engine-index/tensorrt-llm.md[0,9978)、两份来源说明S-TRTLLM.md[0,564)与S-TRTLLM-CODE.md[0,712)、tiered-residency.md[0,4244)、references/S-TRTLLM/fulltext.txt[0,17175)，以及完整candidate.test_script、author_notes和actual_preflight执行记录。相关章节仅按所供摘录阅读：async-scheduling.md[0,7504)、[12000,13940)；disaggregated-serving.md[0,6561)、[16000,18883)；cuda-graph-buffers.md[0,2197)、[4000,8000)、[12000,15247)；cancellation-resource-completion.md[0,7165)、[16000,18279)；weight-expert-offload.md[0,5920)、[12000,15524)；transport-and-rdma.md[0,9444)；serving-recovery.md[0,9036)、[16000,16408)；memory-allocators.md[4000,11212)、[16000,18232)。范围均为提取文本零起点右开字符区间。documents仅列完整供给材料；没有把摘录列为全文核验，也没有读取reader.html图版或源码归档。作者台账另行核对：作者获供上述相关章节摘录、两份完整来源说明及完整S-TRTLLM文档，不能据此推断作者只获供原文摘要。",
+  "test_assessment": "所供actual_preflight记录绑定脚本SHA256 24a342f9a4985cfebd19cf20475ec8e7ad288fb036dbfdba9bd6dd09fbd195e0，显示remote_bwrap隔离执行返回0、输出CHECK_OK；这是已有真实执行记录，本审查未另行运行。作者明确声明作者阶段未执行Python，与记录中后续协调执行不矛盾。时间模拟采用阶段完成递推，对照独立闭式公式，覆盖N=0、N=1、D<H、D>H和D=H，所列17、22、18等结果算术正确。顺序模型检查容量阻断及按next_commit提交；两种天真实现负对照分别实际形成先提交后一候选、save尚未结束却released的不变量违反，因此并非仅以进程退出成功代替判断。保护模型覆盖双消费者、封闭后拒绝启动、重复完成、旧epoch及空集合封闭。然而脚本的device_done布尔值与正文互斥phase不同，漏检正文提交后的停滞；停止测试仅禁止后续提交，未更新discarded，也未检查责任撤销或回收。脚本还没有模型前向、逐层KV位置、输入链或RNG继承的独立参考，不能支持这些机制已经验证的结论。应修复当前具体缺口并对齐覆盖声明，无须将未测设备效果增加为本轮通过条件。"
+}

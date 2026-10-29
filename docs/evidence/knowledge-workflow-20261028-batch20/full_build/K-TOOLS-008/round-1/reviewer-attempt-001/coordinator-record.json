@@ -1,0 +1,302 @@
+{
+  "role": "reviewer",
+  "engine": "sol",
+  "requested_model": "gpt-6.1-sol",
+  "reasoning_effort": "high",
+  "prompt_sha256": "70c813369462d5be691530f2e469501d7161beaa1d86a1471303b1863ac883a2",
+  "usage": [
+    {
+      "input_tokens": 1031008,
+      "cached_input_tokens": 830080,
+      "cache_write_input_tokens": 0,
+      "output_tokens": 7191,
+      "reasoning_output_tokens": 2067
+    }
+  ],
+  "answer": "{\n  \"entry_id\": \"K-TOOLS-008\",\n  \"body_sha256\": \"482d51306e2976d39e1087107fbefda10c375edde29dc06b9acdc9bdf8c4accf\",\n  \"reviewer\": \"sol-reviewer:K-TOOLS-008:round-1\",\n  \"decision\": \"revise\",\n  \"documents\": {\n    \"AGENTS.md\": \"b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a\",\n    \"docs/knowledge-method.md\": \"69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb\",\n    \"docs/knowledge-review.md\": \"f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21\",\n    \"knowledge/tools/gpu-characterization.md\": \"482d51306e2976d39e1087107fbefda10c375edde29dc06b9acdc9bdf8c4accf\",\n    \"knowledge/sources/S-CUDA-BEST.md\": \"4b752c1a26f66a195df62be354649f0a6880f733fb365e82e87bdd63bf71d45c\",\n    \"knowledge/sources/S-CUDA-ASYNC.md\": \"40df9287d0648a8ef55a046ceb1c18dd402619ede6e57ca33d3f90e4ace3da05\",\n    \"knowledge/sources/S-NCU.md\": \"1bec5edf1e9343ad79094b2772466c3132597f8f83085d1d8959683c187f9f17\",\n    \"knowledge/sources/S-NSYS.md\": \"823ebab3b5e25820e6d55b2c6ad4dba63004b08fe75d562fb0890ace857f8336\",\n    \"knowledge/sources/S-CUDA-TOPOLOGY.md\": \"39d4039179728ce8570c3b9ec3801aaad52108d030f278fb598a4d6d47de1f8e\",\n    \"knowledge/hardware/memory-and-roofline.md\": \"467f27d23a2ea5cd0468e2208fb3b080bc5c94d53e43ac89ee9ca077504eae41\",\n    \"tools/check_k_tools_008_full.py\": \"f4b33ed49c1cc086cb626bc577cf4f5452960e1f2157b97e8e723bac1d6e1358\"\n  },\n  \"criteria\": {\n    \"definition\": {\n      \"assessment\": \"partial\",\n      \"reason\": \"动机、条件元组、参数包、工作量和完成边界定义充分；但 L2 段未区分未命中的有效需求字节与实际 HBM 事务字节，图算例中的设备时间与脚本主机时间也不一致。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/tools/gpu-characterization.md\",\n          \"quote\": \"输出不是裸标量，而是带条件谓词的参数条目\"\n        },\n        {\n          \"path\": \"knowledge/tools/gpu-characterization.md\",\n          \"quote\": \"`D_HBM = D_use − D_hit`。\"\n        },\n        {\n          \"path\": \"knowledge/tools/gpu-characterization.md\",\n          \"quote\": \"同工作图 replay 设备侧 0.2 ms。\"\n        }\n      ]\n    },\n    \"legality\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"明确要求完成状态、分子分母范围和条件身份匹配，区分冷热状态、锁钟选择与服务条件；测量值也没有被无条件宣称为硬件极限。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/tools/gpu-characterization.md\",\n          \"quote\": \"一个条目只有在其适用条件被当前 workload 蕴含时才能进入成本模型；条件不蕴含时应重测、换条目或保留未知。\"\n        },\n        {\n          \"path\": \"knowledge/tools/gpu-characterization.md\",\n          \"quote\": \"测得的有效速率是带条件的估计，不是数学上不可突破的硬上限\"\n        }\n      ]\n    },\n    \"algorithm\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"在表征方法这一范围内，给出了输入输出、候选准备、重复采样、拒绝条件、干预、未决处理和发布链；没有把该伪代码冒充已经执行的 CUDA 测量实现。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/tools/gpu-characterization.md\",\n          \"quote\": \"表征的状态链是：计划已定义 → 输入已准备并预热 → 样本已采集 → 条件与分母已核对 → 交叉条件已检验 → 条目已发布或标为未决。\"\n        },\n        {\n          \"path\": \"knowledge/tools/gpu-characterization.md\",\n          \"quote\": \"拒绝零或负时间、分母缺失、未完成工作、条件字段缺失的样本\"\n        },\n        {\n          \"path\": \"knowledge/tools/gpu-characterization.md\",\n          \"quote\": \"若多个解释仍不能区分，保留未决项和原始证据，不发布单一常数\"\n        }\n      ]\n    },\n    \"cost\": {\n      \"assessment\": \"partial\",\n      \"reason\": \"六类成本、共享资源合并、依赖路径和捕获摊销已经展开，组合算例的 GiB/TiB 换算正确；但 L2 流量等式缺少口径条件，图重放算例混淆主机成本与设备工作，影响模型代入。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/tools/gpu-characterization.md\",\n          \"quote\": \"若两个阶段有依赖或共用同一独占资源，不能直接取 max，应按依赖路径相加，或把共享资源的总需求合并后用同一容量估值。\"\n        },\n        {\n          \"path\": \"knowledge/tools/gpu-characterization.md\",\n          \"quote\": \"`N > C0 / (T_eager − T_graph)`，分母必须为正。\"\n        },\n        {\n          \"path\": \"knowledge/tools/gpu-characterization.md\",\n          \"quote\": \"其中已证实由 L2 满足的字节为 `D_hit`\"\n        }\n      ]\n    },\n    \"adaptation\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"条件变化表明确保留计数及完成边界，针对访问形态、工作集、dtype、并发、持续时长、拓扑和运行时变化要求换条目、重测或停止外推，符合本章范围。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/tools/gpu-characterization.md\",\n          \"quote\": \"| 访问形态从顺序变随机 | 有效字节与时间边界 | 换用随机或混合带宽条目；不沿用顺序峰值 |\"\n        },\n        {\n          \"path\": \"knowledge/tools/gpu-characterization.md\",\n          \"quote\": \"| 驱动、运行时或库路径改变 | 计时边界与 dtype 契约 | 重核 dispatch 与参数；旧条目只能作为历史证据 |\"\n        }\n      ]\n    },\n    \"diagnosis\": {\n      \"assessment\": \"partial\",\n      \"reason\": \"竞争解释、受控干预和反证修正表有实质内容；但检查覆盖声明超过实际算法，尤其 L2 错误变体没有进入检查，双工负对照实际检查的是串行执行而非峰值相加。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/tools/gpu-characterization.md\",\n          \"quote\": \"host 降低而 ITL 不变时，撤回端到端提交瓶颈结论\"\n        },\n        {\n          \"path\": \"knowledge/tools/gpu-characterization.md\",\n          \"quote\": \"脚本故意保留错误变体并由独立参考拒绝\"\n        },\n        {\n          \"path\": \"knowledge/tools/gpu-characterization.md\",\n          \"quote\": \"它们必须实际触发不变量失败，而不是只打印成功。\"\n        }\n      ]\n    }\n  },\n  \"findings\": [\n    {\n      \"id\": \"K-TOOLS-008-L2-BYTE-IDENTITY\",\n      \"criterion\": \"cost\",\n      \"evidence\": \"正文写“L2 复用会让观察到的 HBM 字节低于张量逻辑读取字节”，随后以“其中已证实由 L2 满足的字节为 `D_hit`”作为条件给出“`D_HBM = D_use − D_hit`”。脚本 l2_hbm_bytes 也只返回 logical_bytes - hit_bytes。\",\n      \"impact\": \"同一请求集合这一条件不足以建立实际 HBM 字节等式。未命中读取还可能有事务过取、请求合并、其他层命中和写回等差异。例如在冷态、无压缩、32 B 填充粒度的指定模型中，只需一个 4 B 字且 L2 命中为零，有效未命中字节为 4 B，实际填充却为 32 B。当前写法可能把有效需求除以事务带宽，低估时间，违背本章前文的口径要求。\",\n      \"blocking\": true,\n      \"required_revision\": \"分别命名 HBM 有效需求与 HBM 事务字节。将减法限定为明确读取边界下的有效未命中需求账，并说明它与实际事务量相等所需的简化假设；事务时间使用匹配的事务带宽，或直接采用匹配访问形态的有效带宽。增加能区分有效未命中需求与实际填充的离散反例，避免只验证减法本身。\"\n    },\n    {\n      \"id\": \"K-TOOLS-008-GRAPH-TIME-IDENTITY\",\n      \"criterion\": \"definition\",\n      \"evidence\": \"正文算例写“同工作图 replay 设备侧 0.2 ms”，脚本却设置“graph_host = 0.2 * ms”，并设置“device = 0.8 * ms”，通过 max(device, graph_host) 得到图路径每轮 0.8 ms。\",\n      \"impact\": \"脚本支持的是主机重放成本 g=0.2 ms、共同设备工作 D=0.8 ms 的模型，并不支持正文所写的设备重放时间为 0.2 ms。若同一工作已有 0.8 ms 或 12 ms 的 HBM 需求时间，则不能同时把整段设备工作记为 0.2 ms；这会混淆图提交收益与设备执行收益。\",\n      \"blocking\": true,\n      \"required_revision\": \"统一正文和脚本的时间身份。若沿用当前计算，将 0.2 ms 明确为图重放主机提交成本，分别给出共同设备工作和完整轮次时间；保留设备主导时不获益的条件。用完整总时间验证捕获摊销，明确约 25 轮是打平点，严格收益在其后。\"\n    },\n    {\n      \"id\": \"K-TOOLS-008-NEGATIVE-CONTROL-COVERAGE\",\n      \"criterion\": \"diagnosis\",\n      \"evidence\": \"正文声称检查“把表观 L2 速率当 HBM”和“把双向复制按两个单向峰值相加”。实际 L2 部分仅断言 hbm == GIB、logical / hbm == 2.0，没有构造或拒绝该错误速率；双工部分设置“bad_link = serial_link”，比较的是 2.0 s 与 1.4 s，却打印“peak-sum rejected”。图部分的“bad_be = 0.0”也没有执行忽略捕获成本的总时间路径。\",\n      \"impact\": \"退出码 0 不能支持正文列出的全部负对照。双工场景中真正将两个单向峰值相加会预测 (28+28)/(28+28)=1.0 s，脚本实际比较的错误值是串行路径的 2.0 s。L2 部分没有检查带宽误用，因而不能反证本章当前的流量口径错误。\",\n      \"blocking\": true,\n      \"required_revision\": \"让所声称的错误算法实际产生结果并进入相同的参考判定：L2 用独立的有效需求、命中和填充账核对速率；双工明确计算峰值相加的错误时间；捕获摊销用逐轮总账或事件累计核对打平前后结果。同步修订正文覆盖声明，未实现的分支如实列为未覆盖，并重新保存绑定修订后脚本的执行记录。\"\n    }\n  ],\n  \"limitations\": [\n    \"未执行 GPU、CUDA 或 Nsight 测量；真实事务、cache 命中、双工曲线、时钟漂移、图捕获合法性和服务效果仍未验证。正文已清楚声明这些边界，它们本身不构成阻塞问题。\",\n    \"本轮检查了用户提供的完整候选、脚本和实际 preflight 记录；没有重新运行 Python 脚本，也没有从磁盘重算绑定哈希。独立算术复核通过 JavaScript 在内存中完成。\",\n    \"原始文档仅核对所供摘录。S-CUDA-BEST 的本轮原文范围未包含完整 §9.2.1，32 B 段契约由完整来源说明支持；不能据此声称重新通读并核验了该原文章节。\",\n    \"相对链接的层级写法与所供路径一致，但没有验证磁盘文件存在性或 reader.html 实际可读性。当前工具没有提供本地文件读取能力，也未能读取本地技能文件。\",\n    \"作者材料账记录作者获供的范围，不证明认知阅读。账中的正文是较早的完整 5952 字符版本、哈希 b31dd621ab293e8cb26d65dce51ec87b66e86a614dc91fff508c71182529cc3f；本次独立审查对象是绑定 482d51306e2976d39e1087107fbefda10c375edde29dc06b9acdc9bdf8c4accf 的完整候选，不混用两者。\"\n  ],\n  \"checks\": [\n    {\n      \"script\": \"tools/check_k_tools_008_full.py\",\n      \"args\": [],\n      \"script_sha256\": \"f4b33ed49c1cc086cb626bc577cf4f5452960e1f2157b97e8e723bac1d6e1358\",\n      \"execution_scope\": \"审阅用户提供的 actual_preflight 实际执行记录；本审阅者未重跑 Python。\",\n      \"backend\": \"remote_bwrap\",\n      \"returncode\": 0,\n      \"timed_out\": false,\n      \"elapsed_seconds\": 0.0664668008685112,\n      \"assessment\": \"进程完成且 stderr 为空；仅支持实际执行到的 CPU 断言，不能记为全部声称机制及负对照通过。\"\n    }\n  ],\n  \"no_checks_reason\": \"\",\n  \"reading_scope\": \"本审阅者完整阅读用户提供的 AGENTS.md [0,567)、docs/knowledge-method.md [0,2251)、docs/knowledge-review.md [0,3016)、当前 knowledge/tools/gpu-characterization.md [0,11559)、knowledge/sources/S-CUDA-BEST.md [0,992)、S-CUDA-ASYNC.md [0,1610)、S-NCU.md [0,477)、S-NSYS.md [0,498)、S-CUDA-TOPOLOGY.md [0,500)、knowledge/hardware/memory-and-roofline.md [0,13215)，以及完整 candidate.test_script、author_notes、author_material_scopes 和 actual_preflight。以下仅阅读供给摘录，范围均为提取文本的零基半开字符区间：knowledge/hardware/cuda-execution.md [0,4000)、[8000,14869)、[16000,19297)；knowledge/tools/kernel-counter-replay.md [0,6937)、[8000,15229)；knowledge/tools/statistical-experiments.md [0,11736)、[12000,14430)；knowledge/frameworks/cuda-graph-buffers.md [0,6919)、[8000,15247)；knowledge/system-semantics/specialization-levers.md [0,6695)、[8000,15471)；references/S-CUDA-BEST/fulltext.txt [0,4000)、[8000,12000)、[36000,46295)、[52000,60000)、[108000,116000)、[128000,132000)、[156000,160000)、[176000,180000)；references/S-CUDA-ASYNC/fulltext.txt 和 references/S-CUDA-TOPOLOGY/fulltext.txt 各为 [4000,8000)、[80000,84000)、[260000,262295)、[784000,792000)、[800000,804000)、[1020000,1024000)、[1068000,1084000)、[1100000,1104000)；references/S-NCU/fulltext.txt [8000,12000)、[16000,20000)、[24000,30294)、[48000,52000)、[60000,68000)、[108000,124000)、[136000,140000)；references/S-NSYS/fulltext.txt [52000,56000)、[108000,112000)、[140000,144000)、[152000,156000)、[172000,180000)、[200000,208000)、[212000,216000)、[340000,342294)、[448000,452000)、[472000,476000)。documents 仅列完整获供并阅读的文件，摘录原文不列入。未读取源码归档，也没有将作者获供范围替换成本审阅者范围。\",\n  \"test_assessment\": \"实际 preflight 的脚本哈希与要求绑定一致，记录显示 Python 在只读输入、隔离网络的 remote_bwrap 中退出 0；作者原先声明未运行，协调者后续执行记录补充的是运行事实，两者并不矛盾。有效字节/事务字节检查以已知完成时间 1 s 为参考，能区分 128/128 与错误的 160/128；段集合检查使用明确集合 0..3、0..4、0..7，本审阅者另外逐字节枚举复核了 4、5、8 段；串行与重叠、消费者份额和访问模式选择有可手算的固定预期。这些是有限算术检查，不是整体表征器或设备事件模型。边界实际覆盖负字节、零时间、命中超过需求、负偏移、负工作、零工作和纯搬运；未覆盖 select_entry 的缺失/歧义分支、shared 双工分支、不一致速率拒绝或完整样本发布状态。上述未覆盖项不自动成为新增验收条件。阻塞问题在于现有覆盖声明与实际检查不符：L2 没有错误速率负对照，双工 bad_link 是合法串行模型而非峰值相加缺陷，bad_be 为常数且 graph_total 未被调用。独立复算显示实际峰值相加错误预测 1.0 s，而实测双工参数的方向完成参考为 1.4 s；图总账在 24、25、26 轮分别为亏损、打平、获益。脚本因此不能以退出码 0 证明正文声称的全部错误机制已被检测。\"\n}",
+  "exit_code": 0,
+  "status": "completed",
+  "timeout_seconds": 1800,
+  "response_path": "D:\\桌面\\xdb\\InfraAgents\\InfraAgents-know-astra-new\\InfraAgents-know\\docs\\evidence\\knowledge-workflow-20261028-batch20\\full_build\\K-TOOLS-008\\round-1\\reviewer-attempt-001\\answer.txt",
+  "record_path": "D:\\桌面\\xdb\\InfraAgents\\InfraAgents-know-astra-new\\InfraAgents-know\\docs\\evidence\\knowledge-workflow-20261028-batch20\\full_build\\K-TOOLS-008\\round-1\\reviewer-attempt-001\\record.json",
+  "tool_events": [
+    {
+      "type": "item.completed",
+      "item": {
+        "id": "item_1",
+        "type": "mcp_tool_call",
+        "server": "codex",
+        "tool": "list_mcp_resources",
+        "arguments": {},
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"resources\":[]}"
+            }
+          ],
+          "structured_content": null
+        },
+        "error": null,
+        "status": "completed"
+      }
+    },
+    {
+      "type": "item.completed",
+      "item": {
+        "id": "item_2",
+        "type": "mcp_tool_call",
+        "server": "codex",
+        "tool": "list_mcp_resource_templates",
+        "arguments": {},
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"resourceTemplates\":[]}"
+            }
+          ],
+          "structured_content": null
+        },
+        "error": null,
+        "status": "completed"
+      }
+    }
+  ],
+  "inventory_tool_events": [
+    {
+      "type": "item.completed",
+      "item": {
+        "id": "item_1",
+        "type": "mcp_tool_call",
+        "server": "codex",
+        "tool": "list_mcp_resources",
+        "arguments": {},
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"resources\":[]}"
+            }
+          ],
+          "structured_content": null
+        },
+        "error": null,
+        "status": "completed"
+      }
+    },
+    {
+      "type": "item.completed",
+      "item": {
+        "id": "item_2",
+        "type": "mcp_tool_call",
+        "server": "codex",
+        "tool": "list_mcp_resource_templates",
+        "arguments": {},
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"resourceTemplates\":[]}"
+            }
+          ],
+          "structured_content": null
+        },
+        "error": null,
+        "status": "completed"
+      }
+    }
+  ],
+  "rejected_tool_events": [],
+  "tool_policy": "metadata_inventory_only",
+  "tool_policy_version": "metadata-inventory-v1",
+  "tool_policy_scope": "Only empty-argument codex host plugin/skill-directory descriptors and empty template inventory; inventory is not knowledge evidence. All other tool events reject the call.",
+  "tool_policy_reason": "Production chapter construction allows observed generic capability discovery metadata; this does not claim a zero-tool comparison or external source reading.",
+  "malformed_event_lines": [],
+  "turn_completed": true,
+  "error_events": [],
+  "recovered_transport_events": [],
+  "terminal_error_events": [],
+  "transport_recovered": false,
+  "actual_model": null,
+  "identity_verified": null,
+  "identity_basis": "Explicit CLI model and isolated HTTP provider; CLI events do not expose server model identity.",
+  "provider": "eval-openai-http",
+  "max_output_tokens": null,
+  "cli_version": "codex-cli 0.164.0-alpha.11.1",
+  "cost_scope": "Codex token usage is reported; subscription charge is not exposed.",
+  "parsed": {
+    "entry_id": "K-TOOLS-008",
+    "body_sha256": "482d51306e2976d39e1087107fbefda10c375edde29dc06b9acdc9bdf8c4accf",
+    "reviewer": "sol-reviewer:K-TOOLS-008:round-1",
+    "decision": "revise",
+    "documents": {
+      "AGENTS.md": "b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a",
+      "docs/knowledge-method.md": "69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb",
+      "docs/knowledge-review.md": "f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21",
+      "knowledge/tools/gpu-characterization.md": "482d51306e2976d39e1087107fbefda10c375edde29dc06b9acdc9bdf8c4accf",
+      "knowledge/sources/S-CUDA-BEST.md": "4b752c1a26f66a195df62be354649f0a6880f733fb365e82e87bdd63bf71d45c",
+      "knowledge/sources/S-CUDA-ASYNC.md": "40df9287d0648a8ef55a046ceb1c18dd402619ede6e57ca33d3f90e4ace3da05",
+      "knowledge/sources/S-NCU.md": "1bec5edf1e9343ad79094b2772466c3132597f8f83085d1d8959683c187f9f17",
+      "knowledge/sources/S-NSYS.md": "823ebab3b5e25820e6d55b2c6ad4dba63004b08fe75d562fb0890ace857f8336",
+      "knowledge/sources/S-CUDA-TOPOLOGY.md": "39d4039179728ce8570c3b9ec3801aaad52108d030f278fb598a4d6d47de1f8e",
+      "knowledge/hardware/memory-and-roofline.md": "467f27d23a2ea5cd0468e2208fb3b080bc5c94d53e43ac89ee9ca077504eae41",
+      "tools/check_k_tools_008_full.py": "f4b33ed49c1cc086cb626bc577cf4f5452960e1f2157b97e8e723bac1d6e1358"
+    },
+    "criteria": {
+      "definition": {
+        "assessment": "partial",
+        "reason": "动机、条件元组、参数包、工作量和完成边界定义充分；但 L2 段未区分未命中的有效需求字节与实际 HBM 事务字节，图算例中的设备时间与脚本主机时间也不一致。",
+        "evidence": [
+          {
+            "path": "knowledge/tools/gpu-characterization.md",
+            "quote": "输出不是裸标量，而是带条件谓词的参数条目"
+          },
+          {
+            "path": "knowledge/tools/gpu-characterization.md",
+            "quote": "`D_HBM = D_use − D_hit`。"
+          },
+          {
+            "path": "knowledge/tools/gpu-characterization.md",
+            "quote": "同工作图 replay 设备侧 0.2 ms。"
+          }
+        ]
+      },
+      "legality": {
+        "assessment": "sufficient",
+        "reason": "明确要求完成状态、分子分母范围和条件身份匹配，区分冷热状态、锁钟选择与服务条件；测量值也没有被无条件宣称为硬件极限。",
+        "evidence": [
+          {
+            "path": "knowledge/tools/gpu-characterization.md",
+            "quote": "一个条目只有在其适用条件被当前 workload 蕴含时才能进入成本模型；条件不蕴含时应重测、换条目或保留未知。"
+          },
+          {
+            "path": "knowledge/tools/gpu-characterization.md",
+            "quote": "测得的有效速率是带条件的估计，不是数学上不可突破的硬上限"
+          }
+        ]
+      },
+      "algorithm": {
+        "assessment": "sufficient",
+        "reason": "在表征方法这一范围内，给出了输入输出、候选准备、重复采样、拒绝条件、干预、未决处理和发布链；没有把该伪代码冒充已经执行的 CUDA 测量实现。",
+        "evidence": [
+          {
+            "path": "knowledge/tools/gpu-characterization.md",
+            "quote": "表征的状态链是：计划已定义 → 输入已准备并预热 → 样本已采集 → 条件与分母已核对 → 交叉条件已检验 → 条目已发布或标为未决。"
+          },
+          {
+            "path": "knowledge/tools/gpu-characterization.md",
+            "quote": "拒绝零或负时间、分母缺失、未完成工作、条件字段缺失的样本"
+          },
+          {
+            "path": "knowledge/tools/gpu-characterization.md",
+            "quote": "若多个解释仍不能区分，保留未决项和原始证据，不发布单一常数"
+          }
+        ]
+      },
+      "cost": {
+        "assessment": "partial",
+        "reason": "六类成本、共享资源合并、依赖路径和捕获摊销已经展开，组合算例的 GiB/TiB 换算正确；但 L2 流量等式缺少口径条件，图重放算例混淆主机成本与设备工作，影响模型代入。",
+        "evidence": [
+          {
+            "path": "knowledge/tools/gpu-characterization.md",
+            "quote": "若两个阶段有依赖或共用同一独占资源，不能直接取 max，应按依赖路径相加，或把共享资源的总需求合并后用同一容量估值。"
+          },
+          {
+            "path": "knowledge/tools/gpu-characterization.md",
+            "quote": "`N > C0 / (T_eager − T_graph)`，分母必须为正。"
+          },
+          {
+            "path": "knowledge/tools/gpu-characterization.md",
+            "quote": "其中已证实由 L2 满足的字节为 `D_hit`"
+          }
+        ]
+      },
+      "adaptation": {
+        "assessment": "sufficient",
+        "reason": "条件变化表明确保留计数及完成边界，针对访问形态、工作集、dtype、并发、持续时长、拓扑和运行时变化要求换条目、重测或停止外推，符合本章范围。",
+        "evidence": [
+          {
+            "path": "knowledge/tools/gpu-characterization.md",
+            "quote": "| 访问形态从顺序变随机 | 有效字节与时间边界 | 换用随机或混合带宽条目；不沿用顺序峰值 |"
+          },
+          {
+            "path": "knowledge/tools/gpu-characterization.md",
+            "quote": "| 驱动、运行时或库路径改变 | 计时边界与 dtype 契约 | 重核 dispatch 与参数；旧条目只能作为历史证据 |"
+          }
+        ]
+      },
+      "diagnosis": {
+        "assessment": "partial",
+        "reason": "竞争解释、受控干预和反证修正表有实质内容；但检查覆盖声明超过实际算法，尤其 L2 错误变体没有进入检查，双工负对照实际检查的是串行执行而非峰值相加。",
+        "evidence": [
+          {
+            "path": "knowledge/tools/gpu-characterization.md",
+            "quote": "host 降低而 ITL 不变时，撤回端到端提交瓶颈结论"
+          },
+          {
+            "path": "knowledge/tools/gpu-characterization.md",
+            "quote": "脚本故意保留错误变体并由独立参考拒绝"
+          },
+          {
+            "path": "knowledge/tools/gpu-characterization.md",
+            "quote": "它们必须实际触发不变量失败，而不是只打印成功。"
+          }
+        ]
+      }
+    },
+    "findings": [
+      {
+        "id": "K-TOOLS-008-L2-BYTE-IDENTITY",
+        "criterion": "cost",
+        "evidence": "正文写“L2 复用会让观察到的 HBM 字节低于张量逻辑读取字节”，随后以“其中已证实由 L2 满足的字节为 `D_hit`”作为条件给出“`D_HBM = D_use − D_hit`”。脚本 l2_hbm_bytes 也只返回 logical_bytes - hit_bytes。",
+        "impact": "同一请求集合这一条件不足以建立实际 HBM 字节等式。未命中读取还可能有事务过取、请求合并、其他层命中和写回等差异。例如在冷态、无压缩、32 B 填充粒度的指定模型中，只需一个 4 B 字且 L2 命中为零，有效未命中字节为 4 B，实际填充却为 32 B。当前写法可能把有效需求除以事务带宽，低估时间，违背本章前文的口径要求。",
+        "blocking": true,
+        "required_revision": "分别命名 HBM 有效需求与 HBM 事务字节。将减法限定为明确读取边界下的有效未命中需求账，并说明它与实际事务量相等所需的简化假设；事务时间使用匹配的事务带宽，或直接采用匹配访问形态的有效带宽。增加能区分有效未命中需求与实际填充的离散反例，避免只验证减法本身。"
+      },
+      {
+        "id": "K-TOOLS-008-GRAPH-TIME-IDENTITY",
+        "criterion": "definition",
+        "evidence": "正文算例写“同工作图 replay 设备侧 0.2 ms”，脚本却设置“graph_host = 0.2 * ms”，并设置“device = 0.8 * ms”，通过 max(device, graph_host) 得到图路径每轮 0.8 ms。",
+        "impact": "脚本支持的是主机重放成本 g=0.2 ms、共同设备工作 D=0.8 ms 的模型，并不支持正文所写的设备重放时间为 0.2 ms。若同一工作已有 0.8 ms 或 12 ms 的 HBM 需求时间，则不能同时把整段设备工作记为 0.2 ms；这会混淆图提交收益与设备执行收益。",
+        "blocking": true,
+        "required_revision": "统一正文和脚本的时间身份。若沿用当前计算，将 0.2 ms 明确为图重放主机提交成本，分别给出共同设备工作和完整轮次时间；保留设备主导时不获益的条件。用完整总时间验证捕获摊销，明确约 25 轮是打平点，严格收益在其后。"
+      },
+      {
+        "id": "K-TOOLS-008-NEGATIVE-CONTROL-COVERAGE",
+        "criterion": "diagnosis",
+        "evidence": "正文声称检查“把表观 L2 速率当 HBM”和“把双向复制按两个单向峰值相加”。实际 L2 部分仅断言 hbm == GIB、logical / hbm == 2.0，没有构造或拒绝该错误速率；双工部分设置“bad_link = serial_link”，比较的是 2.0 s 与 1.4 s，却打印“peak-sum rejected”。图部分的“bad_be = 0.0”也没有执行忽略捕获成本的总时间路径。",
+        "impact": "退出码 0 不能支持正文列出的全部负对照。双工场景中真正将两个单向峰值相加会预测 (28+28)/(28+28)=1.0 s，脚本实际比较的错误值是串行路径的 2.0 s。L2 部分没有检查带宽误用，因而不能反证本章当前的流量口径错误。",
+        "blocking": true,
+        "required_revision": "让所声称的错误算法实际产生结果并进入相同的参考判定：L2 用独立的有效需求、命中和填充账核对速率；双工明确计算峰值相加的错误时间；捕获摊销用逐轮总账或事件累计核对打平前后结果。同步修订正文覆盖声明，未实现的分支如实列为未覆盖，并重新保存绑定修订后脚本的执行记录。"
+      }
+    ],
+    "limitations": [
+      "未执行 GPU、CUDA 或 Nsight 测量；真实事务、cache 命中、双工曲线、时钟漂移、图捕获合法性和服务效果仍未验证。正文已清楚声明这些边界，它们本身不构成阻塞问题。",
+      "本轮检查了用户提供的完整候选、脚本和实际 preflight 记录；没有重新运行 Python 脚本，也没有从磁盘重算绑定哈希。独立算术复核通过 JavaScript 在内存中完成。",
+      "原始文档仅核对所供摘录。S-CUDA-BEST 的本轮原文范围未包含完整 §9.2.1，32 B 段契约由完整来源说明支持；不能据此声称重新通读并核验了该原文章节。",
+      "相对链接的层级写法与所供路径一致，但没有验证磁盘文件存在性或 reader.html 实际可读性。当前工具没有提供本地文件读取能力，也未能读取本地技能文件。",
+      "作者材料账记录作者获供的范围，不证明认知阅读。账中的正文是较早的完整 5952 字符版本、哈希 b31dd621ab293e8cb26d65dce51ec87b66e86a614dc91fff508c71182529cc3f；本次独立审查对象是绑定 482d51306e2976d39e1087107fbefda10c375edde29dc06b9acdc9bdf8c4accf 的完整候选，不混用两者。"
+    ],
+    "checks": [
+      {
+        "script": "tools/check_k_tools_008_full.py",
+        "args": [],
+        "script_sha256": "f4b33ed49c1cc086cb626bc577cf4f5452960e1f2157b97e8e723bac1d6e1358",
+        "execution_scope": "审阅用户提供的 actual_preflight 实际执行记录；本审阅者未重跑 Python。",
+        "backend": "remote_bwrap",
+        "returncode": 0,
+        "timed_out": false,
+        "elapsed_seconds": 0.0664668008685112,
+        "assessment": "进程完成且 stderr 为空；仅支持实际执行到的 CPU 断言，不能记为全部声称机制及负对照通过。"
+      }
+    ],
+    "no_checks_reason": "",
+    "reading_scope": "本审阅者完整阅读用户提供的 AGENTS.md [0,567)、docs/knowledge-method.md [0,2251)、docs/knowledge-review.md [0,3016)、当前 knowledge/tools/gpu-characterization.md [0,11559)、knowledge/sources/S-CUDA-BEST.md [0,992)、S-CUDA-ASYNC.md [0,1610)、S-NCU.md [0,477)、S-NSYS.md [0,498)、S-CUDA-TOPOLOGY.md [0,500)、knowledge/hardware/memory-and-roofline.md [0,13215)，以及完整 candidate.test_script、author_notes、author_material_scopes 和 actual_preflight。以下仅阅读供给摘录，范围均为提取文本的零基半开字符区间：knowledge/hardware/cuda-execution.md [0,4000)、[8000,14869)、[16000,19297)；knowledge/tools/kernel-counter-replay.md [0,6937)、[8000,15229)；knowledge/tools/statistical-experiments.md [0,11736)、[12000,14430)；knowledge/frameworks/cuda-graph-buffers.md [0,6919)、[8000,15247)；knowledge/system-semantics/specialization-levers.md [0,6695)、[8000,15471)；references/S-CUDA-BEST/fulltext.txt [0,4000)、[8000,12000)、[36000,46295)、[52000,60000)、[108000,116000)、[128000,132000)、[156000,160000)、[176000,180000)；references/S-CUDA-ASYNC/fulltext.txt 和 references/S-CUDA-TOPOLOGY/fulltext.txt 各为 [4000,8000)、[80000,84000)、[260000,262295)、[784000,792000)、[800000,804000)、[1020000,1024000)、[1068000,1084000)、[1100000,1104000)；references/S-NCU/fulltext.txt [8000,12000)、[16000,20000)、[24000,30294)、[48000,52000)、[60000,68000)、[108000,124000)、[136000,140000)；references/S-NSYS/fulltext.txt [52000,56000)、[108000,112000)、[140000,144000)、[152000,156000)、[172000,180000)、[200000,208000)、[212000,216000)、[340000,342294)、[448000,452000)、[472000,476000)。documents 仅列完整获供并阅读的文件，摘录原文不列入。未读取源码归档，也没有将作者获供范围替换成本审阅者范围。",
+    "test_assessment": "实际 preflight 的脚本哈希与要求绑定一致，记录显示 Python 在只读输入、隔离网络的 remote_bwrap 中退出 0；作者原先声明未运行，协调者后续执行记录补充的是运行事实，两者并不矛盾。有效字节/事务字节检查以已知完成时间 1 s 为参考，能区分 128/128 与错误的 160/128；段集合检查使用明确集合 0..3、0..4、0..7，本审阅者另外逐字节枚举复核了 4、5、8 段；串行与重叠、消费者份额和访问模式选择有可手算的固定预期。这些是有限算术检查，不是整体表征器或设备事件模型。边界实际覆盖负字节、零时间、命中超过需求、负偏移、负工作、零工作和纯搬运；未覆盖 select_entry 的缺失/歧义分支、shared 双工分支、不一致速率拒绝或完整样本发布状态。上述未覆盖项不自动成为新增验收条件。阻塞问题在于现有覆盖声明与实际检查不符：L2 没有错误速率负对照，双工 bad_link 是合法串行模型而非峰值相加缺陷，bad_be 为常数且 graph_total 未被调用。独立复算显示实际峰值相加错误预测 1.0 s，而实测双工参数的方向完成参考为 1.4 s；图总账在 24、25、26 轮分别为亏损、打平、获益。脚本因此不能以退出码 0 证明正文声称的全部错误机制已被检测。"
+  },
+  "format_status": "strict_json",
+  "format_error": null,
+  "output_text": "{\n  \"entry_id\": \"K-TOOLS-008\",\n  \"body_sha256\": \"482d51306e2976d39e1087107fbefda10c375edde29dc06b9acdc9bdf8c4accf\",\n  \"reviewer\": \"sol-reviewer:K-TOOLS-008:round-1\",\n  \"decision\": \"revise\",\n  \"documents\": {\n    \"AGENTS.md\": \"b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a\",\n    \"docs/knowledge-method.md\": \"69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb\",\n    \"docs/knowledge-review.md\": \"f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21\",\n    \"knowledge/tools/gpu-characterization.md\": \"482d51306e2976d39e1087107fbefda10c375edde29dc06b9acdc9bdf8c4accf\",\n    \"knowledge/sources/S-CUDA-BEST.md\": \"4b752c1a26f66a195df62be354649f0a6880f733fb365e82e87bdd63bf71d45c\",\n    \"knowledge/sources/S-CUDA-ASYNC.md\": \"40df9287d0648a8ef55a046ceb1c18dd402619ede6e57ca33d3f90e4ace3da05\",\n    \"knowledge/sources/S-NCU.md\": \"1bec5edf1e9343ad79094b2772466c3132597f8f83085d1d8959683c187f9f17\",\n    \"knowledge/sources/S-NSYS.md\": \"823ebab3b5e25820e6d55b2c6ad4dba63004b08fe75d562fb0890ace857f8336\",\n    \"knowledge/sources/S-CUDA-TOPOLOGY.md\": \"39d4039179728ce8570c3b9ec3801aaad52108d030f278fb598a4d6d47de1f8e\",\n    \"knowledge/hardware/memory-and-roofline.md\": \"467f27d23a2ea5cd0468e2208fb3b080bc5c94d53e43ac89ee9ca077504eae41\",\n    \"tools/check_k_tools_008_full.py\": \"f4b33ed49c1cc086cb626bc577cf4f5452960e1f2157b97e8e723bac1d6e1358\"\n  },\n  \"criteria\": {\n    \"definition\": {\n      \"assessment\": \"partial\",\n      \"reason\": \"动机、条件元组、参数包、工作量和完成边界定义充分；但 L2 段未区分未命中的有效需求字节与实际 HBM 事务字节，图算例中的设备时间与脚本主机时间也不一致。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/tools/gpu-characterization.md\",\n          \"quote\": \"输出不是裸标量，而是带条件谓词的参数条目\"\n        },\n        {\n          \"path\": \"knowledge/tools/gpu-characterization.md\",\n          \"quote\": \"`D_HBM = D_use − D_hit`。\"\n        },\n        {\n          \"path\": \"knowledge/tools/gpu-characterization.md\",\n          \"quote\": \"同工作图 replay 设备侧 0.2 ms。\"\n        }\n      ]\n    },\n    \"legality\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"明确要求完成状态、分子分母范围和条件身份匹配，区分冷热状态、锁钟选择与服务条件；测量值也没有被无条件宣称为硬件极限。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/tools/gpu-characterization.md\",\n          \"quote\": \"一个条目只有在其适用条件被当前 workload 蕴含时才能进入成本模型；条件不蕴含时应重测、换条目或保留未知。\"\n        },\n        {\n          \"path\": \"knowledge/tools/gpu-characterization.md\",\n          \"quote\": \"测得的有效速率是带条件的估计，不是数学上不可突破的硬上限\"\n        }\n      ]\n    },\n    \"algorithm\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"在表征方法这一范围内，给出了输入输出、候选准备、重复采样、拒绝条件、干预、未决处理和发布链；没有把该伪代码冒充已经执行的 CUDA 测量实现。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/tools/gpu-characterization.md\",\n          \"quote\": \"表征的状态链是：计划已定义 → 输入已准备并预热 → 样本已采集 → 条件与分母已核对 → 交叉条件已检验 → 条目已发布或标为未决。\"\n        },\n        {\n          \"path\": \"knowledge/tools/gpu-characterization.md\",\n          \"quote\": \"拒绝零或负时间、分母缺失、未完成工作、条件字段缺失的样本\"\n        },\n        {\n          \"path\": \"knowledge/tools/gpu-characterization.md\",\n          \"quote\": \"若多个解释仍不能区分，保留未决项和原始证据，不发布单一常数\"\n        }\n      ]\n    },\n    \"cost\": {\n      \"assessment\": \"partial\",\n      \"reason\": \"六类成本、共享资源合并、依赖路径和捕获摊销已经展开，组合算例的 GiB/TiB 换算正确；但 L2 流量等式缺少口径条件，图重放算例混淆主机成本与设备工作，影响模型代入。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/tools/gpu-characterization.md\",\n          \"quote\": \"若两个阶段有依赖或共用同一独占资源，不能直接取 max，应按依赖路径相加，或把共享资源的总需求合并后用同一容量估值。\"\n        },\n        {\n          \"path\": \"knowledge/tools/gpu-characterization.md\",\n          \"quote\": \"`N > C0 / (T_eager − T_graph)`，分母必须为正。\"\n        },\n        {\n          \"path\": \"knowledge/tools/gpu-characterization.md\",\n          \"quote\": \"其中已证实由 L2 满足的字节为 `D_hit`\"\n        }\n      ]\n    },\n    \"adaptation\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"条件变化表明确保留计数及完成边界，针对访问形态、工作集、dtype、并发、持续时长、拓扑和运行时变化要求换条目、重测或停止外推，符合本章范围。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/tools/gpu-characterization.md\",\n          \"quote\": \"| 访问形态从顺序变随机 | 有效字节与时间边界 | 换用随机或混合带宽条目；不沿用顺序峰值 |\"\n        },\n        {\n          \"path\": \"knowledge/tools/gpu-characterization.md\",\n          \"quote\": \"| 驱动、运行时或库路径改变 | 计时边界与 dtype 契约 | 重核 dispatch 与参数；旧条目只能作为历史证据 |\"\n        }\n      ]\n    },\n    \"diagnosis\": {\n      \"assessment\": \"partial\",\n      \"reason\": \"竞争解释、受控干预和反证修正表有实质内容；但检查覆盖声明超过实际算法，尤其 L2 错误变体没有进入检查，双工负对照实际检查的是串行执行而非峰值相加。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/tools/gpu-characterization.md\",\n          \"quote\": \"host 降低而 ITL 不变时，撤回端到端提交瓶颈结论\"\n        },\n        {\n          \"path\": \"knowledge/tools/gpu-characterization.md\",\n          \"quote\": \"脚本故意保留错误变体并由独立参考拒绝\"\n        },\n        {\n          \"path\": \"knowledge/tools/gpu-characterization.md\",\n          \"quote\": \"它们必须实际触发不变量失败，而不是只打印成功。\"\n        }\n      ]\n    }\n  },\n  \"findings\": [\n    {\n      \"id\": \"K-TOOLS-008-L2-BYTE-IDENTITY\",\n      \"criterion\": \"cost\",\n      \"evidence\": \"正文写“L2 复用会让观察到的 HBM 字节低于张量逻辑读取字节”，随后以“其中已证实由 L2 满足的字节为 `D_hit`”作为条件给出“`D_HBM = D_use − D_hit`”。脚本 l2_hbm_bytes 也只返回 logical_bytes - hit_bytes。\",\n      \"impact\": \"同一请求集合这一条件不足以建立实际 HBM 字节等式。未命中读取还可能有事务过取、请求合并、其他层命中和写回等差异。例如在冷态、无压缩、32 B 填充粒度的指定模型中，只需一个 4 B 字且 L2 命中为零，有效未命中字节为 4 B，实际填充却为 32 B。当前写法可能把有效需求除以事务带宽，低估时间，违背本章前文的口径要求。\",\n      \"blocking\": true,\n      \"required_revision\": \"分别命名 HBM 有效需求与 HBM 事务字节。将减法限定为明确读取边界下的有效未命中需求账，并说明它与实际事务量相等所需的简化假设；事务时间使用匹配的事务带宽，或直接采用匹配访问形态的有效带宽。增加能区分有效未命中需求与实际填充的离散反例，避免只验证减法本身。\"\n    },\n    {\n      \"id\": \"K-TOOLS-008-GRAPH-TIME-IDENTITY\",\n      \"criterion\": \"definition\",\n      \"evidence\": \"正文算例写“同工作图 replay 设备侧 0.2 ms”，脚本却设置“graph_host = 0.2 * ms”，并设置“device = 0.8 * ms”，通过 max(device, graph_host) 得到图路径每轮 0.8 ms。\",\n      \"impact\": \"脚本支持的是主机重放成本 g=0.2 ms、共同设备工作 D=0.8 ms 的模型，并不支持正文所写的设备重放时间为 0.2 ms。若同一工作已有 0.8 ms 或 12 ms 的 HBM 需求时间，则不能同时把整段设备工作记为 0.2 ms；这会混淆图提交收益与设备执行收益。\",\n      \"blocking\": true,\n      \"required_revision\": \"统一正文和脚本的时间身份。若沿用当前计算，将 0.2 ms 明确为图重放主机提交成本，分别给出共同设备工作和完整轮次时间；保留设备主导时不获益的条件。用完整总时间验证捕获摊销，明确约 25 轮是打平点，严格收益在其后。\"\n    },\n    {\n      \"id\": \"K-TOOLS-008-NEGATIVE-CONTROL-COVERAGE\",\n      \"criterion\": \"diagnosis\",\n      \"evidence\": \"正文声称检查“把表观 L2 速率当 HBM”和“把双向复制按两个单向峰值相加”。实际 L2 部分仅断言 hbm == GIB、logical / hbm == 2.0，没有构造或拒绝该错误速率；双工部分设置“bad_link = serial_link”，比较的是 2.0 s 与 1.4 s，却打印“peak-sum rejected”。图部分的“bad_be = 0.0”也没有执行忽略捕获成本的总时间路径。\",\n      \"impact\": \"退出码 0 不能支持正文列出的全部负对照。双工场景中真正将两个单向峰值相加会预测 (28+28)/(28+28)=1.0 s，脚本实际比较的错误值是串行路径的 2.0 s。L2 部分没有检查带宽误用，因而不能反证本章当前的流量口径错误。\",\n      \"blocking\": true,\n      \"required_revision\": \"让所声称的错误算法实际产生结果并进入相同的参考判定：L2 用独立的有效需求、命中和填充账核对速率；双工明确计算峰值相加的错误时间；捕获摊销用逐轮总账或事件累计核对打平前后结果。同步修订正文覆盖声明，未实现的分支如实列为未覆盖，并重新保存绑定修订后脚本的执行记录。\"\n    }\n  ],\n  \"limitations\": [\n    \"未执行 GPU、CUDA 或 Nsight 测量；真实事务、cache 命中、双工曲线、时钟漂移、图捕获合法性和服务效果仍未验证。正文已清楚声明这些边界，它们本身不构成阻塞问题。\",\n    \"本轮检查了用户提供的完整候选、脚本和实际 preflight 记录；没有重新运行 Python 脚本，也没有从磁盘重算绑定哈希。独立算术复核通过 JavaScript 在内存中完成。\",\n    \"原始文档仅核对所供摘录。S-CUDA-BEST 的本轮原文范围未包含完整 §9.2.1，32 B 段契约由完整来源说明支持；不能据此声称重新通读并核验了该原文章节。\",\n    \"相对链接的层级写法与所供路径一致，但没有验证磁盘文件存在性或 reader.html 实际可读性。当前工具没有提供本地文件读取能力，也未能读取本地技能文件。\",\n    \"作者材料账记录作者获供的范围，不证明认知阅读。账中的正文是较早的完整 5952 字符版本、哈希 b31dd621ab293e8cb26d65dce51ec87b66e86a614dc91fff508c71182529cc3f；本次独立审查对象是绑定 482d51306e2976d39e1087107fbefda10c375edde29dc06b9acdc9bdf8c4accf 的完整候选，不混用两者。\"\n  ],\n  \"checks\": [\n    {\n      \"script\": \"tools/check_k_tools_008_full.py\",\n      \"args\": [],\n      \"script_sha256\": \"f4b33ed49c1cc086cb626bc577cf4f5452960e1f2157b97e8e723bac1d6e1358\",\n      \"execution_scope\": \"审阅用户提供的 actual_preflight 实际执行记录；本审阅者未重跑 Python。\",\n      \"backend\": \"remote_bwrap\",\n      \"returncode\": 0,\n      \"timed_out\": false,\n      \"elapsed_seconds\": 0.0664668008685112,\n      \"assessment\": \"进程完成且 stderr 为空；仅支持实际执行到的 CPU 断言，不能记为全部声称机制及负对照通过。\"\n    }\n  ],\n  \"no_checks_reason\": \"\",\n  \"reading_scope\": \"本审阅者完整阅读用户提供的 AGENTS.md [0,567)、docs/knowledge-method.md [0,2251)、docs/knowledge-review.md [0,3016)、当前 knowledge/tools/gpu-characterization.md [0,11559)、knowledge/sources/S-CUDA-BEST.md [0,992)、S-CUDA-ASYNC.md [0,1610)、S-NCU.md [0,477)、S-NSYS.md [0,498)、S-CUDA-TOPOLOGY.md [0,500)、knowledge/hardware/memory-and-roofline.md [0,13215)，以及完整 candidate.test_script、author_notes、author_material_scopes 和 actual_preflight。以下仅阅读供给摘录，范围均为提取文本的零基半开字符区间：knowledge/hardware/cuda-execution.md [0,4000)、[8000,14869)、[16000,19297)；knowledge/tools/kernel-counter-replay.md [0,6937)、[8000,15229)；knowledge/tools/statistical-experiments.md [0,11736)、[12000,14430)；knowledge/frameworks/cuda-graph-buffers.md [0,6919)、[8000,15247)；knowledge/system-semantics/specialization-levers.md [0,6695)、[8000,15471)；references/S-CUDA-BEST/fulltext.txt [0,4000)、[8000,12000)、[36000,46295)、[52000,60000)、[108000,116000)、[128000,132000)、[156000,160000)、[176000,180000)；references/S-CUDA-ASYNC/fulltext.txt 和 references/S-CUDA-TOPOLOGY/fulltext.txt 各为 [4000,8000)、[80000,84000)、[260000,262295)、[784000,792000)、[800000,804000)、[1020000,1024000)、[1068000,1084000)、[1100000,1104000)；references/S-NCU/fulltext.txt [8000,12000)、[16000,20000)、[24000,30294)、[48000,52000)、[60000,68000)、[108000,124000)、[136000,140000)；references/S-NSYS/fulltext.txt [52000,56000)、[108000,112000)、[140000,144000)、[152000,156000)、[172000,180000)、[200000,208000)、[212000,216000)、[340000,342294)、[448000,452000)、[472000,476000)。documents 仅列完整获供并阅读的文件，摘录原文不列入。未读取源码归档，也没有将作者获供范围替换成本审阅者范围。\",\n  \"test_assessment\": \"实际 preflight 的脚本哈希与要求绑定一致，记录显示 Python 在只读输入、隔离网络的 remote_bwrap 中退出 0；作者原先声明未运行，协调者后续执行记录补充的是运行事实，两者并不矛盾。有效字节/事务字节检查以已知完成时间 1 s 为参考，能区分 128/128 与错误的 160/128；段集合检查使用明确集合 0..3、0..4、0..7，本审阅者另外逐字节枚举复核了 4、5、8 段；串行与重叠、消费者份额和访问模式选择有可手算的固定预期。这些是有限算术检查，不是整体表征器或设备事件模型。边界实际覆盖负字节、零时间、命中超过需求、负偏移、负工作、零工作和纯搬运；未覆盖 select_entry 的缺失/歧义分支、shared 双工分支、不一致速率拒绝或完整样本发布状态。上述未覆盖项不自动成为新增验收条件。阻塞问题在于现有覆盖声明与实际检查不符：L2 没有错误速率负对照，双工 bad_link 是合法串行模型而非峰值相加缺陷，bad_be 为常数且 graph_total 未被调用。独立复算显示实际峰值相加错误预测 1.0 s，而实测双工参数的方向完成参考为 1.4 s；图总账在 24、25、26 轮分别为亏损、打平、获益。脚本因此不能以退出码 0 证明正文声称的全部错误机制已被检测。\"\n}",
+  "elapsed_seconds": 188.187
+}

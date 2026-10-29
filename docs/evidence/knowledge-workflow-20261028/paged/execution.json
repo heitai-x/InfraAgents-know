@@ -1,0 +1,166 @@
+{
+  "status": "PASS",
+  "checked_at": "2026-10-28",
+  "checks": [
+    {
+      "name": "paged warp copies reconstruct independent logical K/V tiles",
+      "status": "PASS",
+      "cases": 140
+    },
+    {
+      "name": "empty and tile-tail rows do not query page table or global data",
+      "status": "PASS",
+      "cases_include": "L=0 and tile starts beyond L"
+    },
+    {
+      "name": "published non-contiguous row addresses",
+      "status": "PASS"
+    },
+    {
+      "name": "published byte and metadata request accounting",
+      "status": "PASS"
+    },
+    {
+      "name": "four issue rounds each write one word per shared bank",
+      "status": "PASS"
+    },
+    {
+      "name": "contiguous-address assumption can leave the physical pool",
+      "status": "PASS"
+    },
+    {
+      "name": "contiguous-address assumption can also read different content",
+      "status": "PASS"
+    },
+    {
+      "name": "tight odd dimensions invalidate the declared 32-bit row loads",
+      "status": "PASS"
+    },
+    {
+      "name": "both append schemes preserve independent old and new logical states",
+      "status": "PASS",
+      "cases": 864
+    },
+    {
+      "name": "new consumer waits while an append transaction owns the request",
+      "status": "PASS"
+    },
+    {
+      "name": "sharing cannot race an acquired in-place write lease",
+      "status": "PASS"
+    },
+    {
+      "name": "abort leaves published prefix intact despite uncommitted suffix bytes",
+      "status": "PASS"
+    },
+    {
+      "name": "retry overwrites every newly published position",
+      "status": "PASS"
+    },
+    {
+      "name": "cancelled in-place target retains W until abort False",
+      "status": "PASS"
+    },
+    {
+      "name": "cancelled writer-owned page cannot be assigned as a free page False",
+      "status": "PASS"
+    },
+    {
+      "name": "aborted target is reclaimable only after final writes False",
+      "status": "PASS"
+    },
+    {
+      "name": "cancelled in-place target retains W until abort True",
+      "status": "PASS"
+    },
+    {
+      "name": "cancelled writer-owned page cannot be assigned as a free page True",
+      "status": "PASS"
+    },
+    {
+      "name": "aborted target is reclaimable only after final writes True",
+      "status": "PASS"
+    },
+    {
+      "name": "COW capacity shortage changes no live state",
+      "status": "PASS"
+    },
+    {
+      "name": "capacity failure preserves bytes, descriptor and writer ownership",
+      "status": "PASS"
+    },
+    {
+      "name": "draining a conflicting reader makes in-place candidate feasible",
+      "status": "PASS"
+    },
+    {
+      "name": "ignoring the actual wide read range exposes a write/read conflict",
+      "status": "PASS"
+    },
+    {
+      "name": "shared tail selects the declared COW branch",
+      "status": "PASS"
+    },
+    {
+      "name": "old in-place transaction cannot publish to a reused request name",
+      "status": "PASS"
+    },
+    {
+      "name": "old abort leaves the replacement request and its pending state intact",
+      "status": "PASS"
+    },
+    {
+      "name": "published same-trajectory traffic and capacity comparison",
+      "status": "PASS"
+    },
+    {
+      "name": "sequential fill has P squared versus P declared token-byte traffic",
+      "status": "PASS",
+      "page_lengths": [
+        1,
+        3,
+        4,
+        16
+      ]
+    }
+  ],
+  "check_count": 28,
+  "mapping_cases": 140,
+  "append_cases": 864,
+  "same_trajectory": {
+    "immutable": {
+      "step_traffic_token_bytes": [
+        3,
+        5,
+        7
+      ],
+      "total_bytes": 480,
+      "peak_pages": 4,
+      "peak_bytes": 512
+    },
+    "mixed": {
+      "step_traffic_token_bytes": [
+        1,
+        1,
+        7
+      ],
+      "total_bytes": 288,
+      "peak_pages": 2,
+      "peak_bytes": 256
+    }
+  },
+  "inputs": {
+    "knowledge/algorithms/paged-kv-capacity.md": "66e1dedfb6aafe349721e7b2c050028e64f4668a83bfb7d9962604499bf02859",
+    "knowledge/frameworks/attention-backends.md": "ead758e413f2fd59119e77ce8a91eddd5e5fe6468a315109554d78013df3b4f5"
+  },
+  "script_sha256": "d2cac617e8cfe78e8bc2cbf202bfcba68e7a2d33cdceeff288e1c9e3d95f7cec",
+  "scope": "Independent CPU byte-layout writer versus declared warp loads; serialized-host range/ownership transitions and logical cost arithmetic.",
+  "limits": [
+    "No GPU kernel, graph, physical matrix fragment or generated machine instruction was executed.",
+    "Read ranges are declared in the CPU model; actual instructions and device visibility must be established in an implementation.",
+    "Host transitions are serialized, so this is not an exhaustive proof of concurrent allocators.",
+    "Copy bytes and request segments are logical models, not DRAM measurements or performance evidence.",
+    "Integer token payloads model fixed-format K/V state identity, not full model generation or quantized scale updates.",
+    "No controlled Agent knowledge-benefit experiment was performed."
+  ]
+}

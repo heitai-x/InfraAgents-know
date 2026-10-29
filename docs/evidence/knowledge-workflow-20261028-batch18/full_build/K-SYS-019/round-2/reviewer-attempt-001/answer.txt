@@ -1,0 +1,159 @@
+{
+  "entry_id": "K-SYS-019",
+  "body_sha256": "28418b53a032a866f92fba599f699d183849c8c3170f95f88ea6833c1de4d152",
+  "reviewer": "sol-reviewer:K-SYS-019:round-2",
+  "decision": "accept",
+  "documents": {
+    "AGENTS.md": "b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a",
+    "docs/knowledge-method.md": "69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb",
+    "docs/knowledge-review.md": "f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21",
+    "knowledge/system-semantics/deployment-environment.md": "28418b53a032a866f92fba599f699d183849c8c3170f95f88ea6833c1de4d152",
+    "knowledge/sources/S-NVIDIA-PLUGIN.md": "dcbdcae57ae70346efc20ed1421becee1f358d7a650a2929031aac05993cef91",
+    "knowledge/sources/S-LINUX-RESOURCES.md": "d829824442f5a9abd36c3caf63c5fd30da8da4f8839db88e33aa045b7baa05f0",
+    "knowledge/sources/S-TORCH-CUDA.md": "8ee61677a1e35d475d9bb122b2c7fa824ccf054acefbe2f12345d72c1fb1b00e",
+    "knowledge/sources/S-BORG.md": "2efc1ae7dfd3d9751a94b3ce8ee9426cb4943197fa2afc80c344f009d52c7331",
+    "knowledge/hardware/host-device-transfer.md": "e4921a0714af21f7ab1a336f40af662f716f2c64a42dd598eb2cede548c858d2",
+    "knowledge/workloads/cluster-resource-placement.md": "235de985ced67e21bfe6727ff2e91be680e8def602ad02a3f3e9de2b3ca1b8a1",
+    "references/S-NVIDIA-PLUGIN/fulltext.txt": "0f86c2073119311977b39a773e3c98790682ae1c8269720fe6dda15447d74a94",
+    "tools/check_k_sys_019_full.py": "2313bfcf39ef10a02ad116b70731324b1e75907263e1289c88187a801af026b8"
+  },
+  "criteria": {
+    "definition": {
+      "assessment": "sufficient",
+      "reason": "完整定义环境身份、配置代次、授权声明、实际映射、资源边界和共同依赖；相容关系已统一为制品与环境之间的三值谓词，并给出真、假、未知的判定条件。R1-001 的偏序与非传递性冲突已关闭。",
+      "evidence": [
+        {
+          "path": "knowledge/system-semantics/deployment-environment.md",
+          "quote": "Compatible : A × X → {真, 假, 未知}。"
+        },
+        {
+          "path": "knowledge/system-semantics/deployment-environment.md",
+          "quote": "任一必要要求已被反证则为假；全部要求在声明范围内得到支持才为真；必要信息缺失则为未知。"
+        },
+        {
+          "path": "knowledge/system-semantics/deployment-environment.md",
+          "quote": "ε 不是阻止外部变化的锁。读取多份文件也不是内核事务；配置、热插拔或分配在取证过程中变化时，应丢弃不一致快照并重读。"
+        }
+      ]
+    },
+    "legality": {
+      "assessment": "sufficient",
+      "reason": "准入同时检查单消费者必要上界、共享祖先、实际资源域和已有承诺，CPU 时间先换算为份额，内存按唯一对象及实际记费归属计账。账本不全返回 UNKNOWN，最终发布要求共同预留与代次重验。故障合法性绑定服务声明，并按完整执行组计算剩余副本容量。R1-004、R1-005 已关闭。",
+      "evidence": [
+        {
+          "path": "knowledge/system-semantics/deployment-environment.md",
+          "quote": "CPU 需求定义为指定规划窗口 W 内的 CPU 时间 D_r，先换成 p_r=D_r/W，单位为 CPU 秒/秒。"
+        },
+        {
+          "path": "knowledge/system-semantics/deployment-environment.md",
+          "quote": "共享页的记费归属不明、其他消费者账本缺失或必要峰值未知时，不能输出完整容量可行。"
+        },
+        {
+          "path": "knowledge/system-semantics/deployment-environment.md",
+          "quote": "移除失去任一必要 rank、设备、存储、控制或路径依赖的完整执行组"
+        },
+        {
+          "path": "knowledge/system-semantics/deployment-environment.md",
+          "quote": "未声明故障目标时，记录共同失效风险，不额外要求单实例容错"
+        }
+      ]
+    },
+    "algorithm": {
+      "assessment": "sufficient",
+      "reason": "集合算法逐层处理非空不相交请求的继承回退，条件化不变量与固定 Linux 摘录相符，并限定普通静态层级。设备算法将名额、授权集合、实际枚举和 ordinal 分开，缺枚举分支立即结束；共同准入与就绪发布给出失败、未知、重验及范围收窄路径。脚本实际包含本轮要求补充的负对照与边界输入。R1-002、R1-003、R1-008 已关闭。",
+      "evidence": [
+        {
+          "path": "knowledge/system-semantics/deployment-environment.md",
+          "quote": "E(n)=J_n，当 S_n≠∅ 且 J_n≠∅；否则 E(n)=E(parent(n))。"
+        },
+        {
+          "path": "knowledge/system-semantics/deployment-environment.md",
+          "quote": "3 未取得最终进程枚举：返回 WAIT_ENUMERATION；本次调用结束"
+        },
+        {
+          "path": "knowledge/system-semantics/deployment-environment.md",
+          "quote": "5 μ ← 枚举记录中的 ordinal—稳定身份对应关系"
+        },
+        {
+          "path": "knowledge/system-semantics/deployment-environment.md",
+          "quote": "最大流等于总需求，才存在这个连续份额模型中的放置。它不证明任意线程并行结构能实现该份额，也不证明延迟 SLO。"
+        }
+      ]
+    },
+    "cost": {
+      "assessment": "sufficient",
+      "reason": "六类成本接到同一部署对象，区分唯一驻留峰值、累计工作和完成时间；说明计时起止、秒单位、资源独立前提及共享资源顺序。共享 SSD 算例可独立核算为合法 10 秒计划，串行 12 秒的上界前提明确，孤立 max 的 6 秒估计被资源服务量下界反驳。R1-006 已关闭。",
+      "evidence": [
+        {
+          "path": "knowledge/system-semantics/deployment-environment.md",
+          "quote": "就绪计时从共同准备触发到全部必要条件可发布为止，所有时间项单位为秒。"
+        },
+        {
+          "path": "knowledge/system-semantics/deployment-environment.md",
+          "quote": "共享资源尚未排定时，需要选择合法资源顺序或有效服务份额，单有依赖图关键路径并不保证可实现。"
+        },
+        {
+          "path": "knowledge/system-semantics/deployment-environment.md",
+          "quote": "若阶段时长是固定非负值或可信上界，串行调度合法，且等待、争用及额外依赖均被覆盖，则全局合法串行计划的总和可以给出保守上界。"
+        },
+        {
+          "path": "knowledge/system-semantics/deployment-environment.md",
+          "quote": "该计划完成于 10 秒；全部四项串行的 12 秒也是满足这些假设的保守计划。"
+        }
+      ]
+    },
+    "adaptation": {
+      "assessment": "sufficient",
+      "reason": "驱动、运行时、库、设备身份、共享方式和资源收紧后的保留、重建、重算及放弃条件均按实际依赖解释。共享模式不再直接推出设备或故障域数量变化；MPS 同时检查设备总账和客户端份额。证据重绑定与公开范围收窄也明确保留必要条件。R1-007 已关闭。",
+      "evidence": [
+        {
+          "path": "knowledge/system-semantics/deployment-environment.md",
+          "quote": "共享模式名称本身不改变设备数量或故障域数量。"
+        },
+        {
+          "path": "knowledge/system-semantics/deployment-environment.md",
+          "quote": "time-slicing 检查物理总容量与竞争风险；MPS 还检查客户端份额。80 GiB 两等份下的 60+20 不能因总量相等而放行。"
+        },
+        {
+          "path": "knowledge/system-semantics/deployment-environment.md",
+          "quote": "整个范围无法合法执行，或修复后的成本超过可接受预算时，应放弃该部署组合。"
+        }
+      ]
+    },
+    "diagnosis": {
+      "assessment": "sufficient",
+      "reason": "诊断表将设备身份、相容性、cpuset 回退、祖先竞争、实际 CPU 放置、客户端上限、故障依赖和冷启动争用分别接到可控干预、预期区别与反证修正。明确诊断设计与设备实验结果的区别，没有用符号检查替代真实内核或设备观察。",
+      "evidence": [
+        {
+          "path": "knowledge/system-semantics/deployment-environment.md",
+          "quote": "固定父有效集与 member 配置，分别请求空集、{2}、{1,2}；同时保留请求和 effective"
+        },
+        {
+          "path": "knowledge/system-semantics/deployment-environment.md",
+          "quote": "quota 不变但扩有效集改善，支持放置解释；两者均无效时撤回单纯 CPU 额度不足解释"
+        },
+        {
+          "path": "knowledge/system-semantics/deployment-environment.md",
+          "quote": "这些是诊断设计，不是目标设备实验结果。先固定对象身份、请求与完成边界，再做单因素干预；不同环境中的两次总耗时差不能直接归为 kernel 优化或共享方式收益。"
+        }
+      ]
+    }
+  },
+  "findings": [],
+  "limitations": [
+    "审阅基于任务提供的冻结正文、完整文件、明确摘录和执行记录；未访问文件系统核对落盘字节或链接目标可达性。",
+    "符号检查不验证真实 cgroup effective、分区、热插拔、短周期 CPU 调度、实际共享页记费或线程执行能力。",
+    "设备枚举是显式模型输入；未实测 CUDA、设备注入、CDI、MIG、MPS、fork 副作用或隔离强度。",
+    "检查没有实现分布式预留事务、完整生命周期并发或真实故障恢复；故障容量求和仅适用于给定的独立且可加容量模型。",
+    "设定峰值和 SSD 时间轨迹不构成硬件性能、服务 SLO、真实数值正确性或知识改善 Agent 使用效果的证据。"
+  ],
+  "checks": [
+    {
+      "script": "tools/check_k_sys_019_full.py",
+      "args": []
+    }
+  ],
+  "no_checks_reason": "",
+  "reading_scope": "本审阅完整阅读任务所供 AGENTS.md、docs/knowledge-method.md、docs/knowledge-review.md、当前候选 knowledge/system-semantics/deployment-environment.md、四份 knowledge/sources/S-NVIDIA-PLUGIN.md、S-LINUX-RESOURCES.md、S-TORCH-CUDA.md、S-BORG.md、knowledge/hardware/host-device-transfer.md、knowledge/workloads/cluster-resource-placement.md、references/S-NVIDIA-PLUGIN/fulltext.txt，以及 candidate.test_script 所供完整 tools/check_k_sys_019_full.py；并审查完整 author_notes 与 actual_preflight。其余阅读仅为所供零基半开提取字符区间：knowledge/hardware/cpu-serving.md [0,4000)、[8000,10538)；knowledge/hardware/topology-parallelism.md [8000,14538)；knowledge/hardware/transport-and-rdma.md [0,6538)；knowledge/frameworks/checkpoint-loading.md [0,333)、[8000,14205)；knowledge/system-semantics/model-lifecycle.md [0,6538)；knowledge/system-semantics/host-runtime.md [0,4000)、[12000,14538)；knowledge/system-semantics/tenant-isolation.md [4000,8000)、[12000,14538)；knowledge/system-semantics/serving-recovery.md [0,2538)、[12000,16000)；knowledge/tools/failure-evidence.md [0,2538)、[4000,8000)；knowledge/system-semantics/design-synthesis.md [12000,18538)；knowledge/workloads/cost-and-energy.md [0,2538)、[8000,12000)；references/S-LINUX-RESOURCES/fulltext.txt [0,4000)、[8000,12000)、[16000,20000)、[40000,68000)、[72000,76000)、[84000,96000)、[120000,123248)；references/S-TORCH-CUDA/fulltext.txt [0,4000)、[16000,48000)、[52000,71248)、[76000,80000)；references/S-BORG/fulltext.txt [0,16000)、[20000,28000)、[36000,63248)、[80000,88000)。摘录文件未列入 documents，不声称通读其完整归档。作者材料账本与本审阅范围分别处理：作者账本记录了比本审阅更广的部分原文区间，并记录旧正文身份；它证明材料供应范围，不证明认知阅读，也不改变本次候选正文绑定。未提供或核验上游实现源码。",
+  "test_assessment": "逐函数检查了脚本的机制、参考、输入和负对照，并复核所供协调者 actual_preflight；本审阅会话没有重新执行 Python。该记录的 script_sha256 与当前脚本绑定一致，实际 argv 使用隔离 Python 3.12，returncode=0、stderr 为空、未超时，stdout 报告 29332 项作用域内断言及 19 个负对照见证。作者明确未运行本次 Python，不能把协调者结果改记为作者执行。集合折叠以逐资源布尔状态作为另一表示的参考，并检查父集及条件化请求集不变量；固定 Linux 摘录提供回退语义依据，4096 个组合检出旧交集算法 2238 次和只看本级算法 1872 次。CPU 最大流用不依赖残量网络的消费者子集容量判据交叉检查 576 个两消费者组合，另有 cpuset 小于 quota、祖先超额和相同 CPU 竞争输入。内存检查实际覆盖 48/32/32 下 30+30、已有占用与新承诺、别名去重、身份元数据冲突及不完整账本 UNKNOWN。设备负对照实际构造错误映射，再用同一显式观察比较，grant 顺序、忽略最终过滤及名额扩容量均被区分；WAIT 分支与异常 ordinal 也有输入。dtype 越界使用 bf16 请求，未再被 fp16 正例遮蔽；模态、上下文、代次和收窄请求另行检查。MPS 60+20 总量合法但客户端超限的输入实际拒绝。故障模型检查必要组整体移除与共同域容量损失。峰值参考按唯一存储粒度令牌枚举；SSD 完成时间另由区间计划审计时长、前驱和资源互斥，并以 8 秒服务量下界拒绝 6 秒估计。这些参考、不变量和触发错误的负对照足以支撑正文声明的有限模型覆盖，未发现以退出码替代语义判断的情况。未覆盖的进程/环境身份取证、index 解析、真实设备行为、任意规模 CPU 分配、动态调度及完整事务并发均未被正文宣称已验证。R1-001 至 R1-008 在当前正文和当前脚本中均已修复，campaign 项据整份候选复核关闭。"
+}

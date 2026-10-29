@@ -1,0 +1,60 @@
+{
+  "id": "K-MODEL-006",
+  "path": "models/mla.md",
+  "category": "models",
+  "title": "MLA：压缩状态、矩阵吸收与解耦 RoPE",
+  "summary": "MLA 通过缓存低维 latent 改变 KV 的表示；真正节省 decode 流量需要执行内核沿压缩表示计算。",
+  "revision": 4,
+  "status": "seed",
+  "tags": [
+    "MLA",
+    "DeepSeek",
+    "latent",
+    "矩阵吸收",
+    "latent quantization",
+    "TP replicated latent",
+    "workspace audit"
+  ],
+  "scope": {
+    "model_families": [],
+    "platforms": [],
+    "runtimes": [],
+    "workloads": []
+  },
+  "source_ids": [
+    "S-MLA",
+    "S-FI",
+    "S-TORCH-NUMERIC",
+    "S-DEEPSEEKV3",
+    "S-KIVI"
+  ],
+  "related": [
+    "K-MODEL-002",
+    "K-ALG-004",
+    "K-ALG-009",
+    "K-ALG-021",
+    "K-ALG-015",
+    "K-HW-011",
+    "K-SYS-009",
+    "K-FW-006",
+    "K-MODEL-001"
+  ],
+  "evidence": [],
+  "updated_at": "2026-10-27",
+  "sha256": "01385fb7e6be8482ebd773498a96fc9d027a9c6d300abb415002864fccb9521b",
+  "questions": [
+    "MLA 压缩的对象是什么，为什么可以不展开历史 K/V 就完成 attention？",
+    "prefill 与 decode 为什么可以采用不同实现，吸收是否落实如何验证？",
+    "量化放在 latent 还是展开后，被验证的函数有何不同？",
+    "TP 与 EP 下 latent 状态的归属为何不同，复制 latent 的代价是什么？",
+    "怎样观察展开发生在哪里，容量变小但带宽未降说明什么？"
+  ],
+  "symptoms": [
+    "MLA 容量小但带宽未降",
+    "吸收后数值与参考偏差增大"
+  ],
+  "assumes": [
+    "使用多头潜在注意力的模型",
+    "latent 维度远小于展开 KV"
+  ]
+}

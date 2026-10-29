@@ -1,0 +1,141 @@
+{
+  "entry_id": "K-MODEL-015",
+  "body_sha256": "5b1aa5ab0c66089a805b3788058de2933e9a9316032de9d65a98704ef9961b2f",
+  "reviewer": "sol-reviewer:K-MODEL-015:round-2",
+  "decision": "accept",
+  "documents": {
+    "AGENTS.md": "b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a",
+    "docs/knowledge-method.md": "69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb",
+    "docs/knowledge-review.md": "f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21",
+    "knowledge/models/recommendation-inference.md": "5b1aa5ab0c66089a805b3788058de2933e9a9316032de9d65a98704ef9961b2f",
+    "knowledge/sources/S-DLRM.md": "71df2a168b066bc1f93f0922f6152a216790fe4c2c89803636d77e866ef0a4dd",
+    "knowledge/sources/S-TORCH-NUMERIC.md": "cbe91153d9ff7bd2f596d1d6c4e15de1ad68571f3cbde23215891a8ec7f6fab4",
+    "knowledge/algorithms/tiered-residency.md": "eb3ebc6320d5a32481cf645605d159860dc6d1edb97f1e98afd89ddb24ee82af",
+    "references/S-DLRM/fulltext.txt": "85570fe602c66c3dd186e05769557f5d6c3d23a03f6df655ba9d790507e77d2a",
+    "references/S-TORCH-NUMERIC/fulltext.txt": "bb6b2d8154a10f8f3b15e5ae4465cbc8d833067046964fc6b4d66dc036131b45",
+    "tools/check_k_model_015_full.py": "6e938616f6beea0cca339699746adca7f39ef2df2de17419f353b642243de512"
+  },
+  "criteria": {
+    "definition": {
+      "assessment": "sufficient",
+      "reason": "明确冻结制品、表与请求维度、逐出现项语义、三种聚合函数、pair 排列及输出接口；区分参数容量、请求流量与完成时间。请求状态具有明确就绪边界。",
+      "evidence": [
+        {
+          "path": "knowledge/models/recommendation-inference.md",
+          "quote": "S_b=Σ_k w_(b,k)E_(t_b)[i_(b,k)]，N_b=n_b，W_b=Σ_k w_(b,k)。"
+        },
+        {
+          "path": "knowledge/models/recommendation-inference.md",
+          "quote": "因此 pair 数为 P=F(F+1)/2，交互向量 p∈R^P，top 输入 h=[z,p]∈R^(d+P)。"
+        }
+      ]
+    },
+    "legality": {
+      "assessment": "sufficient",
+      "reason": "完整贡献、兼容版本、合法行、权重及请求边界是必要条件；pair 顺序、空均值拒绝、激活清单和聚合放置明确为接口或方案选择。数值重排没有被宣称为浮点逐位等价。",
+      "evidence": [
+        {
+          "path": "knowledge/models/recommendation-inference.md",
+          "quote": "请求需要满足：schema、mapping、表、dense 参数、数值契约及 pair 顺序属于兼容制品；行 ID 在范围内，或按规则得到合法 OOV；bag 边界覆盖输入且无跨请求混合；权重符合模式；每个逻辑出现项只有一个贡献。"
+        },
+        {
+          "path": "knowledge/models/recommendation-inference.md",
+          "quote": "重复 ID 先合并权重后，可将向量乘加次数降到每个 bag 的唯一行数乘 d，但增加分组和 wsum 构造；浮点重排不保证逐位一致。"
+        }
+      ]
+    },
+    "algorithm": {
+      "assessment": "sufficient",
+      "reason": "R1 关闭。共享 MLP 已展开逐层输入、权重轴、bias、归约、激活、可见性与回收，并绑定 bottom、top 和一次 sigmoid。bag、分片合并、交互及请求提交形成完整前向链。取消明确等待物理最后访问结束。S-DLRM 式(5)、§2.2 支持对应结构，额外契约标为本库选择。",
+      "evidence": [
+        {
+          "path": "knowledge/models/recommendation-inference.md",
+          "quote": "a_0=x，q_l[j]=b_l[j]+Σ_i W_l[j,i]a_(l−1)[i]，a_l[j]=φ_l(q_l[j])。"
+        },
+        {
+          "path": "knowledge/models/recommendation-inference.md",
+          "quote": "top 的 n_0=d+P，二分类参考路径的 n_L=1，初始输入为完整 h；top 最终层 φ_L=IDENTITY，返回一个 logit ℓ。"
+        },
+        {
+          "path": "knowledge/models/recommendation-inference.md",
+          "quote": "等待已启动读取、传输和消费者真实结束后回收其缓冲"
+        }
+      ]
+    },
+    "cost": {
+      "assessment": "sufficient",
+      "reason": "R2 关闭。两种放置均承担必要聚合，分别说明乘权、累加、归一化、partial 合并、通信和驻留；融合收益限定为具体中间读写。dense、交互及 C12-D 整数账正确，准备、同步、共享资源与关键路径也有交代。设备事务和实际耗时未冒充逻辑账。",
+      "evidence": [
+        {
+          "path": "knowledge/models/recommendation-inference.md",
+          "quote": "原始行传输没有消除 bag 聚合。若按唯一行发送，则行净荷可变为 Uds_e，但必须另传每个 bag 的行引用及 mult/wsum；这既不是语义去重，也不是自动消除目标侧计算。"
+        },
+        {
+          "path": "knowledge/models/recommendation-inference.md",
+          "quote": "合并端零初始化实现还需 Rd 次 partial 向量加法和最终归一化；无 partial 切分的单侧实现可以直接采用该侧结果。"
+        },
+        {
+          "path": "knowledge/models/recommendation-inference.md",
+          "quote": "两网络 dense 主项统一为 BΣ_l n_(l−1)n_l MAC，求和覆盖 bottom 和 top；bias 另有 BΣ_l n_l 次加法，非恒等激活、head 和必要转换另计。"
+        }
+      ]
+    },
+    "adaptation": {
+      "assessment": "sufficient",
+      "reason": "热点、batch、bag 长尾、链路、分片和精度变化均连接到保留的不变量及需重算的成本，并给出收益消失后的放弃依据。版本切换与取消没有混淆逻辑资格和物理保留。",
+      "evidence": [
+        {
+          "path": "knowledge/models/recommendation-inference.md",
+          "quote": "| 均匀访问或热点迁移 | 完整 bag 函数 | 重算 miss、迁移及尾延迟；收益消失时缩小或放弃热缓存 |"
+        },
+        {
+          "path": "knowledge/models/recommendation-inference.md",
+          "quote": "如果更新策略允许旧快照完成，不能仅因全局最新版本已变就把它混成新快照；若策略撤销旧执行资格，则阻止其未来提交并等待物理排空。"
+        }
+      ]
+    },
+    "diagnosis": {
+      "assessment": "sufficient",
+      "reason": "R3 关闭。当前脚本与绑定执行记录确实覆盖两个完成分片、3∶2 不等计数、重复项和三种模式；漏向量但保留计数的变体由同一数值比较检出。漏 dense pair 和保形状置零均实际执行。逐层轨迹及组合前向有独立参考，正文也给出性能竞争解释与反证修正。",
+      "evidence": [
+        {
+          "path": "knowledge/models/recommendation-inference.md",
+          "quote": "计数守恒能发现一类遗漏，却不能证明向量完整：错误实现可能保留 N、W，却漏加某个 S_s。因此还需要逐出现项的独立数值参考。"
+        },
+        {
+          "path": "knowledge/models/recommendation-inference.md",
+          "quote": "成功路径在两个已完成分片上核对 SUM、无权均值、加权均值，包含不等计数、重复项及零权重；实际错误变体漏掉已完成分片的向量贡献，同时保留计数，再用相同比较函数检出。"
+        },
+        {
+          "path": "knowledge/models/recommendation-inference.md",
+          "quote": "比较每层 q_l、a_l；使用非零 bias、负中间值和负 logit，首次分歧决定修正位置"
+        }
+      ]
+    }
+  },
+  "findings": [],
+  "limitations": [
+    "检查限于固定输入的 CPU Fraction、Decimal、binary64 和逻辑操作/净荷模型；不证明低精度设备路径、真实访存事务、异步可见性、取消回收、服务性能或生产质量。正文已明确这些边界。",
+    "三个 raw_rows_do_not_remove_aggregation 负对照只篡改已生成的计数字典，不是实际省略目标聚合的错误实现，不能作为额外机制验证。两条正确数据流仍实际执行聚合，并分别通过逐出现项参考及逻辑计数核对。",
+    "本次核对使用所供最终脚本及绑定执行记录，没有在审阅会话中重新运行 Python、重新计算文件哈希或检查离线链接的磁盘存在性。完整原文阅读仅指所供提取文本，未核验 PDF 图像、reader.html 或上游源码。",
+    "当前工具没有文件读取或命令执行能力，资源及模板列表均为空，因此未能读取本地 infraagents-knowledge-build/SKILL.md；本次判断依据为完整供给的方法、审查标准、正文、来源和执行证据。"
+  ],
+  "checks": [
+    {
+      "script": "tools/check_k_model_015_full.py",
+      "args": [],
+      "script_sha256": "6e938616f6beea0cca339699746adca7f39ef2df2de17419f353b642243de512",
+      "status": "pass",
+      "execution_basis": "用户提供的 actual_preflight；审阅者核对脚本逻辑、输出和绑定身份，未自行重跑",
+      "backend": "remote_bwrap",
+      "runtime": "Python 3.12",
+      "interpreter_flags": ["-I", "-S", "-B", "-X", "utf8"],
+      "returncode": 0,
+      "stderr": "",
+      "scope": "确定性 CPU 代数、逐层前向、逻辑操作和净荷模型"
+    }
+  ],
+  "no_checks_reason": "",
+  "reading_scope": "审阅者完整阅读所供 AGENTS.md [0,567)、docs/knowledge-method.md [0,2251)、docs/knowledge-review.md [0,3016)、当前 recommendation-inference.md [0,12664)、S-DLRM.md [0,592)、S-TORCH-NUMERIC.md [0,532)、tiered-residency.md [0,4244)、S-DLRM/fulltext.txt [0,31893)、S-TORCH-NUMERIC/fulltext.txt [0,10998)。相关章节仅阅读所供摘录：operator-primitives.md [0,142)、[4000,16000)；heterogeneous-execution.md [0,5655)、[8000,14487)；cpu-serving.md [0,4916)、[8000,15226)；transport-and-rdma.md [0,12142)；input-distribution.md [0,5037)、[8000,15105)；design-synthesis.md [0,844)、[8000,19298)。以上均为提取文本的零基半开字符范围。另完整检查 candidate.test_script、author_notes、author_material_scopes 及所供 actual_preflight。documents 只列完整供给文件；未把摘录列为整篇。作者 ledger 中旧正文为 [0,3902)、哈希 a36b0addea05174460d8f51179643665f98c51c6aa4a4d9dec235535948dd06d，与当前候选身份不同；作者获得的完整来源及相关摘录范围据其独立 ledger 核对，供给记录不当作认知阅读证明。",
+  "test_assessment": "独立参考有效：reference_bag 按通道逐出现项求和，aggregate_sharded 按 owner 和唯一 ID 分组，再合并 partial；手算锚点进一步锁定结果。两个完成分片的出现次数确为(3,2)，无权分片和分别为(5,8,1)、(12,14,5)，总和(17,22,6)；加权总和为(32,42,11)、W=10。omit_vector_shard=1 确实进入成功合并后跳过向量贡献，同时保留 N、W，四个用例均由 compare 检出。交互参考使用 combinations，候选用嵌套循环；omit_dense 实际跳过 dense-category pair，zero_dense 保持宽度但清零相应槽，均被同一比较判据拒绝，修复了旧硬编码不等式问题。MLP 参考用增广输入吸收 bias，与候选 bias epilogue 分开组织，比较每层 q、a；组合输入(0,-1,-3,-4,33)得到负 logit -1，Decimal head 参考与实际输出0.2689414213699951一致。表侧和目标侧放置均实际聚合，分别核对15次通道加法、加权乘法、3次均值除法以及3对15个净荷元素；计数字典变异不计为真实聚合缺陷控制。空输入、权重约束、缺失分片、语义去重、局部均值平均、CSR、请求混合及身份门控均按脚本实际范围评价。actual_preflight 的脚本哈希和章节输入摘要匹配当前绑定，returncode=0、stderr为空，输出与上述机制一致；作者阶段未执行最终 Python 的说明与随后提供的预检执行属于不同阶段，不混称作者已执行。当前证据足以关闭 R1、R2、R3 及汇总修订要求；不将18项检测数量解释为18个独立机制或设备验证。"
+}

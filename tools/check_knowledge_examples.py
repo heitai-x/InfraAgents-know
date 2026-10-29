@@ -299,6 +299,33 @@ def operator_examples(groups):
           {"once_us": 172, "reused32_us_per_call": 17, "metadata_each_call_us": 23, "metadata_once_per_plan_us": 17.1875},
           "us/call", "plan/reuse + kernel + per-call work; once-per-plan work is divided by reuse")
 
+    item = example(groups, "operators", "causal_alignment_visible_sets", attn, "非等长 causal 是一个具体反例",
+                   {"query_len": 2, "key_len": 5},
+                   ["Queries occupy the last query_len absolute positions of the key range.",
+                    "Bottom-right alignment counts keys at or before each query's absolute position; top-left counts by query index only."])
+    q_len, k_len = 2, 5
+    bottom_right = [k_len - q_len + i + 1 for i in range(q_len)]
+    top_left = [i + 1 for i in range(q_len)]
+    check(item, "visible_key_counts_by_alignment",
+          {"bottom_right": bottom_right, "top_left": top_left, "same_boolean_same_function": bottom_right == top_left},
+          {"bottom_right": [4, 5], "top_left": [1, 2], "same_boolean_same_function": False},
+          "visible keys per query row", "row i sees k_len-q_len+i+1 keys (bottom-right) or i+1 keys (top-left)")
+
+    item = example(groups, "operators", "partition_merge_overlap", attn, "转换成本与可复算反例",
+                   {"logits": [0, 0], "values": [0, 2]},
+                   ["Two keys with equal logits; partitions carry normalized output O and log-sum-exp l.",
+                    "The overlapping merge counts the first key twice; it is a counterexample, not a rounding effect."])
+    def merge(parts):
+        m = max(l for _, l in parts)
+        weights = [math.exp(l - m) for _, l in parts]
+        return sum(w * o for w, (o, _) in zip(weights, parts)) / sum(weights)
+    disjoint = merge([(0.0, 0.0), (2.0, 0.0)])
+    overlapping = merge([(0.0, 0.0), (1.0, math.log(2))])
+    check(item, "disjoint_versus_overlapping_merge",
+          {"direct": 1.0, "disjoint_merge": disjoint, "overlapping_merge": overlapping},
+          {"direct": 1.0, "disjoint_merge": 1.0, "overlapping_merge": 2 / 3},
+          "normalized attention output", "disjoint partitions (O,l)=(0,0),(2,0) merge to 1; a partition that also holds key 0 has O=1, l=ln2 and merges to 2/3")
+
     item = example(groups, "operators", "amdahl_serial_fraction", ops, "把局部内核收益连接到完整 forward",
                    {"fraction": 0.1, "local_speedup": 2}, ["No overlap; other work unchanged; no added adaptation cost."])
     new_cost = Fraction(9, 10) + Fraction(1, 10) / 2

@@ -1,0 +1,53 @@
+{
+  "id": "K-ALG-012",
+  "path": "algorithms/structured-output.md",
+  "category": "algorithms",
+  "title": "结构化生成：语言状态、token 边界与约束采样",
+  "summary": "结构化生成将语法状态与语言模型状态同步推进，合法 token 是从当前语法状态仍可完成目标语言的延伸。",
+  "revision": 3,
+  "status": "seed",
+  "tags": [
+    "structured output",
+    "grammar",
+    "XGrammar",
+    "JSON"
+  ],
+  "scope": {
+    "model_families": [],
+    "platforms": [],
+    "runtimes": [],
+    "workloads": []
+  },
+  "source_ids": [
+    "S-XGRAMMAR",
+    "S-FI-SAMPLE",
+    "S-CHAT"
+  ],
+  "related": [
+    "K-ALG-011",
+    "K-ALG-006",
+    "K-SYS-007",
+    "K-ALG-024",
+    "K-SYS-014",
+    "K-TOOLS-006"
+  ],
+  "evidence": [],
+  "updated_at": "2026-10-27",
+  "sha256": "dd564087bb7df327081ce442368799cb0b27c59e9cbdab314b0a0dac99ca8ade",
+  "questions": [
+    "字符级语法与 token 级生成之间的边界如何处理，跨多个语法边界或半个 UTF-8 字节的 token 何时合法？",
+    "约束 mask 怎样改变模型分布，提前计算 mask 与 GPU 前向重叠需要满足什么状态条件？",
+    "哪些 token 的合法性可以脱离栈上下文预计算，预计算结果与 tokenizer 和语法版本有何依赖？",
+    "投机树的每条分支需要怎样的解析状态快照，接受与拒绝时如何与 KV 和随机状态共同提交？",
+    "结构化输出的性能应如何拆成规则编译、每 token mask 生成、传输和设备计算？"
+  ],
+  "symptoms": [
+    "JSON 格式合法但字段类型或跨字段约束不满足 schema",
+    "带语法约束的首次请求延迟远高于稳态",
+    "更换 tokenizer 后沿用旧 mask 缓存产生非法输出"
+  ],
+  "assumes": [
+    "模型按 token 生成而目标语言按字符或字节定义",
+    "每请求维护独立的语法解析状态"
+  ]
+}

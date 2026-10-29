@@ -1,0 +1,70 @@
+{
+  "id": "K-ALG-021",
+  "path": "algorithms/kv-compression.md",
+  "category": "algorithms",
+  "title": "KV 压缩：表示、近似保留与传输格式",
+  "summary": "KV 量化、历史裁剪与传输编码改变不同成本与语义；分组轴、残余区、元数据和质量必须分别计入。",
+  "revision": 4,
+  "status": "seed",
+  "tags": [
+    "KV compression",
+    "KIVI",
+    "H2O",
+    "KV 量化",
+    "per-channel",
+    "残余区",
+    "压缩传输",
+    "质量"
+  ],
+  "scope": {
+    "model_families": [],
+    "platforms": [],
+    "runtimes": [],
+    "workloads": []
+  },
+  "source_ids": [
+    "S-KIVI",
+    "S-H2O",
+    "S-CACHEGEN",
+    "S-INT8",
+    "S-TORCH-NUMERIC"
+  ],
+  "related": [
+    "K-ALG-005",
+    "K-ALG-002",
+    "K-ALG-018",
+    "K-MODEL-007",
+    "K-FW-002",
+    "K-TOOLS-007",
+    "K-ALG-003",
+    "K-ENGINE-002",
+    "K-ENGINE-004",
+    "K-FW-006",
+    "K-HW-004",
+    "K-MODEL-002",
+    "K-MODEL-006",
+    "K-SYS-003",
+    "K-SYS-013",
+    "K-ALG-022"
+  ],
+  "evidence": [],
+  "updated_at": "2026-10-27",
+  "sha256": "b106cc93bcd9d5acfce5e7766eb25f5c1fbd4ba7844dd1fe6454fc08cc1d99f4",
+  "questions": [
+    "KV 量化、重要 token 保留、压缩传输和模型原生窗口各自改变什么对象，需要验证什么关系？",
+    "K 与 V 的分组轴为什么不同，跨 token 分组的封组时机和高精度残余区如何影响容量与追加？",
+    "有效位宽如何把 scale、偏移和残余区算进去，为什么按位比例估算会低估驻留？",
+    "压缩传输在什么带宽下优于直接传输，与传文本重算相比需要保持哪些相同语义？",
+    "累计 attention 分数保留历史存在什么偏置和反馈，接入 GQA 和融合 kernel 时有哪些额外成本？"
+  ],
+  "symptoms": [
+    "量化后驻留字节远高于按位宽比例预期",
+    "长时间低关注后查询早期实体或数字答案错误",
+    "链路升级后压缩传输反而比直接传输慢"
+  ],
+  "assumes": [
+    "KV 为可分组量化的张量",
+    "有完整历史参考可用于质量对照",
+    "压缩与解压的时间和峰值可测"
+  ]
+}

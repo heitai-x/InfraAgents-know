@@ -1,0 +1,194 @@
+{
+  "entry_id": "K-WORK-010",
+  "scope": "定点失败诊断及修复方案验证；没有修改正式知识库、原候选、队列或旧证据，未进行正式内容接受。",
+  "candidate": {
+    "path": "InfraAgents-know-astra-new/InfraAgents-know/docs/evidence/knowledge-workflow-20261028-batch17/full_build/K-WORK-010/round-3/candidate.json",
+    "sha256": "619d6cb7a8cabe03f390680d0a17f32a304a9acf376ef8cc7e1f4dbb2c299675"
+  },
+  "candidate_chapter_sha256": "dff9c606294b25d31753a46f0398a69098db36f99bc3093edd69ae69c5d5f171",
+  "candidate_script_sha256": "b804b97928c0cbd6d40c698227832eb0fec18ce90f145598e2ee8e0f6a54d608",
+  "prior_semantic_review": {
+    "path": "InfraAgents-know-astra-new/InfraAgents-know/docs/evidence/knowledge-workflow-20261028-batch17/full_build/K-WORK-010/round-2/review-submitted.json",
+    "sha256": "6153f5fab3a75aef7e81c709357faa37fd480531599e46c03ef2bde325c3c689"
+  },
+  "original_failure": {
+    "path": "InfraAgents-know-astra-new/InfraAgents-know/docs/evidence/knowledge-workflow-20261028-batch17/full_build/K-WORK-010/round-3/failure.json",
+    "sha256": "df4667b149c50eec2f73c7aea208a34eb306d7449433b55b8d6abb2cb82d0173"
+  },
+  "original_finding_ids": [
+    "K-WORK-010-R2-A04",
+    "K-WORK-010-R2-D02",
+    "campaign-K-WORK-010-r3"
+  ],
+  "findings": [
+    {
+      "id": "K-WORK-010-CLOSEOUT-FINAL-ELIGIBILITY",
+      "location": "round-3 candidate test_script reference, lines 107-120",
+      "mechanism": "reference 无条件先放 COMMITTED 候选，再添加失败操作。最终操作失败时两个候选排序键相同，min 稳定选中先加入的 COMMITTED。进一步，最终 FULL 即使不具备共同提交资格，也可能被通用非最终事件条件当作普通成功事件发布。",
+      "minimal_counterexample": "spec={'U':node(bad=('FULL',))}, cancellations={}",
+      "observed": "原脚本真实隔离重现退出1；replay 为 start=0、t=1 FAILED、无发布/输出并排空；reference 错为 t=1 COMMITTED，并安装 FULL 输出。",
+      "secondary_counterexample": "events=(('TAIL',1),('FULL',1)), bad=('TAIL',)。只移除不合格 COMMITTED 候选还不够：原通用发布判断会把排序在失败前的 FULL 发布。both_fix 诊断保留此失败；contract_fix 共同约束最终发布资格后通过。",
+      "required_repair": "只有全部必需结果成功时，参考才有最终 COMMITTED 候选；最终事件发布必须同时满足最终提交资格。非最终 FIRST 等事件仍可在后来失败前合法发布并保留。不要通过改变候选插入顺序解决资格问题。"
+    },
+    {
+      "id": "K-WORK-010-CLOSEOUT-SAME-TIME-DISPATCH",
+      "location": "round-3 candidate chapter line112 and test_script replay lines293-294 / reference lines104-105",
+      "minimal_counterexample": "U=成功FULL偏移1、lag0；V依赖U.FULL，a=2；cancellations={'U':2,'V':2}",
+      "observed": "U于1提交。replay在2先处理U取消，紧接着reconsider启动V，再处理V取消，记录V.start=2；reference以 own_cancel_time<=ready_time 判断V从未启动。两者终态相同但启动/物理责任轨迹不同。",
+      "classification": "逐事件后调度本身是合法组织选择；问题是正文/replay与静态参考采用了不同的同刻调度合同，不能直接把replay称为一般非法。",
+      "preferred_repair": "采用本次已实际验证的保守参考组织：同一时刻的外部取消按既有稳定身份逐条处理，每条取消的失败传播仍立即完成；在这些同刻取消全部处理完前不启动新节点，随后恢复eager调度。同步修改正文的时序说明和replay，保留所有同刻终态优先级与身份顺序。此为选定检查模型的组织方式，不是所有服务系统的必要条件。",
+      "alternative_assessment": "若保留原逐事件调度，reference必须推导能够触发启动的具体事件及完整顺序，单用ready_time与cancel_time不足；需要额外处理无关事件唤醒和同刻子事件，修改范围明显大于取消阶段先排空方案。不要忽略starts比较或把实际replay结果作为reference。"
+    }
+  ],
+  "already_closed_in_round3": [
+    "正文COMPLETE已明确物理访问结束与业务结果成功独立，并对确定失败立即FAIL、传播缺失事件；不要重新按round2正文遗漏作判断。",
+    "发布时间等待与通知到达已采用max而非相加；原串加故障对照保留。",
+    "较早依赖失败与本节点取消的终态保留已纳入参考；不要恢复“取消计划中有节点就最终CANCELLED”的旧逻辑。"
+  ],
+  "actual_validation": {
+    "unmodified_candidate": "通过现有SandboxRunner在remote_bwrap执行，脚本SHA与原候选一致；重现同一run_checks:655/audit_events:408失败。",
+    "final_variant": "contract_fix/input/tools/check_work010.py在真实remote_bwrap退出0，stderr为空。没有本机裸执行候选。",
+    "original_suite_completed": [
+      "16条原主事件轨迹",
+      "1440组通知/等待/外部时间门/取消组合",
+      "全部原故障对照",
+      "物理资源责任及重复完成",
+      "非均匀回合及零/单token边界",
+      "275个对齐/非对齐布局案例",
+      "窗口裁剪的驻留积分"
+    ],
+    "added_regressions": [
+      "失败最终操作不提交/不发布",
+      "同刻非最终必需操作失败，含失败排序键晚于FULL",
+      "失败前及同刻取消保持取消终态",
+      "U已提交而U/V同刻取消时V不启动的选定合同",
+      "恢复旧oracle会被相同审计器拒绝",
+      "恢复取消之间调度会被相同审计器拒绝"
+    ],
+    "limits": [
+      "确定性CPU符号/集合/算术模型；无真实模型前向、GPU、DMA、网络、任务质量或服务性能。",
+      "诊断修正版尚未作为正式作者候选交付，正文时序说明尚未同步；必须由作者整合并经新独审与实际检查。"
+    ]
+  },
+  "diagnostic_runs": [
+    {
+      "mode": "original",
+      "record": {
+        "path": "knowledge-workflow/state/production/closeout-20261029/work010-diagnostic/original/execution/sandbox-2db0c4e848cf4f8b94b1ada1ac43412e/execution.json",
+        "sha256": "784e2edbe6c1a3d475eb9dc138e24f4108cd15184f040dd76e049974cb2eb101"
+      },
+      "script": {
+        "path": "knowledge-workflow/state/production/closeout-20261029/work010-diagnostic/original/input/tools/check_work010.py",
+        "sha256": "b804b97928c0cbd6d40c698227832eb0fec18ce90f145598e2ee8e0f6a54d608"
+      },
+      "binding": {
+        "path": "knowledge-workflow/state/production/closeout-20261029/work010-diagnostic/original/binding.json",
+        "sha256": "e94d6f58bb65929dac852e22bab7229dbe95534ed93710d8e13fb41007345b9f"
+      },
+      "returncode": 1,
+      "backend": "remote_bwrap",
+      "elapsed_seconds": 0.06570372357964516
+    },
+    {
+      "mode": "diagnose",
+      "record": {
+        "path": "knowledge-workflow/state/production/closeout-20261029/work010-diagnostic/diagnose/execution/sandbox-f197d8f07e224e009806825aefb7c4a5/execution.json",
+        "sha256": "fb38ccf3cb598364877639892c4bd06d38355f49f22af64b4c435f73c195f3ab"
+      },
+      "script": {
+        "path": "knowledge-workflow/state/production/closeout-20261029/work010-diagnostic/diagnose/input/tools/check_work010.py",
+        "sha256": "002a91d425851c53d874899ddeb7ef1469076abe4dbb50596d9beb22a120e6f2"
+      },
+      "binding": {
+        "path": "knowledge-workflow/state/production/closeout-20261029/work010-diagnostic/diagnose/binding.json",
+        "sha256": "427f9b835a1d48b3b4e1e3b499d511c05ad94c8386e49b861fe20450f5afaeaf"
+      },
+      "returncode": 1,
+      "backend": "remote_bwrap",
+      "elapsed_seconds": 0.06523194164037704
+    },
+    {
+      "mode": "oracle_fix",
+      "record": {
+        "path": "knowledge-workflow/state/production/closeout-20261029/work010-diagnostic/oracle_fix/execution/sandbox-cae93c7dbc304cd3b70e7865c91d8cdd/execution.json",
+        "sha256": "97c5df282eb220408034bb532aff5d603befb99a4e24419aba4d90a069763df1"
+      },
+      "script": {
+        "path": "knowledge-workflow/state/production/closeout-20261029/work010-diagnostic/oracle_fix/input/tools/check_work010.py",
+        "sha256": "5fcc130d4144710c62e815fbbdcb0d491736338d830c8578e0a3db0f94451b06"
+      },
+      "binding": {
+        "path": "knowledge-workflow/state/production/closeout-20261029/work010-diagnostic/oracle_fix/binding.json",
+        "sha256": "717b33997b0c90b5cb74cc8936953c25bde15ee715dcf5220347255582d58109"
+      },
+      "returncode": 1,
+      "backend": "remote_bwrap",
+      "elapsed_seconds": 0.1160203069448471
+    },
+    {
+      "mode": "oracle_fix_diagnose",
+      "record": {
+        "path": "knowledge-workflow/state/production/closeout-20261029/work010-diagnostic/oracle_fix_diagnose/execution/sandbox-6d2ea79f5aa04317b4c3f355f8e0c699/execution.json",
+        "sha256": "0efa8b00eda0b8f0fd18db032a015c14c489ed4a7e3c0046c9d16fae01af563a"
+      },
+      "script": {
+        "path": "knowledge-workflow/state/production/closeout-20261029/work010-diagnostic/oracle_fix_diagnose/input/tools/check_work010.py",
+        "sha256": "2452fcf879e2ffafd9d3538944ea900551d3c1936e4edb5527e5289d40cd9202"
+      },
+      "binding": {
+        "path": "knowledge-workflow/state/production/closeout-20261029/work010-diagnostic/oracle_fix_diagnose/binding.json",
+        "sha256": "e7d8b7629d8b656f2a861c20ba1094a23d0a850f19e64cdfb45fb04ad9c30775"
+      },
+      "returncode": 1,
+      "backend": "remote_bwrap",
+      "elapsed_seconds": 0.11583452299237251
+    },
+    {
+      "mode": "both_fix",
+      "record": {
+        "path": "knowledge-workflow/state/production/closeout-20261029/work010-diagnostic/both_fix/execution/sandbox-f2ea0968bf75487ab49f051a11c0f871/execution.json",
+        "sha256": "5bd0fe213726643cd4cda6a98e21820c1bbc0373cd9cf5c1f0a75a41ae3d1456"
+      },
+      "script": {
+        "path": "knowledge-workflow/state/production/closeout-20261029/work010-diagnostic/both_fix/input/tools/check_work010.py",
+        "sha256": "9bf5d616cac9e92e8d446df22f16e1bcd4da8eb26e30a896ba0da5472dcfb484"
+      },
+      "binding": {
+        "path": "knowledge-workflow/state/production/closeout-20261029/work010-diagnostic/both_fix/binding.json",
+        "sha256": "d5a3f528b0630e998457a814ad4dcdea6fda5d496dbf94cf0b58d2e989dd478c"
+      },
+      "returncode": 1,
+      "backend": "remote_bwrap",
+      "elapsed_seconds": 0.2659870274364948
+    },
+    {
+      "mode": "contract_fix",
+      "record": {
+        "path": "knowledge-workflow/state/production/closeout-20261029/work010-diagnostic/contract_fix/execution/sandbox-c38e7fc00bff4d3ca718a6548f3a2d9d/execution.json",
+        "sha256": "bfe87891fc45c9c66673801d28403f705b21407c487926f8a17b9d9f59376156"
+      },
+      "script": {
+        "path": "knowledge-workflow/state/production/closeout-20261029/work010-diagnostic/contract_fix/input/tools/check_work010.py",
+        "sha256": "ac601a52602f8bf310a47efc2482b0d26620fc16121d10e3d6d716e3d6b5ce41"
+      },
+      "binding": {
+        "path": "knowledge-workflow/state/production/closeout-20261029/work010-diagnostic/contract_fix/binding.json",
+        "sha256": "abc2bf3c932aae5e6d154ae80feb204e0584a64c420533de4241010234da182b"
+      },
+      "returncode": 0,
+      "backend": "remote_bwrap",
+      "elapsed_seconds": 0.26722465083003044
+    }
+  ],
+  "recommended_reference_script": {
+    "path": "knowledge-workflow/state/production/closeout-20261029/work010-diagnostic/contract_fix/input/tools/check_work010.py",
+    "sha256": "ac601a52602f8bf310a47efc2482b0d26620fc16121d10e3d6d716e3d6b5ce41"
+  },
+  "manager_notes": [
+    "以batch17/full_build/K-WORK-010/round-3/candidate.json为修订基线，保留已有完整正文、成本、来源边界及全部检查；不要从已登记旧正文重新扩写整章。round2 COMPLETE确定失败分支、max时间门和首次不可逆终态已在round3修复。",
+    "真实首个失败在reference的最终提交资格：单U的FULL失败时错误生成与FAILED同键的COMMITTED；需仅在全部必需结果成功时建立最终提交候选，并把最终事件发布绑定该资格。FIRST等先前合法发布不能因后来失败撤回。不要只调换列表顺序，不删失败正例。",
+    "随后真实组合失败是同刻调度合同不一致：U在1已提交，V外部下界2且依赖U.FULL，U/V都在2取消；原replay在U取消之后、V取消之前启动V，而reference认为V未启动。逐事件调度并非一般非法。推荐明确选定“同刻取消逐条按稳定身份处理且立即传播，全部同刻取消完成后才启动新工作”的保守检查组织，同时修改正文line112、replay的reconsider入口和参考说明，保留既有同刻终态顺序。保留完整starts/pub/state/output/terminal比较。",
+    "可参考state/production/closeout-20261029/work010-diagnostic/contract_fix/input/tools/check_work010.py中的三个小改位置和追加回归；它已真实跑完原整套检查并退出0，但不能直接把诊断结果称为新正式候选执行。正式检查应包含最小失败最终操作、同刻其他必需操作失败的最终发布门、U/V同刻取消准入边界，以及恢复旧最终资格/旧取消间启动的真实负对照。",
+    "不要缩减原16主轨迹、1440组合、资源/回合/布局/驻留检查，不放宽比较器。新的执行过程写author_notes/证据，长期正文保留机制、选定时序合同、检查覆盖和未测边界。修订后由协调者对最终正文/脚本绑定重新执行并交新独审。"
+  ]
+}

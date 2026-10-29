@@ -1,0 +1,193 @@
+{
+  "role": "reviewer",
+  "engine": "sol",
+  "requested_model": "gpt-6.1-sol",
+  "reasoning_effort": "high",
+  "prompt_sha256": "e080a587f16d3207884e53f0cccb9085a93411657b8a67c37389913e0e36a623",
+  "usage": [
+    {
+      "input_tokens": 175998,
+      "cached_input_tokens": 7552,
+      "cache_write_input_tokens": 0,
+      "output_tokens": 4666,
+      "reasoning_output_tokens": 905
+    }
+  ],
+  "answer": "{\n  \"entry_id\": \"K-MODEL-002\",\n  \"body_sha256\": \"5299d5dbc7bca963628149a1fd4331c8feadf1d799eb787051e98f0b73801e80\",\n  \"reviewer\": \"sol-reviewer:K-MODEL-002:round-2\",\n  \"decision\": \"accept\",\n  \"documents\": {\n    \"AGENTS.md\": \"b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a\",\n    \"docs/knowledge-method.md\": \"69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb\",\n    \"docs/knowledge-review.md\": \"f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21\",\n    \"knowledge/models/gqa-kv-heads.md\": \"5299d5dbc7bca963628149a1fd4331c8feadf1d799eb787051e98f0b73801e80\",\n    \"knowledge/sources/S-GQA.md\": \"95a16ff8af5fe5d1dd114f97788c2c3c68cfa41b3f45035691d48e4458dea35c\",\n    \"knowledge/sources/S-HF-CACHE.md\": \"1a4afcf0d800ba3f42836445874d620ae9f7ba8ab4c361caa505376cc471595c\",\n    \"knowledge/sources/S-FI.md\": \"bc0a19124be4e05621f93ff9c2f35ed8cccfee0465383f4df1671e1dcec9bfc9\",\n    \"knowledge/sources/S-KIVI.md\": \"79161876fab16fe335430a8d38d01de97bb0e17bee0cb9d29c6ba2dfa598998e\",\n    \"knowledge/sources/S-NXDI.md\": \"dcaaabf089394f00959b8f425199cf6eb4b281655eb4ae9086f6411d047d34e9\",\n    \"knowledge/algorithms/kv-compression.md\": \"b106cc93bcd9d5acfce5e7766eb25f5c1fbd4ba7844dd1fe6454fc08cc1d99f4\",\n    \"knowledge/system-semantics/distributed-state-transfer.md\": \"425985efff21e4acbe091ddfa9043cf97b37e550b606f10c0e1560a3c02b1f6f\",\n    \"references/S-GQA/fulltext.txt\": \"eeabb3c73e639c458c7124c61ea29d1bdbbf3cd6b02538f334f3dcf10972f663\",\n    \"references/S-HF-CACHE/fulltext.txt\": \"373837b8ac246d43867eb21de168cc59e5e6e78f5f3b9c27bee54740c4a635b4\",\n    \"references/S-KIVI/fulltext.txt\": \"399fb46e139f4cda57cbcd18c7b75fb1ddeb7dd6957d4a059efe8e40081438f3\",\n    \"references/S-NXDI/fulltext.txt\": \"0d0c89049b3f333f623e8e8ff80686223af0ddd742eba48cdf9c065745327ab7\",\n    \"tools/check_k_model_002_full.py\": \"158b77100e07fd54333f980f170752267710c179d083e1bd446ee2ebfd5da560\"\n  },\n  \"criteria\": {\n    \"definition\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"动机、逐 query head 的函数、映射及逆分组、K/V 不等宽合同、输出拼接和空行约定均已定义。持久 KV 身份与逐 head 归约状态分开，attention 返回也没有被误当成缓存提交或下一 token 的 KV 已存在。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/models/gqa-kv-heads.md\",\n          \"quote\": \"q 和 k 都是 dK 维，v 和 o 都是 dV 维；dK 与 dV 不要求相等。\"\n        },\n        {\n          \"path\": \"knowledge/models/gqa-kv-heads.md\",\n          \"quote\": \"qhead 不属于共享 K/V 对象的身份，却属于 query、归一化状态和输出的身份。\"\n        }\n      ]\n    },\n    \"legality\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"区分了连续均匀分组的整除要求与一般显式映射的合法性，保持 K/V 同映射、逐 head 可见集合、完整贡献和输出顺序。checkpoint 转换明确包含继续训练；GQA、KIVI 和 NxD 的来源结论均限定到所给版本与实验条件，没有将后端选择推广为普遍协议。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/models/gqa-kv-heads.md\",\n          \"quote\": \"一般显式映射只要求每个 qhead 恰好有一个合法 KV head。\"\n        },\n        {\n          \"path\": \"knowledge/models/gqa-kv-heads.md\",\n          \"quote\": \"每个 (i,h) 只对自己的 V(i,h) 归一化。共享 K/V 不意味着共享可见集合、概率或 softmax 统计量。\"\n        }\n      ]\n    },\n    \"algorithm\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"伪代码完整给出输入、分组加载、逐 head 筛选、局部统计、稳定合并、最后读者等待和输出；空块、空历史、零 query 与尾块均有处理。K 的历史及候选宽度已分别修为 dK，加载并集没有替代逐 head 归一化域，R1-001、R1-002 关闭。算法明确限于已有本层 Q/K/V 输入的一层操作，整模型推进衔接 K-MODEL-001，统一发布与旧状态保留另有说明。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/models/gqa-kv-heads.md\",\n          \"quote\": \"已发布 Khist[n,Hkv,dK]、Vhist[n,Hkv,dV]\"\n        },\n        {\n          \"path\": \"knowledge/models/gqa-kv-heads.md\",\n          \"quote\": \"候选 Knew[M,Hkv,dK]、Vnew[M,Hkv,dV]\"\n        },\n        {\n          \"path\": \"knowledge/models/gqa-kv-heads.md\",\n          \"quote\": \"组内加载集合 N 是这些 C 的并集，它只决定共享输入的加载，不能替代某个 head 的归一化域。\"\n        },\n        {\n          \"path\": \"knowledge/models/gqa-kv-heads.md\",\n          \"quote\": \"旧页 4 在 B 和全部旧读者结束前不能回收；发布前失败保留 A 的旧映射，候选复制排空后再回收页 7。\"\n        }\n      ]\n    },\n    \"cost\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"独立复算逐 head attention 工作、四投影几何、分组并集读取、容量算例、TP 副本与 ring 发送量，量纲和条件一致。准备、同步、片上载荷与驻留压力均已列出，并区分有效工作、实际发射、逻辑读取和设备事务。逐 head 不等可见数量使用求和；投影保留 Q/O 的 Hq 轴。容量与有效位宽检查的算术性质声明准确。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/models/gqa-kv-heads.md\",\n          \"quote\": \"F_attn≈Σ_h 2(dK＋dV)P_h＝2(dK＋dV)Σ_h P_h。\"\n        },\n        {\n          \"path\": \"knowledge/models/gqa-kv-heads.md\",\n          \"quote\": \"因此 F_proj≈2MD(Hq＋Hkv)(dK＋dV)；等宽 dK=dV=d 时为 4MDd(Hq＋Hkv)。\"\n        },\n        {\n          \"path\": \"knowledge/models/gqa-kv-heads.md\",\n          \"quote\": \"D_KV,use＝b(dK＋dV)Σ_RΣ_m |A_(R,m)|。\"\n        },\n        {\n          \"path\": \"knowledge/models/gqa-kv-heads.md\",\n          \"quote\": \"这些量分别可能落在寄存器、共享存储或其他片上区域，不能将其总和直接称作共享存储占用。\"\n        }\n      ]\n    },\n    \"adaptation\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"对历史、query 块、Hkv、TP、展开后端、量化表示、桶与逐 head 稀疏性改变，说明了保持的语义、需重算的对象和改选条件。跨页迁移明确区分只改变放置与重新拟合量化组，能够据条件变化撤回原交通和失败语义。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/models/gqa-kv-heads.md\",\n          \"quote\": \"若此次不是迁移，而是追加导致重新拟合跨两页的量化组，旧码和参数可能都要隔离或重编码，不能沿用只复制一页的交通与失败语义。\"\n        },\n        {\n          \"path\": \"knowledge/models/gqa-kv-heads.md\",\n          \"quote\": \"后端不能表达该规则时改执行路径，不能擅自统一 mask\"\n        }\n      ]\n    },\n    \"diagnosis\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"诊断将映射、mask、宽度、合并尺度、TP、重读与同步等竞争解释对应到可控干预和反证修正。脚本的参考路径不调用被测 merge，错误映射、共享 mask 和错误 Q/O 宽度实际进入被测路径后被拒绝。四投影检查已从预写表达式比较改为实际矩阵标量事件计数与独立语义轴枚举，R1-003 关闭；全候选复核未发现新的阻塞问题。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/models/gqa-kv-heads.md\",\n          \"quote\": \"独立参考按正确 μ 展开成逐 qhead K/V，用 Decimal 整行 softmax 计算。\"\n        },\n        {\n          \"path\": \"knowledge/models/gqa-kv-heads.md\",\n          \"quote\": \"错误 Q/O 宽度进入同一矩阵计数路径并被拒绝。\"\n        },\n        {\n          \"path\": \"knowledge/models/gqa-kv-heads.md\",\n          \"quote\": \"字节未降修数据流；事务下降而时间未降则转查其他关键路径\"\n        }\n      ]\n    }\n  },\n  \"findings\": [],\n  \"limitations\": [\n    \"执行证据采用用户提供的 actual_preflight：脚本身份与绑定哈希一致，remote_bwrap 执行返回码为 0、stderr 为空。本审阅未自行重跑，也未重新计算文件哈希。\",\n    \"检查证明小尺寸 CPU binary64/Decimal 数学、标量事件计数和部分资源算术；不证明低精度设备数值、GPU/Neuron kernel、barrier、内存可见性、HBM 事务、collective 或性能。\",\n    \"分页量化迁移是状态与成本推导；脚本没有实现真实量化码格式、异步迁移故障或整模型多层提交协议。\",\n    \"S-FI 仅有完整来源机制说明，未提供允许读取的上游源码或原始说明文档；其具体 API 支持组合未获独立核验。\",\n    \"原始论文按所给完整提取文本核对，未检查 PDF 版面或图像。相邻章节仅按提供范围阅读；未执行文件系统链接存在性检查，也没有模型质量或知识使用效果证据。\"\n  ],\n  \"checks\": [\n    {\n      \"script\": \"tools/check_k_model_002_full.py\",\n      \"args\": []\n    }\n  ],\n  \"no_checks_reason\": \"\",\n  \"reading_scope\": \"已完整阅读所给提取文本，范围单位均为零基、左闭右开字符：AGENTS.md [0,567)；docs/knowledge-method.md [0,2251)；docs/knowledge-review.md [0,3016)；knowledge/models/gqa-kv-heads.md [0,16094)；knowledge/sources/S-GQA.md [0,1154)；S-HF-CACHE.md [0,827)；S-FI.md [0,1582)；S-KIVI.md [0,713)；S-NXDI.md [0,559)；knowledge/algorithms/kv-compression.md [0,5839)；knowledge/system-semantics/distributed-state-transfer.md [0,3216)；references/S-GQA/fulltext.txt [0,23837)；references/S-HF-CACHE/fulltext.txt [0,7977)；references/S-KIVI/fulltext.txt [0,44977)；references/S-NXDI/fulltext.txt [0,48117)。另完整阅读 candidate.test_script 提供的 tools/check_k_model_002_full.py、author_notes 及 actual_preflight 执行记录。相邻摘录阅读范围：knowledge/algorithms/paged-kv-capacity.md [0,4000)、[8000,9075)、[12000,15425)；knowledge/algorithms/attention-io.md [0,4500)、[8000,12000)；knowledge/models/mla.md [0,849)、[8000,15651)；knowledge/hardware/memory-and-roofline.md [0,8500)；knowledge/algorithms/parallelism.md [0,8000)、[12000,12500)；knowledge/algorithms/quantization-contract.md [0,2105)、[8000,14395)；knowledge/frameworks/neuron-serving.md [4000,12500)；knowledge/models/prefill-decode-state.md [0,4500)、[8000,12000)。摘录文件未列入 documents，不声称通读其余内容；未读取源码归档或 PDF 版面。\",\n  \"test_assessment\": \"逐函数检查了被测数据流与断言。grouped_online 按 KV 组建立加载并集，逐 (i,h) 独立筛选、归约并在线合并；dense_decimal_reference 按预期映射展开 K/V，用 65 位 Decimal 整行 softmax，不复用 merge 或共享 mask 故障适配器。实际 QK/PV 循环的计数与可见项/通道独立枚举比较，逻辑加载与 (query块,KV head,key) 集合去重参考比较。五类头映射/宽度配置各执行十二种分块，另覆盖空历史、全空行、零 query、尾块和极端有限分数；提供的真实执行记录报告 60 个主配置，最大参考偏差 1.7763568394002505e-15。映射、共享 mask、漏合并重标度、历史/候选 K 宽度、NaN 和 TP floor 分配负对照均进入对应路径并被断言拒绝。投影路径实际构造四个小矩阵并计每次乘法与累加，独立 oracle 按 token/head/channel/hidden 轴枚举；示例得到 Q/K/V/O=240/120/80/160，总计 600，与一般公式一致。错误 Q 或 O head 宽度进入相同矩阵计数路径，使对应计数分别降到 120 或 80，并由参考拒绝，已消除上一轮仅比较两个预写表达式的缺陷。该投影检查验证几何和工作量，没有把四投影连接成完整模型数值前向；attention 检查比较最终结果，没有逐 tile 导出并断言所有内部统计量。512 MiB、TP16 字节与有效位宽属于算术核算，TP24 集合另有手工推导参考。未执行真实分页量化、异步协议、多层模型、设备或质量检查；这些遗漏与正文声明的验证边界一致，不据此增加本章验收条件。\"\n}",
+  "exit_code": 0,
+  "status": "completed",
+  "timeout_seconds": 1800,
+  "response_path": "D:\\桌面\\xdb\\InfraAgents\\InfraAgents-know-astra-new\\InfraAgents-know\\docs\\evidence\\knowledge-workflow-20261028-batch8\\full_build\\K-MODEL-002\\round-2\\reviewer-attempt-001\\answer.txt",
+  "record_path": "D:\\桌面\\xdb\\InfraAgents\\InfraAgents-know-astra-new\\InfraAgents-know\\docs\\evidence\\knowledge-workflow-20261028-batch8\\full_build\\K-MODEL-002\\round-2\\reviewer-attempt-001\\record.json",
+  "tool_events": [],
+  "inventory_tool_events": [],
+  "rejected_tool_events": [],
+  "tool_policy": "metadata_inventory_only",
+  "tool_policy_version": "metadata-inventory-v1",
+  "tool_policy_scope": "Only empty-argument codex host plugin/skill-directory descriptors and empty template inventory; inventory is not knowledge evidence. All other tool events reject the call.",
+  "tool_policy_reason": "Production chapter construction allows observed generic capability discovery metadata; this does not claim a zero-tool comparison or external source reading.",
+  "malformed_event_lines": [],
+  "turn_completed": true,
+  "error_events": [],
+  "recovered_transport_events": [],
+  "terminal_error_events": [],
+  "transport_recovered": false,
+  "actual_model": null,
+  "identity_verified": null,
+  "identity_basis": "Explicit CLI model and isolated HTTP provider; CLI events do not expose server model identity.",
+  "provider": "eval-openai-http",
+  "max_output_tokens": null,
+  "cli_version": "codex-cli 0.164.0-alpha.11.1",
+  "cost_scope": "Codex token usage is reported; subscription charge is not exposed.",
+  "parsed": {
+    "entry_id": "K-MODEL-002",
+    "body_sha256": "5299d5dbc7bca963628149a1fd4331c8feadf1d799eb787051e98f0b73801e80",
+    "reviewer": "sol-reviewer:K-MODEL-002:round-2",
+    "decision": "accept",
+    "documents": {
+      "AGENTS.md": "b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a",
+      "docs/knowledge-method.md": "69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb",
+      "docs/knowledge-review.md": "f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21",
+      "knowledge/models/gqa-kv-heads.md": "5299d5dbc7bca963628149a1fd4331c8feadf1d799eb787051e98f0b73801e80",
+      "knowledge/sources/S-GQA.md": "95a16ff8af5fe5d1dd114f97788c2c3c68cfa41b3f45035691d48e4458dea35c",
+      "knowledge/sources/S-HF-CACHE.md": "1a4afcf0d800ba3f42836445874d620ae9f7ba8ab4c361caa505376cc471595c",
+      "knowledge/sources/S-FI.md": "bc0a19124be4e05621f93ff9c2f35ed8cccfee0465383f4df1671e1dcec9bfc9",
+      "knowledge/sources/S-KIVI.md": "79161876fab16fe335430a8d38d01de97bb0e17bee0cb9d29c6ba2dfa598998e",
+      "knowledge/sources/S-NXDI.md": "dcaaabf089394f00959b8f425199cf6eb4b281655eb4ae9086f6411d047d34e9",
+      "knowledge/algorithms/kv-compression.md": "b106cc93bcd9d5acfce5e7766eb25f5c1fbd4ba7844dd1fe6454fc08cc1d99f4",
+      "knowledge/system-semantics/distributed-state-transfer.md": "425985efff21e4acbe091ddfa9043cf97b37e550b606f10c0e1560a3c02b1f6f",
+      "references/S-GQA/fulltext.txt": "eeabb3c73e639c458c7124c61ea29d1bdbbf3cd6b02538f334f3dcf10972f663",
+      "references/S-HF-CACHE/fulltext.txt": "373837b8ac246d43867eb21de168cc59e5e6e78f5f3b9c27bee54740c4a635b4",
+      "references/S-KIVI/fulltext.txt": "399fb46e139f4cda57cbcd18c7b75fb1ddeb7dd6957d4a059efe8e40081438f3",
+      "references/S-NXDI/fulltext.txt": "0d0c89049b3f333f623e8e8ff80686223af0ddd742eba48cdf9c065745327ab7",
+      "tools/check_k_model_002_full.py": "158b77100e07fd54333f980f170752267710c179d083e1bd446ee2ebfd5da560"
+    },
+    "criteria": {
+      "definition": {
+        "assessment": "sufficient",
+        "reason": "动机、逐 query head 的函数、映射及逆分组、K/V 不等宽合同、输出拼接和空行约定均已定义。持久 KV 身份与逐 head 归约状态分开，attention 返回也没有被误当成缓存提交或下一 token 的 KV 已存在。",
+        "evidence": [
+          {
+            "path": "knowledge/models/gqa-kv-heads.md",
+            "quote": "q 和 k 都是 dK 维，v 和 o 都是 dV 维；dK 与 dV 不要求相等。"
+          },
+          {
+            "path": "knowledge/models/gqa-kv-heads.md",
+            "quote": "qhead 不属于共享 K/V 对象的身份，却属于 query、归一化状态和输出的身份。"
+          }
+        ]
+      },
+      "legality": {
+        "assessment": "sufficient",
+        "reason": "区分了连续均匀分组的整除要求与一般显式映射的合法性，保持 K/V 同映射、逐 head 可见集合、完整贡献和输出顺序。checkpoint 转换明确包含继续训练；GQA、KIVI 和 NxD 的来源结论均限定到所给版本与实验条件，没有将后端选择推广为普遍协议。",
+        "evidence": [
+          {
+            "path": "knowledge/models/gqa-kv-heads.md",
+            "quote": "一般显式映射只要求每个 qhead 恰好有一个合法 KV head。"
+          },
+          {
+            "path": "knowledge/models/gqa-kv-heads.md",
+            "quote": "每个 (i,h) 只对自己的 V(i,h) 归一化。共享 K/V 不意味着共享可见集合、概率或 softmax 统计量。"
+          }
+        ]
+      },
+      "algorithm": {
+        "assessment": "sufficient",
+        "reason": "伪代码完整给出输入、分组加载、逐 head 筛选、局部统计、稳定合并、最后读者等待和输出；空块、空历史、零 query 与尾块均有处理。K 的历史及候选宽度已分别修为 dK，加载并集没有替代逐 head 归一化域，R1-001、R1-002 关闭。算法明确限于已有本层 Q/K/V 输入的一层操作，整模型推进衔接 K-MODEL-001，统一发布与旧状态保留另有说明。",
+        "evidence": [
+          {
+            "path": "knowledge/models/gqa-kv-heads.md",
+            "quote": "已发布 Khist[n,Hkv,dK]、Vhist[n,Hkv,dV]"
+          },
+          {
+            "path": "knowledge/models/gqa-kv-heads.md",
+            "quote": "候选 Knew[M,Hkv,dK]、Vnew[M,Hkv,dV]"
+          },
+          {
+            "path": "knowledge/models/gqa-kv-heads.md",
+            "quote": "组内加载集合 N 是这些 C 的并集，它只决定共享输入的加载，不能替代某个 head 的归一化域。"
+          },
+          {
+            "path": "knowledge/models/gqa-kv-heads.md",
+            "quote": "旧页 4 在 B 和全部旧读者结束前不能回收；发布前失败保留 A 的旧映射，候选复制排空后再回收页 7。"
+          }
+        ]
+      },
+      "cost": {
+        "assessment": "sufficient",
+        "reason": "独立复算逐 head attention 工作、四投影几何、分组并集读取、容量算例、TP 副本与 ring 发送量，量纲和条件一致。准备、同步、片上载荷与驻留压力均已列出，并区分有效工作、实际发射、逻辑读取和设备事务。逐 head 不等可见数量使用求和；投影保留 Q/O 的 Hq 轴。容量与有效位宽检查的算术性质声明准确。",
+        "evidence": [
+          {
+            "path": "knowledge/models/gqa-kv-heads.md",
+            "quote": "F_attn≈Σ_h 2(dK＋dV)P_h＝2(dK＋dV)Σ_h P_h。"
+          },
+          {
+            "path": "knowledge/models/gqa-kv-heads.md",
+            "quote": "因此 F_proj≈2MD(Hq＋Hkv)(dK＋dV)；等宽 dK=dV=d 时为 4MDd(Hq＋Hkv)。"
+          },
+          {
+            "path": "knowledge/models/gqa-kv-heads.md",
+            "quote": "D_KV,use＝b(dK＋dV)Σ_RΣ_m |A_(R,m)|。"
+          },
+          {
+            "path": "knowledge/models/gqa-kv-heads.md",
+            "quote": "这些量分别可能落在寄存器、共享存储或其他片上区域，不能将其总和直接称作共享存储占用。"
+          }
+        ]
+      },
+      "adaptation": {
+        "assessment": "sufficient",
+        "reason": "对历史、query 块、Hkv、TP、展开后端、量化表示、桶与逐 head 稀疏性改变，说明了保持的语义、需重算的对象和改选条件。跨页迁移明确区分只改变放置与重新拟合量化组，能够据条件变化撤回原交通和失败语义。",
+        "evidence": [
+          {
+            "path": "knowledge/models/gqa-kv-heads.md",
+            "quote": "若此次不是迁移，而是追加导致重新拟合跨两页的量化组，旧码和参数可能都要隔离或重编码，不能沿用只复制一页的交通与失败语义。"
+          },
+          {
+            "path": "knowledge/models/gqa-kv-heads.md",
+            "quote": "后端不能表达该规则时改执行路径，不能擅自统一 mask"
+          }
+        ]
+      },
+      "diagnosis": {
+        "assessment": "sufficient",
+        "reason": "诊断将映射、mask、宽度、合并尺度、TP、重读与同步等竞争解释对应到可控干预和反证修正。脚本的参考路径不调用被测 merge，错误映射、共享 mask 和错误 Q/O 宽度实际进入被测路径后被拒绝。四投影检查已从预写表达式比较改为实际矩阵标量事件计数与独立语义轴枚举，R1-003 关闭；全候选复核未发现新的阻塞问题。",
+        "evidence": [
+          {
+            "path": "knowledge/models/gqa-kv-heads.md",
+            "quote": "独立参考按正确 μ 展开成逐 qhead K/V，用 Decimal 整行 softmax 计算。"
+          },
+          {
+            "path": "knowledge/models/gqa-kv-heads.md",
+            "quote": "错误 Q/O 宽度进入同一矩阵计数路径并被拒绝。"
+          },
+          {
+            "path": "knowledge/models/gqa-kv-heads.md",
+            "quote": "字节未降修数据流；事务下降而时间未降则转查其他关键路径"
+          }
+        ]
+      }
+    },
+    "findings": [],
+    "limitations": [
+      "执行证据采用用户提供的 actual_preflight：脚本身份与绑定哈希一致，remote_bwrap 执行返回码为 0、stderr 为空。本审阅未自行重跑，也未重新计算文件哈希。",
+      "检查证明小尺寸 CPU binary64/Decimal 数学、标量事件计数和部分资源算术；不证明低精度设备数值、GPU/Neuron kernel、barrier、内存可见性、HBM 事务、collective 或性能。",
+      "分页量化迁移是状态与成本推导；脚本没有实现真实量化码格式、异步迁移故障或整模型多层提交协议。",
+      "S-FI 仅有完整来源机制说明，未提供允许读取的上游源码或原始说明文档；其具体 API 支持组合未获独立核验。",
+      "原始论文按所给完整提取文本核对，未检查 PDF 版面或图像。相邻章节仅按提供范围阅读；未执行文件系统链接存在性检查，也没有模型质量或知识使用效果证据。"
+    ],
+    "checks": [
+      {
+        "script": "tools/check_k_model_002_full.py",
+        "args": []
+      }
+    ],
+    "no_checks_reason": "",
+    "reading_scope": "已完整阅读所给提取文本，范围单位均为零基、左闭右开字符：AGENTS.md [0,567)；docs/knowledge-method.md [0,2251)；docs/knowledge-review.md [0,3016)；knowledge/models/gqa-kv-heads.md [0,16094)；knowledge/sources/S-GQA.md [0,1154)；S-HF-CACHE.md [0,827)；S-FI.md [0,1582)；S-KIVI.md [0,713)；S-NXDI.md [0,559)；knowledge/algorithms/kv-compression.md [0,5839)；knowledge/system-semantics/distributed-state-transfer.md [0,3216)；references/S-GQA/fulltext.txt [0,23837)；references/S-HF-CACHE/fulltext.txt [0,7977)；references/S-KIVI/fulltext.txt [0,44977)；references/S-NXDI/fulltext.txt [0,48117)。另完整阅读 candidate.test_script 提供的 tools/check_k_model_002_full.py、author_notes 及 actual_preflight 执行记录。相邻摘录阅读范围：knowledge/algorithms/paged-kv-capacity.md [0,4000)、[8000,9075)、[12000,15425)；knowledge/algorithms/attention-io.md [0,4500)、[8000,12000)；knowledge/models/mla.md [0,849)、[8000,15651)；knowledge/hardware/memory-and-roofline.md [0,8500)；knowledge/algorithms/parallelism.md [0,8000)、[12000,12500)；knowledge/algorithms/quantization-contract.md [0,2105)、[8000,14395)；knowledge/frameworks/neuron-serving.md [4000,12500)；knowledge/models/prefill-decode-state.md [0,4500)、[8000,12000)。摘录文件未列入 documents，不声称通读其余内容；未读取源码归档或 PDF 版面。",
+    "test_assessment": "逐函数检查了被测数据流与断言。grouped_online 按 KV 组建立加载并集，逐 (i,h) 独立筛选、归约并在线合并；dense_decimal_reference 按预期映射展开 K/V，用 65 位 Decimal 整行 softmax，不复用 merge 或共享 mask 故障适配器。实际 QK/PV 循环的计数与可见项/通道独立枚举比较，逻辑加载与 (query块,KV head,key) 集合去重参考比较。五类头映射/宽度配置各执行十二种分块，另覆盖空历史、全空行、零 query、尾块和极端有限分数；提供的真实执行记录报告 60 个主配置，最大参考偏差 1.7763568394002505e-15。映射、共享 mask、漏合并重标度、历史/候选 K 宽度、NaN 和 TP floor 分配负对照均进入对应路径并被断言拒绝。投影路径实际构造四个小矩阵并计每次乘法与累加，独立 oracle 按 token/head/channel/hidden 轴枚举；示例得到 Q/K/V/O=240/120/80/160，总计 600，与一般公式一致。错误 Q 或 O head 宽度进入相同矩阵计数路径，使对应计数分别降到 120 或 80，并由参考拒绝，已消除上一轮仅比较两个预写表达式的缺陷。该投影检查验证几何和工作量，没有把四投影连接成完整模型数值前向；attention 检查比较最终结果，没有逐 tile 导出并断言所有内部统计量。512 MiB、TP16 字节与有效位宽属于算术核算，TP24 集合另有手工推导参考。未执行真实分页量化、异步协议、多层模型、设备或质量检查；这些遗漏与正文声明的验证边界一致，不据此增加本章验收条件。"
+  },
+  "format_status": "strict_json",
+  "format_error": null,
+  "output_text": "{\n  \"entry_id\": \"K-MODEL-002\",\n  \"body_sha256\": \"5299d5dbc7bca963628149a1fd4331c8feadf1d799eb787051e98f0b73801e80\",\n  \"reviewer\": \"sol-reviewer:K-MODEL-002:round-2\",\n  \"decision\": \"accept\",\n  \"documents\": {\n    \"AGENTS.md\": \"b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a\",\n    \"docs/knowledge-method.md\": \"69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb\",\n    \"docs/knowledge-review.md\": \"f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21\",\n    \"knowledge/models/gqa-kv-heads.md\": \"5299d5dbc7bca963628149a1fd4331c8feadf1d799eb787051e98f0b73801e80\",\n    \"knowledge/sources/S-GQA.md\": \"95a16ff8af5fe5d1dd114f97788c2c3c68cfa41b3f45035691d48e4458dea35c\",\n    \"knowledge/sources/S-HF-CACHE.md\": \"1a4afcf0d800ba3f42836445874d620ae9f7ba8ab4c361caa505376cc471595c\",\n    \"knowledge/sources/S-FI.md\": \"bc0a19124be4e05621f93ff9c2f35ed8cccfee0465383f4df1671e1dcec9bfc9\",\n    \"knowledge/sources/S-KIVI.md\": \"79161876fab16fe335430a8d38d01de97bb0e17bee0cb9d29c6ba2dfa598998e\",\n    \"knowledge/sources/S-NXDI.md\": \"dcaaabf089394f00959b8f425199cf6eb4b281655eb4ae9086f6411d047d34e9\",\n    \"knowledge/algorithms/kv-compression.md\": \"b106cc93bcd9d5acfce5e7766eb25f5c1fbd4ba7844dd1fe6454fc08cc1d99f4\",\n    \"knowledge/system-semantics/distributed-state-transfer.md\": \"425985efff21e4acbe091ddfa9043cf97b37e550b606f10c0e1560a3c02b1f6f\",\n    \"references/S-GQA/fulltext.txt\": \"eeabb3c73e639c458c7124c61ea29d1bdbbf3cd6b02538f334f3dcf10972f663\",\n    \"references/S-HF-CACHE/fulltext.txt\": \"373837b8ac246d43867eb21de168cc59e5e6e78f5f3b9c27bee54740c4a635b4\",\n    \"references/S-KIVI/fulltext.txt\": \"399fb46e139f4cda57cbcd18c7b75fb1ddeb7dd6957d4a059efe8e40081438f3\",\n    \"references/S-NXDI/fulltext.txt\": \"0d0c89049b3f333f623e8e8ff80686223af0ddd742eba48cdf9c065745327ab7\",\n    \"tools/check_k_model_002_full.py\": \"158b77100e07fd54333f980f170752267710c179d083e1bd446ee2ebfd5da560\"\n  },\n  \"criteria\": {\n    \"definition\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"动机、逐 query head 的函数、映射及逆分组、K/V 不等宽合同、输出拼接和空行约定均已定义。持久 KV 身份与逐 head 归约状态分开，attention 返回也没有被误当成缓存提交或下一 token 的 KV 已存在。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/models/gqa-kv-heads.md\",\n          \"quote\": \"q 和 k 都是 dK 维，v 和 o 都是 dV 维；dK 与 dV 不要求相等。\"\n        },\n        {\n          \"path\": \"knowledge/models/gqa-kv-heads.md\",\n          \"quote\": \"qhead 不属于共享 K/V 对象的身份，却属于 query、归一化状态和输出的身份。\"\n        }\n      ]\n    },\n    \"legality\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"区分了连续均匀分组的整除要求与一般显式映射的合法性，保持 K/V 同映射、逐 head 可见集合、完整贡献和输出顺序。checkpoint 转换明确包含继续训练；GQA、KIVI 和 NxD 的来源结论均限定到所给版本与实验条件，没有将后端选择推广为普遍协议。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/models/gqa-kv-heads.md\",\n          \"quote\": \"一般显式映射只要求每个 qhead 恰好有一个合法 KV head。\"\n        },\n        {\n          \"path\": \"knowledge/models/gqa-kv-heads.md\",\n          \"quote\": \"每个 (i,h) 只对自己的 V(i,h) 归一化。共享 K/V 不意味着共享可见集合、概率或 softmax 统计量。\"\n        }\n      ]\n    },\n    \"algorithm\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"伪代码完整给出输入、分组加载、逐 head 筛选、局部统计、稳定合并、最后读者等待和输出；空块、空历史、零 query 与尾块均有处理。K 的历史及候选宽度已分别修为 dK，加载并集没有替代逐 head 归一化域，R1-001、R1-002 关闭。算法明确限于已有本层 Q/K/V 输入的一层操作，整模型推进衔接 K-MODEL-001，统一发布与旧状态保留另有说明。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/models/gqa-kv-heads.md\",\n          \"quote\": \"已发布 Khist[n,Hkv,dK]、Vhist[n,Hkv,dV]\"\n        },\n        {\n          \"path\": \"knowledge/models/gqa-kv-heads.md\",\n          \"quote\": \"候选 Knew[M,Hkv,dK]、Vnew[M,Hkv,dV]\"\n        },\n        {\n          \"path\": \"knowledge/models/gqa-kv-heads.md\",\n          \"quote\": \"组内加载集合 N 是这些 C 的并集，它只决定共享输入的加载，不能替代某个 head 的归一化域。\"\n        },\n        {\n          \"path\": \"knowledge/models/gqa-kv-heads.md\",\n          \"quote\": \"旧页 4 在 B 和全部旧读者结束前不能回收；发布前失败保留 A 的旧映射，候选复制排空后再回收页 7。\"\n        }\n      ]\n    },\n    \"cost\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"独立复算逐 head attention 工作、四投影几何、分组并集读取、容量算例、TP 副本与 ring 发送量，量纲和条件一致。准备、同步、片上载荷与驻留压力均已列出，并区分有效工作、实际发射、逻辑读取和设备事务。逐 head 不等可见数量使用求和；投影保留 Q/O 的 Hq 轴。容量与有效位宽检查的算术性质声明准确。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/models/gqa-kv-heads.md\",\n          \"quote\": \"F_attn≈Σ_h 2(dK＋dV)P_h＝2(dK＋dV)Σ_h P_h。\"\n        },\n        {\n          \"path\": \"knowledge/models/gqa-kv-heads.md\",\n          \"quote\": \"因此 F_proj≈2MD(Hq＋Hkv)(dK＋dV)；等宽 dK=dV=d 时为 4MDd(Hq＋Hkv)。\"\n        },\n        {\n          \"path\": \"knowledge/models/gqa-kv-heads.md\",\n          \"quote\": \"D_KV,use＝b(dK＋dV)Σ_RΣ_m |A_(R,m)|。\"\n        },\n        {\n          \"path\": \"knowledge/models/gqa-kv-heads.md\",\n          \"quote\": \"这些量分别可能落在寄存器、共享存储或其他片上区域，不能将其总和直接称作共享存储占用。\"\n        }\n      ]\n    },\n    \"adaptation\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"对历史、query 块、Hkv、TP、展开后端、量化表示、桶与逐 head 稀疏性改变，说明了保持的语义、需重算的对象和改选条件。跨页迁移明确区分只改变放置与重新拟合量化组，能够据条件变化撤回原交通和失败语义。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/models/gqa-kv-heads.md\",\n          \"quote\": \"若此次不是迁移，而是追加导致重新拟合跨两页的量化组，旧码和参数可能都要隔离或重编码，不能沿用只复制一页的交通与失败语义。\"\n        },\n        {\n          \"path\": \"knowledge/models/gqa-kv-heads.md\",\n          \"quote\": \"后端不能表达该规则时改执行路径，不能擅自统一 mask\"\n        }\n      ]\n    },\n    \"diagnosis\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"诊断将映射、mask、宽度、合并尺度、TP、重读与同步等竞争解释对应到可控干预和反证修正。脚本的参考路径不调用被测 merge，错误映射、共享 mask 和错误 Q/O 宽度实际进入被测路径后被拒绝。四投影检查已从预写表达式比较改为实际矩阵标量事件计数与独立语义轴枚举，R1-003 关闭；全候选复核未发现新的阻塞问题。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/models/gqa-kv-heads.md\",\n          \"quote\": \"独立参考按正确 μ 展开成逐 qhead K/V，用 Decimal 整行 softmax 计算。\"\n        },\n        {\n          \"path\": \"knowledge/models/gqa-kv-heads.md\",\n          \"quote\": \"错误 Q/O 宽度进入同一矩阵计数路径并被拒绝。\"\n        },\n        {\n          \"path\": \"knowledge/models/gqa-kv-heads.md\",\n          \"quote\": \"字节未降修数据流；事务下降而时间未降则转查其他关键路径\"\n        }\n      ]\n    }\n  },\n  \"findings\": [],\n  \"limitations\": [\n    \"执行证据采用用户提供的 actual_preflight：脚本身份与绑定哈希一致，remote_bwrap 执行返回码为 0、stderr 为空。本审阅未自行重跑，也未重新计算文件哈希。\",\n    \"检查证明小尺寸 CPU binary64/Decimal 数学、标量事件计数和部分资源算术；不证明低精度设备数值、GPU/Neuron kernel、barrier、内存可见性、HBM 事务、collective 或性能。\",\n    \"分页量化迁移是状态与成本推导；脚本没有实现真实量化码格式、异步迁移故障或整模型多层提交协议。\",\n    \"S-FI 仅有完整来源机制说明，未提供允许读取的上游源码或原始说明文档；其具体 API 支持组合未获独立核验。\",\n    \"原始论文按所给完整提取文本核对，未检查 PDF 版面或图像。相邻章节仅按提供范围阅读；未执行文件系统链接存在性检查，也没有模型质量或知识使用效果证据。\"\n  ],\n  \"checks\": [\n    {\n      \"script\": \"tools/check_k_model_002_full.py\",\n      \"args\": []\n    }\n  ],\n  \"no_checks_reason\": \"\",\n  \"reading_scope\": \"已完整阅读所给提取文本，范围单位均为零基、左闭右开字符：AGENTS.md [0,567)；docs/knowledge-method.md [0,2251)；docs/knowledge-review.md [0,3016)；knowledge/models/gqa-kv-heads.md [0,16094)；knowledge/sources/S-GQA.md [0,1154)；S-HF-CACHE.md [0,827)；S-FI.md [0,1582)；S-KIVI.md [0,713)；S-NXDI.md [0,559)；knowledge/algorithms/kv-compression.md [0,5839)；knowledge/system-semantics/distributed-state-transfer.md [0,3216)；references/S-GQA/fulltext.txt [0,23837)；references/S-HF-CACHE/fulltext.txt [0,7977)；references/S-KIVI/fulltext.txt [0,44977)；references/S-NXDI/fulltext.txt [0,48117)。另完整阅读 candidate.test_script 提供的 tools/check_k_model_002_full.py、author_notes 及 actual_preflight 执行记录。相邻摘录阅读范围：knowledge/algorithms/paged-kv-capacity.md [0,4000)、[8000,9075)、[12000,15425)；knowledge/algorithms/attention-io.md [0,4500)、[8000,12000)；knowledge/models/mla.md [0,849)、[8000,15651)；knowledge/hardware/memory-and-roofline.md [0,8500)；knowledge/algorithms/parallelism.md [0,8000)、[12000,12500)；knowledge/algorithms/quantization-contract.md [0,2105)、[8000,14395)；knowledge/frameworks/neuron-serving.md [4000,12500)；knowledge/models/prefill-decode-state.md [0,4500)、[8000,12000)。摘录文件未列入 documents，不声称通读其余内容；未读取源码归档或 PDF 版面。\",\n  \"test_assessment\": \"逐函数检查了被测数据流与断言。grouped_online 按 KV 组建立加载并集，逐 (i,h) 独立筛选、归约并在线合并；dense_decimal_reference 按预期映射展开 K/V，用 65 位 Decimal 整行 softmax，不复用 merge 或共享 mask 故障适配器。实际 QK/PV 循环的计数与可见项/通道独立枚举比较，逻辑加载与 (query块,KV head,key) 集合去重参考比较。五类头映射/宽度配置各执行十二种分块，另覆盖空历史、全空行、零 query、尾块和极端有限分数；提供的真实执行记录报告 60 个主配置，最大参考偏差 1.7763568394002505e-15。映射、共享 mask、漏合并重标度、历史/候选 K 宽度、NaN 和 TP floor 分配负对照均进入对应路径并被断言拒绝。投影路径实际构造四个小矩阵并计每次乘法与累加，独立 oracle 按 token/head/channel/hidden 轴枚举；示例得到 Q/K/V/O=240/120/80/160，总计 600，与一般公式一致。错误 Q 或 O head 宽度进入相同矩阵计数路径，使对应计数分别降到 120 或 80，并由参考拒绝，已消除上一轮仅比较两个预写表达式的缺陷。该投影检查验证几何和工作量，没有把四投影连接成完整模型数值前向；attention 检查比较最终结果，没有逐 tile 导出并断言所有内部统计量。512 MiB、TP16 字节与有效位宽属于算术核算，TP24 集合另有手工推导参考。未执行真实分页量化、异步协议、多层模型、设备或质量检查；这些遗漏与正文声明的验证边界一致，不据此增加本章验收条件。\"\n}",
+  "elapsed_seconds": 126.36
+}

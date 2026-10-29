@@ -1,0 +1,157 @@
+{
+  "entry_id": "K-SYS-002",
+  "body_sha256": "c7b1bc7d811c67d8728e1d1466d60993c794e3aeea51ed5da2f410357cfd5982",
+  "reviewer": "sol-reviewer:K-SYS-002:round-2",
+  "decision": "revise",
+  "documents": {
+    "AGENTS.md": "b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a",
+    "docs/knowledge-method.md": "69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb",
+    "docs/knowledge-review.md": "f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21",
+    "knowledge/system-semantics/request-batch-identity.md": "c7b1bc7d811c67d8728e1d1466d60993c794e3aeea51ed5da2f410357cfd5982",
+    "knowledge/sources/S-ORCA.md": "920ef987a4a019bb4f0e0386e30bf1c1e3bc720d199ae4de22e462db4f41520a",
+    "knowledge/sources/S-VLLM-SCHED.md": "2e9bbe0d29145039d1bcd43bb54d40c4136ef51641a6e33a5d7097eb0500daf0",
+    "knowledge/sources/S-OTEL.md": "b68ba3b2833dc7f9f5ad7f49ae395fa70cc31b94252dd1741149e1fd1eca4068",
+    "knowledge/algorithms/batched-sampling.md": "eedef73ece886112211c643f263add7644e5bd2018f2043c1716a172368aa6f2",
+    "knowledge/algorithms/branch-generation.md": "42157d4da17ab8ffd7a0aa2f5cd57a1cacdf1a989757261993f6671ae231de3a",
+    "knowledge/workloads/session-workloads.md": "0269e1987e1107d0cf0135cb32aa759c67d5266cfa09fb1402f97704c4ab4d78",
+    "knowledge/system-semantics/model-lifecycle.md": "bf15950cafcbb584f031cc3a1ea9eaf3331d2816819c6e468ae333d70a3c7c0e",
+    "knowledge/system-semantics/serving-recovery.md": "f551fa1f1e6213469c856a880839eefff504fb39f4dd692000b2df80a20a7f5e",
+    "knowledge/system-semantics/tenant-isolation.md": "0ca7501a80e750152a5fb3b9815c77f9e3f9aa393ff7546b3f05375958f88606",
+    "knowledge/algorithms/routing-and-migration.md": "1b9dcfd5fea499a91611459bb936e1c1c49ceb562171fb0f1ba360a7010f5d32",
+    "knowledge/engine-index/vllm-model-runner.md": "87d1433d4f64d939ff8f137d1c1d4092cfdf2b3d7ebdd011a0f344cc66564714",
+    "knowledge/tools/correctness-oracles.md": "c2f88bc9746ac25586fc6700aaf0f5a8d043a1b1f4aee99dfdee02e1ef468aab",
+    "references/S-ORCA/fulltext.txt": "2119a53d77b4a933bab56d7e40b5304fa725561c412514459e56729ca6836794",
+    "references/S-OTEL/fulltext.txt": "f00d2f265bdd7aceff39c2d3c52f7cd3ab12b061e1f02cefaf84d6e12afa34a4",
+    "tools/check_k_sys_002_full.py": "80f75de7a5d6335ec2c5ba7dfbd27ab97c4937b8d21080e96fc63d3d8931677b"
+  },
+  "criteria": {
+    "definition": {
+      "assessment": "partial",
+      "reason": "branch_id 已解决原 F01 的同父同位置兄弟碰撞，且已知 token 与已完成 KV 得到区分。但 κ 和提交键只保留 r.lifetime，未保留 request_id，也未规定 lifetime_id 全局唯一，无法在多请求间保证身份唯一，见 F04。",
+      "evidence": [
+        {
+          "path": "knowledge/system-semantics/request-batch-identity.md",
+          "quote": "其中 branch_id 在请求生命期内唯一、稳定且不复用。"
+        },
+        {
+          "path": "knowledge/system-semantics/request-batch-identity.md",
+          "quote": "p ← p0+j；κ ← (r.lifetime,b.branch_id,g,p)"
+        }
+      ]
+    },
+    "legality": {
+      "assessment": "partial",
+      "reason": "已区分输入就绪、位置、版本、授权及表示选择；混合版本执行的条件表达明确。但行唯一性依赖 F04 中不完整的 κ，使两个合法请求可能被判成重复工作。",
+      "evidence": [
+        {
+          "path": "knowledge/system-semantics/request-batch-identity.md",
+          "quote": "一个视图合法，首先要求 π_t 是双射，且 A_t 中不出现同一 κ 的重复行。"
+        },
+        {
+          "path": "knowledge/system-semantics/request-batch-identity.md",
+          "quote": "否则应先分桶或拒绝。"
+        }
+      ]
+    },
+    "algorithm": {
+      "assessment": "partial",
+      "reason": "执行记录保存槽与 epoch，首次完成门及独立消费者通知已修复原 F02 的普通重复完成路径。但算法 2 未实现纯 KV 工作与生成工作的不同状态提交，且算法 1 的输出职责标识会在同序号输出之间碰撞，见 F05、F06。",
+      "evidence": [
+        {
+          "path": "knowledge/system-semantics/request-batch-identity.md",
+          "quote": "若 CAS(E.completion_claimed,false,true) 失败：返回 duplicate_noop"
+        },
+        {
+          "path": "knowledge/system-semantics/request-batch-identity.md",
+          "quote": "原子地把 Q 写入 E.committed；追加一次输出、推进一次 RNG/grammar 和 output 序号"
+        },
+        {
+          "path": "knowledge/system-semantics/request-batch-identity.md",
+          "quote": "登记执行职责 dev(view_id)；若产生输出，登记输出职责 out(view_id,o)"
+        }
+      ]
+    },
+    "cost": {
+      "assessment": "sufficient",
+      "reason": "在身份映射机制的范围内给出了准备操作量、查账复杂度、压紧逻辑字节、映射及在途结果驻留，并区分逻辑搬运、设备事务和关键路径时间。公式属于条件化推导，没有冒充设备测量；通信与同步的实际耗时仍需具体执行路径确定。",
+      "evidence": [
+        {
+          "path": "knowledge/system-semantics/request-batch-identity.md",
+          "quote": "完成验证按权威账查找每个行键，期望成本为 O(L_t+T_t)，其中 T_t 是采样目标数；若逐行线性扫描账本，则退化为平方级。"
+        },
+        {
+          "path": "knowledge/system-semantics/request-batch-identity.md",
+          "quote": "实际设备事务量还要按布局、对齐、合并和缓存层级重新计算，不能把逻辑字节直接当成设备耗时。"
+        }
+      ]
+    },
+    "adaptation": {
+      "assessment": "sufficient",
+      "reason": "明确了压紧、固定槽、图重放、分支重排、迁移和缓存共享下需要保留的身份与提交约束，也解释了准备搬运、填充和驻留之间的取舍。未把特定引擎组织当作唯一合法实现。",
+      "evidence": [
+        {
+          "path": "knowledge/system-semantics/request-batch-identity.md",
+          "quote": "稳定请求、branch_id、逻辑位置和提交权在所有表示变化下保留。"
+        },
+        {
+          "path": "knowledge/system-semantics/request-batch-identity.md",
+          "quote": "反之，当活跃集合变化很大、长 prefill 与短 decode 混合时，压紧更合适，但必须支付所有字段的重排成本。"
+        }
+      ]
+    },
+    "diagnosis": {
+      "assessment": "sufficient",
+      "reason": "竞争解释、受控重排、迟到及重复通知实验和反证后的修正方向具体。原 F03 已修复：验证器逐行比较原始权威 Atom，并实际拒绝派生数组错误和整体一致错误两个负对照。该结论仅覆盖脚本已执行的 CPU 场景，不能覆盖 F04—F06 的遗漏路径。",
+      "evidence": [
+        {
+          "path": "knowledge/system-semantics/request-batch-identity.md",
+          "quote": "内部比较全部一致，只有原始 atoms 或独立请求账按 κ 建立的权威记录能拒绝它。"
+        },
+        {
+          "path": "knowledge/system-semantics/request-batch-identity.md",
+          "quote": "以上是诊断设计，不声称已经执行 GPU 实验或获得目标系统数据。"
+        }
+      ]
+    }
+  },
+  "findings": [
+    {
+      "id": "K-SYS-002-F04",
+      "criterion": "definition",
+      "evidence": "正文规定“其中 branch_id 在请求生命期内唯一、稳定且不复用。”，算法 1 使用“p ← p0+j；κ ← (r.lifetime,b.branch_id,g,p)”，算法 2 使用“否则若 commit_key Q=(r.lifetime,b.branch_id,g,o) 尚未在 E.committed：”。脚本 atom_key 则返回“return (a.request, a.lifetime, a.branch_id, a.attempt, a.pos)”。",
+      "impact": "正文没有规定 lifetime_id 跨 request_id 全局唯一。合法请求 A、B 均可具有 lifetime=1、branch_id=1、g=0、p=0，却得到同一 κ，导致混批时拒绝其中一个请求或错误关联字段。脚本额外包含 request，因而通过检查不能证明正文键定义正确。",
+      "blocking": true,
+      "required_revision": "统一使用完整请求生命期 r=(request_id,lifetime_id) 构成放置键、提交键和权威账键；若改为要求 lifetime_id 全局唯一，必须明确分配与唯一性契约并统一符号。增加两个 request_id 不同、其余局部身份字段相同的混批检查，要求两者独立保留和归属。"
+    },
+    {
+      "id": "K-SYS-002-F05",
+      "criterion": "algorithm",
+      "evidence": "正文要求“若 k_r+q_r<n_r，本轮只产生 KV，不因中间某行有 hidden state 就发布生成 token”；算法 1 对非采样位置规定“否则 o ← ⊥”，但算法 2 对通过检查的每个请求分支统一执行“原子地把 Q 写入 E.committed；追加一次输出、推进一次 RNG/grammar 和 output 序号”。算法 2 未给出 k_r、n_r 或已确认 token 序列的更新。",
+      "impact": "例如 k=0、n=128、q=64 的合法分块 prefill 完成后，全部行可进入连续 staging，算法仍以 o=⊥ 进入输出提交分支，错误推进输出和 RNG，同时没有把 KV 边界更新为 64。即使实现者自行跳过该输出，仍缺少决定下一轮输入的状态变化。现有正向检查均为 q=1 且产生输出，无法发现此问题。",
+      "blocking": true,
+      "required_revision": "在执行记录中保存各分支本轮起止边界及目标类型；算法 2 明确区分完成 KV 范围与生成提交。合法纯 KV 完成只推进全层有效边界；到达采样末位置时，再按链接的采样或分支接受规则生成候选，并共同更新 token、n、RNG/grammar 和输出序号。取消、失效和重复通知不得重复更新。补充跨两轮的部分 prefill 到末行生成轨迹，核对每一步的 k、n、输出和 RNG。"
+    },
+    {
+      "id": "K-SYS-002-F06",
+      "criterion": "algorithm",
+      "evidence": "算法 1 登记“若产生输出，登记输出职责 out(view_id,o)”。正文同时允许“两个兄弟分支可以有相同 token 文本 X:0、相同父分支和 fork_position，也可以都使用输出序号 0”。回收条件是“若 E.holders 为空且 E.released=false”。",
+      "impact": "同一视图内两个兄弟分支都产生 o=0 时，两个输出职责具有相同标识 out(view_id,0)。若按正文的唯一 holder 集合登记，它们会合并；第一个消费者完成后即可删除共同标识，无法证明另一个消费者已经结束，可能提前释放或复用缓冲。后文要求独立 cid，但没有把它落实到这一构造步骤。脚本预置互异的 transport、trace 标识，避开了该碰撞。",
+      "blocking": true,
+      "required_revision": "为每个实际输出消费者分配唯一 cid，并将其绑定到完整请求生命期、branch_id、输出序号及消费角色，或使用等价的全局唯一消费实例标识；构造、启动和清理统一使用该标识。补充同视图、同输出序号的两个分支消费者交错完成检查：一个完成及其重复通知都不得清除另一个责任，最后一个消费者结束后才回收一次。"
+    }
+  ],
+  "limitations": [
+    "未获得 S-VLLM-SCHED 上游源码归档，只核对所供来源说明；正文已明确这一实现事实核验边界。",
+    "CPU 检查不验证 GPU 全层写入的可见性、跨 stream 同步、真实传输完成、目标引擎正确性、性能或 Agent 使用效果。",
+    "本轮工具未提供文件读取或命令执行能力；未独立重算磁盘哈希、检查链接目标存在性或重跑脚本。执行结论来自所附且绑定脚本哈希的实际沙箱记录。"
+  ],
+  "checks": [
+    {
+      "script": "tools/check_k_sys_002_full.py",
+      "args": []
+    }
+  ],
+  "no_checks_reason": "",
+  "reading_scope": "完整阅读本轮供给的 candidate.chapter、candidate.test_script、author_notes 和 actual_preflight。材料字符范围按所供提取文本的零基半开区间记录：AGENTS.md [0,567)；docs/knowledge-method.md [0,2251)；docs/knowledge-review.md [0,3016)；正文 [0,12764)；S-ORCA 来源说明 [0,1394)；S-VLLM-SCHED 来源说明 [0,760)；S-OTEL 来源说明 [0,520)；batched-sampling.md [0,2567)；branch-generation.md [0,3670)；session-workloads.md [0,3583)；model-lifecycle.md [0,3556)；serving-recovery.md [0,3834)；tenant-isolation.md [0,4131)；routing-and-migration.md [0,3228)；vllm-model-runner.md [0,2207)；correctness-oracles.md [0,5245)；S-ORCA/fulltext.txt 为所供完整提取文本，标注范围 [0,90276)；S-OTEL/fulltext.txt [0,8256)。仅阅读摘录：iteration-batching.md [0,5867)、[12000,12671)；async-scheduling.md [0,4598)、[12000,13940)；service-protocol.md [0,6538)；host-runtime.md [0,2979)、[4000,7559)。这些摘录文件未列入 documents。未读取未暴露的源码归档、磁盘队列、技能文件或 docs/knowledge-build-workflow.md 正文；JSON 使用本轮明确供给的 review schema。所有哈希为要求绑定的字面字段，不声称本地重新计算。",
+  "test_assessment": "所附 actual_preflight 记录绑定脚本 SHA-256 80f75de7a5d6335ec2c5ba7dfbd27ab97c4937b8d21080e96fc63d3d8931677b，显示在 remote_bwrap 中实际执行，returncode=0、stderr 为空，并输出 all_checks=PASS；这与作者当时未执行的说明分属不同阶段。本审阅未另行运行。verify_view 从原始 authoritative_atoms 按逻辑键建立 auth，并将完整 Atom、各派生字段及采样目标与该权威记录比较，已排除原 F03 的内部自洽假通过；两个参数负对照均实际被拒绝。兄弟分支同父同位置、同 token、同输出序号而键不同的检查支持关闭原 F01；普通有效完成重复投递只推进一次输出和 RNG，独立消费者及其重复通知不重复清账，支持关闭原 F02 所述重复完成缺陷。脚本还覆盖空视图、q=0、重复原子和旧 attempt 结果。不过 atom_key 比正文 κ 多了 request 字段，未检验正文的跨请求命名空间；正向 Atom 仅有两个 q=1 的采样分支，未检验纯 KV 提交或 k/n 推进；执行测试只有单请求状态，holders 使用预置互异名称，未检验算法 1 的 out(view_id,o) 碰撞，也未完成两个兄弟分支各自 RNG/输出提交的联合轨迹。旧 attempt 检查不等于实际覆盖取消后槽复用。检查有独立参考和有效负对照，但其成功不能关闭 F04—F06。来源归属方面，ORCA 的迭代调度、控制消息及 KV 寻址陈述与所供原文相符，OTEL 的关联和传播陈述也有原文支持；新增身份、完成协议和成本公式已明确标为独立推导。完整候选复核仍发现阻塞问题，因此 campaign-K-SYS-002-r1 所要求的重新评估结论为 revise。"
+}

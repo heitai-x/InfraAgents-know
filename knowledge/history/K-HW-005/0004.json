@@ -1,0 +1,60 @@
+{
+  "id": "K-HW-005",
+  "path": "hardware/cuda-execution.md",
+  "category": "hardware",
+  "title": "CUDA 平台：SM 数据流、占用率与执行粒度",
+  "summary": "CUDA 优化应把算法的数据复用映射到 SM 的寄存器、共享存储和 warp 执行，再判断主机提交是否成为瓶颈。",
+  "revision": 4,
+  "status": "seed",
+  "tags": [
+    "CUDA",
+    "SM",
+    "warp",
+    "occupancy"
+  ],
+  "scope": {
+    "model_families": [],
+    "platforms": [
+      "cuda"
+    ],
+    "runtimes": [],
+    "workloads": []
+  },
+  "source_ids": [
+    "S-CUDA-BEST",
+    "S-CUDA-CAPABILITY",
+    "S-CUDA-ASYNC",
+    "S-FLASHATTENTION3",
+    "S-NCU"
+  ],
+  "related": [
+    "K-ALG-004",
+    "K-FW-005",
+    "K-FW-007",
+    "K-HW-011",
+    "K-SYS-012",
+    "K-ALG-017",
+    "K-TOOLS-007",
+    "K-HW-004",
+    "K-SYS-010",
+    "K-TOOLS-008"
+  ],
+  "evidence": [],
+  "updated_at": "2026-10-28",
+  "sha256": "bde91ba4ab599a1d10631aebfde84a91e365ca5165bf30253d89a623c6c20748",
+  "questions": [
+    "执行层级与数据层级如何对应，更高 occupancy 为什么不必然更快？",
+    "按 compute capability 的驻留上限与共享存储上限怎样约束 tile 与流水级数？",
+    "L2 保留区与访问策略窗口适合哪些对象，什么条件下它会把流式访问挤出去？",
+    "从 eager 到图再到常驻 kernel 这一轴上，提交成本与灵活性如何交换？",
+    "时钟控制、ECC 与功耗上限怎样改变可持续参数的含义，测量时应声明什么？"
+  ],
+  "symptoms": [
+    "profiler 内 kernel 时间与服务稳态不一致",
+    "同一配置在另一代 GPU 上共享存储不足"
+  ],
+  "assumes": [
+    "NVIDIA GPU 与 CUDA 执行模型",
+    "目标 compute capability 已确定"
+  ]
+}

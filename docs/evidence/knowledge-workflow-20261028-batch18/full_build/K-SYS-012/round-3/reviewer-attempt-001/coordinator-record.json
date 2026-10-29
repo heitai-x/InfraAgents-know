@@ -1,0 +1,573 @@
+{
+  "role": "reviewer",
+  "engine": "sol",
+  "requested_model": "gpt-6.1-sol",
+  "reasoning_effort": "high",
+  "prompt_sha256": "8497a5497090a44f015026328cdb9898c3c2ebbe277fbe0e6eb3fe400cb2b98f",
+  "usage": [
+    {
+      "input_tokens": 235346,
+      "cached_input_tokens": 7552,
+      "cache_write_input_tokens": 0,
+      "output_tokens": 6824,
+      "reasoning_output_tokens": 2366
+    }
+  ],
+  "answer": "{\n  \"entry_id\": \"K-SYS-012\",\n  \"body_sha256\": \"546ea7d7b1d978c755ac9c22853b54988ef4a65ecb557cb6b45dde477c45bcf1\",\n  \"reviewer\": \"sol-reviewer:K-SYS-012:round-3\",\n  \"decision\": \"accept\",\n  \"documents\": {\n    \"AGENTS.md\": \"b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a\",\n    \"docs/knowledge-method.md\": \"69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb\",\n    \"docs/knowledge-review.md\": \"f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21\",\n    \"knowledge/system-semantics/memory-allocators.md\": \"546ea7d7b1d978c755ac9c22853b54988ef4a65ecb557cb6b45dde477c45bcf1\",\n    \"knowledge/sources/S-VATTENTION.md\": \"c841eab45685791bc135d2641ec49661c122c2d8c36fa88f055db1f79b8f1f5d\",\n    \"knowledge/sources/S-PAGED.md\": \"50893a22385b0d577980153a9bc9c617acdcb2a9d7be0af655ad49421f06cc09\",\n    \"knowledge/sources/S-CUDA-ALLOC.md\": \"3ba021c941f2ed8f048be34d1ba0110f37675a3460013f24a239cc43a1e8630a\",\n    \"knowledge/sources/S-TORCH-CUDA.md\": \"8ee61677a1e35d475d9bb122b2c7fa824ccf054acefbe2f12345d72c1fb1b00e\",\n    \"knowledge/engine-index/vllm-kv-manager.md\": \"50b09c7a66c1282b7f6f7ac7ef1f265b953b908ae5fba883c9beec4732e1ab89\",\n    \"knowledge/engine-index/tensorrt-llm.md\": \"6ade1253f3747041bef4a816d82387c3771bff3459a153719cfbd571c2454c0b\",\n    \"tools/check_k_sys_012_full.py\": \"fd5aa27e3e8d3b41fa888191e2bb2c556f632a67515c0d174771682372f606c3\"\n  },\n  \"criteria\": {\n    \"definition\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"动机、输入输出、物理身份、逻辑视图、操作身份及五类保护集合均有定义。拥有者资格、事务状态和页状态正交，容量需求与新增物理占用明确区分。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/system-semantics/memory-allocators.md\",\n          \"quote\": \"物理分配身份记为 x=(space,fid,e,size,compat)，其中 space 是设备或存储域，fid 标识物理区间，e 是该区间的分配代次，size 以字节计，compat 包含粒度、对齐、设备、权限和注册条件。\"\n        },\n        {\n          \"path\": \"knowledge/system-semantics/memory-allocators.md\",\n          \"quote\": \"一个 OPEN 的拥有者可以尚无可见视图；一个 CLOSED 的拥有者可以仍有正在排空的准备或读取。\"\n        }\n      ]\n    },\n    \"legality\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"发布、冲突检查、最后访问、异步撤销与回收条件能够衔接；串行状态域给出登记和退役的线性化关系。连续池、块表、虚拟映射及后台准备被作为条件化选择，没有把地址稳定、容量足够或物理代次误当作完整安全证明。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/system-semantics/memory-allocators.md\",\n          \"quote\": \"容量足够只是必要条件。物理连续区间、虚拟地址可用性、页粒度、权限及设备能力仍须独立满足。\"\n        },\n        {\n          \"path\": \"knowledge/system-semantics/memory-allocators.md\",\n          \"quote\": \"登记若先发生，退役会看见 U；退役若先发生，新的登记与发布均被拒绝。\"\n        },\n        {\n          \"path\": \"knowledge/system-semantics/memory-allocators.md\",\n          \"quote\": \"递增 e 可以阻止旧完成事件结算新责任，却不能阻止旧 DMA 对同一物理地址写入。\"\n        }\n      ]\n    },\n    \"algorithm\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"准备、提交、中止、访问登记、完成与拥有者退役均交付了输入输出和更新顺序。终态操作表解决同一分配生命期内的身份复用；首次准备即建立资格，未发布退役也留下关闭记录。脚本相应实现完整身份登记、逐页预验证后统一结算、准备排空及不可重新打开的资格。R2-001、R2-002均可关闭。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/system-semantics/memory-allocators.md\",\n          \"quote\": \"O 与 U 的生命期不同：U 只保存未结清的物理访问；O 在 U 删除后仍保存足以识别已结束操作的记录。\"\n        },\n        {\n          \"path\": \"knowledge/system-semantics/memory-allocators.md\",\n          \"quote\": \"若存在且描述相同：返回原状态与收据，不创建 U，不授权再次提交。\"\n        },\n        {\n          \"path\": \"knowledge/system-semantics/memory-allocators.md\",\n          \"quote\": \"首次发布尚未发生、当前没有视图、甚至预留尚未来到，都不跳过关闭。\"\n        },\n        {\n          \"path\": \"knowledge/system-semantics/memory-allocators.md\",\n          \"quote\": \"不能逐页移除一半后才发现另一页证书不匹配。\"\n        }\n      ]\n    },\n    \"cost\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"六类成本均与实际工作和时间边界关联。唯一backing准入、缓存分类转移、逐区域舍入、复制双向流量、映射与slack、同时存活峰值及终态记录驻留解释充分。复算尾部字节数、128 KiB缓存复用、120×9微秒及12.75 GiB设定总量成立；来源测量没有被写成本机保证。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/system-semantics/memory-allocators.md\",\n          \"quote\": \"C_plan = bytes((F_hold∖E)∪A)+bytes(J)+M_margin ≤ C_cap。\"\n        },\n        {\n          \"path\": \"knowledge/system-semantics/memory-allocators.md\",\n          \"quote\": \"共用同一内存资源时理想流量时间下界为2D/β，不能给源读与目的写各自一份独占总带宽。\"\n        },\n        {\n          \"path\": \"knowledge/system-semantics/memory-allocators.md\",\n          \"quote\": \"保留N个操作记录的元数据约为Σ_k(b_fixed+a_k b_access)，字节常数由编码决定；不能因U已空就把这项驻留当成零。\"\n        }\n      ]\n    },\n    \"adaptation\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"请求长度、共享程度、独立区域数、设备粒度、映射余裕、取消频率、固定地址合同和操作历史规模改变时，均说明应保留的不变量及需要重算的成本。记录压缩没有被当作无条件成立的优化。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/system-semantics/memory-allocators.md\",\n          \"quote\": \"条件改变后保留身份、发布和回收不变量，重新选择组织：\"\n        },\n        {\n          \"path\": \"knowledge/system-semantics/memory-allocators.md\",\n          \"quote\": \"小页依赖的能力不可用时，必须换合法粒度、组织或后端。\"\n        },\n        {\n          \"path\": \"knowledge/system-semantics/memory-allocators.md\",\n          \"quote\": \"可采用有证明的水位压缩、分段关闭作用域或新实例轮换；不得复用旧完整身份，也不能仅凭TTL清除保护。\"\n        }\n      ]\n    },\n    \"diagnosis\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"诊断表给出竞争解释、可控干预和反证后的修正。两个原缺陷都有从真实入口推进的正轨迹及故障分支；实际事件账、历史接受记录与显式关闭期望能够独立挑战allocator账务，而非仅复述状态标签。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/system-semantics/memory-allocators.md\",\n          \"quote\": \"责任参考应从实际接受的事件及实际结束记录重建，不把allocator当前U或操作表状态当成自己的正确答案。\"\n        },\n        {\n          \"path\": \"knowledge/system-semantics/memory-allocators.md\",\n          \"quote\": \"操作唯一性还要检查历史接受事件，不能只检查此刻pending集合。\"\n        },\n        {\n          \"path\": \"knowledge/system-semantics/memory-allocators.md\",\n          \"quote\": \"这些检查必须从 RetireOwner 入口触发。直接调用 Abort 可以验证事务排空，却不能发现“没有已发布视图就跳过退役”的入口错误。\"\n        }\n      ]\n    }\n  },\n  \"findings\": [],\n  \"limitations\": [\n    \"结论限定于正文声明的单责任域、串行状态域、固定整页与标量CPU模型；不构成任意事件交错的穷举证明。\",\n    \"没有真实GPU页表、TLB、异步映射撤销、stream/event可见性、DMA停止、CUDA Graph、跨设备提交、完整KV布局或性能验证；正文已准确声明。\",\n    \"提交接受状态未知、终态记录压缩、持久化和进程恢复未由脚本实现。当前保留全部终态及关闭墓碑的基线不依赖这些未验证优化。\",\n    \"来源原文仅按本次提供的摘录核对。CUDA §11.3完整规则及§11.9未在本次审阅者原文摘录中完整提供，相应判断结合完整来源说明和streams-allocator摘录；未检查reader.html、PDF图版、源码归档或本地链接存在性。\",\n    \"实际Python执行证据来自任务提供的当前哈希绑定preflight；本审阅调用没有重新运行Python或独立读取磁盘计算哈希。\"\n  ],\n  \"checks\": [\n    {\n      \"script\": \"tools/check_k_sys_012_full.py\",\n      \"args\": []\n    }\n  ],\n  \"reading_scope\": {\n    \"basis\": \"完整阅读任务内提供的当前候选正文、完整Python脚本、作者说明、actual_preflight及下列材料。范围均为提取文本的零基半开字符区间；未访问未提供范围。documents仅列全文材料和完整交付脚本。\",\n    \"full\": {\n      \"AGENTS.md\": [[0, 567]],\n      \"docs/knowledge-method.md\": [[0, 2251]],\n      \"docs/knowledge-review.md\": [[0, 3016]],\n      \"knowledge/system-semantics/memory-allocators.md\": [[0, 18232]],\n      \"knowledge/sources/S-VATTENTION.md\": [[0, 1375]],\n      \"knowledge/sources/S-PAGED.md\": [[0, 2206]],\n      \"knowledge/sources/S-CUDA-ALLOC.md\": [[0, 498]],\n      \"knowledge/sources/S-TORCH-CUDA.md\": [[0, 1468]],\n      \"knowledge/engine-index/vllm-kv-manager.md\": [[0, 2189]],\n      \"knowledge/engine-index/tensorrt-llm.md\": [[0, 2145]],\n      \"tools/check_k_sys_012_full.py\": \"完整candidate.test_script，任务未另提供字符范围\"\n    },\n    \"excerpts\": {\n      \"knowledge/algorithms/paged-kv-capacity.md\": [[12000, 14297]],\n      \"knowledge/algorithms/prefix-cache-identity.md\": [[0, 2297]],\n      \"knowledge/system-semantics/cancellation-resource-completion.md\": [[0, 2297]],\n      \"knowledge/frameworks/streams-allocator.md\": [[4000, 6297]],\n      \"knowledge/frameworks/cuda-graph-buffers.md\": [[0, 2297]],\n      \"knowledge/algorithms/iteration-batching.md\": [[0, 2297]],\n      \"knowledge/algorithms/chunked-prefill.md\": [[4000, 4601], [12000, 13696]],\n      \"knowledge/algorithms/heterogeneous-state-cache.md\": [[0, 2297]],\n      \"knowledge/algorithms/cross-attention-cache.md\": [[4000, 6297]],\n      \"knowledge/algorithms/lora-serving.md\": [[8000, 10297]],\n      \"knowledge/algorithms/parallelism.md\": [[0, 2297]],\n      \"knowledge/engine-index/vllm-model-runner.md\": [[8000, 10297]],\n      \"knowledge/frameworks/inference-eval.md\": [[16000, 18297]],\n      \"knowledge/frameworks/numerical-reference.md\": [[4000, 6297]],\n      \"knowledge/frameworks/attention-backends.md\": [[0, 2297]],\n      \"knowledge/frameworks/mlx-serving.md\": [[8000, 8662], [12000, 13635]],\n      \"knowledge/hardware/memory-and-roofline.md\": [[4000, 6297]],\n      \"knowledge/hardware/cuda-execution.md\": [[12000, 14297]],\n      \"knowledge/hardware/metal-unified-memory.md\": [[0, 2297]],\n      \"knowledge/hardware/trainium-dataflow.md\": [[12000, 14297]],\n      \"knowledge/hardware/cpu-serving.md\": [[8000, 10297]],\n      \"knowledge/models/prefill-decode-state.md\": [[16000, 18297]],\n      \"knowledge/models/moe-routing.md\": [[8000, 10297]],\n      \"knowledge/models/vision-language.md\": [[4000, 6297]],\n      \"knowledge/models/image-diffusion.md\": [[4000, 5113], [16000, 17184]],\n      \"knowledge/models/video-generation.md\": [[4000, 6297]],\n      \"knowledge/models/omni-multimodal.md\": [[8000, 10297]],\n      \"knowledge/system-semantics/design-synthesis.md\": [[4000, 6297]],\n      \"knowledge/tools/correctness-oracles.md\": [[0, 2297]],\n      \"knowledge/workloads/capacity-planning.md\": [[4000, 6297]],\n      \"knowledge/frameworks/checkpoint-loading.md\": [[0, 92], [12000, 14205]],\n      \"knowledge/algorithms/tiered-residency.md\": [[0, 2297]],\n      \"knowledge/algorithms/kv-offload-prefetch.md\": [[8000, 10297]],\n      \"knowledge/hardware/shared-memory-paths.md\": [[0, 2297]],\n      \"knowledge/workloads/multi-model-placement.md\": [[0, 2297]],\n      \"references/S-VATTENTION/fulltext.txt\": [[0, 44000], [52000, 59968], [60000, 64000]],\n      \"references/S-PAGED/fulltext.txt\": [[0, 12000], [16000, 32000], [36000, 48000], [52000, 59968], [60000, 68000]],\n      \"references/S-CUDA-ALLOC/fulltext.txt\": [[44000, 60000], [260000, 264000], [296000, 299969], [308000, 312000], [756000, 760000], [940000, 952000], [960000, 972000]],\n      \"references/S-TORCH-CUDA/fulltext.txt\": [[0, 4000], [12000, 15968], [16000, 52000], [56000, 64000], [76000, 80000]]\n    },\n    \"author_scope_assessment\": \"作者与审阅者范围分别判断。作者ledger记录4191字符旧基线及较大的原文摘录范围，不是当前18232字符候选的阅读证明；当前候选作为完整交付单独审查。作者所获CUDA范围包含[768000,771479)，本审阅者范围不包含它，不能以本次摘录缺失反推作者也未获提供。ledger仅证明供给范围，不证明认知阅读。作者明确没有执行当前Python；后续preflight才提供当前脚本实际执行证据，两者没有混记。\"\n  },\n  \"test_assessment\": \"已逐函数检查Allocator、World、audit及全部fixtures，并核对提供的实际执行记录。actual_preflight绑定当前脚本fd5aa27e3e8d3b41fa888191e2bb2c556f632a67515c0d174771682372f606c3和当前正文546ea7d7b1d978c755ac9c22853b54988ef4a65ecb557cb6b45dde477c45bcf1；Python3.12以-I -S -B -X utf8运行，returncode=0、stderr为空、未超时。此结果是所供执行记录，不是本审阅者另行执行。舍入参考通过逐单位枚举核对1040个小规模案例；资源参考从World实际接受且尚未结束的事件重建U，关闭期望由fixture显式给出，内容期望使用设定逻辑值。R2-001的正常轨迹在页epoch不变时检查在途与DONE重试均不追加事件、描述冲突拒绝、新43与另一owner的42继续受保护；故障策略确实产生第二项事件，旧证书实际删去其责任，并被audit_pending检出，随后退役也暴露非法回收。需区分第一条历史审计负对照可能先因初始化终态记录被遗忘而失败，不能仅凭该输出标签断言执行到了重复身份断言；第二项事件的显式断言与后续独立pending账失败仍直接复现原缺陷。R2-002从retire入口覆盖取得页、初始化在途、初始化完成未发布三个阶段，正路径检查CLOSED、无视图、排空保护及最终复用；负路径在后两阶段确实继续发布，证明确实检测入口错误。其他检查覆盖缓存准入、部分取得和映射失败、COW取消与提交、版本竞争、共享隔离、旧读者、旧证书、实际迟到写污染以及抽象绑定和隔离门。检查具有独立参考及可触发实际错误的负对照，未发现需阻断验收的自证循环。其有限fixture、立即接受提交和符号映射边界与正文声明一致；未执行设备和Agent使用效果检查，不记为PASS。\"\n}",
+  "exit_code": 0,
+  "status": "completed",
+  "timeout_seconds": 1800,
+  "response_path": "D:\\桌面\\xdb\\InfraAgents\\InfraAgents-know-astra-new\\InfraAgents-know\\docs\\evidence\\knowledge-workflow-20261028-batch18\\full_build\\K-SYS-012\\round-3\\reviewer-attempt-001\\answer.txt",
+  "record_path": "D:\\桌面\\xdb\\InfraAgents\\InfraAgents-know-astra-new\\InfraAgents-know\\docs\\evidence\\knowledge-workflow-20261028-batch18\\full_build\\K-SYS-012\\round-3\\reviewer-attempt-001\\record.json",
+  "tool_events": [],
+  "inventory_tool_events": [],
+  "rejected_tool_events": [],
+  "tool_policy": "metadata_inventory_only",
+  "tool_policy_version": "metadata-inventory-v1",
+  "tool_policy_scope": "Only empty-argument codex host plugin/skill-directory descriptors and empty template inventory; inventory is not knowledge evidence. All other tool events reject the call.",
+  "tool_policy_reason": "Production chapter construction allows observed generic capability discovery metadata; this does not claim a zero-tool comparison or external source reading.",
+  "malformed_event_lines": [],
+  "turn_completed": true,
+  "error_events": [],
+  "recovered_transport_events": [],
+  "terminal_error_events": [],
+  "transport_recovered": false,
+  "actual_model": null,
+  "identity_verified": null,
+  "identity_basis": "Explicit CLI model and isolated HTTP provider; CLI events do not expose server model identity.",
+  "provider": "eval-openai-http",
+  "max_output_tokens": null,
+  "cli_version": "codex-cli 0.164.0-alpha.11.1",
+  "cost_scope": "Codex token usage is reported; subscription charge is not exposed.",
+  "parsed": {
+    "entry_id": "K-SYS-012",
+    "body_sha256": "546ea7d7b1d978c755ac9c22853b54988ef4a65ecb557cb6b45dde477c45bcf1",
+    "reviewer": "sol-reviewer:K-SYS-012:round-3",
+    "decision": "accept",
+    "documents": {
+      "AGENTS.md": "b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a",
+      "docs/knowledge-method.md": "69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb",
+      "docs/knowledge-review.md": "f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21",
+      "knowledge/system-semantics/memory-allocators.md": "546ea7d7b1d978c755ac9c22853b54988ef4a65ecb557cb6b45dde477c45bcf1",
+      "knowledge/sources/S-VATTENTION.md": "c841eab45685791bc135d2641ec49661c122c2d8c36fa88f055db1f79b8f1f5d",
+      "knowledge/sources/S-PAGED.md": "50893a22385b0d577980153a9bc9c617acdcb2a9d7be0af655ad49421f06cc09",
+      "knowledge/sources/S-CUDA-ALLOC.md": "3ba021c941f2ed8f048be34d1ba0110f37675a3460013f24a239cc43a1e8630a",
+      "knowledge/sources/S-TORCH-CUDA.md": "8ee61677a1e35d475d9bb122b2c7fa824ccf054acefbe2f12345d72c1fb1b00e",
+      "knowledge/engine-index/vllm-kv-manager.md": "50b09c7a66c1282b7f6f7ac7ef1f265b953b908ae5fba883c9beec4732e1ab89",
+      "knowledge/engine-index/tensorrt-llm.md": "6ade1253f3747041bef4a816d82387c3771bff3459a153719cfbd571c2454c0b",
+      "tools/check_k_sys_012_full.py": "fd5aa27e3e8d3b41fa888191e2bb2c556f632a67515c0d174771682372f606c3"
+    },
+    "criteria": {
+      "definition": {
+        "assessment": "sufficient",
+        "reason": "动机、输入输出、物理身份、逻辑视图、操作身份及五类保护集合均有定义。拥有者资格、事务状态和页状态正交，容量需求与新增物理占用明确区分。",
+        "evidence": [
+          {
+            "path": "knowledge/system-semantics/memory-allocators.md",
+            "quote": "物理分配身份记为 x=(space,fid,e,size,compat)，其中 space 是设备或存储域，fid 标识物理区间，e 是该区间的分配代次，size 以字节计，compat 包含粒度、对齐、设备、权限和注册条件。"
+          },
+          {
+            "path": "knowledge/system-semantics/memory-allocators.md",
+            "quote": "一个 OPEN 的拥有者可以尚无可见视图；一个 CLOSED 的拥有者可以仍有正在排空的准备或读取。"
+          }
+        ]
+      },
+      "legality": {
+        "assessment": "sufficient",
+        "reason": "发布、冲突检查、最后访问、异步撤销与回收条件能够衔接；串行状态域给出登记和退役的线性化关系。连续池、块表、虚拟映射及后台准备被作为条件化选择，没有把地址稳定、容量足够或物理代次误当作完整安全证明。",
+        "evidence": [
+          {
+            "path": "knowledge/system-semantics/memory-allocators.md",
+            "quote": "容量足够只是必要条件。物理连续区间、虚拟地址可用性、页粒度、权限及设备能力仍须独立满足。"
+          },
+          {
+            "path": "knowledge/system-semantics/memory-allocators.md",
+            "quote": "登记若先发生，退役会看见 U；退役若先发生，新的登记与发布均被拒绝。"
+          },
+          {
+            "path": "knowledge/system-semantics/memory-allocators.md",
+            "quote": "递增 e 可以阻止旧完成事件结算新责任，却不能阻止旧 DMA 对同一物理地址写入。"
+          }
+        ]
+      },
+      "algorithm": {
+        "assessment": "sufficient",
+        "reason": "准备、提交、中止、访问登记、完成与拥有者退役均交付了输入输出和更新顺序。终态操作表解决同一分配生命期内的身份复用；首次准备即建立资格，未发布退役也留下关闭记录。脚本相应实现完整身份登记、逐页预验证后统一结算、准备排空及不可重新打开的资格。R2-001、R2-002均可关闭。",
+        "evidence": [
+          {
+            "path": "knowledge/system-semantics/memory-allocators.md",
+            "quote": "O 与 U 的生命期不同：U 只保存未结清的物理访问；O 在 U 删除后仍保存足以识别已结束操作的记录。"
+          },
+          {
+            "path": "knowledge/system-semantics/memory-allocators.md",
+            "quote": "若存在且描述相同：返回原状态与收据，不创建 U，不授权再次提交。"
+          },
+          {
+            "path": "knowledge/system-semantics/memory-allocators.md",
+            "quote": "首次发布尚未发生、当前没有视图、甚至预留尚未来到，都不跳过关闭。"
+          },
+          {
+            "path": "knowledge/system-semantics/memory-allocators.md",
+            "quote": "不能逐页移除一半后才发现另一页证书不匹配。"
+          }
+        ]
+      },
+      "cost": {
+        "assessment": "sufficient",
+        "reason": "六类成本均与实际工作和时间边界关联。唯一backing准入、缓存分类转移、逐区域舍入、复制双向流量、映射与slack、同时存活峰值及终态记录驻留解释充分。复算尾部字节数、128 KiB缓存复用、120×9微秒及12.75 GiB设定总量成立；来源测量没有被写成本机保证。",
+        "evidence": [
+          {
+            "path": "knowledge/system-semantics/memory-allocators.md",
+            "quote": "C_plan = bytes((F_hold∖E)∪A)+bytes(J)+M_margin ≤ C_cap。"
+          },
+          {
+            "path": "knowledge/system-semantics/memory-allocators.md",
+            "quote": "共用同一内存资源时理想流量时间下界为2D/β，不能给源读与目的写各自一份独占总带宽。"
+          },
+          {
+            "path": "knowledge/system-semantics/memory-allocators.md",
+            "quote": "保留N个操作记录的元数据约为Σ_k(b_fixed+a_k b_access)，字节常数由编码决定；不能因U已空就把这项驻留当成零。"
+          }
+        ]
+      },
+      "adaptation": {
+        "assessment": "sufficient",
+        "reason": "请求长度、共享程度、独立区域数、设备粒度、映射余裕、取消频率、固定地址合同和操作历史规模改变时，均说明应保留的不变量及需要重算的成本。记录压缩没有被当作无条件成立的优化。",
+        "evidence": [
+          {
+            "path": "knowledge/system-semantics/memory-allocators.md",
+            "quote": "条件改变后保留身份、发布和回收不变量，重新选择组织："
+          },
+          {
+            "path": "knowledge/system-semantics/memory-allocators.md",
+            "quote": "小页依赖的能力不可用时，必须换合法粒度、组织或后端。"
+          },
+          {
+            "path": "knowledge/system-semantics/memory-allocators.md",
+            "quote": "可采用有证明的水位压缩、分段关闭作用域或新实例轮换；不得复用旧完整身份，也不能仅凭TTL清除保护。"
+          }
+        ]
+      },
+      "diagnosis": {
+        "assessment": "sufficient",
+        "reason": "诊断表给出竞争解释、可控干预和反证后的修正。两个原缺陷都有从真实入口推进的正轨迹及故障分支；实际事件账、历史接受记录与显式关闭期望能够独立挑战allocator账务，而非仅复述状态标签。",
+        "evidence": [
+          {
+            "path": "knowledge/system-semantics/memory-allocators.md",
+            "quote": "责任参考应从实际接受的事件及实际结束记录重建，不把allocator当前U或操作表状态当成自己的正确答案。"
+          },
+          {
+            "path": "knowledge/system-semantics/memory-allocators.md",
+            "quote": "操作唯一性还要检查历史接受事件，不能只检查此刻pending集合。"
+          },
+          {
+            "path": "knowledge/system-semantics/memory-allocators.md",
+            "quote": "这些检查必须从 RetireOwner 入口触发。直接调用 Abort 可以验证事务排空，却不能发现“没有已发布视图就跳过退役”的入口错误。"
+          }
+        ]
+      }
+    },
+    "findings": [],
+    "limitations": [
+      "结论限定于正文声明的单责任域、串行状态域、固定整页与标量CPU模型；不构成任意事件交错的穷举证明。",
+      "没有真实GPU页表、TLB、异步映射撤销、stream/event可见性、DMA停止、CUDA Graph、跨设备提交、完整KV布局或性能验证；正文已准确声明。",
+      "提交接受状态未知、终态记录压缩、持久化和进程恢复未由脚本实现。当前保留全部终态及关闭墓碑的基线不依赖这些未验证优化。",
+      "来源原文仅按本次提供的摘录核对。CUDA §11.3完整规则及§11.9未在本次审阅者原文摘录中完整提供，相应判断结合完整来源说明和streams-allocator摘录；未检查reader.html、PDF图版、源码归档或本地链接存在性。",
+      "实际Python执行证据来自任务提供的当前哈希绑定preflight；本审阅调用没有重新运行Python或独立读取磁盘计算哈希。"
+    ],
+    "checks": [
+      {
+        "script": "tools/check_k_sys_012_full.py",
+        "args": []
+      }
+    ],
+    "reading_scope": {
+      "basis": "完整阅读任务内提供的当前候选正文、完整Python脚本、作者说明、actual_preflight及下列材料。范围均为提取文本的零基半开字符区间；未访问未提供范围。documents仅列全文材料和完整交付脚本。",
+      "full": {
+        "AGENTS.md": [
+          [
+            0,
+            567
+          ]
+        ],
+        "docs/knowledge-method.md": [
+          [
+            0,
+            2251
+          ]
+        ],
+        "docs/knowledge-review.md": [
+          [
+            0,
+            3016
+          ]
+        ],
+        "knowledge/system-semantics/memory-allocators.md": [
+          [
+            0,
+            18232
+          ]
+        ],
+        "knowledge/sources/S-VATTENTION.md": [
+          [
+            0,
+            1375
+          ]
+        ],
+        "knowledge/sources/S-PAGED.md": [
+          [
+            0,
+            2206
+          ]
+        ],
+        "knowledge/sources/S-CUDA-ALLOC.md": [
+          [
+            0,
+            498
+          ]
+        ],
+        "knowledge/sources/S-TORCH-CUDA.md": [
+          [
+            0,
+            1468
+          ]
+        ],
+        "knowledge/engine-index/vllm-kv-manager.md": [
+          [
+            0,
+            2189
+          ]
+        ],
+        "knowledge/engine-index/tensorrt-llm.md": [
+          [
+            0,
+            2145
+          ]
+        ],
+        "tools/check_k_sys_012_full.py": "完整candidate.test_script，任务未另提供字符范围"
+      },
+      "excerpts": {
+        "knowledge/algorithms/paged-kv-capacity.md": [
+          [
+            12000,
+            14297
+          ]
+        ],
+        "knowledge/algorithms/prefix-cache-identity.md": [
+          [
+            0,
+            2297
+          ]
+        ],
+        "knowledge/system-semantics/cancellation-resource-completion.md": [
+          [
+            0,
+            2297
+          ]
+        ],
+        "knowledge/frameworks/streams-allocator.md": [
+          [
+            4000,
+            6297
+          ]
+        ],
+        "knowledge/frameworks/cuda-graph-buffers.md": [
+          [
+            0,
+            2297
+          ]
+        ],
+        "knowledge/algorithms/iteration-batching.md": [
+          [
+            0,
+            2297
+          ]
+        ],
+        "knowledge/algorithms/chunked-prefill.md": [
+          [
+            4000,
+            4601
+          ],
+          [
+            12000,
+            13696
+          ]
+        ],
+        "knowledge/algorithms/heterogeneous-state-cache.md": [
+          [
+            0,
+            2297
+          ]
+        ],
+        "knowledge/algorithms/cross-attention-cache.md": [
+          [
+            4000,
+            6297
+          ]
+        ],
+        "knowledge/algorithms/lora-serving.md": [
+          [
+            8000,
+            10297
+          ]
+        ],
+        "knowledge/algorithms/parallelism.md": [
+          [
+            0,
+            2297
+          ]
+        ],
+        "knowledge/engine-index/vllm-model-runner.md": [
+          [
+            8000,
+            10297
+          ]
+        ],
+        "knowledge/frameworks/inference-eval.md": [
+          [
+            16000,
+            18297
+          ]
+        ],
+        "knowledge/frameworks/numerical-reference.md": [
+          [
+            4000,
+            6297
+          ]
+        ],
+        "knowledge/frameworks/attention-backends.md": [
+          [
+            0,
+            2297
+          ]
+        ],
+        "knowledge/frameworks/mlx-serving.md": [
+          [
+            8000,
+            8662
+          ],
+          [
+            12000,
+            13635
+          ]
+        ],
+        "knowledge/hardware/memory-and-roofline.md": [
+          [
+            4000,
+            6297
+          ]
+        ],
+        "knowledge/hardware/cuda-execution.md": [
+          [
+            12000,
+            14297
+          ]
+        ],
+        "knowledge/hardware/metal-unified-memory.md": [
+          [
+            0,
+            2297
+          ]
+        ],
+        "knowledge/hardware/trainium-dataflow.md": [
+          [
+            12000,
+            14297
+          ]
+        ],
+        "knowledge/hardware/cpu-serving.md": [
+          [
+            8000,
+            10297
+          ]
+        ],
+        "knowledge/models/prefill-decode-state.md": [
+          [
+            16000,
+            18297
+          ]
+        ],
+        "knowledge/models/moe-routing.md": [
+          [
+            8000,
+            10297
+          ]
+        ],
+        "knowledge/models/vision-language.md": [
+          [
+            4000,
+            6297
+          ]
+        ],
+        "knowledge/models/image-diffusion.md": [
+          [
+            4000,
+            5113
+          ],
+          [
+            16000,
+            17184
+          ]
+        ],
+        "knowledge/models/video-generation.md": [
+          [
+            4000,
+            6297
+          ]
+        ],
+        "knowledge/models/omni-multimodal.md": [
+          [
+            8000,
+            10297
+          ]
+        ],
+        "knowledge/system-semantics/design-synthesis.md": [
+          [
+            4000,
+            6297
+          ]
+        ],
+        "knowledge/tools/correctness-oracles.md": [
+          [
+            0,
+            2297
+          ]
+        ],
+        "knowledge/workloads/capacity-planning.md": [
+          [
+            4000,
+            6297
+          ]
+        ],
+        "knowledge/frameworks/checkpoint-loading.md": [
+          [
+            0,
+            92
+          ],
+          [
+            12000,
+            14205
+          ]
+        ],
+        "knowledge/algorithms/tiered-residency.md": [
+          [
+            0,
+            2297
+          ]
+        ],
+        "knowledge/algorithms/kv-offload-prefetch.md": [
+          [
+            8000,
+            10297
+          ]
+        ],
+        "knowledge/hardware/shared-memory-paths.md": [
+          [
+            0,
+            2297
+          ]
+        ],
+        "knowledge/workloads/multi-model-placement.md": [
+          [
+            0,
+            2297
+          ]
+        ],
+        "references/S-VATTENTION/fulltext.txt": [
+          [
+            0,
+            44000
+          ],
+          [
+            52000,
+            59968
+          ],
+          [
+            60000,
+            64000
+          ]
+        ],
+        "references/S-PAGED/fulltext.txt": [
+          [
+            0,
+            12000
+          ],
+          [
+            16000,
+            32000
+          ],
+          [
+            36000,
+            48000
+          ],
+          [
+            52000,
+            59968
+          ],
+          [
+            60000,
+            68000
+          ]
+        ],
+        "references/S-CUDA-ALLOC/fulltext.txt": [
+          [
+            44000,
+            60000
+          ],
+          [
+            260000,
+            264000
+          ],
+          [
+            296000,
+            299969
+          ],
+          [
+            308000,
+            312000
+          ],
+          [
+            756000,
+            760000
+          ],
+          [
+            940000,
+            952000
+          ],
+          [
+            960000,
+            972000
+          ]
+        ],
+        "references/S-TORCH-CUDA/fulltext.txt": [
+          [
+            0,
+            4000
+          ],
+          [
+            12000,
+            15968
+          ],
+          [
+            16000,
+            52000
+          ],
+          [
+            56000,
+            64000
+          ],
+          [
+            76000,
+            80000
+          ]
+        ]
+      },
+      "author_scope_assessment": "作者与审阅者范围分别判断。作者ledger记录4191字符旧基线及较大的原文摘录范围，不是当前18232字符候选的阅读证明；当前候选作为完整交付单独审查。作者所获CUDA范围包含[768000,771479)，本审阅者范围不包含它，不能以本次摘录缺失反推作者也未获提供。ledger仅证明供给范围，不证明认知阅读。作者明确没有执行当前Python；后续preflight才提供当前脚本实际执行证据，两者没有混记。"
+    },
+    "test_assessment": "已逐函数检查Allocator、World、audit及全部fixtures，并核对提供的实际执行记录。actual_preflight绑定当前脚本fd5aa27e3e8d3b41fa888191e2bb2c556f632a67515c0d174771682372f606c3和当前正文546ea7d7b1d978c755ac9c22853b54988ef4a65ecb557cb6b45dde477c45bcf1；Python3.12以-I -S -B -X utf8运行，returncode=0、stderr为空、未超时。此结果是所供执行记录，不是本审阅者另行执行。舍入参考通过逐单位枚举核对1040个小规模案例；资源参考从World实际接受且尚未结束的事件重建U，关闭期望由fixture显式给出，内容期望使用设定逻辑值。R2-001的正常轨迹在页epoch不变时检查在途与DONE重试均不追加事件、描述冲突拒绝、新43与另一owner的42继续受保护；故障策略确实产生第二项事件，旧证书实际删去其责任，并被audit_pending检出，随后退役也暴露非法回收。需区分第一条历史审计负对照可能先因初始化终态记录被遗忘而失败，不能仅凭该输出标签断言执行到了重复身份断言；第二项事件的显式断言与后续独立pending账失败仍直接复现原缺陷。R2-002从retire入口覆盖取得页、初始化在途、初始化完成未发布三个阶段，正路径检查CLOSED、无视图、排空保护及最终复用；负路径在后两阶段确实继续发布，证明确实检测入口错误。其他检查覆盖缓存准入、部分取得和映射失败、COW取消与提交、版本竞争、共享隔离、旧读者、旧证书、实际迟到写污染以及抽象绑定和隔离门。检查具有独立参考及可触发实际错误的负对照，未发现需阻断验收的自证循环。其有限fixture、立即接受提交和符号映射边界与正文声明一致；未执行设备和Agent使用效果检查，不记为PASS。"
+  },
+  "format_status": "strict_json",
+  "format_error": null,
+  "output_text": "{\n  \"entry_id\": \"K-SYS-012\",\n  \"body_sha256\": \"546ea7d7b1d978c755ac9c22853b54988ef4a65ecb557cb6b45dde477c45bcf1\",\n  \"reviewer\": \"sol-reviewer:K-SYS-012:round-3\",\n  \"decision\": \"accept\",\n  \"documents\": {\n    \"AGENTS.md\": \"b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a\",\n    \"docs/knowledge-method.md\": \"69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb\",\n    \"docs/knowledge-review.md\": \"f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21\",\n    \"knowledge/system-semantics/memory-allocators.md\": \"546ea7d7b1d978c755ac9c22853b54988ef4a65ecb557cb6b45dde477c45bcf1\",\n    \"knowledge/sources/S-VATTENTION.md\": \"c841eab45685791bc135d2641ec49661c122c2d8c36fa88f055db1f79b8f1f5d\",\n    \"knowledge/sources/S-PAGED.md\": \"50893a22385b0d577980153a9bc9c617acdcb2a9d7be0af655ad49421f06cc09\",\n    \"knowledge/sources/S-CUDA-ALLOC.md\": \"3ba021c941f2ed8f048be34d1ba0110f37675a3460013f24a239cc43a1e8630a\",\n    \"knowledge/sources/S-TORCH-CUDA.md\": \"8ee61677a1e35d475d9bb122b2c7fa824ccf054acefbe2f12345d72c1fb1b00e\",\n    \"knowledge/engine-index/vllm-kv-manager.md\": \"50b09c7a66c1282b7f6f7ac7ef1f265b953b908ae5fba883c9beec4732e1ab89\",\n    \"knowledge/engine-index/tensorrt-llm.md\": \"6ade1253f3747041bef4a816d82387c3771bff3459a153719cfbd571c2454c0b\",\n    \"tools/check_k_sys_012_full.py\": \"fd5aa27e3e8d3b41fa888191e2bb2c556f632a67515c0d174771682372f606c3\"\n  },\n  \"criteria\": {\n    \"definition\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"动机、输入输出、物理身份、逻辑视图、操作身份及五类保护集合均有定义。拥有者资格、事务状态和页状态正交，容量需求与新增物理占用明确区分。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/system-semantics/memory-allocators.md\",\n          \"quote\": \"物理分配身份记为 x=(space,fid,e,size,compat)，其中 space 是设备或存储域，fid 标识物理区间，e 是该区间的分配代次，size 以字节计，compat 包含粒度、对齐、设备、权限和注册条件。\"\n        },\n        {\n          \"path\": \"knowledge/system-semantics/memory-allocators.md\",\n          \"quote\": \"一个 OPEN 的拥有者可以尚无可见视图；一个 CLOSED 的拥有者可以仍有正在排空的准备或读取。\"\n        }\n      ]\n    },\n    \"legality\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"发布、冲突检查、最后访问、异步撤销与回收条件能够衔接；串行状态域给出登记和退役的线性化关系。连续池、块表、虚拟映射及后台准备被作为条件化选择，没有把地址稳定、容量足够或物理代次误当作完整安全证明。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/system-semantics/memory-allocators.md\",\n          \"quote\": \"容量足够只是必要条件。物理连续区间、虚拟地址可用性、页粒度、权限及设备能力仍须独立满足。\"\n        },\n        {\n          \"path\": \"knowledge/system-semantics/memory-allocators.md\",\n          \"quote\": \"登记若先发生，退役会看见 U；退役若先发生，新的登记与发布均被拒绝。\"\n        },\n        {\n          \"path\": \"knowledge/system-semantics/memory-allocators.md\",\n          \"quote\": \"递增 e 可以阻止旧完成事件结算新责任，却不能阻止旧 DMA 对同一物理地址写入。\"\n        }\n      ]\n    },\n    \"algorithm\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"准备、提交、中止、访问登记、完成与拥有者退役均交付了输入输出和更新顺序。终态操作表解决同一分配生命期内的身份复用；首次准备即建立资格，未发布退役也留下关闭记录。脚本相应实现完整身份登记、逐页预验证后统一结算、准备排空及不可重新打开的资格。R2-001、R2-002均可关闭。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/system-semantics/memory-allocators.md\",\n          \"quote\": \"O 与 U 的生命期不同：U 只保存未结清的物理访问；O 在 U 删除后仍保存足以识别已结束操作的记录。\"\n        },\n        {\n          \"path\": \"knowledge/system-semantics/memory-allocators.md\",\n          \"quote\": \"若存在且描述相同：返回原状态与收据，不创建 U，不授权再次提交。\"\n        },\n        {\n          \"path\": \"knowledge/system-semantics/memory-allocators.md\",\n          \"quote\": \"首次发布尚未发生、当前没有视图、甚至预留尚未来到，都不跳过关闭。\"\n        },\n        {\n          \"path\": \"knowledge/system-semantics/memory-allocators.md\",\n          \"quote\": \"不能逐页移除一半后才发现另一页证书不匹配。\"\n        }\n      ]\n    },\n    \"cost\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"六类成本均与实际工作和时间边界关联。唯一backing准入、缓存分类转移、逐区域舍入、复制双向流量、映射与slack、同时存活峰值及终态记录驻留解释充分。复算尾部字节数、128 KiB缓存复用、120×9微秒及12.75 GiB设定总量成立；来源测量没有被写成本机保证。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/system-semantics/memory-allocators.md\",\n          \"quote\": \"C_plan = bytes((F_hold∖E)∪A)+bytes(J)+M_margin ≤ C_cap。\"\n        },\n        {\n          \"path\": \"knowledge/system-semantics/memory-allocators.md\",\n          \"quote\": \"共用同一内存资源时理想流量时间下界为2D/β，不能给源读与目的写各自一份独占总带宽。\"\n        },\n        {\n          \"path\": \"knowledge/system-semantics/memory-allocators.md\",\n          \"quote\": \"保留N个操作记录的元数据约为Σ_k(b_fixed+a_k b_access)，字节常数由编码决定；不能因U已空就把这项驻留当成零。\"\n        }\n      ]\n    },\n    \"adaptation\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"请求长度、共享程度、独立区域数、设备粒度、映射余裕、取消频率、固定地址合同和操作历史规模改变时，均说明应保留的不变量及需要重算的成本。记录压缩没有被当作无条件成立的优化。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/system-semantics/memory-allocators.md\",\n          \"quote\": \"条件改变后保留身份、发布和回收不变量，重新选择组织：\"\n        },\n        {\n          \"path\": \"knowledge/system-semantics/memory-allocators.md\",\n          \"quote\": \"小页依赖的能力不可用时，必须换合法粒度、组织或后端。\"\n        },\n        {\n          \"path\": \"knowledge/system-semantics/memory-allocators.md\",\n          \"quote\": \"可采用有证明的水位压缩、分段关闭作用域或新实例轮换；不得复用旧完整身份，也不能仅凭TTL清除保护。\"\n        }\n      ]\n    },\n    \"diagnosis\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"诊断表给出竞争解释、可控干预和反证后的修正。两个原缺陷都有从真实入口推进的正轨迹及故障分支；实际事件账、历史接受记录与显式关闭期望能够独立挑战allocator账务，而非仅复述状态标签。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/system-semantics/memory-allocators.md\",\n          \"quote\": \"责任参考应从实际接受的事件及实际结束记录重建，不把allocator当前U或操作表状态当成自己的正确答案。\"\n        },\n        {\n          \"path\": \"knowledge/system-semantics/memory-allocators.md\",\n          \"quote\": \"操作唯一性还要检查历史接受事件，不能只检查此刻pending集合。\"\n        },\n        {\n          \"path\": \"knowledge/system-semantics/memory-allocators.md\",\n          \"quote\": \"这些检查必须从 RetireOwner 入口触发。直接调用 Abort 可以验证事务排空，却不能发现“没有已发布视图就跳过退役”的入口错误。\"\n        }\n      ]\n    }\n  },\n  \"findings\": [],\n  \"limitations\": [\n    \"结论限定于正文声明的单责任域、串行状态域、固定整页与标量CPU模型；不构成任意事件交错的穷举证明。\",\n    \"没有真实GPU页表、TLB、异步映射撤销、stream/event可见性、DMA停止、CUDA Graph、跨设备提交、完整KV布局或性能验证；正文已准确声明。\",\n    \"提交接受状态未知、终态记录压缩、持久化和进程恢复未由脚本实现。当前保留全部终态及关闭墓碑的基线不依赖这些未验证优化。\",\n    \"来源原文仅按本次提供的摘录核对。CUDA §11.3完整规则及§11.9未在本次审阅者原文摘录中完整提供，相应判断结合完整来源说明和streams-allocator摘录；未检查reader.html、PDF图版、源码归档或本地链接存在性。\",\n    \"实际Python执行证据来自任务提供的当前哈希绑定preflight；本审阅调用没有重新运行Python或独立读取磁盘计算哈希。\"\n  ],\n  \"checks\": [\n    {\n      \"script\": \"tools/check_k_sys_012_full.py\",\n      \"args\": []\n    }\n  ],\n  \"reading_scope\": {\n    \"basis\": \"完整阅读任务内提供的当前候选正文、完整Python脚本、作者说明、actual_preflight及下列材料。范围均为提取文本的零基半开字符区间；未访问未提供范围。documents仅列全文材料和完整交付脚本。\",\n    \"full\": {\n      \"AGENTS.md\": [[0, 567]],\n      \"docs/knowledge-method.md\": [[0, 2251]],\n      \"docs/knowledge-review.md\": [[0, 3016]],\n      \"knowledge/system-semantics/memory-allocators.md\": [[0, 18232]],\n      \"knowledge/sources/S-VATTENTION.md\": [[0, 1375]],\n      \"knowledge/sources/S-PAGED.md\": [[0, 2206]],\n      \"knowledge/sources/S-CUDA-ALLOC.md\": [[0, 498]],\n      \"knowledge/sources/S-TORCH-CUDA.md\": [[0, 1468]],\n      \"knowledge/engine-index/vllm-kv-manager.md\": [[0, 2189]],\n      \"knowledge/engine-index/tensorrt-llm.md\": [[0, 2145]],\n      \"tools/check_k_sys_012_full.py\": \"完整candidate.test_script，任务未另提供字符范围\"\n    },\n    \"excerpts\": {\n      \"knowledge/algorithms/paged-kv-capacity.md\": [[12000, 14297]],\n      \"knowledge/algorithms/prefix-cache-identity.md\": [[0, 2297]],\n      \"knowledge/system-semantics/cancellation-resource-completion.md\": [[0, 2297]],\n      \"knowledge/frameworks/streams-allocator.md\": [[4000, 6297]],\n      \"knowledge/frameworks/cuda-graph-buffers.md\": [[0, 2297]],\n      \"knowledge/algorithms/iteration-batching.md\": [[0, 2297]],\n      \"knowledge/algorithms/chunked-prefill.md\": [[4000, 4601], [12000, 13696]],\n      \"knowledge/algorithms/heterogeneous-state-cache.md\": [[0, 2297]],\n      \"knowledge/algorithms/cross-attention-cache.md\": [[4000, 6297]],\n      \"knowledge/algorithms/lora-serving.md\": [[8000, 10297]],\n      \"knowledge/algorithms/parallelism.md\": [[0, 2297]],\n      \"knowledge/engine-index/vllm-model-runner.md\": [[8000, 10297]],\n      \"knowledge/frameworks/inference-eval.md\": [[16000, 18297]],\n      \"knowledge/frameworks/numerical-reference.md\": [[4000, 6297]],\n      \"knowledge/frameworks/attention-backends.md\": [[0, 2297]],\n      \"knowledge/frameworks/mlx-serving.md\": [[8000, 8662], [12000, 13635]],\n      \"knowledge/hardware/memory-and-roofline.md\": [[4000, 6297]],\n      \"knowledge/hardware/cuda-execution.md\": [[12000, 14297]],\n      \"knowledge/hardware/metal-unified-memory.md\": [[0, 2297]],\n      \"knowledge/hardware/trainium-dataflow.md\": [[12000, 14297]],\n      \"knowledge/hardware/cpu-serving.md\": [[8000, 10297]],\n      \"knowledge/models/prefill-decode-state.md\": [[16000, 18297]],\n      \"knowledge/models/moe-routing.md\": [[8000, 10297]],\n      \"knowledge/models/vision-language.md\": [[4000, 6297]],\n      \"knowledge/models/image-diffusion.md\": [[4000, 5113], [16000, 17184]],\n      \"knowledge/models/video-generation.md\": [[4000, 6297]],\n      \"knowledge/models/omni-multimodal.md\": [[8000, 10297]],\n      \"knowledge/system-semantics/design-synthesis.md\": [[4000, 6297]],\n      \"knowledge/tools/correctness-oracles.md\": [[0, 2297]],\n      \"knowledge/workloads/capacity-planning.md\": [[4000, 6297]],\n      \"knowledge/frameworks/checkpoint-loading.md\": [[0, 92], [12000, 14205]],\n      \"knowledge/algorithms/tiered-residency.md\": [[0, 2297]],\n      \"knowledge/algorithms/kv-offload-prefetch.md\": [[8000, 10297]],\n      \"knowledge/hardware/shared-memory-paths.md\": [[0, 2297]],\n      \"knowledge/workloads/multi-model-placement.md\": [[0, 2297]],\n      \"references/S-VATTENTION/fulltext.txt\": [[0, 44000], [52000, 59968], [60000, 64000]],\n      \"references/S-PAGED/fulltext.txt\": [[0, 12000], [16000, 32000], [36000, 48000], [52000, 59968], [60000, 68000]],\n      \"references/S-CUDA-ALLOC/fulltext.txt\": [[44000, 60000], [260000, 264000], [296000, 299969], [308000, 312000], [756000, 760000], [940000, 952000], [960000, 972000]],\n      \"references/S-TORCH-CUDA/fulltext.txt\": [[0, 4000], [12000, 15968], [16000, 52000], [56000, 64000], [76000, 80000]]\n    },\n    \"author_scope_assessment\": \"作者与审阅者范围分别判断。作者ledger记录4191字符旧基线及较大的原文摘录范围，不是当前18232字符候选的阅读证明；当前候选作为完整交付单独审查。作者所获CUDA范围包含[768000,771479)，本审阅者范围不包含它，不能以本次摘录缺失反推作者也未获提供。ledger仅证明供给范围，不证明认知阅读。作者明确没有执行当前Python；后续preflight才提供当前脚本实际执行证据，两者没有混记。\"\n  },\n  \"test_assessment\": \"已逐函数检查Allocator、World、audit及全部fixtures，并核对提供的实际执行记录。actual_preflight绑定当前脚本fd5aa27e3e8d3b41fa888191e2bb2c556f632a67515c0d174771682372f606c3和当前正文546ea7d7b1d978c755ac9c22853b54988ef4a65ecb557cb6b45dde477c45bcf1；Python3.12以-I -S -B -X utf8运行，returncode=0、stderr为空、未超时。此结果是所供执行记录，不是本审阅者另行执行。舍入参考通过逐单位枚举核对1040个小规模案例；资源参考从World实际接受且尚未结束的事件重建U，关闭期望由fixture显式给出，内容期望使用设定逻辑值。R2-001的正常轨迹在页epoch不变时检查在途与DONE重试均不追加事件、描述冲突拒绝、新43与另一owner的42继续受保护；故障策略确实产生第二项事件，旧证书实际删去其责任，并被audit_pending检出，随后退役也暴露非法回收。需区分第一条历史审计负对照可能先因初始化终态记录被遗忘而失败，不能仅凭该输出标签断言执行到了重复身份断言；第二项事件的显式断言与后续独立pending账失败仍直接复现原缺陷。R2-002从retire入口覆盖取得页、初始化在途、初始化完成未发布三个阶段，正路径检查CLOSED、无视图、排空保护及最终复用；负路径在后两阶段确实继续发布，证明确实检测入口错误。其他检查覆盖缓存准入、部分取得和映射失败、COW取消与提交、版本竞争、共享隔离、旧读者、旧证书、实际迟到写污染以及抽象绑定和隔离门。检查具有独立参考及可触发实际错误的负对照，未发现需阻断验收的自证循环。其有限fixture、立即接受提交和符号映射边界与正文声明一致；未执行设备和Agent使用效果检查，不记为PASS。\"\n}",
+  "elapsed_seconds": 156.344
+}

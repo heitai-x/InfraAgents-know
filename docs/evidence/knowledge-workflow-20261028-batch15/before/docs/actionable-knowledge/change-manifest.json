@@ -1,0 +1,333 @@
+{
+  "schema_version": 1,
+  "version_id": "base-gpt-6-astra-2026-04-30-v2.3-draft19",
+  "changes": [
+    {
+      "entry_id": "K-ALG-004",
+      "previous_revision": 4,
+      "revision": 5,
+      "path": "knowledge/algorithms/attention-io.md",
+      "summary": "精确 attention 可以通过改变数据流避免存储完整分数矩阵；算法复杂度、HBM 流量与数值归约顺序分别决定成本。"
+    },
+    {
+      "entry_id": "K-ALG-010",
+      "previous_revision": 4,
+      "revision": 5,
+      "path": "knowledge/algorithms/cross-attention-cache.md",
+      "summary": "当 encoder 输出和投影权重固定时，cross-attention 的 K/V 与 decoder 步数无关，可以一次生成、多次读取。"
+    },
+    {
+      "entry_id": "K-ALG-014",
+      "previous_revision": 4,
+      "revision": 5,
+      "path": "knowledge/algorithms/lora-serving.md",
+      "summary": "LoRA 为共享基座增加低秩映射；多适配器服务将模型复用问题转换成按请求选择增量权重的问题。"
+    },
+    {
+      "entry_id": "K-ALG-015",
+      "previous_revision": 4,
+      "revision": 5,
+      "path": "knowledge/algorithms/parallelism.md",
+      "summary": "并行策略改变张量归属和同步边界；选择依据是每阶段的计算、状态与通信分解。"
+    },
+    {
+      "entry_id": "K-FW-002",
+      "previous_revision": 4,
+      "revision": 5,
+      "path": "knowledge/frameworks/numerical-reference.md",
+      "summary": "一个有解释力的数值参考保持任务函数和输入一致，再分层衡量实现重排与近似产生的差异。"
+    },
+    {
+      "entry_id": "K-FW-003",
+      "previous_revision": 4,
+      "revision": 5,
+      "path": "knowledge/frameworks/streams-allocator.md",
+      "summary": "stream 解决执行顺序，内存生存期解决地址何时可重用；正确的异步程序需要同时满足两种关系。"
+    },
+    {
+      "entry_id": "K-FW-004",
+      "previous_revision": 4,
+      "revision": 5,
+      "path": "knowledge/frameworks/compile-dynamic-shapes.md",
+      "summary": "图获取、IR/lowering、布局和 guard 将函数映射到目标程序；编译缓存及在线变体必须保持副作用、容量与生命周期契约。"
+    },
+    {
+      "entry_id": "K-FW-005",
+      "previous_revision": 4,
+      "revision": 5,
+      "path": "knowledge/frameworks/cuda-graph-buffers.md",
+      "summary": "CUDA Graph 的固定地址、动态计划和在途内容所有权需共同验证；卸载、adapter 切换和图池竞争改变合法性与收益。"
+    },
+    {
+      "entry_id": "K-FW-010",
+      "previous_revision": 4,
+      "revision": 5,
+      "path": "knowledge/frameworks/nki-tiling.md",
+      "summary": "NKI 的 tile 是带硬件轴语义的片上对象；布局与生存期共同决定 DMA、矩阵和归约引擎的供给。"
+    },
+    {
+      "entry_id": "K-HW-001",
+      "previous_revision": 4,
+      "revision": 5,
+      "path": "knowledge/hardware/memory-and-roofline.md",
+      "summary": "容量决定系统能容纳哪些状态，带宽与计算能力决定搬运和处理这些状态的下界，关键路径决定哪些下界实际显现。"
+    },
+    {
+      "entry_id": "K-HW-002",
+      "previous_revision": 5,
+      "revision": 6,
+      "path": "knowledge/hardware/topology-parallelism.md",
+      "summary": "拓扑、方向与共享链路决定通信成本；将理想ring启动项和发送流量放到具体带宽假设中解释。"
+    },
+    {
+      "entry_id": "K-HW-005",
+      "previous_revision": 4,
+      "revision": 5,
+      "path": "knowledge/hardware/cuda-execution.md",
+      "summary": "CUDA 优化应把算法的数据复用映射到 SM 的寄存器、共享存储和 warp 执行，再判断主机提交是否成为瓶颈。"
+    },
+    {
+      "entry_id": "K-HW-006",
+      "previous_revision": 4,
+      "revision": 5,
+      "path": "knowledge/hardware/rocm-execution.md",
+      "summary": "ROCm 移植应保持模型语义，同时按 AMD 的执行资源、矩阵指令和库 dispatch 重新推导数据布局与粒度。"
+    },
+    {
+      "entry_id": "K-HW-007",
+      "previous_revision": 4,
+      "revision": 5,
+      "path": "knowledge/hardware/metal-unified-memory.md",
+      "summary": "统一内存减少显式设备间搬运，但 CPU/GPU 仍共享容量、带宽并通过依赖控制可见性。"
+    },
+    {
+      "entry_id": "K-HW-008",
+      "previous_revision": 4,
+      "revision": 5,
+      "path": "knowledge/hardware/trainium-dataflow.md",
+      "summary": "Trainium 的高效执行来自把张量分块映射到片上存储和专用引擎，同时让静态可执行程序承接动态服务状态。"
+    },
+    {
+      "entry_id": "K-HW-009",
+      "previous_revision": 4,
+      "revision": 5,
+      "path": "knowledge/hardware/cpu-serving.md",
+      "summary": "CPU 服务优化需要同时管理向量算术、内存带宽、线程调度与请求级并发，更多线程不等于更多有效工作。"
+    },
+    {
+      "entry_id": "K-MODEL-010",
+      "previous_revision": 4,
+      "revision": 5,
+      "path": "knowledge/models/video-generation.md",
+      "summary": "视频生成把时间加入 latent 几何，时间压缩、时空 attention 和输出解码共同决定可服务规模。"
+    },
+    {
+      "entry_id": "K-SYS-001",
+      "previous_revision": 4,
+      "revision": 5,
+      "path": "knowledge/system-semantics/host-device-timing.md",
+      "summary": "服务延迟来自生产、提交、执行与消费之间的依赖路径；主机 API 区间与设备工作区间可以重叠。"
+    },
+    {
+      "entry_id": "K-SYS-003",
+      "previous_revision": 5,
+      "revision": 6,
+      "path": "knowledge/system-semantics/position-mask-cache.md",
+      "summary": "缓存中的内容必须对应模型定义的逻辑位置；mask 决定读取集合，物理布局只决定这些内容放在哪里。"
+    },
+    {
+      "entry_id": "K-SYS-004",
+      "previous_revision": 4,
+      "revision": 5,
+      "path": "knowledge/system-semantics/cancellation-resource-completion.md",
+      "summary": "取消撤销未来服务意图，完成证明既有工作已结束；物理资源重用必须等待最后一个使用者。"
+    },
+    {
+      "entry_id": "K-TOOLS-001",
+      "previous_revision": 5,
+      "revision": 6,
+      "path": "knowledge/tools/trace-observability.md",
+      "summary": "trace 是由采集范围和工具机制生成的观测，不是系统全部执行事实的无损副本。"
+    },
+    {
+      "entry_id": "K-TOOLS-002",
+      "previous_revision": 4,
+      "revision": 5,
+      "path": "knowledge/tools/timeline-attribution.md",
+      "summary": "时间线分析先建立关联和依赖，再用区间与关键路径解释延迟；热点累计时长只是入口。"
+    },
+    {
+      "entry_id": "K-TOOLS-003",
+      "previous_revision": 4,
+      "revision": 5,
+      "path": "knowledge/tools/kernel-counter-replay.md",
+      "summary": "硬件计数器帮助识别单 kernel 的资源限制，但它测到的执行可能与正常并发服务具有不同环境。"
+    },
+    {
+      "entry_id": "K-TOOLS-005",
+      "previous_revision": 4,
+      "revision": 5,
+      "path": "knowledge/tools/failure-evidence.md",
+      "summary": "失败记录的价值在于还原系统从哪一个状态开始偏离预期，并区分输入、实现、资源和外部环境。"
+    },
+    {
+      "entry_id": "K-TOOLS-006",
+      "previous_revision": 7,
+      "revision": 8,
+      "path": "knowledge/tools/correctness-oracles.md",
+      "summary": "独立数值、身份与协议参考及负对照按Task和所选机制检查；缺失、重复或空集不能冒充完整结果。"
+    },
+    {
+      "entry_id": "K-WORK-002",
+      "previous_revision": 4,
+      "revision": 5,
+      "path": "knowledge/workloads/arrival-and-concurrency.md",
+      "summary": "负载生成器定义了系统受到的压力；闭环并发和独立到达率回答不同容量问题。"
+    },
+    {
+      "entry_id": "K-WORK-004",
+      "previous_revision": 4,
+      "revision": 5,
+      "path": "knowledge/workloads/measurement-comparability.md",
+      "summary": "可比较的性能结果来自相同任务函数与负载条件，以及能够解释波动的测量窗口。"
+    },
+    {
+      "entry_id": "K-WORK-005",
+      "previous_revision": 4,
+      "revision": 5,
+      "path": "knowledge/workloads/slo-goodput.md",
+      "summary": "服务能力是单位时间内完成有效任务且满足约束的数量，不能用总生成速度替代。"
+    },
+    {
+      "entry_id": "K-WORK-006",
+      "previous_revision": 5,
+      "revision": 6,
+      "path": "knowledge/workloads/capacity-planning.md",
+      "summary": "容量设计把每请求资源需求和阶段服务时间连接到到达过程，得出实例数、并发和缓存预算。"
+    },
+    {
+      "entry_id": "K-ALG-016",
+      "previous_revision": 6,
+      "revision": 7,
+      "path": "knowledge/algorithms/operator-primitives.md",
+      "summary": "从函数、张量地址与别名推导合法执行；展开QKV、归一化、RoPE和融合成本，按所选机制检查数值与真实消费者。"
+    },
+    {
+      "entry_id": "K-HW-010",
+      "previous_revision": 4,
+      "revision": 5,
+      "path": "knowledge/hardware/cpu-linear-kernels.md",
+      "summary": "CPU 线性层需把 shape 的重用机会落实到寄存器、cache/TLB、打包和线程分区；同一配置不适用于全部 GEMV/GEMM。"
+    },
+    {
+      "entry_id": "K-FW-012",
+      "previous_revision": 3,
+      "revision": 4,
+      "path": "knowledge/frameworks/cpu-quantized-kernels.md",
+      "summary": "低位存储、解包和实际乘加是不同执行路径；补偿、组尺度、累加宽度和舍入共同决定正确性与收益。"
+    },
+    {
+      "entry_id": "K-HW-012",
+      "previous_revision": 3,
+      "revision": 4,
+      "path": "knowledge/hardware/storage-io.md",
+      "summary": "实际存储供给由布局、pagecache/直接 I/O、请求粒度、队列和 staging 共同决定；提交、可读、持久化和可回收分开建模。"
+    },
+    {
+      "entry_id": "K-ALG-019",
+      "previous_revision": 3,
+      "revision": 4,
+      "path": "knowledge/algorithms/weight-expert-offload.md",
+      "summary": "权重与专家卸载同时依赖批次重用、专家并集、热点和版本；按 token 稀疏不能直接推断 batch 读取稀疏。"
+    },
+    {
+      "entry_id": "K-ALG-020",
+      "previous_revision": 4,
+      "revision": 5,
+      "path": "knowledge/algorithms/heterogeneous-execution.md",
+      "summary": "CPU–GPU 分工比较冷权重搬运、CPU 计算与分片合并的完整关键路径；激活稀疏预测须有独立质量契约。"
+    },
+    {
+      "entry_id": "K-SYS-013",
+      "previous_revision": 3,
+      "revision": 4,
+      "path": "knowledge/system-semantics/distributed-kv-store.md",
+      "summary": "分布式 KV 目录只定位候选状态；有效副本、共同恢复点、目标可见性与排队/传输成本决定真实可复用性。"
+    },
+    {
+      "entry_id": "K-HW-014",
+      "previous_revision": 3,
+      "revision": 4,
+      "path": "knowledge/hardware/transport-and-rdma.md",
+      "summary": "网络提交、CQE、消费者可见与应用接管是不同事件；注册、代次和完成协议共同决定缓冲何时可回收。"
+    },
+    {
+      "entry_id": "K-SYS-011",
+      "previous_revision": 3,
+      "revision": 4,
+      "path": "knowledge/system-semantics/model-lifecycle.md",
+      "summary": "模型就绪需要完整制品、执行路径和容量；请求绑定版本，新旧并存、排空和卸载由共同生命周期约束。"
+    },
+    {
+      "entry_id": "K-WORK-008",
+      "previous_revision": 3,
+      "revision": 4,
+      "path": "knowledge/workloads/elastic-serving.md",
+      "summary": "扩缩容要以实际就绪容量和启动/排空延迟解释队列；冷启动流量、故障余量与状态所有权决定策略是否可行。"
+    },
+    {
+      "entry_id": "K-ALG-022",
+      "previous_revision": 3,
+      "revision": 4,
+      "path": "knowledge/algorithms/context-reuse.md",
+      "summary": "非前缀文本重复不保证逐层状态相同；按上文、位置与可见性判断精确复用，并对选择性重算独立计量质量和加载成本。"
+    }
+  ],
+  "reviewed_ids": [
+    "K-ALG-004",
+    "K-ALG-010",
+    "K-ALG-014",
+    "K-ALG-015",
+    "K-ALG-016",
+    "K-ALG-019",
+    "K-ALG-020",
+    "K-ALG-022",
+    "K-FW-002",
+    "K-FW-003",
+    "K-FW-004",
+    "K-FW-005",
+    "K-FW-010",
+    "K-FW-012",
+    "K-HW-001",
+    "K-HW-002",
+    "K-HW-005",
+    "K-HW-006",
+    "K-HW-007",
+    "K-HW-008",
+    "K-HW-009",
+    "K-HW-010",
+    "K-HW-012",
+    "K-HW-014",
+    "K-MODEL-010",
+    "K-SYS-001",
+    "K-SYS-003",
+    "K-SYS-004",
+    "K-SYS-011",
+    "K-SYS-013",
+    "K-TOOLS-001",
+    "K-TOOLS-002",
+    "K-TOOLS-003",
+    "K-TOOLS-005",
+    "K-TOOLS-006",
+    "K-WORK-002",
+    "K-WORK-004",
+    "K-WORK-005",
+    "K-WORK-006",
+    "K-WORK-008"
+  ],
+  "source_note_changes": [],
+  "source_changes": {
+    "added": [],
+    "removed": []
+  }
+}

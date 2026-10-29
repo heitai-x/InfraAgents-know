@@ -1,0 +1,172 @@
+{
+  "entry_id": "K-HW-013",
+  "body_sha256": "bee22bfe930d1924927a9639b4433d85fdba815f3c721b7f3fd83f84dff23fca",
+  "reviewer": "sol-reviewer:K-HW-013:round-5",
+  "decision": "accept",
+  "documents": {
+    "AGENTS.md": "b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a",
+    "docs/knowledge-method.md": "69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb",
+    "docs/knowledge-review.md": "f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21",
+    "knowledge/hardware/shared-memory-paths.md": "bee22bfe930d1924927a9639b4433d85fdba815f3c721b7f3fd83f84dff23fca",
+    "knowledge/sources/S-MLX-MEM.md": "1d65e19c9f1394965bdf43eb8e6049a56dcdbe06af5602af386d4608845192d0",
+    "knowledge/sources/S-CUDA-ASYNC.md": "40df9287d0648a8ef55a046ceb1c18dd402619ede6e57ca33d3f90e4ace3da05",
+    "knowledge/sources/S-TORCH-CUDA.md": "8ee61677a1e35d475d9bb122b2c7fa824ccf054acefbe2f12345d72c1fb1b00e",
+    "knowledge/hardware/host-device-transfer.md": "e4921a0714af21f7ab1a336f40af662f716f2c64a42dd598eb2cede548c858d2",
+    "references/S-MLX-MEM/fulltext.txt": "472f16846acae9c84a7daca168b900903579e71b5c05aa2376229f79a0d70f64",
+    "references/S-TORCH-CUDA/fulltext.txt": "4756fc37be9c52d4128b5f4b46f996fddb8b136a9ef51183a6f0e1c7d49b18df",
+    "tools/check_k_hw_013_full.py": "3fb13c8c25413f085cd4a0451a3768463028054dace35d84d4ad944d94dc1df6"
+  },
+  "criteria": {
+    "definition": {
+      "assessment": "sufficient",
+      "reason": "动机明确；对象、物理身份、范围版本、访问模式、地址资格和内容资格分开定义。内容写入版本与物理复用代次没有混用，空访问及算法输入输出也已说明。",
+      "evidence": [
+        {
+          "path": "knowledge/hardware/shared-memory-paths.md",
+          "quote": "共享路径设计需要分别证明地址可用、内容可见和存储仍归本代所有"
+        },
+        {
+          "path": "knowledge/hardware/shared-memory-paths.md",
+          "quote": "一次写入完成后，v 增一，仅将被写范围的 ν 更新为新 v；未写范围保留旧标签。"
+        },
+        {
+          "path": "knowledge/hardware/shared-memory-paths.md",
+          "quote": "首次 OVERWRITE 可以没有 valid，但必须具备 addr；READ 同时需要两者。"
+        }
+      ]
+    },
+    "legality": {
+      "assessment": "sufficient",
+      "reason": "四种路径分别交代能力、地址准备、权限、初始化、生产可见性及最后使用条件；全对象逻辑互斥和完成后物理准入被明确标为保守方案选择。MLX 依赖保证、CUDA 映射限制与 UVM 支持级别没有互换。PyTorch 两种不并发图池共享情形与所供原文一致。",
+      "evidence": [
+        {
+          "path": "knowledge/hardware/shared-memory-paths.md",
+          "quote": "所有内部复制的源和目的也必须满足各自的地址资格，不能只检查最终消费者。"
+        },
+        {
+          "path": "knowledge/hardware/shared-memory-paths.md",
+          "quote": "仅有统一地址而无完整并发支持的目标，必须遵守其 CPU/GPU 访问限制。"
+        },
+        {
+          "path": "knowledge/hardware/shared-memory-paths.md",
+          "quote": "原文给出两种图池共享情形：一组图始终按捕获顺序重放且不并发；或者各图彼此不依赖对方输出且从不并发。"
+        }
+      ]
+    },
+    "algorithm": {
+      "assessment": "sufficient",
+      "reason": "核心协议给出初始化、授权、地址准备、内容恢复、物理准入、完成发布及关闭排空。A04 已修复：完成处理后及本轮访问推进后均扫描 WAIT，由同一状态拥有者重新验证原任务并执行 WAIT→ACTIVE；父访问重入仅订阅不再承担唯一启动入口。放大复制轨迹现在能沿正常入口推进，原身份与一次提交约束保持。",
+      "evidence": [
+        {
+          "path": "knowledge/hardware/shared-memory-paths.md",
+          "quote": "调用 RETRY_WAIT_RESTORES；其成功启动也计入 progress"
+        },
+        {
+          "path": "knowledge/hardware/shared-memory-paths.md",
+          "quote": "对入口时已有 WAIT 任务按建立顺序取有限快照"
+        },
+        {
+          "path": "knowledge/hardware/shared-memory-paths.md",
+          "quote": "要求源仍保存该冻结版本，原逻辑预约仍保护内容，源/目标/staging 保活仍在"
+        },
+        {
+          "path": "knowledge/hardware/shared-memory-paths.md",
+          "quote": "准入成功：原子把 task 改为 ACTIVE，并消费本 opid 唯一的一次启动资格"
+        },
+        {
+          "path": "knowledge/hardware/shared-memory-paths.md",
+          "quote": "保守地排空已有读写、地址准备和已建立的恢复任务；排空循环仍执行 WAIT 重试"
+        }
+      ]
+    },
+    "cost": {
+      "assessment": "sufficient",
+      "reason": "计算、访存、通信、准备、同步和驻留均有明确口径。独立核算交点为 8/31，x=0.27 的路径选择及组合轨迹的 65 MiB 复制、2 MiB 本地读取、48 次页事件与给定数值相容。共享任务按实际复制计费，WAIT 扫描包含失败尝试成本；并发关键路径与共同资源需求分开处理。",
+      "evidence": [
+        {
+          "path": "knowledge/hardware/shared-memory-paths.md",
+          "quote": "T_copy≈D/B_l+R·x·D/B_d+E_copy，"
+        },
+        {
+          "path": "knowledge/hardware/shared-memory-paths.md",
+          "quote": "Q_mig=Σ_{e∈E}s_e=Σ_p m_p·g_p。"
+        },
+        {
+          "path": "knowledge/hardware/shared-memory-paths.md",
+          "quote": "共享恢复任务按实际启动的任务计 Q_c，不能按订阅消费者数重复收费。"
+        },
+        {
+          "path": "knowledge/hardware/shared-memory-paths.md",
+          "quote": "若每项实际范围数有界，直接扫描的冲突部分为 O(w·p)。"
+        }
+      ]
+    },
+    "adaptation": {
+      "assessment": "sufficient",
+      "reason": "重复读取、稀疏范围、首次只写、交替改写、页大小、容量、图池及平台变化均说明保留的不变量和需要重算的成本。共享恢复等待过长时给出拆分或独立目标的比较方向；没有把只读交点推广到仅写输出，也未承诺持续到达负载下无饥饿。",
+      "evidence": [
+        {
+          "path": "knowledge/hardware/shared-memory-paths.md",
+          "quote": "局部复制、缓存改变、写后补复制、方向不同的链路带宽或 β≠1 都应回到 Q_c、Q_d、Q_remote 原式，不沿用这个交点。"
+        },
+        {
+          "path": "knowledge/hardware/shared-memory-paths.md",
+          "quote": "共享等待过长时比较拆分或独立目标容量"
+        },
+        {
+          "path": "knowledge/hardware/shared-memory-paths.md",
+          "quote": "重新核对系统分配、并发、映射及完成接口，不能沿用旧设备资格"
+        }
+      ]
+    },
+    "diagnosis": {
+      "assessment": "sufficient",
+      "reason": "竞争解释具有可区分的干预和反证修正。A04 的诊断区分物理账未清、重试遗漏、地址准备未生效及版本失配；负对照删除真实重试机制后通过同一正常入口暴露停滞。数值正确与物理访问合法性分开审计，CPU 模型和设备验证边界声明准确。",
+      "evidence": [
+        {
+          "path": "knowledge/hardware/shared-memory-paths.md",
+          "quote": "账已清且资格完整仍 WAIT 支持重试遗漏，资格失配则按原原因等待或隔离"
+        },
+        {
+          "path": "knowledge/hardware/shared-memory-paths.md",
+          "quote": "两份复制写入完全相同的 ν 和数值，串行数值模型可能仍返回正确结果；独立物理访问不变量必须拒绝这条轨迹。"
+        },
+        {
+          "path": "knowledge/hardware/shared-memory-paths.md",
+          "quote": "观察器不能手工启动 move、为 WAIT 制造复制完成，或清空 pending 来伪造排空。"
+        }
+      ]
+    }
+  },
+  "findings": [],
+  "limitations": [
+    "检查支持有限、确定性的 CPU 字节和事件模型；未实现完整 phase/DAG 规划，部分交叠后的缺失范围重算由测试显式提供。取消、部分提交失败、任意交错、多设备别名和持续负载下公平性未穷尽，正文已准确限定。",
+    "模型完成证书不证明真实 GPU 的最后访问、缓存可见性、映射及原子资格、事务粒度、UVM 迁移、allocator 或 CUDA Graph 行为；设定成本不构成设备性能或 Agent 使用效果证据。",
+    "本次审阅使用直接提供的材料及执行记录，未另行运行 Python，也未从磁盘重新计算哈希或检查离线链接目标存在性。链接的相对路径和委托内容已按所供文本核对。",
+    "CUDA 原文仅按本次明确提供的摘录核对；当前 §10.1 摘录截断，不能据它单独宣称已核对该节全部权限接口细节。未读取 reader.html、外链或源码归档。"
+  ],
+  "checks": [
+    {
+      "script": "tools/check_k_hw_013_full.py",
+      "args": [],
+      "script_sha256": "3fb13c8c25413f085cd4a0451a3768463028054dace35d84d4ad944d94dc1df6",
+      "execution_source": "用户提供的 actual_preflight",
+      "backend": "remote_bwrap",
+      "python_args": [
+        "-I",
+        "-S",
+        "-B",
+        "-X",
+        "utf8"
+      ],
+      "returncode": 0,
+      "timed_out": false,
+      "stderr": "",
+      "reviewer_rerun": false,
+      "assessment": "所供记录绑定当前脚本哈希和当前正文输入哈希，显示 Python 3.12 隔离执行完成。审阅已检查脚本中的参考、状态转换和故障判据；执行成功仅支持其声明的 CPU 模型范围。"
+    }
+  ],
+  "no_checks_reason": "本审阅未额外执行检查；checks 记录的是用户提供且已核对绑定与输出的真实 preflight，不记为审阅者自行执行的 PASS。",
+  "reading_scope": "先完整阅读所供 AGENTS.md [0,567)、docs/knowledge-method.md [0,2251)、docs/knowledge-review.md [0,3016)，再完整阅读当前候选 knowledge/hardware/shared-memory-paths.md [0,25467) 和 candidate.test_script 全文。完整阅读三份来源说明：S-MLX-MEM [0,495)、S-CUDA-ASYNC [0,1610)、S-TORCH-CUDA [0,1468)；完整阅读 host-device-transfer.md [0,6485)、所供 MLX 原始提取文本 [0,2656) 和标为 full 的 PyTorch 原始提取文本 [0,80851)。相关章节仅阅读所供摘录：metal-unified-memory.md [0,4000)、[8000,10920)、[12000,15705)；heterogeneous-execution.md [0,4138)、[8000,14487)；memory-allocators.md [4000,12393)、[16000,18232)；streams-allocator.md [0,5788)、[8000,12837)；mlx-serving.md [0,8990)、[12000,13635)；attention-io.md [0,5221)、[8000,13404)；rocm-execution.md [0,3778)、[8000,14847)。CUDA 原始提取文本仅阅读本次 materials.files 提供的 [72000,80000)、[88000,92000)、[156000,164000)、[204000,208000)、[212000,216000)、[228000,232000)、[240000,244000)、[260000,264000)、[300000,304000)、[344000,348000)、[352000,356000)、[456000,460000)、[488000,500000)、[508000,512000)、[644000,652000)、[692000,696000)、[732000,734559)、[940000,948000)、[968000,972000)、[1020000,1044000)、[1052000,1060000)、[1068000,1076000)、[1088000,1092000)。范围均为提取文本的零基半开字符区间，摘录未列入 documents 全文清单。另完整检查所供 A04、author_notes、author_material_scopes 和 actual_preflight。作者材料台账与本审阅范围分别处理：台账记录作者获得较旧正式正文、完整 MLX/PyTorch 提取文本及其专属 CUDA/相关章摘录；未把本次审阅摘录范围反推为作者范围，也未把材料提供记录视为认知阅读证明。",
+  "test_assessment": "A04 关闭。正文与脚本都实现了完成清账→重试已有 WAIT→推进消费者的转换。run_expanded_regression 在 old 真实完成后只调用 advance，要求同一个 move 自动 ACTIVE；随后检查原任务对象、parent、key、订阅关系、计数器及唯一 begin/submit，并在真实复制完成后自动授权 new，最终真实读取完成后排空。skip_wait_retry 保留首次尝试而禁止既有 WAIT 的再次尝试；同一轨迹先确认物理账为空且 WAIT/消费者未完成，再确认正常推进报告 STALLED，最后由 must_fail_with 核对确切的 A04 失败消息，因此没有用任意异常冒充检出。物理安全参考将区间展开为逐字节 R/W 集合，独立于候选区间判断，能拒绝同值复制的 WAW 及复制/消费交叠。成本从字节访问枚举对照公式，所有权使用独立历史参考，地址检查从事件重建映射、权限、准备及保活。八种共享恢复顺序、半开边界、源端 W 解除、地址等待及版本/保活失配均有对应检查。所供 preflight 的当前哈希绑定、退出码及输出与这些调用一致；作者明确未自行执行最终 Python，与后来提供的外部 preflight 不冲突。完整 DAG、部分交叠自动规划、取消和未知提交恢复没有被这些检查证明，正文也未如此宣称。"
+}

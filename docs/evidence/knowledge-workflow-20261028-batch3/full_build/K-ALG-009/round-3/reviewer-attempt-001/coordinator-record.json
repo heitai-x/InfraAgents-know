@@ -1,0 +1,289 @@
+{
+  "role": "reviewer",
+  "engine": "sol",
+  "requested_model": "gpt-6.1-sol",
+  "reasoning_effort": "high",
+  "prompt_sha256": "5a501550fb5c3013f46acc552deb671b545a809fa241b06be5aef2c79a6336fd",
+  "usage": [
+    {
+      "input_tokens": 954367,
+      "cached_input_tokens": 770816,
+      "cache_write_input_tokens": 0,
+      "output_tokens": 8319,
+      "reasoning_output_tokens": 3117
+    }
+  ],
+  "answer": "{\n  \"entry_id\": \"K-ALG-009\",\n  \"body_sha256\": \"4c55de36355895df73d2dbc2fcd986078627ae600625efb0c2e8769064fa11a0\",\n  \"reviewer\": \"sol-reviewer:K-ALG-009:round-3\",\n  \"decision\": \"revise\",\n  \"documents\": {\n    \"AGENTS.md\": \"b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a\",\n    \"docs/knowledge-method.md\": \"69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb\",\n    \"docs/knowledge-review.md\": \"f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21\",\n    \"knowledge/algorithms/heterogeneous-state-cache.md\": \"4c55de36355895df73d2dbc2fcd986078627ae600625efb0c2e8769064fa11a0\",\n    \"knowledge/sources/S-VLLM-HYBRID.md\": \"0b3b67b14c24f707211afc5bf40eb2af9c5c549d5170c2ff25bd3efe5e81c8c9\",\n    \"knowledge/sources/S-MAMBA.md\": \"c549c121da3cfc3d5c5fa33ae151ce27f7440cbd2d2c911d545aaafca8f18b37\",\n    \"knowledge/sources/S-PAGED.md\": \"50893a22385b0d577980153a9bc9c617acdcb2a9d7be0af655ad49421f06cc09\",\n    \"knowledge/models/recurrent-hybrid-state.md\": \"b16b229713829787bffef07a62a08c0feca0a7b3a188aea2332a3689388c0417\",\n    \"knowledge/models/mla.md\": \"01385fb7e6be8482ebd773498a96fc9d027a9c6d300abb415002864fccb9521b\",\n    \"knowledge/models/sliding-window-attention.md\": \"1e53a46e31c96b8f99e06f88a107ec0df87becb9d064e31bed580854c0fa0aef\",\n    \"knowledge/algorithms/tiered-residency.md\": \"eb3ebc6320d5a32481cf645605d159860dc6d1edb97f1e98afd89ddb24ee82af\",\n    \"knowledge/algorithms/kv-offload-prefetch.md\": \"a7088eba5c78cd9e96cf011d61946ad7dec4ecb6378ac16e7f2fc3820af38301\",\n    \"knowledge/system-semantics/memory-allocators.md\": \"2e7258787b94ad142c7c236541e8718803ad30b273d08e6c398dff673a1df838\",\n    \"knowledge/system-semantics/serving-recovery.md\": \"f551fa1f1e6213469c856a880839eefff504fb39f4dd692000b2df80a20a7f5e\",\n    \"knowledge/algorithms/branch-generation.md\": \"42157d4da17ab8ffd7a0aa2f5cd57a1cacdf1a989757261993f6671ae231de3a\",\n    \"knowledge/engine-index/vllm-kv-manager.md\": \"50b09c7a66c1282b7f6f7ac7ef1f265b953b908ae5fba883c9beec4732e1ab89\",\n    \"knowledge/frameworks/neuron-serving.md\": \"0a7be25e54019cb53d80e180594d1eb633cfdd9e9a058cb340a2c07dee7f3f0e\",\n    \"knowledge/hardware/trainium-dataflow.md\": \"0773594917538d150957f945b6c9268e1aca64bb83e041aec2315c1cb0984019\",\n    \"knowledge/system-semantics/position-mask-cache.md\": \"91641b10a52209747af8d9fa83f822bedb01c583cede42a58550ad87ffe14ad6\",\n    \"knowledge/system-semantics/distributed-state-transfer.md\": \"425985efff21e4acbe091ddfa9043cf97b37e550b606f10c0e1560a3c02b1f6f\",\n    \"references/S-VLLM-HYBRID/fulltext.txt\": \"c82febf32c70bc2755f7678dfe63925a264fbe68cf44980ad8f63b891f76ecc0\",\n    \"references/S-MAMBA/fulltext.txt\": \"7dfe3ceff72ac596eac9dda408875752fdcb1ebf8e246959c387dec969025342\",\n    \"references/S-PAGED/fulltext.txt\": \"1f7c1718e253614838ba3e453297a8e222867506b737c3d3dedec2e3b026cc40\",\n    \"tools/check_k_alg_009_full.py\": \"a502fd7b8c71194f4a6179ec4d4787926889fffd2efe1a24626b0580f9b2c86c\"\n  },\n  \"criteria\": {\n    \"definition\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"动机明确落在异构更新规则造成的共同恢复、实际重放和安全回收问题上；消费位置、计算身份、状态族、计划与可消费视图均已定义，并区分分配、计算、发布和保留。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/algorithms/heterogeneous-state-cache.md\",\n          \"quote\": \"用 p 表示已经消费的 token 数，S_g(p) 表示状态族 g 在消费 x[0:p) 后的状态；下一步输入的位置是 p。\"\n        },\n        {\n          \"path\": \"knowledge/algorithms/heterogeneous-state-cache.md\",\n          \"quote\": \"必须分开四个事实：已经分配、已经计算、已经发布、仍然保留。\"\n        }\n      ]\n    },\n    \"legality\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"共同恢复采用状态集合交集，窗口与卷积按下一步实际读取范围判断；初始化、表示、数值契约、源稳定性、共享写隔离和物理最后使用均有条件。历史 Hybrid 文档的统一页、分组及功能限制与本章独立推广分开陈述，与供应来源相符。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/algorithms/heterogeneous-state-cache.md\",\n          \"quote\": \"共同直接恢复位置属于所有必需族直接集合的交集；各族最大长度不能代替交集。\"\n        },\n        {\n          \"path\": \"knowledge/algorithms/heterogeneous-state-cache.md\",\n          \"quote\": \"W＝1 或 K_c＝1 时，相应旧历史为空，不能因没有旧槽就拒绝恢复。\"\n        },\n        {\n          \"path\": \"knowledge/algorithms/heterogeneous-state-cache.md\",\n          \"quote\": \"本章的一般集合与事务算法是独立推导，不宣称该历史实现已经支持任意混合模型。\"\n        }\n      ]\n    },\n    \"algorithm\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"当前候选贯通分组映射、共同起点搜索、已知输入逐层重放、完整步骤提交、联合预留和按完整操作身份排空。高层 KV 来源及卷积历史与递归状态的更新关系已有解释，末行 logits 与下一 token 的已知性也已分开。明确批准本轮脚本在声明的 CPU 模型范围内对所分配算法问题的检查；campaign-K-ALG-009-r1 与 campaign-K-ALG-009-r2 对应的重放完整性、事件身份和提前复用问题可按当前候选关闭，不延续为未修复 findings。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/algorithms/heterogeneous-state-cache.md\",\n          \"quote\": \"高层 K/V 必须来自低层本步输出，不能仅用原始 token 和层号直接构造。\"\n        },\n        {\n          \"path\": \"knowledge/algorithms/heterogeneous-state-cache.md\",\n          \"quote\": \"将候选状态共同提交为 committed=t+1；按规则裁剪窗口并推进环形标签\"\n        },\n        {\n          \"path\": \"knowledge/algorithms/heterogeneous-state-cache.md\",\n          \"quote\": \"未知、重复、字段不符或属于其他尝试的事件：不改变当前在途集合\"\n        },\n        {\n          \"path\": \"knowledge/algorithms/heterogeneous-state-cache.md\",\n          \"quote\": \"安全性首先来自旧操作排空之前不重用地址；代次用于防止迟到通知被结算到新使用者。\"\n        }\n      ]\n    },\n    \"cost\": {\n      \"assessment\": \"partial\",\n      \"reason\": \"页字节、容量主项、快照与 padding 算术正确，六类成本及共享、预留、重叠和失败驻留的边界解释充分。但下降搜索宣称 O(nF)，未计每个候选重复逐项核对重放输入的成本；所交付 plan 实现存在固定 F 下 Θ(n²) 的实际检查路径，见 R3-REPLAY-INPUT-COST。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/algorithms/heterogeneous-state-cache.md\",\n          \"quote\": \"连续区间资格检查可按族常数时间完成；基线下降搜索为 O(nF)，F 是必需族数，缺页表示则另计范围查询成本。\"\n        },\n        {\n          \"path\": \"knowledge/algorithms/heterogeneous-state-cache.md\",\n          \"quote\": \"要求 DirectRecoverable(eta,c)，且 x[c:p) 及必需特征逐项可重放\"\n        },\n        {\n          \"path\": \"knowledge/algorithms/heterogeneous-state-cache.md\",\n          \"quote\": \"预留与其物化页不重复相加，共享页只计一次。\"\n        }\n      ]\n    },\n    \"adaptation\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"窗口、页长、状态尺寸、表示、重用距离及完成延迟改变后，分别解释恢复资格、碎片、复制、快照价值与准入如何改变，并允许放弃统一池或包级策略；没有把历史参数当作普遍最优值。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/algorithms/heterogeneous-state-cache.md\",\n          \"quote\": \"递归状态远大于注意力块时，可以放弃统一池，比较按族池、子分配或分层驻留。\"\n        },\n        {\n          \"path\": \"knowledge/algorithms/heterogeneous-state-cache.md\",\n          \"quote\": \"完成延迟增大时，隔离待回收容量上升，应降低准入或调整预留，不能通过提前回收维持吞吐。\"\n        }\n      ]\n    },\n    \"diagnosis\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"区分容量与排队、消费者取址、复制准备、快照写流量以及生命周期错误，给出控制变量、可反驳预测和结果不符后的修正方向。数值参考与事件负对照能够触及当前机制，设备效果明确保留为未验证范围。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/algorithms/heterogeneous-state-cache.md\",\n          \"quote\": \"若固定请求集后差距消失，优先支持容量与排队解释；若仍存在，再独立比较消费者和准备/复制路径。\"\n        },\n        {\n          \"path\": \"knowledge/algorithms/heterogeneous-state-cache.md\",\n          \"quote\": \"负对照真正提前释放并重用页面，再让旧写到达，由独立物理租约/内容不变量发现污染。\"\n        }\n      ]\n    }\n  },\n  \"findings\": [\n    {\n      \"id\": \"R3-REPLAY-INPUT-COST\",\n      \"criterion\": \"cost\",\n      \"evidence\": \"当前正文称“基线下降搜索为 O(nF)”，同时要求“x[c:p) 及必需特征逐项可重放”。当前 tools/check_k_alg_009_full.py 的 plan 使用 for c in range(target, -1, -1)，在每个合法 c 内重新执行 all(t in known for t in range(c, target))。取 target=n、full=(0,n-1)、window=None、conv=None、checkpoints=None、initial=True、known=set(range(n-1))：目标 n 不可直接恢复，起点 n-1…0 均合法，但每次扫描都在缺失的输入 n-1 处失败，总成员查询数为 1+2+…+n=n(n+1)/2。独立 JavaScript 操作计数重建得到 n=64、128、256 时分别为 2080、8256、32896；该补充检查不是 Python 重跑。\",\n      \"impact\": \"固定状态族数量时，完整恢复规划仍可能产生二次准备开销；正文现有线性复杂度会低估长前缀且缺少重放输入时的搜索成本。现有成功执行只检查规划结果，没有核对这一成本断言。\",\n      \"blocking\": true,\n      \"required_revision\": \"将 O(nF) 限定为状态族资格检查部分，并另计当前逐候选输入扫描的最坏 O(n²) 成本；或者明确增加一次输入及必需特征可重放性的预处理，使每个候选区间能以 O(1) 判断，并同步交付实现及预处理成本。用上述末端输入缺失轨迹核对修订后的操作量；保留已通过的重放与物理回收检查。\"\n    }\n  ],\n  \"limitations\": [\n    \"本轮测试证据来自消息所附、绑定本轮脚本哈希的 actual_preflight；本 reviewer 未重新执行 Python，也未独立重算磁盘文件哈希。\",\n    \"元数据模型限于连续范围、普通窗口和有限检查点；不证明真实缺页结构、sink/global 稀疏集合、MLA 转换或 TP/PP 重分片正确。\",\n    \"四层标量 CPU 模型验证恢复机制，不是真实 Mamba 或生产引擎数值验证；事件模型的可靠终结语义不证明真实 GPU、驱动或 NIC 提供相同保证。\",\n    \"设备可见性、并发安全、分布式故障、性能和 Agent 使用效果未验证；成功事件模型保守保留 staging 至退休，不能用于估计最小驻留。\",\n    \"仅检查供应文本中的引用关系和路径表达，未验证本地链接目标可达性、PDF 图像或源码归档。docs/knowledge-build-workflow.md 与本地技能正文未供应，当前工具也无文件读取入口；JSON 格式采用用户明确提供的 schema。\"\n  ],\n  \"checks\": [\n    {\n      \"script\": \"tools/check_k_alg_009_full.py\",\n      \"args\": []\n    }\n  ],\n  \"no_checks_reason\": \"\",\n  \"reading_scope\": \"阅读对象为消息供应的提取文本，不声称独立读取磁盘原始字节。以下范围均为零起点、半开字符区间，完整阅读：AGENTS.md [0,567)；docs/knowledge-method.md [0,2251)；docs/knowledge-review.md [0,3016)；knowledge/algorithms/heterogeneous-state-cache.md [0,12677)；knowledge/sources/S-VLLM-HYBRID.md [0,568)；knowledge/sources/S-MAMBA.md [0,487)；knowledge/sources/S-PAGED.md [0,2206)；knowledge/models/recurrent-hybrid-state.md [0,3563)；knowledge/models/mla.md [0,4303)；knowledge/models/sliding-window-attention.md [0,3580)；knowledge/algorithms/tiered-residency.md [0,4244)；knowledge/algorithms/kv-offload-prefetch.md [0,3710)；knowledge/system-semantics/memory-allocators.md [0,4191)；knowledge/system-semantics/serving-recovery.md [0,3834)；knowledge/algorithms/branch-generation.md [0,3670)；knowledge/engine-index/vllm-kv-manager.md [0,2189)；knowledge/frameworks/neuron-serving.md [0,3294)；knowledge/hardware/trainium-dataflow.md [0,3115)；knowledge/system-semantics/position-mask-cache.md [0,4078)；knowledge/system-semantics/distributed-state-transfer.md [0,3216)；references/S-VLLM-HYBRID/fulltext.txt [0,15489)；references/S-MAMBA/fulltext.txt [0,135643)，供应页1–36；references/S-PAGED/fulltext.txt [0,82285)，供应页1–16。完整阅读 candidate.test_script 中 tools/check_k_alg_009_full.py，从 shebang 至 main() 调用，未提供字符范围编号。仅阅读以下摘录：knowledge/algorithms/prefix-cache-identity.md [0,3309)、[8000,10003)；knowledge/algorithms/paged-kv-capacity.md [0,1887)、[12000,15425)；knowledge/system-semantics/design-synthesis.md [0,3438)、[8000,9874)。这三个摘录文件未列入 documents。另完整审查 author_notes 与 actual_preflight 的 stdout、stderr、退出码、执行参数及脚本摘要；前两轮原始产物未供应，未声称阅读这些目录中的文件。\",\n  \"test_assessment\": \"已逐函数检查交付脚本。direct_reference 以可见位置集合构造独立期望，与区间 contains 路径不同；9000 次比较及显式边界覆盖消费端点、空历史、初始化不可用、身份/context 不符和缺失输入。dense_reference 按层计算完整序列，cached_step 按 token 推进，二者不共享 step；四层数据流确实使高层 KV 依赖低层输出，并消费 attention 历史、卷积历史和递归状态。231 个合法切点组合比较全部状态及后续输出，同时检查共享起点未被修改；跳过重放、混合递归状态和污染历史均被检测。PhysicalDevice 的独立 active/terminal 账与 lease_violations 不依赖事务 pending 计数；负对照实际执行未知事件导致错误计数归零、释放、重分配和无代次保护的旧地址写入，并检查丢失物理租约和新对象内容污染，直接针对前轮事件身份与提前回收缺陷。安全路径覆盖字段错误、伪造、重复、旧尝试通知、取消请求与确认区别、延迟通知、发布缺族、六种终结顺序和最终容量守恒。容量复算的 140.375 MiB、70 MiB、3.625 MiB 与正文一致。供应 actual_preflight 绑定脚本 a502fd7b8c71194f4a6179ec4d4787926889fffd2efe1a24626b0580f9b2c86c，在 remote_bwrap 内以 Python 3.12 隔离执行，returncode=0、stderr为空，输出与上述检查路径相符；这是所附执行证据，不冒称 reviewer 亲自运行。明确批准该检查在声明范围内对 campaign-K-ALG-009-r1/r2 的修复验证。遗漏是 plan 的重复输入扫描成本未检查；独立 JavaScript 操作计数重建反驳了正文完整搜索 O(nF) 的断言，因此进程成功不能支持本轮整体 accept。脚本也没有验证真实设备可见性、并发、布局转换、引擎执行或性能，这些边界与作者声明一致。\"\n}",
+  "exit_code": 0,
+  "status": "completed",
+  "timeout_seconds": 1800,
+  "response_path": "D:\\桌面\\xdb\\InfraAgents\\InfraAgents-know-astra-new\\InfraAgents-know\\docs\\evidence\\knowledge-workflow-20261028-batch3\\full_build\\K-ALG-009\\round-3\\reviewer-attempt-001\\answer.txt",
+  "record_path": "D:\\桌面\\xdb\\InfraAgents\\InfraAgents-know-astra-new\\InfraAgents-know\\docs\\evidence\\knowledge-workflow-20261028-batch3\\full_build\\K-ALG-009\\round-3\\reviewer-attempt-001\\record.json",
+  "tool_events": [
+    {
+      "type": "item.completed",
+      "item": {
+        "id": "item_1",
+        "type": "mcp_tool_call",
+        "server": "codex",
+        "tool": "list_mcp_resources",
+        "arguments": {},
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"resources\":[]}"
+            }
+          ],
+          "structured_content": null
+        },
+        "error": null,
+        "status": "completed"
+      }
+    },
+    {
+      "type": "item.completed",
+      "item": {
+        "id": "item_2",
+        "type": "mcp_tool_call",
+        "server": "codex",
+        "tool": "list_mcp_resource_templates",
+        "arguments": {},
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"resourceTemplates\":[]}"
+            }
+          ],
+          "structured_content": null
+        },
+        "error": null,
+        "status": "completed"
+      }
+    }
+  ],
+  "inventory_tool_events": [
+    {
+      "type": "item.completed",
+      "item": {
+        "id": "item_1",
+        "type": "mcp_tool_call",
+        "server": "codex",
+        "tool": "list_mcp_resources",
+        "arguments": {},
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"resources\":[]}"
+            }
+          ],
+          "structured_content": null
+        },
+        "error": null,
+        "status": "completed"
+      }
+    },
+    {
+      "type": "item.completed",
+      "item": {
+        "id": "item_2",
+        "type": "mcp_tool_call",
+        "server": "codex",
+        "tool": "list_mcp_resource_templates",
+        "arguments": {},
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"resourceTemplates\":[]}"
+            }
+          ],
+          "structured_content": null
+        },
+        "error": null,
+        "status": "completed"
+      }
+    }
+  ],
+  "rejected_tool_events": [],
+  "tool_policy": "metadata_inventory_only",
+  "tool_policy_version": "2026-10-28-production-v1",
+  "tool_policy_scope": "Only empty-argument codex host plugin/skill-directory descriptors and empty template inventory; inventory is not knowledge evidence. All other tool events reject the call.",
+  "tool_policy_reason": "Production chapter construction allows observed generic capability discovery metadata; this does not claim a zero-tool comparison or external source reading.",
+  "malformed_event_lines": [],
+  "turn_completed": true,
+  "error_events": [],
+  "actual_model": null,
+  "identity_verified": null,
+  "identity_basis": "Explicit CLI model and isolated HTTP provider; CLI events do not expose server model identity.",
+  "provider": "eval-openai-http",
+  "max_output_tokens": null,
+  "cli_version": "codex-cli 0.164.0-alpha.11.1",
+  "cost_scope": "Codex token usage is reported; subscription charge is not exposed.",
+  "parsed": {
+    "entry_id": "K-ALG-009",
+    "body_sha256": "4c55de36355895df73d2dbc2fcd986078627ae600625efb0c2e8769064fa11a0",
+    "reviewer": "sol-reviewer:K-ALG-009:round-3",
+    "decision": "revise",
+    "documents": {
+      "AGENTS.md": "b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a",
+      "docs/knowledge-method.md": "69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb",
+      "docs/knowledge-review.md": "f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21",
+      "knowledge/algorithms/heterogeneous-state-cache.md": "4c55de36355895df73d2dbc2fcd986078627ae600625efb0c2e8769064fa11a0",
+      "knowledge/sources/S-VLLM-HYBRID.md": "0b3b67b14c24f707211afc5bf40eb2af9c5c549d5170c2ff25bd3efe5e81c8c9",
+      "knowledge/sources/S-MAMBA.md": "c549c121da3cfc3d5c5fa33ae151ce27f7440cbd2d2c911d545aaafca8f18b37",
+      "knowledge/sources/S-PAGED.md": "50893a22385b0d577980153a9bc9c617acdcb2a9d7be0af655ad49421f06cc09",
+      "knowledge/models/recurrent-hybrid-state.md": "b16b229713829787bffef07a62a08c0feca0a7b3a188aea2332a3689388c0417",
+      "knowledge/models/mla.md": "01385fb7e6be8482ebd773498a96fc9d027a9c6d300abb415002864fccb9521b",
+      "knowledge/models/sliding-window-attention.md": "1e53a46e31c96b8f99e06f88a107ec0df87becb9d064e31bed580854c0fa0aef",
+      "knowledge/algorithms/tiered-residency.md": "eb3ebc6320d5a32481cf645605d159860dc6d1edb97f1e98afd89ddb24ee82af",
+      "knowledge/algorithms/kv-offload-prefetch.md": "a7088eba5c78cd9e96cf011d61946ad7dec4ecb6378ac16e7f2fc3820af38301",
+      "knowledge/system-semantics/memory-allocators.md": "2e7258787b94ad142c7c236541e8718803ad30b273d08e6c398dff673a1df838",
+      "knowledge/system-semantics/serving-recovery.md": "f551fa1f1e6213469c856a880839eefff504fb39f4dd692000b2df80a20a7f5e",
+      "knowledge/algorithms/branch-generation.md": "42157d4da17ab8ffd7a0aa2f5cd57a1cacdf1a989757261993f6671ae231de3a",
+      "knowledge/engine-index/vllm-kv-manager.md": "50b09c7a66c1282b7f6f7ac7ef1f265b953b908ae5fba883c9beec4732e1ab89",
+      "knowledge/frameworks/neuron-serving.md": "0a7be25e54019cb53d80e180594d1eb633cfdd9e9a058cb340a2c07dee7f3f0e",
+      "knowledge/hardware/trainium-dataflow.md": "0773594917538d150957f945b6c9268e1aca64bb83e041aec2315c1cb0984019",
+      "knowledge/system-semantics/position-mask-cache.md": "91641b10a52209747af8d9fa83f822bedb01c583cede42a58550ad87ffe14ad6",
+      "knowledge/system-semantics/distributed-state-transfer.md": "425985efff21e4acbe091ddfa9043cf97b37e550b606f10c0e1560a3c02b1f6f",
+      "references/S-VLLM-HYBRID/fulltext.txt": "c82febf32c70bc2755f7678dfe63925a264fbe68cf44980ad8f63b891f76ecc0",
+      "references/S-MAMBA/fulltext.txt": "7dfe3ceff72ac596eac9dda408875752fdcb1ebf8e246959c387dec969025342",
+      "references/S-PAGED/fulltext.txt": "1f7c1718e253614838ba3e453297a8e222867506b737c3d3dedec2e3b026cc40",
+      "tools/check_k_alg_009_full.py": "a502fd7b8c71194f4a6179ec4d4787926889fffd2efe1a24626b0580f9b2c86c"
+    },
+    "criteria": {
+      "definition": {
+        "assessment": "sufficient",
+        "reason": "动机明确落在异构更新规则造成的共同恢复、实际重放和安全回收问题上；消费位置、计算身份、状态族、计划与可消费视图均已定义，并区分分配、计算、发布和保留。",
+        "evidence": [
+          {
+            "path": "knowledge/algorithms/heterogeneous-state-cache.md",
+            "quote": "用 p 表示已经消费的 token 数，S_g(p) 表示状态族 g 在消费 x[0:p) 后的状态；下一步输入的位置是 p。"
+          },
+          {
+            "path": "knowledge/algorithms/heterogeneous-state-cache.md",
+            "quote": "必须分开四个事实：已经分配、已经计算、已经发布、仍然保留。"
+          }
+        ]
+      },
+      "legality": {
+        "assessment": "sufficient",
+        "reason": "共同恢复采用状态集合交集，窗口与卷积按下一步实际读取范围判断；初始化、表示、数值契约、源稳定性、共享写隔离和物理最后使用均有条件。历史 Hybrid 文档的统一页、分组及功能限制与本章独立推广分开陈述，与供应来源相符。",
+        "evidence": [
+          {
+            "path": "knowledge/algorithms/heterogeneous-state-cache.md",
+            "quote": "共同直接恢复位置属于所有必需族直接集合的交集；各族最大长度不能代替交集。"
+          },
+          {
+            "path": "knowledge/algorithms/heterogeneous-state-cache.md",
+            "quote": "W＝1 或 K_c＝1 时，相应旧历史为空，不能因没有旧槽就拒绝恢复。"
+          },
+          {
+            "path": "knowledge/algorithms/heterogeneous-state-cache.md",
+            "quote": "本章的一般集合与事务算法是独立推导，不宣称该历史实现已经支持任意混合模型。"
+          }
+        ]
+      },
+      "algorithm": {
+        "assessment": "sufficient",
+        "reason": "当前候选贯通分组映射、共同起点搜索、已知输入逐层重放、完整步骤提交、联合预留和按完整操作身份排空。高层 KV 来源及卷积历史与递归状态的更新关系已有解释，末行 logits 与下一 token 的已知性也已分开。明确批准本轮脚本在声明的 CPU 模型范围内对所分配算法问题的检查；campaign-K-ALG-009-r1 与 campaign-K-ALG-009-r2 对应的重放完整性、事件身份和提前复用问题可按当前候选关闭，不延续为未修复 findings。",
+        "evidence": [
+          {
+            "path": "knowledge/algorithms/heterogeneous-state-cache.md",
+            "quote": "高层 K/V 必须来自低层本步输出，不能仅用原始 token 和层号直接构造。"
+          },
+          {
+            "path": "knowledge/algorithms/heterogeneous-state-cache.md",
+            "quote": "将候选状态共同提交为 committed=t+1；按规则裁剪窗口并推进环形标签"
+          },
+          {
+            "path": "knowledge/algorithms/heterogeneous-state-cache.md",
+            "quote": "未知、重复、字段不符或属于其他尝试的事件：不改变当前在途集合"
+          },
+          {
+            "path": "knowledge/algorithms/heterogeneous-state-cache.md",
+            "quote": "安全性首先来自旧操作排空之前不重用地址；代次用于防止迟到通知被结算到新使用者。"
+          }
+        ]
+      },
+      "cost": {
+        "assessment": "partial",
+        "reason": "页字节、容量主项、快照与 padding 算术正确，六类成本及共享、预留、重叠和失败驻留的边界解释充分。但下降搜索宣称 O(nF)，未计每个候选重复逐项核对重放输入的成本；所交付 plan 实现存在固定 F 下 Θ(n²) 的实际检查路径，见 R3-REPLAY-INPUT-COST。",
+        "evidence": [
+          {
+            "path": "knowledge/algorithms/heterogeneous-state-cache.md",
+            "quote": "连续区间资格检查可按族常数时间完成；基线下降搜索为 O(nF)，F 是必需族数，缺页表示则另计范围查询成本。"
+          },
+          {
+            "path": "knowledge/algorithms/heterogeneous-state-cache.md",
+            "quote": "要求 DirectRecoverable(eta,c)，且 x[c:p) 及必需特征逐项可重放"
+          },
+          {
+            "path": "knowledge/algorithms/heterogeneous-state-cache.md",
+            "quote": "预留与其物化页不重复相加，共享页只计一次。"
+          }
+        ]
+      },
+      "adaptation": {
+        "assessment": "sufficient",
+        "reason": "窗口、页长、状态尺寸、表示、重用距离及完成延迟改变后，分别解释恢复资格、碎片、复制、快照价值与准入如何改变，并允许放弃统一池或包级策略；没有把历史参数当作普遍最优值。",
+        "evidence": [
+          {
+            "path": "knowledge/algorithms/heterogeneous-state-cache.md",
+            "quote": "递归状态远大于注意力块时，可以放弃统一池，比较按族池、子分配或分层驻留。"
+          },
+          {
+            "path": "knowledge/algorithms/heterogeneous-state-cache.md",
+            "quote": "完成延迟增大时，隔离待回收容量上升，应降低准入或调整预留，不能通过提前回收维持吞吐。"
+          }
+        ]
+      },
+      "diagnosis": {
+        "assessment": "sufficient",
+        "reason": "区分容量与排队、消费者取址、复制准备、快照写流量以及生命周期错误，给出控制变量、可反驳预测和结果不符后的修正方向。数值参考与事件负对照能够触及当前机制，设备效果明确保留为未验证范围。",
+        "evidence": [
+          {
+            "path": "knowledge/algorithms/heterogeneous-state-cache.md",
+            "quote": "若固定请求集后差距消失，优先支持容量与排队解释；若仍存在，再独立比较消费者和准备/复制路径。"
+          },
+          {
+            "path": "knowledge/algorithms/heterogeneous-state-cache.md",
+            "quote": "负对照真正提前释放并重用页面，再让旧写到达，由独立物理租约/内容不变量发现污染。"
+          }
+        ]
+      }
+    },
+    "findings": [
+      {
+        "id": "R3-REPLAY-INPUT-COST",
+        "criterion": "cost",
+        "evidence": "当前正文称“基线下降搜索为 O(nF)”，同时要求“x[c:p) 及必需特征逐项可重放”。当前 tools/check_k_alg_009_full.py 的 plan 使用 for c in range(target, -1, -1)，在每个合法 c 内重新执行 all(t in known for t in range(c, target))。取 target=n、full=(0,n-1)、window=None、conv=None、checkpoints=None、initial=True、known=set(range(n-1))：目标 n 不可直接恢复，起点 n-1…0 均合法，但每次扫描都在缺失的输入 n-1 处失败，总成员查询数为 1+2+…+n=n(n+1)/2。独立 JavaScript 操作计数重建得到 n=64、128、256 时分别为 2080、8256、32896；该补充检查不是 Python 重跑。",
+        "impact": "固定状态族数量时，完整恢复规划仍可能产生二次准备开销；正文现有线性复杂度会低估长前缀且缺少重放输入时的搜索成本。现有成功执行只检查规划结果，没有核对这一成本断言。",
+        "blocking": true,
+        "required_revision": "将 O(nF) 限定为状态族资格检查部分，并另计当前逐候选输入扫描的最坏 O(n²) 成本；或者明确增加一次输入及必需特征可重放性的预处理，使每个候选区间能以 O(1) 判断，并同步交付实现及预处理成本。用上述末端输入缺失轨迹核对修订后的操作量；保留已通过的重放与物理回收检查。"
+      }
+    ],
+    "limitations": [
+      "本轮测试证据来自消息所附、绑定本轮脚本哈希的 actual_preflight；本 reviewer 未重新执行 Python，也未独立重算磁盘文件哈希。",
+      "元数据模型限于连续范围、普通窗口和有限检查点；不证明真实缺页结构、sink/global 稀疏集合、MLA 转换或 TP/PP 重分片正确。",
+      "四层标量 CPU 模型验证恢复机制，不是真实 Mamba 或生产引擎数值验证；事件模型的可靠终结语义不证明真实 GPU、驱动或 NIC 提供相同保证。",
+      "设备可见性、并发安全、分布式故障、性能和 Agent 使用效果未验证；成功事件模型保守保留 staging 至退休，不能用于估计最小驻留。",
+      "仅检查供应文本中的引用关系和路径表达，未验证本地链接目标可达性、PDF 图像或源码归档。docs/knowledge-build-workflow.md 与本地技能正文未供应，当前工具也无文件读取入口；JSON 格式采用用户明确提供的 schema。"
+    ],
+    "checks": [
+      {
+        "script": "tools/check_k_alg_009_full.py",
+        "args": []
+      }
+    ],
+    "no_checks_reason": "",
+    "reading_scope": "阅读对象为消息供应的提取文本，不声称独立读取磁盘原始字节。以下范围均为零起点、半开字符区间，完整阅读：AGENTS.md [0,567)；docs/knowledge-method.md [0,2251)；docs/knowledge-review.md [0,3016)；knowledge/algorithms/heterogeneous-state-cache.md [0,12677)；knowledge/sources/S-VLLM-HYBRID.md [0,568)；knowledge/sources/S-MAMBA.md [0,487)；knowledge/sources/S-PAGED.md [0,2206)；knowledge/models/recurrent-hybrid-state.md [0,3563)；knowledge/models/mla.md [0,4303)；knowledge/models/sliding-window-attention.md [0,3580)；knowledge/algorithms/tiered-residency.md [0,4244)；knowledge/algorithms/kv-offload-prefetch.md [0,3710)；knowledge/system-semantics/memory-allocators.md [0,4191)；knowledge/system-semantics/serving-recovery.md [0,3834)；knowledge/algorithms/branch-generation.md [0,3670)；knowledge/engine-index/vllm-kv-manager.md [0,2189)；knowledge/frameworks/neuron-serving.md [0,3294)；knowledge/hardware/trainium-dataflow.md [0,3115)；knowledge/system-semantics/position-mask-cache.md [0,4078)；knowledge/system-semantics/distributed-state-transfer.md [0,3216)；references/S-VLLM-HYBRID/fulltext.txt [0,15489)；references/S-MAMBA/fulltext.txt [0,135643)，供应页1–36；references/S-PAGED/fulltext.txt [0,82285)，供应页1–16。完整阅读 candidate.test_script 中 tools/check_k_alg_009_full.py，从 shebang 至 main() 调用，未提供字符范围编号。仅阅读以下摘录：knowledge/algorithms/prefix-cache-identity.md [0,3309)、[8000,10003)；knowledge/algorithms/paged-kv-capacity.md [0,1887)、[12000,15425)；knowledge/system-semantics/design-synthesis.md [0,3438)、[8000,9874)。这三个摘录文件未列入 documents。另完整审查 author_notes 与 actual_preflight 的 stdout、stderr、退出码、执行参数及脚本摘要；前两轮原始产物未供应，未声称阅读这些目录中的文件。",
+    "test_assessment": "已逐函数检查交付脚本。direct_reference 以可见位置集合构造独立期望，与区间 contains 路径不同；9000 次比较及显式边界覆盖消费端点、空历史、初始化不可用、身份/context 不符和缺失输入。dense_reference 按层计算完整序列，cached_step 按 token 推进，二者不共享 step；四层数据流确实使高层 KV 依赖低层输出，并消费 attention 历史、卷积历史和递归状态。231 个合法切点组合比较全部状态及后续输出，同时检查共享起点未被修改；跳过重放、混合递归状态和污染历史均被检测。PhysicalDevice 的独立 active/terminal 账与 lease_violations 不依赖事务 pending 计数；负对照实际执行未知事件导致错误计数归零、释放、重分配和无代次保护的旧地址写入，并检查丢失物理租约和新对象内容污染，直接针对前轮事件身份与提前回收缺陷。安全路径覆盖字段错误、伪造、重复、旧尝试通知、取消请求与确认区别、延迟通知、发布缺族、六种终结顺序和最终容量守恒。容量复算的 140.375 MiB、70 MiB、3.625 MiB 与正文一致。供应 actual_preflight 绑定脚本 a502fd7b8c71194f4a6179ec4d4787926889fffd2efe1a24626b0580f9b2c86c，在 remote_bwrap 内以 Python 3.12 隔离执行，returncode=0、stderr为空，输出与上述检查路径相符；这是所附执行证据，不冒称 reviewer 亲自运行。明确批准该检查在声明范围内对 campaign-K-ALG-009-r1/r2 的修复验证。遗漏是 plan 的重复输入扫描成本未检查；独立 JavaScript 操作计数重建反驳了正文完整搜索 O(nF) 的断言，因此进程成功不能支持本轮整体 accept。脚本也没有验证真实设备可见性、并发、布局转换、引擎执行或性能，这些边界与作者声明一致。"
+  },
+  "format_status": "strict_json",
+  "format_error": null,
+  "output_text": "{\n  \"entry_id\": \"K-ALG-009\",\n  \"body_sha256\": \"4c55de36355895df73d2dbc2fcd986078627ae600625efb0c2e8769064fa11a0\",\n  \"reviewer\": \"sol-reviewer:K-ALG-009:round-3\",\n  \"decision\": \"revise\",\n  \"documents\": {\n    \"AGENTS.md\": \"b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a\",\n    \"docs/knowledge-method.md\": \"69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb\",\n    \"docs/knowledge-review.md\": \"f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21\",\n    \"knowledge/algorithms/heterogeneous-state-cache.md\": \"4c55de36355895df73d2dbc2fcd986078627ae600625efb0c2e8769064fa11a0\",\n    \"knowledge/sources/S-VLLM-HYBRID.md\": \"0b3b67b14c24f707211afc5bf40eb2af9c5c549d5170c2ff25bd3efe5e81c8c9\",\n    \"knowledge/sources/S-MAMBA.md\": \"c549c121da3cfc3d5c5fa33ae151ce27f7440cbd2d2c911d545aaafca8f18b37\",\n    \"knowledge/sources/S-PAGED.md\": \"50893a22385b0d577980153a9bc9c617acdcb2a9d7be0af655ad49421f06cc09\",\n    \"knowledge/models/recurrent-hybrid-state.md\": \"b16b229713829787bffef07a62a08c0feca0a7b3a188aea2332a3689388c0417\",\n    \"knowledge/models/mla.md\": \"01385fb7e6be8482ebd773498a96fc9d027a9c6d300abb415002864fccb9521b\",\n    \"knowledge/models/sliding-window-attention.md\": \"1e53a46e31c96b8f99e06f88a107ec0df87becb9d064e31bed580854c0fa0aef\",\n    \"knowledge/algorithms/tiered-residency.md\": \"eb3ebc6320d5a32481cf645605d159860dc6d1edb97f1e98afd89ddb24ee82af\",\n    \"knowledge/algorithms/kv-offload-prefetch.md\": \"a7088eba5c78cd9e96cf011d61946ad7dec4ecb6378ac16e7f2fc3820af38301\",\n    \"knowledge/system-semantics/memory-allocators.md\": \"2e7258787b94ad142c7c236541e8718803ad30b273d08e6c398dff673a1df838\",\n    \"knowledge/system-semantics/serving-recovery.md\": \"f551fa1f1e6213469c856a880839eefff504fb39f4dd692000b2df80a20a7f5e\",\n    \"knowledge/algorithms/branch-generation.md\": \"42157d4da17ab8ffd7a0aa2f5cd57a1cacdf1a989757261993f6671ae231de3a\",\n    \"knowledge/engine-index/vllm-kv-manager.md\": \"50b09c7a66c1282b7f6f7ac7ef1f265b953b908ae5fba883c9beec4732e1ab89\",\n    \"knowledge/frameworks/neuron-serving.md\": \"0a7be25e54019cb53d80e180594d1eb633cfdd9e9a058cb340a2c07dee7f3f0e\",\n    \"knowledge/hardware/trainium-dataflow.md\": \"0773594917538d150957f945b6c9268e1aca64bb83e041aec2315c1cb0984019\",\n    \"knowledge/system-semantics/position-mask-cache.md\": \"91641b10a52209747af8d9fa83f822bedb01c583cede42a58550ad87ffe14ad6\",\n    \"knowledge/system-semantics/distributed-state-transfer.md\": \"425985efff21e4acbe091ddfa9043cf97b37e550b606f10c0e1560a3c02b1f6f\",\n    \"references/S-VLLM-HYBRID/fulltext.txt\": \"c82febf32c70bc2755f7678dfe63925a264fbe68cf44980ad8f63b891f76ecc0\",\n    \"references/S-MAMBA/fulltext.txt\": \"7dfe3ceff72ac596eac9dda408875752fdcb1ebf8e246959c387dec969025342\",\n    \"references/S-PAGED/fulltext.txt\": \"1f7c1718e253614838ba3e453297a8e222867506b737c3d3dedec2e3b026cc40\",\n    \"tools/check_k_alg_009_full.py\": \"a502fd7b8c71194f4a6179ec4d4787926889fffd2efe1a24626b0580f9b2c86c\"\n  },\n  \"criteria\": {\n    \"definition\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"动机明确落在异构更新规则造成的共同恢复、实际重放和安全回收问题上；消费位置、计算身份、状态族、计划与可消费视图均已定义，并区分分配、计算、发布和保留。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/algorithms/heterogeneous-state-cache.md\",\n          \"quote\": \"用 p 表示已经消费的 token 数，S_g(p) 表示状态族 g 在消费 x[0:p) 后的状态；下一步输入的位置是 p。\"\n        },\n        {\n          \"path\": \"knowledge/algorithms/heterogeneous-state-cache.md\",\n          \"quote\": \"必须分开四个事实：已经分配、已经计算、已经发布、仍然保留。\"\n        }\n      ]\n    },\n    \"legality\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"共同恢复采用状态集合交集，窗口与卷积按下一步实际读取范围判断；初始化、表示、数值契约、源稳定性、共享写隔离和物理最后使用均有条件。历史 Hybrid 文档的统一页、分组及功能限制与本章独立推广分开陈述，与供应来源相符。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/algorithms/heterogeneous-state-cache.md\",\n          \"quote\": \"共同直接恢复位置属于所有必需族直接集合的交集；各族最大长度不能代替交集。\"\n        },\n        {\n          \"path\": \"knowledge/algorithms/heterogeneous-state-cache.md\",\n          \"quote\": \"W＝1 或 K_c＝1 时，相应旧历史为空，不能因没有旧槽就拒绝恢复。\"\n        },\n        {\n          \"path\": \"knowledge/algorithms/heterogeneous-state-cache.md\",\n          \"quote\": \"本章的一般集合与事务算法是独立推导，不宣称该历史实现已经支持任意混合模型。\"\n        }\n      ]\n    },\n    \"algorithm\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"当前候选贯通分组映射、共同起点搜索、已知输入逐层重放、完整步骤提交、联合预留和按完整操作身份排空。高层 KV 来源及卷积历史与递归状态的更新关系已有解释，末行 logits 与下一 token 的已知性也已分开。明确批准本轮脚本在声明的 CPU 模型范围内对所分配算法问题的检查；campaign-K-ALG-009-r1 与 campaign-K-ALG-009-r2 对应的重放完整性、事件身份和提前复用问题可按当前候选关闭，不延续为未修复 findings。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/algorithms/heterogeneous-state-cache.md\",\n          \"quote\": \"高层 K/V 必须来自低层本步输出，不能仅用原始 token 和层号直接构造。\"\n        },\n        {\n          \"path\": \"knowledge/algorithms/heterogeneous-state-cache.md\",\n          \"quote\": \"将候选状态共同提交为 committed=t+1；按规则裁剪窗口并推进环形标签\"\n        },\n        {\n          \"path\": \"knowledge/algorithms/heterogeneous-state-cache.md\",\n          \"quote\": \"未知、重复、字段不符或属于其他尝试的事件：不改变当前在途集合\"\n        },\n        {\n          \"path\": \"knowledge/algorithms/heterogeneous-state-cache.md\",\n          \"quote\": \"安全性首先来自旧操作排空之前不重用地址；代次用于防止迟到通知被结算到新使用者。\"\n        }\n      ]\n    },\n    \"cost\": {\n      \"assessment\": \"partial\",\n      \"reason\": \"页字节、容量主项、快照与 padding 算术正确，六类成本及共享、预留、重叠和失败驻留的边界解释充分。但下降搜索宣称 O(nF)，未计每个候选重复逐项核对重放输入的成本；所交付 plan 实现存在固定 F 下 Θ(n²) 的实际检查路径，见 R3-REPLAY-INPUT-COST。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/algorithms/heterogeneous-state-cache.md\",\n          \"quote\": \"连续区间资格检查可按族常数时间完成；基线下降搜索为 O(nF)，F 是必需族数，缺页表示则另计范围查询成本。\"\n        },\n        {\n          \"path\": \"knowledge/algorithms/heterogeneous-state-cache.md\",\n          \"quote\": \"要求 DirectRecoverable(eta,c)，且 x[c:p) 及必需特征逐项可重放\"\n        },\n        {\n          \"path\": \"knowledge/algorithms/heterogeneous-state-cache.md\",\n          \"quote\": \"预留与其物化页不重复相加，共享页只计一次。\"\n        }\n      ]\n    },\n    \"adaptation\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"窗口、页长、状态尺寸、表示、重用距离及完成延迟改变后，分别解释恢复资格、碎片、复制、快照价值与准入如何改变，并允许放弃统一池或包级策略；没有把历史参数当作普遍最优值。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/algorithms/heterogeneous-state-cache.md\",\n          \"quote\": \"递归状态远大于注意力块时，可以放弃统一池，比较按族池、子分配或分层驻留。\"\n        },\n        {\n          \"path\": \"knowledge/algorithms/heterogeneous-state-cache.md\",\n          \"quote\": \"完成延迟增大时，隔离待回收容量上升，应降低准入或调整预留，不能通过提前回收维持吞吐。\"\n        }\n      ]\n    },\n    \"diagnosis\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"区分容量与排队、消费者取址、复制准备、快照写流量以及生命周期错误，给出控制变量、可反驳预测和结果不符后的修正方向。数值参考与事件负对照能够触及当前机制，设备效果明确保留为未验证范围。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/algorithms/heterogeneous-state-cache.md\",\n          \"quote\": \"若固定请求集后差距消失，优先支持容量与排队解释；若仍存在，再独立比较消费者和准备/复制路径。\"\n        },\n        {\n          \"path\": \"knowledge/algorithms/heterogeneous-state-cache.md\",\n          \"quote\": \"负对照真正提前释放并重用页面，再让旧写到达，由独立物理租约/内容不变量发现污染。\"\n        }\n      ]\n    }\n  },\n  \"findings\": [\n    {\n      \"id\": \"R3-REPLAY-INPUT-COST\",\n      \"criterion\": \"cost\",\n      \"evidence\": \"当前正文称“基线下降搜索为 O(nF)”，同时要求“x[c:p) 及必需特征逐项可重放”。当前 tools/check_k_alg_009_full.py 的 plan 使用 for c in range(target, -1, -1)，在每个合法 c 内重新执行 all(t in known for t in range(c, target))。取 target=n、full=(0,n-1)、window=None、conv=None、checkpoints=None、initial=True、known=set(range(n-1))：目标 n 不可直接恢复，起点 n-1…0 均合法，但每次扫描都在缺失的输入 n-1 处失败，总成员查询数为 1+2+…+n=n(n+1)/2。独立 JavaScript 操作计数重建得到 n=64、128、256 时分别为 2080、8256、32896；该补充检查不是 Python 重跑。\",\n      \"impact\": \"固定状态族数量时，完整恢复规划仍可能产生二次准备开销；正文现有线性复杂度会低估长前缀且缺少重放输入时的搜索成本。现有成功执行只检查规划结果，没有核对这一成本断言。\",\n      \"blocking\": true,\n      \"required_revision\": \"将 O(nF) 限定为状态族资格检查部分，并另计当前逐候选输入扫描的最坏 O(n²) 成本；或者明确增加一次输入及必需特征可重放性的预处理，使每个候选区间能以 O(1) 判断，并同步交付实现及预处理成本。用上述末端输入缺失轨迹核对修订后的操作量；保留已通过的重放与物理回收检查。\"\n    }\n  ],\n  \"limitations\": [\n    \"本轮测试证据来自消息所附、绑定本轮脚本哈希的 actual_preflight；本 reviewer 未重新执行 Python，也未独立重算磁盘文件哈希。\",\n    \"元数据模型限于连续范围、普通窗口和有限检查点；不证明真实缺页结构、sink/global 稀疏集合、MLA 转换或 TP/PP 重分片正确。\",\n    \"四层标量 CPU 模型验证恢复机制，不是真实 Mamba 或生产引擎数值验证；事件模型的可靠终结语义不证明真实 GPU、驱动或 NIC 提供相同保证。\",\n    \"设备可见性、并发安全、分布式故障、性能和 Agent 使用效果未验证；成功事件模型保守保留 staging 至退休，不能用于估计最小驻留。\",\n    \"仅检查供应文本中的引用关系和路径表达，未验证本地链接目标可达性、PDF 图像或源码归档。docs/knowledge-build-workflow.md 与本地技能正文未供应，当前工具也无文件读取入口；JSON 格式采用用户明确提供的 schema。\"\n  ],\n  \"checks\": [\n    {\n      \"script\": \"tools/check_k_alg_009_full.py\",\n      \"args\": []\n    }\n  ],\n  \"no_checks_reason\": \"\",\n  \"reading_scope\": \"阅读对象为消息供应的提取文本，不声称独立读取磁盘原始字节。以下范围均为零起点、半开字符区间，完整阅读：AGENTS.md [0,567)；docs/knowledge-method.md [0,2251)；docs/knowledge-review.md [0,3016)；knowledge/algorithms/heterogeneous-state-cache.md [0,12677)；knowledge/sources/S-VLLM-HYBRID.md [0,568)；knowledge/sources/S-MAMBA.md [0,487)；knowledge/sources/S-PAGED.md [0,2206)；knowledge/models/recurrent-hybrid-state.md [0,3563)；knowledge/models/mla.md [0,4303)；knowledge/models/sliding-window-attention.md [0,3580)；knowledge/algorithms/tiered-residency.md [0,4244)；knowledge/algorithms/kv-offload-prefetch.md [0,3710)；knowledge/system-semantics/memory-allocators.md [0,4191)；knowledge/system-semantics/serving-recovery.md [0,3834)；knowledge/algorithms/branch-generation.md [0,3670)；knowledge/engine-index/vllm-kv-manager.md [0,2189)；knowledge/frameworks/neuron-serving.md [0,3294)；knowledge/hardware/trainium-dataflow.md [0,3115)；knowledge/system-semantics/position-mask-cache.md [0,4078)；knowledge/system-semantics/distributed-state-transfer.md [0,3216)；references/S-VLLM-HYBRID/fulltext.txt [0,15489)；references/S-MAMBA/fulltext.txt [0,135643)，供应页1–36；references/S-PAGED/fulltext.txt [0,82285)，供应页1–16。完整阅读 candidate.test_script 中 tools/check_k_alg_009_full.py，从 shebang 至 main() 调用，未提供字符范围编号。仅阅读以下摘录：knowledge/algorithms/prefix-cache-identity.md [0,3309)、[8000,10003)；knowledge/algorithms/paged-kv-capacity.md [0,1887)、[12000,15425)；knowledge/system-semantics/design-synthesis.md [0,3438)、[8000,9874)。这三个摘录文件未列入 documents。另完整审查 author_notes 与 actual_preflight 的 stdout、stderr、退出码、执行参数及脚本摘要；前两轮原始产物未供应，未声称阅读这些目录中的文件。\",\n  \"test_assessment\": \"已逐函数检查交付脚本。direct_reference 以可见位置集合构造独立期望，与区间 contains 路径不同；9000 次比较及显式边界覆盖消费端点、空历史、初始化不可用、身份/context 不符和缺失输入。dense_reference 按层计算完整序列，cached_step 按 token 推进，二者不共享 step；四层数据流确实使高层 KV 依赖低层输出，并消费 attention 历史、卷积历史和递归状态。231 个合法切点组合比较全部状态及后续输出，同时检查共享起点未被修改；跳过重放、混合递归状态和污染历史均被检测。PhysicalDevice 的独立 active/terminal 账与 lease_violations 不依赖事务 pending 计数；负对照实际执行未知事件导致错误计数归零、释放、重分配和无代次保护的旧地址写入，并检查丢失物理租约和新对象内容污染，直接针对前轮事件身份与提前回收缺陷。安全路径覆盖字段错误、伪造、重复、旧尝试通知、取消请求与确认区别、延迟通知、发布缺族、六种终结顺序和最终容量守恒。容量复算的 140.375 MiB、70 MiB、3.625 MiB 与正文一致。供应 actual_preflight 绑定脚本 a502fd7b8c71194f4a6179ec4d4787926889fffd2efe1a24626b0580f9b2c86c，在 remote_bwrap 内以 Python 3.12 隔离执行，returncode=0、stderr为空，输出与上述检查路径相符；这是所附执行证据，不冒称 reviewer 亲自运行。明确批准该检查在声明范围内对 campaign-K-ALG-009-r1/r2 的修复验证。遗漏是 plan 的重复输入扫描成本未检查；独立 JavaScript 操作计数重建反驳了正文完整搜索 O(nF) 的断言，因此进程成功不能支持本轮整体 accept。脚本也没有验证真实设备可见性、并发、布局转换、引擎执行或性能，这些边界与作者声明一致。\"\n}",
+  "elapsed_seconds": 248.266
+}

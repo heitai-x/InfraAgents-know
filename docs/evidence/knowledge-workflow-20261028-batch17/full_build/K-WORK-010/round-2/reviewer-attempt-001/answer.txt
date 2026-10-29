@@ -1,0 +1,156 @@
+{
+  "entry_id": "K-WORK-010",
+  "body_sha256": "817c6657dbca8907e6dc4180533e17a38228ca91519c4da5848f273d9e39727c",
+  "reviewer": "sol-reviewer:K-WORK-010:round-2",
+  "decision": "revise",
+  "documents": {
+    "AGENTS.md": "b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a",
+    "docs/knowledge-method.md": "69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb",
+    "docs/knowledge-review.md": "f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21",
+    "knowledge/workloads/session-workloads.md": "817c6657dbca8907e6dc4180533e17a38228ca91519c4da5848f273d9e39727c",
+    "knowledge/sources/S-SGLANG.md": "4fd6badbee1df40da422f2866f1536bbe4f5266856b8d97004072a21b9d0e2c9",
+    "knowledge/sources/S-ORCA.md": "920ef987a4a019bb4f0e0386e30bf1c1e3bc720d199ae4de22e462db4f41520a",
+    "knowledge/sources/S-VLLM-PREFIX.md": "9e3f16fdac245da8aa97deea55a820642b67e626329748c980eaa2fc0b7656f5",
+    "knowledge/sources/S-MLPERF-SCENARIOS.md": "e210de2929034d4a6e25a31ee72b81a184412a7e637c979210f91ae02a261b04",
+    "knowledge/engine-index/vllm-scheduler.md": "9e576ff7711ed5e448a4bedfe7ab69949a79bc3f61417bf258f7a3b56caf1fe5",
+    "references/S-SGLANG/fulltext.txt": "7dfb3a43ba73d9d9861c06311005edf12dfafa9f60a268fec327deb4d8e8770d",
+    "references/S-ORCA/fulltext.txt": "2119a53d77b4a933bab56d7e40b5304fa725561c412514459e56729ca6836794",
+    "references/S-VLLM-PREFIX/fulltext.txt": "0d6423dca458bb628af7d15961bdba92b0d501660f93690610a354ef68f07353",
+    "references/S-MLPERF-SCENARIOS/upstream/loadgen/README.md": "074479dbeb369205ccc8800450c647893b4901c247e0e4ee7f321f05254e9305",
+    "tools/check_k_work_010_full.py": "87a02eda673f80cf389b4fde7e0637ee3d93121ebf6cac7122ae7ef92f0c38ff"
+  },
+  "criteria": {
+    "definition": {
+      "assessment": "sufficient",
+      "reason": "明确会话、分支、尝试、边和输出版本身份，区分业务状态、物理责任及测量人口；输入构造、事件合同和时间、容量、驻留公式均有作用域。",
+      "evidence": [
+        {
+          "path": "knowledge/workloads/session-workloads.md",
+          "quote": "需要同时保存三本账：业务依赖与提交账、物理访问责任账、包含失败和未完成者的测量人口账。"
+        },
+        {
+          "path": "knowledge/workloads/session-workloads.md",
+          "quote": "事件身份采用 κ=(生产者完整实例,事件类型,输出版本)。"
+        }
+      ]
+    },
+    "legality": {
+      "assessment": "sufficient",
+      "reason": "将计算等价、实际驻留、全层完成、消费者可见和物理排空列为资格条件；明确固定 AND DAG、单次启动、私有写区和串行协调是所选设计。来源事实与独立协议推导区分清楚。",
+      "evidence": [
+        {
+          "path": "knowledge/workloads/session-workloads.md",
+          "quote": "合法性要求图无环、边事件及尝试版本确定、必需输入可重建、分支可写状态隔离、失败传播有终止规则、到达模式及完成边界明确。"
+        },
+        {
+          "path": "knowledge/workloads/session-workloads.md",
+          "quote": "以下是一种保守设计：固定 AND DAG、每节点只启动一次、分支写区私有、共享页不可变，所有事务由同一协调域串行处理。"
+        }
+      ]
+    },
+    "algorithm": {
+      "assessment": "partial",
+      "reason": "A01、A02、A03 的具体问题已修复：取消后继续结算物理票据，通知按边去重且统一检查终态，所有节点具有时间门和实际唤醒，事件生产接口明确，模型内部推进有明确委托及完成接口。但 COMPLETE 收到确定失败结果后没有调用失败终止路径，可能留下没有任何后继事件的 RUNNING 节点。",
+      "evidence": [
+        {
+          "path": "knowledge/workloads/session-workloads.md",
+          "quote": "请求已取消时仍结算物理责任，但拒绝未发布候选，不改变业务终态"
+        },
+        {
+          "path": "knowledge/workloads/session-workloads.md",
+          "quote": "否则保存 satisfied[edge_id]=κ；只在首次合格通知时结算该边"
+        },
+        {
+          "path": "knowledge/workloads/session-workloads.md",
+          "quote": "成功范围进入候选完成账；失败范围不可发布"
+        }
+      ]
+    },
+    "cost": {
+      "assessment": "sufficient",
+      "reason": "C01 已关闭。位置、页数和字节单位明确；总容量以物理对象并集核算，限定对齐简式，展开未对齐 COW 的五页过渡峰值、四页稳态及复制流量。六类成本、等待积分、共享容量与读取流量、关键路径与累计工作均有区分。",
+      "evidence": [
+        {
+          "path": "knowledge/workloads/session-workloads.md",
+          "quote": "pages(n)=ceil(n/P) 仅表示页数，不能直接与字节相加。"
+        },
+        {
+          "path": "knowledge/workloads/session-workloads.md",
+          "quote": "复制和旧读者尚未结束时，S、A0、A1、B0、B1 共五页，即 5B。"
+        },
+        {
+          "path": "knowledge/workloads/session-workloads.md",
+          "quote": "同一页被多个等待者持有仍只计一次。"
+        }
+      ]
+    },
+    "adaptation": {
+      "assessment": "sufficient",
+      "reason": "说明模板、tokenizer、模型、位置和状态格式变化后的身份重验，以及思考时间、页长、分支宽度和容量压力导致的成本反转；保留依赖和责任原则，同时允许调整保留、换出或重算策略。",
+      "evidence": [
+        {
+          "path": "knowledge/workloads/session-workloads.md",
+          "quote": "模板、tokenizer、工具结果或模型变化后，保留依赖与责任原则，重建受影响输入和缓存身份。"
+        },
+        {
+          "path": "knowledge/workloads/session-workloads.md",
+          "quote": "容量紧张且重用遥远时，可以放弃驻留而选择换出或重算，但目的容量、恢复计算与传输必须另计。"
+        }
+      ]
+    },
+    "diagnosis": {
+      "assessment": "partial",
+      "reason": "D01 所指的虚报负对照和仅比较非严格时间戳问题已修复。当前脚本确实执行故障变体，审计器按记录顺序重建发布证据，资源模型使用独立责任快照；提供的真实预检记录支持这些固定算例通过。但递归参考错误地串加通知延迟与等待，并在终态预测中忽略依赖失败先于取消的顺序，尚不能正确裁决其声明模型中的部分合法轨迹。",
+      "evidence": [
+        {
+          "path": "knowledge/workloads/session-workloads.md",
+          "quote": "事件检查器从固定 DAG、取消计划和事件生产偏移直接递归推导预期启动与发布，再按实际记录顺序审计证据集合、边通知、时间门和不可逆终态"
+        },
+        {
+          "path": "knowledge/workloads/session-workloads.md",
+          "quote": "通知传输较晚时，实际就绪还不早于所需通知被接收的时刻。"
+        }
+      ]
+    }
+  },
+  "findings": [
+    {
+      "id": "K-WORK-010-R2-A04",
+      "criterion": "algorithm",
+      "evidence": "COMPLETE 写明“成功范围进入候选完成账；失败范围不可发布”，随后仅在仍有提交资格时尝试 PUBLISH，并执行 TRY_RECLAIM；没有把确定失败结果转入 FAIL(v,reason)。终止传播只在 CANCEL/FAIL 分支展开。",
+      "impact": "单个生成节点已经 RUNNING，最后一项模型操作返回完整最后访问证据但结果失败时，算法会清掉该票据 U、拒绝发布，却保留 RUNNING。若没有其他未来事件，最终只能报告契约/容量停滞；必需消费者也不会及时获得 DEPENDENCY_IMPOSSIBLE。已经确定的执行失败因而没有进入声明的业务终态及传播路径。",
+      "blocking": true,
+      "required_revision": "在 COMPLETE 中明确区分物理访问结束和业务结果成功。对使所需产物无法完成的确定失败，在协调域调用 FAIL 或等价终止事务，停止未来提交并传播缺失必需事件；其他尚在途票据继续独立结算。若允许恢复，必须明确恢复分支及真实后继事件。检查最后操作失败、仍有另一操作在途以及必需消费者等待的轨迹。"
+    },
+    {
+      "id": "K-WORK-010-R2-D02",
+      "criterion": "diagnosis",
+      "evidence": "reference 使用“bounds.append(upstream[event] + spec[u]['lag'] + wait)”，而 replay 的时间门使用发布时间加 wait，并在实际通知到达后 reconsider。reference 还以“elif v in cancellations: states[v] = 'CANCELLED'”预测所有未提交且有取消计划的节点，未保留较早的依赖失败。",
+      "impact": "参考与正文机制不一致。例：U 在 1 发布 FULL，通知延迟 3，V 的等待为 2、外部下界为 0；通知于 4 到达且等待已于 3 到期，合法 eager 启动为 4，reference 却要求 6。另例：U 在 1 被取消且所需事件未发布，V 当时已传播为 FAILED，V 在 2 收到取消应保持 FAILED，reference 却要求 CANCELLED。现有算例没有同时组合正通知延迟和正等待，也没有覆盖依赖失败先于本节点取消，因此退出 0 未暴露这些错误。",
+      "blocking": true,
+      "required_revision": "按独立约束正确合并发布时间等待门与通知接收门，采用 max(pub+wait, pub+lag)，而非相加；终态参考需要推导依赖不可能发生的时刻，并按固定同刻顺序保留最先确定的不可逆终态。将上述合法轨迹送入同一审计器，保留修订脚本的真实执行记录，同时确保原有故障变体仍被拒绝。"
+    }
+  ],
+  "limitations": [
+    "本次依据完整内嵌候选、材料及绑定脚本的实际预检记录审查，未读取或修改本地文件，未独立重新计算文件哈希或核验离线链接存在性；documents 保留指定绑定值。",
+    "作者材料账记录作者获得的全文与摘录范围，不证明认知阅读完成。作者获得的是修订前章节材料；当前候选另按本次完整正文审查，未混用两个章节哈希。",
+    "真实预检仅证明确定性 CPU 符号模型中的已执行算例与负对照；未执行真实模型、tokenizer、质量评价、工具副作用、GPU 全层写入、跨 stream 可见性、DMA 或网络排空实验。",
+    "物理检查仅使用 L/U、两个槽和有限 uid；O/B/Q 为空，没有验证输出消费者、长期绑定或隔离原因的实际结束接口。",
+    "相关章节仅按明确提供的摘录使用，不能据此独立认证被委托章节的全文完整性。没有读取上游源码归档或省略的图片。",
+    "MLPerf 场景具体定义由来源说明支持；所供 README 仅链接 Test Settings，不能据它独立核验具体场景注释。正文已正确声明此边界。"
+  ],
+  "checks": [
+    {
+      "script": "tools/check_k_work_010_full.py",
+      "args": [],
+      "execution_origin": "用户提供的 actual_preflight，非本审阅调用重新执行",
+      "script_sha256": "87a02eda673f80cf389b4fde7e0637ee3d93121ebf6cac7122ae7ef92f0c38ff",
+      "returncode": 0,
+      "stderr": "",
+      "assessment": "记录显示六组事件正常轨迹、资源轨迹、回合参考、275 组页布局及驻留算术通过，14 个负对照被拒绝。该结果不覆盖 findings 中由静态检查推导的新反例。"
+    }
+  ],
+  "no_checks_reason": "",
+  "reading_scope": "审阅全文：AGENTS.md [0,567)、docs/knowledge-method.md [0,2251)、docs/knowledge-review.md [0,3016)、当前 session-workloads.md [0,13444)、S-SGLANG.md [0,472)、S-ORCA.md [0,1394)、S-VLLM-PREFIX.md [0,521)、S-MLPERF-SCENARIOS.md [0,823)、vllm-scheduler.md [0,2314)、S-SGLANG/fulltext.txt [0,80104)、S-ORCA/fulltext.txt [0,90276)、S-VLLM-PREFIX/fulltext.txt [0,13926)、LoadGen README [0,11382)，以及内嵌完整 test_script、author_notes 和 actual_preflight。相关章摘录：arrival-and-concurrency [0,4000)、[8000,9000)；input-distribution [0,5000)；prefix-cache-identity [0,5000)；tokenization-io [0,1025)、[8000,11975)；cancellation-resource-completion [0,5000)；iteration-batching [0,5000)；chunked-prefill [8000,11304)、[12000,13696)；omni-multimodal [12000,17000)；request-batch-identity [4000,5929)、[16000,19071)；design-synthesis [0,1000)、[12000,16000)；correctness-oracles [0,1000)、[8000,12000)；metric-events [4000,5000)、[8000,12000)；measurement-comparability [0,4000)、[12000,13000)；slo-goodput [0,5000)；capacity-planning [4000,8000)、[12000,13000)；branch-generation [4000,8000)、[12000,13000)。范围均采用所供账中的提取字符、零起点半开区间；摘录文件未加入 documents。",
+  "test_assessment": "事件审计器独立重建已发布证据及按边交付集合，逐记录序号检查发布先于消费，未读取 replay 的依赖计数；递归参考独立于事件堆。实际预检显示忽略依赖、重复通知抵扣、误取消兄弟、漏唤醒、遗漏时间门、取消后复活及丢弃旧发布均被拒绝，确实检验本章修订机制。资源参考使用手工责任快照，实际拒绝取消即释放和重复完成抵消 kernel；回合参考枚举 token 身份，布局参考分配物理槽内容，具有实质独立性。作者阶段未运行 Python 的声明与后来提供的预检执行并不矛盾，不能把后者追记为作者当时已执行。当前执行记录真实支持固定 fixtures，但递归参考存在 D02 的时间与终态错误，事件模型也没有确定执行失败的处理路径，不能据退出 0 关闭 A04。新增反例在本次仅作静态推导，未记为实际执行或 PASS。"
+}

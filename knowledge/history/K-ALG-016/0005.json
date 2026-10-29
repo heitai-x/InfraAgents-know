@@ -1,0 +1,83 @@
+{
+  "id": "K-ALG-016",
+  "path": "algorithms/operator-primitives.md",
+  "category": "algorithms",
+  "title": "基础算子：从张量契约到合法融合",
+  "summary": "从函数、张量地址与别名推导合法执行；展开QKV、归一化、RoPE和融合成本，按所选机制检查数值与真实消费者。",
+  "revision": 5,
+  "status": "seed",
+  "tags": [
+    "GEMM",
+    "GEMV",
+    "embedding",
+    "RMSNorm",
+    "LayerNorm",
+    "RoPE",
+    "softmax",
+    "gather",
+    "scatter",
+    "融合",
+    "QKV布局",
+    "统计域",
+    "residual lifetime",
+    "算子适配",
+    "端到端成本",
+    "tensor stride",
+    "storage offset",
+    "alias"
+  ],
+  "scope": {
+    "model_families": [],
+    "platforms": [],
+    "runtimes": [],
+    "workloads": []
+  },
+  "source_ids": [
+    "S-TRANSFORMER",
+    "S-RMSNORM",
+    "S-ROPE",
+    "S-TORCH-NUMERIC",
+    "S-FLASH",
+    "S-CPU-TUNING",
+    "S-SDPA",
+    "S-FA-IMPL",
+    "S-CUDA-BEST",
+    "S-TRITON"
+  ],
+  "related": [
+    "K-MODEL-001",
+    "K-ALG-004",
+    "K-FW-002",
+    "K-HW-010",
+    "K-FW-011",
+    "K-FW-007",
+    "K-FW-006",
+    "K-FW-001",
+    "K-FW-010",
+    "K-SYS-010",
+    "K-TOOLS-006",
+    "K-MODEL-013",
+    "K-MODEL-014",
+    "K-MODEL-015",
+    "K-MODEL-016"
+  ],
+  "evidence": [],
+  "updated_at": "2026-10-27",
+  "sha256": "7e67de661bf7263bb65c68fbb97c8344055f1795758a89b149c7c95b097526eb",
+  "questions": [
+    "一个 strided 张量的逻辑下标如何映射到地址，为什么只改 shape 或 stride 不等于完成了物理重排？",
+    "RMSNorm 与 LayerNorm 的统计域和 ε 位置有什么区别，tile 对齐填充为何会改变整行函数？",
+    "RoPE 的相对位置关系依赖哪些约定，缓存保存旋转前还是旋转后的 K 对后续 append 有何影响？",
+    "residual 与 norm 融合在 residual 仍活跃与不再活跃两种情况下分别省掉多少读写？",
+    "融合或自定义 kernel 的局部收益如何连接到完整 forward 的关键路径上限？"
+  ],
+  "symptoms": [
+    "算子融合后小矩阵变快而大矩阵变慢",
+    "归一化输出整体被放大约一个固定比例",
+    "从位置零开始的短序列正确但跨 chunk 长序列出错"
+  ],
+  "assumes": [
+    "Transformer 的线性、归一化、位置旋转和激活算子",
+    "存在固定数值契约的参考实现可对照"
+  ]
+}

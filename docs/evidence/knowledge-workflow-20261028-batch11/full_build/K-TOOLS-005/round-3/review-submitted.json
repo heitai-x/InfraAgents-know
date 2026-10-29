@@ -1,0 +1,196 @@
+{
+  "entry_id": "K-TOOLS-005",
+  "body_sha256": "fa54dc2a72a12e562c76a8c8fdaf8fe12e3937c9520c47e5d180986fcc1d0229",
+  "reviewer": "sol-reviewer:K-TOOLS-005:round-3",
+  "decision": "accept",
+  "documents": {
+    "AGENTS.md": "b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a",
+    "docs/knowledge-method.md": "69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb",
+    "docs/knowledge-review.md": "f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21",
+    "knowledge/tools/failure-evidence.md": "fa54dc2a72a12e562c76a8c8fdaf8fe12e3937c9520c47e5d180986fcc1d0229",
+    "knowledge/sources/S-PY-SUBPROCESS.md": "a466b22c1b51e2d1612328903406712c1e30d38770a6510d96a3937ff1bede32",
+    "knowledge/sources/S-CUDA-ASYNC.md": "40df9287d0648a8ef55a046ceb1c18dd402619ede6e57ca33d3f90e4ace3da05",
+    "knowledge/sources/S-TORCH-NUMERIC.md": "cbe91153d9ff7bd2f596d1d6c4e15de1ad68571f3cbde23215891a8ec7f6fab4",
+    "knowledge/sources/S-LINUX-RESOURCES.md": "d829824442f5a9abd36c3caf63c5fd30da8da4f8839db88e33aa045b7baa05f0",
+    "knowledge/sources/S-RDMA.md": "660948886af9019ac90e6c58ab7b2a4ca9dbf282f1bb74de37162403f24f4d49",
+    "knowledge/sources/S-LINUX-IO.md": "786caae53cc1e80173616ce470c481145e285c2176b7cff4777576cc893fc316",
+    "knowledge/system-semantics/evidence-and-independent-checks.md": "50b7c97de928be322713ef149fb734c0c20acda17c4a321c46a198b0019831be",
+    "knowledge/tools/correctness-oracles.md": "c2f88bc9746ac25586fc6700aaf0f5a8d043a1b1f4aee99dfdee02e1ef468aab",
+    "knowledge/system-semantics/serving-recovery.md": "f551fa1f1e6213469c856a880839eefff504fb39f4dd692000b2df80a20a7f5e",
+    "knowledge/system-semantics/storage-services.md": "283ceab23fbbf5c27bbb4486b56c2123459a19a00229c5baae70d09c18062661",
+    "knowledge/system-semantics/deployment-environment.md": "1b47e39a7f36c9f1cba4dc1792ad9243fd69d083ae1d6a7bb13bfd80dae1a8a5",
+    "knowledge/tools/statistical-experiments.md": "908b3588a6fa20bb1f2aed9f5db51c4b462953d79f8944cdbcfea7141c74644f",
+    "knowledge/system-semantics/tenant-isolation.md": "0ca7501a80e750152a5fb3b9815c77f9e3f9aa393ff7546b3f05375958f88606",
+    "references/S-TORCH-NUMERIC/fulltext.txt": "bb6b2d8154a10f8f3b15e5ae4465cbc8d833067046964fc6b4d66dc036131b45",
+    "references/S-RDMA/fulltext.txt": "9f4bea8bc130fc7dcdf0b53d20ce7269555cddd2a7c67e5d54c6dbd7a55b2720",
+    "tools/check_k_tools_005_full.py": "6b1842559263e3e47be4029d5dff9e672ab9bab4230dc1ba6c04cb42a88c2c81"
+  },
+  "criteria": {
+    "definition": {
+      "assessment": "sufficient",
+      "reason": "动机、执行尝试、观测事件、契约实例和失败证书均有定义。四集合区分有效真、有效假、证据未知与已知比较无效，并明确预先声明的分母，能够解释空集合和全部无效的边界。",
+      "evidence": [
+        {
+          "path": "knowledge/tools/failure-evidence.md",
+          "quote": "失败分析要还原系统从哪个可检查状态开始偏离任务契约，并通过干预区分输入、实现、资源和外部环境。"
+        },
+        {
+          "path": "knowledge/tools/failure-evidence.md",
+          "quote": "四个集合构成不重叠的完整分区："
+        },
+        {
+          "path": "knowledge/tools/failure-evidence.md",
+          "quote": "有效检查数为 `N_checked=|True|+|Bad|`，分母始终是预先声明的 `|Ω|`。"
+        }
+      ]
+    },
+    "legality": {
+      "assessment": "sufficient",
+      "reason": "明确区分接口事实与诊断方案：进程退出、等待超时、设备完成、远端消费各有独立边界；缩减须保留固定覆盖、身份、机制关系与同类失败。取消组合轨迹正确区分拒绝旧结果提交与阻止旧物理访问。所供 subprocess、verbs、数值和 cgroup 原文支持相应事实，未把来源扩大为目标设备保证。",
+      "evidence": [
+        {
+          "path": "knowledge/tools/failure-evidence.md",
+          "quote": "合法缩减要保留同类失败 `F`、机制关系集合 `P_keep`、目标逻辑身份映射、相容 oracle，以及必要观测覆盖 `K`。"
+        },
+        {
+          "path": "knowledge/tools/failure-evidence.md",
+          "quote": "仅增加代次能拒绝旧结果提交，却不能阻止旧工作写入同一物理地址。"
+        },
+        {
+          "path": "knowledge/tools/failure-evidence.md",
+          "quote": "时间戳大小本身不能证明因果。"
+        }
+      ]
+    },
+    "algorithm": {
+      "assessment": "sufficient",
+      "reason": "两个核心算法均提供输入输出、初始化、分类顺序、状态更新和退出条件。局部失败与最早性未知分别保存，汇总不再依赖 D 是否为空；OracleInvalid 连同理由和计数返回。最小化统一使用完整三值谓词，以严格下降度量、版本账本和预算退出避免无进展循环。ALG-001、ALG-002、ALG-003 在当前文本与检查中均已修复，可关闭。",
+      "evidence": [
+        {
+          "path": "knowledge/tools/failure-evidence.md",
+          "quote": "检查点自身覆盖不足，直接进入 `Unknown`，即使没有任何前驱也不能成为确认前沿。"
+        },
+        {
+          "path": "knowledge/tools/failure-evidence.md",
+          "quote": "S.complete = Ω 非空且 Unknown、OracleInvalid 均为空"
+        },
+        {
+          "path": "knowledge/tools/failure-evidence.md",
+          "quote": "返回全部集合、理由、证书、C 和 S"
+        },
+        {
+          "path": "knowledge/tools/failure-evidence.md",
+          "quote": "完整接受谓词是 `A = I ∧ K_ok ∧ P_ok ∧ F_ok`。"
+        },
+        {
+          "path": "knowledge/tools/failure-evidence.md",
+          "quote": "未知记录按 `(version,current身份,t)` 绑定。"
+        },
+        {
+          "path": "knowledge/tools/failure-evidence.md",
+          "quote": "若 active_unknown 或 pending 非空："
+        }
+      ]
+    },
+    "cost": {
+      "assessment": "sufficient",
+      "reason": "覆盖采集计算、图存储与遍历、传输、环境准备、同步扰动、在线及离线驻留和复现实验成本；区分逻辑字节、线缆字节、墙钟时间、字节秒与峰值。驻留吞吐公式在同质、固定时长、无开销和饱和条件下成立；线性服务上界由工作守恒推出，明确禁止替换为未饱和实测基线。10/9/8 GB 的 3/3/2 反例及低到达率反例正确，关闭所述旧比例容量上界问题。",
+      "evidence": [
+        {
+          "path": "knowledge/tools/failure-evidence.md",
+          "quote": "它们不是墙钟延迟公式：批量写出可以与计算重叠，也可能争用 CPU、锁、内存带宽、磁盘或网络。"
+        },
+        {
+          "path": "knowledge/tools/failure-evidence.md",
+          "quote": "逐候选反向遍历最多为 `O(|Bad|(V+M))`；显式存全部可达关系可能占 `O(V²)`。"
+        },
+        {
+          "path": "knowledge/tools/failure-evidence.md",
+          "quote": "`X_res(M)=⌊M/m⌋/τ`，单位为任务/秒。"
+        },
+        {
+          "path": "knowledge/tools/failure-evidence.md",
+          "quote": "一般实测基线 `X_base,obs` 未必达到该能力，因此不能替换分母。"
+        },
+        {
+          "path": "knowledge/tools/failure-evidence.md",
+          "quote": "峰值按唯一物理范围的并集计，不能把平均字节秒直接当峰值容量。"
+        }
+      ]
+    },
+    "adaptation": {
+      "assessment": "sufficient",
+      "reason": "条件变化表给出需保留的不变量、需要调整的观测和放弃原判断的信号；涵盖竞态、跨 stream、执行组、oracle、I/O 和资源模型变化。概率失败不因一次未触发而判定消失，CPU 模型向 GPU 迁移也明确要求重新验证。",
+      "evidence": [
+        {
+          "path": "knowledge/tools/failure-evidence.md",
+          "quote": "一次未触发通常不能确定 `F_ok=false`；应按预先定义的统计或调度 oracle 判为未知，或明确限定为某条已固定轨迹。"
+        },
+        {
+          "path": "knowledge/tools/failure-evidence.md",
+          "quote": "前者核对并发阶梯和生存期，后者核对工作守恒；不能沿用相同百分比预测"
+        },
+        {
+          "path": "knowledge/tools/failure-evidence.md",
+          "quote": "缩减或清理改变证据能力后，应同时收窄结论范围。"
+        }
+      ]
+    },
+    "diagnosis": {
+      "assessment": "sufficient",
+      "reason": "机制证书包含可反驳预测与竞争解释，实验逐项控制身份、覆盖、完成边界和资源条件。取消后的旧写入、索引错误和比较错配有不同干预；无效 oracle、自身覆盖缺口、缩减未知和错误容量上界也有针对性反证。未把实验设计或有限逻辑检查写成真实故障注入结论。",
+      "evidence": [
+        {
+          "path": "knowledge/tools/failure-evidence.md",
+          "quote": "竞争解释必须对某项受控改变给出不同预测。"
+        },
+        {
+          "path": "knowledge/tools/failure-evidence.md",
+          "quote": "区分实验应分别保持旧存储到完成、只增加提交身份检查、固定 B 的索引，并记录旧操作最后访问与 B 首次读取。"
+        },
+        {
+          "path": "knowledge/tools/failure-evidence.md",
+          "quote": "若候选解释均被反证，应输出未解决、已排除范围和还需要的证据。"
+        }
+      ]
+    }
+  },
+  "findings": [],
+  "limitations": [
+    "前沿检查是明确声明的投影模型，合并局部证据未知与最早性未知；没有端到端执行正文全部四集合、U_earliest、路径证书和双轴汇总接口。该边界不撤销已检查的局部规则。",
+    "覆盖、身份、因果边和完成证明为模型输入，检查不能证明真实采集完整性、时钟校准、设备可见性或物理最后访问结束。",
+    "容量检查仅验证同质任务、固定驻留时间、无开销的理想模型，以及固定每任务工作量下的服务守恒；未测量碎片、异构装箱、回收、batch 变化或实际吞吐。",
+    "进程检查未启动真实子进程；数值检查仅覆盖给定有限 logits 的 argmax 契约。没有 CUDA、cgroup、RDMA、块设备、网络、多 rank、概率竞态或 Agent 使用效果实测。",
+    "本次依据提供的完整文本、摘录、哈希绑定和协调者执行记录审查；未重新计算磁盘文件哈希、检查链接目标存在性或核验上游源码归档。摘录不构成完整原文阅读。"
+  ],
+  "checks": [
+    {
+      "script": "tools/check_k_tools_005_full.py",
+      "args": [],
+      "script_sha256": "6b1842559263e3e47be4029d5dff9e672ab9bab4230dc1ba6c04cb42a88c2c81",
+      "assessment": "approved",
+      "execution_source": "用户提供的 actual_preflight；本审阅调用未另行执行 Python",
+      "returncode": 0,
+      "result": "批准该检查在声明的有限 CPU 逻辑范围内作为本轮证据。执行记录绑定当前脚本哈希，使用隔离的 Python 3.12、-I -S -B -X utf8，stderr 为空，未超时。",
+      "observations": {
+        "frontier_cases": 549,
+        "ignore_self_detected": 271,
+        "obligation_fixed_cases": 7,
+        "three_valued_cases": 81,
+        "minimizer_negative_controls_detected": 3,
+        "resident_cases": 588,
+        "service_cases": 360,
+        "resident_10_9_8": [
+          "3",
+          "3",
+          "2"
+        ],
+        "faulty_cost_bound_families_detected": 2,
+        "process_contract_fixtures": 6,
+        "real_processes": 0
+      }
+    }
+  ],
+  "reading_scope": "完整阅读提供的当前候选章、完整交付检查脚本、author_notes、actual_preflight，以及全部 materials 内容。以下范围均为提取文本的零基半开字符区间。完整文件：AGENTS.md [0,567)；docs/knowledge-method.md [0,2251)；docs/knowledge-review.md [0,3016)；knowledge/tools/failure-evidence.md [0,18166)；knowledge/sources/S-PY-SUBPROCESS.md [0,509)；knowledge/sources/S-CUDA-ASYNC.md [0,1610)；knowledge/sources/S-TORCH-NUMERIC.md [0,532)；knowledge/sources/S-LINUX-RESOURCES.md [0,949)；knowledge/sources/S-RDMA.md [0,739)；knowledge/sources/S-LINUX-IO.md [0,850)；knowledge/system-semantics/evidence-and-independent-checks.md [0,3845)；knowledge/tools/correctness-oracles.md [0,5245)；knowledge/system-semantics/serving-recovery.md [0,3834)；knowledge/system-semantics/storage-services.md [0,3922)；knowledge/system-semantics/deployment-environment.md [0,3882)；knowledge/tools/statistical-experiments.md [0,4269)；knowledge/system-semantics/tenant-isolation.md [0,4131)；references/S-TORCH-NUMERIC/fulltext.txt [0,10998)；references/S-RDMA/fulltext.txt [0,25147)。tools/check_k_tools_005_full.py 阅读 candidate.test_script 提供的完整脚本，未提供字符范围元数据。仅阅读摘录：knowledge/system-semantics/collective-ordering.md [0,3914)、[16000,19813)；knowledge/system-semantics/cancellation-resource-completion.md [0,4000)、[12000,15727)；knowledge/system-semantics/service-protocol.md [0,4000)、[12000,15727)；knowledge/tools/trace-observability.md [0,885)、[12000,18842)；references/S-PY-SUBPROCESS/fulltext.txt [0,26288)、[28000,40000)、[48000,62026)；references/S-CUDA-ASYNC/fulltext.txt [68000,72000)、[208000,212000)、[284000,288000)、[456000,460000)、[500000,504000)、[516000,536000)、[552000,552315)、[580000,584000)、[588000,592000)、[752000,756000)；references/S-LINUX-RESOURCES/fulltext.txt [0,4315)、[8000,12000)、[16000,20000)、[44000,68000)、[72000,76000)、[84000,88000)、[116000,124000)；references/S-LINUX-IO/fulltext.txt [0,52315)，其完整提取长度为52366，未据此声称通读完整文件。documents 仅列完整提供并阅读的文件。未提供旧轮审查全文，本次仅按当前候选和任务列出的旧问题核对关闭情况。",
+  "test_assessment": "独立审阅了完整脚本的候选算法、参考、固定预期和负对照，并核对用户提供的实际执行输出，不以退出码0代替语义判断。前沿候选使用反向遍历，参考使用全对可达矩阵；无前驱自身缺口另有固定预期，ignore_self 变体确实被同一审计拒绝，枚举记录549例及271次差异。保留前驱缺口、多前沿、时间戳误归因和环输入检查，支持关闭ALG-003。义务检查有七组固定汇总预期、分区审计、四维身份错配及独立直接全通过契约；旧式忽略OracleInvalid的汇总在无效独占和有效/无效混合时被拒绝，支持关闭ALG-001。缩减接受门与可能世界补全参考比较全部81组三值输入；历史审计检查版本、严格缩小、完整当前删除集合、未知保留和预算，覆盖变差候选保留F/P仍被拒绝，无法观察候选返回INCOMPLETE。weak、drop_unknown和accept_any三个错误变体被拒绝，支持关闭ALG-002。其观察生成器是公开的布尔夹具，独立性主要位于接受逻辑和历史不变量，不是独立调度器。驻留参考通过逐单元装箱计数，区别于候选整除公式；588例含零容量、容不下一个任务和10/9/8阈值。服务检查以精确有理数验证360例工作守恒，并用可行轨迹拒绝容量同比吞吐上界和未饱和基线替换，实际测试了本轮成本修复。进程部分为固定文档契约表，数值部分为手算分歧位置，均无真实运行外推。作者仅运行V8的说明与之后协调者绑定当前Python脚本的preflight记录属于不同执行阶段，不能混记；本审阅明确批准后者在其声明范围内的检查证据。未覆盖完整报告接口、真实探针、设备、服务及使用效果的部分保留为limitation，不据此新增无关验收条件。"
+}

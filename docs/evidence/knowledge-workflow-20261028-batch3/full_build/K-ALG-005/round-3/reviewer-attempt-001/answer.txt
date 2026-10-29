@@ -1,0 +1,141 @@
+{
+  "entry_id": "K-ALG-005",
+  "body_sha256": "47d84fe50702d71f068e70e109941b6cb622111dbf103c04dfe10c8d99b2b8be",
+  "reviewer": "sol-reviewer:K-ALG-005:round-3",
+  "decision": "accept",
+  "documents": {
+    "AGENTS.md": "b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a",
+    "docs/knowledge-method.md": "69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb",
+    "docs/knowledge-review.md": "f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21",
+    "knowledge/algorithms/quantization-contract.md": "47d84fe50702d71f068e70e109941b6cb622111dbf103c04dfe10c8d99b2b8be",
+    "knowledge/sources/S-GPTQ.md": "ab4b597c9d425e72b110a2be5ee56d98542a61f02630e542886d8c1afc15d1cb",
+    "knowledge/sources/S-TORCH-NUMERIC.md": "cbe91153d9ff7bd2f596d1d6c4e15de1ad68571f3cbde23215891a8ec7f6fab4",
+    "knowledge/sources/S-CUDA-CAPABILITY.md": "b01baba1d2826b0682b2b58c6a0d23bf0f6e616a758e41c74b4688b55417f286",
+    "knowledge/sources/S-AWQ.md": "4fa268a183cc1613919704d3c22d474531694c316309b8a0c97e5a9aaee596ae",
+    "knowledge/sources/S-SMOOTHQUANT.md": "d12a23d411ca8f41f7ed608ceef68c7f53e7fd540a336a626a7e87e8e1ea3a52",
+    "knowledge/sources/S-FLASHINFERPAPER.md": "0e4c6f197789b08bbd5d0f35b202ce316bbe788bdc6a3f67ca0c27e19e256437",
+    "knowledge/hardware/precision-and-kernel-support.md": "7185979b8429b7d44fd34ec0910bbe85c617a457cc4d9d9055920e73d07bc5d3",
+    "knowledge/frameworks/numerical-reference.md": "a70beff4c73683f897d9c0c1fb291539051e20b2c31adfd90a3f6677c411596f",
+    "knowledge/models/gqa-kv-heads.md": "9b51a72ccc9c86095f9c8a37e234893fe93068938390f69513c6ff90dd22da1d",
+    "knowledge/frameworks/cpu-quantized-kernels.md": "fcb634a208ad9c814cc9b3228aee7082ca77091c7a385b3d3d57618f14aba310",
+    "knowledge/algorithms/kv-compression.md": "b106cc93bcd9d5acfce5e7766eb25f5c1fbd4ba7844dd1fe6454fc08cc1d99f4",
+    "knowledge/hardware/cpu-linear-kernels.md": "b4d5391890478b2874f6ea548b154a580a0810356f9cf9cb05248a9d2f728dcc",
+    "knowledge/tools/statistical-experiments.md": "908b3588a6fa20bb1f2aed9f5db51c4b462953d79f8944cdbcfea7141c74644f",
+    "knowledge/hardware/memory-and-roofline.md": "2bebeecbaa625667b8ad8c2fbc13449f0da31ac24b0abd6289127be1150c7d0c",
+    "knowledge/system-semantics/known-tensions.md": "e7e30a27ff5b42d93b55bc6e36a008ce6f5c100410fbe357ee3870a4ad601f90",
+    "references/S-TORCH-NUMERIC/fulltext.txt": "bb6b2d8154a10f8f3b15e5ae4465cbc8d833067046964fc6b4d66dc036131b45",
+    "references/S-SMOOTHQUANT/fulltext.txt": "9c3f806adae8774873b8a24edb740c8b42879b94c5d76f99b68ad9d9d1ab0096",
+    "tools/check_k_alg_005_full.py": "978d5d4983127a5de1b14054293bdea880cb59fe4fdd10a947affa072a9bf156"
+  },
+  "criteria": {
+    "definition": {
+      "assessment": "sufficient",
+      "reason": "明确压缩收益与转换成本的动机，定义 REAL/ZERO 的编码和解码、舍入位置、裁剪误差边界、输入输出和静态/动态参数状态。线性层误差展开正确；GPTQ 的矩阵轴、阻尼目标和逐行分组身份一致。",
+      "evidence": [
+        {
+          "path": "knowledge/algorithms/quantization-contract.md",
+          "quote": "静态参数属于冻结制品；动态参数属于当前调用或 token 的状态，必须随该次产生的码共同交给消费者。"
+        },
+        {
+          "path": "knowledge/algorithms/quantization-contract.md",
+          "quote": "在线性层 y＝Wx 中，若权重和激活都量化，则 ŷ−y＝ΔW x＋WΔx＋ΔWΔx，其中 ΔW＝Ŵ−W、Δx＝x̂−x。"
+        }
+      ]
+    },
+    "legality": {
+      "assessment": "sufficient",
+      "reason": "区分必须保持的表示、索引、精度和消费者契约与组长、尺度策略、执行路径等选择。覆盖合法码域、正尺度、常数组、非有限值、尾部中性处理、参数存储精度和正定分解失败。公开硬件接口条件与实际 dispatch 的证据边界清楚。",
+      "evidence": [
+        {
+          "path": "knowledge/algorithms/quantization-contract.md",
+          "quote": "分组覆盖每个有效元素恰好一次。轴、组号、尾组有效长度和元数据排列共同定义映射。组大小不必整除维度，尾部不能从相邻组借用参数。"
+        },
+        {
+          "path": "knowledge/algorithms/quantization-contract.md",
+          "quote": "若 scale 写入 FP16，应先得到实际可存储的 scale，再用它编码和计算补偿；不能补偿时用未舍入尺度，导出时才换成另一个尺度。"
+        }
+      ]
+    },
+    "algorithm": {
+      "assessment": "sufficient",
+      "reason": "QPACK 与 GPTQ-LAYER-FROZEN 已给出可恢复的输入、初始化、推进、短末块、空维、失败条件和交付制品。逐行输入维分组的 P 在循环前冻结，跨块只读并原样导出，排除了旧码被新参数重解释。逆 Hessian 因子、外积更新和块外延迟更新与受约束二次参考一致。K-ALG-005-R2-001 及其 campaign 转述问题关闭。固定网格方案得到所供 GPTQ §3 前提支持，并明确区别于论文另述的动态组参数选择。",
+      "evidence": [
+        {
+          "path": "knowledge/algorithms/quantization-contract.md",
+          "quote": "参数生命周期为：从未经本轮补偿的完整 W₀ 建立所有组 → 转成最终存储精度并校验 → 冻结 P → 逐列只读 P → 原样随 Q 导出。"
+        },
+        {
+          "path": "knowledge/algorithms/quantization-contract.md",
+          "quote": "关键不变量是：第 10 步用于补偿的 h，等于最终 Q[r,j] 与最终 P[r,floor(j/G)] 的独立解码值。"
+        },
+        {
+          "path": "knowledge/algorithms/quantization-contract.md",
+          "quote": "本块以外的列尚欠本块 E 所代表的延迟更新，直到第 12 步才物化。"
+        }
+      ]
+    },
+    "cost": {
+      "assessment": "sufficient",
+      "reason": "计算、访存、通信、准备、同步和驻留均联系到具体路径。逐行尾组计数、8.5 MiB 制品、64 MiB Hessian 和准备复杂度可复算；区分容量、实际事务与关键路径，计入解包、完整展开副本、参数复制和动态统计同步，没有将位宽比例直接当作速度比例。",
+      "evidence": [
+        {
+          "path": "knowledge/algorithms/quantization-contract.md",
+          "quote": "逐输出行分组的准确组数为 d_out·ceil(d_in/G)，不能把整张矩阵展平后只做一次向上取整。"
+        },
+        {
+          "path": "knowledge/algorithms/quantization-contract.md",
+          "quote": "H 累积主项约 O(m d_in²)，GPTQ 补偿与分解主项为 O(d_out d_in²＋d_in³)。"
+        },
+        {
+          "path": "knowledge/algorithms/quantization-contract.md",
+          "quote": "共享同一带宽或计算资源的阶段不能同时领取各自的理想重叠收益，应沿真实依赖图估计。"
+        }
+      ]
+    },
+    "adaptation": {
+      "assessment": "sufficient",
+      "reason": "对 batch、上下文、G/B、校准分布、参数精度、设备和并行度变化，说明保留的不变量、需要重建或重测的对象及放弃条件。特别区分改变块宽与改变分组参数，未将固定网格的状态证明外推到动态拟合。",
+      "evidence": [
+        {
+          "path": "knowledge/algorithms/quantization-contract.md",
+          "quote": "| 参数存储精度改变 | 码必须由实际保存参数解释 | 使用新精度重新冻结参数并重跑补偿 | 不得只改 scale dtype 后沿用旧补偿结论 |"
+        },
+        {
+          "path": "knowledge/algorithms/quantization-contract.md",
+          "quote": "本节固定网格方案允许 G 与 B 不对齐；若改为组起点动态拟合，就必须另外处理尚未物化的块外补偿，不能沿用这里的状态证明。"
+        }
+      ]
+    },
+    "diagnosis": {
+      "assessment": "sufficient",
+      "reason": "表示、执行和模型质量三层参考边界清楚；参数覆盖、补偿方向、跨块更新、舍入、掩码、布局和性能异常均有竞争解释、干预和修正路径。检查脚本含独立约束参考及实际触发的负对照，所附执行记录支持其软件模型范围内的检测结论。",
+      "evidence": [
+        {
+          "path": "knowledge/algorithms/quantization-contract.md",
+          "quote": "先比较同一码与参数的独立解码，再比较解量化参考与目标 kernel，最后比较量化模型与原模型质量。"
+        },
+        {
+          "path": "knowledge/algorithms/quantization-contract.md",
+          "quote": "参数覆盖要让已有码在最终表下被重新解释；掩码检查要实际遍历有效位置，不能直接把期望总和赋给“masked”结果。"
+        }
+      ]
+    }
+  },
+  "findings": [],
+  "limitations": [
+    "验证限于确定性 Python binary64 软件算术、小矩阵和小向量 signed INT4 打包；未验证真实 FP16 元数据转换、任意设备预打包布局或目标 kernel 数值。",
+    "未实测设备同步、内存可见性、dispatch、事务、性能、峰值驻留、完整模型质量或知识对 Agent 构建效果的改善。",
+    "本章交付固定网格与原列顺序方案，不交付动态组参数重估、补偿重放或 act-order 实现。",
+    "所供 FlashInfer 原文摘录未覆盖附录 F，其 FP8 KV 路径归属未在本轮独立核验；正文已明确这一边界。CUDA WMMA 的具体契约本轮依据完整来源说明，不能登记为对应原文章节的直接复核。",
+    "未直接读取磁盘文件、重算绑定文件哈希或检查离线链接存在性；文件身份和执行记录依据本请求提供的绑定材料。"
+  ],
+  "checks": [
+    {
+      "script": "tools/check_k_alg_005_full.py",
+      "args": []
+    }
+  ],
+  "no_checks_reason": "",
+  "reading_scope": "完整阅读本请求所供以下全文，范围单位均为提取文本的零基半开字符区间：AGENTS.md [0,567)；docs/knowledge-method.md [0,2251)；docs/knowledge-review.md [0,3016)；knowledge/algorithms/quantization-contract.md [0,14395)；knowledge/sources/S-GPTQ.md [0,527)；S-TORCH-NUMERIC.md [0,532)；S-CUDA-CAPABILITY.md [0,1097)；S-AWQ.md [0,590)；S-SMOOTHQUANT.md [0,597)；S-FLASHINFERPAPER.md [0,2811)；knowledge/hardware/precision-and-kernel-support.md [0,5068)；knowledge/frameworks/numerical-reference.md [0,3374)；knowledge/models/gqa-kv-heads.md [0,3902)；knowledge/frameworks/cpu-quantized-kernels.md [0,3369)；knowledge/algorithms/kv-compression.md [0,5839)；knowledge/hardware/cpu-linear-kernels.md [0,4016)；knowledge/tools/statistical-experiments.md [0,4269)；knowledge/hardware/memory-and-roofline.md [0,4009)；knowledge/system-semantics/known-tensions.md [0,5454)；references/S-TORCH-NUMERIC/fulltext.txt [0,10998)；references/S-SMOOTHQUANT/fulltext.txt [0,44126)。仅阅读以下所供摘录，不声称阅读全文，也未将其列入 documents：knowledge/hardware/gpu-kernel-pipelines.md [0,4500)、[8000,12000)；references/S-GPTQ/fulltext.txt [0,40000)、[44000,47400)、[48000,56000)；references/S-AWQ/fulltext.txt [0,44000)、[52000,52097)、[56000,63304)；references/S-CUDA-CAPABILITY/fulltext.txt [48000,52000)、[76000,80000)、[88000,92000)、[156000,163400)、[284000,288000)、[548000,556000)、[648000,652000)、[692000,696000)、[940000,944000)、[972000,976000)、[1080000,1084000)；references/S-FLASHINFERPAPER/fulltext.txt [0,4000)、[8000,39400)、[40000,52000)、[80000,84000)。另完整阅读所供 Python 检查脚本、author_notes、actual_preflight 和两项待处理问题。未读取源码归档。当前工具没有文件读取或 shell 接口，未读取技能 SKILL.md、docs/knowledge-build-workflow.md 或工作流队列；审查 JSON 使用用户内嵌 schema，未执行登记。",
+  "test_assessment": "独立审阅了完整脚本及所附实际执行记录。被测 blocked 使用逆 Hessian 的 Cholesky 行更新；constrained_reference 每次从原始 W 和已固定前缀，通过带主元的 Gauss-Jordan 求解 H 的剩余主子系统，再枚举网格选择最近重建值。后者不复用被测 U 或 encode，能区分补偿方向、块更新和量化选择错误。independent_decode 通过组区间展开恢复最终 Q/P，并与补偿时记录的 used_values 比较。覆盖两行、非单位尺度、G=1/3/7 与 B=1/2/3/8、跨块组、短末组、非零零点、全零组、空维和部分非法输入。参数覆盖负对照实际生成旧码 [1,1]、补偿值 [1,4] 和最终解码 [4,4]，一致性检查确实拒绝它；H=I 时无需补偿，仍直接测试本轮修复的元数据生命周期。错误因子进入真实短块循环，产生 [0,1,0] 而独立参考为 [0,0,0]，目标值分别为 0.5345 与 0.3545。REAL 掩码使用实际遍历，错误填充、有符号解释和跨组单位亦有被检测的负对照。实际预检记录绑定脚本 SHA-256 978d5d4983127a5de1b14054293bdea880cb59fe4fdd10a947affa072a9bf156，在 remote_bwrap 的 Python 3.12 隔离执行中 returncode=0、stderr 为空且未超时；这是所附真实运行证据，本审阅者未重新执行 Python。作者当时未运行 Python 的说明与随后协调者预检记录属于不同执行主体，并不冲突。本审阅另通过内存 JavaScript 实际复算冻结尺度反例、覆盖检测、二维二次目标 0.18/0.1656/0.198，以及 131072 组、8.5 MiB 制品和 64 MiB Hessian；这些辅助复算不冒充 Python 或设备测试。脚本未覆盖 X 到 H 的构造、真实参数序列化和设备布局等，正文未将这些遗漏声称为已验证。结合独立推导和负对照，当前检查不是仅复述实现的自证。"
+}

@@ -1,0 +1,145 @@
+{
+  "entry_id": "K-HW-004",
+  "body_sha256": "8684edd9a875ddfcb5db18c1fbc18196c39b37933c88c1cd8061dc6b6a90cc95",
+  "reviewer": "sol-reviewer:K-HW-004:round-1",
+  "decision": "revise",
+  "documents": {
+    "AGENTS.md": "b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a",
+    "docs/knowledge-method.md": "69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb",
+    "docs/knowledge-review.md": "f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21",
+    "knowledge/hardware/precision-and-kernel-support.md": "8684edd9a875ddfcb5db18c1fbc18196c39b37933c88c1cd8061dc6b6a90cc95",
+    "knowledge/sources/S-CUDA-CAPABILITY.md": "b01baba1d2826b0682b2b58c6a0d23bf0f6e616a758e41c74b4688b55417f286",
+    "knowledge/sources/S-TORCH-NUMERIC.md": "cbe91153d9ff7bd2f596d1d6c4e15de1ad68571f3cbde23215891a8ec7f6fab4",
+    "knowledge/sources/S-GPTQ.md": "ab4b597c9d425e72b110a2be5ee56d98542a61f02630e542886d8c1afc15d1cb",
+    "knowledge/sources/S-SMOOTHQUANT.md": "d12a23d411ca8f41f7ed608ceef68c7f53e7fd540a336a626a7e87e8e1ea3a52",
+    "knowledge/sources/S-AWQ.md": "4fa268a183cc1613919704d3c22d474531694c316309b8a0c97e5a9aaee596ae",
+    "knowledge/sources/S-FLASHINFERPAPER.md": "0e4c6f197789b08bbd5d0f35b202ce316bbe788bdc6a3f67ca0c27e19e256437",
+    "knowledge/hardware/cuda-execution.md": "1ce1166d2d3017ec2c6ee9a02f07be615e38d4aca7aca26d270ebcf5559ed14c",
+    "knowledge/hardware/rocm-execution.md": "90b76df39be1414db25b7b98297de507d3e63fdc49599264d0214fcb60ad62e0",
+    "knowledge/frameworks/cpu-quantized-kernels.md": "fcb634a208ad9c814cc9b3228aee7082ca77091c7a385b3d3d57618f14aba310",
+    "knowledge/hardware/cpu-linear-kernels.md": "b4d5391890478b2874f6ea548b154a580a0810356f9cf9cb05248a9d2f728dcc",
+    "knowledge/tools/kernel-counter-replay.md": "9ecd4279422f94ccc42ffa70aca42d5fbec6e8f61a1182fb5983aebeaccd692d",
+    "knowledge/algorithms/kv-compression.md": "b106cc93bcd9d5acfce5e7766eb25f5c1fbd4ba7844dd1fe6454fc08cc1d99f4",
+    "knowledge/models/vision-inference.md": "a3b95c24c3838a54df90db945066257c0960e20a24929ed2812838fc5a3528a0",
+    "references/S-TORCH-NUMERIC/fulltext.txt": "bb6b2d8154a10f8f3b15e5ae4465cbc8d833067046964fc6b4d66dc036131b45",
+    "references/S-SMOOTHQUANT/fulltext.txt": "9c3f806adae8774873b8a24edb740c8b42879b94c5d76f99b68ad9d9d1ab0096",
+    "tools/check_k_hw_004_full.py": "fef38b6cf210febae5586002d9dbbae7a7d66e9bca0fe0d5a9a44561ede892a0"
+  },
+  "criteria": {
+    "definition": {
+      "assessment": "sufficient",
+      "reason": "明确区分表示、API、执行契约、实际 dispatch 与负载观测，给出量化重建、误差传播、组身份以及逻辑、数学和执行状态。定义足以解释为何仅降低存储位宽不能决定执行收益。",
+      "evidence": [
+        {
+          "path": "knowledge/hardware/precision-and-kernel-support.md",
+          "quote": "存储精度、乘法精度、累加精度和输出精度必须分别描述。"
+        },
+        {
+          "path": "knowledge/hardware/precision-and-kernel-support.md",
+          "quote": "数学状态是跨 K 段保留的 accumulator；执行状态是 A_s/B_s/C_s 暂存区和 warp 的集体完成条件。"
+        }
+      ]
+    },
+    "legality": {
+      "assessment": "partial",
+      "reason": "尺度、组覆盖、零填充、整数溢出和公开 WMMA 约束解释充分；但实际打包流程接受的位宽超过其 nibble 布局能够表示的范围，且 WMMA 交接流程没有落实正文自己要求的共享内存完成依赖。",
+      "evidence": [
+        {
+          "path": "knowledge/hardware/precision-and-kernel-support.md",
+          "quote": "合法实现必须同时保持数值含义、索引身份和完成依赖。"
+        },
+        {
+          "path": "knowledge/hardware/precision-and-kernel-support.md",
+          "quote": "1 校验 b≥2，q_min=-2^(b-1)，q_max=2^(b-1)-1，G>0"
+        }
+      ]
+    },
+    "algorithm": {
+      "assessment": "partial",
+      "reason": "冻结尺度、逐元素编码、解码、尾部处理和跨 K 累加已有完整推进结构，但通用位宽与固定 nibble 打包相互矛盾。WMMA 协作暂存到集体装载之间还缺少明确的生产者完成及消费者可见性步骤，因此尚不能作为完整合法执行路径交付。",
+      "evidence": [
+        {
+          "path": "knowledge/hardware/precision-and-kernel-support.md",
+          "quote": "每字节低 nibble 放偶然下标 2h 的码，高 nibble 放 2h+1 的码"
+        },
+        {
+          "path": "knowledge/hardware/precision-and-kernel-support.md",
+          "quote": "全体成员以一致参数集体加载 A fragment 与 B fragment\n     等待装载完成，再执行矩阵乘加"
+        }
+      ]
+    },
+    "cost": {
+      "assessment": "sufficient",
+      "reason": "在声明的 INT4 容量算例和逻辑流量假设下，字节、有效位宽、算术强度、tile 暂存及组部分和容量均复算一致；准备摊销、通信副本、同步和驻留也有条件化解释，没有把逻辑字节当成设备事务或实测延迟。",
+      "evidence": [
+        {
+          "path": "knowledge/hardware/precision-and-kernel-support.md",
+          "quote": "总权重约 8,912,896 字节，即 4.25 bit/weight；元数据占码字节约 6.25%。"
+        },
+        {
+          "path": "knowledge/hardware/precision-and-kernel-support.md",
+          "quote": "能重叠的阶段不能把各自理想时间直接相加，不能重叠的阶段也不能漏算。"
+        }
+      ]
+    },
+    "adaptation": {
+      "assessment": "sufficient",
+      "reason": "对 decode/prefill、组长、尺度存储精度、架构、尾部和混合精度变化，分别说明保留关系、新增成本与放弃条件。SmoothQuant 的缩放关系和 FlashInfer 的 FP8 KV 边界与所供原文相符，未外推质量或性能保证。",
+      "evidence": [
+        {
+          "path": "knowledge/hardware/precision-and-kernel-support.md",
+          "quote": "用实际存储值重新编码，重跑独立解码和质量检查"
+        },
+        {
+          "path": "knowledge/hardware/precision-and-kernel-support.md",
+          "quote": "没有合法高效内核时使用成熟高精度路径或更换布局"
+        }
+      ]
+    },
+    "diagnosis": {
+      "assessment": "sufficient",
+      "reason": "诊断链区分制品解码、kernel 执行和模型近似，给出竞争解释、干预和反证后的修正。已提供执行中的符号扩展及单一 epilogue 负对照确实进入被检机制；其通过范围不足以关闭本轮发现的位宽与同步缺口。",
+      "evidence": [
+        {
+          "path": "knowledge/hardware/precision-and-kernel-support.md",
+          "quote": "这三个边界分别定位表示/布局、执行数值和算法近似，不能用同一平均指标代替。"
+        },
+        {
+          "path": "knowledge/hardware/precision-and-kernel-support.md",
+          "quote": "尺度相同则错误实现也可能通过。"
+        }
+      ]
+    }
+  },
+  "findings": [
+    {
+      "id": "K-HW-004-R1-F01",
+      "criterion": "algorithm",
+      "evidence": "算法声明“1 校验 b≥2，q_min=-2^(b-1)，q_max=2^(b-1)-1，G>0”，随后规定“每字节低 nibble 放偶然下标 2h 的码，高 nibble 放 2h+1 的码”和“负码按其 b 位二进制补码写入”。随附 pack_signed(codes, bits=4) 也接受 bits 参数，却固定使用 high << 4。",
+      "impact": "固定两个 nibble 的字节布局不能实现所声明的任意 b≥2 契约。例如 b=8 时，[16,0] 与 [0,1] 都是合法码对，按脚本的移位合并却都得到 0x10；不同输入发生编码碰撞，无法独立恢复。现有执行只测试默认 b=4，因而没有发现此错误。",
+      "blocking": true,
+      "required_revision": "将此具体算法及脚本明确限定为 b=4，并拒绝其他位宽；或完整定义通用 b-bit 位流的偏移、跨字节编码、解码和尾部规则。增加能拒绝上述碰撞或拒绝非法位宽的检查，不能仅保留 b≥2 的校验。"
+    },
+    {
+      "id": "K-HW-004-R1-F02",
+      "criterion": "algorithm",
+      "evidence": "WMMA16-STAGE 在协作写入 A_s/B_s 和零填之后直接执行“全体成员以一致参数集体加载 A fragment 与 B fragment”，等待步骤却位于装载之后：“等待装载完成，再执行矩阵乘加”。正文同时明确“矩阵指令的同步只覆盖该 API 规定的 fragment 操作，不自动替代前后任意共享内存依赖。”",
+      "impact": "流程没有在消费者读取共享 tile 前建立全部生产者写入完成及 warp 范围内的内存可见性。集体调用的一致参与不能替代共享内存的顺序保证，装载后的等待也无法补救装载时已发生的错误读取。因此从共享暂存到矩阵操作数的关键状态交接尚不完整。",
+      "blocking": true,
+      "required_revision": "在每轮 A_s/B_s 的全部有效写入和零填完成后、fragment 装载之前，显式加入具有正确作用域和内存顺序的同步步骤；对单 warp 普通共享内存交接可说明使用全体参与的 __syncwarp。明确 C_s 写回到按行列读取之间也建立相应完成与可见性条件，并保留旧输入全部读完后才能覆盖的约束。允许用抽象同步伪代码交付，无须把未执行的 GPU 验证写成通过。"
+    }
+  ],
+  "limitations": [
+    "作者明确未验证目标 CPU/GPU kernel、实际 dispatch、生成指令、设备事务、性能或模型质量；这些边界合理，不单独构成修订理由。",
+    "CUDA 原文所供节选没有覆盖 §7.24 的 WMMA 契约，本轮相关事实核对依赖完整提供的 S-CUDA-CAPABILITY 来源说明，不能声称已直接阅读该节原文。",
+    "未取得本地文件读取或 Python 执行工具；文件身份按用户提供的绑定记录登记，未独立重新计算本地文件哈希。相对链接可作路径逻辑检查，目标文件存在性及 reader 页面可打开性未独立验证。"
+  ],
+  "checks": [
+    {
+      "script": "tools/check_k_hw_004_full.py",
+      "args": []
+    }
+  ],
+  "reading_scope": "完整阅读本次提供的全部材料。以下为完整文件，范围采用材料标注的零基、半开提取字符区间：AGENTS.md [0,567)；docs/knowledge-method.md [0,2251)；docs/knowledge-review.md [0,3016)；knowledge/hardware/precision-and-kernel-support.md [0,12999)；knowledge/sources/S-CUDA-CAPABILITY.md [0,1097)；knowledge/sources/S-TORCH-NUMERIC.md [0,532)；knowledge/sources/S-GPTQ.md [0,527)；knowledge/sources/S-SMOOTHQUANT.md [0,597)；knowledge/sources/S-AWQ.md [0,590)；knowledge/sources/S-FLASHINFERPAPER.md [0,2811)；knowledge/hardware/cuda-execution.md [0,7299)；knowledge/hardware/rocm-execution.md [0,2454)；knowledge/frameworks/cpu-quantized-kernels.md [0,3369)；knowledge/hardware/cpu-linear-kernels.md [0,4016)；knowledge/tools/kernel-counter-replay.md [0,3862)；knowledge/algorithms/kv-compression.md [0,5839)；knowledge/models/vision-inference.md [0,4331)；references/S-TORCH-NUMERIC/fulltext.txt [0,10998)；references/S-SMOOTHQUANT/fulltext.txt [0,44126)。tools/check_k_hw_004_full.py 阅读了 candidate.test_script 提供的完整脚本，从 shebang 至 main 调用。以下仅阅读所供节选，不列入 documents：knowledge/algorithms/quantization-contract.md [0,4000)、[8000,12500)；knowledge/hardware/gpu-kernel-pipelines.md [0,4500)、[8000,12000)；knowledge/frameworks/triton-kernels.md [0,4500)、[8000,12000)；references/S-CUDA-CAPABILITY/fulltext.txt [0,4000)、[500000,504000)、[516000,524000)、[1032000,1036000)、[1040000,1044000)、[1056000,1068000)、[1072000,1084000)、[1100000,1101486)；references/S-GPTQ/fulltext.txt [0,29485)、[32000,52000)；references/S-AWQ/fulltext.txt [0,9486)、[12000,44000)、[52000,60000)；references/S-FLASHINFERPAPER/fulltext.txt [0,34953)、[48000,52000)、[72000,76000)、[80000,84000)、[88000,90533)。另完整核阅 author_notes、actual_preflight 的输出、返回码、脚本哈希和执行配置；未读取源码归档，未将节选声称为完整原文。",
+  "test_assessment": "checks 记录的是已提供并核阅的实际预检执行，不表示本审阅者重新执行了 Python。actual_preflight 显示绑定脚本在 remote_bwrap 中以 Python 3.12、隔离参数和只读输入执行，returncode=0、stderr 为空；作者自述未执行与另行提供的预检执行属于不同事实。算法检查方面，INT4 往返以原始整数码及固定字节为参考，含 -8、-1/0xF 和奇数尾部，无符号解包故障确实被发现；分组点积使用 Fraction 的逐组部分和与逐元素解量化两种路径，并由手算值 5 拒绝错误 epilogue 的 8，具有实质机制覆盖。容量及 INT8 界属于算术复算；127² 错误界在 K=131072 处被区别出来。WMMA 部分只检查地址对齐与 leading dimension 的谓词，lda=15 是非法输入测试，没有执行错误 WMMA 实现或 fragment 交接，不能据其 PASS 推出共享内存同步正确。脚本也未执行从 W 建立并冻结尺度的完整编码流程，未覆盖非默认位宽。审阅者另用 JavaScript 独立复算容量、算术强度、tile 容量及整数界，结果与正文算例一致；按当前移位规则构造 b=8 的两个合法码对，实际得到相同打包值 16，确认 F01。设备行为、模型质量和性能仍按作者声明保留未验证边界。"
+}

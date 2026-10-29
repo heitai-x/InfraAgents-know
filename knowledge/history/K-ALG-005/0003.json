@@ -1,0 +1,68 @@
+{
+  "id": "K-ALG-005",
+  "path": "algorithms/quantization-contract.md",
+  "category": "algorithms",
+  "title": "量化：误差传播、分组尺度与执行格式",
+  "summary": "权重/激活/KV 的校准、缩放与执行格式共同决定量化收益；分别验证制品解释、真实 kernel 和任务质量。",
+  "revision": 3,
+  "status": "seed",
+  "tags": [
+    "quantization",
+    "GPTQ",
+    "W4A16",
+    "量化",
+    "scale",
+    "AWQ",
+    "SmoothQuant",
+    "校准集",
+    "FP8",
+    "重打包",
+    "dispatch"
+  ],
+  "scope": {
+    "model_families": [],
+    "platforms": [],
+    "runtimes": [],
+    "workloads": []
+  },
+  "source_ids": [
+    "S-GPTQ",
+    "S-TORCH-NUMERIC",
+    "S-CUDA-CAPABILITY",
+    "S-AWQ",
+    "S-SMOOTHQUANT",
+    "S-FLASHINFERPAPER"
+  ],
+  "related": [
+    "K-HW-004",
+    "K-FW-002",
+    "K-MODEL-002",
+    "K-FW-012",
+    "K-ALG-021",
+    "K-HW-010",
+    "K-HW-011",
+    "K-TOOLS-007",
+    "K-HW-001",
+    "K-SYS-025"
+  ],
+  "evidence": [],
+  "updated_at": "2026-10-27",
+  "sha256": "1ff1082b95610754539212473ba3a562ed9725713e5b882d264a56c79d713403",
+  "questions": [
+    "权重、激活和 KV 三种量化对象各自减少哪类字节，哪类成本可能仍然占主导？",
+    "分组 scale 与 zero point 占多少额外容量，小分组在拟合与元数据开销之间如何权衡？",
+    "校准集的分布覆盖、静态与动态尺度各自如何影响实际输出误差？",
+    "GPTQ、AWQ 与 SmoothQuant 各自改变的是量化目标、网格还是激活分布？",
+    "量化回归如何依次区分打包解释错误、kernel 数值误差与算法近似误差？"
+  ],
+  "symptoms": [
+    "权重位宽减半但端到端 decode 时间几乎不变",
+    "短文本输出正常而长上下文或稀有 token 上质量明显下降",
+    "量化模型加载时峰值显存远高于制品大小"
+  ],
+  "assumes": [
+    "训练后量化，不重新训练模型",
+    "目标硬件存在对应的低位执行路径",
+    "有可用于校准和独立验证的目标分布样本"
+  ]
+}

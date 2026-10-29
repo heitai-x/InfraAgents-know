@@ -1,0 +1,91 @@
+{
+  "entry_id": "K-WORK-011",
+  "diagnosed_by": "/root/closeout_binding",
+  "scope": "Read-only diagnosis of retained candidate, actual reviewer prompt/output, material scope ledgers, invocation records and current validation code. No model invocation, candidate execution, semantic re-acceptance or production mutation.",
+  "classification": "reviewer_literal_hash_transcription_error",
+  "validator_bug_found": false,
+  "decision": "preserve_candidate_and_fresh_review",
+  "candidate": {
+    "path": "docs/evidence/knowledge-workflow-20261028-batch16/full_build/K-WORK-011/round-3/candidate.json",
+    "sha256": "8f92fb600aa46d7f5ccf0174dfe409ffa3f64fa1242f73efbe3c57421e968837",
+    "original_author": "sol-author:K-WORK-011:round-3",
+    "original_author_workflow": "docs/evidence/knowledge-workflow-20261028-batch16/workflow.json",
+    "chapter_path": "knowledge/workloads/cluster-resource-placement.md",
+    "chapter_sha256": "b82151bc29b1b1cdefb3152475b007d91a30abd2cb2d3b44e5e69966e42b6725",
+    "script_path": "tools/check_k_work_011_full.py",
+    "script_sha256": "cf81f6946c25ddc57ec4acbae8ba8251d07290f7621149dba7c85ec4b3af8fd3",
+    "author_invocation": {
+      "path": "docs/evidence/knowledge-workflow-20261028-batch16/full_build/K-WORK-011/round-3/author-attempt-001/coordinator-record.json",
+      "sha256": "2ac694c37cf55e28fcf7bbf77e440a65e0c700bb86b41e1b602ce95df4c35e8d",
+      "engine": "sol",
+      "requested_model": "gpt-6.1-sol",
+      "status": "completed",
+      "exit_code": 0,
+      "identity_limit": "The record does not independently expose the provider's actual backend model identity. The original author identity is the retained workflow identity."
+    }
+  },
+  "document_map_difference": {
+    "expected_count": 12,
+    "actual_count": 12,
+    "missing_paths": [],
+    "extra_paths": [],
+    "mismatches": [
+      {
+        "path": "AGENTS.md",
+        "expected": "b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a",
+        "actual": "b395db677de0398c8aeefd1c021bcbcfeb89deec3f1a10865fb829f3ba433f861a",
+        "expected_length": 64,
+        "actual_length": 66,
+        "mechanism": "The reviewer duplicated the two hexadecimal characters bc after the substring 021bc. All other path-to-hash pairs match the actual prompt literally."
+      }
+    ],
+    "expected_map_source": "Actual prompt required_literal_fields.documents; equal to schema.documents and to reviewer-materials.documents plus the bound check script.",
+    "raw_answer_equals_retained_review": true,
+    "correct_hash_occurrences_in_prompt": 5,
+    "incorrect_hash_occurrences_in_prompt": 0
+  },
+  "scope_check": {
+    "reviewer_full_document_count_without_script": 11,
+    "author_full_document_count": 12,
+    "borg_author_scope": {"reading_scope": "full", "excerpt_ranges": [[0, 89088]]},
+    "borg_reviewer_scope": {"reading_scope": "excerpt", "excerpt_ranges": [[0, 11924], [12000, 68000], [72000, 88000]]},
+    "conclusion": "Borg's omission from reviewer documents is correct because the reviewer received excerpts. This is not the earlier class of author/reviewer material-scope confusion."
+  },
+  "validation_evidence": {
+    "code_path": "knowledge-workflow/src/knowledge_workflow/campaign.py",
+    "code_lines": [662, 668, 686, 689, 701, 713, 716],
+    "behavior": "review_candidate supplies exact literal bindings before invocation. validate_semantic_record compares review.documents with that map and rejects the mismatch. The observed single invalid SHA is sufficient to reproduce the recorded failure.",
+    "failure_reason": "Reviewer literal documents map does not match the actual supplied full documents",
+    "retained_review_decision": "accept",
+    "retained_review_findings": [],
+    "meaning": "The semantic acceptance is a retained model judgment, but its invalid identity binding prevents formal acceptance. This audit does not repair the old review or grant acceptance.",
+    "actual_preflight_path": "docs/evidence/knowledge-workflow-20261028-batch16/full_build/K-WORK-011/round-3/preflight-check-attempt-001/result.json",
+    "actual_preflight_returncode": 0,
+    "preflight_limit": "Historical actual execution only; the normal recheck must bind its own current candidate and material inputs."
+  },
+  "recommended_action": {
+    "operation": "schedule_recheck",
+    "author": "sol-author:K-WORK-011:round-3",
+    "candidate_path": "docs/evidence/knowledge-workflow-20261028-batch16/full_build/K-WORK-011/round-3/candidate.json",
+    "reason": "旧独审的12项材料映射仅有AGENTS.md散列多写bc，导致64位值成为66位；实际提示与材料账均正确。保留原候选及作者，重新执行实际检查和全新独立审查，不重写整章、不修改旧review原件，也不扩大正文修订轮数。",
+    "manager_notes": [
+      "保留round-3候选的完整正文和检查脚本，不因字面散列输出错误让作者重写技术内容。",
+      "新独审以新一轮实际提供的required_literal_fields.documents为准，逐字复制文档路径和64位SHA；不能复用旧documents映射，也不能把作者范围当成审阅者范围。",
+      "旧审阅认为K-WORK-011-R2-GANG-START-01已修复；新独审仍应实际检查首次提交后临界区外准备派发、历史重试不重复派发及对应负对照，不能把旧accept当作新判定。",
+      "不修改旧review的错误SHA、不降低映射相等要求、不把本诊断作为语义验收。"
+    ],
+    "additional_author_rounds": 0,
+    "validator_patch_required": false,
+    "prompt_change_required": false,
+    "optional_reviewer_reminder": "本次是保留候选的新独审。身份字段按本次required_literal_fields逐字复制，SHA为64个十六进制字符；上次AGENTS.md散列抄写错误不构成技术内容缺陷，也不能据此自动接受。现有全局提示已经要求逐字复制，无需为此新增机制。"
+  },
+  "artifacts": [
+    {"path": "docs/evidence/knowledge-workflow-20261028-batch16/full_build/K-WORK-011/round-3/author-materials.json", "sha256": "aeb6569ae485c0178c5b99f128866b0738e394f0b05a2f1b67e180113bdeaaef"},
+    {"path": "docs/evidence/knowledge-workflow-20261028-batch16/full_build/K-WORK-011/round-3/reviewer-materials.json", "sha256": "06434b8dd067cc163297aca118ce5bf2f568191250f9bf44e8c008b4676e5acf"},
+    {"path": "docs/evidence/knowledge-workflow-20261028-batch16/full_build/K-WORK-011/round-3/review-submitted.json", "sha256": "9a4ee499cc5ade922066dc16fc15829f1204ad57d0b8d575d8b798cbd8aab8fc"},
+    {"path": "docs/evidence/knowledge-workflow-20261028-batch16/full_build/K-WORK-011/round-3/failure.json", "sha256": "07fe680308e6f6432261a35506d9658ed8895c1a22007c60f67cc022bdbc0080"},
+    {"path": "docs/evidence/knowledge-workflow-20261028-batch16/full_build/K-WORK-011/round-3/reviewer-attempt-001/prompt.txt", "sha256": "4030e90b4f4e5bc2c4bfecb364a939dd6b3e953fa323b2d8ca328296e865001d", "normalized_prompt_string_sha256": "bd0cf50ac0259b150e3daa256b04feb4e9272679cf711b1997a755f917e104fa", "normalization_note": "Windows retained prompt file has CRLF bytes. Decoding with universal newlines reproduces the input-string hash recorded by the invocation; both bindings were checked."},
+    {"path": "docs/evidence/knowledge-workflow-20261028-batch16/full_build/K-WORK-011/round-3/reviewer-attempt-001/answer.txt", "sha256": "f31019dc8c5f51566380f857ab6f87f8ccf77015540a3bc490fa3355ae5be0dd"},
+    {"path": "docs/evidence/knowledge-workflow-20261028-batch16/full_build/K-WORK-011/round-3/reviewer-attempt-001/record.json", "sha256": "83c046c3ba31ec1c15e964cc833ffefbfdc900b205b7318b530566249a121f1f"}
+  ]
+}

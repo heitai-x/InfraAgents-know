@@ -1,0 +1,63 @@
+{
+  "id": "K-HW-012",
+  "path": "hardware/storage-io.md",
+  "category": "hardware",
+  "title": "存储 I/O：请求粒度、队列和加载流水",
+  "summary": "实际存储供给由布局、pagecache/直接 I/O、请求粒度、队列和 staging 共同决定；提交、可读、持久化和可回收分开建模。",
+  "revision": 2,
+  "status": "seed",
+  "tags": [
+    "SSD",
+    "NVMe",
+    "storage I/O",
+    "直接 I/O",
+    "pagecache",
+    "mmap",
+    "IOPS",
+    "队列深度",
+    "DMA"
+  ],
+  "scope": {
+    "model_families": [],
+    "platforms": [],
+    "runtimes": [],
+    "workloads": []
+  },
+  "source_ids": [
+    "S-LINUX-IO",
+    "S-SERVERLESSLLM",
+    "S-CUDA-ASYNC",
+    "S-GPUDIRECT"
+  ],
+  "related": [
+    "K-FW-011",
+    "K-ALG-017",
+    "K-ALG-018",
+    "K-HW-003",
+    "K-SYS-015",
+    "K-SYS-001",
+    "K-TOOLS-001",
+    "K-TOOLS-002",
+    "K-TOOLS-003",
+    "K-SYS-018",
+    "K-SYS-017"
+  ],
+  "evidence": [],
+  "updated_at": "2026-10-27",
+  "sha256": "cec95f0a908c9abf7e9f7b83a5c930d044709d06c479d3c82967241edb49ff31",
+  "questions": [
+    "文件范围与张量布局为什么不是一回事，转换发生在哪一层？",
+    "页缓存、mmap 与直接 I/O 各自在什么条件下更合适，代价是什么？",
+    "请求大小、IOPS 与队列深度如何共同决定实际供给？",
+    "SSD 到 DRAM 到 GPU 的一块数据经过哪些阶段，哪些边界决定缓冲可复用？",
+    "绕过主机中转的直通路径改变了哪些成本，不改变哪些？"
+  ],
+  "symptoms": [
+    "SSD 标称很快但模型供给不足",
+    "冷启动时主存带宽先于 SSD 饱和"
+  ],
+  "assumes": [
+    "本地 NVMe 类存储",
+    "Linux I/O 栈的页缓存语义"
+  ]
+}

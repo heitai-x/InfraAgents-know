@@ -1,0 +1,76 @@
+{
+  "id": "K-FW-005",
+  "path": "frameworks/cuda-graph-buffers.md",
+  "category": "frameworks",
+  "title": "CUDA Graph：捕获边界、计划状态与变长服务",
+  "summary": "CUDA Graph 的固定地址、动态计划和在途内容所有权需共同验证；卸载、adapter 切换和图池竞争改变合法性与收益。",
+  "revision": 3,
+  "status": "seed",
+  "tags": [
+    "CUDA Graph",
+    "稳定地址",
+    "capture",
+    "replay",
+    "workspace",
+    "graph pool",
+    "LoRA",
+    "offload",
+    "fixed_split_size",
+    "并发重放"
+  ],
+  "scope": {
+    "model_families": [],
+    "platforms": [
+      "cuda"
+    ],
+    "runtimes": [
+      "pytorch"
+    ],
+    "workloads": []
+  },
+  "source_ids": [
+    "S-TORCH-CUDA",
+    "S-CUDA-ASYNC",
+    "S-FI",
+    "S-TRTLLM",
+    "S-FLASHINFERPAPER"
+  ],
+  "related": [
+    "K-ALG-008",
+    "K-ALG-010",
+    "K-FW-006",
+    "K-SYS-004",
+    "K-ALG-019",
+    "K-ALG-014",
+    "K-ALG-017",
+    "K-SYS-012",
+    "K-SYS-011",
+    "K-ENGINE-003",
+    "K-ENGINE-005",
+    "K-FW-003",
+    "K-FW-004",
+    "K-HW-005",
+    "K-SYS-010",
+    "K-TOOLS-008",
+    "K-SYS-024",
+    "K-SYS-025"
+  ],
+  "evidence": [],
+  "updated_at": "2026-10-27",
+  "sha256": "440b52fb12e41f753d0800016ddd7f9d40b5634e2c33431d1208986d1ccaedef",
+  "questions": [
+    "CUDA Graph 实际固定了哪些东西，地址、形状、计划与内容各自属于哪一层约束？",
+    "完整捕获与分段捕获各自把哪些动态工作留在图外，代价如何比较？",
+    "变长批怎样进入静态容量，桶、填充与 mask 各自承担什么？",
+    "attention 的 plan/run 边界为什么不能全部进入图，计划失效的条件是什么？",
+    "图池、工作区与多桶驻留如何挤占 KV 容量，收益与容量账怎样联合计算？"
+  ],
+  "symptoms": [
+    "重放后输出混入上一批请求的内容",
+    "增加图桶后可容纳并发下降"
+  ],
+  "assumes": [
+    "设备支持图捕获与重放",
+    "存在稳定地址的输入输出缓冲"
+  ]
+}

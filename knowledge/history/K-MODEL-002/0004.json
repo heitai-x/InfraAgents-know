@@ -1,0 +1,63 @@
+{
+  "id": "K-MODEL-002",
+  "path": "models/gqa-kv-heads.md",
+  "category": "models",
+  "title": "MHA、GQA 与 MQA：头映射和带宽复用",
+  "summary": "GQA 让多个 query heads 读取同一组 K/V；逻辑共享可以减少状态，但是否减少实际访存取决于 kernel。",
+  "revision": 4,
+  "status": "seed",
+  "tags": [
+    "GQA",
+    "MQA",
+    "KV heads",
+    "缓存头数",
+    "uneven heads",
+    "quantized pages",
+    "replicated KV"
+  ],
+  "scope": {
+    "model_families": [
+      "transformer"
+    ],
+    "platforms": [],
+    "runtimes": [],
+    "workloads": []
+  },
+  "source_ids": [
+    "S-GQA",
+    "S-HF-CACHE",
+    "S-FI",
+    "S-KIVI",
+    "S-NXDI"
+  ],
+  "related": [
+    "K-ALG-002",
+    "K-ALG-004",
+    "K-MODEL-006",
+    "K-HW-001",
+    "K-ALG-021",
+    "K-ALG-015",
+    "K-SYS-009",
+    "K-ALG-005",
+    "K-FW-009",
+    "K-MODEL-001"
+  ],
+  "evidence": [],
+  "updated_at": "2026-10-27",
+  "sha256": "9b51a72ccc9c86095f9c8a37e234893fe93068938390f69513c6ff90dd22da1d",
+  "questions": [
+    "query head、KV head 与分组比之间的关系怎样决定缓存大小与读取量？",
+    "逻辑共享 K/V 能减少容量，为什么实际访存是否减少取决于 kernel？",
+    "张量并行下 KV head 怎样归属到各 rank，非整除时如何写完整映射？",
+    "从错误的输出形态怎样回到 head 映射错误，哪些检查能区分它与数值误差？",
+    "分页与量化为什么不能改变 head 身份，页内布局与 head 轴如何共同约束？"
+  ],
+  "symptoms": [
+    "GQA 模型显存占用与 MHA 相同",
+    "TP 切分后某些 head 输出错位"
+  ],
+  "assumes": [
+    "使用 GQA 或 MQA 的 transformer",
+    "KV 以 head 为轴存储"
+  ]
+}

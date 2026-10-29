@@ -1,0 +1,151 @@
+{
+  "entry_id": "K-FW-004",
+  "body_sha256": "07af865ce36c3628a330dc8a0c76e85c068cfe195c54157b7c203c1680b95f7f",
+  "reviewer": "sol-reviewer:K-FW-004:round-2",
+  "decision": "revise",
+  "documents": {
+    "AGENTS.md": "b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a",
+    "docs/knowledge-method.md": "69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb",
+    "docs/knowledge-review.md": "f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21",
+    "knowledge/frameworks/compile-dynamic-shapes.md": "07af865ce36c3628a330dc8a0c76e85c068cfe195c54157b7c203c1680b95f7f",
+    "knowledge/sources/S-TORCH-DYNAMIC.md": "e25e5064d2a272b3121fc11bf72b817673bcac318e4f91cc4dc60f3896005c22",
+    "knowledge/sources/S-NXDI.md": "dcaaabf089394f00959b8f425199cf6eb4b281655eb4ae9086f6411d047d34e9",
+    "knowledge/sources/S-TRITON.md": "424109f8cee2e62edafdcd161f46190ecece6dcde0107ce42e67c1291801d14f",
+    "knowledge/sources/S-TVM.md": "d75602d9d7690dd48fe0bf97075f6f043094338453854b2dea122e528dd0b4f8",
+    "knowledge/sources/S-ANSOR.md": "a550bc8f70359ee1b5b8d7085a12e6dc0cd9066d97726ab0abab0acedd9c2509",
+    "knowledge/workloads/input-distribution.md": "b1b68f0d2a6d640c4b64c2bc98560b9e9a79a6a60b445899949b5db15b96aa90",
+    "knowledge/frameworks/checkpoint-loading.md": "5205ab97f77cdb821e5a0c3f6685a99cfc12ccc8474f96c6de82375372cb59bf",
+    "knowledge/system-semantics/model-lifecycle.md": "bf15950cafcbb584f031cc3a1ea9eaf3331d2816819c6e468ae333d70a3c7c0e",
+    "knowledge/models/embedding-reranking.md": "44f22a27c9b4a11579bed108952f18722d90cd0d4c326db189c865d7e51aef38",
+    "knowledge/models/vision-inference.md": "a3b95c24c3838a54df90db945066257c0960e20a24929ed2812838fc5a3528a0",
+    "knowledge/models/graph-inference.md": "343135d67c7fd61ed1e7fb82185df7a8f30ebfc86cb5427dfd9e6313046fe6fe",
+    "knowledge/frameworks/inference-eval.md": "9381e25cf021f5338aef4311ba5c95ca2255fead917335c292b79347acf6b4b9",
+    "knowledge/frameworks/neuron-serving.md": "0a7be25e54019cb53d80e180594d1eb633cfdd9e9a058cb340a2c07dee7f3f0e",
+    "knowledge/tools/framework-profiler-scope.md": "4f46307c9d0e0daeaf3d8ebecf0f3e385ff7696d342af2a002c41eced70d93d1",
+    "references/S-TORCH-DYNAMIC/fulltext.txt": "716fbc028c09a8da746d5749c31019e150d51468acf50f752c6620b2fd26e0ff",
+    "references/S-NXDI/fulltext.txt": "0d0c89049b3f333f623e8e8ff80686223af0ddd742eba48cdf9c065745327ab7",
+    "references/S-TVM/fulltext.txt": "395e021c4880ca64c78d6d850f96c654f4867bbcae9f7abcbe752dcfcb0a96a7",
+    "references/S-ANSOR/fulltext.txt": "2027a31bd061275035e8817f3d3335c9d303aa83fff5d56787d346190b01463e",
+    "tools/check_k_fw_004_full.py": "ddc2e7ffe2bad20b8c17b7bc0457c8052886d5406042a72a8dbd42807a6f6169"
+  },
+  "criteria": {
+    "definition": {
+      "assessment": "sufficient",
+      "reason": "说明了特化的动机，定义带状态的模型函数、变体身份和合法域，并区分逻辑尺寸、物理容量及实际特化依赖。分桶长度的单位、范围和迁移含义明确。",
+      "evidence": [
+        {
+          "path": "knowledge/frameworks/compile-dynamic-shapes.md",
+          "quote": "输出既包括 `y`，也包括状态变化 `z→z'`；输出张量接近而 KV 写错位置，仍然是不正确的执行。"
+        },
+        {
+          "path": "knowledge/frameworks/compile-dynamic-shapes.md",
+          "quote": "逻辑 shape 描述任务，物理 shape 描述分配和执行容量，两者不能混为一谈。"
+        }
+      ]
+    },
+    "legality": {
+      "assessment": "sufficient",
+      "reason": "正确区分 guard 必要条件与程序正确性，处理形状分支排除条件、padding 对原函数的影响、共享写区隔离及有限验证的覆盖边界。NxD 的最小后缀桶策略与其他数学上合法的选择没有混同；关键来源表述与所供固定原文相符。",
+      "evidence": [
+        {
+          "path": "knowledge/frameworks/compile-dynamic-shapes.md",
+          "quote": "guard 通过只是允许执行的必要条件，不能弥补错误的 lowering、mask 或状态绑定。"
+        },
+        {
+          "path": "knowledge/frameworks/compile-dynamic-shapes.md",
+          "quote": "保留全部前缀、只补后缀 padding 也可能是另一种合法策略；它不符合上述优先迁移的选择规则，却不天然违反 attention 数学。"
+        }
+      ]
+    },
+    "algorithm": {
+      "assessment": "partial",
+      "reason": "PrefixBucket 的初始化、联合选桶、迁移区间、溢出和空批分支充分；构建发布、使用权和图持续引用也有明确状态轨迹。但前缀迁移进入多层 decoder 后，各层后缀输入、新旧 KV 及最终 logits 的产生关系没有展开，也没有明确委托给链接章节。整次执行失败不得发布部分状态目前仍是要求，尚未说明它如何约束逐层写入和最终提交。",
+      "evidence": [
+        {
+          "path": "knowledge/frameworks/compile-dynamic-shapes.md",
+          "quote": "记录复用区间 [0,h'_i)、重算区间 [h'_i,n_i)"
+        },
+        {
+          "path": "knowledge/frameworks/compile-dynamic-shapes.md",
+          "quote": "7. 提交计算；只对有效行和合法私有写区提交状态。\n   输出按本次请求及代次解释，失败不得发布部分成功状态。"
+        }
+      ]
+    },
+    "cost": {
+      "assessment": "sufficient",
+      "reason": "六类成本均有条件化说明。线性工作和 attention 配对将迁移与容量浪费分开，算例数值一致；KV 复制按读写字节计费，准备摊销和命中率回本单位正确。容量采用同时存活物理并集，时间区分累计工作与关键路径，没有把设定结果写成实测。",
+      "evidence": [
+        {
+          "path": "knowledge/frameworks/compile-dynamic-shapes.md",
+          "quote": "因此可以拆成 `A_bucket−A_original=(A_valid−A_original)+(A_bucket−A_valid)`，分别解释重算与物理容量工作。"
+        },
+        {
+          "path": "knowledge/frameworks/compile-dynamic-shapes.md",
+          "quote": "每请求平均准备项是 `C_prep/N_req`。"
+        },
+        {
+          "path": "knowledge/frameworks/compile-dynamic-shapes.md",
+          "quote": "共享对象只计一次；allocator reserved 与池中活跃对象不能重复相加。"
+        }
+      ]
+    },
+    "adaptation": {
+      "assessment": "sufficient",
+      "reason": "围绕访问分布、前缀命中、布局、权重绑定、图地址、目标及并行配置和容量压力，说明保留的不变量、需要调整的对象及选择证据；也给出放弃专门编译和不能跨成本跳变使用二分的条件。",
+      "evidence": [
+        {
+          "path": "knowledge/frameworks/compile-dynamic-shapes.md",
+          "quote": "| 前缀命中分布改变 | 缓存身份、位置与可见性 | 重选二维粒度和迁移策略 | 实际跳过长度、重算、转换、桶组合数 |"
+        },
+        {
+          "path": "knowledge/frameworks/compile-dynamic-shapes.md",
+          "quote": "若高度动态的输出数量没有可接受上界、外部状态无法进入受支持表示，或成熟库已使可节省部分很小，应允许放弃整段专门编译。"
+        }
+      ]
+    },
+    "diagnosis": {
+      "assessment": "sufficient",
+      "reason": "提出可区分的竞争解释、受控干预和反证后的修正，独立参考不读取被测 mask。脚本的实际错误路径覆盖 padding 分母、旧程序错误复用、分支、摊销和图引用释放，足以支持其声明的有限模型结论；设备和服务归因仍明确留待相应测量。",
+      "evidence": [
+        {
+          "path": "knowledge/frameworks/compile-dynamic-shapes.md",
+          "quote": "attention 参考直接按绝对 query 位置遍历 `0…position`，不读取被测 mask。"
+        },
+        {
+          "path": "knowledge/frameworks/compile-dynamic-shapes.md",
+          "quote": "构建已减少却仍慢，检查锁、转换或图准备"
+        },
+        {
+          "path": "knowledge/frameworks/compile-dynamic-shapes.md",
+          "quote": "这些有限模型不证明真实设备同步或内存可见性。"
+        }
+      ]
+    }
+  },
+  "findings": [
+    {
+      "id": "K-FW-004-r2-layer-state-commit",
+      "criterion": "algorithm",
+      "evidence": "正文给出“每个有效 query 使用原绝对位置与相同 causal 可见集合”，随后 ResolveAndExecute 第 7 步为“提交计算；只对有效行和合法私有写区提交状态”，并要求“失败不得发布部分成功状态”。但二者之间未说明逐层输入和 KV 推进；延伸阅读中的分块 Prefill 链接也未明确承担这部分执行与提交合同。脚本 attention_physical 使用 score(position, token) 和固定 token 值，未构造层间隐藏状态或逐层 KV。",
+      "impact": "读者可以独立实现选桶及单层可见性，却仍需自行补出多层重算：后续层应消费前层重算出的后缀表示，历史 KV 必须取对应层，末行 logits 需由最终层产生。正文也不足以确定前几层已写入而后层失败时，哪些数据仍未提交、重试可读哪些状态。单层结果正确不能排除这些实现错误。",
+      "blocking": true,
+      "required_revision": "在迁移执行处补全逐层数据流和整次提交关系，或明确委托到已有完整解释：说明第一层后缀输入、各层对应的复用 KV、新增 K/V、causal 消费、向下一层传递及最终末行 logits；区分逐层物理写入与请求可见提交，说明后层失败时如何保留旧提交边界并隔离未提交写入。现有标量检查继续限定为单层可见性模型即可，不要求增加统一标题或固定数量的算例。"
+    }
+  ],
+  "limitations": [
+    "没有 GPU、Neuron、真实编译器、服务性能或 Agent 使用效果证据；CPU 模型不能证明低精度数值路径、实际设备事务、资源分配、stream/event 可见性及图捕获合法性。",
+    "S-TRITON 仅提供完整的作者核验机制说明，没有可读上游原文；未读取源码归档或核对 PDF 图版。",
+    "实际 Python 执行依据所供协调者 preflight 记录，本审阅调用没有重新执行脚本。作者所述未执行与后续协调者执行属于不同记录，不能混记为作者执行通过。",
+    "现有生命周期检查只有有限顺序事件轨迹，未覆盖真实取消、重复或迟到通知、多 rank 发布和设备在途访问。",
+    "本轮工具未提供文件读取能力，资源列表也为空，因此未能读取所列技能文件；本结论依据用户完整提供的审查材料，不声称已执行该技能流程。"
+  ],
+  "checks": [
+    {
+      "script": "tools/check_k_fw_004_full.py",
+      "args": []
+    }
+  ],
+  "no_checks_reason": "",
+  "reading_scope": "完整阅读所供提取文本，范围均为零起点、右开字符区间：AGENTS.md [0,567)；docs/knowledge-method.md [0,2251)；docs/knowledge-review.md [0,3016)；knowledge/frameworks/compile-dynamic-shapes.md [0,15056)；knowledge/sources/S-TORCH-DYNAMIC.md [0,550)；S-NXDI.md [0,559)；S-TRITON.md [0,1098)；S-TVM.md [0,609)；S-ANSOR.md [0,560)；knowledge/workloads/input-distribution.md [0,2880)；knowledge/frameworks/checkpoint-loading.md [0,3354)；knowledge/system-semantics/model-lifecycle.md [0,3556)；knowledge/models/embedding-reranking.md [0,4128)；vision-inference.md [0,4331)；graph-inference.md [0,3892)；knowledge/frameworks/inference-eval.md [0,3779)；neuron-serving.md [0,3294)；knowledge/tools/framework-profiler-scope.md [0,4833)；references/S-TORCH-DYNAMIC/fulltext.txt [0,11742)；references/S-NXDI/fulltext.txt [0,48117)；references/S-TVM/fulltext.txt [0,67763)；references/S-ANSOR/fulltext.txt [0,81518)。完整阅读 candidate.test_script、作者四字段对象和所供 actual_preflight 执行记录。仅阅读以下相关章节摘录：knowledge/frameworks/cuda-graph-buffers.md [0,2917)、[12000,15154)；knowledge/algorithms/chunked-prefill.md [0,375)、[8000,13696)；knowledge/frameworks/triton-kernels.md [8000,11503)、[12000,14568)；knowledge/frameworks/nki-tiling.md [8000,11079)、[12000,14992)；knowledge/models/image-diffusion.md [8000,14071)。这些摘录未列入 documents，不声称阅读全文。全文阅读指所供提取文件，不代表阅读其链接的全部原始网站、图版或源码。",
+  "test_assessment": "已检查算法、独立参考和实际执行范围。迁移公式对照逐 token 容器操作；物理 attention 对照原绝对位置的 causal 枚举；stride 与折叠常量错误复用对照显式整数视图；矩形成本对照配对集合；回本对照累计有理数收益及最小阈值；释放门控对照从事件历史重建的外部读者。这些主要检查具有独立参考，并非整体同义重述。所供 remote_bwrap 记录的 script_sha256 与要求绑定一致，Python 3.12 隔离执行 returncode=0、stderr 为空，输出为 285 个可行迁移、120 个后缀溢出、6025 个批计划、285 个 attention 情形、42 个分支情形、45 个矩形成本情形及七事件生命周期；13 个列出的错误负对照均被捕获。padding 负对照实际进入 softmax 分母，遗漏 guard 后实际执行旧整数程序，忽略图引用实际触发带外部读者的释放，确实检查了各自机制。部分策略和成本负对照直接比较已构造错误结果，不能扩大解释为真实后端故障注入。脚本没有验证多层隐藏状态/KV 推进、完整命中恢复的整模型结果、失败后的请求提交边界、真实异步或性能，成功退出不能关闭本次 algorithm finding。campaign-K-FW-004-r1 的具体交付问题已关闭：当前 candidate 恰好包含 chapter、test_script、no_test_reason、author_notes 四个字段，没有 output_schema_ok。"
+}

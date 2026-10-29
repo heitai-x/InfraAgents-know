@@ -1,0 +1,84 @@
+{
+  "result": "PASS",
+  "date": "2026-10-28",
+  "phase": "initial_before_counterevidence",
+  "offsets": {
+    "NHD_K": 94,
+    "NHD_V": 158,
+    "HND_K": 100,
+    "HND_V": 168
+  },
+  "after_cancel": {
+    "5": {
+      "owners": 1,
+      "pins": 2
+    },
+    "2": {
+      "owners": 1,
+      "pins": 1
+    },
+    "7": {
+      "owners": 0,
+      "pins": 1
+    }
+  },
+  "cow": {
+    "read_bytes": 64,
+    "write_bytes": 64,
+    "append_bytes": 32
+  },
+  "capacity": {
+    "P3": {
+      "effective_bytes": 6389760,
+      "allocated_bytes": 7667712,
+      "wasted_bytes": 1277952,
+      "table_entries": 26,
+      "table_bytes": 104,
+      "preparation_us": 7.8
+    },
+    "P8": {
+      "effective_bytes": 6389760,
+      "allocated_bytes": 10223616,
+      "wasted_bytes": 3833856,
+      "table_entries": 13,
+      "table_bytes": 52,
+      "preparation_us": 3.9
+    }
+  },
+  "physical_page_pair_bytes": 96,
+  "simultaneously_live_page_pairs": 3,
+  "simultaneously_live_bytes": 288,
+  "completion_orders": [
+    [
+      "R0",
+      "R1"
+    ],
+    [
+      "R1",
+      "R0"
+    ]
+  ],
+  "hypotheses": [
+    {
+      "cause": "Early reuse after cancellation ignores an in-flight reader",
+      "prediction": "Delayed R1 and forced reuse amplify failures; retaining pages through final read suppresses this path"
+    },
+    {
+      "cause": "Mutable descriptor or current-row routing replaces the old snapshot",
+      "prediction": "Can fail with pages retained; separate immutable descriptor/routing snapshots change behaviour"
+    },
+    {
+      "cause": "Duplicate old completion changes a recycled page generation",
+      "prediction": "Injecting duplicate notifications corrupts new reader accounting unless ticket/generation checks isolate it"
+    },
+    {
+      "cause": "Reading beyond the valid tail",
+      "prediction": "Poisoning the third tail slot can fail even without cancellation or reuse"
+    }
+  ],
+  "documents": {
+    "docs/evidence/parallel-mechanisms-20261027/tasks/paged-transfer.md": "6ad20c2cd55656222b0d28d2f0f51f9bd9c91abefc2274eb5726a62b7335233f",
+    "knowledge/algorithms/paged-kv-capacity.md": "7bf4b4801d1670848e6716a46d6e62839090a5fe92d09dc252d3eae751774981"
+  },
+  "scope": "Independent author-cross-reading CPU transfer exercise; private byte layout and set-based lifecycle construction. Shared parent context, no OS isolation, no fixed reasoning budget, no upstream code or author checks read. Not controlled knowledge benefit, real GPU safety or performance evidence."
+}

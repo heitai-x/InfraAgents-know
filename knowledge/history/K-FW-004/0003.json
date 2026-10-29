@@ -1,0 +1,72 @@
+{
+  "id": "K-FW-004",
+  "path": "frameworks/compile-dynamic-shapes.md",
+  "category": "frameworks",
+  "title": "编译与动态形状：Guard、分桶和变体成本",
+  "summary": "图获取、IR/lowering、布局和 guard 将函数映射到目标程序；编译缓存及在线变体必须保持副作用、容量与生命周期契约。",
+  "revision": 3,
+  "status": "seed",
+  "tags": [
+    "compile",
+    "dynamic shapes",
+    "guard",
+    "重编译",
+    "bucketing",
+    "IR",
+    "lowering",
+    "布局传播",
+    "融合",
+    "编译缓存",
+    "TVM",
+    "Ansor"
+  ],
+  "scope": {
+    "model_families": [],
+    "platforms": [],
+    "runtimes": [
+      "pytorch"
+    ],
+    "workloads": []
+  },
+  "source_ids": [
+    "S-TORCH-DYNAMIC",
+    "S-NXDI",
+    "S-TRITON",
+    "S-TVM",
+    "S-ANSOR"
+  ],
+  "related": [
+    "K-FW-005",
+    "K-ALG-007",
+    "K-WORK-003",
+    "K-FW-011",
+    "K-SYS-011",
+    "K-FW-007",
+    "K-MODEL-013",
+    "K-MODEL-014",
+    "K-MODEL-016",
+    "K-FW-001",
+    "K-FW-009",
+    "K-FW-010",
+    "K-MODEL-009",
+    "K-TOOLS-004"
+  ],
+  "evidence": [],
+  "updated_at": "2026-10-27",
+  "sha256": "6f9773875d24bbe32fd80e62cfba4e85f841ec1b65876b513c30d8d9f000b1ef",
+  "questions": [
+    "编译特化到底固定了哪些条件，guard 失效时重编译的成本由什么决定？",
+    "分桶的优化目标是什么，桶的数量与粒度如何在编译成本、padding 与命中率之间权衡？",
+    "编译与 CUDA Graph 分别摊薄什么成本，二者组合时哪些约束必须同时满足？",
+    "从模型函数到 IR、lowering 与执行计划的每一步各自引入哪些布局与融合决定？",
+    "编译缓存与在线变体的身份由哪些条件构成，为什么 shape 相等不足以判定可复用？"
+  ],
+  "symptoms": [
+    "新长度请求触发长时间停顿后才开始执行",
+    "编译后的程序在某些 stride 下结果错误"
+  ],
+  "assumes": [
+    "存在图获取或编译阶段的执行路径",
+    "服务形状在有限集合内变化"
+  ]
+}

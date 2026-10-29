@@ -1,0 +1,64 @@
+{
+  "id": "K-ALG-008",
+  "path": "algorithms/async-scheduling.md",
+  "category": "algorithms",
+  "title": "异步调度：依赖图、代次与双缓冲",
+  "summary": "异步调度只重叠彼此独立的工作；自回归 token、缓存映射和资源回收仍由明确依赖连接。",
+  "revision": 3,
+  "status": "seed",
+  "tags": [
+    "async scheduling",
+    "异步调度",
+    "epoch",
+    "double buffer"
+  ],
+  "scope": {
+    "model_families": [],
+    "platforms": [],
+    "runtimes": [],
+    "workloads": []
+  },
+  "source_ids": [
+    "S-CUDA-ASYNC",
+    "S-CUDA-ALLOC",
+    "S-VLLM-SCHED",
+    "S-FLASHATTENTION3",
+    "S-POWERINFER"
+  ],
+  "related": [
+    "K-FW-003",
+    "K-FW-005",
+    "K-SYS-002",
+    "K-SYS-004",
+    "K-HW-011",
+    "K-ALG-017",
+    "K-ALG-020",
+    "K-SYS-015",
+    "K-ALG-001",
+    "K-ALG-006",
+    "K-ENGINE-005",
+    "K-FW-008",
+    "K-HW-003",
+    "K-SYS-001"
+  ],
+  "evidence": [],
+  "updated_at": "2026-10-27",
+  "sha256": "d950c32c9d0cb128f06f9e07c8723aa6c43cdd3ba550f9918f960fb0cffe3c94",
+  "questions": [
+    "主机准备、设备执行和结果处理中哪些工作可以重叠，下一 token 的依赖把什么留在关键路径？",
+    "一个执行代次的快照包含哪些内容，双缓冲在什么条件下才允许旧组复用？",
+    "取消一个在途请求后，结果迟到时如何既丢弃业务输出又完成资源账务？",
+    "流水深度增加时，容量占用和取消、切换、高优先级请求的响应延迟如何变化？",
+    "怎样区分代码能异步提交与关键路径已经缩短这两种不同结论？"
+  ],
+  "symptoms": [
+    "读取输出或检查 EOS 的位置导致主机设备重叠消失",
+    "取消的请求结果被路由到复用同一 slot 的新请求",
+    "增加主机线程后设备利用率不变而排队更长"
+  ],
+  "assumes": [
+    "自回归 token 依赖",
+    "主机与设备通过异步队列提交工作",
+    "单实例内的迭代级调度"
+  ]
+}

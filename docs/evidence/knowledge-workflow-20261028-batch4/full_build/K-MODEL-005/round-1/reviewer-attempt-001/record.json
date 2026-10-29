@@ -1,0 +1,322 @@
+{
+  "role": "reviewer",
+  "engine": "sol",
+  "requested_model": "gpt-6.1-sol",
+  "reasoning_effort": "high",
+  "prompt_sha256": "f0016659c19e1d478cd2ba2aa79a8cda047e7c03f39f96f66793d372859d636a",
+  "usage": [
+    {
+      "input_tokens": 617125,
+      "cached_input_tokens": 469760,
+      "cache_write_input_tokens": 0,
+      "output_tokens": 7146,
+      "reasoning_output_tokens": 1930
+    }
+  ],
+  "answer": "{\n  \"entry_id\": \"K-MODEL-005\",\n  \"body_sha256\": \"c8aa4ed6235b5cfb49b590b164927d4e9b8066eafdc8463ccd4303792051e4ec\",\n  \"reviewer\": \"sol-reviewer:K-MODEL-005:round-1\",\n  \"decision\": \"revise\",\n  \"documents\": {\n    \"AGENTS.md\": \"b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a\",\n    \"docs/knowledge-method.md\": \"69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb\",\n    \"docs/knowledge-review.md\": \"f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21\",\n    \"knowledge/models/encoder-decoder-streaming.md\": \"c8aa4ed6235b5cfb49b590b164927d4e9b8066eafdc8463ccd4303792051e4ec\",\n    \"knowledge/sources/S-TRANSFORMER.md\": \"e1858681f1645209756f7eb640dcdfe3a786f5af3e529fb61bce6de0212a82d7\",\n    \"knowledge/sources/S-WHISPER.md\": \"3983e829fbc2948712af3a9aab931917271565753f83cb0e89f1cfad2a4b36e1\",\n    \"knowledge/sources/S-MOONSHINE.md\": \"4370d127afcf5863d1df06bda22911b343655c31bd1ead107135f30e81074759\",\n    \"knowledge/algorithms/cross-attention-cache.md\": \"24ccdfcf4b31aba460cc537493e1c17e73643683f1c4e2df5a6c673fb5e2166e\",\n    \"knowledge/models/speech-generation.md\": \"9cab040f27f77dc8040a6cc6f0ae96a175542e4379e2262ca2cdb53fb9aee3a4\",\n    \"knowledge/system-semantics/tokenization-io.md\": \"1dea61a1f632805cb90873e747cb3079230a7b6bab76b17b4281662b82367565\",\n    \"knowledge/system-semantics/host-runtime.md\": \"005342b6131acdd072d5cf35456a5b01e5630f764b614e7090639fde01a5b36a\",\n    \"knowledge/system-semantics/cancellation-resource-completion.md\": \"919052c77f65a13c9dc09aad03341ed31f0820dbbdcb2750b5789f349f9e86c1\",\n    \"knowledge/workloads/slo-goodput.md\": \"5aa9b71cddb7d896ffa1fe6d78ac61cf0bb92d76279ae4d563f1110ed9dbedb4\",\n    \"knowledge/models/omni-multimodal.md\": \"f1fc4dc6611ad1b53ad8cc7f2abf0cbf9b9b2022d2d22c64dc712a39943d9d15\",\n    \"knowledge/tools/statistical-experiments.md\": \"908b3588a6fa20bb1f2aed9f5db51c4b462953d79f8944cdbcfea7141c74644f\",\n    \"references/S-TRANSFORMER/fulltext.txt\": \"7bae85f4505c924b16d6c601c744b9665f245a20ea84258aa86bb51036a16805\",\n    \"references/S-WHISPER/fulltext.txt\": \"74d3fc9a7877dd5ff86ac147cb73f4a88d9443aec76f79f12fed602d351eb7de\",\n    \"references/S-MOONSHINE/fulltext.txt\": \"e0fd9d8b31bccf8c41eee0c181bcfb00cf89461a7e0b80844984e7b4cf0d19eb\",\n    \"tools/check_k_model_005_full.py\": \"9a338de59d5891d74234a60ae13c93958305077ca86b6d22aff287d4bec00a99\"\n  },\n  \"criteria\": {\n    \"definition\": {\n      \"assessment\": \"partial\",\n      \"reason\": \"动机、源特征与表示、三类 attention 和发布状态已定义；但 H_t 没有区分 decoder 层及子层输入，目标预测位置与已计算 KV 位置也未建立对应关系。L 被称为源层数却用于逐 decoder cross 层容量，self 与 cross 宽度被无条件共用，符号尚不足以支持一般模型。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/models/encoder-decoder-streaming.md\",\n          \"quote\": \"decoder 已消费的目标前缀为 y_{<t}，第 t 步隐藏状态为 H_t。\"\n        },\n        {\n          \"path\": \"knowledge/models/encoder-decoder-streaming.md\",\n          \"quote\": \"设源层数 L、每层 cross KV 宽度 D_kv＝H_cross·d_h、每元素 b 字节\"\n        }\n      ]\n    },\n    \"legality\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"明确把模型函数约束与缓存、布局和分块方案区分；固定源和稳定追加前缀的复用条件、双向重编码反例、请求隔离及表示契约有实质解释。Whisper 固定窗口与 Moonshine 变长输入均未被扩大为任意块增量能力。取消的物理最后使用条件可沿已提供的主机运行时与取消章节完整追踪。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/models/encoder-decoder-streaming.md\",\n          \"quote\": \"合法性首先来自模型 forward 语义，而不是实现者临时选一个 mask。\"\n        },\n        {\n          \"path\": \"knowledge/models/encoder-decoder-streaming.md\",\n          \"quote\": \"若新源只是在旧源后追加位置，且模型契约保证旧位置的 E 不变、mask 只是在末尾扩展，则 cross K/V 可以追加\"\n        },\n        {\n          \"path\": \"knowledge/models/encoder-decoder-streaming.md\",\n          \"quote\": \"变长输入能力、减少 padding、真正按稳定块延续，是三件需要分别验证的能力。\"\n        }\n      ]\n    },\n    \"algorithm\": {\n      \"assessment\": \"partial\",\n      \"reason\": \"源投影循环、版本检查和发布不变量已有展开，但核心 decoder_forward 仍为未解释调用，没有逐层输入和新增 self KV 的产生路径。空源分支位于返回之后；预算暂停、长度终止和整请求完成被合并处理，尚不能据此独立实现正确的推进与恢复。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/models/encoder-decoder-streaming.md\",\n          \"quote\": \"H_t ← decoder_forward(y_{<t}, self_KV, source_state.cross_KV,\"\n        },\n        {\n          \"path\": \"knowledge/models/encoder-decoder-streaming.md\",\n          \"quote\": \"更新 self_KV[t]；把 y_t 记为暂定输出；\"\n        },\n        {\n          \"path\": \"knowledge/models/encoder-decoder-streaming.md\",\n          \"quote\": \"6. 若源为空或有效长度为 0：返回 EMPTY_SOURCE，不进入 cross 解码。\"\n        }\n      ]\n    },\n    \"cost\": {\n      \"assessment\": \"partial\",\n      \"reason\": \"六类成本均有解释，cross 投影乘加单位、容量换算、八路输入字节和串行资源需求可复算且算术正确；但层数与 self/cross 几何混用使一般容量公式不成立。self attention 的复杂度没有声明每层、固定 head 配置及所省略的计算项，不能直接作为总目标计算。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/models/encoder-decoder-streaming.md\",\n          \"quote\": \"目标 self KV 约为 2LT D_kv b 字节。\"\n        },\n        {\n          \"path\": \"knowledge/models/encoder-decoder-streaming.md\",\n          \"quote\": \"有 self KV 时每步约 O(t D_kv)，总目标计算仍约 O(T^2 D_kv)\"\n        },\n        {\n          \"path\": \"knowledge/models/encoder-decoder-streaming.md\",\n          \"quote\": \"同步成本包括 encoder 完成、块提交、投影写入和发布边界\"\n        }\n      ]\n    },\n    \"adaptation\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"源变化、目标长短、内存和带宽、设备分离、块大小、精度与布局变化均连接到具体依赖和成本。相关 cross 缓存章节还说明更换源后目标 self 状态的依赖及重算要求；八路场景给出选择反转条件，且未把假设时序作为实测承诺。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/models/encoder-decoder-streaming.md\",\n          \"quote\": \"encoder 与 decoder 分设备时，先比较传输 E 与传输 cross KV 的字节，再决定在哪一侧投影\"\n        },\n        {\n          \"path\": \"knowledge/models/encoder-decoder-streaming.md\",\n          \"quote\": \"精度、布局或页长改变后，要重新检查缓存合法性和内核契约。\"\n        },\n        {\n          \"path\": \"knowledge/models/encoder-decoder-streaming.md\",\n          \"quote\": \"若任务只要求整段录音最终结果，A 的简单批处理可能更合算\"\n        }\n      ]\n    },\n    \"diagnosis\": {\n      \"assessment\": \"partial\",\n      \"reason\": \"竞争解释、控制变量、反证方向及质量与延迟的联合口径较充分；实际预检也检测到指定 mask 和 stale-cache 扰动。但脚本允许新版本提交更小样本偏移，违背正文不变量；所谓追加缓存检查实际重新投影全部源，缓存等价路径又共享全部数值实现，验证强度不足以支撑作者列出的完整检查范围。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/models/encoder-decoder-streaming.md\",\n          \"quote\": \"已提交样本偏移和稳定文本前缀不缩短\"\n        },\n        {\n          \"path\": \"knowledge/models/encoder-decoder-streaming.md\",\n          \"quote\": \"正确实现应在同一固定输入、同一源版本和明确 mask 下与独立参考一致\"\n        },\n        {\n          \"path\": \"knowledge/models/encoder-decoder-streaming.md\",\n          \"quote\": \"机制检查可在 CPU 上用小矩阵验证：缓存 cross K/V 与逐步重算输出一致\"\n        }\n      ]\n    }\n  },\n  \"findings\": [\n    {\n      \"id\": \"K-MODEL-005-R1-001\",\n      \"criterion\": \"algorithm\",\n      \"evidence\": \"正文定义“decoder 已消费的目标前缀为 y_{<t}”，随后执行“H_t ← decoder_forward(y_{<t}, self_KV, source_state.cross_KV,”、“logits ← output_head(H_t)；按任务规则选择或采样 y_t；”和“更新 self_KV[t]；把 y_t 记为暂定输出；”。没有定义 self_KV[t] 对应哪个已消费输入，也没有展开 decoder 各层。\",\n      \"impact\": \"读者无法判断每轮消费完整前缀还是仅新增输入，可能重复追加历史，或把刚选出的 y_t 当成已经具有全部层 KV。若 t 表示移位后的预测槽，其 KV 实际对应已知输入，这一约定也未说明。完整所供相邻章节没有补足这条逐层 forward 链。\",\n      \"blocking\": true,\n      \"required_revision\": \"明确目标 token 索引、实际 decoder 输入位置、已计算 KV 长度和下一预测位置；展开任务前缀/BOS 初始化及后续仅消费未计算已知输入的路径。给出代表性多层 decoder 的 self 投影与追加、self attention、cross attention、后续子层及层间隐藏状态关系，或明确委托给已完整解释这些步骤的章节。说明本轮 logits 所预测 token 的 KV 何时产生，并持久化继续执行所需状态。\"\n    },\n    {\n      \"id\": \"K-MODEL-005-R1-002\",\n      \"criterion\": \"algorithm\",\n      \"evidence\": \"BuildSourceState 第 5 步为“返回 SourceState，并把 v、S_valid、E 与 cross K/V 绑定为同一内容身份；”，第 6 步才是“若源为空或有效长度为 0：返回 EMPTY_SOURCE，不进入 cross 解码。”\",\n      \"impact\": \"空源保护不可达；实际流程可能先让不支持空输入的 processor/encoder 执行，或者返回有效长度为零的正常 SourceState。脚本检查的是非空 keys 上的全屏蔽集合，不能证明这个分支正确。\",\n      \"blocking\": true,\n      \"required_revision\": \"将原始空源及处理后有效长度为零的检查放在相关消费者和正常返回之前，明确各自返回路径；使 EMPTY_SOURCE 不会进入投影或 cross 解码。\"\n    },\n    {\n      \"id\": \"K-MODEL-005-R1-003\",\n      \"criterion\": \"algorithm\",\n      \"evidence\": \"DecodeStep 输入包含“剩余时间/长度预算”，循环条件为“while 未到 EOS、长度上限或预算边界:”，退出后却规定“若当前块是最后一块：执行模型允许的 flush，消费最后 lookahead，提交 END_OF_REQUEST；”。非最后块则直接返回 WAIT_NEXT_BLOCK。\",\n      \"impact\": \"最后一个源块已到达而本次执行预算耗尽时，目标生成可能尚未结束，却会提交整请求完成。非最后块在预算耗尽时也可能仍有可执行工作，无条件等待下一块会造成错误暂停；正文没有区分请求长度终止与调度时间片。\",\n      \"blocking\": true,\n      \"required_revision\": \"保留明确退出原因，区分执行预算暂停、等待更多源、目标 EOS、请求长度终止与失败；预算暂停保存进度并允许在现有源上继续。仅在源 flush 已完成且目标达到合法终止条件时发布相应请求终态，说明尾部不足 lookahead 时采用的模型契约。\"\n    },\n    {\n      \"id\": \"K-MODEL-005-R1-004\",\n      \"criterion\": \"cost\",\n      \"evidence\": \"正文写“设源层数 L、每层 cross KV 宽度 D_kv＝H_cross·d_h”，同时给出“全部 cross K/V 约为 2LS D_kv b 字节”和“目标 self KV 约为 2LT D_kv b 字节”；成本段再以同一个 D_kv 表示 self attention 计算。\",\n      \"impact\": \"cross K/V 份数由 decoder 中的 cross 模块决定，不由 encoder 源层数决定；self 与 cross 的 KV head 和通道配置也可以不同。当前写法会在两侧层数或模块几何不同的模型上算错容量，并把 KV 存储宽度当作一般 attention 运算宽度。\",\n      \"blocking\": true,\n      \"required_revision\": \"将 L 明确定义为相应 decoder 层/模块数，分别定义 self 与 cross 的 KV 宽度；可用逐层求和给出一般容量式，再把现有数值例限定为同宽同精度配置。将 self attention 复杂度限定为明确的每层 MHA 假设，或区分 query heads 与 KV heads，并说明投影、FFN、output head 等未包含项。\"\n    },\n    {\n      \"id\": \"K-MODEL-005-R1-005\",\n      \"criterion\": \"diagnosis\",\n      \"evidence\": \"正文要求“已提交样本偏移和稳定文本前缀不缩短”。脚本仅在“if version == ledger['version'] and committed_sample < ledger['committed']:”时拒绝偏移回退，因此 advance_ledger({'version': 2, 'committed': 800, 'stable': 'alpha beta'}, 3, 799, 'alpha beta') 会通过。追加检查使用“extended_keys, extended_values = project(extended_rows, wk, wv)”，实际重投影了全部源。\",\n      \"impact\": \"检查器会接受违反正文提交不变量的新版本事件；现有 stale-ledger 用例同时改变版本、偏移和文本，不能分别验证这些保护。追加等价检查也没有经过旧缓存加新后缀的真实数据流。退出码 0 不能支持作者对这些机制的完整覆盖判断。\",\n      \"blocking\": true,\n      \"required_revision\": \"对同一请求的所有兼容源版本保持已提交样本偏移单调，并分别检查版本过期、同版本偏移回退、新版本偏移回退、文本回退和合法推进；让故障路径由同一不变量判定器实际检出。追加用例应保留旧 K/V、仅投影新行再拼接，与完整重算比较。为共享 project/attention 的等价检查补充独立的非平凡数值参考或解析结果，避免共同实现错误同时通过。\"\n    }\n  ],\n  \"limitations\": [\n    \"实际执行证据仅支持纯 Python CPU 小矩阵检查；没有真实模型推理、目标设备数值/同步/性能、WER 或服务负载实验。这些边界已明确声明，本身不构成阻塞问题。\",\n    \"Whisper 与 Moonshine 的固定论文事实经所供全文核对，未发现影响本章结论的来源失真；不能据此证明任意块的无损增量处理能力。\",\n    \"本次仅能读取用户提供的材料；工具未暴露本地文件或执行接口，不能重新核验磁盘哈希、链接目标存在性或独立重跑脚本。所列哈希按要求原样绑定。\",\n    \"docs/knowledge-build-workflow.md 未在所供材料中，无法声称已阅读其全文；本次严格采用用户明确提供的 review JSON 格式。\"\n  ],\n  \"checks\": [\n    {\n      \"script\": \"tools/check_k_model_005_full.py\",\n      \"args\": []\n    }\n  ],\n  \"no_checks_reason\": \"\",\n  \"reading_scope\": \"完整阅读所供抽取文本，范围均为零基、半开字符区间：AGENTS.md [0,567)；docs/knowledge-method.md [0,2251)；docs/knowledge-review.md [0,3016)；knowledge/models/encoder-decoder-streaming.md [0,10004)；knowledge/sources/S-TRANSFORMER.md [0,550)；knowledge/sources/S-WHISPER.md [0,518)；knowledge/sources/S-MOONSHINE.md [0,537)；knowledge/algorithms/cross-attention-cache.md [0,3845)；knowledge/models/speech-generation.md [0,3599)；knowledge/system-semantics/tokenization-io.md [0,3217)；knowledge/system-semantics/host-runtime.md [0,7559)；knowledge/system-semantics/cancellation-resource-completion.md [0,3782)；knowledge/workloads/slo-goodput.md [0,2616)；knowledge/models/omni-multimodal.md [0,3735)；knowledge/tools/statistical-experiments.md [0,4269)；references/S-TRANSFORMER/fulltext.txt [0,39757)；references/S-WHISPER/fulltext.txt [0,112336)；references/S-MOONSHINE/fulltext.txt [0,26755)。knowledge/system-semantics/design-synthesis.md 仅阅读所供 [0,9444) 摘录，其全文为 9874 字符，未列入 documents。完整阅读 candidate.test_script 所供脚本从首行至 EOF、author_notes 和 actual_preflight 执行记录。论文阅读范围指所供全文抽取文本，不声称检查了原始 PDF 图像或源码归档。\",\n  \"test_assessment\": \"已检查完整脚本算法和提供的实际预检记录。记录显示 remote_bwrap 中 Python 3.12 以隔离参数执行绑定脚本，returncode=0、stderr 为空、未超时；这属于协调者提供的实际执行，本 reviewer 未重新运行。缓存与重算在两个 query 上差值为 0；错误 causal-cross、full-self 和改源后旧缓存的扰动分别产生约 0.5678、0.2686、0.2246 差异，确实检测了这些指定输入上的机制差别。空可见集合、单源输出等于 V、容量常数是有意义的不变量。局限在于缓存和重算完全共享 project、attention、softmax，不能独立发现共同的多源数值错误；追加路径重新投影全部源，没有检验增量拼接；改源用例仅证明 stale 输出有差异，没有实现缓存身份拒绝。ledger 负对照只断言故障函数返回旧版本，没有通过统一守恒判定器检查，正确路径也漏掉新版本偏移回退。作者如实声明自己未执行，预检补充了执行证据，但其对追加和提交保护的覆盖判断仍过宽。脚本未覆盖多层自回归输入/KV 对应、空源构建分支、预算暂停与最终完成，不能据 CPU 检查通过关闭这些正文算法缺口。\"\n}",
+  "exit_code": 0,
+  "status": "completed",
+  "timeout_seconds": 1800,
+  "response_path": "D:\\桌面\\xdb\\InfraAgents\\InfraAgents-know-astra-new\\InfraAgents-know\\docs\\evidence\\knowledge-workflow-20261028-batch4\\full_build\\K-MODEL-005\\round-1\\reviewer-attempt-001\\answer.txt",
+  "record_path": "D:\\桌面\\xdb\\InfraAgents\\InfraAgents-know-astra-new\\InfraAgents-know\\docs\\evidence\\knowledge-workflow-20261028-batch4\\full_build\\K-MODEL-005\\round-1\\reviewer-attempt-001\\record.json",
+  "tool_events": [
+    {
+      "type": "item.completed",
+      "item": {
+        "id": "item_1",
+        "type": "mcp_tool_call",
+        "server": "codex",
+        "tool": "list_mcp_resources",
+        "arguments": {},
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"resources\":[]}"
+            }
+          ],
+          "structured_content": null
+        },
+        "error": null,
+        "status": "completed"
+      }
+    },
+    {
+      "type": "item.completed",
+      "item": {
+        "id": "item_2",
+        "type": "mcp_tool_call",
+        "server": "codex",
+        "tool": "list_mcp_resource_templates",
+        "arguments": {},
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"resourceTemplates\":[]}"
+            }
+          ],
+          "structured_content": null
+        },
+        "error": null,
+        "status": "completed"
+      }
+    }
+  ],
+  "inventory_tool_events": [
+    {
+      "type": "item.completed",
+      "item": {
+        "id": "item_1",
+        "type": "mcp_tool_call",
+        "server": "codex",
+        "tool": "list_mcp_resources",
+        "arguments": {},
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"resources\":[]}"
+            }
+          ],
+          "structured_content": null
+        },
+        "error": null,
+        "status": "completed"
+      }
+    },
+    {
+      "type": "item.completed",
+      "item": {
+        "id": "item_2",
+        "type": "mcp_tool_call",
+        "server": "codex",
+        "tool": "list_mcp_resource_templates",
+        "arguments": {},
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"resourceTemplates\":[]}"
+            }
+          ],
+          "structured_content": null
+        },
+        "error": null,
+        "status": "completed"
+      }
+    }
+  ],
+  "rejected_tool_events": [],
+  "tool_policy": "metadata_inventory_only",
+  "tool_policy_version": "2026-10-28-production-v1",
+  "tool_policy_scope": "Only empty-argument codex host plugin/skill-directory descriptors and empty template inventory; inventory is not knowledge evidence. All other tool events reject the call.",
+  "tool_policy_reason": "Production chapter construction allows observed generic capability discovery metadata; this does not claim a zero-tool comparison or external source reading.",
+  "malformed_event_lines": [],
+  "turn_completed": true,
+  "error_events": [],
+  "recovered_transport_events": [],
+  "terminal_error_events": [],
+  "transport_recovered": false,
+  "actual_model": null,
+  "identity_verified": null,
+  "identity_basis": "Explicit CLI model and isolated HTTP provider; CLI events do not expose server model identity.",
+  "provider": "eval-openai-http",
+  "max_output_tokens": null,
+  "cli_version": "codex-cli 0.164.0-alpha.11.1",
+  "cost_scope": "Codex token usage is reported; subscription charge is not exposed.",
+  "parsed": {
+    "entry_id": "K-MODEL-005",
+    "body_sha256": "c8aa4ed6235b5cfb49b590b164927d4e9b8066eafdc8463ccd4303792051e4ec",
+    "reviewer": "sol-reviewer:K-MODEL-005:round-1",
+    "decision": "revise",
+    "documents": {
+      "AGENTS.md": "b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a",
+      "docs/knowledge-method.md": "69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb",
+      "docs/knowledge-review.md": "f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21",
+      "knowledge/models/encoder-decoder-streaming.md": "c8aa4ed6235b5cfb49b590b164927d4e9b8066eafdc8463ccd4303792051e4ec",
+      "knowledge/sources/S-TRANSFORMER.md": "e1858681f1645209756f7eb640dcdfe3a786f5af3e529fb61bce6de0212a82d7",
+      "knowledge/sources/S-WHISPER.md": "3983e829fbc2948712af3a9aab931917271565753f83cb0e89f1cfad2a4b36e1",
+      "knowledge/sources/S-MOONSHINE.md": "4370d127afcf5863d1df06bda22911b343655c31bd1ead107135f30e81074759",
+      "knowledge/algorithms/cross-attention-cache.md": "24ccdfcf4b31aba460cc537493e1c17e73643683f1c4e2df5a6c673fb5e2166e",
+      "knowledge/models/speech-generation.md": "9cab040f27f77dc8040a6cc6f0ae96a175542e4379e2262ca2cdb53fb9aee3a4",
+      "knowledge/system-semantics/tokenization-io.md": "1dea61a1f632805cb90873e747cb3079230a7b6bab76b17b4281662b82367565",
+      "knowledge/system-semantics/host-runtime.md": "005342b6131acdd072d5cf35456a5b01e5630f764b614e7090639fde01a5b36a",
+      "knowledge/system-semantics/cancellation-resource-completion.md": "919052c77f65a13c9dc09aad03341ed31f0820dbbdcb2750b5789f349f9e86c1",
+      "knowledge/workloads/slo-goodput.md": "5aa9b71cddb7d896ffa1fe6d78ac61cf0bb92d76279ae4d563f1110ed9dbedb4",
+      "knowledge/models/omni-multimodal.md": "f1fc4dc6611ad1b53ad8cc7f2abf0cbf9b9b2022d2d22c64dc712a39943d9d15",
+      "knowledge/tools/statistical-experiments.md": "908b3588a6fa20bb1f2aed9f5db51c4b462953d79f8944cdbcfea7141c74644f",
+      "references/S-TRANSFORMER/fulltext.txt": "7bae85f4505c924b16d6c601c744b9665f245a20ea84258aa86bb51036a16805",
+      "references/S-WHISPER/fulltext.txt": "74d3fc9a7877dd5ff86ac147cb73f4a88d9443aec76f79f12fed602d351eb7de",
+      "references/S-MOONSHINE/fulltext.txt": "e0fd9d8b31bccf8c41eee0c181bcfb00cf89461a7e0b80844984e7b4cf0d19eb",
+      "tools/check_k_model_005_full.py": "9a338de59d5891d74234a60ae13c93958305077ca86b6d22aff287d4bec00a99"
+    },
+    "criteria": {
+      "definition": {
+        "assessment": "partial",
+        "reason": "动机、源特征与表示、三类 attention 和发布状态已定义；但 H_t 没有区分 decoder 层及子层输入，目标预测位置与已计算 KV 位置也未建立对应关系。L 被称为源层数却用于逐 decoder cross 层容量，self 与 cross 宽度被无条件共用，符号尚不足以支持一般模型。",
+        "evidence": [
+          {
+            "path": "knowledge/models/encoder-decoder-streaming.md",
+            "quote": "decoder 已消费的目标前缀为 y_{<t}，第 t 步隐藏状态为 H_t。"
+          },
+          {
+            "path": "knowledge/models/encoder-decoder-streaming.md",
+            "quote": "设源层数 L、每层 cross KV 宽度 D_kv＝H_cross·d_h、每元素 b 字节"
+          }
+        ]
+      },
+      "legality": {
+        "assessment": "sufficient",
+        "reason": "明确把模型函数约束与缓存、布局和分块方案区分；固定源和稳定追加前缀的复用条件、双向重编码反例、请求隔离及表示契约有实质解释。Whisper 固定窗口与 Moonshine 变长输入均未被扩大为任意块增量能力。取消的物理最后使用条件可沿已提供的主机运行时与取消章节完整追踪。",
+        "evidence": [
+          {
+            "path": "knowledge/models/encoder-decoder-streaming.md",
+            "quote": "合法性首先来自模型 forward 语义，而不是实现者临时选一个 mask。"
+          },
+          {
+            "path": "knowledge/models/encoder-decoder-streaming.md",
+            "quote": "若新源只是在旧源后追加位置，且模型契约保证旧位置的 E 不变、mask 只是在末尾扩展，则 cross K/V 可以追加"
+          },
+          {
+            "path": "knowledge/models/encoder-decoder-streaming.md",
+            "quote": "变长输入能力、减少 padding、真正按稳定块延续，是三件需要分别验证的能力。"
+          }
+        ]
+      },
+      "algorithm": {
+        "assessment": "partial",
+        "reason": "源投影循环、版本检查和发布不变量已有展开，但核心 decoder_forward 仍为未解释调用，没有逐层输入和新增 self KV 的产生路径。空源分支位于返回之后；预算暂停、长度终止和整请求完成被合并处理，尚不能据此独立实现正确的推进与恢复。",
+        "evidence": [
+          {
+            "path": "knowledge/models/encoder-decoder-streaming.md",
+            "quote": "H_t ← decoder_forward(y_{<t}, self_KV, source_state.cross_KV,"
+          },
+          {
+            "path": "knowledge/models/encoder-decoder-streaming.md",
+            "quote": "更新 self_KV[t]；把 y_t 记为暂定输出；"
+          },
+          {
+            "path": "knowledge/models/encoder-decoder-streaming.md",
+            "quote": "6. 若源为空或有效长度为 0：返回 EMPTY_SOURCE，不进入 cross 解码。"
+          }
+        ]
+      },
+      "cost": {
+        "assessment": "partial",
+        "reason": "六类成本均有解释，cross 投影乘加单位、容量换算、八路输入字节和串行资源需求可复算且算术正确；但层数与 self/cross 几何混用使一般容量公式不成立。self attention 的复杂度没有声明每层、固定 head 配置及所省略的计算项，不能直接作为总目标计算。",
+        "evidence": [
+          {
+            "path": "knowledge/models/encoder-decoder-streaming.md",
+            "quote": "目标 self KV 约为 2LT D_kv b 字节。"
+          },
+          {
+            "path": "knowledge/models/encoder-decoder-streaming.md",
+            "quote": "有 self KV 时每步约 O(t D_kv)，总目标计算仍约 O(T^2 D_kv)"
+          },
+          {
+            "path": "knowledge/models/encoder-decoder-streaming.md",
+            "quote": "同步成本包括 encoder 完成、块提交、投影写入和发布边界"
+          }
+        ]
+      },
+      "adaptation": {
+        "assessment": "sufficient",
+        "reason": "源变化、目标长短、内存和带宽、设备分离、块大小、精度与布局变化均连接到具体依赖和成本。相关 cross 缓存章节还说明更换源后目标 self 状态的依赖及重算要求；八路场景给出选择反转条件，且未把假设时序作为实测承诺。",
+        "evidence": [
+          {
+            "path": "knowledge/models/encoder-decoder-streaming.md",
+            "quote": "encoder 与 decoder 分设备时，先比较传输 E 与传输 cross KV 的字节，再决定在哪一侧投影"
+          },
+          {
+            "path": "knowledge/models/encoder-decoder-streaming.md",
+            "quote": "精度、布局或页长改变后，要重新检查缓存合法性和内核契约。"
+          },
+          {
+            "path": "knowledge/models/encoder-decoder-streaming.md",
+            "quote": "若任务只要求整段录音最终结果，A 的简单批处理可能更合算"
+          }
+        ]
+      },
+      "diagnosis": {
+        "assessment": "partial",
+        "reason": "竞争解释、控制变量、反证方向及质量与延迟的联合口径较充分；实际预检也检测到指定 mask 和 stale-cache 扰动。但脚本允许新版本提交更小样本偏移，违背正文不变量；所谓追加缓存检查实际重新投影全部源，缓存等价路径又共享全部数值实现，验证强度不足以支撑作者列出的完整检查范围。",
+        "evidence": [
+          {
+            "path": "knowledge/models/encoder-decoder-streaming.md",
+            "quote": "已提交样本偏移和稳定文本前缀不缩短"
+          },
+          {
+            "path": "knowledge/models/encoder-decoder-streaming.md",
+            "quote": "正确实现应在同一固定输入、同一源版本和明确 mask 下与独立参考一致"
+          },
+          {
+            "path": "knowledge/models/encoder-decoder-streaming.md",
+            "quote": "机制检查可在 CPU 上用小矩阵验证：缓存 cross K/V 与逐步重算输出一致"
+          }
+        ]
+      }
+    },
+    "findings": [
+      {
+        "id": "K-MODEL-005-R1-001",
+        "criterion": "algorithm",
+        "evidence": "正文定义“decoder 已消费的目标前缀为 y_{<t}”，随后执行“H_t ← decoder_forward(y_{<t}, self_KV, source_state.cross_KV,”、“logits ← output_head(H_t)；按任务规则选择或采样 y_t；”和“更新 self_KV[t]；把 y_t 记为暂定输出；”。没有定义 self_KV[t] 对应哪个已消费输入，也没有展开 decoder 各层。",
+        "impact": "读者无法判断每轮消费完整前缀还是仅新增输入，可能重复追加历史，或把刚选出的 y_t 当成已经具有全部层 KV。若 t 表示移位后的预测槽，其 KV 实际对应已知输入，这一约定也未说明。完整所供相邻章节没有补足这条逐层 forward 链。",
+        "blocking": true,
+        "required_revision": "明确目标 token 索引、实际 decoder 输入位置、已计算 KV 长度和下一预测位置；展开任务前缀/BOS 初始化及后续仅消费未计算已知输入的路径。给出代表性多层 decoder 的 self 投影与追加、self attention、cross attention、后续子层及层间隐藏状态关系，或明确委托给已完整解释这些步骤的章节。说明本轮 logits 所预测 token 的 KV 何时产生，并持久化继续执行所需状态。"
+      },
+      {
+        "id": "K-MODEL-005-R1-002",
+        "criterion": "algorithm",
+        "evidence": "BuildSourceState 第 5 步为“返回 SourceState，并把 v、S_valid、E 与 cross K/V 绑定为同一内容身份；”，第 6 步才是“若源为空或有效长度为 0：返回 EMPTY_SOURCE，不进入 cross 解码。”",
+        "impact": "空源保护不可达；实际流程可能先让不支持空输入的 processor/encoder 执行，或者返回有效长度为零的正常 SourceState。脚本检查的是非空 keys 上的全屏蔽集合，不能证明这个分支正确。",
+        "blocking": true,
+        "required_revision": "将原始空源及处理后有效长度为零的检查放在相关消费者和正常返回之前，明确各自返回路径；使 EMPTY_SOURCE 不会进入投影或 cross 解码。"
+      },
+      {
+        "id": "K-MODEL-005-R1-003",
+        "criterion": "algorithm",
+        "evidence": "DecodeStep 输入包含“剩余时间/长度预算”，循环条件为“while 未到 EOS、长度上限或预算边界:”，退出后却规定“若当前块是最后一块：执行模型允许的 flush，消费最后 lookahead，提交 END_OF_REQUEST；”。非最后块则直接返回 WAIT_NEXT_BLOCK。",
+        "impact": "最后一个源块已到达而本次执行预算耗尽时，目标生成可能尚未结束，却会提交整请求完成。非最后块在预算耗尽时也可能仍有可执行工作，无条件等待下一块会造成错误暂停；正文没有区分请求长度终止与调度时间片。",
+        "blocking": true,
+        "required_revision": "保留明确退出原因，区分执行预算暂停、等待更多源、目标 EOS、请求长度终止与失败；预算暂停保存进度并允许在现有源上继续。仅在源 flush 已完成且目标达到合法终止条件时发布相应请求终态，说明尾部不足 lookahead 时采用的模型契约。"
+      },
+      {
+        "id": "K-MODEL-005-R1-004",
+        "criterion": "cost",
+        "evidence": "正文写“设源层数 L、每层 cross KV 宽度 D_kv＝H_cross·d_h”，同时给出“全部 cross K/V 约为 2LS D_kv b 字节”和“目标 self KV 约为 2LT D_kv b 字节”；成本段再以同一个 D_kv 表示 self attention 计算。",
+        "impact": "cross K/V 份数由 decoder 中的 cross 模块决定，不由 encoder 源层数决定；self 与 cross 的 KV head 和通道配置也可以不同。当前写法会在两侧层数或模块几何不同的模型上算错容量，并把 KV 存储宽度当作一般 attention 运算宽度。",
+        "blocking": true,
+        "required_revision": "将 L 明确定义为相应 decoder 层/模块数，分别定义 self 与 cross 的 KV 宽度；可用逐层求和给出一般容量式，再把现有数值例限定为同宽同精度配置。将 self attention 复杂度限定为明确的每层 MHA 假设，或区分 query heads 与 KV heads，并说明投影、FFN、output head 等未包含项。"
+      },
+      {
+        "id": "K-MODEL-005-R1-005",
+        "criterion": "diagnosis",
+        "evidence": "正文要求“已提交样本偏移和稳定文本前缀不缩短”。脚本仅在“if version == ledger['version'] and committed_sample < ledger['committed']:”时拒绝偏移回退，因此 advance_ledger({'version': 2, 'committed': 800, 'stable': 'alpha beta'}, 3, 799, 'alpha beta') 会通过。追加检查使用“extended_keys, extended_values = project(extended_rows, wk, wv)”，实际重投影了全部源。",
+        "impact": "检查器会接受违反正文提交不变量的新版本事件；现有 stale-ledger 用例同时改变版本、偏移和文本，不能分别验证这些保护。追加等价检查也没有经过旧缓存加新后缀的真实数据流。退出码 0 不能支持作者对这些机制的完整覆盖判断。",
+        "blocking": true,
+        "required_revision": "对同一请求的所有兼容源版本保持已提交样本偏移单调，并分别检查版本过期、同版本偏移回退、新版本偏移回退、文本回退和合法推进；让故障路径由同一不变量判定器实际检出。追加用例应保留旧 K/V、仅投影新行再拼接，与完整重算比较。为共享 project/attention 的等价检查补充独立的非平凡数值参考或解析结果，避免共同实现错误同时通过。"
+      }
+    ],
+    "limitations": [
+      "实际执行证据仅支持纯 Python CPU 小矩阵检查；没有真实模型推理、目标设备数值/同步/性能、WER 或服务负载实验。这些边界已明确声明，本身不构成阻塞问题。",
+      "Whisper 与 Moonshine 的固定论文事实经所供全文核对，未发现影响本章结论的来源失真；不能据此证明任意块的无损增量处理能力。",
+      "本次仅能读取用户提供的材料；工具未暴露本地文件或执行接口，不能重新核验磁盘哈希、链接目标存在性或独立重跑脚本。所列哈希按要求原样绑定。",
+      "docs/knowledge-build-workflow.md 未在所供材料中，无法声称已阅读其全文；本次严格采用用户明确提供的 review JSON 格式。"
+    ],
+    "checks": [
+      {
+        "script": "tools/check_k_model_005_full.py",
+        "args": []
+      }
+    ],
+    "no_checks_reason": "",
+    "reading_scope": "完整阅读所供抽取文本，范围均为零基、半开字符区间：AGENTS.md [0,567)；docs/knowledge-method.md [0,2251)；docs/knowledge-review.md [0,3016)；knowledge/models/encoder-decoder-streaming.md [0,10004)；knowledge/sources/S-TRANSFORMER.md [0,550)；knowledge/sources/S-WHISPER.md [0,518)；knowledge/sources/S-MOONSHINE.md [0,537)；knowledge/algorithms/cross-attention-cache.md [0,3845)；knowledge/models/speech-generation.md [0,3599)；knowledge/system-semantics/tokenization-io.md [0,3217)；knowledge/system-semantics/host-runtime.md [0,7559)；knowledge/system-semantics/cancellation-resource-completion.md [0,3782)；knowledge/workloads/slo-goodput.md [0,2616)；knowledge/models/omni-multimodal.md [0,3735)；knowledge/tools/statistical-experiments.md [0,4269)；references/S-TRANSFORMER/fulltext.txt [0,39757)；references/S-WHISPER/fulltext.txt [0,112336)；references/S-MOONSHINE/fulltext.txt [0,26755)。knowledge/system-semantics/design-synthesis.md 仅阅读所供 [0,9444) 摘录，其全文为 9874 字符，未列入 documents。完整阅读 candidate.test_script 所供脚本从首行至 EOF、author_notes 和 actual_preflight 执行记录。论文阅读范围指所供全文抽取文本，不声称检查了原始 PDF 图像或源码归档。",
+    "test_assessment": "已检查完整脚本算法和提供的实际预检记录。记录显示 remote_bwrap 中 Python 3.12 以隔离参数执行绑定脚本，returncode=0、stderr 为空、未超时；这属于协调者提供的实际执行，本 reviewer 未重新运行。缓存与重算在两个 query 上差值为 0；错误 causal-cross、full-self 和改源后旧缓存的扰动分别产生约 0.5678、0.2686、0.2246 差异，确实检测了这些指定输入上的机制差别。空可见集合、单源输出等于 V、容量常数是有意义的不变量。局限在于缓存和重算完全共享 project、attention、softmax，不能独立发现共同的多源数值错误；追加路径重新投影全部源，没有检验增量拼接；改源用例仅证明 stale 输出有差异，没有实现缓存身份拒绝。ledger 负对照只断言故障函数返回旧版本，没有通过统一守恒判定器检查，正确路径也漏掉新版本偏移回退。作者如实声明自己未执行，预检补充了执行证据，但其对追加和提交保护的覆盖判断仍过宽。脚本未覆盖多层自回归输入/KV 对应、空源构建分支、预算暂停与最终完成，不能据 CPU 检查通过关闭这些正文算法缺口。"
+  },
+  "format_status": "strict_json",
+  "format_error": null,
+  "output_text": "{\n  \"entry_id\": \"K-MODEL-005\",\n  \"body_sha256\": \"c8aa4ed6235b5cfb49b590b164927d4e9b8066eafdc8463ccd4303792051e4ec\",\n  \"reviewer\": \"sol-reviewer:K-MODEL-005:round-1\",\n  \"decision\": \"revise\",\n  \"documents\": {\n    \"AGENTS.md\": \"b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a\",\n    \"docs/knowledge-method.md\": \"69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb\",\n    \"docs/knowledge-review.md\": \"f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21\",\n    \"knowledge/models/encoder-decoder-streaming.md\": \"c8aa4ed6235b5cfb49b590b164927d4e9b8066eafdc8463ccd4303792051e4ec\",\n    \"knowledge/sources/S-TRANSFORMER.md\": \"e1858681f1645209756f7eb640dcdfe3a786f5af3e529fb61bce6de0212a82d7\",\n    \"knowledge/sources/S-WHISPER.md\": \"3983e829fbc2948712af3a9aab931917271565753f83cb0e89f1cfad2a4b36e1\",\n    \"knowledge/sources/S-MOONSHINE.md\": \"4370d127afcf5863d1df06bda22911b343655c31bd1ead107135f30e81074759\",\n    \"knowledge/algorithms/cross-attention-cache.md\": \"24ccdfcf4b31aba460cc537493e1c17e73643683f1c4e2df5a6c673fb5e2166e\",\n    \"knowledge/models/speech-generation.md\": \"9cab040f27f77dc8040a6cc6f0ae96a175542e4379e2262ca2cdb53fb9aee3a4\",\n    \"knowledge/system-semantics/tokenization-io.md\": \"1dea61a1f632805cb90873e747cb3079230a7b6bab76b17b4281662b82367565\",\n    \"knowledge/system-semantics/host-runtime.md\": \"005342b6131acdd072d5cf35456a5b01e5630f764b614e7090639fde01a5b36a\",\n    \"knowledge/system-semantics/cancellation-resource-completion.md\": \"919052c77f65a13c9dc09aad03341ed31f0820dbbdcb2750b5789f349f9e86c1\",\n    \"knowledge/workloads/slo-goodput.md\": \"5aa9b71cddb7d896ffa1fe6d78ac61cf0bb92d76279ae4d563f1110ed9dbedb4\",\n    \"knowledge/models/omni-multimodal.md\": \"f1fc4dc6611ad1b53ad8cc7f2abf0cbf9b9b2022d2d22c64dc712a39943d9d15\",\n    \"knowledge/tools/statistical-experiments.md\": \"908b3588a6fa20bb1f2aed9f5db51c4b462953d79f8944cdbcfea7141c74644f\",\n    \"references/S-TRANSFORMER/fulltext.txt\": \"7bae85f4505c924b16d6c601c744b9665f245a20ea84258aa86bb51036a16805\",\n    \"references/S-WHISPER/fulltext.txt\": \"74d3fc9a7877dd5ff86ac147cb73f4a88d9443aec76f79f12fed602d351eb7de\",\n    \"references/S-MOONSHINE/fulltext.txt\": \"e0fd9d8b31bccf8c41eee0c181bcfb00cf89461a7e0b80844984e7b4cf0d19eb\",\n    \"tools/check_k_model_005_full.py\": \"9a338de59d5891d74234a60ae13c93958305077ca86b6d22aff287d4bec00a99\"\n  },\n  \"criteria\": {\n    \"definition\": {\n      \"assessment\": \"partial\",\n      \"reason\": \"动机、源特征与表示、三类 attention 和发布状态已定义；但 H_t 没有区分 decoder 层及子层输入，目标预测位置与已计算 KV 位置也未建立对应关系。L 被称为源层数却用于逐 decoder cross 层容量，self 与 cross 宽度被无条件共用，符号尚不足以支持一般模型。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/models/encoder-decoder-streaming.md\",\n          \"quote\": \"decoder 已消费的目标前缀为 y_{<t}，第 t 步隐藏状态为 H_t。\"\n        },\n        {\n          \"path\": \"knowledge/models/encoder-decoder-streaming.md\",\n          \"quote\": \"设源层数 L、每层 cross KV 宽度 D_kv＝H_cross·d_h、每元素 b 字节\"\n        }\n      ]\n    },\n    \"legality\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"明确把模型函数约束与缓存、布局和分块方案区分；固定源和稳定追加前缀的复用条件、双向重编码反例、请求隔离及表示契约有实质解释。Whisper 固定窗口与 Moonshine 变长输入均未被扩大为任意块增量能力。取消的物理最后使用条件可沿已提供的主机运行时与取消章节完整追踪。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/models/encoder-decoder-streaming.md\",\n          \"quote\": \"合法性首先来自模型 forward 语义，而不是实现者临时选一个 mask。\"\n        },\n        {\n          \"path\": \"knowledge/models/encoder-decoder-streaming.md\",\n          \"quote\": \"若新源只是在旧源后追加位置，且模型契约保证旧位置的 E 不变、mask 只是在末尾扩展，则 cross K/V 可以追加\"\n        },\n        {\n          \"path\": \"knowledge/models/encoder-decoder-streaming.md\",\n          \"quote\": \"变长输入能力、减少 padding、真正按稳定块延续，是三件需要分别验证的能力。\"\n        }\n      ]\n    },\n    \"algorithm\": {\n      \"assessment\": \"partial\",\n      \"reason\": \"源投影循环、版本检查和发布不变量已有展开，但核心 decoder_forward 仍为未解释调用，没有逐层输入和新增 self KV 的产生路径。空源分支位于返回之后；预算暂停、长度终止和整请求完成被合并处理，尚不能据此独立实现正确的推进与恢复。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/models/encoder-decoder-streaming.md\",\n          \"quote\": \"H_t ← decoder_forward(y_{<t}, self_KV, source_state.cross_KV,\"\n        },\n        {\n          \"path\": \"knowledge/models/encoder-decoder-streaming.md\",\n          \"quote\": \"更新 self_KV[t]；把 y_t 记为暂定输出；\"\n        },\n        {\n          \"path\": \"knowledge/models/encoder-decoder-streaming.md\",\n          \"quote\": \"6. 若源为空或有效长度为 0：返回 EMPTY_SOURCE，不进入 cross 解码。\"\n        }\n      ]\n    },\n    \"cost\": {\n      \"assessment\": \"partial\",\n      \"reason\": \"六类成本均有解释，cross 投影乘加单位、容量换算、八路输入字节和串行资源需求可复算且算术正确；但层数与 self/cross 几何混用使一般容量公式不成立。self attention 的复杂度没有声明每层、固定 head 配置及所省略的计算项，不能直接作为总目标计算。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/models/encoder-decoder-streaming.md\",\n          \"quote\": \"目标 self KV 约为 2LT D_kv b 字节。\"\n        },\n        {\n          \"path\": \"knowledge/models/encoder-decoder-streaming.md\",\n          \"quote\": \"有 self KV 时每步约 O(t D_kv)，总目标计算仍约 O(T^2 D_kv)\"\n        },\n        {\n          \"path\": \"knowledge/models/encoder-decoder-streaming.md\",\n          \"quote\": \"同步成本包括 encoder 完成、块提交、投影写入和发布边界\"\n        }\n      ]\n    },\n    \"adaptation\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"源变化、目标长短、内存和带宽、设备分离、块大小、精度与布局变化均连接到具体依赖和成本。相关 cross 缓存章节还说明更换源后目标 self 状态的依赖及重算要求；八路场景给出选择反转条件，且未把假设时序作为实测承诺。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/models/encoder-decoder-streaming.md\",\n          \"quote\": \"encoder 与 decoder 分设备时，先比较传输 E 与传输 cross KV 的字节，再决定在哪一侧投影\"\n        },\n        {\n          \"path\": \"knowledge/models/encoder-decoder-streaming.md\",\n          \"quote\": \"精度、布局或页长改变后，要重新检查缓存合法性和内核契约。\"\n        },\n        {\n          \"path\": \"knowledge/models/encoder-decoder-streaming.md\",\n          \"quote\": \"若任务只要求整段录音最终结果，A 的简单批处理可能更合算\"\n        }\n      ]\n    },\n    \"diagnosis\": {\n      \"assessment\": \"partial\",\n      \"reason\": \"竞争解释、控制变量、反证方向及质量与延迟的联合口径较充分；实际预检也检测到指定 mask 和 stale-cache 扰动。但脚本允许新版本提交更小样本偏移，违背正文不变量；所谓追加缓存检查实际重新投影全部源，缓存等价路径又共享全部数值实现，验证强度不足以支撑作者列出的完整检查范围。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/models/encoder-decoder-streaming.md\",\n          \"quote\": \"已提交样本偏移和稳定文本前缀不缩短\"\n        },\n        {\n          \"path\": \"knowledge/models/encoder-decoder-streaming.md\",\n          \"quote\": \"正确实现应在同一固定输入、同一源版本和明确 mask 下与独立参考一致\"\n        },\n        {\n          \"path\": \"knowledge/models/encoder-decoder-streaming.md\",\n          \"quote\": \"机制检查可在 CPU 上用小矩阵验证：缓存 cross K/V 与逐步重算输出一致\"\n        }\n      ]\n    }\n  },\n  \"findings\": [\n    {\n      \"id\": \"K-MODEL-005-R1-001\",\n      \"criterion\": \"algorithm\",\n      \"evidence\": \"正文定义“decoder 已消费的目标前缀为 y_{<t}”，随后执行“H_t ← decoder_forward(y_{<t}, self_KV, source_state.cross_KV,”、“logits ← output_head(H_t)；按任务规则选择或采样 y_t；”和“更新 self_KV[t]；把 y_t 记为暂定输出；”。没有定义 self_KV[t] 对应哪个已消费输入，也没有展开 decoder 各层。\",\n      \"impact\": \"读者无法判断每轮消费完整前缀还是仅新增输入，可能重复追加历史，或把刚选出的 y_t 当成已经具有全部层 KV。若 t 表示移位后的预测槽，其 KV 实际对应已知输入，这一约定也未说明。完整所供相邻章节没有补足这条逐层 forward 链。\",\n      \"blocking\": true,\n      \"required_revision\": \"明确目标 token 索引、实际 decoder 输入位置、已计算 KV 长度和下一预测位置；展开任务前缀/BOS 初始化及后续仅消费未计算已知输入的路径。给出代表性多层 decoder 的 self 投影与追加、self attention、cross attention、后续子层及层间隐藏状态关系，或明确委托给已完整解释这些步骤的章节。说明本轮 logits 所预测 token 的 KV 何时产生，并持久化继续执行所需状态。\"\n    },\n    {\n      \"id\": \"K-MODEL-005-R1-002\",\n      \"criterion\": \"algorithm\",\n      \"evidence\": \"BuildSourceState 第 5 步为“返回 SourceState，并把 v、S_valid、E 与 cross K/V 绑定为同一内容身份；”，第 6 步才是“若源为空或有效长度为 0：返回 EMPTY_SOURCE，不进入 cross 解码。”\",\n      \"impact\": \"空源保护不可达；实际流程可能先让不支持空输入的 processor/encoder 执行，或者返回有效长度为零的正常 SourceState。脚本检查的是非空 keys 上的全屏蔽集合，不能证明这个分支正确。\",\n      \"blocking\": true,\n      \"required_revision\": \"将原始空源及处理后有效长度为零的检查放在相关消费者和正常返回之前，明确各自返回路径；使 EMPTY_SOURCE 不会进入投影或 cross 解码。\"\n    },\n    {\n      \"id\": \"K-MODEL-005-R1-003\",\n      \"criterion\": \"algorithm\",\n      \"evidence\": \"DecodeStep 输入包含“剩余时间/长度预算”，循环条件为“while 未到 EOS、长度上限或预算边界:”，退出后却规定“若当前块是最后一块：执行模型允许的 flush，消费最后 lookahead，提交 END_OF_REQUEST；”。非最后块则直接返回 WAIT_NEXT_BLOCK。\",\n      \"impact\": \"最后一个源块已到达而本次执行预算耗尽时，目标生成可能尚未结束，却会提交整请求完成。非最后块在预算耗尽时也可能仍有可执行工作，无条件等待下一块会造成错误暂停；正文没有区分请求长度终止与调度时间片。\",\n      \"blocking\": true,\n      \"required_revision\": \"保留明确退出原因，区分执行预算暂停、等待更多源、目标 EOS、请求长度终止与失败；预算暂停保存进度并允许在现有源上继续。仅在源 flush 已完成且目标达到合法终止条件时发布相应请求终态，说明尾部不足 lookahead 时采用的模型契约。\"\n    },\n    {\n      \"id\": \"K-MODEL-005-R1-004\",\n      \"criterion\": \"cost\",\n      \"evidence\": \"正文写“设源层数 L、每层 cross KV 宽度 D_kv＝H_cross·d_h”，同时给出“全部 cross K/V 约为 2LS D_kv b 字节”和“目标 self KV 约为 2LT D_kv b 字节”；成本段再以同一个 D_kv 表示 self attention 计算。\",\n      \"impact\": \"cross K/V 份数由 decoder 中的 cross 模块决定，不由 encoder 源层数决定；self 与 cross 的 KV head 和通道配置也可以不同。当前写法会在两侧层数或模块几何不同的模型上算错容量，并把 KV 存储宽度当作一般 attention 运算宽度。\",\n      \"blocking\": true,\n      \"required_revision\": \"将 L 明确定义为相应 decoder 层/模块数，分别定义 self 与 cross 的 KV 宽度；可用逐层求和给出一般容量式，再把现有数值例限定为同宽同精度配置。将 self attention 复杂度限定为明确的每层 MHA 假设，或区分 query heads 与 KV heads，并说明投影、FFN、output head 等未包含项。\"\n    },\n    {\n      \"id\": \"K-MODEL-005-R1-005\",\n      \"criterion\": \"diagnosis\",\n      \"evidence\": \"正文要求“已提交样本偏移和稳定文本前缀不缩短”。脚本仅在“if version == ledger['version'] and committed_sample < ledger['committed']:”时拒绝偏移回退，因此 advance_ledger({'version': 2, 'committed': 800, 'stable': 'alpha beta'}, 3, 799, 'alpha beta') 会通过。追加检查使用“extended_keys, extended_values = project(extended_rows, wk, wv)”，实际重投影了全部源。\",\n      \"impact\": \"检查器会接受违反正文提交不变量的新版本事件；现有 stale-ledger 用例同时改变版本、偏移和文本，不能分别验证这些保护。追加等价检查也没有经过旧缓存加新后缀的真实数据流。退出码 0 不能支持作者对这些机制的完整覆盖判断。\",\n      \"blocking\": true,\n      \"required_revision\": \"对同一请求的所有兼容源版本保持已提交样本偏移单调，并分别检查版本过期、同版本偏移回退、新版本偏移回退、文本回退和合法推进；让故障路径由同一不变量判定器实际检出。追加用例应保留旧 K/V、仅投影新行再拼接，与完整重算比较。为共享 project/attention 的等价检查补充独立的非平凡数值参考或解析结果，避免共同实现错误同时通过。\"\n    }\n  ],\n  \"limitations\": [\n    \"实际执行证据仅支持纯 Python CPU 小矩阵检查；没有真实模型推理、目标设备数值/同步/性能、WER 或服务负载实验。这些边界已明确声明，本身不构成阻塞问题。\",\n    \"Whisper 与 Moonshine 的固定论文事实经所供全文核对，未发现影响本章结论的来源失真；不能据此证明任意块的无损增量处理能力。\",\n    \"本次仅能读取用户提供的材料；工具未暴露本地文件或执行接口，不能重新核验磁盘哈希、链接目标存在性或独立重跑脚本。所列哈希按要求原样绑定。\",\n    \"docs/knowledge-build-workflow.md 未在所供材料中，无法声称已阅读其全文；本次严格采用用户明确提供的 review JSON 格式。\"\n  ],\n  \"checks\": [\n    {\n      \"script\": \"tools/check_k_model_005_full.py\",\n      \"args\": []\n    }\n  ],\n  \"no_checks_reason\": \"\",\n  \"reading_scope\": \"完整阅读所供抽取文本，范围均为零基、半开字符区间：AGENTS.md [0,567)；docs/knowledge-method.md [0,2251)；docs/knowledge-review.md [0,3016)；knowledge/models/encoder-decoder-streaming.md [0,10004)；knowledge/sources/S-TRANSFORMER.md [0,550)；knowledge/sources/S-WHISPER.md [0,518)；knowledge/sources/S-MOONSHINE.md [0,537)；knowledge/algorithms/cross-attention-cache.md [0,3845)；knowledge/models/speech-generation.md [0,3599)；knowledge/system-semantics/tokenization-io.md [0,3217)；knowledge/system-semantics/host-runtime.md [0,7559)；knowledge/system-semantics/cancellation-resource-completion.md [0,3782)；knowledge/workloads/slo-goodput.md [0,2616)；knowledge/models/omni-multimodal.md [0,3735)；knowledge/tools/statistical-experiments.md [0,4269)；references/S-TRANSFORMER/fulltext.txt [0,39757)；references/S-WHISPER/fulltext.txt [0,112336)；references/S-MOONSHINE/fulltext.txt [0,26755)。knowledge/system-semantics/design-synthesis.md 仅阅读所供 [0,9444) 摘录，其全文为 9874 字符，未列入 documents。完整阅读 candidate.test_script 所供脚本从首行至 EOF、author_notes 和 actual_preflight 执行记录。论文阅读范围指所供全文抽取文本，不声称检查了原始 PDF 图像或源码归档。\",\n  \"test_assessment\": \"已检查完整脚本算法和提供的实际预检记录。记录显示 remote_bwrap 中 Python 3.12 以隔离参数执行绑定脚本，returncode=0、stderr 为空、未超时；这属于协调者提供的实际执行，本 reviewer 未重新运行。缓存与重算在两个 query 上差值为 0；错误 causal-cross、full-self 和改源后旧缓存的扰动分别产生约 0.5678、0.2686、0.2246 差异，确实检测了这些指定输入上的机制差别。空可见集合、单源输出等于 V、容量常数是有意义的不变量。局限在于缓存和重算完全共享 project、attention、softmax，不能独立发现共同的多源数值错误；追加路径重新投影全部源，没有检验增量拼接；改源用例仅证明 stale 输出有差异，没有实现缓存身份拒绝。ledger 负对照只断言故障函数返回旧版本，没有通过统一守恒判定器检查，正确路径也漏掉新版本偏移回退。作者如实声明自己未执行，预检补充了执行证据，但其对追加和提交保护的覆盖判断仍过宽。脚本未覆盖多层自回归输入/KV 对应、空源构建分支、预算暂停与最终完成，不能据 CPU 检查通过关闭这些正文算法缺口。\"\n}",
+  "elapsed_seconds": 235.25
+}

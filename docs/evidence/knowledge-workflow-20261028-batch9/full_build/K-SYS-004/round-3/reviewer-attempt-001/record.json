@@ -1,0 +1,283 @@
+{
+  "role": "reviewer",
+  "engine": "sol",
+  "requested_model": "gpt-6.1-sol",
+  "reasoning_effort": "high",
+  "prompt_sha256": "046690b238b5dbcd624c0fdcff83adcb407fc43babd1b6ee854f4e77be0a688c",
+  "usage": [
+    {
+      "input_tokens": 836809,
+      "cached_input_tokens": 634624,
+      "cache_write_input_tokens": 0,
+      "output_tokens": 6644,
+      "reasoning_output_tokens": 2099
+    }
+  ],
+  "answer": "{\n  \"entry_id\": \"K-SYS-004\",\n  \"body_sha256\": \"50dd6f59586f6fd0f45f332436df258c97768a80321ab6e2c04ff643d6fe2f5a\",\n  \"reviewer\": \"sol-reviewer:K-SYS-004:round-3\",\n  \"decision\": \"accept\",\n  \"documents\": {\n    \"AGENTS.md\": \"b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a\",\n    \"docs/knowledge-method.md\": \"69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb\",\n    \"docs/knowledge-review.md\": \"f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21\",\n    \"knowledge/system-semantics/cancellation-resource-completion.md\": \"50dd6f59586f6fd0f45f332436df258c97768a80321ab6e2c04ff643d6fe2f5a\",\n    \"knowledge/sources/S-ASGI.md\": \"ca77c63e9a95b8be934ae485d89245f895dc7fa49fdf7fcce03b139346127ed9\",\n    \"knowledge/sources/S-CUDA-ALLOC.md\": \"3ba021c941f2ed8f048be34d1ba0110f37675a3460013f24a239cc43a1e8630a\",\n    \"knowledge/sources/S-CUDA-ASYNC.md\": \"40df9287d0648a8ef55a046ceb1c18dd402619ede6e57ca33d3f90e4ace3da05\",\n    \"knowledge/sources/S-RDMA.md\": \"660948886af9019ac90e6c58ab7b2a4ca9dbf282f1bb74de37162403f24f4d49\",\n    \"knowledge/sources/S-LINUX-IO.md\": \"786caae53cc1e80173616ce470c481145e285c2176b7cff4777576cc893fc316\",\n    \"knowledge/sources/S-SERVERLESSLLM.md\": \"aff9202b72fffcdf3145d0f014888070d2e12995b04f9c259930ad90a806473d\",\n    \"knowledge/system-semantics/model-lifecycle.md\": \"bf15950cafcbb584f031cc3a1ea9eaf3331d2816819c6e468ae333d70a3c7c0e\",\n    \"knowledge/system-semantics/serving-recovery.md\": \"f551fa1f1e6213469c856a880839eefff504fb39f4dd692000b2df80a20a7f5e\",\n    \"knowledge/tools/failure-evidence.md\": \"23dfc65dcbd319c1789dcb80b62f6c843bb5db8c076e86a00643cff546700067\",\n    \"knowledge/engine-index/sglang-radix-scheduler.md\": \"abf1eb7040f1f6ba697822719094f8cc26172a329d6003a027862ef89de03374\",\n    \"knowledge/engine-index/tensorrt-llm.md\": \"6ade1253f3747041bef4a816d82387c3771bff3459a153719cfbd571c2454c0b\",\n    \"knowledge/models/speech-generation.md\": \"9cab040f27f77dc8040a6cc6f0ae96a175542e4379e2262ca2cdb53fb9aee3a4\",\n    \"knowledge/workloads/session-workloads.md\": \"0269e1987e1107d0cf0135cb32aa759c67d5266cfa09fb1402f97704c4ab4d78\",\n    \"references/S-ASGI/fulltext.txt\": \"ba273c91f3e7b8c32f863e8b57145798c3b5c9275073f758a41e1cb0a6f5bee3\",\n    \"references/S-RDMA/fulltext.txt\": \"9f4bea8bc130fc7dcdf0b53d20ce7269555cddd2a7c67e5d54c6dbd7a55b2720\",\n    \"tools/check_k_sys_004_full.py\": \"c6cf9f00296ac9944c747d8e9e499f13ea65ebf66397046cbdf63d1c5367c33f\"\n  },\n  \"criteria\": {\n    \"definition\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"明确区分请求执行代次、物理槽生命期、业务终态和物理责任，给出回收谓词、事件算法输入输出及迁移状态。p 被定义为业务提交序号，未将已选 token、已计算 KV 与客户端消费混为一谈。本章承担资源与提交协议，不承担模型逐层计算算法。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/system-semantics/cancellation-resource-completion.md\",\n          \"quote\": \"retiring_x ∧ L_x=∅ ∧ U_x=∅ ∧ O_x=∅ ∧ B_x=∅ ∧ Q_x=∅。\"\n        },\n        {\n          \"path\": \"knowledge/system-semantics/cancellation-resource-completion.md\",\n          \"quote\": \"p 是最终业务提交序号，不是“已生成 token 数”或“KV 长度”的别名。\"\n        }\n      ]\n    },\n    \"legality\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"最后访问结束、业务成功、消费者可见性和输出借用分别设定证据条件；说明别名保护、部分提交、超时、图地址资格和 collective 参与约束。迁移明确要求实际提交端接受 fencing，并限定无法参加事务或去重的外部副作用范围。ASGI、RDMA 和图内存节点的关键陈述与所供原文相符，通用协议被标为独立推导。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/system-semantics/cancellation-resource-completion.md\",\n          \"quote\": \"“访问已经结束”和“结果成功”分别记录。\"\n        },\n        {\n          \"path\": \"knowledge/system-semantics/cancellation-resource-completion.md\",\n          \"quote\": \"必要前提是授权验证、提交安装与接管决定处于同一个线性化域。\"\n        },\n        {\n          \"path\": \"knowledge/system-semantics/cancellation-resource-completion.md\",\n          \"quote\": \"无法参加事务、无法 fencing 且不能按身份去重的外部副作用，不在本协议的安全迁移范围内。\"\n        }\n      ]\n    },\n    \"algorithm\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"两段伪代码给出初始化、事件入口、原子更新、完成和失败分支。资源侧先登记再启动，重复和旧事件不能抵消其他责任。迁移侧在 A 中关闭入口，安装或撤销关门前的 J，J 为空后固定最终 p，保持门控直至放弃或接管后激活；安装端共同验证票据、授权和前驱版本。快照后源推进、预读授权后暂停以及接管确认丢失三种交错均有明确截断点。K-SYS-004-r2-migration-commit-fence 已修复，相关 workflow 阻断可关闭。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/system-semantics/cancellation-resource-completion.md\",\n          \"quote\": \"关门与 ENTER_COMMIT 在同一状态域内排序；源端所有提交入口受此门控。\"\n        },\n        {\n          \"path\": \"knowledge/system-semantics/cancellation-resource-completion.md\",\n          \"quote\": \"持续处理 J：每张已进入票据必须安装成功或在 A 中明确撤销。\"\n        },\n        {\n          \"path\": \"knowledge/system-semantics/cancellation-resource-completion.md\",\n          \"quote\": \"A 在安装时重新检查 term、owner、当前票据、前驱版本和请求资格，并在同一事务内安装增量与输出记录。\"\n        },\n        {\n          \"path\": \"knowledge/system-semantics/cancellation-resource-completion.md\",\n          \"quote\": \"不根据本地超时重新授权 src，不丢弃可能已经承担恢复责任的 dst。\"\n        }\n      ]\n    },\n    \"cost\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"覆盖剩余计算、初始化访存、通信、责任元数据、串行状态域同步和副本驻留，区分并行依赖最大值与所选串行暂停路径。复算 32 MiB/(8 GiB/s)=3.90625 ms、暂停和为9.90625 ms、1 GiB传输为125 ms，均正确；取消驻留算例为640 MiB。吞吐式使用设备工作单位，未把网络等待当作设备工作；共享物理容量及 used/reserved 口径明确。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/system-semantics/cancellation-resource-completion.md\",\n          \"quote\": \"T_pause = T_settle + T_delta + T_verify + T_transfer_authority + T_activate。\"\n        },\n        {\n          \"path\": \"knowledge/system-semantics/cancellation-resource-completion.md\",\n          \"quote\": \"M_cancel = λ_c E[∫ b_i(t) dt]。\"\n        },\n        {\n          \"path\": \"knowledge/system-semantics/cancellation-resource-completion.md\",\n          \"quote\": \"D 是剩余设备工作，不能把纯网络等待或空闲隔离墙钟时间直接填入。\"\n        }\n      ]\n    },\n    \"adaptation\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"条件变化表保持最后访问和唯一提交前缀等不变量，同时给出跨 stream、外部 DMA、共享对象、慢消费者、高事件率及故障后的调整依据。新增迁移条件直接对应当前机制：增量过大可预复制或放弃，授权不可达保持未知状态，共同提交域缺失时放弃单次授权预读方案。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/system-semantics/cancellation-resource-completion.md\",\n          \"quote\": \"在合法不可变前缀上预复制、缩小提交单位，或放弃本次迁移；不能放宽快照边界\"\n        },\n        {\n          \"path\": \"knowledge/system-semantics/cancellation-resource-completion.md\",\n          \"quote\": \"引入共同事务或权威提交接收端；单次读取授权方案应放弃\"\n        }\n      ]\n    },\n    \"diagnosis\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"竞争解释包含物理排空、通知阻塞、消费者借用、旧代提交、布局错误以及迁移快照过旧、旧事务穿越与网络重送，分别给出可控干预和反证后的修正方向。检查要求参考服从固定动作判定、消除遮蔽责任并核对完整提交前缀。配套检查具有固定预期、独立状态表示和实际检出的负对照，结论限定于有限模型。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/system-semantics/cancellation-resource-completion.md\",\n          \"quote\": \"分别在最终快照后尝试源提交、在授权预读后暂停旧事务、仅重送已提交 outbox\"\n        },\n        {\n          \"path\": \"knowledge/system-semantics/cancellation-resource-completion.md\",\n          \"quote\": \"迁移检查还应核对完整已提交前缀，而不只统计某一时刻 owner 的数量。\"\n        },\n        {\n          \"path\": \"knowledge/system-semantics/cancellation-resource-completion.md\",\n          \"quote\": \"拒绝的重用不能出现在历史拥有者集合中。\"\n        }\n      ]\n    }\n  },\n  \"findings\": [],\n  \"limitations\": [\n    \"接受范围为所述保守资源协议及单请求串行权威提交域协议；不构成分布式共识、持久性、源故障后快照可恢复性或网络恰好一次交付的实现证明。\",\n    \"CPU 检查未覆盖所有并发交错、永久故障域 Q、真实部分提交、别名冲突、模型逐层状态/RNG 转换、平台中止或映射撤销；这些边界已在正文声明。\",\n    \"没有 CUDA、RDMA、Linux I/O、GPU 可见性、实际最后访问、图合法性、性能或 Agent 使用效果实测证据。\",\n    \"执行结论依据本任务提供的绑定脚本及 actual_preflight 原始记录，本审阅 invocation 未重新运行 Python。作者所称 V8 实验与协调者后续 Python 执行分别记录，未将二者混同。\",\n    \"材料以外的 reader.html 文件存在性和本地磁盘字节未独立核验；正文相对链接的目标关系与所供阅读链一致。CUDA 和 ServerlessLLM 原文仅按提供摘录使用。\"\n  ],\n  \"checks\": [\n    {\n      \"script\": \"tools/check_k_sys_004_full.py\",\n      \"args\": []\n    }\n  ],\n  \"no_checks_reason\": \"\",\n  \"reading_scope\": \"完整阅读本任务提供的以下全文：AGENTS.md [0,567)、docs/knowledge-method.md [0,2251)、docs/knowledge-review.md [0,3016)、knowledge/system-semantics/cancellation-resource-completion.md [0,18300)；六份来源说明 S-ASGI [0,491)、S-CUDA-ALLOC [0,498)、S-CUDA-ASYNC [0,1610)、S-RDMA [0,739)、S-LINUX-IO [0,850)、S-SERVERLESSLLM [0,781)；knowledge/system-semantics/model-lifecycle.md [0,3556)、serving-recovery.md [0,3834)、knowledge/tools/failure-evidence.md [0,3753)、knowledge/engine-index/sglang-radix-scheduler.md [0,1901)、tensorrt-llm.md [0,2145)、knowledge/models/speech-generation.md [0,3599)、knowledge/workloads/session-workloads.md [0,3583)；references/S-ASGI/fulltext.txt [0,23566)、references/S-RDMA/fulltext.txt [0,25147)。完整阅读 candidate.test_script 所供 tools/check_k_sys_004_full.py，从文件头至 main 入口，以及 author_notes 和 actual_preflight 的 stdout、stderr、返回码及执行身份。其余材料仅阅读所供摘录，以下范围均为提取文本的零起点半开字符区间：knowledge/algorithms/async-scheduling.md [0,3863)；knowledge/frameworks/streams-allocator.md [8000,11863)；knowledge/system-semantics/service-protocol.md、memory-allocators.md、storage-services.md 各 [0,3863)；knowledge/hardware/transport-and-rdma.md [0,3863)；knowledge/algorithms/paged-kv-capacity.md [0,438)、[12000,15425)；knowledge/frameworks/cuda-graph-buffers.md [4000,4709)、[12000,15154)；knowledge/frameworks/mlx-serving.md [4000,7863)；knowledge/models/encoder-decoder-streaming.md [4000,7863)；knowledge/tools/correctness-oracles.md [0,3863)；knowledge/system-semantics/host-runtime.md [0,304)、[4000,7559)；knowledge/algorithms/tiered-residency.md、heterogeneous-execution.md 各 [0,3863)；knowledge/system-semantics/tenant-isolation.md [0,3863)。references/S-CUDA-ALLOC/fulltext.txt 与 references/S-CUDA-ASYNC/fulltext.txt 各仅所供相同摘录：[208000,212000)、[280000,288000)、[328000,332000)、[676000,680000)、[688000,692000)、[728000,732000)、[784000,792000)、[800000,804000)、[948000,952016)。references/S-LINUX-IO/fulltext.txt 仅 [0,40016)、[44000,48000)；references/S-SERVERLESSLLM/fulltext.txt 仅 [0,28000)、[36000,36016)、[44000,56000)、[60000,64000)。documents 只列完整提供并阅读的文件；未声称通读上述摘录所属原文件，也未读取上游源码归档。\",\n  \"test_assessment\": \"已逐函数检查 Lifetime、lifetime_facts、Migration、migration_facts、固定轨迹、run_case 和负对照注入。资源参考从固定接受历史重建扁平责任，不读取候选对象集合来决定预期；拒绝事件仍触发完整状态比较，可发现拒绝动作产生的副作用。迁移参考从历史重建授权、票据、提交内容和冻结前缀，固定判定另外检查必须拒绝的入口；参考与候选存在相似状态机，但固定接受结果、不同资源表示、前缀不变量和故意缺陷提供了实际辨别力，并非仅比较候选自身计数。所供 actual_preflight 的 script_sha256 与要求绑定一致，实际使用 Python 3.12 的 -I -S -B -X utf8 参数运行，returncode=0，stderr为空，未超时。记录显示资源28条轨迹、288事件及11类负对照，迁移7条轨迹、100事件及8类负对照均完成相应检查。负对照分别暴露提前回收、重复责任清除、取消后提交、冻结后源入口、遗漏J结算、错误快照、错误READY、提前目标激活、超时回退和忽略前驱等缺陷。cached_authority 的实际首个检出点是已安装旧票据的重复安装，不能单凭该 witness 宣称单独验证了跨term fencing；正常轨迹另明确检查撤销旧票据、接管及目标新提交后拒绝旧安装。三种上一轮交错由正文状态域论证和有限轨迹共同支持。脚本不是完整模型检查器，未实现永久Q、真实部分提交、分布式存储、模型状态变换或outbox交付；这些遗漏与正文声明一致，可保留为验证边界。作者关于其当时仅执行V8、尚未执行Python的说明与后续协调者preflight不冲突，本次接受不依赖沿用上一轮PASS。\"\n}",
+  "exit_code": 0,
+  "status": "completed",
+  "timeout_seconds": 1800,
+  "response_path": "D:\\桌面\\xdb\\InfraAgents\\InfraAgents-know-astra-new\\InfraAgents-know\\docs\\evidence\\knowledge-workflow-20261028-batch9\\full_build\\K-SYS-004\\round-3\\reviewer-attempt-001\\answer.txt",
+  "record_path": "D:\\桌面\\xdb\\InfraAgents\\InfraAgents-know-astra-new\\InfraAgents-know\\docs\\evidence\\knowledge-workflow-20261028-batch9\\full_build\\K-SYS-004\\round-3\\reviewer-attempt-001\\record.json",
+  "tool_events": [
+    {
+      "type": "item.completed",
+      "item": {
+        "id": "item_1",
+        "type": "mcp_tool_call",
+        "server": "codex",
+        "tool": "list_mcp_resources",
+        "arguments": {},
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"resources\":[]}"
+            }
+          ],
+          "structured_content": null
+        },
+        "error": null,
+        "status": "completed"
+      }
+    },
+    {
+      "type": "item.completed",
+      "item": {
+        "id": "item_2",
+        "type": "mcp_tool_call",
+        "server": "codex",
+        "tool": "list_mcp_resource_templates",
+        "arguments": {},
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"resourceTemplates\":[]}"
+            }
+          ],
+          "structured_content": null
+        },
+        "error": null,
+        "status": "completed"
+      }
+    }
+  ],
+  "inventory_tool_events": [
+    {
+      "type": "item.completed",
+      "item": {
+        "id": "item_1",
+        "type": "mcp_tool_call",
+        "server": "codex",
+        "tool": "list_mcp_resources",
+        "arguments": {},
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"resources\":[]}"
+            }
+          ],
+          "structured_content": null
+        },
+        "error": null,
+        "status": "completed"
+      }
+    },
+    {
+      "type": "item.completed",
+      "item": {
+        "id": "item_2",
+        "type": "mcp_tool_call",
+        "server": "codex",
+        "tool": "list_mcp_resource_templates",
+        "arguments": {},
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"resourceTemplates\":[]}"
+            }
+          ],
+          "structured_content": null
+        },
+        "error": null,
+        "status": "completed"
+      }
+    }
+  ],
+  "rejected_tool_events": [],
+  "tool_policy": "metadata_inventory_only",
+  "tool_policy_version": "metadata-inventory-v1",
+  "tool_policy_scope": "Only empty-argument codex host plugin/skill-directory descriptors and empty template inventory; inventory is not knowledge evidence. All other tool events reject the call.",
+  "tool_policy_reason": "Production chapter construction allows observed generic capability discovery metadata; this does not claim a zero-tool comparison or external source reading.",
+  "malformed_event_lines": [],
+  "turn_completed": true,
+  "error_events": [],
+  "recovered_transport_events": [],
+  "terminal_error_events": [],
+  "transport_recovered": false,
+  "actual_model": null,
+  "identity_verified": null,
+  "identity_basis": "Explicit CLI model and isolated HTTP provider; CLI events do not expose server model identity.",
+  "provider": "eval-openai-http",
+  "max_output_tokens": null,
+  "cli_version": "codex-cli 0.164.0-alpha.11.1",
+  "cost_scope": "Codex token usage is reported; subscription charge is not exposed.",
+  "parsed": {
+    "entry_id": "K-SYS-004",
+    "body_sha256": "50dd6f59586f6fd0f45f332436df258c97768a80321ab6e2c04ff643d6fe2f5a",
+    "reviewer": "sol-reviewer:K-SYS-004:round-3",
+    "decision": "accept",
+    "documents": {
+      "AGENTS.md": "b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a",
+      "docs/knowledge-method.md": "69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb",
+      "docs/knowledge-review.md": "f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21",
+      "knowledge/system-semantics/cancellation-resource-completion.md": "50dd6f59586f6fd0f45f332436df258c97768a80321ab6e2c04ff643d6fe2f5a",
+      "knowledge/sources/S-ASGI.md": "ca77c63e9a95b8be934ae485d89245f895dc7fa49fdf7fcce03b139346127ed9",
+      "knowledge/sources/S-CUDA-ALLOC.md": "3ba021c941f2ed8f048be34d1ba0110f37675a3460013f24a239cc43a1e8630a",
+      "knowledge/sources/S-CUDA-ASYNC.md": "40df9287d0648a8ef55a046ceb1c18dd402619ede6e57ca33d3f90e4ace3da05",
+      "knowledge/sources/S-RDMA.md": "660948886af9019ac90e6c58ab7b2a4ca9dbf282f1bb74de37162403f24f4d49",
+      "knowledge/sources/S-LINUX-IO.md": "786caae53cc1e80173616ce470c481145e285c2176b7cff4777576cc893fc316",
+      "knowledge/sources/S-SERVERLESSLLM.md": "aff9202b72fffcdf3145d0f014888070d2e12995b04f9c259930ad90a806473d",
+      "knowledge/system-semantics/model-lifecycle.md": "bf15950cafcbb584f031cc3a1ea9eaf3331d2816819c6e468ae333d70a3c7c0e",
+      "knowledge/system-semantics/serving-recovery.md": "f551fa1f1e6213469c856a880839eefff504fb39f4dd692000b2df80a20a7f5e",
+      "knowledge/tools/failure-evidence.md": "23dfc65dcbd319c1789dcb80b62f6c843bb5db8c076e86a00643cff546700067",
+      "knowledge/engine-index/sglang-radix-scheduler.md": "abf1eb7040f1f6ba697822719094f8cc26172a329d6003a027862ef89de03374",
+      "knowledge/engine-index/tensorrt-llm.md": "6ade1253f3747041bef4a816d82387c3771bff3459a153719cfbd571c2454c0b",
+      "knowledge/models/speech-generation.md": "9cab040f27f77dc8040a6cc6f0ae96a175542e4379e2262ca2cdb53fb9aee3a4",
+      "knowledge/workloads/session-workloads.md": "0269e1987e1107d0cf0135cb32aa759c67d5266cfa09fb1402f97704c4ab4d78",
+      "references/S-ASGI/fulltext.txt": "ba273c91f3e7b8c32f863e8b57145798c3b5c9275073f758a41e1cb0a6f5bee3",
+      "references/S-RDMA/fulltext.txt": "9f4bea8bc130fc7dcdf0b53d20ce7269555cddd2a7c67e5d54c6dbd7a55b2720",
+      "tools/check_k_sys_004_full.py": "c6cf9f00296ac9944c747d8e9e499f13ea65ebf66397046cbdf63d1c5367c33f"
+    },
+    "criteria": {
+      "definition": {
+        "assessment": "sufficient",
+        "reason": "明确区分请求执行代次、物理槽生命期、业务终态和物理责任，给出回收谓词、事件算法输入输出及迁移状态。p 被定义为业务提交序号，未将已选 token、已计算 KV 与客户端消费混为一谈。本章承担资源与提交协议，不承担模型逐层计算算法。",
+        "evidence": [
+          {
+            "path": "knowledge/system-semantics/cancellation-resource-completion.md",
+            "quote": "retiring_x ∧ L_x=∅ ∧ U_x=∅ ∧ O_x=∅ ∧ B_x=∅ ∧ Q_x=∅。"
+          },
+          {
+            "path": "knowledge/system-semantics/cancellation-resource-completion.md",
+            "quote": "p 是最终业务提交序号，不是“已生成 token 数”或“KV 长度”的别名。"
+          }
+        ]
+      },
+      "legality": {
+        "assessment": "sufficient",
+        "reason": "最后访问结束、业务成功、消费者可见性和输出借用分别设定证据条件；说明别名保护、部分提交、超时、图地址资格和 collective 参与约束。迁移明确要求实际提交端接受 fencing，并限定无法参加事务或去重的外部副作用范围。ASGI、RDMA 和图内存节点的关键陈述与所供原文相符，通用协议被标为独立推导。",
+        "evidence": [
+          {
+            "path": "knowledge/system-semantics/cancellation-resource-completion.md",
+            "quote": "“访问已经结束”和“结果成功”分别记录。"
+          },
+          {
+            "path": "knowledge/system-semantics/cancellation-resource-completion.md",
+            "quote": "必要前提是授权验证、提交安装与接管决定处于同一个线性化域。"
+          },
+          {
+            "path": "knowledge/system-semantics/cancellation-resource-completion.md",
+            "quote": "无法参加事务、无法 fencing 且不能按身份去重的外部副作用，不在本协议的安全迁移范围内。"
+          }
+        ]
+      },
+      "algorithm": {
+        "assessment": "sufficient",
+        "reason": "两段伪代码给出初始化、事件入口、原子更新、完成和失败分支。资源侧先登记再启动，重复和旧事件不能抵消其他责任。迁移侧在 A 中关闭入口，安装或撤销关门前的 J，J 为空后固定最终 p，保持门控直至放弃或接管后激活；安装端共同验证票据、授权和前驱版本。快照后源推进、预读授权后暂停以及接管确认丢失三种交错均有明确截断点。K-SYS-004-r2-migration-commit-fence 已修复，相关 workflow 阻断可关闭。",
+        "evidence": [
+          {
+            "path": "knowledge/system-semantics/cancellation-resource-completion.md",
+            "quote": "关门与 ENTER_COMMIT 在同一状态域内排序；源端所有提交入口受此门控。"
+          },
+          {
+            "path": "knowledge/system-semantics/cancellation-resource-completion.md",
+            "quote": "持续处理 J：每张已进入票据必须安装成功或在 A 中明确撤销。"
+          },
+          {
+            "path": "knowledge/system-semantics/cancellation-resource-completion.md",
+            "quote": "A 在安装时重新检查 term、owner、当前票据、前驱版本和请求资格，并在同一事务内安装增量与输出记录。"
+          },
+          {
+            "path": "knowledge/system-semantics/cancellation-resource-completion.md",
+            "quote": "不根据本地超时重新授权 src，不丢弃可能已经承担恢复责任的 dst。"
+          }
+        ]
+      },
+      "cost": {
+        "assessment": "sufficient",
+        "reason": "覆盖剩余计算、初始化访存、通信、责任元数据、串行状态域同步和副本驻留，区分并行依赖最大值与所选串行暂停路径。复算 32 MiB/(8 GiB/s)=3.90625 ms、暂停和为9.90625 ms、1 GiB传输为125 ms，均正确；取消驻留算例为640 MiB。吞吐式使用设备工作单位，未把网络等待当作设备工作；共享物理容量及 used/reserved 口径明确。",
+        "evidence": [
+          {
+            "path": "knowledge/system-semantics/cancellation-resource-completion.md",
+            "quote": "T_pause = T_settle + T_delta + T_verify + T_transfer_authority + T_activate。"
+          },
+          {
+            "path": "knowledge/system-semantics/cancellation-resource-completion.md",
+            "quote": "M_cancel = λ_c E[∫ b_i(t) dt]。"
+          },
+          {
+            "path": "knowledge/system-semantics/cancellation-resource-completion.md",
+            "quote": "D 是剩余设备工作，不能把纯网络等待或空闲隔离墙钟时间直接填入。"
+          }
+        ]
+      },
+      "adaptation": {
+        "assessment": "sufficient",
+        "reason": "条件变化表保持最后访问和唯一提交前缀等不变量，同时给出跨 stream、外部 DMA、共享对象、慢消费者、高事件率及故障后的调整依据。新增迁移条件直接对应当前机制：增量过大可预复制或放弃，授权不可达保持未知状态，共同提交域缺失时放弃单次授权预读方案。",
+        "evidence": [
+          {
+            "path": "knowledge/system-semantics/cancellation-resource-completion.md",
+            "quote": "在合法不可变前缀上预复制、缩小提交单位，或放弃本次迁移；不能放宽快照边界"
+          },
+          {
+            "path": "knowledge/system-semantics/cancellation-resource-completion.md",
+            "quote": "引入共同事务或权威提交接收端；单次读取授权方案应放弃"
+          }
+        ]
+      },
+      "diagnosis": {
+        "assessment": "sufficient",
+        "reason": "竞争解释包含物理排空、通知阻塞、消费者借用、旧代提交、布局错误以及迁移快照过旧、旧事务穿越与网络重送，分别给出可控干预和反证后的修正方向。检查要求参考服从固定动作判定、消除遮蔽责任并核对完整提交前缀。配套检查具有固定预期、独立状态表示和实际检出的负对照，结论限定于有限模型。",
+        "evidence": [
+          {
+            "path": "knowledge/system-semantics/cancellation-resource-completion.md",
+            "quote": "分别在最终快照后尝试源提交、在授权预读后暂停旧事务、仅重送已提交 outbox"
+          },
+          {
+            "path": "knowledge/system-semantics/cancellation-resource-completion.md",
+            "quote": "迁移检查还应核对完整已提交前缀，而不只统计某一时刻 owner 的数量。"
+          },
+          {
+            "path": "knowledge/system-semantics/cancellation-resource-completion.md",
+            "quote": "拒绝的重用不能出现在历史拥有者集合中。"
+          }
+        ]
+      }
+    },
+    "findings": [],
+    "limitations": [
+      "接受范围为所述保守资源协议及单请求串行权威提交域协议；不构成分布式共识、持久性、源故障后快照可恢复性或网络恰好一次交付的实现证明。",
+      "CPU 检查未覆盖所有并发交错、永久故障域 Q、真实部分提交、别名冲突、模型逐层状态/RNG 转换、平台中止或映射撤销；这些边界已在正文声明。",
+      "没有 CUDA、RDMA、Linux I/O、GPU 可见性、实际最后访问、图合法性、性能或 Agent 使用效果实测证据。",
+      "执行结论依据本任务提供的绑定脚本及 actual_preflight 原始记录，本审阅 invocation 未重新运行 Python。作者所称 V8 实验与协调者后续 Python 执行分别记录，未将二者混同。",
+      "材料以外的 reader.html 文件存在性和本地磁盘字节未独立核验；正文相对链接的目标关系与所供阅读链一致。CUDA 和 ServerlessLLM 原文仅按提供摘录使用。"
+    ],
+    "checks": [
+      {
+        "script": "tools/check_k_sys_004_full.py",
+        "args": []
+      }
+    ],
+    "no_checks_reason": "",
+    "reading_scope": "完整阅读本任务提供的以下全文：AGENTS.md [0,567)、docs/knowledge-method.md [0,2251)、docs/knowledge-review.md [0,3016)、knowledge/system-semantics/cancellation-resource-completion.md [0,18300)；六份来源说明 S-ASGI [0,491)、S-CUDA-ALLOC [0,498)、S-CUDA-ASYNC [0,1610)、S-RDMA [0,739)、S-LINUX-IO [0,850)、S-SERVERLESSLLM [0,781)；knowledge/system-semantics/model-lifecycle.md [0,3556)、serving-recovery.md [0,3834)、knowledge/tools/failure-evidence.md [0,3753)、knowledge/engine-index/sglang-radix-scheduler.md [0,1901)、tensorrt-llm.md [0,2145)、knowledge/models/speech-generation.md [0,3599)、knowledge/workloads/session-workloads.md [0,3583)；references/S-ASGI/fulltext.txt [0,23566)、references/S-RDMA/fulltext.txt [0,25147)。完整阅读 candidate.test_script 所供 tools/check_k_sys_004_full.py，从文件头至 main 入口，以及 author_notes 和 actual_preflight 的 stdout、stderr、返回码及执行身份。其余材料仅阅读所供摘录，以下范围均为提取文本的零起点半开字符区间：knowledge/algorithms/async-scheduling.md [0,3863)；knowledge/frameworks/streams-allocator.md [8000,11863)；knowledge/system-semantics/service-protocol.md、memory-allocators.md、storage-services.md 各 [0,3863)；knowledge/hardware/transport-and-rdma.md [0,3863)；knowledge/algorithms/paged-kv-capacity.md [0,438)、[12000,15425)；knowledge/frameworks/cuda-graph-buffers.md [4000,4709)、[12000,15154)；knowledge/frameworks/mlx-serving.md [4000,7863)；knowledge/models/encoder-decoder-streaming.md [4000,7863)；knowledge/tools/correctness-oracles.md [0,3863)；knowledge/system-semantics/host-runtime.md [0,304)、[4000,7559)；knowledge/algorithms/tiered-residency.md、heterogeneous-execution.md 各 [0,3863)；knowledge/system-semantics/tenant-isolation.md [0,3863)。references/S-CUDA-ALLOC/fulltext.txt 与 references/S-CUDA-ASYNC/fulltext.txt 各仅所供相同摘录：[208000,212000)、[280000,288000)、[328000,332000)、[676000,680000)、[688000,692000)、[728000,732000)、[784000,792000)、[800000,804000)、[948000,952016)。references/S-LINUX-IO/fulltext.txt 仅 [0,40016)、[44000,48000)；references/S-SERVERLESSLLM/fulltext.txt 仅 [0,28000)、[36000,36016)、[44000,56000)、[60000,64000)。documents 只列完整提供并阅读的文件；未声称通读上述摘录所属原文件，也未读取上游源码归档。",
+    "test_assessment": "已逐函数检查 Lifetime、lifetime_facts、Migration、migration_facts、固定轨迹、run_case 和负对照注入。资源参考从固定接受历史重建扁平责任，不读取候选对象集合来决定预期；拒绝事件仍触发完整状态比较，可发现拒绝动作产生的副作用。迁移参考从历史重建授权、票据、提交内容和冻结前缀，固定判定另外检查必须拒绝的入口；参考与候选存在相似状态机，但固定接受结果、不同资源表示、前缀不变量和故意缺陷提供了实际辨别力，并非仅比较候选自身计数。所供 actual_preflight 的 script_sha256 与要求绑定一致，实际使用 Python 3.12 的 -I -S -B -X utf8 参数运行，returncode=0，stderr为空，未超时。记录显示资源28条轨迹、288事件及11类负对照，迁移7条轨迹、100事件及8类负对照均完成相应检查。负对照分别暴露提前回收、重复责任清除、取消后提交、冻结后源入口、遗漏J结算、错误快照、错误READY、提前目标激活、超时回退和忽略前驱等缺陷。cached_authority 的实际首个检出点是已安装旧票据的重复安装，不能单凭该 witness 宣称单独验证了跨term fencing；正常轨迹另明确检查撤销旧票据、接管及目标新提交后拒绝旧安装。三种上一轮交错由正文状态域论证和有限轨迹共同支持。脚本不是完整模型检查器，未实现永久Q、真实部分提交、分布式存储、模型状态变换或outbox交付；这些遗漏与正文声明一致，可保留为验证边界。作者关于其当时仅执行V8、尚未执行Python的说明与后续协调者preflight不冲突，本次接受不依赖沿用上一轮PASS。"
+  },
+  "format_status": "strict_json",
+  "format_error": null,
+  "output_text": "{\n  \"entry_id\": \"K-SYS-004\",\n  \"body_sha256\": \"50dd6f59586f6fd0f45f332436df258c97768a80321ab6e2c04ff643d6fe2f5a\",\n  \"reviewer\": \"sol-reviewer:K-SYS-004:round-3\",\n  \"decision\": \"accept\",\n  \"documents\": {\n    \"AGENTS.md\": \"b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a\",\n    \"docs/knowledge-method.md\": \"69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb\",\n    \"docs/knowledge-review.md\": \"f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21\",\n    \"knowledge/system-semantics/cancellation-resource-completion.md\": \"50dd6f59586f6fd0f45f332436df258c97768a80321ab6e2c04ff643d6fe2f5a\",\n    \"knowledge/sources/S-ASGI.md\": \"ca77c63e9a95b8be934ae485d89245f895dc7fa49fdf7fcce03b139346127ed9\",\n    \"knowledge/sources/S-CUDA-ALLOC.md\": \"3ba021c941f2ed8f048be34d1ba0110f37675a3460013f24a239cc43a1e8630a\",\n    \"knowledge/sources/S-CUDA-ASYNC.md\": \"40df9287d0648a8ef55a046ceb1c18dd402619ede6e57ca33d3f90e4ace3da05\",\n    \"knowledge/sources/S-RDMA.md\": \"660948886af9019ac90e6c58ab7b2a4ca9dbf282f1bb74de37162403f24f4d49\",\n    \"knowledge/sources/S-LINUX-IO.md\": \"786caae53cc1e80173616ce470c481145e285c2176b7cff4777576cc893fc316\",\n    \"knowledge/sources/S-SERVERLESSLLM.md\": \"aff9202b72fffcdf3145d0f014888070d2e12995b04f9c259930ad90a806473d\",\n    \"knowledge/system-semantics/model-lifecycle.md\": \"bf15950cafcbb584f031cc3a1ea9eaf3331d2816819c6e468ae333d70a3c7c0e\",\n    \"knowledge/system-semantics/serving-recovery.md\": \"f551fa1f1e6213469c856a880839eefff504fb39f4dd692000b2df80a20a7f5e\",\n    \"knowledge/tools/failure-evidence.md\": \"23dfc65dcbd319c1789dcb80b62f6c843bb5db8c076e86a00643cff546700067\",\n    \"knowledge/engine-index/sglang-radix-scheduler.md\": \"abf1eb7040f1f6ba697822719094f8cc26172a329d6003a027862ef89de03374\",\n    \"knowledge/engine-index/tensorrt-llm.md\": \"6ade1253f3747041bef4a816d82387c3771bff3459a153719cfbd571c2454c0b\",\n    \"knowledge/models/speech-generation.md\": \"9cab040f27f77dc8040a6cc6f0ae96a175542e4379e2262ca2cdb53fb9aee3a4\",\n    \"knowledge/workloads/session-workloads.md\": \"0269e1987e1107d0cf0135cb32aa759c67d5266cfa09fb1402f97704c4ab4d78\",\n    \"references/S-ASGI/fulltext.txt\": \"ba273c91f3e7b8c32f863e8b57145798c3b5c9275073f758a41e1cb0a6f5bee3\",\n    \"references/S-RDMA/fulltext.txt\": \"9f4bea8bc130fc7dcdf0b53d20ce7269555cddd2a7c67e5d54c6dbd7a55b2720\",\n    \"tools/check_k_sys_004_full.py\": \"c6cf9f00296ac9944c747d8e9e499f13ea65ebf66397046cbdf63d1c5367c33f\"\n  },\n  \"criteria\": {\n    \"definition\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"明确区分请求执行代次、物理槽生命期、业务终态和物理责任，给出回收谓词、事件算法输入输出及迁移状态。p 被定义为业务提交序号，未将已选 token、已计算 KV 与客户端消费混为一谈。本章承担资源与提交协议，不承担模型逐层计算算法。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/system-semantics/cancellation-resource-completion.md\",\n          \"quote\": \"retiring_x ∧ L_x=∅ ∧ U_x=∅ ∧ O_x=∅ ∧ B_x=∅ ∧ Q_x=∅。\"\n        },\n        {\n          \"path\": \"knowledge/system-semantics/cancellation-resource-completion.md\",\n          \"quote\": \"p 是最终业务提交序号，不是“已生成 token 数”或“KV 长度”的别名。\"\n        }\n      ]\n    },\n    \"legality\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"最后访问结束、业务成功、消费者可见性和输出借用分别设定证据条件；说明别名保护、部分提交、超时、图地址资格和 collective 参与约束。迁移明确要求实际提交端接受 fencing，并限定无法参加事务或去重的外部副作用范围。ASGI、RDMA 和图内存节点的关键陈述与所供原文相符，通用协议被标为独立推导。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/system-semantics/cancellation-resource-completion.md\",\n          \"quote\": \"“访问已经结束”和“结果成功”分别记录。\"\n        },\n        {\n          \"path\": \"knowledge/system-semantics/cancellation-resource-completion.md\",\n          \"quote\": \"必要前提是授权验证、提交安装与接管决定处于同一个线性化域。\"\n        },\n        {\n          \"path\": \"knowledge/system-semantics/cancellation-resource-completion.md\",\n          \"quote\": \"无法参加事务、无法 fencing 且不能按身份去重的外部副作用，不在本协议的安全迁移范围内。\"\n        }\n      ]\n    },\n    \"algorithm\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"两段伪代码给出初始化、事件入口、原子更新、完成和失败分支。资源侧先登记再启动，重复和旧事件不能抵消其他责任。迁移侧在 A 中关闭入口，安装或撤销关门前的 J，J 为空后固定最终 p，保持门控直至放弃或接管后激活；安装端共同验证票据、授权和前驱版本。快照后源推进、预读授权后暂停以及接管确认丢失三种交错均有明确截断点。K-SYS-004-r2-migration-commit-fence 已修复，相关 workflow 阻断可关闭。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/system-semantics/cancellation-resource-completion.md\",\n          \"quote\": \"关门与 ENTER_COMMIT 在同一状态域内排序；源端所有提交入口受此门控。\"\n        },\n        {\n          \"path\": \"knowledge/system-semantics/cancellation-resource-completion.md\",\n          \"quote\": \"持续处理 J：每张已进入票据必须安装成功或在 A 中明确撤销。\"\n        },\n        {\n          \"path\": \"knowledge/system-semantics/cancellation-resource-completion.md\",\n          \"quote\": \"A 在安装时重新检查 term、owner、当前票据、前驱版本和请求资格，并在同一事务内安装增量与输出记录。\"\n        },\n        {\n          \"path\": \"knowledge/system-semantics/cancellation-resource-completion.md\",\n          \"quote\": \"不根据本地超时重新授权 src，不丢弃可能已经承担恢复责任的 dst。\"\n        }\n      ]\n    },\n    \"cost\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"覆盖剩余计算、初始化访存、通信、责任元数据、串行状态域同步和副本驻留，区分并行依赖最大值与所选串行暂停路径。复算 32 MiB/(8 GiB/s)=3.90625 ms、暂停和为9.90625 ms、1 GiB传输为125 ms，均正确；取消驻留算例为640 MiB。吞吐式使用设备工作单位，未把网络等待当作设备工作；共享物理容量及 used/reserved 口径明确。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/system-semantics/cancellation-resource-completion.md\",\n          \"quote\": \"T_pause = T_settle + T_delta + T_verify + T_transfer_authority + T_activate。\"\n        },\n        {\n          \"path\": \"knowledge/system-semantics/cancellation-resource-completion.md\",\n          \"quote\": \"M_cancel = λ_c E[∫ b_i(t) dt]。\"\n        },\n        {\n          \"path\": \"knowledge/system-semantics/cancellation-resource-completion.md\",\n          \"quote\": \"D 是剩余设备工作，不能把纯网络等待或空闲隔离墙钟时间直接填入。\"\n        }\n      ]\n    },\n    \"adaptation\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"条件变化表保持最后访问和唯一提交前缀等不变量，同时给出跨 stream、外部 DMA、共享对象、慢消费者、高事件率及故障后的调整依据。新增迁移条件直接对应当前机制：增量过大可预复制或放弃，授权不可达保持未知状态，共同提交域缺失时放弃单次授权预读方案。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/system-semantics/cancellation-resource-completion.md\",\n          \"quote\": \"在合法不可变前缀上预复制、缩小提交单位，或放弃本次迁移；不能放宽快照边界\"\n        },\n        {\n          \"path\": \"knowledge/system-semantics/cancellation-resource-completion.md\",\n          \"quote\": \"引入共同事务或权威提交接收端；单次读取授权方案应放弃\"\n        }\n      ]\n    },\n    \"diagnosis\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"竞争解释包含物理排空、通知阻塞、消费者借用、旧代提交、布局错误以及迁移快照过旧、旧事务穿越与网络重送，分别给出可控干预和反证后的修正方向。检查要求参考服从固定动作判定、消除遮蔽责任并核对完整提交前缀。配套检查具有固定预期、独立状态表示和实际检出的负对照，结论限定于有限模型。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/system-semantics/cancellation-resource-completion.md\",\n          \"quote\": \"分别在最终快照后尝试源提交、在授权预读后暂停旧事务、仅重送已提交 outbox\"\n        },\n        {\n          \"path\": \"knowledge/system-semantics/cancellation-resource-completion.md\",\n          \"quote\": \"迁移检查还应核对完整已提交前缀，而不只统计某一时刻 owner 的数量。\"\n        },\n        {\n          \"path\": \"knowledge/system-semantics/cancellation-resource-completion.md\",\n          \"quote\": \"拒绝的重用不能出现在历史拥有者集合中。\"\n        }\n      ]\n    }\n  },\n  \"findings\": [],\n  \"limitations\": [\n    \"接受范围为所述保守资源协议及单请求串行权威提交域协议；不构成分布式共识、持久性、源故障后快照可恢复性或网络恰好一次交付的实现证明。\",\n    \"CPU 检查未覆盖所有并发交错、永久故障域 Q、真实部分提交、别名冲突、模型逐层状态/RNG 转换、平台中止或映射撤销；这些边界已在正文声明。\",\n    \"没有 CUDA、RDMA、Linux I/O、GPU 可见性、实际最后访问、图合法性、性能或 Agent 使用效果实测证据。\",\n    \"执行结论依据本任务提供的绑定脚本及 actual_preflight 原始记录，本审阅 invocation 未重新运行 Python。作者所称 V8 实验与协调者后续 Python 执行分别记录，未将二者混同。\",\n    \"材料以外的 reader.html 文件存在性和本地磁盘字节未独立核验；正文相对链接的目标关系与所供阅读链一致。CUDA 和 ServerlessLLM 原文仅按提供摘录使用。\"\n  ],\n  \"checks\": [\n    {\n      \"script\": \"tools/check_k_sys_004_full.py\",\n      \"args\": []\n    }\n  ],\n  \"no_checks_reason\": \"\",\n  \"reading_scope\": \"完整阅读本任务提供的以下全文：AGENTS.md [0,567)、docs/knowledge-method.md [0,2251)、docs/knowledge-review.md [0,3016)、knowledge/system-semantics/cancellation-resource-completion.md [0,18300)；六份来源说明 S-ASGI [0,491)、S-CUDA-ALLOC [0,498)、S-CUDA-ASYNC [0,1610)、S-RDMA [0,739)、S-LINUX-IO [0,850)、S-SERVERLESSLLM [0,781)；knowledge/system-semantics/model-lifecycle.md [0,3556)、serving-recovery.md [0,3834)、knowledge/tools/failure-evidence.md [0,3753)、knowledge/engine-index/sglang-radix-scheduler.md [0,1901)、tensorrt-llm.md [0,2145)、knowledge/models/speech-generation.md [0,3599)、knowledge/workloads/session-workloads.md [0,3583)；references/S-ASGI/fulltext.txt [0,23566)、references/S-RDMA/fulltext.txt [0,25147)。完整阅读 candidate.test_script 所供 tools/check_k_sys_004_full.py，从文件头至 main 入口，以及 author_notes 和 actual_preflight 的 stdout、stderr、返回码及执行身份。其余材料仅阅读所供摘录，以下范围均为提取文本的零起点半开字符区间：knowledge/algorithms/async-scheduling.md [0,3863)；knowledge/frameworks/streams-allocator.md [8000,11863)；knowledge/system-semantics/service-protocol.md、memory-allocators.md、storage-services.md 各 [0,3863)；knowledge/hardware/transport-and-rdma.md [0,3863)；knowledge/algorithms/paged-kv-capacity.md [0,438)、[12000,15425)；knowledge/frameworks/cuda-graph-buffers.md [4000,4709)、[12000,15154)；knowledge/frameworks/mlx-serving.md [4000,7863)；knowledge/models/encoder-decoder-streaming.md [4000,7863)；knowledge/tools/correctness-oracles.md [0,3863)；knowledge/system-semantics/host-runtime.md [0,304)、[4000,7559)；knowledge/algorithms/tiered-residency.md、heterogeneous-execution.md 各 [0,3863)；knowledge/system-semantics/tenant-isolation.md [0,3863)。references/S-CUDA-ALLOC/fulltext.txt 与 references/S-CUDA-ASYNC/fulltext.txt 各仅所供相同摘录：[208000,212000)、[280000,288000)、[328000,332000)、[676000,680000)、[688000,692000)、[728000,732000)、[784000,792000)、[800000,804000)、[948000,952016)。references/S-LINUX-IO/fulltext.txt 仅 [0,40016)、[44000,48000)；references/S-SERVERLESSLLM/fulltext.txt 仅 [0,28000)、[36000,36016)、[44000,56000)、[60000,64000)。documents 只列完整提供并阅读的文件；未声称通读上述摘录所属原文件，也未读取上游源码归档。\",\n  \"test_assessment\": \"已逐函数检查 Lifetime、lifetime_facts、Migration、migration_facts、固定轨迹、run_case 和负对照注入。资源参考从固定接受历史重建扁平责任，不读取候选对象集合来决定预期；拒绝事件仍触发完整状态比较，可发现拒绝动作产生的副作用。迁移参考从历史重建授权、票据、提交内容和冻结前缀，固定判定另外检查必须拒绝的入口；参考与候选存在相似状态机，但固定接受结果、不同资源表示、前缀不变量和故意缺陷提供了实际辨别力，并非仅比较候选自身计数。所供 actual_preflight 的 script_sha256 与要求绑定一致，实际使用 Python 3.12 的 -I -S -B -X utf8 参数运行，returncode=0，stderr为空，未超时。记录显示资源28条轨迹、288事件及11类负对照，迁移7条轨迹、100事件及8类负对照均完成相应检查。负对照分别暴露提前回收、重复责任清除、取消后提交、冻结后源入口、遗漏J结算、错误快照、错误READY、提前目标激活、超时回退和忽略前驱等缺陷。cached_authority 的实际首个检出点是已安装旧票据的重复安装，不能单凭该 witness 宣称单独验证了跨term fencing；正常轨迹另明确检查撤销旧票据、接管及目标新提交后拒绝旧安装。三种上一轮交错由正文状态域论证和有限轨迹共同支持。脚本不是完整模型检查器，未实现永久Q、真实部分提交、分布式存储、模型状态变换或outbox交付；这些遗漏与正文声明一致，可保留为验证边界。作者关于其当时仅执行V8、尚未执行Python的说明与后续协调者preflight不冲突，本次接受不依赖沿用上一轮PASS。\"\n}",
+  "elapsed_seconds": 211.078
+}

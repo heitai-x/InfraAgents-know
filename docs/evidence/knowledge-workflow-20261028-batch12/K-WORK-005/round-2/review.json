@@ -1,0 +1,150 @@
+{
+  "entry_id": "K-WORK-005",
+  "body_sha256": "28a058ee90766b096b1b426b228136729e55418b0e4987c914cd6f94367110fe",
+  "reviewer": "sol-reviewer:K-WORK-005:round-2",
+  "decision": "revise",
+  "documents": {
+    "AGENTS.md": "b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a",
+    "docs/knowledge-method.md": "69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb",
+    "docs/knowledge-review.md": "f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21",
+    "knowledge/workloads/slo-goodput.md": "28a058ee90766b096b1b426b228136729e55418b0e4987c914cd6f94367110fe",
+    "knowledge/sources/S-MLPERF-LLM.md": "d0a591089c57e5e6d0051cdd73ce4ffc1bbfe60657470732921e25710f936cf0",
+    "knowledge/sources/S-DISTSERVE.md": "968cbf46667e862085b0e2d72405805351bd33880ac23d8d055bf259192411f4",
+    "knowledge/sources/S-GENAI-PERF.md": "1db17462a3ae4cd41dcb58a78f3f9fa9e71ff3a51614e56855be07bcb95618e0",
+    "knowledge/workloads/capacity-planning.md": "2a1fab417c30d8e6984c202d805f31863e0f00e248558c583609b5f9ba7e88c7",
+    "knowledge/workloads/session-workloads.md": "0269e1987e1107d0cf0135cb32aa759c67d5266cfa09fb1402f97704c4ab4d78",
+    "knowledge/models/vision-language.md": "5ce873c82e975be23aedfebbdeeda5acc0cf55d35b51ef24f744af9d174fe55c",
+    "knowledge/models/speech-generation.md": "9cab040f27f77dc8040a6cc6f0ae96a175542e4379e2262ca2cdb53fb9aee3a4",
+    "knowledge/algorithms/routing-and-migration.md": "1b9dcfd5fea499a91611459bb936e1c1c49ceb562171fb0f1ba360a7010f5d32",
+    "knowledge/workloads/elastic-serving.md": "782ba12ac9d0af5f8dbdd477e0c706230ae14e7f54d2795ab3b385eaeb8b39f4",
+    "references/S-MLPERF-LLM/upstream/language/llama2-70b/README.md": "f7eee4fb707a5035e7c8f8fe01f351a4620ea1ab904ca8086fcd9043eabb6b5e",
+    "references/S-MLPERF-LLM/upstream/loadgen/README.md": "074479dbeb369205ccc8800450c647893b4901c247e0e4ee7f321f05254e9305",
+    "references/S-DISTSERVE/fulltext.txt": "3a5cab6f9b9ac40c7fd396c5da1a021a9a3df666f6945f88e58a4a6a393477fd",
+    "references/S-GENAI-PERF/fulltext.txt": "357d6fcaafc41f2954ea87da567cd2b41ec8a146f8e4f19cb976acf39f539ddc",
+    "tools/check_k_work_005_full.py": "2d365f346d21fb9a7c9015776982a2f8eadb14377b68eb96484adfaed046943e"
+  },
+  "criteria": {
+    "definition": {
+      "assessment": "sufficient",
+      "reason": "完成单位、请求身份、联合资格、数据集级质量门槛、单 token 豁免及 cohort 分母均有明确解释；交集概率界与排空后的历时换算正确。阶段容量式的流率人口问题另列为成本项缺口。",
+      "evidence": [
+        {
+          "path": "knowledge/workloads/slo-goodput.md",
+          "quote": "质量合同若只提供数据集级 ROUGE 等统计量，应先判断整个候选是否达到该质量门槛，再统计该候选的逐请求时延合格完成；不能凭空生成逐请求质量标签。"
+        },
+        {
+          "path": "knowledge/workloads/slo-goodput.md",
+          "quote": "有限窗口中恒有 G＝(O/T)(V/O)(T/H)，前提是 O>0。"
+        }
+      ]
+    },
+    "legality": {
+      "assessment": "sufficient",
+      "reason": "区分硬容量合法性、预测时延和合同允许的拒绝或降级；准入重新检查与预留在同一事务内完成。取消只撤销业务资格，全部在途访问完成后才允许回收，未混淆逻辑终止与物理排空。",
+      "evidence": [
+        {
+          "path": "knowledge/workloads/slo-goodput.md",
+          "quote": "预测通过不保证未来 SLO，预测失败也不自动证明数学上不存在其他调度方案。"
+        },
+        {
+          "path": "knowledge/workloads/slo-goodput.md",
+          "quote": "只有对象无业务保留需求且全部在途访问完成时，归还物理容量"
+        }
+      ]
+    },
+    "algorithm": {
+      "assessment": "partial",
+      "reason": "三段伪代码交代了输入输出、推进、分区不变量、预留与候选确认；P/D 轨迹也保留首 token 与目标 KV 两条依赖。但交付检查用字符串排序内容位置，在同刻存在至少 11 个 token 时会拒绝合法顺序，且现有参考对照未覆盖这一情况。",
+      "evidence": [
+        {
+          "path": "knowledge/workloads/slo-goodput.md",
+          "quote": "按时间处理；同刻顺序固定为准入决定、内容、业务终止、质量证书"
+        },
+        {
+          "path": "knowledge/workloads/slo-goodput.md",
+          "quote": "要求 state 为业务进行中，输出位置连续且属于本请求"
+        },
+        {
+          "path": "knowledge/workloads/slo-goodput.md",
+          "quote": "目标第一次 decode 必须等待二者及容量、授权均就绪。"
+        }
+      ]
+    },
+    "cost": {
+      "assessment": "partial",
+      "reason": "六类成本、唯一驻留、关键路径、每合格任务总成本和整数副本反例充分；70/110/95 ms、8 请求/s 与 0.8 GiB 的设定算术正确。但是阶段必要条件沿用了先前表示 offered 到达率的 λ，遗漏拒绝后实际进入阶段的人口，导致允许拒绝的合法候选可能被错误排除。",
+      "evidence": [
+        {
+          "path": "knowledge/workloads/slo-goodput.md",
+          "quote": "λ≤min(n_pμ_p,n_dμ_d,B/K)。"
+        },
+        {
+          "path": "knowledge/workloads/slo-goodput.md",
+          "quote": "窗口总成本除以 V 得到每合格任务成本；能量同理，V=0 时未定义。分子包含该资源范围内的空闲保留、失败、拒绝处理、重试与排空。"
+        }
+      ]
+    },
+    "adaptation": {
+      "assessment": "sufficient",
+      "reason": "负载长度、缓存、客户端、突发、质量目标及硬件改变后，明确哪些身份与所有权不变量保留，哪些服务曲面和结论重算；包含放弃拒绝策略及保留旧交付候选的条件。非单调搜索边界解释合理。",
+      "evidence": [
+        {
+          "path": "knowledge/workloads/slo-goodput.md",
+          "quote": "只有在固定配置和负载族上建立了相应单调性，才能把失败点当作全部更高负载的上界并二分；否则保留网格扫描和局部细化。"
+        },
+        {
+          "path": "knowledge/workloads/slo-goodput.md",
+          "quote": "应保留仍合法的旧交付候选，在新条件下调整参数或放弃相应优化，而不是把旧容量数字当作事实常数。"
+        }
+      ]
+    },
+    "diagnosis": {
+      "assessment": "sufficient",
+      "reason": "针对拒绝筛选、删失、边缘比例、P/D 等待及提前释放给出竞争解释、可控干预和撤回条件。来源中 DistServe 的容量边界含义与本章完成计数率已区分；CPU 模型、真实设备和使用效果的证据边界声明准确。",
+      "evidence": [
+        {
+          "path": "knowledge/workloads/slo-goodput.md",
+          "quote": "延迟最后访问完成，检查新预留是否仍受旧对象占用约束。若取消即放行，修复生命周期而非报告收益"
+        },
+        {
+          "path": "knowledge/workloads/slo-goodput.md",
+          "quote": "如果时间改善却没有发生预测的工作量或等待变化，候选可以继续研究，但机制解释必须修正。"
+        }
+      ]
+    }
+  },
+  "findings": [
+    {
+      "id": "K-WORK-005-R2-FLOW-POPULATION",
+      "criterion": "cost",
+      "evidence": "正文先写“定义测试运行点为到达率 λ”，继而写“设接受比例为 α、接受后的联合合格概率为 p，则 G≈λαp”；P/D 成本节随后直接给出“λ≤min(n_pμ_p,n_dμ_d,B/K)。”，没有重新定义 λ 或限定全部 offered 请求均进入这条路径。",
+      "impact": "同一符号从 offered 到达率隐式变成阶段服务流率。若合同允许拒绝，offered 为 20 请求/s、接受比例为 0.4，则阶段流率为 8 请求/s，可以满足 12、10、8 请求/s 的三项平均资源上界，而正文必要条件会错误排除该点。重试或不同路径还会进一步改变各阶段流率。",
+      "blocking": true,
+      "required_revision": "为 offered、准入及各阶段访问流率分别命名。在全部准入请求均访问两池、每次迁移 K 且无重试的限定下，用 λα 写阶段必要条件；或明确另定义 λ_service 并说明它与 offered、拒绝及重试的关系。同步限定 0.8 GiB 算例采用的源缓冲进入率，并增加允许拒绝时的独立反例核对。"
+    },
+    {
+      "id": "K-WORK-005-R2-SAME-TIME-TOKEN-ORDER",
+      "criterion": "algorithm",
+      "evidence": "tools/check_k_work_005_full.py 的 evaluate 使用“key=lambda e: (e[0], PRIORITY[e[1]], str(e[2]))”，随后要求“value != len(times)”时抛出异常。对合法记录 row('same', 0, (0, True), (1,) * 11, (2, 'normal'), (3, True))，字符串键将内容位置排成 0、1、10、2……9，在第三个内容事件错误报告 illegal visible token。",
+      "impact": "正文没有要求可观测 token 时刻严格递增；多个位置可以具有相同整数时间戳。该实现会把合法观测误判为不可审计，无法完成本章承诺的窗口归约。现有 same_tick 用例只有一个 token，因此实际预检通过没有检验此缺陷。",
+      "blocking": true,
+      "required_revision": "同一时刻、同一内容类型内按数值输出位置排序，其他事件类型使用明确且类型相容的排序规则。新增至少 11 个同刻 token 的合法轨迹，与端点参考比较；再将字符串排序作为负对照，要求同一测试检出。隔离重跑交付 Python 并保存真实结果。"
+    }
+  ],
+  "limitations": [
+    "本轮无法访问文件系统或 Python 执行工具；documents 哈希按指定绑定原样记录，未声称重新计算磁盘哈希、验证链接可达性或重跑 Python。",
+    "已审阅所供 actual_preflight 的隔离执行记录；新增缺陷探针只在 V8 中复现所示排序规则和流率算术，不冒充 Python 执行结果。",
+    "检查不实现真实模型、tokenizer、质量评价器、负载生成器、GPU/NIC、并发原子事务或设备可见性；生产尾部、长期稳定性及 Agent 使用效果仍未验证，这些边界本身不构成阻塞。",
+    "未读取未供给的图片、源码归档或摘录以外章节。知识库技能文件也无法通过当前工具读取，未将其记为已应用的审查依据。",
+    "上一轮非严格 JSON 的历史 author 响应原始字节未提供，未独立重放其解析；本次阻塞结论来自当前候选的两个具体问题。"
+  ],
+  "checks": [
+    {
+      "script": "tools/check_k_work_005_full.py",
+      "args": []
+    }
+  ],
+  "no_checks_reason": "",
+  "reading_scope": "完整阅读所供文本：AGENTS.md [0,567)；docs/knowledge-method.md [0,2251)；docs/knowledge-review.md [0,3016)；knowledge/workloads/slo-goodput.md [0,11975)；三份来源说明 S-MLPERF-LLM [0,702)、S-DISTSERVE [0,443)、S-GENAI-PERF [0,506)；capacity-planning.md [0,3442)、session-workloads.md [0,3583)、vision-language.md [0,4050)、speech-generation.md [0,3599)、routing-and-migration.md [0,3228)、elastic-serving.md [0,3284)；Llama 2 README [0,12270)、LoadGen README [0,11382)、DistServe 提取全文 [0,85689)、GenAI-Perf 提取全文 [0,46825)。完整阅读 candidate.test_script、author_notes 和 actual_preflight。相关章节仅阅读供给摘录，范围为零基半开字符区间：metric-events.md [8000,11763)、[16000,16487)；arrival-and-concurrency.md [8000,12250)；iteration-batching.md [0,4000)、[8000,8250)；statistical-experiments.md [0,3981)、[4000,4269)；host-runtime.md [0,4250)；chunked-prefill.md [8000,10554)、[12000,13696)；disaggregated-serving.md [0,1367)、[16000,18883)；encoder-decoder-streaming.md [0,4250)；image-diffusion.md [4000,7066)、[16000,17184)；video-generation.md [4000,6344)、[16000,17906)；omni-multimodal.md [0,250)、[8000,12000)；input-distribution.md [0,1145)、[12000,15105)；measurement-comparability.md [0,377)、[12000,15873)；retrieval-pipeline.md [0,3743)、[4000,4507)。范围沿用供给材料标注，不代表独立读取磁盘原件；摘录文件未列入 documents。",
+  "test_assessment": "实际预检绑定脚本 SHA256 与指定值一致，记录显示 remote_bwrap 中 Python 3.12 使用 -I -S -B -X utf8 执行，returncode=0、stderr 为空，未超时。输出确有 88 条基础记录、offered=67、admitted=64、normal=42、qunknown=22、good=6、tokens=8；前沿为 a/b/d，核对了 720 种顺序，并实际检出了九个列明负对照。这比作者侧声明的 V8 五个负对照覆盖更广，二者执行主体与范围不能混记。事件参考采用端点直接分类，不复用事件推进状态机；间隔参考采用逐边不等式和端点交叉乘法，三条守恒式另作约束。资源模型对照预先给定的可用量轨迹，取消即释放负对照直接检验最后读者机制。前沿参考采用全体两两比较，能验证增量维护与可行过滤，但共享 dominates 谓词；该谓词另经静态核对，与正文支配定义一致。覆盖了空 cohort、到达窗外、截止等号、空输出、单 token、质量未知、准入前终止、迟到决定、重复及冲突。遗漏包括多个同刻内容事件跨越两位数位置、拒绝后阶段流率与 offered 的关系；本轮 V8 独立探针确认词典排序产生 0、1、10、2……9，并在期望位置 2 遇到位置 10。这是对当前机制的具体反例，因此退出码 0 不足以接受。脚本也没有实际验证完整负载搜索、服务时间预测、输出质量或并发事务，正文对这些范围的限制可以保留。来源核对支持 MLPerf 首 token/最终完成与外部质量职责、DistServe 分阶段配置及其试验条件、GenAI-Perf 指标和完成窗口区别；未发现需要新增的来源事实阻塞项。"
+}

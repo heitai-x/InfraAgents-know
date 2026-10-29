@@ -1,0 +1,205 @@
+{
+  "role": "reviewer",
+  "engine": "sol",
+  "requested_model": "gpt-6.1-sol",
+  "reasoning_effort": "high",
+  "prompt_sha256": "b78ec6a67ee347d235db416c4d5ef41e0ef85ab0671377628c2144fbe19938e4",
+  "usage": [
+    {
+      "input_tokens": 322774,
+      "cached_input_tokens": 168832,
+      "cache_write_input_tokens": 0,
+      "output_tokens": 5531,
+      "reasoning_output_tokens": 1161
+    }
+  ],
+  "answer": "{\n  \"entry_id\": \"K-MODEL-008\",\n  \"body_sha256\": \"9840acf19c6453c5ba8e660d274d1b50b3d8a6d256a87f426ecba836aae2ec65\",\n  \"reviewer\": \"sol-reviewer:K-MODEL-008:round-3\",\n  \"decision\": \"accept\",\n  \"documents\": {\n    \"AGENTS.md\": \"b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a\",\n    \"docs/knowledge-method.md\": \"69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb\",\n    \"docs/knowledge-review.md\": \"f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21\",\n    \"knowledge/models/vision-language.md\": \"9840acf19c6453c5ba8e660d274d1b50b3d8a6d256a87f426ecba836aae2ec65\",\n    \"knowledge/sources/S-QWEN-VL.md\": \"a41acb4d122419b0575a7fb4b0e510fb409a3b8b8cdb3bf875c571e3ae4c479a\",\n    \"knowledge/sources/S-TRANSFORMER.md\": \"e1858681f1645209756f7eb640dcdfe3a786f5af3e529fb61bce6de0212a82d7\",\n    \"knowledge/sources/S-HF-CACHE.md\": \"1a4afcf0d800ba3f42836445874d620ae9f7ba8ab4c361caa505376cc471595c\",\n    \"knowledge/system-semantics/tokenization-io.md\": \"1dea61a1f632805cb90873e747cb3079230a7b6bab76b17b4281662b82367565\",\n    \"knowledge/workloads/input-distribution.md\": \"b1b68f0d2a6d640c4b64c2bc98560b9e9a79a6a60b445899949b5db15b96aa90\",\n    \"knowledge/system-semantics/host-runtime.md\": \"005342b6131acdd072d5cf35456a5b01e5630f764b614e7090639fde01a5b36a\",\n    \"knowledge/system-semantics/memory-allocators.md\": \"2e7258787b94ad142c7c236541e8718803ad30b273d08e6c398dff673a1df838\",\n    \"knowledge/algorithms/routing-and-migration.md\": \"1b9dcfd5fea499a91611459bb936e1c1c49ceb562171fb0f1ba360a7010f5d32\",\n    \"knowledge/workloads/slo-goodput.md\": \"5aa9b71cddb7d896ffa1fe6d78ac61cf0bb92d76279ae4d563f1110ed9dbedb4\",\n    \"knowledge/hardware/host-device-transfer.md\": \"e4921a0714af21f7ab1a336f40af662f716f2c64a42dd598eb2cede548c858d2\",\n    \"knowledge/models/omni-multimodal.md\": \"f1fc4dc6611ad1b53ad8cc7f2abf0cbf9b9b2022d2d22c64dc712a39943d9d15\",\n    \"knowledge/models/vision-inference.md\": \"a3b95c24c3838a54df90db945066257c0960e20a24929ed2812838fc5a3528a0\",\n    \"references/S-QWEN-VL/fulltext.txt\": \"87c0802f0f621cb7ab11e36f542e8d16ada24490084fa471423a12bb2d6a0fd2\",\n    \"references/S-TRANSFORMER/fulltext.txt\": \"7bae85f4505c924b16d6c601c744b9665f245a20ea84258aa86bb51036a16805\",\n    \"references/S-HF-CACHE/fulltext.txt\": \"373837b8ac246d43867eb21de168cc59e5e6e78f5f3b9c27bee54740c4a635b4\",\n    \"tools/check_k_model_008_full.py\": \"46e1240d433ab9de296ddd98c9222be3d431fabfdf1d543022e88b8e1e043269\"\n  },\n  \"criteria\": {\n    \"definition\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"定义了不可变媒体、预处理张量、patch 网格、编码特征、桥接特征、实际输入行、位置及可见集合，并解释这些对象为什么共同决定模型函数和资源需求。n、c、ℓ 分别表示已知输入、全层提交状态和可选末行输出，采样与 KV 计算没有混同。attention、RMSNorm、FFN 和几何公式足以支撑后续算法。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/models/vision-language.md\",\n          \"quote\": \"F_i 是视觉 encoder 输出；Z_i 是空间合并和 projector 后的语言侧特征。二者有不同宽度、token 数和生命期。\"\n        },\n        {\n          \"path\": \"knowledge/models/vision-language.md\",\n          \"quote\": \"只有 c=n 且 ℓ 属于当前边界，才能用它选择下一个 token。已输出 token 不等于已有其 KV：采样后通常 n=c+1。\"\n        }\n      ]\n    },\n    \"legality\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"明确区分固定模型契约与缓存、分窗、布局及末输出保存方式等设计选择。精确复用受依赖闭包、位置、可见性、数值表示和前缀稳定性约束；共享写隔离、全层发布、物理最后使用及空输入规则均有具体条件。参数化 pre-norm 程序没有冒充完整 Qwen checkpoint 规范。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/models/vision-language.md\",\n          \"quote\": \"decoder 追加复用要求旧前缀表示对新增后缀稳定。标准因果 self-attention 具备这一依赖结构；若新增输入改变旧行位置、可见集合或非逐行统计，必须重新判断。\"\n        },\n        {\n          \"path\": \"knowledge/models/vision-language.md\",\n          \"quote\": \"已发布共享区只读；取消不等于物理访问完成，全部引用和在途访问结束后才可回收。\"\n        },\n        {\n          \"path\": \"knowledge/models/vision-language.md\",\n          \"quote\": \"它是参数化算法，不能据此宣称报告已经确定所有 Qwen checkpoint 的逐条执行次序。\"\n        }\n      ]\n    },\n    \"algorithm\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"视觉路径展开 patch 投影、逐层位置变换、窗口聚集、attention、逆映射、残差、FFN 和空间 merge。decoder 路径明确每层隐藏状态、新旧 KV 可见集合、末端输出及全层一致提交。主循环覆盖部分命中、完整命中有末输出、完整命中无末输出三条首 token 路径；末行恢复保持长度并从原输入表示开始。取消后的逻辑不提交与物理排空分别说明。此前无后继和逐层黑盒问题在当前正文中已修复。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/models/vision-language.md\",\n          \"quote\": \"decoder 新段的每层 q/k/v 来自该层新行隐藏状态；历史 KV 来自历史行在同一层的投影。\"\n        },\n        {\n          \"path\": \"knowledge/models/vision-language.md\",\n          \"quote\": \"读取视图←本层历史 KV[:a] 与本次暂存 k_new/v_new 的逻辑拼接。\"\n        },\n        {\n          \"path\": \"knowledge/models/vision-language.md\",\n          \"quote\": \"三种首 token 分支都有后继：部分命中消费后缀；完整命中有末输出直接采样；完整命中无末输出安全重算。\"\n        }\n      ]\n    },\n    \"cost\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"计算账区分成对工作、乘加与 FLOPs，资源账区分 F/Z、像素、全层 KV、末输出、共享副本和瞬时隔离容量。复算窗口项为 98,304 对、混合层为 12,189,696 对；KV 为 57,344 字节/token，896 行为 49 MiB。布局读写、主机准备、传输、同步、排队与驻留均有对应成本，165/118/133/88 ms 算例算术一致且明确为串行设定。没有把理论工作比当作设备时延比。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/models/vision-language.md\",\n          \"quote\": \"窗口聚集及还原若都物化为宽度 d_v 的独立缓冲，两次转换合计约涉及 4N_p d_v b_v 字节的读写\"\n        },\n        {\n          \"path\": \"knowledge/models/vision-language.md\",\n          \"quote\": \"896 行输入为 49 MiB；加 256 行预留为 63 MiB/request；8 请求该项为 504 MiB。\"\n        },\n        {\n          \"path\": \"knowledge/models/vision-language.md\",\n          \"quote\": \"流水可以跨请求重叠，但单请求依赖、共享带宽及首尾排空仍存在，不能任意取阶段最大值代替 TTFT。\"\n        }\n      ]\n    },\n    \"adaptation\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"条件变化表沿实际依赖判断保留与失效，覆盖文本、processor、空间和时间几何、模型参数、表示、并发及容量变化。进一步给出特征恢复、末输出保存、亲和路由与重算之间的反转条件，能够据新条件重算合法性和成本。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/models/vision-language.md\",\n          \"quote\": \"改 resize/crop/插值/方向/色彩 | 原媒体 | X 改变，相关 F/Z 和 KV 失效\"\n        },\n        {\n          \"path\": \"knowledge/models/vision-language.md\",\n          \"quote\": \"prefix 亲和排队超过省下的计算时，重算或复制热点可能更快。\"\n        }\n      ]\n    },\n    \"diagnosis\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"将无首 token、数值错误、视觉错位和延迟问题分别连接竞争解释、可控改变及预期观察。当前检查具有 dense 显式可见集合参考、在线缓存路径、坐标参考和实际缺陷注入；遗漏恢复确实产生 None 后继，再由独立活性不变量检测。正文准确限定共享数学原语、生产缓存、异步设备语义和性能的验证边界。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/models/vision-language.md\",\n          \"quote\": \"固定 KV，只改变是否保存末输出；遗漏分支在 c=n、ℓ 缺失时没有后继\"\n        },\n        {\n          \"path\": \"knowledge/models/vision-language.md\",\n          \"quote\": \"遗漏无 logits 恢复时，让调度选择真实返回无动作，再由“有预算、未取消的合法请求必须有后继”不变量检测\"\n        },\n        {\n          \"path\": \"knowledge/models/vision-language.md\",\n          \"quote\": \"共享线性、归一化及投影原语不属于两路独立验证范围。\"\n        }\n      ]\n    }\n  },\n  \"findings\": [],\n  \"limitations\": [\n    \"结论针对完整供应正文及声明范围的参数化机制；不是 Qwen 权重、processor、精确 MRoPE 接口、merger 次序或视频尾帧兼容性认证。\",\n    \"CPU 检查共享线性、归一化、投影和 FFN 原语；身份检查验证示意描述字段及拒绝规则，不证明生产缓存实现或摘要无碰撞。\",\n    \"未验证随机采样、grammar、跨 token stop、物理尾页复制、异步取消、DMA、GPU 内存可见性、设备性能、视觉任务质量或 Agent 使用效果。正文已明确这些边界。\",\n    \"cross-attention-cache 和 design-synthesis 仅供应摘录；未据此声称通读原章。未读取源码归档、PDF 图像或 reader.html。\",\n    \"本调用工具发现未提供文件读取或终端接口，未读取本地技能文件、重算磁盘哈希、确认链接目标或重跑 Python。文档身份采用供应绑定；实际执行判断来自绑定当前脚本哈希的 actual_preflight 记录。\"\n  ],\n  \"checks\": [\n    {\n      \"script\": \"tools/check_k_model_008_full.py\",\n      \"args\": [],\n      \"assessment\": \"approved\",\n      \"script_sha256\": \"46e1240d433ab9de296ddd98c9222be3d431fabfdf1d543022e88b8e1e043269\",\n      \"reason\": \"独立审阅完整脚本后，明确批准本轮指定检查及其声明范围。dense 与缓存 attention、视觉映射和空间 merge 有不同组织的参考路径，关键缺陷负对照实际被检测；检查足以支持当前 CPU 机制结论。\",\n      \"execution\": {\n        \"evidence\": \"用户供应的 actual_preflight\",\n        \"reviewer_reran\": false,\n        \"returncode\": 0,\n        \"stderr\": \"\",\n        \"timed_out\": false,\n        \"reported_pass_groups\": 22,\n        \"observed_omitted_recovery_successor\": \"None\"\n      }\n    }\n  ],\n  \"no_checks_reason\": \"\",\n  \"reading_scope\": \"全文阅读供应的以下提取文本，范围单位均为零基、左闭右开字符：AGENTS.md [0,567)；docs/knowledge-method.md [0,2251)；docs/knowledge-review.md [0,3016)；knowledge/models/vision-language.md [0,15903)；knowledge/sources/S-QWEN-VL.md [0,466)；knowledge/sources/S-TRANSFORMER.md [0,550)；knowledge/sources/S-HF-CACHE.md [0,827)；knowledge/system-semantics/tokenization-io.md [0,3217)；knowledge/workloads/input-distribution.md [0,2880)；knowledge/system-semantics/host-runtime.md [0,7559)；knowledge/system-semantics/memory-allocators.md [0,4191)；knowledge/algorithms/routing-and-migration.md [0,3228)；knowledge/workloads/slo-goodput.md [0,2616)；knowledge/hardware/host-device-transfer.md [0,6485)；knowledge/models/omni-multimodal.md [0,3735)；knowledge/models/vision-inference.md [0,4331)；references/S-QWEN-VL/fulltext.txt [0,91965)；references/S-TRANSFORMER/fulltext.txt [0,39757)；references/S-HF-CACHE/fulltext.txt [0,7977)。其中来源全文指供应的完整文本提取，不包含原 PDF 图像。仅阅读摘录：knowledge/algorithms/cross-attention-cache.md [0,6366)、[16000,17361)；knowledge/system-semantics/design-synthesis.md [0,7727)，二者未列入 documents。完整审阅 candidate.test_script 从开头说明字符串至 main() 调用的全部交付代码，以及供应 author_notes 和 actual_preflight 执行记录；脚本未另供应字符范围。哈希表或执行 input_digests 中的其他文件不构成阅读记录。\",\n  \"test_assessment\": \"来源核对：Qwen 全文 §2.1、§2.1.1 和表 1 支持 patch、窗口、层数、四 patch merger 及 7B 几何；§2.1.2–2.1.3 支持动态 FPS 和绝对时间 MRoPE；§3.3.4 明确 768 帧及 24,576 tokens 是评测限制。Transformer §3.1–3.4 支持 attention、层间数据流和 cross Q/KV 来源，正文正确区分其 post-norm/ReLU 与参数化 pre-norm/SwiGLU 程序。HF 文档支持逐层历史与当前 KV、mask 范围及先选 token 后消费的顺序，正文没有照搬其乘零 mask 示意。检查算法核对：dense 显式构造因果可见集合及概率向量，consume 通过历史与新增 KV、在线稳定归约推进，两者比较全部层 KV 和末 logits，而非仅比较生成 ID。视觉参考用逐坐标 dense mask，待测路径用分窗聚集及逆映射；merge 使用坐标字典参考，窗口成本另用 query/key 穷举参考。覆盖冷、分块、逐 token、所有 prompt 前缀、完整命中有/无 logits、归一化前隐藏状态、单行、末行为视觉行、零预算和 EOS。遗漏当前 KV、错误窗口还原、连续四行分组、重复末输入及不完整层边界均有已检出的负对照。遗漏恢复 mutation 的 select_action 实际返回 None，生成循环的 active-request successor 不变量随后检出真实停滞，修复了旧版主动抛异常不能证明活性检测的问题。身份 mutation 检查位置、内容、文本和媒体顺序，但其作用限于示意键及校验规则。供应执行绑定当前脚本 SHA256，returncode=0、stderr 为空、timed_out=false，输出报告 22 个 PASS 分组；本 reviewer 未自行重跑。输出 ID 全为 3 限制了仅看 token 轨迹的区分力，但逐步 logits 和全层 KV 对照提供更强证据。公共数学原语、真实 checkpoint、生产并发与设备行为仍不在证明范围。campaign-K-MODEL-008-r1/r2 所涉技术修复在当前候选中成立，本轮指定检查已在 checks 中明确 approved；此结论不声称协调器的产物登记校验已经执行成功。\"\n}",
+  "exit_code": 0,
+  "status": "completed",
+  "timeout_seconds": 1800,
+  "response_path": "D:\\桌面\\xdb\\InfraAgents\\InfraAgents-know-astra-new\\InfraAgents-know\\docs\\evidence\\knowledge-workflow-20261028-batch7\\full_build\\K-MODEL-008\\round-3\\reviewer-attempt-001\\answer.txt",
+  "record_path": "D:\\桌面\\xdb\\InfraAgents\\InfraAgents-know-astra-new\\InfraAgents-know\\docs\\evidence\\knowledge-workflow-20261028-batch7\\full_build\\K-MODEL-008\\round-3\\reviewer-attempt-001\\record.json",
+  "tool_events": [],
+  "inventory_tool_events": [],
+  "rejected_tool_events": [],
+  "tool_policy": "metadata_inventory_only",
+  "tool_policy_version": "metadata-inventory-v1",
+  "tool_policy_scope": "Only empty-argument codex host plugin/skill-directory descriptors and empty template inventory; inventory is not knowledge evidence. All other tool events reject the call.",
+  "tool_policy_reason": "Production chapter construction allows observed generic capability discovery metadata; this does not claim a zero-tool comparison or external source reading.",
+  "malformed_event_lines": [],
+  "turn_completed": true,
+  "error_events": [],
+  "recovered_transport_events": [],
+  "terminal_error_events": [],
+  "transport_recovered": false,
+  "actual_model": null,
+  "identity_verified": null,
+  "identity_basis": "Explicit CLI model and isolated HTTP provider; CLI events do not expose server model identity.",
+  "provider": "eval-openai-http",
+  "max_output_tokens": null,
+  "cli_version": "codex-cli 0.164.0-alpha.11.1",
+  "cost_scope": "Codex token usage is reported; subscription charge is not exposed.",
+  "parsed": {
+    "entry_id": "K-MODEL-008",
+    "body_sha256": "9840acf19c6453c5ba8e660d274d1b50b3d8a6d256a87f426ecba836aae2ec65",
+    "reviewer": "sol-reviewer:K-MODEL-008:round-3",
+    "decision": "accept",
+    "documents": {
+      "AGENTS.md": "b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a",
+      "docs/knowledge-method.md": "69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb",
+      "docs/knowledge-review.md": "f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21",
+      "knowledge/models/vision-language.md": "9840acf19c6453c5ba8e660d274d1b50b3d8a6d256a87f426ecba836aae2ec65",
+      "knowledge/sources/S-QWEN-VL.md": "a41acb4d122419b0575a7fb4b0e510fb409a3b8b8cdb3bf875c571e3ae4c479a",
+      "knowledge/sources/S-TRANSFORMER.md": "e1858681f1645209756f7eb640dcdfe3a786f5af3e529fb61bce6de0212a82d7",
+      "knowledge/sources/S-HF-CACHE.md": "1a4afcf0d800ba3f42836445874d620ae9f7ba8ab4c361caa505376cc471595c",
+      "knowledge/system-semantics/tokenization-io.md": "1dea61a1f632805cb90873e747cb3079230a7b6bab76b17b4281662b82367565",
+      "knowledge/workloads/input-distribution.md": "b1b68f0d2a6d640c4b64c2bc98560b9e9a79a6a60b445899949b5db15b96aa90",
+      "knowledge/system-semantics/host-runtime.md": "005342b6131acdd072d5cf35456a5b01e5630f764b614e7090639fde01a5b36a",
+      "knowledge/system-semantics/memory-allocators.md": "2e7258787b94ad142c7c236541e8718803ad30b273d08e6c398dff673a1df838",
+      "knowledge/algorithms/routing-and-migration.md": "1b9dcfd5fea499a91611459bb936e1c1c49ceb562171fb0f1ba360a7010f5d32",
+      "knowledge/workloads/slo-goodput.md": "5aa9b71cddb7d896ffa1fe6d78ac61cf0bb92d76279ae4d563f1110ed9dbedb4",
+      "knowledge/hardware/host-device-transfer.md": "e4921a0714af21f7ab1a336f40af662f716f2c64a42dd598eb2cede548c858d2",
+      "knowledge/models/omni-multimodal.md": "f1fc4dc6611ad1b53ad8cc7f2abf0cbf9b9b2022d2d22c64dc712a39943d9d15",
+      "knowledge/models/vision-inference.md": "a3b95c24c3838a54df90db945066257c0960e20a24929ed2812838fc5a3528a0",
+      "references/S-QWEN-VL/fulltext.txt": "87c0802f0f621cb7ab11e36f542e8d16ada24490084fa471423a12bb2d6a0fd2",
+      "references/S-TRANSFORMER/fulltext.txt": "7bae85f4505c924b16d6c601c744b9665f245a20ea84258aa86bb51036a16805",
+      "references/S-HF-CACHE/fulltext.txt": "373837b8ac246d43867eb21de168cc59e5e6e78f5f3b9c27bee54740c4a635b4",
+      "tools/check_k_model_008_full.py": "46e1240d433ab9de296ddd98c9222be3d431fabfdf1d543022e88b8e1e043269"
+    },
+    "criteria": {
+      "definition": {
+        "assessment": "sufficient",
+        "reason": "定义了不可变媒体、预处理张量、patch 网格、编码特征、桥接特征、实际输入行、位置及可见集合，并解释这些对象为什么共同决定模型函数和资源需求。n、c、ℓ 分别表示已知输入、全层提交状态和可选末行输出，采样与 KV 计算没有混同。attention、RMSNorm、FFN 和几何公式足以支撑后续算法。",
+        "evidence": [
+          {
+            "path": "knowledge/models/vision-language.md",
+            "quote": "F_i 是视觉 encoder 输出；Z_i 是空间合并和 projector 后的语言侧特征。二者有不同宽度、token 数和生命期。"
+          },
+          {
+            "path": "knowledge/models/vision-language.md",
+            "quote": "只有 c=n 且 ℓ 属于当前边界，才能用它选择下一个 token。已输出 token 不等于已有其 KV：采样后通常 n=c+1。"
+          }
+        ]
+      },
+      "legality": {
+        "assessment": "sufficient",
+        "reason": "明确区分固定模型契约与缓存、分窗、布局及末输出保存方式等设计选择。精确复用受依赖闭包、位置、可见性、数值表示和前缀稳定性约束；共享写隔离、全层发布、物理最后使用及空输入规则均有具体条件。参数化 pre-norm 程序没有冒充完整 Qwen checkpoint 规范。",
+        "evidence": [
+          {
+            "path": "knowledge/models/vision-language.md",
+            "quote": "decoder 追加复用要求旧前缀表示对新增后缀稳定。标准因果 self-attention 具备这一依赖结构；若新增输入改变旧行位置、可见集合或非逐行统计，必须重新判断。"
+          },
+          {
+            "path": "knowledge/models/vision-language.md",
+            "quote": "已发布共享区只读；取消不等于物理访问完成，全部引用和在途访问结束后才可回收。"
+          },
+          {
+            "path": "knowledge/models/vision-language.md",
+            "quote": "它是参数化算法，不能据此宣称报告已经确定所有 Qwen checkpoint 的逐条执行次序。"
+          }
+        ]
+      },
+      "algorithm": {
+        "assessment": "sufficient",
+        "reason": "视觉路径展开 patch 投影、逐层位置变换、窗口聚集、attention、逆映射、残差、FFN 和空间 merge。decoder 路径明确每层隐藏状态、新旧 KV 可见集合、末端输出及全层一致提交。主循环覆盖部分命中、完整命中有末输出、完整命中无末输出三条首 token 路径；末行恢复保持长度并从原输入表示开始。取消后的逻辑不提交与物理排空分别说明。此前无后继和逐层黑盒问题在当前正文中已修复。",
+        "evidence": [
+          {
+            "path": "knowledge/models/vision-language.md",
+            "quote": "decoder 新段的每层 q/k/v 来自该层新行隐藏状态；历史 KV 来自历史行在同一层的投影。"
+          },
+          {
+            "path": "knowledge/models/vision-language.md",
+            "quote": "读取视图←本层历史 KV[:a] 与本次暂存 k_new/v_new 的逻辑拼接。"
+          },
+          {
+            "path": "knowledge/models/vision-language.md",
+            "quote": "三种首 token 分支都有后继：部分命中消费后缀；完整命中有末输出直接采样；完整命中无末输出安全重算。"
+          }
+        ]
+      },
+      "cost": {
+        "assessment": "sufficient",
+        "reason": "计算账区分成对工作、乘加与 FLOPs，资源账区分 F/Z、像素、全层 KV、末输出、共享副本和瞬时隔离容量。复算窗口项为 98,304 对、混合层为 12,189,696 对；KV 为 57,344 字节/token，896 行为 49 MiB。布局读写、主机准备、传输、同步、排队与驻留均有对应成本，165/118/133/88 ms 算例算术一致且明确为串行设定。没有把理论工作比当作设备时延比。",
+        "evidence": [
+          {
+            "path": "knowledge/models/vision-language.md",
+            "quote": "窗口聚集及还原若都物化为宽度 d_v 的独立缓冲，两次转换合计约涉及 4N_p d_v b_v 字节的读写"
+          },
+          {
+            "path": "knowledge/models/vision-language.md",
+            "quote": "896 行输入为 49 MiB；加 256 行预留为 63 MiB/request；8 请求该项为 504 MiB。"
+          },
+          {
+            "path": "knowledge/models/vision-language.md",
+            "quote": "流水可以跨请求重叠，但单请求依赖、共享带宽及首尾排空仍存在，不能任意取阶段最大值代替 TTFT。"
+          }
+        ]
+      },
+      "adaptation": {
+        "assessment": "sufficient",
+        "reason": "条件变化表沿实际依赖判断保留与失效，覆盖文本、processor、空间和时间几何、模型参数、表示、并发及容量变化。进一步给出特征恢复、末输出保存、亲和路由与重算之间的反转条件，能够据新条件重算合法性和成本。",
+        "evidence": [
+          {
+            "path": "knowledge/models/vision-language.md",
+            "quote": "改 resize/crop/插值/方向/色彩 | 原媒体 | X 改变，相关 F/Z 和 KV 失效"
+          },
+          {
+            "path": "knowledge/models/vision-language.md",
+            "quote": "prefix 亲和排队超过省下的计算时，重算或复制热点可能更快。"
+          }
+        ]
+      },
+      "diagnosis": {
+        "assessment": "sufficient",
+        "reason": "将无首 token、数值错误、视觉错位和延迟问题分别连接竞争解释、可控改变及预期观察。当前检查具有 dense 显式可见集合参考、在线缓存路径、坐标参考和实际缺陷注入；遗漏恢复确实产生 None 后继，再由独立活性不变量检测。正文准确限定共享数学原语、生产缓存、异步设备语义和性能的验证边界。",
+        "evidence": [
+          {
+            "path": "knowledge/models/vision-language.md",
+            "quote": "固定 KV，只改变是否保存末输出；遗漏分支在 c=n、ℓ 缺失时没有后继"
+          },
+          {
+            "path": "knowledge/models/vision-language.md",
+            "quote": "遗漏无 logits 恢复时，让调度选择真实返回无动作，再由“有预算、未取消的合法请求必须有后继”不变量检测"
+          },
+          {
+            "path": "knowledge/models/vision-language.md",
+            "quote": "共享线性、归一化及投影原语不属于两路独立验证范围。"
+          }
+        ]
+      }
+    },
+    "findings": [],
+    "limitations": [
+      "结论针对完整供应正文及声明范围的参数化机制；不是 Qwen 权重、processor、精确 MRoPE 接口、merger 次序或视频尾帧兼容性认证。",
+      "CPU 检查共享线性、归一化、投影和 FFN 原语；身份检查验证示意描述字段及拒绝规则，不证明生产缓存实现或摘要无碰撞。",
+      "未验证随机采样、grammar、跨 token stop、物理尾页复制、异步取消、DMA、GPU 内存可见性、设备性能、视觉任务质量或 Agent 使用效果。正文已明确这些边界。",
+      "cross-attention-cache 和 design-synthesis 仅供应摘录；未据此声称通读原章。未读取源码归档、PDF 图像或 reader.html。",
+      "本调用工具发现未提供文件读取或终端接口，未读取本地技能文件、重算磁盘哈希、确认链接目标或重跑 Python。文档身份采用供应绑定；实际执行判断来自绑定当前脚本哈希的 actual_preflight 记录。"
+    ],
+    "checks": [
+      {
+        "script": "tools/check_k_model_008_full.py",
+        "args": [],
+        "assessment": "approved",
+        "script_sha256": "46e1240d433ab9de296ddd98c9222be3d431fabfdf1d543022e88b8e1e043269",
+        "reason": "独立审阅完整脚本后，明确批准本轮指定检查及其声明范围。dense 与缓存 attention、视觉映射和空间 merge 有不同组织的参考路径，关键缺陷负对照实际被检测；检查足以支持当前 CPU 机制结论。",
+        "execution": {
+          "evidence": "用户供应的 actual_preflight",
+          "reviewer_reran": false,
+          "returncode": 0,
+          "stderr": "",
+          "timed_out": false,
+          "reported_pass_groups": 22,
+          "observed_omitted_recovery_successor": "None"
+        }
+      }
+    ],
+    "no_checks_reason": "",
+    "reading_scope": "全文阅读供应的以下提取文本，范围单位均为零基、左闭右开字符：AGENTS.md [0,567)；docs/knowledge-method.md [0,2251)；docs/knowledge-review.md [0,3016)；knowledge/models/vision-language.md [0,15903)；knowledge/sources/S-QWEN-VL.md [0,466)；knowledge/sources/S-TRANSFORMER.md [0,550)；knowledge/sources/S-HF-CACHE.md [0,827)；knowledge/system-semantics/tokenization-io.md [0,3217)；knowledge/workloads/input-distribution.md [0,2880)；knowledge/system-semantics/host-runtime.md [0,7559)；knowledge/system-semantics/memory-allocators.md [0,4191)；knowledge/algorithms/routing-and-migration.md [0,3228)；knowledge/workloads/slo-goodput.md [0,2616)；knowledge/hardware/host-device-transfer.md [0,6485)；knowledge/models/omni-multimodal.md [0,3735)；knowledge/models/vision-inference.md [0,4331)；references/S-QWEN-VL/fulltext.txt [0,91965)；references/S-TRANSFORMER/fulltext.txt [0,39757)；references/S-HF-CACHE/fulltext.txt [0,7977)。其中来源全文指供应的完整文本提取，不包含原 PDF 图像。仅阅读摘录：knowledge/algorithms/cross-attention-cache.md [0,6366)、[16000,17361)；knowledge/system-semantics/design-synthesis.md [0,7727)，二者未列入 documents。完整审阅 candidate.test_script 从开头说明字符串至 main() 调用的全部交付代码，以及供应 author_notes 和 actual_preflight 执行记录；脚本未另供应字符范围。哈希表或执行 input_digests 中的其他文件不构成阅读记录。",
+    "test_assessment": "来源核对：Qwen 全文 §2.1、§2.1.1 和表 1 支持 patch、窗口、层数、四 patch merger 及 7B 几何；§2.1.2–2.1.3 支持动态 FPS 和绝对时间 MRoPE；§3.3.4 明确 768 帧及 24,576 tokens 是评测限制。Transformer §3.1–3.4 支持 attention、层间数据流和 cross Q/KV 来源，正文正确区分其 post-norm/ReLU 与参数化 pre-norm/SwiGLU 程序。HF 文档支持逐层历史与当前 KV、mask 范围及先选 token 后消费的顺序，正文没有照搬其乘零 mask 示意。检查算法核对：dense 显式构造因果可见集合及概率向量，consume 通过历史与新增 KV、在线稳定归约推进，两者比较全部层 KV 和末 logits，而非仅比较生成 ID。视觉参考用逐坐标 dense mask，待测路径用分窗聚集及逆映射；merge 使用坐标字典参考，窗口成本另用 query/key 穷举参考。覆盖冷、分块、逐 token、所有 prompt 前缀、完整命中有/无 logits、归一化前隐藏状态、单行、末行为视觉行、零预算和 EOS。遗漏当前 KV、错误窗口还原、连续四行分组、重复末输入及不完整层边界均有已检出的负对照。遗漏恢复 mutation 的 select_action 实际返回 None，生成循环的 active-request successor 不变量随后检出真实停滞，修复了旧版主动抛异常不能证明活性检测的问题。身份 mutation 检查位置、内容、文本和媒体顺序，但其作用限于示意键及校验规则。供应执行绑定当前脚本 SHA256，returncode=0、stderr 为空、timed_out=false，输出报告 22 个 PASS 分组；本 reviewer 未自行重跑。输出 ID 全为 3 限制了仅看 token 轨迹的区分力，但逐步 logits 和全层 KV 对照提供更强证据。公共数学原语、真实 checkpoint、生产并发与设备行为仍不在证明范围。campaign-K-MODEL-008-r1/r2 所涉技术修复在当前候选中成立，本轮指定检查已在 checks 中明确 approved；此结论不声称协调器的产物登记校验已经执行成功。"
+  },
+  "format_status": "strict_json",
+  "format_error": null,
+  "output_text": "{\n  \"entry_id\": \"K-MODEL-008\",\n  \"body_sha256\": \"9840acf19c6453c5ba8e660d274d1b50b3d8a6d256a87f426ecba836aae2ec65\",\n  \"reviewer\": \"sol-reviewer:K-MODEL-008:round-3\",\n  \"decision\": \"accept\",\n  \"documents\": {\n    \"AGENTS.md\": \"b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a\",\n    \"docs/knowledge-method.md\": \"69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb\",\n    \"docs/knowledge-review.md\": \"f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21\",\n    \"knowledge/models/vision-language.md\": \"9840acf19c6453c5ba8e660d274d1b50b3d8a6d256a87f426ecba836aae2ec65\",\n    \"knowledge/sources/S-QWEN-VL.md\": \"a41acb4d122419b0575a7fb4b0e510fb409a3b8b8cdb3bf875c571e3ae4c479a\",\n    \"knowledge/sources/S-TRANSFORMER.md\": \"e1858681f1645209756f7eb640dcdfe3a786f5af3e529fb61bce6de0212a82d7\",\n    \"knowledge/sources/S-HF-CACHE.md\": \"1a4afcf0d800ba3f42836445874d620ae9f7ba8ab4c361caa505376cc471595c\",\n    \"knowledge/system-semantics/tokenization-io.md\": \"1dea61a1f632805cb90873e747cb3079230a7b6bab76b17b4281662b82367565\",\n    \"knowledge/workloads/input-distribution.md\": \"b1b68f0d2a6d640c4b64c2bc98560b9e9a79a6a60b445899949b5db15b96aa90\",\n    \"knowledge/system-semantics/host-runtime.md\": \"005342b6131acdd072d5cf35456a5b01e5630f764b614e7090639fde01a5b36a\",\n    \"knowledge/system-semantics/memory-allocators.md\": \"2e7258787b94ad142c7c236541e8718803ad30b273d08e6c398dff673a1df838\",\n    \"knowledge/algorithms/routing-and-migration.md\": \"1b9dcfd5fea499a91611459bb936e1c1c49ceb562171fb0f1ba360a7010f5d32\",\n    \"knowledge/workloads/slo-goodput.md\": \"5aa9b71cddb7d896ffa1fe6d78ac61cf0bb92d76279ae4d563f1110ed9dbedb4\",\n    \"knowledge/hardware/host-device-transfer.md\": \"e4921a0714af21f7ab1a336f40af662f716f2c64a42dd598eb2cede548c858d2\",\n    \"knowledge/models/omni-multimodal.md\": \"f1fc4dc6611ad1b53ad8cc7f2abf0cbf9b9b2022d2d22c64dc712a39943d9d15\",\n    \"knowledge/models/vision-inference.md\": \"a3b95c24c3838a54df90db945066257c0960e20a24929ed2812838fc5a3528a0\",\n    \"references/S-QWEN-VL/fulltext.txt\": \"87c0802f0f621cb7ab11e36f542e8d16ada24490084fa471423a12bb2d6a0fd2\",\n    \"references/S-TRANSFORMER/fulltext.txt\": \"7bae85f4505c924b16d6c601c744b9665f245a20ea84258aa86bb51036a16805\",\n    \"references/S-HF-CACHE/fulltext.txt\": \"373837b8ac246d43867eb21de168cc59e5e6e78f5f3b9c27bee54740c4a635b4\",\n    \"tools/check_k_model_008_full.py\": \"46e1240d433ab9de296ddd98c9222be3d431fabfdf1d543022e88b8e1e043269\"\n  },\n  \"criteria\": {\n    \"definition\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"定义了不可变媒体、预处理张量、patch 网格、编码特征、桥接特征、实际输入行、位置及可见集合，并解释这些对象为什么共同决定模型函数和资源需求。n、c、ℓ 分别表示已知输入、全层提交状态和可选末行输出，采样与 KV 计算没有混同。attention、RMSNorm、FFN 和几何公式足以支撑后续算法。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/models/vision-language.md\",\n          \"quote\": \"F_i 是视觉 encoder 输出；Z_i 是空间合并和 projector 后的语言侧特征。二者有不同宽度、token 数和生命期。\"\n        },\n        {\n          \"path\": \"knowledge/models/vision-language.md\",\n          \"quote\": \"只有 c=n 且 ℓ 属于当前边界，才能用它选择下一个 token。已输出 token 不等于已有其 KV：采样后通常 n=c+1。\"\n        }\n      ]\n    },\n    \"legality\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"明确区分固定模型契约与缓存、分窗、布局及末输出保存方式等设计选择。精确复用受依赖闭包、位置、可见性、数值表示和前缀稳定性约束；共享写隔离、全层发布、物理最后使用及空输入规则均有具体条件。参数化 pre-norm 程序没有冒充完整 Qwen checkpoint 规范。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/models/vision-language.md\",\n          \"quote\": \"decoder 追加复用要求旧前缀表示对新增后缀稳定。标准因果 self-attention 具备这一依赖结构；若新增输入改变旧行位置、可见集合或非逐行统计，必须重新判断。\"\n        },\n        {\n          \"path\": \"knowledge/models/vision-language.md\",\n          \"quote\": \"已发布共享区只读；取消不等于物理访问完成，全部引用和在途访问结束后才可回收。\"\n        },\n        {\n          \"path\": \"knowledge/models/vision-language.md\",\n          \"quote\": \"它是参数化算法，不能据此宣称报告已经确定所有 Qwen checkpoint 的逐条执行次序。\"\n        }\n      ]\n    },\n    \"algorithm\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"视觉路径展开 patch 投影、逐层位置变换、窗口聚集、attention、逆映射、残差、FFN 和空间 merge。decoder 路径明确每层隐藏状态、新旧 KV 可见集合、末端输出及全层一致提交。主循环覆盖部分命中、完整命中有末输出、完整命中无末输出三条首 token 路径；末行恢复保持长度并从原输入表示开始。取消后的逻辑不提交与物理排空分别说明。此前无后继和逐层黑盒问题在当前正文中已修复。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/models/vision-language.md\",\n          \"quote\": \"decoder 新段的每层 q/k/v 来自该层新行隐藏状态；历史 KV 来自历史行在同一层的投影。\"\n        },\n        {\n          \"path\": \"knowledge/models/vision-language.md\",\n          \"quote\": \"读取视图←本层历史 KV[:a] 与本次暂存 k_new/v_new 的逻辑拼接。\"\n        },\n        {\n          \"path\": \"knowledge/models/vision-language.md\",\n          \"quote\": \"三种首 token 分支都有后继：部分命中消费后缀；完整命中有末输出直接采样；完整命中无末输出安全重算。\"\n        }\n      ]\n    },\n    \"cost\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"计算账区分成对工作、乘加与 FLOPs，资源账区分 F/Z、像素、全层 KV、末输出、共享副本和瞬时隔离容量。复算窗口项为 98,304 对、混合层为 12,189,696 对；KV 为 57,344 字节/token，896 行为 49 MiB。布局读写、主机准备、传输、同步、排队与驻留均有对应成本，165/118/133/88 ms 算例算术一致且明确为串行设定。没有把理论工作比当作设备时延比。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/models/vision-language.md\",\n          \"quote\": \"窗口聚集及还原若都物化为宽度 d_v 的独立缓冲，两次转换合计约涉及 4N_p d_v b_v 字节的读写\"\n        },\n        {\n          \"path\": \"knowledge/models/vision-language.md\",\n          \"quote\": \"896 行输入为 49 MiB；加 256 行预留为 63 MiB/request；8 请求该项为 504 MiB。\"\n        },\n        {\n          \"path\": \"knowledge/models/vision-language.md\",\n          \"quote\": \"流水可以跨请求重叠，但单请求依赖、共享带宽及首尾排空仍存在，不能任意取阶段最大值代替 TTFT。\"\n        }\n      ]\n    },\n    \"adaptation\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"条件变化表沿实际依赖判断保留与失效，覆盖文本、processor、空间和时间几何、模型参数、表示、并发及容量变化。进一步给出特征恢复、末输出保存、亲和路由与重算之间的反转条件，能够据新条件重算合法性和成本。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/models/vision-language.md\",\n          \"quote\": \"改 resize/crop/插值/方向/色彩 | 原媒体 | X 改变，相关 F/Z 和 KV 失效\"\n        },\n        {\n          \"path\": \"knowledge/models/vision-language.md\",\n          \"quote\": \"prefix 亲和排队超过省下的计算时，重算或复制热点可能更快。\"\n        }\n      ]\n    },\n    \"diagnosis\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"将无首 token、数值错误、视觉错位和延迟问题分别连接竞争解释、可控改变及预期观察。当前检查具有 dense 显式可见集合参考、在线缓存路径、坐标参考和实际缺陷注入；遗漏恢复确实产生 None 后继，再由独立活性不变量检测。正文准确限定共享数学原语、生产缓存、异步设备语义和性能的验证边界。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/models/vision-language.md\",\n          \"quote\": \"固定 KV，只改变是否保存末输出；遗漏分支在 c=n、ℓ 缺失时没有后继\"\n        },\n        {\n          \"path\": \"knowledge/models/vision-language.md\",\n          \"quote\": \"遗漏无 logits 恢复时，让调度选择真实返回无动作，再由“有预算、未取消的合法请求必须有后继”不变量检测\"\n        },\n        {\n          \"path\": \"knowledge/models/vision-language.md\",\n          \"quote\": \"共享线性、归一化及投影原语不属于两路独立验证范围。\"\n        }\n      ]\n    }\n  },\n  \"findings\": [],\n  \"limitations\": [\n    \"结论针对完整供应正文及声明范围的参数化机制；不是 Qwen 权重、processor、精确 MRoPE 接口、merger 次序或视频尾帧兼容性认证。\",\n    \"CPU 检查共享线性、归一化、投影和 FFN 原语；身份检查验证示意描述字段及拒绝规则，不证明生产缓存实现或摘要无碰撞。\",\n    \"未验证随机采样、grammar、跨 token stop、物理尾页复制、异步取消、DMA、GPU 内存可见性、设备性能、视觉任务质量或 Agent 使用效果。正文已明确这些边界。\",\n    \"cross-attention-cache 和 design-synthesis 仅供应摘录；未据此声称通读原章。未读取源码归档、PDF 图像或 reader.html。\",\n    \"本调用工具发现未提供文件读取或终端接口，未读取本地技能文件、重算磁盘哈希、确认链接目标或重跑 Python。文档身份采用供应绑定；实际执行判断来自绑定当前脚本哈希的 actual_preflight 记录。\"\n  ],\n  \"checks\": [\n    {\n      \"script\": \"tools/check_k_model_008_full.py\",\n      \"args\": [],\n      \"assessment\": \"approved\",\n      \"script_sha256\": \"46e1240d433ab9de296ddd98c9222be3d431fabfdf1d543022e88b8e1e043269\",\n      \"reason\": \"独立审阅完整脚本后，明确批准本轮指定检查及其声明范围。dense 与缓存 attention、视觉映射和空间 merge 有不同组织的参考路径，关键缺陷负对照实际被检测；检查足以支持当前 CPU 机制结论。\",\n      \"execution\": {\n        \"evidence\": \"用户供应的 actual_preflight\",\n        \"reviewer_reran\": false,\n        \"returncode\": 0,\n        \"stderr\": \"\",\n        \"timed_out\": false,\n        \"reported_pass_groups\": 22,\n        \"observed_omitted_recovery_successor\": \"None\"\n      }\n    }\n  ],\n  \"no_checks_reason\": \"\",\n  \"reading_scope\": \"全文阅读供应的以下提取文本，范围单位均为零基、左闭右开字符：AGENTS.md [0,567)；docs/knowledge-method.md [0,2251)；docs/knowledge-review.md [0,3016)；knowledge/models/vision-language.md [0,15903)；knowledge/sources/S-QWEN-VL.md [0,466)；knowledge/sources/S-TRANSFORMER.md [0,550)；knowledge/sources/S-HF-CACHE.md [0,827)；knowledge/system-semantics/tokenization-io.md [0,3217)；knowledge/workloads/input-distribution.md [0,2880)；knowledge/system-semantics/host-runtime.md [0,7559)；knowledge/system-semantics/memory-allocators.md [0,4191)；knowledge/algorithms/routing-and-migration.md [0,3228)；knowledge/workloads/slo-goodput.md [0,2616)；knowledge/hardware/host-device-transfer.md [0,6485)；knowledge/models/omni-multimodal.md [0,3735)；knowledge/models/vision-inference.md [0,4331)；references/S-QWEN-VL/fulltext.txt [0,91965)；references/S-TRANSFORMER/fulltext.txt [0,39757)；references/S-HF-CACHE/fulltext.txt [0,7977)。其中来源全文指供应的完整文本提取，不包含原 PDF 图像。仅阅读摘录：knowledge/algorithms/cross-attention-cache.md [0,6366)、[16000,17361)；knowledge/system-semantics/design-synthesis.md [0,7727)，二者未列入 documents。完整审阅 candidate.test_script 从开头说明字符串至 main() 调用的全部交付代码，以及供应 author_notes 和 actual_preflight 执行记录；脚本未另供应字符范围。哈希表或执行 input_digests 中的其他文件不构成阅读记录。\",\n  \"test_assessment\": \"来源核对：Qwen 全文 §2.1、§2.1.1 和表 1 支持 patch、窗口、层数、四 patch merger 及 7B 几何；§2.1.2–2.1.3 支持动态 FPS 和绝对时间 MRoPE；§3.3.4 明确 768 帧及 24,576 tokens 是评测限制。Transformer §3.1–3.4 支持 attention、层间数据流和 cross Q/KV 来源，正文正确区分其 post-norm/ReLU 与参数化 pre-norm/SwiGLU 程序。HF 文档支持逐层历史与当前 KV、mask 范围及先选 token 后消费的顺序，正文没有照搬其乘零 mask 示意。检查算法核对：dense 显式构造因果可见集合及概率向量，consume 通过历史与新增 KV、在线稳定归约推进，两者比较全部层 KV 和末 logits，而非仅比较生成 ID。视觉参考用逐坐标 dense mask，待测路径用分窗聚集及逆映射；merge 使用坐标字典参考，窗口成本另用 query/key 穷举参考。覆盖冷、分块、逐 token、所有 prompt 前缀、完整命中有/无 logits、归一化前隐藏状态、单行、末行为视觉行、零预算和 EOS。遗漏当前 KV、错误窗口还原、连续四行分组、重复末输入及不完整层边界均有已检出的负对照。遗漏恢复 mutation 的 select_action 实际返回 None，生成循环的 active-request successor 不变量随后检出真实停滞，修复了旧版主动抛异常不能证明活性检测的问题。身份 mutation 检查位置、内容、文本和媒体顺序，但其作用限于示意键及校验规则。供应执行绑定当前脚本 SHA256，returncode=0、stderr 为空、timed_out=false，输出报告 22 个 PASS 分组；本 reviewer 未自行重跑。输出 ID 全为 3 限制了仅看 token 轨迹的区分力，但逐步 logits 和全层 KV 对照提供更强证据。公共数学原语、真实 checkpoint、生产并发与设备行为仍不在证明范围。campaign-K-MODEL-008-r1/r2 所涉技术修复在当前候选中成立，本轮指定检查已在 checks 中明确 approved；此结论不声称协调器的产物登记校验已经执行成功。\"\n}",
+  "elapsed_seconds": 143.875
+}

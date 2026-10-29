@@ -1,0 +1,143 @@
+{
+  "entry_id": "K-FW-008",
+  "body_sha256": "f16f8287e7fd632c26f479dc90c88d0c4468852e86eac1a654ac0914a0958d4e",
+  "reviewer": "sol-reviewer:K-FW-008:round-3",
+  "decision": "accept",
+  "documents": {
+    "AGENTS.md": "b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a",
+    "docs/knowledge-method.md": "69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb",
+    "docs/knowledge-review.md": "f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21",
+    "knowledge/frameworks/mlx-serving.md": "f16f8287e7fd632c26f479dc90c88d0c4468852e86eac1a654ac0914a0958d4e",
+    "knowledge/sources/S-MLX.md": "7ee538d3fc5d3e2167c4f395180e9f63c984f75be9aeb3f419c902b2255cd9c9",
+    "knowledge/sources/S-MLX-MEM.md": "1d65e19c9f1394965bdf43eb8e6049a56dcdbe06af5602af386d4608845192d0",
+    "knowledge/sources/S-MLX-EXEC.md": "ede2398cdba02f6b68dfbbff362f1922b85ad05b294c3f3b374aa45293064d41",
+    "knowledge/hardware/metal-unified-memory.md": "b4a1f38557eecf13e85f3a962f617c95ec86ef7c800a664471d6b1d2c3d31fd4",
+    "knowledge/system-semantics/cancellation-resource-completion.md": "919052c77f65a13c9dc09aad03341ed31f0820dbbdcb2750b5789f349f9e86c1",
+    "knowledge/system-semantics/memory-allocators.md": "2e7258787b94ad142c7c236541e8718803ad30b273d08e6c398dff673a1df838",
+    "knowledge/system-semantics/host-runtime.md": "005342b6131acdd072d5cf35456a5b01e5630f764b614e7090639fde01a5b36a",
+    "knowledge/frameworks/checkpoint-loading.md": "5205ab97f77cdb821e5a0c3f6685a99cfc12ccc8474f96c6de82375372cb59bf",
+    "knowledge/hardware/shared-memory-paths.md": "9471f29d33a5821b00e11b6d08fb69fe31288087d558f05c5f9234350efe8b0d",
+    "references/S-MLX/fulltext.txt": "070faaf48ca988d2b78a568a649a2e7e0a05ed5577740aa14e1b0a730e52e438",
+    "references/S-MLX-MEM/fulltext.txt": "472f16846acae9c84a7daca168b900903579e71b5c05aa2376229f79a0d70f64",
+    "references/S-MLX-EXEC/fulltext.txt": "a60bc4cd5bf23053a16122c83b835e2db761fd49be3f16a0a075711a24f90b99",
+    "tools/check_k_fw_008_full.py": "a0db6cfde79ad7a8ef18f213aaba8fc1955e1c1a2e145b795c8152a9f81d76c6"
+  },
+  "criteria": {
+    "definition": {
+      "assessment": "sufficient",
+      "reason": "定义了图根闭包、已知 token 长度、全层 KV 完成边界、末行 logits 身份、RNG、业务版本和执行身份；明确区分采样产生 token 与计算该 token 的 KV。逐层 hidden、K/V 和末行输出关系足以恢复服务步的依赖。",
+      "evidence": [
+        {
+          "path": "knowledge/frameworks/mlx-serving.md",
+          "quote": "k 是所有必要层的 KV 都已完成的连续边界，0≤k≤n"
+        },
+        {
+          "path": "knowledge/frameworks/mlx-serving.md",
+          "quote": "采样 x[n] 之后，n 增一，但新 token 的 KV 尚未计算，k 保持旧 n。"
+        }
+      ]
+    },
+    "legality": {
+      "assessment": "sufficient",
+      "reason": "合法性落实到入口和提交两个检查点，并同时检查资格、阶段、版本、执行身份和未结束责任。失败采取不可原地重试的终止契约，排空不恢复资格。LEG-06 的失败后重入及迟到提交漏洞已关闭；取消与事务线性化点也有明确先后。",
+      "evidence": [
+        {
+          "path": "knowledge/frameworks/mlx-serving.md",
+          "quote": "若 not r.live 或 not r.commit_eligible 或 r.failed：返回 BLOCKED"
+        },
+        {
+          "path": "knowledge/frameworks/mlx-serving.md",
+          "quote": "要求 r.phase=READY_TO_COMMIT 且 r.P 为空"
+        },
+        {
+          "path": "knowledge/frameworks/mlx-serving.md",
+          "quote": "失败排空只解除物理责任，不恢复业务资格；迟到成功结果同样不能提交。"
+        }
+      ]
+    },
+    "algorithm": {
+      "assessment": "sufficient",
+      "reason": "PREPARE 展开逐 token、逐层计算和私有写入；服务算法串起冻结、求值、采样、原子提交及交付；失败算法保留最后使用责任。满 KV 无 logits 有隔离重算路径。正常多步服务与完整前缀参考一致，当前候选已修复所列历史具体失败，campaign 问题不再作为开放缺口。",
+      "evidence": [
+        {
+          "path": "knowledge/frameworks/mlx-serving.md",
+          "quote": "h=BLOCK_REMAINDER(l,h,local[l,0:t+1],t)"
+        },
+        {
+          "path": "knowledge/frameworks/mlx-serving.md",
+          "quote": "在私有区重算最后一个已知 token，读取 [0:n−1) 的只读前缀，得到末行结果后丢弃重算 KV"
+        },
+        {
+          "path": "knowledge/frameworks/mlx-serving.md",
+          "quote": "不安装 KV、token、RNG、版本或响应记录"
+        }
+      ]
+    },
+    "cost": {
+      "assessment": "sufficient",
+      "reason": "COST-07 已关闭：明确共享前缀与私有增量的物理关系、写入隔离和安装方式，补充增量写入、准备元数据及峰值；连续物化候选另计复制读写和同时存活副本。128 KiB/token、2 GiB KV、17.5 GiB 基线、512 KiB 增量和编译摊销算术一致。逻辑流量、设备事务、串行时间与重叠路径没有混算。",
+      "evidence": [
+        {
+          "path": "knowledge/frameworks/mlx-serving.md",
+          "quote": "不搬运旧前缀，也不复制 delta 的有效载荷"
+        },
+        {
+          "path": "knowledge/frameworks/mlx-serving.md",
+          "quote": "准备阶段额外 KV 读写约为 2b·b_kv，额外副本驻留约为 b·b_kv"
+        },
+        {
+          "path": "knowledge/frameworks/mlx-serving.md",
+          "quote": "不能把这个逻辑口径当作 DRAM 事务测量"
+        }
+      ]
+    },
+    "adaptation": {
+      "assessment": "sufficient",
+      "reason": "形状变化、连续 KV 要求、缓存缺失、外部动态状态、并发压力和失败取消均给出保留约束、调整候选及反转信号。shapeless 的选择以算子支持、状态正确性和真实编译次数为条件，没有把文档的一般能力外推成具体 attention 的保证。",
+      "evidence": [
+        {
+          "path": "knowledge/frameworks/mlx-serving.md",
+          "quote": "自回归 KV 长度增长时，可以比较 shapeless、长度分桶、只编译稳定子图和普通求值。"
+        },
+        {
+          "path": "knowledge/frameworks/mlx-serving.md",
+          "quote": "文档的一般规则不证明具体 attention 已支持任意动态长度。"
+        }
+      ]
+    },
+    "diagnosis": {
+      "assessment": "sufficient",
+      "reason": "DIA-05 已关闭：捕获检查实际生成保存的操作表示，由通用解释器执行，独立预期来自 trace 外快照及本次输入；四种机制缺陷接受同一判据并被拒绝。存储、失败资格、KV 边界、RNG 和取消也有针对机制的不变量或参考及负对照。竞争解释表给出可控干预和反证后的修正，且准确限制 CPU 模型证据。",
+      "evidence": [
+        {
+          "path": "knowledge/frameworks/mlx-serving.md",
+          "quote": "捕获检查先 trace 出操作表示，再执行；参考不由被测执行器调用。"
+        },
+        {
+          "path": "knowledge/frameworks/mlx-serving.md",
+          "quote": "检查者在 trace 外保存常量快照，随后分别改变 x、显式 s 和外部容器；预期由该快照及本次显式输入计算。"
+        },
+        {
+          "path": "knowledge/frameworks/mlx-serving.md",
+          "quote": "排空后又提交说明终止资格被错误恢复；不完整证书清账说明完成边界错误"
+        }
+      ]
+    }
+  },
+  "findings": [],
+  "limitations": [
+    "结论限定于所提供的固定文档、候选算法和确定性 CPU 模型；未验证真实 MLX 编译器、GPU 数值、stream 可见性、设备访存事务、内存压力或性能。",
+    "分段 KV 是明确声明的服务候选契约。真实 MLX attention 是否能无复制消费该视图，仍需按具体算子和版本确认；需要物化时应使用正文另列的复制成本。",
+    "CPU 服务模型采用串行状态拥有者、同步玩具计算和单请求至多一个未结束执行；不证明线程竞态、真实采样中断、多执行并发、失败恢复或网络重送去重。",
+    "本次审查未重新运行脚本，执行证据来自所提供的 actual_preflight；作者本人未运行与协调侧已有真实执行记录是不同事实。",
+    "文档身份沿用提供的哈希绑定，未独立读取磁盘重算哈希或验证 reader.html 的实际存在；未读取源码归档或证明 Agent 使用效果。"
+  ],
+  "checks": [
+    {
+      "script": "tools/check_k_fw_008_full.py",
+      "args": []
+    }
+  ],
+  "reading_scope": "已完整阅读提供的以下抽取全文，范围均为零基、左闭右开的字符范围：AGENTS.md [0,567)；docs/knowledge-method.md [0,2251)；docs/knowledge-review.md [0,3016)；knowledge/frameworks/mlx-serving.md [0,13635)；knowledge/sources/S-MLX.md [0,470)；knowledge/sources/S-MLX-MEM.md [0,495)；knowledge/sources/S-MLX-EXEC.md [0,872)；knowledge/hardware/metal-unified-memory.md [0,2050)；knowledge/system-semantics/cancellation-resource-completion.md [0,3782)；knowledge/system-semantics/memory-allocators.md [0,4191)；knowledge/system-semantics/host-runtime.md [0,7559)；knowledge/frameworks/checkpoint-loading.md [0,3354)；knowledge/hardware/shared-memory-paths.md [0,3129)；references/S-MLX/fulltext.txt [0,4768)；references/S-MLX-MEM/fulltext.txt [0,2656)；references/S-MLX-EXEC/fulltext.txt [0,14096)。knowledge/algorithms/async-scheduling.md 仅阅读提供的 [0,6202) 与 [8000,13940) 摘录，不列入 documents，不声称完整阅读。完整阅读 candidate.test_script 所提供脚本、author_notes、待处理问题及 actual_preflight 的执行记录。未读取未提供的 workflow、历史审查目录、reader.html、源码归档或其他来源原文。",
+  "test_assessment": "静态检查脚本后，所附 actual_preflight 显示绑定脚本 a0db6cfde79ad7a8ef18f213aaba8fc1955e1c1a2e145b795c8152a9f81d76c6 在隔离 Python 3.12 环境实际执行，returncode=0、stderr 为空且未超时；这不是本审阅者重新执行的记录。成功退出之外，检查具有实质独立判据：捕获模型先由 Symbol 运算生成 Program，execute_ir 只解释保存指令，不调用 oracle；capture_judge 在外部保存初始常量并分别改变 x、显式状态和外部容器，固化显式输入、重读隐式容器、交换槽位及重新 trace 的变体均会失败。完整前缀参考不使用请求的增量状态，参考采样独立以 argmax 求解，覆盖 q=1、2、9 的 prefill 与四次生成、空输入、非法片长和 KV 边界，以及缓存末行和隔离重算。存储检查比较实际对象身份及物理并集，复制前缀变体由同一判据拒绝。失败轨迹实际执行保留责任后的再次推进、迟到候选、错误身份、未知使用者、不完整结束证书、真实结束、重复结束及排空后再次推进；terminal_judge 比较业务状态、旧 KV 对象、版本、RNG 和输出，遗漏入口与提交资格或遗漏迟到提交检查的变体被检出。图闭包、容量共享身份、提前 k、错误 RNG、事务前后取消、loss 对象区别和 stream 依赖模型也有可触发的错误对照。CPU 模型没有覆盖真实设备可见性、线程交错、分配失败、网络协议或性能；shape 和成本部分属于设定算术，不能视为真实 MLX 编译或设备测量。来源中的 lazy-evaluation 旧编译表述、Compilation 常量捕获与 shapeless 示例、Unified Memory 依赖及 M1 Max 示例均已与正文限定交叉核对，未发现当前范围内的阻塞性事实或算法缺口。"
+}

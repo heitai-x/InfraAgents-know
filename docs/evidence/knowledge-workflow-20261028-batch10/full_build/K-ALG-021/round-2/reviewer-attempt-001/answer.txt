@@ -1,0 +1,154 @@
+{
+  "entry_id": "K-ALG-021",
+  "body_sha256": "6a90b569f9fd1b74ca2e8ede11f1094bcb15df5ff6918d4c2d357b9c5dbc1e68",
+  "reviewer": "sol-reviewer:K-ALG-021:round-2",
+  "decision": "accept",
+  "documents": {
+    "AGENTS.md": "b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a",
+    "docs/knowledge-method.md": "69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb",
+    "docs/knowledge-review.md": "f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21",
+    "knowledge/algorithms/kv-compression.md": "6a90b569f9fd1b74ca2e8ede11f1094bcb15df5ff6918d4c2d357b9c5dbc1e68",
+    "knowledge/sources/S-KIVI.md": "79161876fab16fe335430a8d38d01de97bb0e17bee0cb9d29c6ba2dfa598998e",
+    "knowledge/sources/S-H2O.md": "1d56de5a56e43c8e88a9df34cb87ae0af71865fbe0d3ee2ead23186bdb75b53d",
+    "knowledge/sources/S-CACHEGEN.md": "6e151b26d74bfb170ea4c3b58a1336b5e85509b556ba4db60380416a1abf1543",
+    "knowledge/sources/S-INT8.md": "fd85648a08a0e4bb18fe9d74d25e9d8a5fc6d29faf941554ff2e29f88fa98744",
+    "knowledge/sources/S-TORCH-NUMERIC.md": "cbe91153d9ff7bd2f596d1d6c4e15de1ad68571f3cbde23215891a8ec7f6fab4",
+    "knowledge/algorithms/kv-offload-prefetch.md": "a7088eba5c78cd9e96cf011d61946ad7dec4ecb6378ac16e7f2fc3820af38301",
+    "knowledge/tools/statistical-experiments.md": "908b3588a6fa20bb1f2aed9f5db51c4b462953d79f8944cdbcfea7141c74644f",
+    "knowledge/engine-index/vllm-kv-manager.md": "50b09c7a66c1282b7f6f7ac7ef1f265b953b908ae5fba883c9beec4732e1ab89",
+    "knowledge/engine-index/sglang-radix-scheduler.md": "abf1eb7040f1f6ba697822719094f8cc26172a329d6003a027862ef89de03374",
+    "knowledge/system-semantics/distributed-kv-store.md": "ecc4f667ff186b05fececba52c500e43d0460def524e6200b9cfa00fcdb984c0",
+    "knowledge/algorithms/context-reuse.md": "ddd8fa928d5ebd9876aca4971dc357b666ea999be9b148e3e88404c9e271ab13",
+    "references/S-KIVI/fulltext.txt": "399fb46e139f4cda57cbcd18c7b75fb1ddeb7dd6957d4a059efe8e40081438f3",
+    "references/S-INT8/fulltext.txt": "1137a01d16d677bc5d236a2fd4905a2fff8319b3f719494e51f1fb830176c3d4",
+    "references/S-TORCH-NUMERIC/fulltext.txt": "bb6b2d8154a10f8f3b15e5ae4465cbc8d833067046964fc6b4d66dc036131b45",
+    "tools/check_k_alg_021_full.py": "8a138a66028f2c8e28b4a0a4b77a3a6f613b94c0252bceb5378c080034bf8aeb"
+  },
+  "criteria": {
+    "definition": {
+      "assessment": "sufficient",
+      "reason": "动机、单层张量轴、合法可见集合、稳定 softmax、空集合行为及输入输出身份明确。正文区分数值表示改变、历史删除、传输编码和模型原生窗口，并区分分配、完成、发布与持有状态。量化误差和删除概率质量的局部关系没有被外推为整模型质量保证。",
+      "evidence": [
+        {
+          "path": "knowledge/algorithms/kv-compression.md",
+          "quote": "先考虑一层、一个 KV head，K、V∈ℝ^{L×d}，L 是已完成的逻辑 token 数，d 是通道数。"
+        },
+        {
+          "path": "knowledge/algorithms/kv-compression.md",
+          "quote": "已分配、已写入、已封组、已发布和仍被读者持有是不同事实，不能用一个长度字段代替。"
+        }
+      ]
+    },
+    "legality": {
+      "assessment": "sufficient",
+      "reason": "明确有符号码域的偏移、舍入规则、参数冻结、异常尺度、有效尾组、独立 K/V 边界以及整体归一化合同。H2O 的预算、初始化和同分规则标为执行选择；传输要求格式及前缀身份一致，失败不发布。来源经验、数学推导和实现约定的归属清楚。",
+      "evidence": [
+        {
+          "path": "knowledge/algorithms/kv-compression.md",
+          "quote": "s=(max x−min x)/(q_max−q_min)，b=min x−s q_min。"
+        },
+        {
+          "path": "knowledge/algorithms/kv-compression.md",
+          "quote": "实际制品须先冻结保存精度下的参数，再编码；数学参数经过保存舍入后不能继续配旧码而声称同一重建值。"
+        },
+        {
+          "path": "knowledge/algorithms/kv-compression.md",
+          "quote": "全部必要层和范围完成后发布；任一步失败均不发布部分恢复点"
+        }
+      ]
+    },
+    "algorithm": {
+      "assessment": "sufficient",
+      "reason": "量化、流式追加、独立边界重建、在线 attention、累计评分选择、锚点差分和有理数区间编解码均有可复现步骤。组合说明保留原逻辑组身份、未封组暂存、稀疏参数依赖及重复近似。逐层推进产生下一层输入，全部必要层完成后共同提交；取消回收等待已发起读写结束。",
+      "evidence": [
+        {
+          "path": "knowledge/algorithms/kv-compression.md",
+          "quote": "r_K=L mod R，n_K=L−r_K；r_V=min(L,R)，n_V=L−r_V。"
+        },
+        {
+          "path": "knowledge/algorithms/kv-compression.md",
+          "quote": "按已声明封组顺序推进表示，再对 S∪{t} 进行整体 attention 和评分；产生下一层输入，准备 S新。"
+        },
+        {
+          "path": "knowledge/algorithms/kv-compression.md",
+          "quote": "淘汰部分码后，可以压紧码槽，但每个存活元素仍引用原组参数；最后一个引用消失后才释放参数。"
+        }
+      ]
+    },
+    "cost": {
+      "assessment": "sufficient",
+      "reason": "六类成本覆盖实际对象及发生条件。容量公式分别计算码、参数和两侧残差，410 MiB 与 436 MiB 对应不同残差条件，算术一致。量化突发、评分获取、选择复杂度、物理 head 副本、旧快照及展开交通均有说明。传输临界点和三个带宽算例单位正确，串行比较与流水关键路径分开。",
+      "evidence": [
+        {
+          "path": "knowledge/algorithms/kv-compression.md",
+          "quote": "B_meta=m[(n_K/G)d＋n_V ceil(d/G)]，"
+        },
+        {
+          "path": "knowledge/algorithms/kv-compression.md",
+          "quote": "额外统计路径可能需要暂存或第二遍 QK；这一成本不能省略。"
+        },
+        {
+          "path": "knowledge/algorithms/kv-compression.md",
+          "quote": "峰值沿同时存活对象求和。被旧读者持有的版本不能提前扣除。"
+        },
+        {
+          "path": "knowledge/algorithms/kv-compression.md",
+          "quote": "T_c＋rD/B<D/B，即 B<(1−r)D/T_c。"
+        }
+      ]
+    },
+    "adaptation": {
+      "assessment": "sufficient",
+      "reason": "对历史长度、分组、残差、分布、模型头结构、预算、带宽、设备布局和并发变化，分别说明保留关系、调整成本及退出依据。删除历史不能凭扩大预算恢复；2 bit、量化轴及论文性能均未被当作跨条件保证。",
+      "evidence": [
+        {
+          "path": "knowledge/algorithms/kv-compression.md",
+          "quote": "删除位置以后，扩大预算不能仅靠改长度恢复它，必须有合法副本或重算路径。"
+        },
+        {
+          "path": "knowledge/algorithms/kv-compression.md",
+          "quote": "重核实际 head 副本、评分聚合和量化轴，不能直接沿用原字节或位宽结论"
+        },
+        {
+          "path": "knowledge/algorithms/kv-compression.md",
+          "quote": "解码成为主项时改原始传输；文本重算也须参与比较"
+        }
+      ]
+    },
+    "diagnosis": {
+      "assessment": "sufficient",
+      "reason": "三层参考区分近似损失与制品执行错误，固定前缀与真实生成分开。诊断表给出封组、归一化、槽覆盖、GQA、锚点、单位和性能解释的可控干预及修正方向。检查具有独立网格、子集枚举、整行 attention 和手算区间参考，并实际检测进入计算路径的故障。",
+      "evidence": [
+        {
+          "path": "knowledge/algorithms/kv-compression.md",
+          "quote": "第一与第二比较近似损失，第二与第三定位执行错误。"
+        },
+        {
+          "path": "knowledge/algorithms/kv-compression.md",
+          "quote": "保持选择不变，只延迟写回；实际读取旧槽内容核验"
+        },
+        {
+          "path": "knowledge/algorithms/kv-compression.md",
+          "quote": "负对照必须实际进入被检路径。两份代码复制同一 min/max 公式不构成独立参考；只打印“发现超预算”而没有断言也不构成检测。"
+        }
+      ]
+    }
+  },
+  "findings": [],
+  "limitations": [
+    "本轮依据提供文本复核来源事实，未阅读 PDF 版面、上游源码或节选之外的原文；来源说明记载的既往完整阅读不等于本 reviewer 完整阅读原始资料。",
+    "检查验证小型精确有理数量化及编解码、binary64 attention、选择机制和资源算术；不验证参数低精度保存舍入、真实打包 ABI、有限宽算术编码器或容器全面损坏检测。",
+    "稀疏物理池、共享前缀、多层事务和取消回收已有算法边界说明，但脚本未实现其完整并发协议；软件槽覆盖反例不能证明 GPU 可见性或异步回收正确。",
+    "未测目标 CPU/GPU kernel、设备事务、多卡通信、网络性能、真实模型长期质量、服务 SLO 或 Agent 使用效果。",
+    "链接指向的语义关系已按所给材料核对；未执行文件存在性、冻结读取或全库结构检查，不将这些检查记为通过。"
+  ],
+  "checks": [
+    {
+      "script": "tools/check_k_alg_021_full.py",
+      "args": []
+    }
+  ],
+  "no_checks_reason": "",
+  "reading_scope": "完整阅读本轮提供的候选正文、完整 test_script、author_notes 与 actual_preflight；本 reviewer 未另行运行脚本或读取本地文件。以下范围均为提取文本的零基半开字符范围。全文：AGENTS.md [0,567)；docs/knowledge-method.md [0,2251)；docs/knowledge-review.md [0,3016)；knowledge/algorithms/kv-compression.md [0,15488)；knowledge/sources/S-KIVI.md [0,713)；S-H2O.md [0,810)；S-CACHEGEN.md [0,909)；S-INT8.md [0,756)；S-TORCH-NUMERIC.md [0,532)；knowledge/algorithms/kv-offload-prefetch.md [0,3710)；knowledge/tools/statistical-experiments.md [0,4269)；knowledge/engine-index/vllm-kv-manager.md [0,2189)；sglang-radix-scheduler.md [0,1901)；knowledge/system-semantics/distributed-kv-store.md [0,3441)；knowledge/algorithms/context-reuse.md [0,4611)；references/S-KIVI/fulltext.txt [0,44977)；references/S-INT8/fulltext.txt [0,52394)；references/S-TORCH-NUMERIC/fulltext.txt [0,10998)。tools/check_k_alg_021_full.py 按 candidate.test_script 提供的完整脚本阅读。节选：knowledge/algorithms/quantization-contract.md [0,1312)、[8000,12000)；paged-kv-capacity.md [0,4000)、[8000,9312)；knowledge/models/sliding-window-attention.md [0,1431)、[12000,15881)；knowledge/frameworks/numerical-reference.md [4000,9312)；knowledge/algorithms/prefix-cache-identity.md [0,5312)；knowledge/frameworks/attention-backends.md [0,4000)、[16000,17312)；knowledge/hardware/precision-and-kernel-support.md [8000,13312)；knowledge/models/gqa-kv-heads.md [8000,9312)、[12000,16000)；mla.md [0,1661)、[12000,15651)；knowledge/system-semantics/position-mask-cache.md [4000,5312)、[8000,12000)；references/S-H2O/fulltext.txt [0,25029)、[28000,36000)、[56000,68000)、[72000,80000)、[96000,104000)、[112000,116000)；references/S-CACHEGEN/fulltext.txt [0,60000)、[68000,69030)、[76000,80000)。documents 仅列本轮获得全文的文件及完整候选脚本；节选不据此声称全文阅读。",
+  "test_assessment": "独立检查了完整脚本的实现、参考和断言，并核对协调者提供的真实 remote_bwrap 执行记录。actual_preflight 的正文摘要为 6a90b569f9fd1b74ca2e8ede11f1094bcb15df5ff6918d4c2d357b9c5dbc1e68，script_sha256 为 8a138a66028f2c8e28b4a0a4b77a3a6f613b94c0252bceb5378c080034bf8aeb，与本轮绑定一致；Python 3.12 完整执行 returncode=0、stderr 为空、未超时。原 campaign-K-ALG-021-r1 的字典解包失败已经具体修复为 Q0 接收单个状态字典，并实际检查类型、空容器和空重建；本轮完整执行越过该位置并完成所有检查，因此关闭该执行阻塞项。作者说明自己只执行 V8 局部检查、未执行 Python，与后来协调者执行 Python 的记录属于不同执行主体，不存在将作者未执行项目冒记为通过的问题。量化参考枚举端点网格并独立选择最近重建值，避免复制编码器的偏移与舍入实现；流式状态逐次与原始输入构造的批量参考比较，覆盖 42 个状态、不同 G/R、空输入及短通道尾组。attention 用整行指数公式对照分块重标度归约，覆盖不同 K/V 边界和空分区，但输入较温和，不证明极端分数的浮点稳定性。H2O 用子集枚举核对贪心选择、预算和分数保留，检查 65 步及零预算；其概率行是外部构造，未验证完整模型评分生成。提前覆盖负对照实际改变被读取的旧槽数值；GQA 负对照实际形成四行并集并被三行预算检查拒绝。算术编码除往返外还有手算区间 [1/4,7/16) 的已知标签参考，锚点恢复使用独立网格参考。执行输出报告 13 项被强制断言检出的负对照，其中 signed 偏移、参数覆盖、K/V 边界混用、分区独立归一化、旧槽提前覆盖、错误熵表和原始锚点差分直接触及正文机制。带宽单位、解码开销导致的错选及 410/436 MiB 条件化容量也实际核算。脚本不是仅凭往返或退出码建立正确性；其未覆盖的硬件、完整组合协议及模型质量范围已明确保留为 limitation。"
+}

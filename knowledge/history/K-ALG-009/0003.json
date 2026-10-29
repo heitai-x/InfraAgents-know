@@ -1,0 +1,68 @@
+{
+  "id": "K-ALG-009",
+  "path": "algorithms/heterogeneous-state-cache.md",
+  "category": "algorithms",
+  "title": "异构状态缓存：层组、恢复位置与联合分配",
+  "summary": "混合模型的缓存是多类状态的联合系统，统一的是逻辑恢复位置，物理块形状可以不同。",
+  "revision": 3,
+  "status": "seed",
+  "tags": [
+    "heterogeneous KV",
+    "混合缓存",
+    "SSM",
+    "LCM",
+    "层组",
+    "joint state bundle",
+    "state migration",
+    "transactional reservation"
+  ],
+  "scope": {
+    "model_families": [],
+    "platforms": [],
+    "runtimes": [],
+    "workloads": []
+  },
+  "source_ids": [
+    "S-VLLM-HYBRID",
+    "S-MAMBA",
+    "S-PAGED"
+  ],
+  "related": [
+    "K-MODEL-004",
+    "K-MODEL-006",
+    "K-MODEL-007",
+    "K-ALG-003",
+    "K-ALG-017",
+    "K-ALG-018",
+    "K-SYS-012",
+    "K-SYS-014",
+    "K-ALG-024",
+    "K-ALG-002",
+    "K-ENGINE-002",
+    "K-FW-009",
+    "K-HW-008",
+    "K-SYS-003",
+    "K-SYS-009",
+    "K-SYS-010"
+  ],
+  "evidence": [],
+  "updated_at": "2026-10-27",
+  "sha256": "c9d7ef861fd1243cb4a605a38405fe1c7ddb2cfc24a653a97a83080ad065d02b",
+  "questions": [
+    "全注意力、窗口、MLA 和递归状态在长度、形状和更新方式上有何差异，为何不能统一成同样 KV 页？",
+    "独立池、统一字节块池和大块内子分配各自在容量调剂与元数据账上付出什么代价？",
+    "各状态族的可恢复位置集合如何取交集，为什么前缀哈希命中不构成全模型恢复资格？",
+    "多个池需要同时预留时，怎样避免容量僵局，淘汰单池对象对整个恢复包有何影响？",
+    "跨层卸载和恢复的提交边界在哪里，哪些失败窗口需要独立验证？"
+  ],
+  "symptoms": [
+    "某一状态池耗尽而其他池大量闲置",
+    "attention KV 命中很长但模型只能从很早的检查点继续",
+    "两个请求各占住一个池互相等待导致无法推进"
+  ],
+  "assumes": [
+    "混合模型包含多种状态族",
+    "有块或页形式的状态分配",
+    "状态按逻辑恢复位置对齐"
+  ]
+}

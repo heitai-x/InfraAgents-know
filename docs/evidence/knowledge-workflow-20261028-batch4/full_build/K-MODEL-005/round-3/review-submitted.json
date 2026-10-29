@@ -1,0 +1,137 @@
+{
+  "entry_id": "K-MODEL-005",
+  "body_sha256": "94911222370093000a93b5ba9a2c95376edc09741df865056067ffbe613ad2a8",
+  "reviewer": "sol-reviewer:K-MODEL-005:round-3",
+  "decision": "accept",
+  "documents": {
+    "AGENTS.md": "b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a",
+    "docs/knowledge-method.md": "69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb",
+    "docs/knowledge-review.md": "f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21",
+    "knowledge/models/encoder-decoder-streaming.md": "94911222370093000a93b5ba9a2c95376edc09741df865056067ffbe613ad2a8",
+    "knowledge/sources/S-TRANSFORMER.md": "e1858681f1645209756f7eb640dcdfe3a786f5af3e529fb61bce6de0212a82d7",
+    "knowledge/sources/S-WHISPER.md": "3983e829fbc2948712af3a9aab931917271565753f83cb0e89f1cfad2a4b36e1",
+    "knowledge/sources/S-MOONSHINE.md": "4370d127afcf5863d1df06bda22911b343655c31bd1ead107135f30e81074759",
+    "knowledge/algorithms/cross-attention-cache.md": "24ccdfcf4b31aba460cc537493e1c17e73643683f1c4e2df5a6c673fb5e2166e",
+    "knowledge/models/speech-generation.md": "9cab040f27f77dc8040a6cc6f0ae96a175542e4379e2262ca2cdb53fb9aee3a4",
+    "knowledge/system-semantics/tokenization-io.md": "1dea61a1f632805cb90873e747cb3079230a7b6bab76b17b4281662b82367565",
+    "knowledge/system-semantics/host-runtime.md": "005342b6131acdd072d5cf35456a5b01e5630f764b614e7090639fde01a5b36a",
+    "knowledge/system-semantics/cancellation-resource-completion.md": "919052c77f65a13c9dc09aad03341ed31f0820dbbdcb2750b5789f349f9e86c1",
+    "knowledge/workloads/slo-goodput.md": "5aa9b71cddb7d896ffa1fe6d78ac61cf0bb92d76279ae4d563f1110ed9dbedb4",
+    "knowledge/models/omni-multimodal.md": "f1fc4dc6611ad1b53ad8cc7f2abf0cbf9b9b2022d2d22c64dc712a39943d9d15",
+    "knowledge/tools/statistical-experiments.md": "908b3588a6fa20bb1f2aed9f5db51c4b462953d79f8944cdbcfea7141c74644f",
+    "references/S-TRANSFORMER/fulltext.txt": "7bae85f4505c924b16d6c601c744b9665f245a20ea84258aa86bb51036a16805",
+    "references/S-WHISPER/fulltext.txt": "74d3fc9a7877dd5ff86ac147cb73f4a88d9443aec76f79f12fed602d351eb7de",
+    "references/S-MOONSHINE/fulltext.txt": "e0fd9d8b31bccf8c41eee0c181bcfb00cf89461a7e0b80844984e7b4cf0d19eb",
+    "tools/check_k_model_005_full.py": "aeed32ab1cc6d8e84bd786232b6579e146462d77693bd2036770a6e65a175b50"
+  },
+  "criteria": {
+    "definition": {
+      "assessment": "sufficient",
+      "reason": "动机、源与目标的不同计量单位、移位输入、已计算长度、logits 预测位置及持久状态均明确。已选择 token 与其 KV 的产生时点已经分开，解决原索引歧义。",
+      "evidence": [
+        {
+          "path": "knowledge/models/encoder-decoder-streaming.md",
+          "quote": "位置从 0 开始，消费输入 z_i 后得到 H_i，输出头的 logits_i 预测 z_{i+1}。因此最后一个 prompt 位置 H_{m−1} 预测第一个生成 token y_0。"
+        },
+        {
+          "path": "knowledge/models/encoder-decoder-streaming.md",
+          "quote": "选择出 y_0 时，n 仍为 m；y_0 的位置 m 尚无 KV。"
+        }
+      ]
+    },
+    "legality": {
+      "assessment": "sufficient",
+      "reason": "区分三类 attention 的可见性、源投影复用条件、物理表示身份和目标状态依赖；没有把变长音频或稳定源前缀误当作任意增量解码等价性。Transformer、Whisper 和 Moonshine 的关键陈述与所供固定论文一致，服务状态机明确属于本库推导。",
+      "evidence": [
+        {
+          "path": "knowledge/models/encoder-decoder-streaming.md",
+          "quote": "只有旧 E 真正不变、旧位置坐标不变、投影是逐行的且权重和表示契约不变时，追加源才允许保留旧 cross K/V、仅投影新增行并拼接。"
+        },
+        {
+          "path": "knowledge/models/encoder-decoder-streaming.md",
+          "quote": "只对旧目标前缀做 replay，得到的是“新源条件下强制保留此前 token”的状态，并不证明这些 token 会由新源重新生成。"
+        }
+      ]
+    },
+    "algorithm": {
+      "assessment": "sufficient",
+      "reason": "代表性多层 decoder 已展开 self 投影与追加、合法 attention、cross、残差与归一化、FFN 和层间隐藏状态。初始化、prompt 消费、末行 logits 保存、选择与后续消费形成可恢复闭环。三层空源保护均先于相应消费者；执行预算、源等待、目标终止、flush 和尾部失败分别处理。取消后的物理回收明确委托给已提供完整内容的相关章节。原 R1-001、R1-002、R1-003 及相关 campaign 算法问题可关闭。",
+      "evidence": [
+        {
+          "path": "knowledge/models/encoder-decoder-streaming.md",
+          "quote": "因此高层位置 i 的 self KV 来自低层已经完成 self、cross 和 FFN 后的隐藏状态，并非全部层都从原始 embedding 投影。"
+        },
+        {
+          "path": "knowledge/models/encoder-decoder-streaming.md",
+          "quote": "原始空源不能先送入不支持空输入的 processor；特征全无效不能进入 encoder；encoder 输出全无效不能进入 cross 投影。"
+        },
+        {
+          "path": "knowledge/models/encoder-decoder-streaming.md",
+          "quote": "PAUSED_BUDGET 等待的是下一次调度，现有源上仍可继续；WAIT_MORE_SOURCE 等待的是输入或源发布事件；WAIT_SOURCE_FINAL 表示当前目标已停，但整请求完成条件尚未成立。"
+        }
+      ]
+    },
+    "cost": {
+      "assessment": "sufficient",
+      "reason": "容量按实际 decoder self/cross 模块及各自 K/V 宽度和精度求和，已修复 encoder 层数与 cross 份数混用。attention 运算按 query heads 计，明确 MAC 单位、公式假设及未包含项目；逻辑读取、设备事务、跨设备传输、准备、同步和驻留分别说明。容量、24 倍传输比、410 ms 首块路径、3 秒/s 串行需求和 55% 合批占用均可复算。原 R1-004 可关闭。",
+      "evidence": [
+        {
+          "path": "knowledge/models/encoder-decoder-streaming.md",
+          "quote": "则 cross 主体容量为 S Σ_c(D_Kc b_Kc＋D_Vc b_Vc)。它与 encoder 层数没有直接的份数关系。"
+        },
+        {
+          "path": "knowledge/models/encoder-decoder-streaming.md",
+          "quote": "每个新增 query 的 QK 与 PV 合计约为 H_q N(d_k＋d_v) MAC，softmax 另有 O(H_q N) 标量工作。"
+        },
+        {
+          "path": "knowledge/models/encoder-decoder-streaming.md",
+          "quote": "这些是各模块 attention 项，不是完整 decoder 成本：self/cross 的 query 投影、self 新 K/V 投影、输出投影、FFN、归一化、输出词表头和采样均另计。"
+        }
+      ]
+    },
+    "adaptation": {
+      "assessment": "sufficient",
+      "reason": "源更新、目标长度、精度/backend、块大小、lookahead、并发和服务目标变化均连接到具体依赖或成本变化。八路转写案例给出候选的合法性、资源可行性与选择反转条件，没有将设定参数写成实测能力。",
+      "evidence": [
+        {
+          "path": "knowledge/models/encoder-decoder-streaming.md",
+          "quote": "源每次更新都改变旧表示时，应放弃精确追加缓存；必要时重建 cross 和目标状态。"
+        },
+        {
+          "path": "knowledge/models/encoder-decoder-streaming.md",
+          "quote": "只要求整段最终结果时 A 可能更合算；允许修订且重复计算可承受时 B 有价值；稳定延迟严格时再验证 C 的模型与服务联合条件。"
+        }
+      ]
+    },
+    "diagnosis": {
+      "assessment": "sufficient",
+      "reason": "诊断表提供竞争解释、可控区分实验和修正方向。脚本具有非平凡解析参考、独立完整前缀路径和实际追加数据流；ledger 的四种违规被隔离检查，旧跨版本回退缺陷会被共同判定器拒绝。所供实际执行记录与脚本哈希一致且退出码为 0，但结论仅限声明的 CPU 小模型范围。原 R1-005 和 round-2 错误 oracle 问题可关闭。",
+      "evidence": [
+        {
+          "path": "knowledge/models/encoder-decoder-streaming.md",
+          "quote": "版本过期、同版本偏移回退、新版本偏移回退和文本回退是四种应分别拒绝的情况。"
+        },
+        {
+          "path": "knowledge/models/encoder-decoder-streaming.md",
+          "quote": "以非对称矩阵的字面投影结果和多源非均匀 softmax 解析式核对算术；保留旧 K/V、仅投影新增行并与完整重算比较；用独立的完整前缀计算路径核对简化两层 decoder 的增量状态"
+        }
+      ]
+    }
+  },
+  "findings": [],
+  "limitations": [
+    "检查使用省略 normalization 的两层 CPU 小模型，不验证真实 Whisper/Moonshine 的位置编码、norm、量化、模型质量或生成结果。",
+    "脚本未执行随机采样恢复、真实源版本切换后的多层重建、异步取消或物理最后使用汇合；这些机制的文字说明不能替代相应实现和设备验证。",
+    "GPU 内存可见性、kernel、真实链路流量、WER、负载长尾和知识使用效果均未测量；正文已清楚保留这些边界。",
+    "本次依据消息内提供的完整文本、摘录和实际执行记录复核，没有重新运行 Python，也没有核验本地链接目标、原始 PDF 图像或上游源码。"
+  ],
+  "checks": [
+    {
+      "script": "tools/check_k_model_005_full.py",
+      "args": []
+    }
+  ],
+  "no_checks_reason": "",
+  "reading_scope": "完整阅读用户提供的以下材料，范围均为提取文本中从零开始的半开字符区间：AGENTS.md [0,567)；docs/knowledge-method.md [0,2251)；docs/knowledge-review.md [0,3016)；knowledge/models/encoder-decoder-streaming.md [0,13899)；knowledge/sources/S-TRANSFORMER.md [0,550)；knowledge/sources/S-WHISPER.md [0,518)；knowledge/sources/S-MOONSHINE.md [0,537)；knowledge/algorithms/cross-attention-cache.md [0,3845)；knowledge/models/speech-generation.md [0,3599)；knowledge/system-semantics/tokenization-io.md [0,3217)；knowledge/system-semantics/host-runtime.md [0,7559)；knowledge/system-semantics/cancellation-resource-completion.md [0,3782)；knowledge/workloads/slo-goodput.md [0,2616)；knowledge/models/omni-multimodal.md [0,3735)；knowledge/tools/statistical-experiments.md [0,4269)；references/S-TRANSFORMER/fulltext.txt [0,39757)；references/S-WHISPER/fulltext.txt [0,112336)；references/S-MOONSHINE/fulltext.txt [0,26755)。knowledge/system-semantics/design-synthesis.md 仅阅读所供 [0,9444) 摘录，未列入 documents。另完整阅读 candidate.test_script 所供脚本、author_notes 和 actual_preflight 执行记录。论文全文阅读限于所供提取文本，不声称检查 PDF 图像、未提供文档或源码归档；格式依据本次明确提供的 review schema。",
+  "test_assessment": "独立核对了脚本算法和所供实际执行，而非仅采信通过声明。行向量 [1,0] 的 K 投影为 [1,0]，V 投影为 [1,0.5]，修正了 round-2 错误参考。非对称投影字面值与三源非均匀 softmax 解析结果约 [0.813676276774,1.099642252669] 提供算术锚点。追加路径实际调用 project 处理旧三行和新增一行，保留旧缓存对象后拼接，再与完整重算比较。两层参考采用按层完整重算、独立二维线性公式和独立 attention 公式，与逐位置缓存路径比较 logits 及逐层 KV；共享 embedding 和参数限制其独立性范围，但不使缓存数据流检查成为同实现自比较。状态检查覆盖不同 prompt 长度、prefill 后暂停、零预算、选择后暂停、逐操作恢复、EOS 无须消费、长度停止、源等待、最终源等待、尾部失败及空前缀。ledger 分别拒绝过期版本、同版本回退、新版本回退和文本回退，并接受合法推进；faulty_advance 放行的事件确实再由正常 validate_ledger 拒绝。提前计算长度、预算直接终止和后置空检查也分别由正常进度、终态及消费者轨迹判定器拒绝；causal-cross、未来 self 和旧源缓存的数值影响实际超过阈值。所供 remote_bwrap 记录绑定脚本 aeed32ab1cc6d8e84bd786232b6579e146462d77693bd2036770a6e65a175b50，returncode=0、stderr 为空、未超时，两层最大误差为 2.776e-17；这是协调者提供的实际执行证据，本审阅没有另行运行。缺少的真实模型、随机采样、动态源重建、设备同步和服务质量/性能检查与作者声明边界一致，不据此记为 PASS。"
+}

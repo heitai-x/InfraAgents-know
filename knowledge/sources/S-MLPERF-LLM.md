@@ -2,18 +2,14 @@
 
 ## 本地完整原文
 
-[完整原文](../../references/S-MLPERF-LLM/reader.html) · [全文文本](../../references/S-MLPERF-LLM/fulltext.txt)
+[文档原文](../../references/S-MLPERF-LLM/upstream/language/llama2-70b/README.md)
 
 固定版本：Git 3ecc2e0a0c126503debec8b8213b1be949f04636 (2026-04-22)。来源版本日期：2026-04-22；整理核对日期：2026-10-22。
 
-## 来源支持的机制与定义
+## 联合约束与负载身份
 
-MLPerf 的 Llama 2 服务基准将特定任务、到达模型、质量和延迟条件组织成评测协议，服务能力依赖这些共同条件。
+本来源将 Llama 2 的任务说明与 LoadGen 场景、设置和交互图一起归档。模型/数据与质量要求、请求产生方式、完成通知和性能条件共同定义一次比较；把最终 tokens/s 从这些条件中抽离，会丢失其含义。
 
-## InfraAgents 如何据此推导
+算法层面先固定输入样本与期望输出的判定方式，再按所选场景产生请求、收集结果和完成事件，最后分别判断质量与时间约束。完成量不能只计成功返回的一部分而忽略其他已提供请求；压测器因等待而降低 offered 压力时也应明确。
 
-本库借鉴联合质量/延迟约束与有效吞吐的定义方式，不迁移其阈值或成绩；按自身 workload 计算 offered、admitted 和合格完成量。
-
-## 适用边界
-
-机制与接口说明；不构成当前目标的性能或可达性证明。 原始版本、日期依据与归档范围见本地 provenance.json；版本日期不证明模型训练实际包含该资料。
+不同到达场景的具体定义见[S-MLPERF-SCENARIOS](S-MLPERF-SCENARIOS.md)。本库从中提炼联合质量/延迟和完整观察边界的方法，不照搬特定任务阈值或成绩，见[测量可比性](../workloads/measurement-comparability.md)与[Goodput](../workloads/slo-goodput.md)。实现头文件保留作审计，文档部分保留原文入口；这里没有本项目实测。

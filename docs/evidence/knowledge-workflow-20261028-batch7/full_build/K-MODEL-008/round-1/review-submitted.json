@@ -1,0 +1,167 @@
+{
+  "entry_id": "K-MODEL-008",
+  "body_sha256": "0342af70fafd3378a1ea65f9c1c8e136bda4fcd3b13bcb7a4df737c38cf7c86a",
+  "reviewer": "sol-reviewer:K-MODEL-008:round-1",
+  "decision": "revise",
+  "documents": {
+    "AGENTS.md": "b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a",
+    "docs/knowledge-method.md": "69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb",
+    "docs/knowledge-review.md": "f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21",
+    "knowledge/models/vision-language.md": "0342af70fafd3378a1ea65f9c1c8e136bda4fcd3b13bcb7a4df737c38cf7c86a",
+    "knowledge/sources/S-QWEN-VL.md": "a41acb4d122419b0575a7fb4b0e510fb409a3b8b8cdb3bf875c571e3ae4c479a",
+    "knowledge/sources/S-TRANSFORMER.md": "e1858681f1645209756f7eb640dcdfe3a786f5af3e529fb61bce6de0212a82d7",
+    "knowledge/sources/S-HF-CACHE.md": "1a4afcf0d800ba3f42836445874d620ae9f7ba8ab4c361caa505376cc471595c",
+    "knowledge/system-semantics/tokenization-io.md": "1dea61a1f632805cb90873e747cb3079230a7b6bab76b17b4281662b82367565",
+    "knowledge/workloads/input-distribution.md": "b1b68f0d2a6d640c4b64c2bc98560b9e9a79a6a60b445899949b5db15b96aa90",
+    "knowledge/system-semantics/host-runtime.md": "005342b6131acdd072d5cf35456a5b01e5630f764b614e7090639fde01a5b36a",
+    "knowledge/system-semantics/memory-allocators.md": "2e7258787b94ad142c7c236541e8718803ad30b273d08e6c398dff673a1df838",
+    "knowledge/algorithms/routing-and-migration.md": "1b9dcfd5fea499a91611459bb936e1c1c49ceb562171fb0f1ba360a7010f5d32",
+    "knowledge/workloads/slo-goodput.md": "5aa9b71cddb7d896ffa1fe6d78ac61cf0bb92d76279ae4d563f1110ed9dbedb4",
+    "knowledge/hardware/host-device-transfer.md": "e4921a0714af21f7ab1a336f40af662f716f2c64a42dd598eb2cede548c858d2",
+    "knowledge/models/omni-multimodal.md": "f1fc4dc6611ad1b53ad8cc7f2abf0cbf9b9b2022d2d22c64dc712a39943d9d15",
+    "knowledge/models/vision-inference.md": "a3b95c24c3838a54df90db945066257c0960e20a24929ed2812838fc5a3528a0",
+    "references/S-QWEN-VL/fulltext.txt": "87c0802f0f621cb7ab11e36f542e8d16ada24490084fa471423a12bb2d6a0fd2",
+    "references/S-TRANSFORMER/fulltext.txt": "7bae85f4505c924b16d6c601c744b9665f245a20ea84258aa86bb51036a16805",
+    "references/S-HF-CACHE/fulltext.txt": "373837b8ac246d43867eb21de168cc59e5e6e78f5f3b9c27bee54740c4a635b4",
+    "tools/check_k_model_008_full.py": "1d990558e7386fd29c1c8e2bede460973b23eaad829570f235ae63d0c8d7013b"
+  },
+  "criteria": {
+    "definition": {
+      "assessment": "sufficient",
+      "reason": "说明了媒体张数不足以确定模型输入与资源需求的动机，定义了快照、像素、patch、桥接特征、语言序列、位置和可见性，并区分视觉编码完成与 KV 已计算。生成推进的操作性缺口归入 algorithm。",
+      "evidence": [
+        {
+          "path": "knowledge/models/vision-language.md",
+          "quote": "语言输入 L：文本 token、特殊 token、视觉占位符和 Z_i 按媒体顺序组成的规范序列；其位置映射为 Π，可见性关系为 A。"
+        },
+        {
+          "path": "knowledge/models/vision-language.md",
+          "quote": "视觉 token 已被编码，不等于其 KV 已计算。decoder KV 只覆盖实际进入 prefill/decode 的 token；缓存特征也不等于缓存 KV。"
+        }
+      ]
+    },
+    "legality": {
+      "assessment": "sufficient",
+      "reason": "正确区分特定模型的几何条件、桥接结构选择和精确复用条件；内容身份、processor、位置、mask、数值表示均进入合法性讨论。取消部分明确要求物理最后使用完成和引用归零，未把逻辑取消当作可立即回收。Qwen、Transformer 与 HF 来源归因在供应范围内成立。",
+      "evidence": [
+        {
+          "path": "knowledge/models/vision-language.md",
+          "quote": "H、W 能被 28 整除只证明满足 Qwen2.5-VL 报告所述 resize 条件之一，不证明任意实现都接受该形状。"
+        },
+        {
+          "path": "knowledge/models/vision-language.md",
+          "quote": "第三，取消后媒体读取、H2D、视觉 kernel 和 KV 写入可能仍在途，只有完成事件和引用归零后才能复用槽位。"
+        }
+      ]
+    },
+    "algorithm": {
+      "assessment": "partial",
+      "reason": "媒体身份、几何检查、特征发布、布局检查和取消清理已有明确主路径，但完整前缀命中缺少末行 logits 的取得及首 token 采样分支；视觉 encoder 和 decoder 的逐层计算仍为未展开调用或一句描述，也没有明确委托给完整的关联算法。因此尚不足以独立恢复所声称的完整执行路径。",
+      "evidence": [
+        {
+          "path": "knowledge/models/vision-language.md",
+          "quote": "若 PC 有完全相等的 ready 前缀：\n      复用该前缀的 KV 与已提交状态"
+        },
+        {
+          "path": "knowledge/models/vision-language.md",
+          "quote": "F_i←VisionEncode(X_i,G_i,Q.encoder)\n      Z_i←MergeProject(F_i,G_i,Q.merger)"
+        },
+        {
+          "path": "knowledge/models/vision-language.md",
+          "quote": "5. 进入 DECODING：每步用当前 token 的 Q 读取已有 KV，按 Q 计算并追加新 K/V；"
+        }
+      ]
+    },
+    "cost": {
+      "assessment": "sufficient",
+      "reason": "窗口与全注意力计数、merge 前后字节、GQA 全层 KV 容量均与供应配置相符，单位和排除项清楚。独立枚举得到 C_pair=12189696、dense 比例约 6.19355；独立字节核算得到 57344 字节/token、49 MiB 输入 KV、63 MiB 预留和 9.8203125 MiB 三对象容量。主机准备、传输、同步、排队和驻留均有解释。热缓存时间算例明确附带消除预处理的条件，其能否由当前伪代码实现仍须限定。",
+      "evidence": [
+        {
+          "path": "knowledge/models/vision-language.md",
+          "quote": "这个数只数成对 score，不含 Q/K/V 线性投影、FFN、softmax、访存、head 维度和 kernel 效率，不能直接当作端到端时延比。"
+        },
+        {
+          "path": "knowledge/models/vision-language.md",
+          "quote": "B_kv = 2 L_dec H_kv d_head b_kv，"
+        },
+        {
+          "path": "knowledge/models/vision-language.md",
+          "quote": "同步成本包括媒体解码完成、H2D 完成、视觉 kernel 完成、feature/prefix 发布和首内容提交；这些事件在关键路径上不一定能相互覆盖。"
+        }
+      ]
+    },
+    "adaptation": {
+      "assessment": "sufficient",
+      "reason": "条件变化表沿实际依赖区分媒体快照、F/Z、完整前缀和 KV 布局的保留与失效，并解释恢复费用、热点排队、主机或视觉瓶颈如何使缓存和批处理选择反转。",
+      "evidence": [
+        {
+          "path": "knowledge/models/vision-language.md",
+          "quote": "视觉特征可能完全一样；但 decoder 前缀从第一个不同文本 token 起就不再相同。"
+        },
+        {
+          "path": "knowledge/models/vision-language.md",
+          "quote": "热点排队超过省下的计算时，重算或复制缓存又可能更快；视觉 encoder 已饱和而主机充足时，增加主机并发不会提高视觉吞吐；主机 resize 是瓶颈时，扩大 decoder batch 也不会缩短 TTFT。"
+        }
+      ]
+    },
+    "diagnosis": {
+      "assessment": "sufficient",
+      "reason": "按媒体、视觉、传输、prefill 与排队组织竞争解释和受控改变，给出身份、布局、位置及成本的具体反例，并区分视觉任务质量与语言流畅度。正文明确这些是实验设计；现有检查对状态推进的覆盖不足已计入算法 findings，不能用脚本成功抵消。",
+      "evidence": [
+        {
+          "path": "knowledge/models/vision-language.md",
+          "quote": "诊断时先把观察拆成阶段，再为竞争解释设计会给出不同预测的受控改变。以下是实验设计，不是已执行结果。"
+        },
+        {
+          "path": "knowledge/models/vision-language.md",
+          "quote": "以上负对照分别检验身份、布局、位置和成本模型，不能互相替代。"
+        },
+        {
+          "path": "knowledge/models/vision-language.md",
+          "quote": "纯文本回归不能覆盖模态桥接；语言流畅也不能代替视觉正确。"
+        }
+      ]
+    }
+  },
+  "findings": [
+    {
+      "id": "K-MODEL-008-R1-ALG-001",
+      "criterion": "algorithm",
+      "evidence": "knowledge/models/vision-language.md：步骤 4 为“若 PC 有完全相等的 ready 前缀：\n      复用该前缀的 KV 与已提交状态”；随后直接进入“5. 进入 DECODING：每步用当前 token 的 Q 读取已有 KV，按 Q 计算并追加新 K/V；”。全文未规定缓存末行 logits/隐藏状态、取得 logits 的重算路径或采样更新顺序。",
+      "impact": "合法缓存可以只保存完整输入的逐层 KV。命中后没有未处理输入，也没有可直接采样的 logits；此时步骤 5 的“当前 token”无明确来源。直接重复输入末 token 又可能重复追加其 KV。即使已有 logits，新 token 也尚未被选出，其 KV 更不存在。当前描述不能保证完整命中后的首 token 生成或后续正确推进。",
+      "blocking": true,
+      "required_revision": "明确已知 token、已计算 KV 边界和可用 logits 的状态；分别处理存在未处理后缀、完整命中且保留末行输出、完整命中但未保留末行输出。后一分支可安全重算最后一个已知输入位置，但须使用其之前的历史并隔离共享写区。随后明确 logits→采样→生成 token 提交→下一轮消费该 token 并计算其 KV 的顺序，以及终止条件。为完整 KV 命中但无 logits 的路径增加对应检查，并使遗漏该分支的负对照实际被检测。"
+    },
+    {
+      "id": "K-MODEL-008-R1-ALG-002",
+      "criterion": "algorithm",
+      "evidence": "knowledge/models/vision-language.md 声称“下面是处理器、视觉桥接和 decoder 的完整主路径”，但视觉计算只有“F_i←VisionEncode(X_i,G_i,Q.encoder)\n      Z_i←MergeProject(F_i,G_i,Q.merger)”；decoder 只有“每步用当前 token 的 Q 读取已有 KV，按 Q 计算并追加新 K/V”。正文没有展开逐层输入、attention 输出到下一层的传递以及整请求提交关系，也没有明确链接委托这些步骤。",
+      "impact": "窗口/全注意力的成本公式未连接到可恢复的视觉层计算；读者不能从主路径确定每层 Q/K/V 的来源、窗口聚集与还原、位置变换和残差/FFN 的推进。decoder 也未说明本层新增 K/V 如何参与本次 attention、下一层输入如何产生及何时才形成完整可提交状态。原始 Transformer 文档不能直接替代 Qwen 的具体层契约，现有 CPU 脚本也未执行这些机制。",
+      "blocking": true,
+      "required_revision": "在本章补足由固定模型契约参数化的逐层数据流，或明确委托给已有且完整的关联算法。视觉部分至少贯通 patch 输入、逐层窗口/全注意力、位置变换、层输出和按空间分组的 merge/projector；decoder 部分贯通 embedding、每层本次 Q/K/V、历史与当前可见集合、层输出、末层 logits 及完整状态提交。未知 checkpoint 细节继续保留为显式契约参数，不虚构来源未提供的值。将模型契约 Q 与 query 张量的符号区分。"
+    }
+  ],
+  "limitations": [
+    "结论限于用户供应的完整文本和明确摘录；未读取源码归档，未把关联章节摘录当作通读原章。",
+    "Qwen 供应报告未给出 merger 隐藏宽度、精确时间戳到位置 ID 的映射及奇数视频尾帧处理；这些明确声明的边界可保留。",
+    "目标设备的数值、同步、重叠、性能和视觉任务质量均未由现有 CPU 检查验证；Agent 构建能力改善也没有使用效果证据。",
+    "118 ms 热路径算例以确实省去预处理为条件；RunVLM 当前在查询 FC 前执行 Preprocess，因此该时间不是当前伪代码已实现的收益。若其余设定保持且仍执行 15 ms 预处理，对应串行值为 133 ms。",
+    "本次审阅未独立复跑 Python 脚本；实际执行结论来自所供绑定预检记录。独立复算仅在 functions.exec 中执行了 JavaScript 成对枚举和字节核算。",
+    "本会话没有本地文件读取能力，未重新核验磁盘字节、链接目标存在性或读取 infraagents-knowledge-build 的 SKILL.md；documents 使用用户要求的绑定哈希，评审规则依据直接供应的规范全文。"
+  ],
+  "checks": [
+    {
+      "script": "tools/check_k_model_008_full.py",
+      "args": [],
+      "execution_scope": "审阅用户供应的 actual_preflight 执行记录及完整脚本；非审阅者独立复跑",
+      "script_sha256": "1d990558e7386fd29c1c8e2bede460973b23eaad829570f235ae63d0c8d7013b",
+      "returncode": 0,
+      "timed_out": false,
+      "reviewer_reran": false,
+      "result": "供应记录显示 31 项 PASS、stderr 为空；仅支持脚本实际覆盖的 CPU 算术和示意身份/位置检查。"
+    }
+  ],
+  "no_checks_reason": "",
+  "reading_scope": "以下范围均为供应材料声明的抽取文本零起点、半开字符范围，并已完整阅读所供应内容。全文：AGENTS.md [0,567)；docs/knowledge-method.md [0,2251)；docs/knowledge-review.md [0,3016)；knowledge/models/vision-language.md [0,13673)；knowledge/sources/S-QWEN-VL.md [0,466)；knowledge/sources/S-TRANSFORMER.md [0,550)；knowledge/sources/S-HF-CACHE.md [0,827)；knowledge/system-semantics/tokenization-io.md [0,3217)；knowledge/workloads/input-distribution.md [0,2880)；knowledge/system-semantics/host-runtime.md [0,7559)；knowledge/system-semantics/memory-allocators.md [0,4191)；knowledge/algorithms/routing-and-migration.md [0,3228)；knowledge/workloads/slo-goodput.md [0,2616)；knowledge/hardware/host-device-transfer.md [0,6485)；knowledge/models/omni-multimodal.md [0,3735)；knowledge/models/vision-inference.md [0,4331)；references/S-QWEN-VL/fulltext.txt [0,91965)，供应文本含第 1–23 页；references/S-TRANSFORMER/fulltext.txt [0,39757)，供应文本含第 1–15 页；references/S-HF-CACHE/fulltext.txt [0,7977)。另完整阅读了 candidate.test_script 所供 tools/check_k_model_008_full.py、author_notes 和 actual_preflight 执行记录。仅摘录：knowledge/algorithms/cross-attention-cache.md [0,6366)、[16000,17361)；knowledge/system-semantics/design-synthesis.md [0,7727)，原抽取全文长度为 9874。两份摘录未列入 documents；未声称读取摘录外内容、reader.html、PDF 图像或源码归档。",
+  "test_assessment": "脚本以固定数值参考验证几何、成对计数及字节容量，并有 merge 比例、28 倍数合法性和空间位置唯一性不变量，不是全部自证循环。本次另外通过逐 patch 对枚举独立计算窗口可见关系，得到每窗口层 98304 对、混合 32 层 12189696 对，与正文一致；字节复算亦一致。供应实际预检记录绑定相同脚本哈希，returncode=0，运行约 0.117 秒；作者称本人未执行、协调者执行，与记录相容。负对照覆盖遗漏 merge、宽松尺寸接受、locator+shape 身份碰撞和忽略文本内容的前缀碰撞，但主要比较脚本内的正确/故障示意函数。flattened MRoPE 检查只证明两种位置元组不同，没有将错误位置送入前缀复用判定并确认拒绝。脚本没有执行 RunVLM，没有逐层 attention 或独立完整 forward 参考，也未检查完整前缀命中无 logits、采样与 KV 边界、placeholder 交换、异步取消与回收。小窗口、非整窗口和视频时间仅有有限或示意覆盖，未验证 checkpoint 的位置映射。上述边界不否定算术检查，但其 PASS 不能证明两项 blocking 算法缺口已经解决。"
+}

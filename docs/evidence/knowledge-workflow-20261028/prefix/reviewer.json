@@ -1,0 +1,137 @@
+{
+  "entry_id": "K-ALG-003",
+  "body_sha256": "98389e4a67eb746a52f39d11986256c857a00167f4c989f26dbd2d3f1b3275d9",
+  "reviewer": "/root",
+  "decision": "accept",
+  "reviewed_at": "2026-10-28",
+  "scope": "完整页前缀目录、精确依赖身份、命中保护、计算完成后发布、缓存/请求/执行/构造责任、叶淘汰与条件化收益；不验收完整混合模型或真实GPU执行。",
+  "documents": {
+    "knowledge/algorithms/prefix-cache-identity.md": "98389e4a67eb746a52f39d11986256c857a00167f4c989f26dbd2d3f1b3275d9",
+    "tools/check_prefix_cache.py": "c662d64af4d2920df77e310755d7d0add1e912ea20fba776dc269364e44ec546",
+    "docs/evidence/knowledge-workflow-20261028/prefix/author-review.md": "18cd983da235df6e00b49663ac514d9f80596e5cc143c437de11d201ad23d74d",
+    "knowledge/sources/S-SGLANG.md": "4fd6badbee1df40da422f2866f1536bbe4f5266856b8d97004072a21b9d0e2c9",
+    "knowledge/sources/S-VLLM-PREFIX.md": "9e3f16fdac245da8aa97deea55a820642b67e626329748c980eaa2fc0b7656f5",
+    "knowledge/sources/S-HF-CACHE.md": "1a4afcf0d800ba3f42836445874d620ae9f7ba8ab4c361caa505376cc471595c",
+    "knowledge/sources/S-MOONCAKE.md": "87547af306062e8e7c7d5da5de6102cd47ac371d0b9172a1b4c2eda719134e8b",
+    "references/S-SGLANG/fulltext.txt": "7dfb3a43ba73d9d9861c06311005edf12dfafa9f60a268fec327deb4d8e8770d",
+    "references/S-VLLM-PREFIX/fulltext.txt": "0d6423dca458bb628af7d15961bdba92b0d501660f93690610a354ef68f07353",
+    "docs/knowledge-method.md": "69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb",
+    "docs/knowledge-review.md": "f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21"
+  },
+  "reading_scope": {
+    "knowledge/algorithms/prefix-cache-identity.md": "完整当前正文，包括新增算法与保留容量场景",
+    "tools/check_prefix_cache.py": "完整脚本，独立闭式参考、状态目录、参数化请求、负对照与成本算术",
+    "docs/evidence/knowledge-workflow-20261028/prefix/author-review.md": "完整作者记录",
+    "knowledge/sources/S-SGLANG.md": "完整来源说明",
+    "knowledge/sources/S-VLLM-PREFIX.md": "完整来源说明",
+    "knowledge/sources/S-HF-CACHE.md": "完整来源说明",
+    "knowledge/sources/S-MOONCAKE.md": "完整来源说明",
+    "references/S-SGLANG/fulltext.txt": "定位核对§3的单token页、Radix、引用、叶优先及Fig.3边分裂，不声称本次整篇重读",
+    "references/S-VLLM-PREFIX/fulltext.txt": "读取开头身份/完整块/碰撞/额外条件与隔离、分配与重复块相关段落，未声称整篇重读",
+    "docs/knowledge-method.md": "完整当前方法",
+    "docs/knowledge-review.md": "完整六标准审查逻辑"
+  },
+  "criteria": {
+    "definition": {
+      "assessment": "sufficient",
+      "reason": "定义η、已知输入、状态S和真正可继续位置p；缓存对象不被简化为token字符串或相同地址，输出包含句柄与就绪关系。",
+      "evidence": [
+        {
+          "path": "knowledge/algorithms/prefix-cache-identity.md",
+          "quote": "请求输出是实际可继续的位置 p、对应的状态句柄与就绪关系，以及尚需处理的输入 x[p:n)。"
+        }
+      ]
+    },
+    "legality": {
+      "assessment": "sufficient",
+      "reason": "将父依赖、精确身份核验、状态实际完成和恢复交集作为条件；完整页、叶优先、保留重复物理副本是独立候选选择。不同浮点或随机前向明确需另验。",
+      "evidence": [
+        {
+          "path": "knowledge/algorithms/prefix-cache-identity.md",
+          "quote": "父哈希碰撞不能再用“父哈希相同”证明父身份相同。"
+        },
+        {
+          "path": "knowledge/algorithms/prefix-cache-identity.md",
+          "quote": "模型函数上的等价不自动成为浮点逐位相同。"
+        }
+      ]
+    },
+    "algorithm": {
+      "assessment": "sufficient",
+      "reason": "查找所有完整匹配边界后与恢复集合求交，按无logits上限选p；再保护命中、完整预留、计算、核对就绪、提交或取消放弃。五页轨迹贯通缓存和在途引用，能推导再次命中缩短。",
+      "evidence": [
+        {
+          "path": "knowledge/algorithms/prefix-cache-identity.md",
+          "quote": "将匹配边界与各状态恢复集合求交，选择可跳过上限内最大的 p；无非零交点则 p←0"
+        },
+        {
+          "path": "knowledge/algorithms/prefix-cache-identity.md",
+          "quote": "请求结束只撤销 A，不自动撤销 C，也不会结束 R。"
+        }
+      ]
+    },
+    "cost": {
+      "assessment": "sufficient",
+      "reason": "同一请求串行例连接全重算、剩余计算、查找/接入、恢复和排队；状态容量按物理并集，边际留存价值防止祖先重复记账。网络只在跨边界发生，合成数值均有条件。",
+      "evidence": [
+        {
+          "path": "knowledge/algorithms/prefix-cache-identity.md",
+          "quote": "T后(p) 仍包含 suffix 对 prefix 的 Attention 工作，不能用“命中 p/n”直接把整个前向时间按比例扣掉。"
+        },
+        {
+          "path": "knowledge/algorithms/prefix-cache-identity.md",
+          "quote": "不能给每个共享祖先重复记同一整段重算收益。"
+        }
+      ]
+    },
+    "adaptation": {
+      "assessment": "sufficient",
+      "reason": "明确完整KV命中但无logits的安全重算，非连续恢复集合不能取最大长度；排队使远端复用相对重算反转，复用概率使保留收益反转，且资格不被收益覆盖。",
+      "evidence": [
+        {
+          "path": "knowledge/algorithms/prefix-cache-identity.md",
+          "quote": "只存 KV 的本例令可跳过上限为 n−1，再按 P 向下取整"
+        },
+        {
+          "path": "knowledge/algorithms/prefix-cache-identity.md",
+          "quote": "只有对象已具备可淘汰资格时才能实施该选择；活读者保护不能因为收益为负而撤销。"
+        }
+      ]
+    },
+    "diagnosis": {
+      "assessment": "sufficient",
+      "reason": "按真正跳过、剩余工作、恢复和排队分解高命中低收益；身份碰撞、未完成发布、忙读者淘汰、目录复用和描述覆盖有不同干预。检查用独立闭式因果参考，范围与真实Transformer区分。",
+      "evidence": [
+        {
+          "path": "knowledge/algorithms/prefix-cache-identity.md",
+          "quote": "分别记录逻辑匹配、实际跳过位置、完成计算 token 数和准备/恢复/计算时间"
+        },
+        {
+          "path": "knowledge/algorithms/prefix-cache-identity.md",
+          "quote": "若禁用页面复用后仍失败，不能只归因为提前回收"
+        }
+      ]
+    }
+  },
+  "findings": [],
+  "closed_findings": [
+    {
+      "id": "prefix-algorithm-chain",
+      "result": "closed_in_declared_scope",
+      "evidence": "由身份与收益原则深化为完整页目录及查询/保护/预留/发布/淘汰算法，五页轨迹与成本反转可复算。"
+    }
+  ],
+  "limitations": [
+    "作者与审查者共享父对话和文件系统，实际非作者复核不构成盲审或受控知识效果比较。",
+    "整数因果递推与串行主机模型不证明真实Transformer、GPU可见性、并发allocator或网络传输。",
+    "Radix边分裂在正文说明，本次可执行模型采用完整页链式目录，不能把模型通过说成真实Radix或混合模型实现已验证。",
+    "来源说明仍保留此前字节；关键独立算法由当前正文承担，没有把其内容成熟度外推到其他来源说明或全库。",
+    "本次没有新增learner任务或目标设备测量；使用效果仍单独保留未评估状态。"
+  ],
+  "checks": [
+    {
+      "script": "tools/check_prefix_cache.py",
+      "args": []
+    }
+  ]
+}

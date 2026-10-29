@@ -1,0 +1,72 @@
+{
+  "id": "K-HW-003",
+  "path": "hardware/host-device-transfer.md",
+  "category": "hardware",
+  "title": "主机准备、DMA 与流水缓冲",
+  "summary": "主机准备、DMA、计算与消费按对象依赖连接；量化有限批、各池槽位与共享带宽，允许不同放置与传输方式。",
+  "revision": 5,
+  "status": "seed",
+  "tags": [
+    "DMA",
+    "pinned memory",
+    "H2D",
+    "D2H",
+    "流水",
+    "API contract",
+    "可执行设计",
+    "wait_stream",
+    "record_stream",
+    "CPU GPU overlap",
+    "buffer lifetime",
+    "双缓冲",
+    "槽位",
+    "共享带宽"
+  ],
+  "scope": {
+    "model_families": [],
+    "platforms": [
+      "cuda"
+    ],
+    "runtimes": [],
+    "workloads": []
+  },
+  "source_ids": [
+    "S-CUDA-ASYNC",
+    "S-CUDA-BEST",
+    "S-CUDA-ALLOC",
+    "S-LINUX-IO",
+    "S-TORCH-CUDA"
+  ],
+  "related": [
+    "K-ALG-008",
+    "K-FW-003",
+    "K-MODEL-008",
+    "K-HW-012",
+    "K-HW-013",
+    "K-ALG-020",
+    "K-ALG-017",
+    "K-SYS-001",
+    "K-HW-009",
+    "K-SYS-019",
+    "K-FW-011",
+    "K-HW-014"
+  ],
+  "evidence": [],
+  "updated_at": "2026-10-27",
+  "sha256": "e4921a0714af21f7ab1a336f40af662f716f2c64a42dd598eb2cede548c858d2",
+  "questions": [
+    "主机准备为什么不是一次复制，从对象可用到设备可消费之间有哪些阶段？",
+    "流水周期与有限批的完成时间如何由各阶段时间与槽位数共同决定？",
+    "何时减少传输次数比提高单次带宽更有效，判断依据是什么？",
+    "多级输入共享主存或 PCIe 带宽时，每级可用份额怎样分配？",
+    "缓冲池的槽位与代次如何防止迟到 DMA 覆盖新一轮数据？"
+  ],
+  "symptoms": [
+    "CPU 与 GPU 都忙但总延迟没有降低",
+    "增加预取深度后主存带宽先于设备饱和"
+  ],
+  "assumes": [
+    "主机与设备通过 PCIe 类链路连接",
+    "存在可钉住的主机缓冲"
+  ]
+}

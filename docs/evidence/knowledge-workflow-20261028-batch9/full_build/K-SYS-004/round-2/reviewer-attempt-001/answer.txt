@@ -1,0 +1,152 @@
+{
+  "entry_id": "K-SYS-004",
+  "body_sha256": "a4f40fd8e024ac653202369df61ca4318387d539b71073bbd30a6a47bd8cf3c3",
+  "reviewer": "sol-reviewer:K-SYS-004:round-2",
+  "decision": "revise",
+  "documents": {
+    "AGENTS.md": "b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a",
+    "docs/knowledge-method.md": "69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb",
+    "docs/knowledge-review.md": "f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21",
+    "knowledge/system-semantics/cancellation-resource-completion.md": "a4f40fd8e024ac653202369df61ca4318387d539b71073bbd30a6a47bd8cf3c3",
+    "knowledge/sources/S-ASGI.md": "ca77c63e9a95b8be934ae485d89245f895dc7fa49fdf7fcce03b139346127ed9",
+    "knowledge/sources/S-CUDA-ALLOC.md": "3ba021c941f2ed8f048be34d1ba0110f37675a3460013f24a239cc43a1e8630a",
+    "knowledge/sources/S-CUDA-ASYNC.md": "40df9287d0648a8ef55a046ceb1c18dd402619ede6e57ca33d3f90e4ace3da05",
+    "knowledge/sources/S-RDMA.md": "660948886af9019ac90e6c58ab7b2a4ca9dbf282f1bb74de37162403f24f4d49",
+    "knowledge/sources/S-LINUX-IO.md": "786caae53cc1e80173616ce470c481145e285c2176b7cff4777576cc893fc316",
+    "knowledge/sources/S-SERVERLESSLLM.md": "aff9202b72fffcdf3145d0f014888070d2e12995b04f9c259930ad90a806473d",
+    "knowledge/system-semantics/model-lifecycle.md": "bf15950cafcbb584f031cc3a1ea9eaf3331d2816819c6e468ae333d70a3c7c0e",
+    "knowledge/system-semantics/serving-recovery.md": "f551fa1f1e6213469c856a880839eefff504fb39f4dd692000b2df80a20a7f5e",
+    "knowledge/tools/failure-evidence.md": "23dfc65dcbd319c1789dcb80b62f6c843bb5db8c076e86a00643cff546700067",
+    "knowledge/engine-index/sglang-radix-scheduler.md": "abf1eb7040f1f6ba697822719094f8cc26172a329d6003a027862ef89de03374",
+    "knowledge/engine-index/tensorrt-llm.md": "6ade1253f3747041bef4a816d82387c3771bff3459a153719cfbd571c2454c0b",
+    "knowledge/models/speech-generation.md": "9cab040f27f77dc8040a6cc6f0ae96a175542e4379e2262ca2cdb53fb9aee3a4",
+    "knowledge/workloads/session-workloads.md": "0269e1987e1107d0cf0135cb32aa759c67d5266cfa09fb1402f97704c4ab4d78",
+    "references/S-ASGI/fulltext.txt": "ba273c91f3e7b8c32f863e8b57145798c3b5c9275073f758a41e1cb0a6f5bee3",
+    "references/S-RDMA/fulltext.txt": "9f4bea8bc130fc7dcdf0b53d20ce7269555cddd2a7c67e5d54c6dbd7a55b2720",
+    "tools/check_k_sys_004_full.py": "787f467ed1e3e4a56fb99514980939e025a6ecf3d281b14e4adce1b47218ec61"
+  },
+  "criteria": {
+    "definition": {
+      "assessment": "sufficient",
+      "reason": "清楚区分请求执行代次、物理分配代次及逻辑、执行、输出、绑定和隔离责任；定义了回收谓词，并将业务终止与物理排空分开。",
+      "evidence": [
+        {
+          "path": "knowledge/system-semantics/cancellation-resource-completion.md",
+          "quote": "请求实例 r 不复用；其执行代次为 I=(r,g)。物理槽 s 的一次分配生命期为 x=(s,e)，e 是槽代次，不能与请求执行代次 g 混用。"
+        },
+        {
+          "path": "knowledge/system-semantics/cancellation-resource-completion.md",
+          "quote": "retiring_x ∧ L_x=∅ ∧ U_x=∅ ∧ O_x=∅ ∧ B_x=∅ ∧ Q_x=∅。"
+        }
+      ]
+    },
+    "legality": {
+      "assessment": "partial",
+      "reason": "本地回收、整票据完成、输出借用和图地址的合法条件充分，且与所供来源相符。但迁移仅要求每次提交核对授权记录，未建立授权核对与实际提交之间不可被接管穿越的关系，最终快照也未明确约束源端后续提交。",
+      "evidence": [
+        {
+          "path": "knowledge/system-semantics/cancellation-resource-completion.md",
+          "quote": "仅递增 e 或 g 可以拒绝旧结果提交，不能阻止旧 DMA 写入同一物理地址。"
+        },
+        {
+          "path": "knowledge/system-semantics/cancellation-resource-completion.md",
+          "quote": "提交权由单一可线性化的授权记录维护，每次业务提交都核对该记录"
+        }
+      ]
+    },
+    "algorithm": {
+      "assessment": "partial",
+      "reason": "本地事件算法已展开登记先于启动、部分提交、隔离解除、提交与消费者登记及旧释放幂等处理，旧参考污染也已修复。迁移算法仍缺少源端提交静止点与授权切换的完整连接，存在目标从过期边界继续或旧提交跨越接管的执行轨迹。",
+      "evidence": [
+        {
+          "path": "knowledge/system-semantics/cancellation-resource-completion.md",
+          "quote": "先对每个对象登记对应 τ 到 U，并保存 operation 记录"
+        },
+        {
+          "path": "knowledge/system-semantics/cancellation-resource-completion.md",
+          "quote": "若 x 已 freed：幂等返回；不得改写 current[x.slot]"
+        },
+        {
+          "path": "knowledge/system-semantics/cancellation-resource-completion.md",
+          "quote": "在 src 的确定提交边界 p 冻结最终快照"
+        },
+        {
+          "path": "knowledge/system-semantics/cancellation-resource-completion.md",
+          "quote": "dst 取得新授权后才能从 p 继续提交；src 的旧 term 不再可提交。"
+        }
+      ]
+    },
+    "cost": {
+      "assessment": "sufficient",
+      "reason": "实际复算了轨迹中的 67/66 MiB、5 ms 回收延迟及 640 MiB 平均额外驻留；吞吐式按设备工作量计量，单位为请求/秒。计算、访存、通信、准备、同步及驻留均有条件说明，避免重叠时间相加和共享容量重复计数。",
+      "evidence": [
+        {
+          "path": "knowledge/system-semantics/cancellation-resource-completion.md",
+          "quote": "M_cancel = λ_c E[∫ b_i(t) dt]。"
+        },
+        {
+          "path": "knowledge/system-semantics/cancellation-resource-completion.md",
+          "quote": "D 是剩余设备工作，不能把纯网络等待或空闲隔离墙钟时间直接填入。"
+        },
+        {
+          "path": "knowledge/system-semantics/cancellation-resource-completion.md",
+          "quote": "事件合并可以减少主机开销，前提是合并证据覆盖全部被撤销责任。"
+        }
+      ]
+    },
+    "adaptation": {
+      "assessment": "sufficient",
+      "reason": "跨 stream、外部 DMA、共享引用、高取消率、长期绑定、故障及慢消费者变化后，分别说明应保留的不变量、可调整方案和收益反转信号，没有把单一实现当作通用要求。",
+      "evidence": [
+        {
+          "path": "knowledge/system-semantics/cancellation-resource-completion.md",
+          "quote": "重建 event、注册区和外部完成依赖，不能沿用单队列假设"
+        },
+        {
+          "path": "knowledge/system-semantics/cancellation-resource-completion.md",
+          "quote": "有界背压、复制后交还或终止消费者；复制减少设备驻留但增加主存与流量"
+        }
+      ]
+    },
+    "diagnosis": {
+      "assessment": "sufficient",
+      "reason": "提供了物理生命期、结果身份、布局、通知阻塞和合法池保留等竞争解释及可控干预；特别解释了拥有者遮蔽负对照和拒绝动作污染参考的假通过/假失败机制。设备验证与有限 CPU 模型的边界声明清楚。",
+      "evidence": [
+        {
+          "path": "knowledge/system-semantics/cancellation-resource-completion.md",
+          "quote": "分别延迟设备完成、主机通知处理和输出消费，记录三本账"
+        },
+        {
+          "path": "knowledge/system-semantics/cancellation-resource-completion.md",
+          "quote": "拒绝的重用不能出现在历史拥有者集合中。否则参考会凭空创造一个新拥有者，把合法释放判成错误。"
+        }
+      ]
+    }
+  },
+  "findings": [
+    {
+      "id": "K-SYS-004-r2-migration-commit-fence",
+      "criterion": "algorithm",
+      "evidence": "正文要求“提交权由单一可线性化的授权记录维护，每次业务提交都核对该记录”；迁移第 2 步为“在 src 的确定提交边界 p 冻结最终快照”，第 6 步仅检查“原记录仍为 (r,term,src)、attempt 当前有效且 dst READY”，第 7 步随后允许目标“从 p 继续提交”。没有明确停止源端提交、结算已进入的提交事务，也没有将授权核对与提交安装原子化或在提交接收端实施 fencing。",
+      "impact": "冻结快照不自动冻结源端业务推进。源端若在快照 p 后、授权切换前提交 p+1，第 6 步仍可成功，而目标只有 p，可能重复输出或丢失已提交状态。即使意图暂停源端，单独读取授权也存在检查后使用窗口：旧事务核对 term 后暂停，接管更新授权，目标开始提交，旧事务再安装结果。授权记录自身可线性化不能排除这两条轨迹。",
+      "blocking": true,
+      "required_revision": "明确迁移的提交静止协议：在源端同一提交状态域内关闭新提交并结算已进入的提交事务，再确定最终边界 p；保持该门控直到失败恢复旧授权或完成接管。或者给出与业务提交共同原子验证授权和边界的权威提交机制，并说明实际提交端如何拒绝旧 term。复核快照后源端推进、旧提交在授权核对后暂停、接管确认丢失三种交错，确保目标恢复边界包含全部已提交状态且旧提交不能穿越接管。"
+    }
+  ],
+  "limitations": [
+    "评审依据任务提供的完整文本、摘录及实际预检记录；未从磁盘重新计算哈希，也未由本评审再次启动 Python。",
+    "检查仅验证有限 CPU 离散状态；未证明 CUDA/RDMA/Linux I/O 的实际最后访问、内存可见性、平台中止或性能。",
+    "单项隔离折叠为未结 U；永久故障域 Q、真实部分提交失败、别名访问冲突及分布式授权存储未由该脚本验证。",
+    "脚本的 commit 只检查请求存活、执行代次和重复提交；未验证完整候选数据、模型/输入版本、可见性、RNG 更新或网络交付。",
+    "CUDA 原文仅检查所供摘录和来源说明；ServerlessLLM 的具体 token 重算迁移依据来源说明，未将缺失的 §5 原文视作已读。",
+    "未验证知识对 Agent 构建能力的改善，也未实际打开离线链接目标。"
+  ],
+  "checks": [
+    {
+      "script": "tools/check_k_sys_004_full.py",
+      "args": []
+    }
+  ],
+  "reading_scope": "全部范围为任务给出的提取文本字符，零基、左闭右开。完整阅读：AGENTS.md [0,567)；docs/knowledge-method.md [0,2251)；docs/knowledge-review.md [0,3016)；当前正文 [0,13419)；六份来源说明 S-ASGI [0,491)、S-CUDA-ALLOC [0,498)、S-CUDA-ASYNC [0,1610)、S-RDMA [0,739)、S-LINUX-IO [0,850)、S-SERVERLESSLLM [0,781)；model-lifecycle.md [0,3556)；serving-recovery.md [0,3834)；failure-evidence.md [0,3753)；sglang-radix-scheduler.md [0,1901)；tensorrt-llm.md [0,2145)；speech-generation.md [0,3599)；session-workloads.md [0,3583)；references/S-ASGI/fulltext.txt [0,23566)；references/S-RDMA/fulltext.txt [0,25147)。完整检查候选 test_script，从 shebang 至 raise SystemExit(main())，并阅读 author_notes 和 actual_preflight 的完整所供记录。其余仅阅读摘录：async-scheduling.md [0,3863)；streams-allocator.md [8000,11863)；service-protocol.md [0,3863)；memory-allocators.md [0,3863)；storage-services.md [0,3863)；transport-and-rdma.md [0,3863)；paged-kv-capacity.md [0,438)、[12000,15425)；cuda-graph-buffers.md [4000,4709)、[12000,15154)；mlx-serving.md [4000,7863)；encoder-decoder-streaming.md [4000,7863)；correctness-oracles.md [0,3863)；host-runtime.md [0,304)、[4000,7559)；tiered-residency.md、heterogeneous-execution.md、tenant-isolation.md 各 [0,3863)。两份 CUDA 原文分别仅检查 [208000,212000)、[280000,288000)、[328000,332000)、[676000,680000)、[688000,692000)、[728000,732000)、[784000,792000)、[800000,804000)，以及 ALLOC [948000,953237)、ASYNC [948000,953236)。Linux I/O 原文仅 [0,41236)、[44000,48000)；ServerlessLLM 原文仅 [0,28000)、[36000,37236)、[44000,56000)、[60000,64000)。摘录文件未列入 documents；未读取源码归档或技能文件。",
+  "test_assessment": "已逐段检查脚本。Model 使用逐对象责任集合，facts 从参考判定接受的历史重建扁平责任；expected 独立计算动作资格，固定 golden 再约束关键结果，run_case 每事件比较接受结果和完整状态，因此不是仅比较最终布尔值。两侧仍共享部分抽象规则，不能视为形式证明。reference_regression 明确重现被拒绝 alloc 污染历史、虚构 B 拥有者并拒绝合法释放的旧缺陷；新历史忽略拒绝动作，epoch 保持 0。所供 actual_preflight 绑定脚本 SHA256 787f467ed1e3e4a56fb99514980939e025a6ecf3d281b14e4adce1b47218ec61，Python 3.12 在 remote_bwrap 中实际返回 0，stderr 为空，无超时，报告 28 案例、288 事件、11 类负对照全部检出。负对照分别实际改变 U/L/O/B 保护、取消提交门控、超时责任、证书覆盖、槽重用、旧释放、旧完成及其他读者保护；状态比较能检出返回值相同但责任已损坏的变体。无效证书案例先删除 L，避免拥有者遮蔽提前释放错误；读者覆盖全部六种结束顺序，另枚举四类阻塞集合的 16 种组合。故 campaign-K-SYS-004-r1 的具体检查失败已修复并通过完整交付脚本复核，可以关闭。作者只运行 JavaScript 影子模型、未运行 Python 的声明与后来协调者实际预检是不同执行主体和阶段，不应互相改写。上述通过不覆盖迁移提交静止与授权切换；脚本没有 owner/term/p/READY 状态，无法反驳本轮 finding，也未验证正文全部提交语义或设备行为。"
+}

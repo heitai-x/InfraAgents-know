@@ -1,0 +1,312 @@
+{
+  "role": "reviewer",
+  "engine": "sol",
+  "requested_model": "gpt-6.1-sol",
+  "reasoning_effort": "high",
+  "prompt_sha256": "66a5fba12c6f88eaea5a939a049e75794bf8675afb942bc2e9d6c60aac74e0c7",
+  "usage": [
+    {
+      "input_tokens": 730214,
+      "cached_input_tokens": 554624,
+      "cache_write_input_tokens": 0,
+      "output_tokens": 6852,
+      "reasoning_output_tokens": 1648
+    }
+  ],
+  "answer": "{\n  \"entry_id\": \"K-FW-007\",\n  \"body_sha256\": \"6cbe2ed9c747cf60a923b7ef14c5f25c330a1c011442dea261afd1e4f62c2344\",\n  \"reviewer\": \"sol-reviewer:K-FW-007:round-1\",\n  \"decision\": \"revise\",\n  \"documents\": {\n    \"AGENTS.md\": \"b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a\",\n    \"docs/knowledge-method.md\": \"69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb\",\n    \"docs/knowledge-review.md\": \"f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21\",\n    \"knowledge/frameworks/triton-kernels.md\": \"6cbe2ed9c747cf60a923b7ef14c5f25c330a1c011442dea261afd1e4f62c2344\",\n    \"knowledge/sources/S-TRITON.md\": \"424109f8cee2e62edafdcd161f46190ecece6dcde0107ce42e67c1291801d14f\",\n    \"knowledge/sources/S-CUDA-BEST.md\": \"4b752c1a26f66a195df62be354649f0a6880f733fb365e82e87bdd63bf71d45c\",\n    \"knowledge/sources/S-ROCM.md\": \"a781dedf1327b2478e84466832a80e9bb81605e10ec2535450f472d6dd1d0483\",\n    \"knowledge/sources/S-TVM.md\": \"d75602d9d7690dd48fe0bf97075f6f043094338453854b2dea122e528dd0b4f8\",\n    \"knowledge/sources/S-ANSOR.md\": \"a550bc8f70359ee1b5b8d7085a12e6dc0cd9066d97726ab0abab0acedd9c2509\",\n    \"knowledge/sources/S-TORCH-NUMERIC.md\": \"cbe91153d9ff7bd2f596d1d6c4e15de1ad68571f3cbde23215891a8ec7f6fab4\",\n    \"knowledge/sources/S-TORCH-CUDA.md\": \"8ee61677a1e35d475d9bb122b2c7fa824ccf054acefbe2f12345d72c1fb1b00e\",\n    \"knowledge/hardware/cuda-execution.md\": \"1ce1166d2d3017ec2c6ee9a02f07be615e38d4aca7aca26d270ebcf5559ed14c\",\n    \"knowledge/hardware/rocm-execution.md\": \"90b76df39be1414db25b7b98297de507d3e63fdc49599264d0214fcb60ad62e0\",\n    \"knowledge/hardware/cpu-linear-kernels.md\": \"b4d5391890478b2874f6ea548b154a580a0810356f9cf9cb05248a9d2f728dcc\",\n    \"knowledge/hardware/precision-and-kernel-support.md\": \"7185979b8429b7d44fd34ec0910bbe85c617a457cc4d9d9055920e73d07bc5d3\",\n    \"knowledge/frameworks/compile-dynamic-shapes.md\": \"6f9773875d24bbe32fd80e62cfba4e85f841ec1b65876b513c30d8d9f000b1ef\",\n    \"knowledge/tools/kernel-counter-replay.md\": \"9ecd4279422f94ccc42ffa70aca42d5fbec6e8f61a1182fb5983aebeaccd692d\",\n    \"knowledge/tools/statistical-experiments.md\": \"908b3588a6fa20bb1f2aed9f5db51c4b462953d79f8944cdbcfea7141c74644f\",\n    \"references/S-ROCM/fulltext.txt\": \"f5364f72aaaf3149705e29af60d62c448b0f60b6da9e69a470090c68236af29e\",\n    \"references/S-TORCH-NUMERIC/fulltext.txt\": \"bb6b2d8154a10f8f3b15e5ae4465cbc8d833067046964fc6b4d66dc036131b45\",\n    \"tools/check_k_fw_007_full.py\": \"9c0d043623aa85279e870518c27335c21c863b0f0a4b23dd2c8ae4c1ecf83aab\"\n  },\n  \"criteria\": {\n    \"definition\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"说明块程序的动机、矩阵轴、program 与输出 tile 的关系，并区分逻辑、数学和执行状态。attention 的可见集合、归约统计量、底数转换及空行输出契约可恢复。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/frameworks/triton-kernels.md\",\n          \"quote\": \"BM、BN、BK 是候选配置，不是函数定义；改变它们仍可计算同一 C，但会改变块数、每块资源、重复读取和尾部浪费。\"\n        },\n        {\n          \"path\": \"knowledge/frameworks/triton-kernels.md\",\n          \"quote\": \"本章采用输出零向量、空标志为真、自然 LSE 为负无穷的契约\"\n        }\n      ]\n    },\n    \"legality\": {\n      \"assessment\": \"partial\",\n      \"reason\": \"写者唯一性、完整归约域、stride、资源和数值契约均有明确条件，也区分候选剪枝与数学合法性；但实际交付的 GEMM 输入掩码不满足正文规定的越界保护条件。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/frameworks/triton-kernels.md\",\n          \"quote\": \"所有可能越界的加载、预取和写出都在实际地址生成前或访问时被掩码保护；只在最后写回时掩码不能保护输入读取。\"\n        },\n        {\n          \"path\": \"knowledge/frameworks/triton-kernels.md\",\n          \"quote\": \"i<m0+BM 且 k0+k<K 时取 A[m0+i,k0+k]，否则取代数零\"\n        }\n      ]\n    },\n    \"algorithm\": {\n      \"assessment\": \"partial\",\n      \"reason\": \"attention 的空状态、逐块合并和底数一致性基本正确，生产完成与最后读者完成也有区分。但 GEMM 的 M/N 输入边界判断错误，且 epilogue 在更新 acc 后又于写回时调用，不能作为正确的完整块程序交付。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/frameworks/triton-kernels.md\",\n          \"quote\": \"k0+k<K 且 j<n0+BN 时取 B[k0+k,n0+j]，否则取代数零\"\n        },\n        {\n          \"path\": \"knowledge/frameworks/triton-kernels.md\",\n          \"quote\": \"若需要 epilogue：在 acc 上逐元素应用 bias、激活或其他已定义变换\"\n        },\n        {\n          \"path\": \"knowledge/frameworks/triton-kernels.md\",\n          \"quote\": \"C[m0+i,n0+j] = epilogue(acc[i,j])\"\n        }\n      ]\n    },\n    \"cost\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"计算主项、请求字节、唯一输入字节、缓冲容量和累加器容量分开计量。两组 tile 的 KiB、每线程累加值与读取总量均可复算；融合成本考虑外部消费者、重算、驻留和跨 block 交换，调优摊销单位正确，没有将资源估计冒充实测时间。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/frameworks/triton-kernels.md\",\n          \"quote\": \"这只是容量，不是额外读取字节。\"\n        },\n        {\n          \"path\": \"knowledge/frameworks/triton-kernels.md\",\n          \"quote\": \"方案 A 请求 16×3×6 KiB=288 KiB 的 A/B tile 读取，方案 B 请求 4×3×12 KiB=144 KiB\"\n        },\n        {\n          \"path\": \"knowledge/frameworks/triton-kernels.md\",\n          \"quote\": \"若该中间量仍被另一个消费者使用，就只能省去本消费者的读取，写出仍须保留。\"\n        }\n      ]\n    },\n    \"adaptation\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"解释短输入候选耗尽、布局与存储偏移变化、跨平台资源变化、数值路径变化以及副作用调优如何改变选择，并给出调整候选、padding、重排或通用后端等有条件的处理方式。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/frameworks/triton-kernels.md\",\n          \"quote\": \"此时必须提供满足新域的候选、带正确掩码的 padding 路径或语义等价的通用后端\"\n        },\n        {\n          \"path\": \"knowledge/frameworks/triton-kernels.md\",\n          \"quote\": \"应使用相同初始状态比较候选，或把可安全调优的纯计算段与一次性状态提交分开。\"\n        },\n        {\n          \"path\": \"knowledge/frameworks/triton-kernels.md\",\n          \"quote\": \"若生产者不满足，应比较直接支持 stride、单次重排或改变生产布局的成本。\"\n        }\n      ]\n    },\n    \"diagnosis\": {\n      \"assessment\": \"partial\",\n      \"reason\": \"性能诊断表提供竞争解释、观测和反证后的修正；整行 softmax 参考也独立于合并函数。但检查没有实际覆盖非空长度的全 mask 行，空 LSE 使用 None 而非正文的负无穷；所谓 max 补零负对照仅比较两个最大值，没有验证错误 attention 是否被正确性检查拒绝。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/frameworks/triton-kernels.md\",\n          \"quote\": \"若驻留未变且无资源限制，该解释缺少支持\"\n        },\n        {\n          \"path\": \"knowledge/frameworks/triton-kernels.md\",\n          \"quote\": \"随章检查 tools/check_k_fw_007_full.py 用独立整行参考核对分块合并、空块、全空行、非整除尾部和 b=2/e 的 LSE 契约\"\n        },\n        {\n          \"path\": \"knowledge/frameworks/triton-kernels.md\",\n          \"quote\": \"检查若不能检测这些注入错误，就不能用同一检查证明主路径正确。\"\n        }\n      ]\n    }\n  },\n  \"findings\": [\n    {\n      \"id\": \"K-FW-007-R1-001\",\n      \"criterion\": \"algorithm\",\n      \"evidence\": \"GEMM 伪代码写为“i<m0+BM 且 k0+k<K 时取 A[m0+i,k0+k]，否则取代数零”和“k0+k<K 且 j<n0+BN 时取 B[k0+k,n0+j]，否则取代数零”。\",\n      \"impact\": \"i、j 是 tile 内下标，这两个条件没有约束实际矩阵边界。例如 M=N=5、BM=BN=4、pm=pn=1 时，m0=n0=4，i=j=1 仍满足所写条件，却读取 A[5,k] 和 B[k,5]。最终 store 掩码不能阻止这些越界读取。现有脚本只计算 GEMM 资源，没有执行这些加载。\",\n      \"blocking\": true,\n      \"required_revision\": \"明确局部 i/j/k 的范围，将 A 的有效条件改为 m0+i<M 且 k0+k<K，将 B 的条件改为 k0+k<K 且 n0+j<N；无效位置不得执行输入访问。用非整除 M/N 的访问轨迹或等价的可检查模型验证真实加载范围及输出参考，并确认原错误条件会被检测。\"\n    },\n    {\n      \"id\": \"K-FW-007-R1-002\",\n      \"criterion\": \"algorithm\",\n      \"evidence\": \"同一伪代码先写“若需要 epilogue：在 acc 上逐元素应用 bias、激活或其他已定义变换”，随后写“C[m0+i,n0+j] = epilogue(acc[i,j])”。\",\n      \"impact\": \"按步骤执行会应用两次 epilogue。若 epilogue 为加 bias，结果成为 AB+2·bias；SiLU 等非幂等激活同样改变函数。未启用 epilogue 时的写回也没有明确恒等行为。\",\n      \"blocking\": true,\n      \"required_revision\": \"选择在 acc 上变换一次后直接写回，或仅在最终 store 表达式调用一次；明确未启用时为恒等变换。用非零 bias 等非幂等变换核对单次应用的结果。\"\n    },\n    {\n      \"id\": \"K-FW-007-R1-003\",\n      \"criterion\": \"diagnosis\",\n      \"evidence\": \"正文声称检查覆盖“全空行”和“b=2/e 的 LSE 契约”；脚本的非空 scores 只使用 all_visible 和 with_empty_block，全空测试实际调用 direct_attention([], [], [], dv) 与 block_attention([], [], [], 4, 2.0, dv)。两个函数的空返回均为“return [0.0] * dv, True, None”，但执行输出声称“all-masked row and S=0 keep the empty contract”。\",\n      \"impact\": \"S=0 没有执行任何局部块，不能证明 S>0 且每块均不可见时的初始化与合并正确。None 也没有验证正文承诺的自然 LSE=-∞。实际退出码 0 不支持该覆盖声明。\",\n      \"blocking\": true,\n      \"required_revision\": \"加入 S>0、visible 全 False 且跨多个块的测试，分别覆盖 b=2/e，并明确核对零输出、empty=True 和自然 LSE=-∞。若测试接口有意用 None 表示空 LSE，须明确适配关系并实际验证对外的负无穷契约；同步修正输出及作者覆盖说明。\"\n    },\n    {\n      \"id\": \"K-FW-007-R1-004\",\n      \"criterion\": \"diagnosis\",\n      \"evidence\": \"正文写“并设置自然指数混用、max 补零等应被拒绝的负对照”。脚本相关检查只有“valid = [-5.0, -3.0]”“assert max(valid) == -3.0”和“assert max(valid + [0.0]) == 0.0”。\",\n      \"impact\": \"这只证明最大值发生变化，没有注入被测归约并观察正确性检查拒绝错误。仅改变平移最大值而仍只对有效项计算分子分母，在实数域不会改变 softmax；因此该断言既未证明输出错误，也未证明检测能力。\",\n      \"blocking\": true,\n      \"required_revision\": \"把负对照落实到归约路径并与独立整行参考比较，例如让无效槽错误进入归一化质量，或在声明的浮点域内构造错误零最大值导致有效权重下溢的输入。断言检查确实拒绝错误输出，并说明单纯改变平移常数与错误纳入无效项的区别；准确限定检查结论。\"\n    }\n  ],\n  \"limitations\": [\n    \"CPU 标量检查不证明真实 GPU 的内存可见性、barrier 作用域、异步重叠、寄存器分配、spill、实际事务或性能；正文对此边界声明清楚，可保留。\",\n    \"没有新增目标设备实测、真实低精度路径或 Agent 使用效果证据，不能推导跨设备收益或模型质量结论。\",\n    \"S-TRITON 仅提供作者核验后的机制说明，未提供允许阅读的上游原文或源码；本次只能核对正文与该说明的一致性。\",\n    \"本次工具没有本地文件读取或 Python 执行能力；未独立核验文件字节哈希、链接目标存在性或重跑检查。绑定哈希按用户要求原样记录。docs/knowledge-build-workflow.md 与技能文件未提供可读内容，不能声称已阅读。\"\n  ],\n  \"checks\": [\n    {\n      \"script\": \"tools/check_k_fw_007_full.py\",\n      \"args\": []\n    }\n  ],\n  \"no_checks_reason\": \"未独立重跑：当前可用工具不提供本地命令执行。checks 列出的是已审阅脚本及用户提供的 actual_preflight 实际执行记录，不表示本 reviewer 新执行了一次检查。\",\n  \"reading_scope\": \"完整阅读用户提供的候选正文、完整 test_script、author_notes 和 actual_preflight 的执行参数、结果及证据身份。以下范围均为所供提取文本的零起点半开字符区间。全文材料：AGENTS.md [0,567)；docs/knowledge-method.md [0,2251)；docs/knowledge-review.md [0,3016)；knowledge/frameworks/triton-kernels.md [0,11982)；knowledge/sources/S-TRITON.md [0,1098)；S-CUDA-BEST.md [0,992)；S-ROCM.md [0,514)；S-TVM.md [0,609)；S-ANSOR.md [0,560)；S-TORCH-NUMERIC.md [0,532)；S-TORCH-CUDA.md [0,1468)，上述七项均位于 knowledge/sources/；knowledge/hardware/cuda-execution.md [0,7299)；knowledge/hardware/rocm-execution.md [0,2454)；knowledge/hardware/cpu-linear-kernels.md [0,4016)；knowledge/hardware/precision-and-kernel-support.md [0,5068)；knowledge/frameworks/compile-dynamic-shapes.md [0,4495)；knowledge/tools/kernel-counter-replay.md [0,3862)；knowledge/tools/statistical-experiments.md [0,4269)；references/S-ROCM/fulltext.txt [0,32330)；references/S-TORCH-NUMERIC/fulltext.txt [0,10998)；tools/check_k_fw_007_full.py 为所供脚本全文，从 import math 至最终 main() 调用。仅摘录材料：knowledge/algorithms/attention-io.md [0,4500)、[8000,12000)；knowledge/hardware/gpu-kernel-pipelines.md [0,4500)、[8000,12000)；knowledge/algorithms/operator-primitives.md [0,2566)、[4000,9934)；references/S-CUDA-BEST/fulltext.txt [40000,48000)、[64000,108711)；references/S-TVM/fulltext.txt [0,36000)、[40000,40711)、[44000,60000)；references/S-ANSOR/fulltext.txt [0,12000)、[16000,40000)、[48000,56712)、[60000,64000)、[72000,76000)；references/S-TORCH-CUDA/fulltext.txt [0,8000)、[16000,20711)、[24000,44000)、[48000,64000)、[76000,80000)。这些摘录不构成全文阅读，未列入 documents。来源时间按所供固定版本和 2026-04-30 cutoff 判断，未引入后续来源事实。\",\n  \"test_assessment\": \"提供的 actual_preflight 记录显示绑定脚本在 remote_bwrap 中以隔离 Python 参数执行，returncode=0、stderr 为空、未超时；其 script_sha256 与要求绑定值一致。本 reviewer 审阅该记录但没有独立重跑。direct_attention 独立遍历整行有效集合并计算稳定 softmax，不调用 local_state 或 merge，因此对预先给定 scores 的分块输出和非空 LSE 构成有效参考。固定输入覆盖多种块长、非整除 KV 尾部、有效块之间的空块、b=2/e 和一组极端有限分数。自然指数混用确实作用于合并状态，脚本检测到输出差异，另有可复算的 1.6 与约 1.76159 例子。资源常量、32-bit 回绕及摊销断言支持相应解析算例，但不验证设备行为。脚本未逐块对照 m/ℓ/U 不变量，未计算 QK 或偏置，也没有 GEMM 数值和输入访问实现，故不能发现正文的错误 M/N 掩码或重复 epilogue。S>0 的全 mask 行没有测试，空 LSE 返回 None，没有验证正文负无穷契约。max 补零只检验 max 数值变化，没有检测注入后的归约错误；不能把这部分称为已检测的机制负对照。直接平均分区输出、仅 store 掩码及 autotune 副作用隔离也没有对应执行检查。作者关于未有 GPU 实测的边界合理，但作者和脚本输出关于全 mask 行、空 LSE 契约及 max 补零负对照的覆盖判断需要修正。\"\n}",
+  "exit_code": 0,
+  "status": "completed",
+  "timeout_seconds": 1800,
+  "response_path": "D:\\桌面\\xdb\\InfraAgents\\InfraAgents-know-astra-new\\InfraAgents-know\\docs\\evidence\\knowledge-workflow-20261028-batch4\\full_build\\K-FW-007\\round-1\\reviewer-attempt-001\\answer.txt",
+  "record_path": "D:\\桌面\\xdb\\InfraAgents\\InfraAgents-know-astra-new\\InfraAgents-know\\docs\\evidence\\knowledge-workflow-20261028-batch4\\full_build\\K-FW-007\\round-1\\reviewer-attempt-001\\record.json",
+  "tool_events": [
+    {
+      "type": "item.completed",
+      "item": {
+        "id": "item_1",
+        "type": "mcp_tool_call",
+        "server": "codex",
+        "tool": "list_mcp_resources",
+        "arguments": {},
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"resources\":[]}"
+            }
+          ],
+          "structured_content": null
+        },
+        "error": null,
+        "status": "completed"
+      }
+    },
+    {
+      "type": "item.completed",
+      "item": {
+        "id": "item_2",
+        "type": "mcp_tool_call",
+        "server": "codex",
+        "tool": "list_mcp_resource_templates",
+        "arguments": {},
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"resourceTemplates\":[]}"
+            }
+          ],
+          "structured_content": null
+        },
+        "error": null,
+        "status": "completed"
+      }
+    }
+  ],
+  "inventory_tool_events": [
+    {
+      "type": "item.completed",
+      "item": {
+        "id": "item_1",
+        "type": "mcp_tool_call",
+        "server": "codex",
+        "tool": "list_mcp_resources",
+        "arguments": {},
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"resources\":[]}"
+            }
+          ],
+          "structured_content": null
+        },
+        "error": null,
+        "status": "completed"
+      }
+    },
+    {
+      "type": "item.completed",
+      "item": {
+        "id": "item_2",
+        "type": "mcp_tool_call",
+        "server": "codex",
+        "tool": "list_mcp_resource_templates",
+        "arguments": {},
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"resourceTemplates\":[]}"
+            }
+          ],
+          "structured_content": null
+        },
+        "error": null,
+        "status": "completed"
+      }
+    }
+  ],
+  "rejected_tool_events": [],
+  "tool_policy": "metadata_inventory_only",
+  "tool_policy_version": "2026-10-28-production-v1",
+  "tool_policy_scope": "Only empty-argument codex host plugin/skill-directory descriptors and empty template inventory; inventory is not knowledge evidence. All other tool events reject the call.",
+  "tool_policy_reason": "Production chapter construction allows observed generic capability discovery metadata; this does not claim a zero-tool comparison or external source reading.",
+  "malformed_event_lines": [],
+  "turn_completed": true,
+  "error_events": [],
+  "recovered_transport_events": [],
+  "terminal_error_events": [],
+  "transport_recovered": false,
+  "actual_model": null,
+  "identity_verified": null,
+  "identity_basis": "Explicit CLI model and isolated HTTP provider; CLI events do not expose server model identity.",
+  "provider": "eval-openai-http",
+  "max_output_tokens": null,
+  "cli_version": "codex-cli 0.164.0-alpha.11.1",
+  "cost_scope": "Codex token usage is reported; subscription charge is not exposed.",
+  "parsed": {
+    "entry_id": "K-FW-007",
+    "body_sha256": "6cbe2ed9c747cf60a923b7ef14c5f25c330a1c011442dea261afd1e4f62c2344",
+    "reviewer": "sol-reviewer:K-FW-007:round-1",
+    "decision": "revise",
+    "documents": {
+      "AGENTS.md": "b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a",
+      "docs/knowledge-method.md": "69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb",
+      "docs/knowledge-review.md": "f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21",
+      "knowledge/frameworks/triton-kernels.md": "6cbe2ed9c747cf60a923b7ef14c5f25c330a1c011442dea261afd1e4f62c2344",
+      "knowledge/sources/S-TRITON.md": "424109f8cee2e62edafdcd161f46190ecece6dcde0107ce42e67c1291801d14f",
+      "knowledge/sources/S-CUDA-BEST.md": "4b752c1a26f66a195df62be354649f0a6880f733fb365e82e87bdd63bf71d45c",
+      "knowledge/sources/S-ROCM.md": "a781dedf1327b2478e84466832a80e9bb81605e10ec2535450f472d6dd1d0483",
+      "knowledge/sources/S-TVM.md": "d75602d9d7690dd48fe0bf97075f6f043094338453854b2dea122e528dd0b4f8",
+      "knowledge/sources/S-ANSOR.md": "a550bc8f70359ee1b5b8d7085a12e6dc0cd9066d97726ab0abab0acedd9c2509",
+      "knowledge/sources/S-TORCH-NUMERIC.md": "cbe91153d9ff7bd2f596d1d6c4e15de1ad68571f3cbde23215891a8ec7f6fab4",
+      "knowledge/sources/S-TORCH-CUDA.md": "8ee61677a1e35d475d9bb122b2c7fa824ccf054acefbe2f12345d72c1fb1b00e",
+      "knowledge/hardware/cuda-execution.md": "1ce1166d2d3017ec2c6ee9a02f07be615e38d4aca7aca26d270ebcf5559ed14c",
+      "knowledge/hardware/rocm-execution.md": "90b76df39be1414db25b7b98297de507d3e63fdc49599264d0214fcb60ad62e0",
+      "knowledge/hardware/cpu-linear-kernels.md": "b4d5391890478b2874f6ea548b154a580a0810356f9cf9cb05248a9d2f728dcc",
+      "knowledge/hardware/precision-and-kernel-support.md": "7185979b8429b7d44fd34ec0910bbe85c617a457cc4d9d9055920e73d07bc5d3",
+      "knowledge/frameworks/compile-dynamic-shapes.md": "6f9773875d24bbe32fd80e62cfba4e85f841ec1b65876b513c30d8d9f000b1ef",
+      "knowledge/tools/kernel-counter-replay.md": "9ecd4279422f94ccc42ffa70aca42d5fbec6e8f61a1182fb5983aebeaccd692d",
+      "knowledge/tools/statistical-experiments.md": "908b3588a6fa20bb1f2aed9f5db51c4b462953d79f8944cdbcfea7141c74644f",
+      "references/S-ROCM/fulltext.txt": "f5364f72aaaf3149705e29af60d62c448b0f60b6da9e69a470090c68236af29e",
+      "references/S-TORCH-NUMERIC/fulltext.txt": "bb6b2d8154a10f8f3b15e5ae4465cbc8d833067046964fc6b4d66dc036131b45",
+      "tools/check_k_fw_007_full.py": "9c0d043623aa85279e870518c27335c21c863b0f0a4b23dd2c8ae4c1ecf83aab"
+    },
+    "criteria": {
+      "definition": {
+        "assessment": "sufficient",
+        "reason": "说明块程序的动机、矩阵轴、program 与输出 tile 的关系，并区分逻辑、数学和执行状态。attention 的可见集合、归约统计量、底数转换及空行输出契约可恢复。",
+        "evidence": [
+          {
+            "path": "knowledge/frameworks/triton-kernels.md",
+            "quote": "BM、BN、BK 是候选配置，不是函数定义；改变它们仍可计算同一 C，但会改变块数、每块资源、重复读取和尾部浪费。"
+          },
+          {
+            "path": "knowledge/frameworks/triton-kernels.md",
+            "quote": "本章采用输出零向量、空标志为真、自然 LSE 为负无穷的契约"
+          }
+        ]
+      },
+      "legality": {
+        "assessment": "partial",
+        "reason": "写者唯一性、完整归约域、stride、资源和数值契约均有明确条件，也区分候选剪枝与数学合法性；但实际交付的 GEMM 输入掩码不满足正文规定的越界保护条件。",
+        "evidence": [
+          {
+            "path": "knowledge/frameworks/triton-kernels.md",
+            "quote": "所有可能越界的加载、预取和写出都在实际地址生成前或访问时被掩码保护；只在最后写回时掩码不能保护输入读取。"
+          },
+          {
+            "path": "knowledge/frameworks/triton-kernels.md",
+            "quote": "i<m0+BM 且 k0+k<K 时取 A[m0+i,k0+k]，否则取代数零"
+          }
+        ]
+      },
+      "algorithm": {
+        "assessment": "partial",
+        "reason": "attention 的空状态、逐块合并和底数一致性基本正确，生产完成与最后读者完成也有区分。但 GEMM 的 M/N 输入边界判断错误，且 epilogue 在更新 acc 后又于写回时调用，不能作为正确的完整块程序交付。",
+        "evidence": [
+          {
+            "path": "knowledge/frameworks/triton-kernels.md",
+            "quote": "k0+k<K 且 j<n0+BN 时取 B[k0+k,n0+j]，否则取代数零"
+          },
+          {
+            "path": "knowledge/frameworks/triton-kernels.md",
+            "quote": "若需要 epilogue：在 acc 上逐元素应用 bias、激活或其他已定义变换"
+          },
+          {
+            "path": "knowledge/frameworks/triton-kernels.md",
+            "quote": "C[m0+i,n0+j] = epilogue(acc[i,j])"
+          }
+        ]
+      },
+      "cost": {
+        "assessment": "sufficient",
+        "reason": "计算主项、请求字节、唯一输入字节、缓冲容量和累加器容量分开计量。两组 tile 的 KiB、每线程累加值与读取总量均可复算；融合成本考虑外部消费者、重算、驻留和跨 block 交换，调优摊销单位正确，没有将资源估计冒充实测时间。",
+        "evidence": [
+          {
+            "path": "knowledge/frameworks/triton-kernels.md",
+            "quote": "这只是容量，不是额外读取字节。"
+          },
+          {
+            "path": "knowledge/frameworks/triton-kernels.md",
+            "quote": "方案 A 请求 16×3×6 KiB=288 KiB 的 A/B tile 读取，方案 B 请求 4×3×12 KiB=144 KiB"
+          },
+          {
+            "path": "knowledge/frameworks/triton-kernels.md",
+            "quote": "若该中间量仍被另一个消费者使用，就只能省去本消费者的读取，写出仍须保留。"
+          }
+        ]
+      },
+      "adaptation": {
+        "assessment": "sufficient",
+        "reason": "解释短输入候选耗尽、布局与存储偏移变化、跨平台资源变化、数值路径变化以及副作用调优如何改变选择，并给出调整候选、padding、重排或通用后端等有条件的处理方式。",
+        "evidence": [
+          {
+            "path": "knowledge/frameworks/triton-kernels.md",
+            "quote": "此时必须提供满足新域的候选、带正确掩码的 padding 路径或语义等价的通用后端"
+          },
+          {
+            "path": "knowledge/frameworks/triton-kernels.md",
+            "quote": "应使用相同初始状态比较候选，或把可安全调优的纯计算段与一次性状态提交分开。"
+          },
+          {
+            "path": "knowledge/frameworks/triton-kernels.md",
+            "quote": "若生产者不满足，应比较直接支持 stride、单次重排或改变生产布局的成本。"
+          }
+        ]
+      },
+      "diagnosis": {
+        "assessment": "partial",
+        "reason": "性能诊断表提供竞争解释、观测和反证后的修正；整行 softmax 参考也独立于合并函数。但检查没有实际覆盖非空长度的全 mask 行，空 LSE 使用 None 而非正文的负无穷；所谓 max 补零负对照仅比较两个最大值，没有验证错误 attention 是否被正确性检查拒绝。",
+        "evidence": [
+          {
+            "path": "knowledge/frameworks/triton-kernels.md",
+            "quote": "若驻留未变且无资源限制，该解释缺少支持"
+          },
+          {
+            "path": "knowledge/frameworks/triton-kernels.md",
+            "quote": "随章检查 tools/check_k_fw_007_full.py 用独立整行参考核对分块合并、空块、全空行、非整除尾部和 b=2/e 的 LSE 契约"
+          },
+          {
+            "path": "knowledge/frameworks/triton-kernels.md",
+            "quote": "检查若不能检测这些注入错误，就不能用同一检查证明主路径正确。"
+          }
+        ]
+      }
+    },
+    "findings": [
+      {
+        "id": "K-FW-007-R1-001",
+        "criterion": "algorithm",
+        "evidence": "GEMM 伪代码写为“i<m0+BM 且 k0+k<K 时取 A[m0+i,k0+k]，否则取代数零”和“k0+k<K 且 j<n0+BN 时取 B[k0+k,n0+j]，否则取代数零”。",
+        "impact": "i、j 是 tile 内下标，这两个条件没有约束实际矩阵边界。例如 M=N=5、BM=BN=4、pm=pn=1 时，m0=n0=4，i=j=1 仍满足所写条件，却读取 A[5,k] 和 B[k,5]。最终 store 掩码不能阻止这些越界读取。现有脚本只计算 GEMM 资源，没有执行这些加载。",
+        "blocking": true,
+        "required_revision": "明确局部 i/j/k 的范围，将 A 的有效条件改为 m0+i<M 且 k0+k<K，将 B 的条件改为 k0+k<K 且 n0+j<N；无效位置不得执行输入访问。用非整除 M/N 的访问轨迹或等价的可检查模型验证真实加载范围及输出参考，并确认原错误条件会被检测。"
+      },
+      {
+        "id": "K-FW-007-R1-002",
+        "criterion": "algorithm",
+        "evidence": "同一伪代码先写“若需要 epilogue：在 acc 上逐元素应用 bias、激活或其他已定义变换”，随后写“C[m0+i,n0+j] = epilogue(acc[i,j])”。",
+        "impact": "按步骤执行会应用两次 epilogue。若 epilogue 为加 bias，结果成为 AB+2·bias；SiLU 等非幂等激活同样改变函数。未启用 epilogue 时的写回也没有明确恒等行为。",
+        "blocking": true,
+        "required_revision": "选择在 acc 上变换一次后直接写回，或仅在最终 store 表达式调用一次；明确未启用时为恒等变换。用非零 bias 等非幂等变换核对单次应用的结果。"
+      },
+      {
+        "id": "K-FW-007-R1-003",
+        "criterion": "diagnosis",
+        "evidence": "正文声称检查覆盖“全空行”和“b=2/e 的 LSE 契约”；脚本的非空 scores 只使用 all_visible 和 with_empty_block，全空测试实际调用 direct_attention([], [], [], dv) 与 block_attention([], [], [], 4, 2.0, dv)。两个函数的空返回均为“return [0.0] * dv, True, None”，但执行输出声称“all-masked row and S=0 keep the empty contract”。",
+        "impact": "S=0 没有执行任何局部块，不能证明 S>0 且每块均不可见时的初始化与合并正确。None 也没有验证正文承诺的自然 LSE=-∞。实际退出码 0 不支持该覆盖声明。",
+        "blocking": true,
+        "required_revision": "加入 S>0、visible 全 False 且跨多个块的测试，分别覆盖 b=2/e，并明确核对零输出、empty=True 和自然 LSE=-∞。若测试接口有意用 None 表示空 LSE，须明确适配关系并实际验证对外的负无穷契约；同步修正输出及作者覆盖说明。"
+      },
+      {
+        "id": "K-FW-007-R1-004",
+        "criterion": "diagnosis",
+        "evidence": "正文写“并设置自然指数混用、max 补零等应被拒绝的负对照”。脚本相关检查只有“valid = [-5.0, -3.0]”“assert max(valid) == -3.0”和“assert max(valid + [0.0]) == 0.0”。",
+        "impact": "这只证明最大值发生变化，没有注入被测归约并观察正确性检查拒绝错误。仅改变平移最大值而仍只对有效项计算分子分母，在实数域不会改变 softmax；因此该断言既未证明输出错误，也未证明检测能力。",
+        "blocking": true,
+        "required_revision": "把负对照落实到归约路径并与独立整行参考比较，例如让无效槽错误进入归一化质量，或在声明的浮点域内构造错误零最大值导致有效权重下溢的输入。断言检查确实拒绝错误输出，并说明单纯改变平移常数与错误纳入无效项的区别；准确限定检查结论。"
+      }
+    ],
+    "limitations": [
+      "CPU 标量检查不证明真实 GPU 的内存可见性、barrier 作用域、异步重叠、寄存器分配、spill、实际事务或性能；正文对此边界声明清楚，可保留。",
+      "没有新增目标设备实测、真实低精度路径或 Agent 使用效果证据，不能推导跨设备收益或模型质量结论。",
+      "S-TRITON 仅提供作者核验后的机制说明，未提供允许阅读的上游原文或源码；本次只能核对正文与该说明的一致性。",
+      "本次工具没有本地文件读取或 Python 执行能力；未独立核验文件字节哈希、链接目标存在性或重跑检查。绑定哈希按用户要求原样记录。docs/knowledge-build-workflow.md 与技能文件未提供可读内容，不能声称已阅读。"
+    ],
+    "checks": [
+      {
+        "script": "tools/check_k_fw_007_full.py",
+        "args": []
+      }
+    ],
+    "no_checks_reason": "未独立重跑：当前可用工具不提供本地命令执行。checks 列出的是已审阅脚本及用户提供的 actual_preflight 实际执行记录，不表示本 reviewer 新执行了一次检查。",
+    "reading_scope": "完整阅读用户提供的候选正文、完整 test_script、author_notes 和 actual_preflight 的执行参数、结果及证据身份。以下范围均为所供提取文本的零起点半开字符区间。全文材料：AGENTS.md [0,567)；docs/knowledge-method.md [0,2251)；docs/knowledge-review.md [0,3016)；knowledge/frameworks/triton-kernels.md [0,11982)；knowledge/sources/S-TRITON.md [0,1098)；S-CUDA-BEST.md [0,992)；S-ROCM.md [0,514)；S-TVM.md [0,609)；S-ANSOR.md [0,560)；S-TORCH-NUMERIC.md [0,532)；S-TORCH-CUDA.md [0,1468)，上述七项均位于 knowledge/sources/；knowledge/hardware/cuda-execution.md [0,7299)；knowledge/hardware/rocm-execution.md [0,2454)；knowledge/hardware/cpu-linear-kernels.md [0,4016)；knowledge/hardware/precision-and-kernel-support.md [0,5068)；knowledge/frameworks/compile-dynamic-shapes.md [0,4495)；knowledge/tools/kernel-counter-replay.md [0,3862)；knowledge/tools/statistical-experiments.md [0,4269)；references/S-ROCM/fulltext.txt [0,32330)；references/S-TORCH-NUMERIC/fulltext.txt [0,10998)；tools/check_k_fw_007_full.py 为所供脚本全文，从 import math 至最终 main() 调用。仅摘录材料：knowledge/algorithms/attention-io.md [0,4500)、[8000,12000)；knowledge/hardware/gpu-kernel-pipelines.md [0,4500)、[8000,12000)；knowledge/algorithms/operator-primitives.md [0,2566)、[4000,9934)；references/S-CUDA-BEST/fulltext.txt [40000,48000)、[64000,108711)；references/S-TVM/fulltext.txt [0,36000)、[40000,40711)、[44000,60000)；references/S-ANSOR/fulltext.txt [0,12000)、[16000,40000)、[48000,56712)、[60000,64000)、[72000,76000)；references/S-TORCH-CUDA/fulltext.txt [0,8000)、[16000,20711)、[24000,44000)、[48000,64000)、[76000,80000)。这些摘录不构成全文阅读，未列入 documents。来源时间按所供固定版本和 2026-04-30 cutoff 判断，未引入后续来源事实。",
+    "test_assessment": "提供的 actual_preflight 记录显示绑定脚本在 remote_bwrap 中以隔离 Python 参数执行，returncode=0、stderr 为空、未超时；其 script_sha256 与要求绑定值一致。本 reviewer 审阅该记录但没有独立重跑。direct_attention 独立遍历整行有效集合并计算稳定 softmax，不调用 local_state 或 merge，因此对预先给定 scores 的分块输出和非空 LSE 构成有效参考。固定输入覆盖多种块长、非整除 KV 尾部、有效块之间的空块、b=2/e 和一组极端有限分数。自然指数混用确实作用于合并状态，脚本检测到输出差异，另有可复算的 1.6 与约 1.76159 例子。资源常量、32-bit 回绕及摊销断言支持相应解析算例，但不验证设备行为。脚本未逐块对照 m/ℓ/U 不变量，未计算 QK 或偏置，也没有 GEMM 数值和输入访问实现，故不能发现正文的错误 M/N 掩码或重复 epilogue。S>0 的全 mask 行没有测试，空 LSE 返回 None，没有验证正文负无穷契约。max 补零只检验 max 数值变化，没有检测注入后的归约错误；不能把这部分称为已检测的机制负对照。直接平均分区输出、仅 store 掩码及 autotune 副作用隔离也没有对应执行检查。作者关于未有 GPU 实测的边界合理，但作者和脚本输出关于全 mask 行、空 LSE 契约及 max 补零负对照的覆盖判断需要修正。"
+  },
+  "format_status": "strict_json",
+  "format_error": null,
+  "output_text": "{\n  \"entry_id\": \"K-FW-007\",\n  \"body_sha256\": \"6cbe2ed9c747cf60a923b7ef14c5f25c330a1c011442dea261afd1e4f62c2344\",\n  \"reviewer\": \"sol-reviewer:K-FW-007:round-1\",\n  \"decision\": \"revise\",\n  \"documents\": {\n    \"AGENTS.md\": \"b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a\",\n    \"docs/knowledge-method.md\": \"69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb\",\n    \"docs/knowledge-review.md\": \"f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21\",\n    \"knowledge/frameworks/triton-kernels.md\": \"6cbe2ed9c747cf60a923b7ef14c5f25c330a1c011442dea261afd1e4f62c2344\",\n    \"knowledge/sources/S-TRITON.md\": \"424109f8cee2e62edafdcd161f46190ecece6dcde0107ce42e67c1291801d14f\",\n    \"knowledge/sources/S-CUDA-BEST.md\": \"4b752c1a26f66a195df62be354649f0a6880f733fb365e82e87bdd63bf71d45c\",\n    \"knowledge/sources/S-ROCM.md\": \"a781dedf1327b2478e84466832a80e9bb81605e10ec2535450f472d6dd1d0483\",\n    \"knowledge/sources/S-TVM.md\": \"d75602d9d7690dd48fe0bf97075f6f043094338453854b2dea122e528dd0b4f8\",\n    \"knowledge/sources/S-ANSOR.md\": \"a550bc8f70359ee1b5b8d7085a12e6dc0cd9066d97726ab0abab0acedd9c2509\",\n    \"knowledge/sources/S-TORCH-NUMERIC.md\": \"cbe91153d9ff7bd2f596d1d6c4e15de1ad68571f3cbde23215891a8ec7f6fab4\",\n    \"knowledge/sources/S-TORCH-CUDA.md\": \"8ee61677a1e35d475d9bb122b2c7fa824ccf054acefbe2f12345d72c1fb1b00e\",\n    \"knowledge/hardware/cuda-execution.md\": \"1ce1166d2d3017ec2c6ee9a02f07be615e38d4aca7aca26d270ebcf5559ed14c\",\n    \"knowledge/hardware/rocm-execution.md\": \"90b76df39be1414db25b7b98297de507d3e63fdc49599264d0214fcb60ad62e0\",\n    \"knowledge/hardware/cpu-linear-kernels.md\": \"b4d5391890478b2874f6ea548b154a580a0810356f9cf9cb05248a9d2f728dcc\",\n    \"knowledge/hardware/precision-and-kernel-support.md\": \"7185979b8429b7d44fd34ec0910bbe85c617a457cc4d9d9055920e73d07bc5d3\",\n    \"knowledge/frameworks/compile-dynamic-shapes.md\": \"6f9773875d24bbe32fd80e62cfba4e85f841ec1b65876b513c30d8d9f000b1ef\",\n    \"knowledge/tools/kernel-counter-replay.md\": \"9ecd4279422f94ccc42ffa70aca42d5fbec6e8f61a1182fb5983aebeaccd692d\",\n    \"knowledge/tools/statistical-experiments.md\": \"908b3588a6fa20bb1f2aed9f5db51c4b462953d79f8944cdbcfea7141c74644f\",\n    \"references/S-ROCM/fulltext.txt\": \"f5364f72aaaf3149705e29af60d62c448b0f60b6da9e69a470090c68236af29e\",\n    \"references/S-TORCH-NUMERIC/fulltext.txt\": \"bb6b2d8154a10f8f3b15e5ae4465cbc8d833067046964fc6b4d66dc036131b45\",\n    \"tools/check_k_fw_007_full.py\": \"9c0d043623aa85279e870518c27335c21c863b0f0a4b23dd2c8ae4c1ecf83aab\"\n  },\n  \"criteria\": {\n    \"definition\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"说明块程序的动机、矩阵轴、program 与输出 tile 的关系，并区分逻辑、数学和执行状态。attention 的可见集合、归约统计量、底数转换及空行输出契约可恢复。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/frameworks/triton-kernels.md\",\n          \"quote\": \"BM、BN、BK 是候选配置，不是函数定义；改变它们仍可计算同一 C，但会改变块数、每块资源、重复读取和尾部浪费。\"\n        },\n        {\n          \"path\": \"knowledge/frameworks/triton-kernels.md\",\n          \"quote\": \"本章采用输出零向量、空标志为真、自然 LSE 为负无穷的契约\"\n        }\n      ]\n    },\n    \"legality\": {\n      \"assessment\": \"partial\",\n      \"reason\": \"写者唯一性、完整归约域、stride、资源和数值契约均有明确条件，也区分候选剪枝与数学合法性；但实际交付的 GEMM 输入掩码不满足正文规定的越界保护条件。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/frameworks/triton-kernels.md\",\n          \"quote\": \"所有可能越界的加载、预取和写出都在实际地址生成前或访问时被掩码保护；只在最后写回时掩码不能保护输入读取。\"\n        },\n        {\n          \"path\": \"knowledge/frameworks/triton-kernels.md\",\n          \"quote\": \"i<m0+BM 且 k0+k<K 时取 A[m0+i,k0+k]，否则取代数零\"\n        }\n      ]\n    },\n    \"algorithm\": {\n      \"assessment\": \"partial\",\n      \"reason\": \"attention 的空状态、逐块合并和底数一致性基本正确，生产完成与最后读者完成也有区分。但 GEMM 的 M/N 输入边界判断错误，且 epilogue 在更新 acc 后又于写回时调用，不能作为正确的完整块程序交付。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/frameworks/triton-kernels.md\",\n          \"quote\": \"k0+k<K 且 j<n0+BN 时取 B[k0+k,n0+j]，否则取代数零\"\n        },\n        {\n          \"path\": \"knowledge/frameworks/triton-kernels.md\",\n          \"quote\": \"若需要 epilogue：在 acc 上逐元素应用 bias、激活或其他已定义变换\"\n        },\n        {\n          \"path\": \"knowledge/frameworks/triton-kernels.md\",\n          \"quote\": \"C[m0+i,n0+j] = epilogue(acc[i,j])\"\n        }\n      ]\n    },\n    \"cost\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"计算主项、请求字节、唯一输入字节、缓冲容量和累加器容量分开计量。两组 tile 的 KiB、每线程累加值与读取总量均可复算；融合成本考虑外部消费者、重算、驻留和跨 block 交换，调优摊销单位正确，没有将资源估计冒充实测时间。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/frameworks/triton-kernels.md\",\n          \"quote\": \"这只是容量，不是额外读取字节。\"\n        },\n        {\n          \"path\": \"knowledge/frameworks/triton-kernels.md\",\n          \"quote\": \"方案 A 请求 16×3×6 KiB=288 KiB 的 A/B tile 读取，方案 B 请求 4×3×12 KiB=144 KiB\"\n        },\n        {\n          \"path\": \"knowledge/frameworks/triton-kernels.md\",\n          \"quote\": \"若该中间量仍被另一个消费者使用，就只能省去本消费者的读取，写出仍须保留。\"\n        }\n      ]\n    },\n    \"adaptation\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"解释短输入候选耗尽、布局与存储偏移变化、跨平台资源变化、数值路径变化以及副作用调优如何改变选择，并给出调整候选、padding、重排或通用后端等有条件的处理方式。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/frameworks/triton-kernels.md\",\n          \"quote\": \"此时必须提供满足新域的候选、带正确掩码的 padding 路径或语义等价的通用后端\"\n        },\n        {\n          \"path\": \"knowledge/frameworks/triton-kernels.md\",\n          \"quote\": \"应使用相同初始状态比较候选，或把可安全调优的纯计算段与一次性状态提交分开。\"\n        },\n        {\n          \"path\": \"knowledge/frameworks/triton-kernels.md\",\n          \"quote\": \"若生产者不满足，应比较直接支持 stride、单次重排或改变生产布局的成本。\"\n        }\n      ]\n    },\n    \"diagnosis\": {\n      \"assessment\": \"partial\",\n      \"reason\": \"性能诊断表提供竞争解释、观测和反证后的修正；整行 softmax 参考也独立于合并函数。但检查没有实际覆盖非空长度的全 mask 行，空 LSE 使用 None 而非正文的负无穷；所谓 max 补零负对照仅比较两个最大值，没有验证错误 attention 是否被正确性检查拒绝。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/frameworks/triton-kernels.md\",\n          \"quote\": \"若驻留未变且无资源限制，该解释缺少支持\"\n        },\n        {\n          \"path\": \"knowledge/frameworks/triton-kernels.md\",\n          \"quote\": \"随章检查 tools/check_k_fw_007_full.py 用独立整行参考核对分块合并、空块、全空行、非整除尾部和 b=2/e 的 LSE 契约\"\n        },\n        {\n          \"path\": \"knowledge/frameworks/triton-kernels.md\",\n          \"quote\": \"检查若不能检测这些注入错误，就不能用同一检查证明主路径正确。\"\n        }\n      ]\n    }\n  },\n  \"findings\": [\n    {\n      \"id\": \"K-FW-007-R1-001\",\n      \"criterion\": \"algorithm\",\n      \"evidence\": \"GEMM 伪代码写为“i<m0+BM 且 k0+k<K 时取 A[m0+i,k0+k]，否则取代数零”和“k0+k<K 且 j<n0+BN 时取 B[k0+k,n0+j]，否则取代数零”。\",\n      \"impact\": \"i、j 是 tile 内下标，这两个条件没有约束实际矩阵边界。例如 M=N=5、BM=BN=4、pm=pn=1 时，m0=n0=4，i=j=1 仍满足所写条件，却读取 A[5,k] 和 B[k,5]。最终 store 掩码不能阻止这些越界读取。现有脚本只计算 GEMM 资源，没有执行这些加载。\",\n      \"blocking\": true,\n      \"required_revision\": \"明确局部 i/j/k 的范围，将 A 的有效条件改为 m0+i<M 且 k0+k<K，将 B 的条件改为 k0+k<K 且 n0+j<N；无效位置不得执行输入访问。用非整除 M/N 的访问轨迹或等价的可检查模型验证真实加载范围及输出参考，并确认原错误条件会被检测。\"\n    },\n    {\n      \"id\": \"K-FW-007-R1-002\",\n      \"criterion\": \"algorithm\",\n      \"evidence\": \"同一伪代码先写“若需要 epilogue：在 acc 上逐元素应用 bias、激活或其他已定义变换”，随后写“C[m0+i,n0+j] = epilogue(acc[i,j])”。\",\n      \"impact\": \"按步骤执行会应用两次 epilogue。若 epilogue 为加 bias，结果成为 AB+2·bias；SiLU 等非幂等激活同样改变函数。未启用 epilogue 时的写回也没有明确恒等行为。\",\n      \"blocking\": true,\n      \"required_revision\": \"选择在 acc 上变换一次后直接写回，或仅在最终 store 表达式调用一次；明确未启用时为恒等变换。用非零 bias 等非幂等变换核对单次应用的结果。\"\n    },\n    {\n      \"id\": \"K-FW-007-R1-003\",\n      \"criterion\": \"diagnosis\",\n      \"evidence\": \"正文声称检查覆盖“全空行”和“b=2/e 的 LSE 契约”；脚本的非空 scores 只使用 all_visible 和 with_empty_block，全空测试实际调用 direct_attention([], [], [], dv) 与 block_attention([], [], [], 4, 2.0, dv)。两个函数的空返回均为“return [0.0] * dv, True, None”，但执行输出声称“all-masked row and S=0 keep the empty contract”。\",\n      \"impact\": \"S=0 没有执行任何局部块，不能证明 S>0 且每块均不可见时的初始化与合并正确。None 也没有验证正文承诺的自然 LSE=-∞。实际退出码 0 不支持该覆盖声明。\",\n      \"blocking\": true,\n      \"required_revision\": \"加入 S>0、visible 全 False 且跨多个块的测试，分别覆盖 b=2/e，并明确核对零输出、empty=True 和自然 LSE=-∞。若测试接口有意用 None 表示空 LSE，须明确适配关系并实际验证对外的负无穷契约；同步修正输出及作者覆盖说明。\"\n    },\n    {\n      \"id\": \"K-FW-007-R1-004\",\n      \"criterion\": \"diagnosis\",\n      \"evidence\": \"正文写“并设置自然指数混用、max 补零等应被拒绝的负对照”。脚本相关检查只有“valid = [-5.0, -3.0]”“assert max(valid) == -3.0”和“assert max(valid + [0.0]) == 0.0”。\",\n      \"impact\": \"这只证明最大值发生变化，没有注入被测归约并观察正确性检查拒绝错误。仅改变平移最大值而仍只对有效项计算分子分母，在实数域不会改变 softmax；因此该断言既未证明输出错误，也未证明检测能力。\",\n      \"blocking\": true,\n      \"required_revision\": \"把负对照落实到归约路径并与独立整行参考比较，例如让无效槽错误进入归一化质量，或在声明的浮点域内构造错误零最大值导致有效权重下溢的输入。断言检查确实拒绝错误输出，并说明单纯改变平移常数与错误纳入无效项的区别；准确限定检查结论。\"\n    }\n  ],\n  \"limitations\": [\n    \"CPU 标量检查不证明真实 GPU 的内存可见性、barrier 作用域、异步重叠、寄存器分配、spill、实际事务或性能；正文对此边界声明清楚，可保留。\",\n    \"没有新增目标设备实测、真实低精度路径或 Agent 使用效果证据，不能推导跨设备收益或模型质量结论。\",\n    \"S-TRITON 仅提供作者核验后的机制说明，未提供允许阅读的上游原文或源码；本次只能核对正文与该说明的一致性。\",\n    \"本次工具没有本地文件读取或 Python 执行能力；未独立核验文件字节哈希、链接目标存在性或重跑检查。绑定哈希按用户要求原样记录。docs/knowledge-build-workflow.md 与技能文件未提供可读内容，不能声称已阅读。\"\n  ],\n  \"checks\": [\n    {\n      \"script\": \"tools/check_k_fw_007_full.py\",\n      \"args\": []\n    }\n  ],\n  \"no_checks_reason\": \"未独立重跑：当前可用工具不提供本地命令执行。checks 列出的是已审阅脚本及用户提供的 actual_preflight 实际执行记录，不表示本 reviewer 新执行了一次检查。\",\n  \"reading_scope\": \"完整阅读用户提供的候选正文、完整 test_script、author_notes 和 actual_preflight 的执行参数、结果及证据身份。以下范围均为所供提取文本的零起点半开字符区间。全文材料：AGENTS.md [0,567)；docs/knowledge-method.md [0,2251)；docs/knowledge-review.md [0,3016)；knowledge/frameworks/triton-kernels.md [0,11982)；knowledge/sources/S-TRITON.md [0,1098)；S-CUDA-BEST.md [0,992)；S-ROCM.md [0,514)；S-TVM.md [0,609)；S-ANSOR.md [0,560)；S-TORCH-NUMERIC.md [0,532)；S-TORCH-CUDA.md [0,1468)，上述七项均位于 knowledge/sources/；knowledge/hardware/cuda-execution.md [0,7299)；knowledge/hardware/rocm-execution.md [0,2454)；knowledge/hardware/cpu-linear-kernels.md [0,4016)；knowledge/hardware/precision-and-kernel-support.md [0,5068)；knowledge/frameworks/compile-dynamic-shapes.md [0,4495)；knowledge/tools/kernel-counter-replay.md [0,3862)；knowledge/tools/statistical-experiments.md [0,4269)；references/S-ROCM/fulltext.txt [0,32330)；references/S-TORCH-NUMERIC/fulltext.txt [0,10998)；tools/check_k_fw_007_full.py 为所供脚本全文，从 import math 至最终 main() 调用。仅摘录材料：knowledge/algorithms/attention-io.md [0,4500)、[8000,12000)；knowledge/hardware/gpu-kernel-pipelines.md [0,4500)、[8000,12000)；knowledge/algorithms/operator-primitives.md [0,2566)、[4000,9934)；references/S-CUDA-BEST/fulltext.txt [40000,48000)、[64000,108711)；references/S-TVM/fulltext.txt [0,36000)、[40000,40711)、[44000,60000)；references/S-ANSOR/fulltext.txt [0,12000)、[16000,40000)、[48000,56712)、[60000,64000)、[72000,76000)；references/S-TORCH-CUDA/fulltext.txt [0,8000)、[16000,20711)、[24000,44000)、[48000,64000)、[76000,80000)。这些摘录不构成全文阅读，未列入 documents。来源时间按所供固定版本和 2026-04-30 cutoff 判断，未引入后续来源事实。\",\n  \"test_assessment\": \"提供的 actual_preflight 记录显示绑定脚本在 remote_bwrap 中以隔离 Python 参数执行，returncode=0、stderr 为空、未超时；其 script_sha256 与要求绑定值一致。本 reviewer 审阅该记录但没有独立重跑。direct_attention 独立遍历整行有效集合并计算稳定 softmax，不调用 local_state 或 merge，因此对预先给定 scores 的分块输出和非空 LSE 构成有效参考。固定输入覆盖多种块长、非整除 KV 尾部、有效块之间的空块、b=2/e 和一组极端有限分数。自然指数混用确实作用于合并状态，脚本检测到输出差异，另有可复算的 1.6 与约 1.76159 例子。资源常量、32-bit 回绕及摊销断言支持相应解析算例，但不验证设备行为。脚本未逐块对照 m/ℓ/U 不变量，未计算 QK 或偏置，也没有 GEMM 数值和输入访问实现，故不能发现正文的错误 M/N 掩码或重复 epilogue。S>0 的全 mask 行没有测试，空 LSE 返回 None，没有验证正文负无穷契约。max 补零只检验 max 数值变化，没有检测注入后的归约错误；不能把这部分称为已检测的机制负对照。直接平均分区输出、仅 store 掩码及 autotune 副作用隔离也没有对应执行检查。作者关于未有 GPU 实测的边界合理，但作者和脚本输出关于全 mask 行、空 LSE 契约及 max 补零负对照的覆盖判断需要修正。\"\n}",
+  "elapsed_seconds": 224.109
+}

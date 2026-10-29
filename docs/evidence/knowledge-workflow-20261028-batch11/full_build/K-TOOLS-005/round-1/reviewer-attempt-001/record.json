@@ -1,0 +1,292 @@
+{
+  "role": "reviewer",
+  "engine": "sol",
+  "requested_model": "gpt-6.1-sol",
+  "reasoning_effort": "high",
+  "prompt_sha256": "d7412c4f4cdd7e0376284124ab3b2383bd1345a9d8aea02a4dc2f905ca02c91f",
+  "usage": [
+    {
+      "input_tokens": 966474,
+      "cached_input_tokens": 780160,
+      "cache_write_input_tokens": 0,
+      "output_tokens": 7072,
+      "reasoning_output_tokens": 2008
+    }
+  ],
+  "answer": "{\n  \"entry_id\": \"K-TOOLS-005\",\n  \"body_sha256\": \"93802f4a824835894fc975ba75b452de337ebeea7a68bff6ec0ef4ff2a2e0556\",\n  \"reviewer\": \"sol-reviewer:K-TOOLS-005:round-1\",\n  \"decision\": \"revise\",\n  \"documents\": {\n    \"AGENTS.md\": \"b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a\",\n    \"docs/knowledge-method.md\": \"69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb\",\n    \"docs/knowledge-review.md\": \"f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21\",\n    \"knowledge/tools/failure-evidence.md\": \"93802f4a824835894fc975ba75b452de337ebeea7a68bff6ec0ef4ff2a2e0556\",\n    \"knowledge/sources/S-PY-SUBPROCESS.md\": \"a466b22c1b51e2d1612328903406712c1e30d38770a6510d96a3937ff1bede32\",\n    \"knowledge/sources/S-CUDA-ASYNC.md\": \"40df9287d0648a8ef55a046ceb1c18dd402619ede6e57ca33d3f90e4ace3da05\",\n    \"knowledge/sources/S-TORCH-NUMERIC.md\": \"cbe91153d9ff7bd2f596d1d6c4e15de1ad68571f3cbde23215891a8ec7f6fab4\",\n    \"knowledge/sources/S-LINUX-RESOURCES.md\": \"d829824442f5a9abd36c3caf63c5fd30da8da4f8839db88e33aa045b7baa05f0\",\n    \"knowledge/sources/S-RDMA.md\": \"660948886af9019ac90e6c58ab7b2a4ca9dbf282f1bb74de37162403f24f4d49\",\n    \"knowledge/sources/S-LINUX-IO.md\": \"786caae53cc1e80173616ce470c481145e285c2176b7cff4777576cc893fc316\",\n    \"knowledge/system-semantics/evidence-and-independent-checks.md\": \"50b7c97de928be322713ef149fb734c0c20acda17c4a321c46a198b0019831be\",\n    \"knowledge/tools/correctness-oracles.md\": \"c2f88bc9746ac25586fc6700aaf0f5a8d043a1b1f4aee99dfdee02e1ef468aab\",\n    \"knowledge/system-semantics/serving-recovery.md\": \"f551fa1f1e6213469c856a880839eefff504fb39f4dd692000b2df80a20a7f5e\",\n    \"knowledge/system-semantics/storage-services.md\": \"283ceab23fbbf5c27bbb4486b56c2123459a19a00229c5baae70d09c18062661\",\n    \"knowledge/system-semantics/deployment-environment.md\": \"1b47e39a7f36c9f1cba4dc1792ad9243fd69d083ae1d6a7bb13bfd80dae1a8a5\",\n    \"knowledge/tools/statistical-experiments.md\": \"908b3588a6fa20bb1f2aed9f5db51c4b462953d79f8944cdbcfea7141c74644f\",\n    \"knowledge/system-semantics/tenant-isolation.md\": \"0ca7501a80e750152a5fb3b9815c77f9e3f9aa393ff7546b3f05375958f88606\",\n    \"references/S-TORCH-NUMERIC/fulltext.txt\": \"bb6b2d8154a10f8f3b15e5ae4465cbc8d833067046964fc6b4d66dc036131b45\",\n    \"references/S-RDMA/fulltext.txt\": \"9f4bea8bc130fc7dcdf0b53d20ce7269555cddd2a7c67e5d54c6dbd7a55b2720\",\n    \"references/S-LINUX-IO/fulltext.txt\": \"d6da925f1c90da275de1e6aa94a179a3273ad342fe77b61608a8b77fa75c3495\",\n    \"tools/check_k_tools_005_full.py\": \"923886ceaea20d49bd1fc4423d15013a7fbed3c56eca90ad2767b7c4c0dd58d0\"\n  },\n  \"criteria\": {\n    \"definition\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"运行身份、观测事件、契约义务与失败证书均有明确组成，区分执行事实与观测、退出与正确性，以及确认、未知和 oracle 无效等状态。定义足以支撑本章诊断对象；下述缺口发生在这些状态的算法交付。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/tools/failure-evidence.md\",\n          \"quote\": \"契约 `Φ` 由若干义务 `φ=(pred,scope,checkpoint,evidence)` 组成：在哪个作用域、哪个边界检查什么谓词，以及需要什么证据。\"\n        },\n        {\n          \"path\": \"knowledge/tools/failure-evidence.md\",\n          \"quote\": \"缺少一条记录只能在覆盖和身份完整的范围内支持“该域未观察到”，不能直接证明“没有发生”。\"\n        }\n      ]\n    },\n    \"legality\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"缩减需同时保持失败类别、机制关系、观测覆盖和 oracle 身份，清楚区别合法条件与采样、同步、注入等方案选择。subprocess 超时、POSIX 信号、RDMA 完成与通知、块层乱序完成的主要论断与所供文档一致。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/tools/failure-evidence.md\",\n          \"quote\": \"足以观察失败的边界，而不是删掉观测点后把错误变成未观察；\"\n        },\n        {\n          \"path\": \"knowledge/tools/failure-evidence.md\",\n          \"quote\": \"oracle、版本和单位不变，或者明确声明这是一次新的实验。\"\n        }\n      ]\n    },\n    \"algorithm\": {\n      \"assessment\": \"partial\",\n      \"reason\": \"两段伪代码已展开输入、循环、状态与退出，但 oracle 无效集合没有进入最终输出，最小化中的未知记录和最终合法性检查未闭合。交付 Python 的前沿计算还遗漏检查点自身的覆盖缺口；现有成功预检未覆盖这些分支。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/tools/failure-evidence.md\",\n          \"quote\": \"把它记入 OrcaleInvalid，停止对该义务作引擎归因\"\n        },\n        {\n          \"path\": \"knowledge/tools/failure-evidence.md\",\n          \"quote\": \"返回 D、Unknown、C 及每条路径的证书\"\n        },\n        {\n          \"path\": \"knowledge/tools/failure-evidence.md\",\n          \"quote\": \"若仍产生同类 F 且保持 P，则 current 不是 1-极小，继续缩减\"\n        }\n      ]\n    },\n    \"cost\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"解释记录处理、日志字节量、同步、锁与带宽争用、证据驻留、环境准备和反复 oracle 调用成本，并明确重叠与墙钟影响的条件。20000×256=5120000 字节，1000 次为5120000000字节，十进制 MB/GB 算例正确；容量注入关系明确限定为粗略且受瓶颈条件约束，未冒充实测。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/tools/failure-evidence.md\",\n          \"quote\": \"真正的墙钟影响取决于这些工作是否与计算重叠、是否争用同一锁或同一带宽。\"\n        },\n        {\n          \"path\": \"knowledge/tools/failure-evidence.md\",\n          \"quote\": \"每次运行还包含环境准备、预热、超时等待、清理和可能的故障注入影响，因此不能只用内核执行时间估算复现成本。\"\n        }\n      ]\n    },\n    \"adaptation\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"对异步执行、竞态、数值契约、执行组、采样与生产注入分别说明保留项、调整方式和放弃信号。对取消后的物理复用保留最后访问结束条件，并链接相应资源生命期章节；本章无需承担模型逐层前向算法。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/tools/failure-evidence.md\",\n          \"quote\": \"无法证明旧访问已结束时，不能复用被注入对象\"\n        },\n        {\n          \"path\": \"knowledge/tools/failure-evidence.md\",\n          \"quote\": \"严格审计要求每次尝试都能追溯时，不能只保留最终成功请求；允许重放的临时实验可以删除部分状态，但删除后必须改变结论的范围。\"\n        }\n      ]\n    },\n    \"diagnosis\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"竞争解释配有可控干预、差异预测与修正方向，覆盖报告点和触发点、OOM与外部信号、数值路径、通信后果链及采集缺失。明确区分设计与已执行实验，没有把设备验证缺失包装为通过。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/tools/failure-evidence.md\",\n          \"quote\": \"竞争解释必须给出不同预测。若两个解释对同一干预给出相同结果，这个干预就没有区分力。\"\n        },\n        {\n          \"path\": \"knowledge/tools/failure-evidence.md\",\n          \"quote\": \"若所有候选解释都被反证，正确输出是未解决和所需证据，而不是任选一个最方便的标签。\"\n        }\n      ]\n    }\n  },\n  \"findings\": [\n    {\n      \"id\": \"K-TOOLS-005-ALG-001\",\n      \"criterion\": \"algorithm\",\n      \"evidence\": \"knowledge/tools/failure-evidence.md 将不匹配义务“把它记入 OrcaleInvalid，停止对该义务作引擎归因”，但最终只有“返回 D、Unknown、C 及每条路径的证书”；报告分支只检查“若 D 为空且 Unknown 为空”。\",\n      \"impact\": \"当所有义务都因版本或单位不匹配而无效时，Bad 与 Unknown 均为空，算法仍进入未发现失败分支，且返回值没有携带无效义务。这丢失了正文明确要求保留的 oracle 无效状态，使调用者无法区别有效检查未发现失败与根本未形成有效比较。\",\n      \"blocking\": true,\n      \"required_revision\": \"将 oracle 无效集合和对应理由纳入返回结果与汇总状态；无效义务不得计入已完成有效检查。补充仅含无效义务及有效、无效义务混合的检查，确认其不会被汇总为全部有效且未发现失败。\"\n    },\n    {\n      \"id\": \"K-TOOLS-005-ALG-002\",\n      \"criterion\": \"algorithm\",\n      \"evidence\": \"knowledge/tools/failure-evidence.md 初始化“current=C0；accepted=空；rejected=空；unknown=空”，遇到未知时仅执行“rejected 加入 t，原因记为证据不完整”；最终检查却是“若仍产生同类 F 且保持 P，则 current 不是 1-极小，继续缩减”。\",\n      \"impact\": \"unknown 从未更新。一个保持 F 与 P、但覆盖变差的候选会在主循环被拒绝，又在最终检查中被要求继续缩减；相同候选可反复触发这一矛盾。无法观察的单步删除也不能证明不存在合法缩减，却可能随空 unknown 输出形成无条件的1-极小结论。\",\n      \"blocking\": true,\n      \"required_revision\": \"统一主循环和最终复核的完整接受谓词，包含身份、覆盖和未知状态；记录未知候选及其所属 current 版本。存在无法判定的单步删除时，返回未完成的极小性证明及预算边界，或明确限定为已判定删除集合内的结果，避免无进展循环。加入覆盖变差和无法观察两类受控候选检查。\"\n    },\n    {\n      \"id\": \"K-TOOLS-005-ALG-003\",\n      \"criterion\": \"algorithm\",\n      \"evidence\": \"正文要求“若覆盖不足、时钟映射未知或对象代次无法对应，则放入 `Unknown`，而不是把它当作通过。”但 tools/check_k_tools_005_full.py 的 earliest_frontier 仅检查“if any(byid[a].coverage_gap for a in anc):”，未检查 v.coverage_gap；现有 gap 用例只把缺口放在另一个前驱事件。\",\n      \"impact\": \"对单个 violation=True、coverage_gap=True 且没有前驱的检查点，交付逻辑返回该点为确认前沿、unknown为空。独立V8反例已复现这一错误，而所供预检仍能成功，说明当前检查不能支持其宣称的检查点覆盖规则。\",\n      \"blocking\": true,\n      \"required_revision\": \"在前沿模型中先校验检查点自身证据，再校验因果过去；自身覆盖不足必须输出 UNKNOWN。增加独立固定预期的自身缺口用例，并验证故意忽略自身覆盖的变体会被拒绝；保留现有前驱缺口与多前沿检查。\"\n    }\n  ],\n  \"limitations\": [\n    \"未执行目标 GPU、cgroup、RDMA、块设备、网络或跨 rank 故障实验；正文对这些边界的限制声明合理，不因缺少实测另列内容缺陷。\",\n    \"logits 检查只比较固定序列的 argmax，不能证明随机采样分布、真实生成轨迹、任务质量或模型内部首次数值偏离。\",\n    \"本次没有命令执行和文件读取工具，未自行重跑 Python、重新计算磁盘哈希或验证链接目标存在性；文档身份使用提供的绑定值，相对链接仅作文本核对。\",\n    \"未能读取本地 infraagents-knowledge-build 技能文件；审查依据为完整提供的方法、审查规则和材料范围，未声称执行该技能工作流。\"\n  ],\n  \"checks\": [\n    {\n      \"script\": \"tools/check_k_tools_005_full.py\",\n      \"args\": []\n    }\n  ],\n  \"no_checks_reason\": \"\",\n  \"reading_scope\": \"完整阅读所供 AGENTS.md、docs/knowledge-method.md、docs/knowledge-review.md、候选正文、六份来源说明，以及 documents 中列出的七份相关完整章节；完整阅读 references/S-TORCH-NUMERIC/fulltext.txt [0,10998)、references/S-RDMA/fulltext.txt [0,25147)、references/S-LINUX-IO/fulltext.txt [0,52366) 和候选完整 Python 脚本。其余仅阅读所供摘录，字符范围均为零基半开区间：collective-ordering.md [0,3914)、[16000,19813)；cancellation-resource-completion.md [0,4000)、[12000,15727)；service-protocol.md [0,4000)、[12000,15727)；trace-observability.md [0,885)、[12000,18842)；S-PY-SUBPROCESS 原文 [0,40210)、[48000,62026)；S-CUDA-ASYNC 原文 [68000,72000)、[208000,212000)、[284000,288000)、[456000,460000)、[500000,504000)、[516000,536000)、[552000,554237)、[580000,584000)、[588000,592000)、[752000,756000)；S-LINUX-RESOURCES 原文 [0,6236)、[8000,12000)、[16000,20000)、[44000,68000)、[72000,76000)、[84000,88000)、[116000,124000)。摘录文件未列入 documents，不声称通读其完整原文。未读取源码归档或递归阅读相关章节的全部来源。\",\n  \"test_assessment\": \"所供 actual_preflight 记录绑定当前脚本哈希，remote_bwrap 中以 Python 3.12 实际执行，returncode=0、stderr为空，输出 RESULT scoped_checks_ok；这是协调者提供的执行证据，不是本审阅者重跑结果。作者称编写时未运行脚本，与随后协调者预检并不矛盾。静态检查发现：前沿用例有固定预期与非极小前沿不变量，能拒绝最后时间戳归因；进程用例核对部分固定接口事实，但 process_claim_ok 复用 process_facts，不是实际 subprocess 行为实验，正退出码路径也未实际调用；数值用例以手算预期0和1区分逐位与argmax差异；最小化检查遍历剩余单步删除，并拒绝丢失失败的缩减器，对删除合法性有辨别力，但 race_outcome 本身是给定布尔模型，不模拟真实重叠写。前沿验证器同时复用被测前沿函数，因此现有负对照不能替代遗漏分支的独立预期。本审阅者实际在 functions.exec 的V8中执行了交付前沿逻辑的对应转写，并以独立覆盖契约检查自身缺口反例：预期 frontier=[]、unknown=[uncovered_checkpoint]，实际 frontier=[uncovered_checkpoint]、unknown=[]，缺陷被检出；这不是 Python 文件执行。另在V8中检查 oracle-invalid-only 的报告条件，以及 F、P成立而覆盖变差时主循环与最终复核谓词不一致。上述反例直接针对本章覆盖和状态交付机制。成本算例独立复算正确；检查脚本没有验证成本公式或真实观测扰动，不能据其退出0推断这些效果。\"\n}",
+  "exit_code": 0,
+  "status": "completed",
+  "timeout_seconds": 1800,
+  "response_path": "D:\\桌面\\xdb\\InfraAgents\\InfraAgents-know-astra-new\\InfraAgents-know\\docs\\evidence\\knowledge-workflow-20261028-batch11\\full_build\\K-TOOLS-005\\round-1\\reviewer-attempt-001\\answer.txt",
+  "record_path": "D:\\桌面\\xdb\\InfraAgents\\InfraAgents-know-astra-new\\InfraAgents-know\\docs\\evidence\\knowledge-workflow-20261028-batch11\\full_build\\K-TOOLS-005\\round-1\\reviewer-attempt-001\\record.json",
+  "tool_events": [
+    {
+      "type": "item.completed",
+      "item": {
+        "id": "item_1",
+        "type": "mcp_tool_call",
+        "server": "codex",
+        "tool": "list_mcp_resources",
+        "arguments": {},
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"resources\":[]}"
+            }
+          ],
+          "structured_content": null
+        },
+        "error": null,
+        "status": "completed"
+      }
+    },
+    {
+      "type": "item.completed",
+      "item": {
+        "id": "item_2",
+        "type": "mcp_tool_call",
+        "server": "codex",
+        "tool": "list_mcp_resource_templates",
+        "arguments": {},
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"resourceTemplates\":[]}"
+            }
+          ],
+          "structured_content": null
+        },
+        "error": null,
+        "status": "completed"
+      }
+    }
+  ],
+  "inventory_tool_events": [
+    {
+      "type": "item.completed",
+      "item": {
+        "id": "item_1",
+        "type": "mcp_tool_call",
+        "server": "codex",
+        "tool": "list_mcp_resources",
+        "arguments": {},
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"resources\":[]}"
+            }
+          ],
+          "structured_content": null
+        },
+        "error": null,
+        "status": "completed"
+      }
+    },
+    {
+      "type": "item.completed",
+      "item": {
+        "id": "item_2",
+        "type": "mcp_tool_call",
+        "server": "codex",
+        "tool": "list_mcp_resource_templates",
+        "arguments": {},
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"resourceTemplates\":[]}"
+            }
+          ],
+          "structured_content": null
+        },
+        "error": null,
+        "status": "completed"
+      }
+    }
+  ],
+  "rejected_tool_events": [],
+  "tool_policy": "metadata_inventory_only",
+  "tool_policy_version": "metadata-inventory-v1",
+  "tool_policy_scope": "Only empty-argument codex host plugin/skill-directory descriptors and empty template inventory; inventory is not knowledge evidence. All other tool events reject the call.",
+  "tool_policy_reason": "Production chapter construction allows observed generic capability discovery metadata; this does not claim a zero-tool comparison or external source reading.",
+  "malformed_event_lines": [],
+  "turn_completed": true,
+  "error_events": [],
+  "recovered_transport_events": [],
+  "terminal_error_events": [],
+  "transport_recovered": false,
+  "actual_model": null,
+  "identity_verified": null,
+  "identity_basis": "Explicit CLI model and isolated HTTP provider; CLI events do not expose server model identity.",
+  "provider": "eval-openai-http",
+  "max_output_tokens": null,
+  "cli_version": "codex-cli 0.164.0-alpha.11.1",
+  "cost_scope": "Codex token usage is reported; subscription charge is not exposed.",
+  "parsed": {
+    "entry_id": "K-TOOLS-005",
+    "body_sha256": "93802f4a824835894fc975ba75b452de337ebeea7a68bff6ec0ef4ff2a2e0556",
+    "reviewer": "sol-reviewer:K-TOOLS-005:round-1",
+    "decision": "revise",
+    "documents": {
+      "AGENTS.md": "b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a",
+      "docs/knowledge-method.md": "69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb",
+      "docs/knowledge-review.md": "f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21",
+      "knowledge/tools/failure-evidence.md": "93802f4a824835894fc975ba75b452de337ebeea7a68bff6ec0ef4ff2a2e0556",
+      "knowledge/sources/S-PY-SUBPROCESS.md": "a466b22c1b51e2d1612328903406712c1e30d38770a6510d96a3937ff1bede32",
+      "knowledge/sources/S-CUDA-ASYNC.md": "40df9287d0648a8ef55a046ceb1c18dd402619ede6e57ca33d3f90e4ace3da05",
+      "knowledge/sources/S-TORCH-NUMERIC.md": "cbe91153d9ff7bd2f596d1d6c4e15de1ad68571f3cbde23215891a8ec7f6fab4",
+      "knowledge/sources/S-LINUX-RESOURCES.md": "d829824442f5a9abd36c3caf63c5fd30da8da4f8839db88e33aa045b7baa05f0",
+      "knowledge/sources/S-RDMA.md": "660948886af9019ac90e6c58ab7b2a4ca9dbf282f1bb74de37162403f24f4d49",
+      "knowledge/sources/S-LINUX-IO.md": "786caae53cc1e80173616ce470c481145e285c2176b7cff4777576cc893fc316",
+      "knowledge/system-semantics/evidence-and-independent-checks.md": "50b7c97de928be322713ef149fb734c0c20acda17c4a321c46a198b0019831be",
+      "knowledge/tools/correctness-oracles.md": "c2f88bc9746ac25586fc6700aaf0f5a8d043a1b1f4aee99dfdee02e1ef468aab",
+      "knowledge/system-semantics/serving-recovery.md": "f551fa1f1e6213469c856a880839eefff504fb39f4dd692000b2df80a20a7f5e",
+      "knowledge/system-semantics/storage-services.md": "283ceab23fbbf5c27bbb4486b56c2123459a19a00229c5baae70d09c18062661",
+      "knowledge/system-semantics/deployment-environment.md": "1b47e39a7f36c9f1cba4dc1792ad9243fd69d083ae1d6a7bb13bfd80dae1a8a5",
+      "knowledge/tools/statistical-experiments.md": "908b3588a6fa20bb1f2aed9f5db51c4b462953d79f8944cdbcfea7141c74644f",
+      "knowledge/system-semantics/tenant-isolation.md": "0ca7501a80e750152a5fb3b9815c77f9e3f9aa393ff7546b3f05375958f88606",
+      "references/S-TORCH-NUMERIC/fulltext.txt": "bb6b2d8154a10f8f3b15e5ae4465cbc8d833067046964fc6b4d66dc036131b45",
+      "references/S-RDMA/fulltext.txt": "9f4bea8bc130fc7dcdf0b53d20ce7269555cddd2a7c67e5d54c6dbd7a55b2720",
+      "references/S-LINUX-IO/fulltext.txt": "d6da925f1c90da275de1e6aa94a179a3273ad342fe77b61608a8b77fa75c3495",
+      "tools/check_k_tools_005_full.py": "923886ceaea20d49bd1fc4423d15013a7fbed3c56eca90ad2767b7c4c0dd58d0"
+    },
+    "criteria": {
+      "definition": {
+        "assessment": "sufficient",
+        "reason": "运行身份、观测事件、契约义务与失败证书均有明确组成，区分执行事实与观测、退出与正确性，以及确认、未知和 oracle 无效等状态。定义足以支撑本章诊断对象；下述缺口发生在这些状态的算法交付。",
+        "evidence": [
+          {
+            "path": "knowledge/tools/failure-evidence.md",
+            "quote": "契约 `Φ` 由若干义务 `φ=(pred,scope,checkpoint,evidence)` 组成：在哪个作用域、哪个边界检查什么谓词，以及需要什么证据。"
+          },
+          {
+            "path": "knowledge/tools/failure-evidence.md",
+            "quote": "缺少一条记录只能在覆盖和身份完整的范围内支持“该域未观察到”，不能直接证明“没有发生”。"
+          }
+        ]
+      },
+      "legality": {
+        "assessment": "sufficient",
+        "reason": "缩减需同时保持失败类别、机制关系、观测覆盖和 oracle 身份，清楚区别合法条件与采样、同步、注入等方案选择。subprocess 超时、POSIX 信号、RDMA 完成与通知、块层乱序完成的主要论断与所供文档一致。",
+        "evidence": [
+          {
+            "path": "knowledge/tools/failure-evidence.md",
+            "quote": "足以观察失败的边界，而不是删掉观测点后把错误变成未观察；"
+          },
+          {
+            "path": "knowledge/tools/failure-evidence.md",
+            "quote": "oracle、版本和单位不变，或者明确声明这是一次新的实验。"
+          }
+        ]
+      },
+      "algorithm": {
+        "assessment": "partial",
+        "reason": "两段伪代码已展开输入、循环、状态与退出，但 oracle 无效集合没有进入最终输出，最小化中的未知记录和最终合法性检查未闭合。交付 Python 的前沿计算还遗漏检查点自身的覆盖缺口；现有成功预检未覆盖这些分支。",
+        "evidence": [
+          {
+            "path": "knowledge/tools/failure-evidence.md",
+            "quote": "把它记入 OrcaleInvalid，停止对该义务作引擎归因"
+          },
+          {
+            "path": "knowledge/tools/failure-evidence.md",
+            "quote": "返回 D、Unknown、C 及每条路径的证书"
+          },
+          {
+            "path": "knowledge/tools/failure-evidence.md",
+            "quote": "若仍产生同类 F 且保持 P，则 current 不是 1-极小，继续缩减"
+          }
+        ]
+      },
+      "cost": {
+        "assessment": "sufficient",
+        "reason": "解释记录处理、日志字节量、同步、锁与带宽争用、证据驻留、环境准备和反复 oracle 调用成本，并明确重叠与墙钟影响的条件。20000×256=5120000 字节，1000 次为5120000000字节，十进制 MB/GB 算例正确；容量注入关系明确限定为粗略且受瓶颈条件约束，未冒充实测。",
+        "evidence": [
+          {
+            "path": "knowledge/tools/failure-evidence.md",
+            "quote": "真正的墙钟影响取决于这些工作是否与计算重叠、是否争用同一锁或同一带宽。"
+          },
+          {
+            "path": "knowledge/tools/failure-evidence.md",
+            "quote": "每次运行还包含环境准备、预热、超时等待、清理和可能的故障注入影响，因此不能只用内核执行时间估算复现成本。"
+          }
+        ]
+      },
+      "adaptation": {
+        "assessment": "sufficient",
+        "reason": "对异步执行、竞态、数值契约、执行组、采样与生产注入分别说明保留项、调整方式和放弃信号。对取消后的物理复用保留最后访问结束条件，并链接相应资源生命期章节；本章无需承担模型逐层前向算法。",
+        "evidence": [
+          {
+            "path": "knowledge/tools/failure-evidence.md",
+            "quote": "无法证明旧访问已结束时，不能复用被注入对象"
+          },
+          {
+            "path": "knowledge/tools/failure-evidence.md",
+            "quote": "严格审计要求每次尝试都能追溯时，不能只保留最终成功请求；允许重放的临时实验可以删除部分状态，但删除后必须改变结论的范围。"
+          }
+        ]
+      },
+      "diagnosis": {
+        "assessment": "sufficient",
+        "reason": "竞争解释配有可控干预、差异预测与修正方向，覆盖报告点和触发点、OOM与外部信号、数值路径、通信后果链及采集缺失。明确区分设计与已执行实验，没有把设备验证缺失包装为通过。",
+        "evidence": [
+          {
+            "path": "knowledge/tools/failure-evidence.md",
+            "quote": "竞争解释必须给出不同预测。若两个解释对同一干预给出相同结果，这个干预就没有区分力。"
+          },
+          {
+            "path": "knowledge/tools/failure-evidence.md",
+            "quote": "若所有候选解释都被反证，正确输出是未解决和所需证据，而不是任选一个最方便的标签。"
+          }
+        ]
+      }
+    },
+    "findings": [
+      {
+        "id": "K-TOOLS-005-ALG-001",
+        "criterion": "algorithm",
+        "evidence": "knowledge/tools/failure-evidence.md 将不匹配义务“把它记入 OrcaleInvalid，停止对该义务作引擎归因”，但最终只有“返回 D、Unknown、C 及每条路径的证书”；报告分支只检查“若 D 为空且 Unknown 为空”。",
+        "impact": "当所有义务都因版本或单位不匹配而无效时，Bad 与 Unknown 均为空，算法仍进入未发现失败分支，且返回值没有携带无效义务。这丢失了正文明确要求保留的 oracle 无效状态，使调用者无法区别有效检查未发现失败与根本未形成有效比较。",
+        "blocking": true,
+        "required_revision": "将 oracle 无效集合和对应理由纳入返回结果与汇总状态；无效义务不得计入已完成有效检查。补充仅含无效义务及有效、无效义务混合的检查，确认其不会被汇总为全部有效且未发现失败。"
+      },
+      {
+        "id": "K-TOOLS-005-ALG-002",
+        "criterion": "algorithm",
+        "evidence": "knowledge/tools/failure-evidence.md 初始化“current=C0；accepted=空；rejected=空；unknown=空”，遇到未知时仅执行“rejected 加入 t，原因记为证据不完整”；最终检查却是“若仍产生同类 F 且保持 P，则 current 不是 1-极小，继续缩减”。",
+        "impact": "unknown 从未更新。一个保持 F 与 P、但覆盖变差的候选会在主循环被拒绝，又在最终检查中被要求继续缩减；相同候选可反复触发这一矛盾。无法观察的单步删除也不能证明不存在合法缩减，却可能随空 unknown 输出形成无条件的1-极小结论。",
+        "blocking": true,
+        "required_revision": "统一主循环和最终复核的完整接受谓词，包含身份、覆盖和未知状态；记录未知候选及其所属 current 版本。存在无法判定的单步删除时，返回未完成的极小性证明及预算边界，或明确限定为已判定删除集合内的结果，避免无进展循环。加入覆盖变差和无法观察两类受控候选检查。"
+      },
+      {
+        "id": "K-TOOLS-005-ALG-003",
+        "criterion": "algorithm",
+        "evidence": "正文要求“若覆盖不足、时钟映射未知或对象代次无法对应，则放入 `Unknown`，而不是把它当作通过。”但 tools/check_k_tools_005_full.py 的 earliest_frontier 仅检查“if any(byid[a].coverage_gap for a in anc):”，未检查 v.coverage_gap；现有 gap 用例只把缺口放在另一个前驱事件。",
+        "impact": "对单个 violation=True、coverage_gap=True 且没有前驱的检查点，交付逻辑返回该点为确认前沿、unknown为空。独立V8反例已复现这一错误，而所供预检仍能成功，说明当前检查不能支持其宣称的检查点覆盖规则。",
+        "blocking": true,
+        "required_revision": "在前沿模型中先校验检查点自身证据，再校验因果过去；自身覆盖不足必须输出 UNKNOWN。增加独立固定预期的自身缺口用例，并验证故意忽略自身覆盖的变体会被拒绝；保留现有前驱缺口与多前沿检查。"
+      }
+    ],
+    "limitations": [
+      "未执行目标 GPU、cgroup、RDMA、块设备、网络或跨 rank 故障实验；正文对这些边界的限制声明合理，不因缺少实测另列内容缺陷。",
+      "logits 检查只比较固定序列的 argmax，不能证明随机采样分布、真实生成轨迹、任务质量或模型内部首次数值偏离。",
+      "本次没有命令执行和文件读取工具，未自行重跑 Python、重新计算磁盘哈希或验证链接目标存在性；文档身份使用提供的绑定值，相对链接仅作文本核对。",
+      "未能读取本地 infraagents-knowledge-build 技能文件；审查依据为完整提供的方法、审查规则和材料范围，未声称执行该技能工作流。"
+    ],
+    "checks": [
+      {
+        "script": "tools/check_k_tools_005_full.py",
+        "args": []
+      }
+    ],
+    "no_checks_reason": "",
+    "reading_scope": "完整阅读所供 AGENTS.md、docs/knowledge-method.md、docs/knowledge-review.md、候选正文、六份来源说明，以及 documents 中列出的七份相关完整章节；完整阅读 references/S-TORCH-NUMERIC/fulltext.txt [0,10998)、references/S-RDMA/fulltext.txt [0,25147)、references/S-LINUX-IO/fulltext.txt [0,52366) 和候选完整 Python 脚本。其余仅阅读所供摘录，字符范围均为零基半开区间：collective-ordering.md [0,3914)、[16000,19813)；cancellation-resource-completion.md [0,4000)、[12000,15727)；service-protocol.md [0,4000)、[12000,15727)；trace-observability.md [0,885)、[12000,18842)；S-PY-SUBPROCESS 原文 [0,40210)、[48000,62026)；S-CUDA-ASYNC 原文 [68000,72000)、[208000,212000)、[284000,288000)、[456000,460000)、[500000,504000)、[516000,536000)、[552000,554237)、[580000,584000)、[588000,592000)、[752000,756000)；S-LINUX-RESOURCES 原文 [0,6236)、[8000,12000)、[16000,20000)、[44000,68000)、[72000,76000)、[84000,88000)、[116000,124000)。摘录文件未列入 documents，不声称通读其完整原文。未读取源码归档或递归阅读相关章节的全部来源。",
+    "test_assessment": "所供 actual_preflight 记录绑定当前脚本哈希，remote_bwrap 中以 Python 3.12 实际执行，returncode=0、stderr为空，输出 RESULT scoped_checks_ok；这是协调者提供的执行证据，不是本审阅者重跑结果。作者称编写时未运行脚本，与随后协调者预检并不矛盾。静态检查发现：前沿用例有固定预期与非极小前沿不变量，能拒绝最后时间戳归因；进程用例核对部分固定接口事实，但 process_claim_ok 复用 process_facts，不是实际 subprocess 行为实验，正退出码路径也未实际调用；数值用例以手算预期0和1区分逐位与argmax差异；最小化检查遍历剩余单步删除，并拒绝丢失失败的缩减器，对删除合法性有辨别力，但 race_outcome 本身是给定布尔模型，不模拟真实重叠写。前沿验证器同时复用被测前沿函数，因此现有负对照不能替代遗漏分支的独立预期。本审阅者实际在 functions.exec 的V8中执行了交付前沿逻辑的对应转写，并以独立覆盖契约检查自身缺口反例：预期 frontier=[]、unknown=[uncovered_checkpoint]，实际 frontier=[uncovered_checkpoint]、unknown=[]，缺陷被检出；这不是 Python 文件执行。另在V8中检查 oracle-invalid-only 的报告条件，以及 F、P成立而覆盖变差时主循环与最终复核谓词不一致。上述反例直接针对本章覆盖和状态交付机制。成本算例独立复算正确；检查脚本没有验证成本公式或真实观测扰动，不能据其退出0推断这些效果。"
+  },
+  "format_status": "strict_json",
+  "format_error": null,
+  "output_text": "{\n  \"entry_id\": \"K-TOOLS-005\",\n  \"body_sha256\": \"93802f4a824835894fc975ba75b452de337ebeea7a68bff6ec0ef4ff2a2e0556\",\n  \"reviewer\": \"sol-reviewer:K-TOOLS-005:round-1\",\n  \"decision\": \"revise\",\n  \"documents\": {\n    \"AGENTS.md\": \"b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a\",\n    \"docs/knowledge-method.md\": \"69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb\",\n    \"docs/knowledge-review.md\": \"f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21\",\n    \"knowledge/tools/failure-evidence.md\": \"93802f4a824835894fc975ba75b452de337ebeea7a68bff6ec0ef4ff2a2e0556\",\n    \"knowledge/sources/S-PY-SUBPROCESS.md\": \"a466b22c1b51e2d1612328903406712c1e30d38770a6510d96a3937ff1bede32\",\n    \"knowledge/sources/S-CUDA-ASYNC.md\": \"40df9287d0648a8ef55a046ceb1c18dd402619ede6e57ca33d3f90e4ace3da05\",\n    \"knowledge/sources/S-TORCH-NUMERIC.md\": \"cbe91153d9ff7bd2f596d1d6c4e15de1ad68571f3cbde23215891a8ec7f6fab4\",\n    \"knowledge/sources/S-LINUX-RESOURCES.md\": \"d829824442f5a9abd36c3caf63c5fd30da8da4f8839db88e33aa045b7baa05f0\",\n    \"knowledge/sources/S-RDMA.md\": \"660948886af9019ac90e6c58ab7b2a4ca9dbf282f1bb74de37162403f24f4d49\",\n    \"knowledge/sources/S-LINUX-IO.md\": \"786caae53cc1e80173616ce470c481145e285c2176b7cff4777576cc893fc316\",\n    \"knowledge/system-semantics/evidence-and-independent-checks.md\": \"50b7c97de928be322713ef149fb734c0c20acda17c4a321c46a198b0019831be\",\n    \"knowledge/tools/correctness-oracles.md\": \"c2f88bc9746ac25586fc6700aaf0f5a8d043a1b1f4aee99dfdee02e1ef468aab\",\n    \"knowledge/system-semantics/serving-recovery.md\": \"f551fa1f1e6213469c856a880839eefff504fb39f4dd692000b2df80a20a7f5e\",\n    \"knowledge/system-semantics/storage-services.md\": \"283ceab23fbbf5c27bbb4486b56c2123459a19a00229c5baae70d09c18062661\",\n    \"knowledge/system-semantics/deployment-environment.md\": \"1b47e39a7f36c9f1cba4dc1792ad9243fd69d083ae1d6a7bb13bfd80dae1a8a5\",\n    \"knowledge/tools/statistical-experiments.md\": \"908b3588a6fa20bb1f2aed9f5db51c4b462953d79f8944cdbcfea7141c74644f\",\n    \"knowledge/system-semantics/tenant-isolation.md\": \"0ca7501a80e750152a5fb3b9815c77f9e3f9aa393ff7546b3f05375958f88606\",\n    \"references/S-TORCH-NUMERIC/fulltext.txt\": \"bb6b2d8154a10f8f3b15e5ae4465cbc8d833067046964fc6b4d66dc036131b45\",\n    \"references/S-RDMA/fulltext.txt\": \"9f4bea8bc130fc7dcdf0b53d20ce7269555cddd2a7c67e5d54c6dbd7a55b2720\",\n    \"references/S-LINUX-IO/fulltext.txt\": \"d6da925f1c90da275de1e6aa94a179a3273ad342fe77b61608a8b77fa75c3495\",\n    \"tools/check_k_tools_005_full.py\": \"923886ceaea20d49bd1fc4423d15013a7fbed3c56eca90ad2767b7c4c0dd58d0\"\n  },\n  \"criteria\": {\n    \"definition\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"运行身份、观测事件、契约义务与失败证书均有明确组成，区分执行事实与观测、退出与正确性，以及确认、未知和 oracle 无效等状态。定义足以支撑本章诊断对象；下述缺口发生在这些状态的算法交付。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/tools/failure-evidence.md\",\n          \"quote\": \"契约 `Φ` 由若干义务 `φ=(pred,scope,checkpoint,evidence)` 组成：在哪个作用域、哪个边界检查什么谓词，以及需要什么证据。\"\n        },\n        {\n          \"path\": \"knowledge/tools/failure-evidence.md\",\n          \"quote\": \"缺少一条记录只能在覆盖和身份完整的范围内支持“该域未观察到”，不能直接证明“没有发生”。\"\n        }\n      ]\n    },\n    \"legality\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"缩减需同时保持失败类别、机制关系、观测覆盖和 oracle 身份，清楚区别合法条件与采样、同步、注入等方案选择。subprocess 超时、POSIX 信号、RDMA 完成与通知、块层乱序完成的主要论断与所供文档一致。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/tools/failure-evidence.md\",\n          \"quote\": \"足以观察失败的边界，而不是删掉观测点后把错误变成未观察；\"\n        },\n        {\n          \"path\": \"knowledge/tools/failure-evidence.md\",\n          \"quote\": \"oracle、版本和单位不变，或者明确声明这是一次新的实验。\"\n        }\n      ]\n    },\n    \"algorithm\": {\n      \"assessment\": \"partial\",\n      \"reason\": \"两段伪代码已展开输入、循环、状态与退出，但 oracle 无效集合没有进入最终输出，最小化中的未知记录和最终合法性检查未闭合。交付 Python 的前沿计算还遗漏检查点自身的覆盖缺口；现有成功预检未覆盖这些分支。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/tools/failure-evidence.md\",\n          \"quote\": \"把它记入 OrcaleInvalid，停止对该义务作引擎归因\"\n        },\n        {\n          \"path\": \"knowledge/tools/failure-evidence.md\",\n          \"quote\": \"返回 D、Unknown、C 及每条路径的证书\"\n        },\n        {\n          \"path\": \"knowledge/tools/failure-evidence.md\",\n          \"quote\": \"若仍产生同类 F 且保持 P，则 current 不是 1-极小，继续缩减\"\n        }\n      ]\n    },\n    \"cost\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"解释记录处理、日志字节量、同步、锁与带宽争用、证据驻留、环境准备和反复 oracle 调用成本，并明确重叠与墙钟影响的条件。20000×256=5120000 字节，1000 次为5120000000字节，十进制 MB/GB 算例正确；容量注入关系明确限定为粗略且受瓶颈条件约束，未冒充实测。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/tools/failure-evidence.md\",\n          \"quote\": \"真正的墙钟影响取决于这些工作是否与计算重叠、是否争用同一锁或同一带宽。\"\n        },\n        {\n          \"path\": \"knowledge/tools/failure-evidence.md\",\n          \"quote\": \"每次运行还包含环境准备、预热、超时等待、清理和可能的故障注入影响，因此不能只用内核执行时间估算复现成本。\"\n        }\n      ]\n    },\n    \"adaptation\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"对异步执行、竞态、数值契约、执行组、采样与生产注入分别说明保留项、调整方式和放弃信号。对取消后的物理复用保留最后访问结束条件，并链接相应资源生命期章节；本章无需承担模型逐层前向算法。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/tools/failure-evidence.md\",\n          \"quote\": \"无法证明旧访问已结束时，不能复用被注入对象\"\n        },\n        {\n          \"path\": \"knowledge/tools/failure-evidence.md\",\n          \"quote\": \"严格审计要求每次尝试都能追溯时，不能只保留最终成功请求；允许重放的临时实验可以删除部分状态，但删除后必须改变结论的范围。\"\n        }\n      ]\n    },\n    \"diagnosis\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"竞争解释配有可控干预、差异预测与修正方向，覆盖报告点和触发点、OOM与外部信号、数值路径、通信后果链及采集缺失。明确区分设计与已执行实验，没有把设备验证缺失包装为通过。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/tools/failure-evidence.md\",\n          \"quote\": \"竞争解释必须给出不同预测。若两个解释对同一干预给出相同结果，这个干预就没有区分力。\"\n        },\n        {\n          \"path\": \"knowledge/tools/failure-evidence.md\",\n          \"quote\": \"若所有候选解释都被反证，正确输出是未解决和所需证据，而不是任选一个最方便的标签。\"\n        }\n      ]\n    }\n  },\n  \"findings\": [\n    {\n      \"id\": \"K-TOOLS-005-ALG-001\",\n      \"criterion\": \"algorithm\",\n      \"evidence\": \"knowledge/tools/failure-evidence.md 将不匹配义务“把它记入 OrcaleInvalid，停止对该义务作引擎归因”，但最终只有“返回 D、Unknown、C 及每条路径的证书”；报告分支只检查“若 D 为空且 Unknown 为空”。\",\n      \"impact\": \"当所有义务都因版本或单位不匹配而无效时，Bad 与 Unknown 均为空，算法仍进入未发现失败分支，且返回值没有携带无效义务。这丢失了正文明确要求保留的 oracle 无效状态，使调用者无法区别有效检查未发现失败与根本未形成有效比较。\",\n      \"blocking\": true,\n      \"required_revision\": \"将 oracle 无效集合和对应理由纳入返回结果与汇总状态；无效义务不得计入已完成有效检查。补充仅含无效义务及有效、无效义务混合的检查，确认其不会被汇总为全部有效且未发现失败。\"\n    },\n    {\n      \"id\": \"K-TOOLS-005-ALG-002\",\n      \"criterion\": \"algorithm\",\n      \"evidence\": \"knowledge/tools/failure-evidence.md 初始化“current=C0；accepted=空；rejected=空；unknown=空”，遇到未知时仅执行“rejected 加入 t，原因记为证据不完整”；最终检查却是“若仍产生同类 F 且保持 P，则 current 不是 1-极小，继续缩减”。\",\n      \"impact\": \"unknown 从未更新。一个保持 F 与 P、但覆盖变差的候选会在主循环被拒绝，又在最终检查中被要求继续缩减；相同候选可反复触发这一矛盾。无法观察的单步删除也不能证明不存在合法缩减，却可能随空 unknown 输出形成无条件的1-极小结论。\",\n      \"blocking\": true,\n      \"required_revision\": \"统一主循环和最终复核的完整接受谓词，包含身份、覆盖和未知状态；记录未知候选及其所属 current 版本。存在无法判定的单步删除时，返回未完成的极小性证明及预算边界，或明确限定为已判定删除集合内的结果，避免无进展循环。加入覆盖变差和无法观察两类受控候选检查。\"\n    },\n    {\n      \"id\": \"K-TOOLS-005-ALG-003\",\n      \"criterion\": \"algorithm\",\n      \"evidence\": \"正文要求“若覆盖不足、时钟映射未知或对象代次无法对应，则放入 `Unknown`，而不是把它当作通过。”但 tools/check_k_tools_005_full.py 的 earliest_frontier 仅检查“if any(byid[a].coverage_gap for a in anc):”，未检查 v.coverage_gap；现有 gap 用例只把缺口放在另一个前驱事件。\",\n      \"impact\": \"对单个 violation=True、coverage_gap=True 且没有前驱的检查点，交付逻辑返回该点为确认前沿、unknown为空。独立V8反例已复现这一错误，而所供预检仍能成功，说明当前检查不能支持其宣称的检查点覆盖规则。\",\n      \"blocking\": true,\n      \"required_revision\": \"在前沿模型中先校验检查点自身证据，再校验因果过去；自身覆盖不足必须输出 UNKNOWN。增加独立固定预期的自身缺口用例，并验证故意忽略自身覆盖的变体会被拒绝；保留现有前驱缺口与多前沿检查。\"\n    }\n  ],\n  \"limitations\": [\n    \"未执行目标 GPU、cgroup、RDMA、块设备、网络或跨 rank 故障实验；正文对这些边界的限制声明合理，不因缺少实测另列内容缺陷。\",\n    \"logits 检查只比较固定序列的 argmax，不能证明随机采样分布、真实生成轨迹、任务质量或模型内部首次数值偏离。\",\n    \"本次没有命令执行和文件读取工具，未自行重跑 Python、重新计算磁盘哈希或验证链接目标存在性；文档身份使用提供的绑定值，相对链接仅作文本核对。\",\n    \"未能读取本地 infraagents-knowledge-build 技能文件；审查依据为完整提供的方法、审查规则和材料范围，未声称执行该技能工作流。\"\n  ],\n  \"checks\": [\n    {\n      \"script\": \"tools/check_k_tools_005_full.py\",\n      \"args\": []\n    }\n  ],\n  \"no_checks_reason\": \"\",\n  \"reading_scope\": \"完整阅读所供 AGENTS.md、docs/knowledge-method.md、docs/knowledge-review.md、候选正文、六份来源说明，以及 documents 中列出的七份相关完整章节；完整阅读 references/S-TORCH-NUMERIC/fulltext.txt [0,10998)、references/S-RDMA/fulltext.txt [0,25147)、references/S-LINUX-IO/fulltext.txt [0,52366) 和候选完整 Python 脚本。其余仅阅读所供摘录，字符范围均为零基半开区间：collective-ordering.md [0,3914)、[16000,19813)；cancellation-resource-completion.md [0,4000)、[12000,15727)；service-protocol.md [0,4000)、[12000,15727)；trace-observability.md [0,885)、[12000,18842)；S-PY-SUBPROCESS 原文 [0,40210)、[48000,62026)；S-CUDA-ASYNC 原文 [68000,72000)、[208000,212000)、[284000,288000)、[456000,460000)、[500000,504000)、[516000,536000)、[552000,554237)、[580000,584000)、[588000,592000)、[752000,756000)；S-LINUX-RESOURCES 原文 [0,6236)、[8000,12000)、[16000,20000)、[44000,68000)、[72000,76000)、[84000,88000)、[116000,124000)。摘录文件未列入 documents，不声称通读其完整原文。未读取源码归档或递归阅读相关章节的全部来源。\",\n  \"test_assessment\": \"所供 actual_preflight 记录绑定当前脚本哈希，remote_bwrap 中以 Python 3.12 实际执行，returncode=0、stderr为空，输出 RESULT scoped_checks_ok；这是协调者提供的执行证据，不是本审阅者重跑结果。作者称编写时未运行脚本，与随后协调者预检并不矛盾。静态检查发现：前沿用例有固定预期与非极小前沿不变量，能拒绝最后时间戳归因；进程用例核对部分固定接口事实，但 process_claim_ok 复用 process_facts，不是实际 subprocess 行为实验，正退出码路径也未实际调用；数值用例以手算预期0和1区分逐位与argmax差异；最小化检查遍历剩余单步删除，并拒绝丢失失败的缩减器，对删除合法性有辨别力，但 race_outcome 本身是给定布尔模型，不模拟真实重叠写。前沿验证器同时复用被测前沿函数，因此现有负对照不能替代遗漏分支的独立预期。本审阅者实际在 functions.exec 的V8中执行了交付前沿逻辑的对应转写，并以独立覆盖契约检查自身缺口反例：预期 frontier=[]、unknown=[uncovered_checkpoint]，实际 frontier=[uncovered_checkpoint]、unknown=[]，缺陷被检出；这不是 Python 文件执行。另在V8中检查 oracle-invalid-only 的报告条件，以及 F、P成立而覆盖变差时主循环与最终复核谓词不一致。上述反例直接针对本章覆盖和状态交付机制。成本算例独立复算正确；检查脚本没有验证成本公式或真实观测扰动，不能据其退出0推断这些效果。\"\n}",
+  "elapsed_seconds": 233.562
+}

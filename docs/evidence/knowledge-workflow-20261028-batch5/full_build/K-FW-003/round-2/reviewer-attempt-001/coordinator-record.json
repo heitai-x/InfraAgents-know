@@ -1,0 +1,185 @@
+{
+  "role": "reviewer",
+  "engine": "sol",
+  "requested_model": "gpt-6.1-sol",
+  "reasoning_effort": "high",
+  "prompt_sha256": "b16264264f0b817d78d0f83ea6ee7099607ece119b6c07912fac88642f5fa97a",
+  "usage": [
+    {
+      "input_tokens": 187194,
+      "cached_input_tokens": 7552,
+      "cache_write_input_tokens": 0,
+      "output_tokens": 4495,
+      "reasoning_output_tokens": 1034
+    }
+  ],
+  "answer": "{\n  \"entry_id\": \"K-FW-003\",\n  \"body_sha256\": \"cd6a3f20b72a017afe63af8d1d071f345048b79c8697b504482977539f40b4c3\",\n  \"reviewer\": \"sol-reviewer:K-FW-003:round-2\",\n  \"decision\": \"accept\",\n  \"documents\": {\n    \"AGENTS.md\": \"b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a\",\n    \"docs/knowledge-method.md\": \"69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb\",\n    \"docs/knowledge-review.md\": \"f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21\",\n    \"knowledge/frameworks/streams-allocator.md\": \"cd6a3f20b72a017afe63af8d1d071f345048b79c8697b504482977539f40b4c3\",\n    \"knowledge/sources/S-TORCH-CUDA.md\": \"8ee61677a1e35d475d9bb122b2c7fa824ccf054acefbe2f12345d72c1fb1b00e\",\n    \"knowledge/sources/S-CUDA-ASYNC.md\": \"40df9287d0648a8ef55a046ceb1c18dd402619ede6e57ca33d3f90e4ace3da05\",\n    \"knowledge/sources/S-CUDA-ALLOC.md\": \"3ba021c941f2ed8f048be34d1ba0110f37675a3460013f24a239cc43a1e8630a\",\n    \"knowledge/system-semantics/cancellation-resource-completion.md\": \"919052c77f65a13c9dc09aad03341ed31f0820dbbdcb2750b5789f349f9e86c1\",\n    \"knowledge/hardware/shared-memory-paths.md\": \"9471f29d33a5821b00e11b6d08fb69fe31288087d558f05c5f9234350efe8b0d\",\n    \"knowledge/algorithms/kv-offload-prefetch.md\": \"a7088eba5c78cd9e96cf011d61946ad7dec4ecb6378ac16e7f2fc3820af38301\",\n    \"knowledge/system-semantics/memory-allocators.md\": \"2e7258787b94ad142c7c236541e8718803ad30b273d08e6c398dff673a1df838\",\n    \"knowledge/hardware/host-device-transfer.md\": \"e4921a0714af21f7ab1a336f40af662f716f2c64a42dd598eb2cede548c858d2\",\n    \"knowledge/system-semantics/host-device-timing.md\": \"411061489661a325939476348559d80df773a32cc19be2aef216e4d4a5b0b554\",\n    \"knowledge/hardware/transport-and-rdma.md\": \"72bcf1d8948eae41c243e422f6b0370462dcc4bf33ef86f5664a09b4e46d3ba2\",\n    \"references/S-TORCH-CUDA/fulltext.txt\": \"4756fc37be9c52d4128b5f4b46f996fddb8b136a9ef51183a6f0e1c7d49b18df\",\n    \"tools/check_k_fw_003_full.py\": \"84e5ff6cf3840d71740a9f02a74819a53f6e368094b86f13a7da918abfb1bbbc\"\n  },\n  \"criteria\": {\n    \"definition\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"明确限定单进程、单设备、主机串行账务范围，以存储身份和代次处理别名，定义分配、访问、释放及未来授权；区分已安排内容与设备完成，输入输出和状态足以恢复本章模型。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/frameworks/streams-allocator.md\",\n          \"quote\": \"一个存储对象记为 X=(device,address,bytes,epoch)。bytes 以字节计，epoch 每次把同一物理槽交给新对象时递增。\"\n        },\n        {\n          \"path\": \"knowledge/frameworks/streams-allocator.md\",\n          \"quote\": \"内容版本可以在提交时登记为“将由某操作生成”，不能把这个登记解释成设备已经完成。\"\n        }\n      ]\n    },\n    \"legality\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"分配生效、生产消费、冲突访问和释放分别具有明确偏序要求；record_stream、持有引用和执行等待的职责没有混淆。普通与异步 free 的混用、默认 stream 差异和图未来访问权均与所供文档相符，保守槽回收被正确标为方案选择。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/frameworks/streams-allocator.md\",\n          \"quote\": \"合法性至少要求：对每个 u∈U_X，A_X≺s(u)，且 e(u)≺F_X；读取依赖的最后生产写入必须先于读取；同一范围内至少一方写入的访问必须有明确次序，或采用本章范围之外、经证明的并发协议。\"\n        },\n        {\n          \"path\": \"knowledge/frameworks/streams-allocator.md\",\n          \"quote\": \"`record_stream` 不是等待生产者，也不是读写锁。\"\n        }\n      ]\n    },\n    \"algorithm\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"伪代码覆盖初始化、访问授权与模式合并、过去前沿收集、等待与提交、完成登记、关闭和回收。W/R 压缩的传递覆盖论证成立，多对象统一更新避免自依赖；未初始化、空工作及部分提交失败有明确处理。取消保留物理责任，旧代通知不能改变新代账务。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/frameworks/streams-allocator.md\",\n          \"quote\": \"多对象操作应先收集所有旧前沿，再提交并统一更新。\"\n        },\n        {\n          \"path\": \"knowledge/frameworks/streams-allocator.md\",\n          \"quote\": \"正确性不变量是：W 覆盖最近写入；R 覆盖 W 之后所有尚未被后继写入汇合的读取。\"\n        },\n        {\n          \"path\": \"knowledge/frameworks/streams-allocator.md\",\n          \"quote\": \"例如 kernel 已成功入队、随后事件记录失败，不能删除该访问并立即回收。\"\n        }\n      ]\n    },\n    \"cost\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"六类成本均与具体机制连接，区分关键路径、实际流量和物理驻留。独立复算得到 X/W/H 槽数为 2/1/2，设备与 pinned 容量为 144/128 MiB，64 MiB/4 ms 为 15.625 GiB/s；共享资源带宽条件和 workspace 容量交换的前提清楚。O(S) 对应前沿状态规模，不应外推为全部拥有者及事件资源的总量。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/frameworks/streams-allocator.md\",\n          \"quote\": \"按关键路径分析，不能累加所有并发等待区间\"\n        },\n        {\n          \"path\": \"knowledge/frameworks/streams-allocator.md\",\n          \"quote\": \"对应设备缓冲为 2×64+16=144 MiB，pinned 主机缓冲为 2×64=128 MiB。\"\n        },\n        {\n          \"path\": \"knowledge/frameworks/streams-allocator.md\",\n          \"quote\": \"共享资源 r 每批承担 Q_r 字节、可持续带宽 B_r 时，还要求 P≥Q_r/B_r\"\n        }\n      ]\n    },\n    \"adaptation\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"条件变化表保留分配、内容和最后使用不变量，并具体解释单 stream、长尾读者、容量紧张、小对象、图绑定、别名和后端变化时的调整与放弃条件；没有把更多缓冲或独立 workspace 等同于性能收益。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/frameworks/streams-allocator.md\",\n          \"quote\": \"降低在途深度、共享 workspace 并串行、等待或分块；额外缓冲挤出 KV 时可能反转收益\"\n        },\n        {\n          \"path\": \"knowledge/frameworks/streams-allocator.md\",\n          \"quote\": \"保守全存储前沿，或在可证明范围后细分；只按 tensor 身份建账应放弃\"\n        }\n      ]\n    },\n    \"diagnosis\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"对旧值、压力错误、双消费者、共享 workspace、显存保留、取消回收和无加速分别给出竞争解释、可控干预及反证后的修正。交付检查具有独立全历史冲突参考、执行状态不变量和实际检出的负对照；正文正确限制 CPU 模型与设备结论的关系。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/frameworks/streams-allocator.md\",\n          \"quote\": \"全设备同步使错误消失，只能说明时序相关，不能定位生产边、回收边还是 workspace 冲突。\"\n        },\n        {\n          \"path\": \"knowledge/frameworks/streams-allocator.md\",\n          \"quote\": \"分别拉长 B、C，交换提交与结束顺序\"\n        },\n        {\n          \"path\": \"knowledge/frameworks/streams-allocator.md\",\n          \"quote\": \"错误对照要实际删除一条保护或错误合并一个责任，确认独立参考确实能发现它。\"\n        }\n      ]\n    }\n  },\n  \"findings\": [],\n  \"limitations\": [\n    \"结论限于所供固定文档和明确摘录；CUDA 指南完整原文、上游源码及未提供的内部依赖复用规则未被完整核验。\",\n    \"CPU 检查不证明真实 CUDA 可见性、库内部 stream 覆盖、DMA、图重放、驱动池复用、硬件重叠、性能、设备故障恢复或 Agent 使用效果。\",\n    \"图枚举使用单对象、固定初始生产者及 R/W 操作；未动态测试多对象别名合并、UPDATE 的数值语义、未初始化即关闭、部分提交失败和 QUARANTINED 恢复。这些路径通过正文保守规则审阅，不计作测试通过。\",\n    \"作者阶段仅执行 JavaScript 模型；Python 的执行证据来自所供协调者 preflight。本审阅读取并分析该记录，没有另行执行脚本。\",\n    \"离线链接的目标身份与语义通过所供材料核对；未执行落盘文件存在性、冻结读取或发布登记检查。\"\n  ],\n  \"checks\": [\n    {\n      \"script\": \"tools/check_k_fw_003_full.py\",\n      \"args\": []\n    }\n  ],\n  \"no_checks_reason\": \"\",\n  \"reading_scope\": \"完整阅读所供 AGENTS.md [0,567)、docs/knowledge-method.md [0,2251)、docs/knowledge-review.md [0,3016)、正文 [0,12875)、S-TORCH-CUDA 来源说明 [0,1468)、S-CUDA-ASYNC 来源说明 [0,1610)、S-CUDA-ALLOC 来源说明 [0,498)、cancellation-resource-completion.md [0,3782)、shared-memory-paths.md [0,3129)、kv-offload-prefetch.md [0,3710)、memory-allocators.md [0,4191)、host-device-transfer.md [0,6485)、host-device-timing.md [0,3827)、transport-and-rdma.md [0,4088)，以及标为完整提供的 references/S-TORCH-CUDA/fulltext.txt [0,80851)。完整阅读 candidate.test_script 和 actual_preflight 的输出、执行参数及脚本哈希。相关章节仅阅读所供摘录：async-scheduling.md [0,1143)、[8000,13940)；cuda-graph-buffers.md [0,4000)、[12000,15083)；gpu-kernel-pipelines.md [0,1005)、[8000,14078)；attention-backends.md [0,3083)、[16000,20000)；host-runtime.md [0,3524)、[4000,7559)。两个 CUDA fulltext 路径均只阅读相同的所供摘录：[48000,56000)、[84000,100000)、[104000,108000)、[152000,160000)、[640000,644000)、[684000,691138)、[700000,704000)、[744000,748000)、[756000,764000)、[768000,772000)、[780000,784000)、[792000,800000)、[1076000,1084000)。范围均为材料声明的提取文本零基半开字符区间；摘录文件未列入 documents，不宣称完整阅读 CUDA 指南或源码归档。\",\n  \"test_assessment\": \"检查不是仅复述前沿实现：reference 分支直接连接全部历史冲突和所有访问结束到释放的关系，不使用 W/R 压缩；expected_versions 从串行操作序列独立推导版本，validate_prefix 检查分配、初始化、活动冲突、读取内容及释放条件。所有权参考按不可变授权列表减去已完成集合计算剩余责任；容量检查以半开占用区间扫描对照 ceil(L/P)，并核对组合案例。所供实际执行记录的脚本 SHA256 与绑定一致，使用 Python 3.12 的 -I -S -B -X utf8，在 remote_bwrap 隔离环境返回 0、stderr 为空且未超时；结果为 1555 个图案例、1255 条 n≤3 的完整拓扑执行、20 个所有权案例，容量为 144/128 MiB。六个图缺陷和旧 epoch 缺陷均实际触发 Failure；例如 ignore_readers 检出 writer overlaps a prior access，last_reader 和 free_writer_only 检出 free during active access，early_event 检出访问尚未结束就释放。它们直接测试本章生产边、读者汇合、最后使用及代次机制，具备有效反证能力。作者声明的 JavaScript 检查与协调者后来实际执行的 Python 检查分别计量；没有把未执行设备检查记为 PASS。模型遗漏已列为 limitations，不以有限枚举推出完整设备实现正确。上一轮非严格 JSON 属于交付格式失败，当前材料以结构化候选提供完整正文和脚本，本审阅重新评估了全候选，未沿用该失败作为当前技术缺口。\"\n}",
+  "exit_code": 0,
+  "status": "completed",
+  "timeout_seconds": 1800,
+  "response_path": "D:\\桌面\\xdb\\InfraAgents\\InfraAgents-know-astra-new\\InfraAgents-know\\docs\\evidence\\knowledge-workflow-20261028-batch5\\full_build\\K-FW-003\\round-2\\reviewer-attempt-001\\answer.txt",
+  "record_path": "D:\\桌面\\xdb\\InfraAgents\\InfraAgents-know-astra-new\\InfraAgents-know\\docs\\evidence\\knowledge-workflow-20261028-batch5\\full_build\\K-FW-003\\round-2\\reviewer-attempt-001\\record.json",
+  "tool_events": [],
+  "inventory_tool_events": [],
+  "rejected_tool_events": [],
+  "tool_policy": "metadata_inventory_only",
+  "tool_policy_version": "metadata-inventory-v1",
+  "tool_policy_scope": "Only empty-argument codex host plugin/skill-directory descriptors and empty template inventory; inventory is not knowledge evidence. All other tool events reject the call.",
+  "tool_policy_reason": "Production chapter construction allows observed generic capability discovery metadata; this does not claim a zero-tool comparison or external source reading.",
+  "malformed_event_lines": [],
+  "turn_completed": true,
+  "error_events": [],
+  "recovered_transport_events": [],
+  "terminal_error_events": [],
+  "transport_recovered": false,
+  "actual_model": null,
+  "identity_verified": null,
+  "identity_basis": "Explicit CLI model and isolated HTTP provider; CLI events do not expose server model identity.",
+  "provider": "eval-openai-http",
+  "max_output_tokens": null,
+  "cli_version": "codex-cli 0.164.0-alpha.11.1",
+  "cost_scope": "Codex token usage is reported; subscription charge is not exposed.",
+  "parsed": {
+    "entry_id": "K-FW-003",
+    "body_sha256": "cd6a3f20b72a017afe63af8d1d071f345048b79c8697b504482977539f40b4c3",
+    "reviewer": "sol-reviewer:K-FW-003:round-2",
+    "decision": "accept",
+    "documents": {
+      "AGENTS.md": "b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a",
+      "docs/knowledge-method.md": "69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb",
+      "docs/knowledge-review.md": "f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21",
+      "knowledge/frameworks/streams-allocator.md": "cd6a3f20b72a017afe63af8d1d071f345048b79c8697b504482977539f40b4c3",
+      "knowledge/sources/S-TORCH-CUDA.md": "8ee61677a1e35d475d9bb122b2c7fa824ccf054acefbe2f12345d72c1fb1b00e",
+      "knowledge/sources/S-CUDA-ASYNC.md": "40df9287d0648a8ef55a046ceb1c18dd402619ede6e57ca33d3f90e4ace3da05",
+      "knowledge/sources/S-CUDA-ALLOC.md": "3ba021c941f2ed8f048be34d1ba0110f37675a3460013f24a239cc43a1e8630a",
+      "knowledge/system-semantics/cancellation-resource-completion.md": "919052c77f65a13c9dc09aad03341ed31f0820dbbdcb2750b5789f349f9e86c1",
+      "knowledge/hardware/shared-memory-paths.md": "9471f29d33a5821b00e11b6d08fb69fe31288087d558f05c5f9234350efe8b0d",
+      "knowledge/algorithms/kv-offload-prefetch.md": "a7088eba5c78cd9e96cf011d61946ad7dec4ecb6378ac16e7f2fc3820af38301",
+      "knowledge/system-semantics/memory-allocators.md": "2e7258787b94ad142c7c236541e8718803ad30b273d08e6c398dff673a1df838",
+      "knowledge/hardware/host-device-transfer.md": "e4921a0714af21f7ab1a336f40af662f716f2c64a42dd598eb2cede548c858d2",
+      "knowledge/system-semantics/host-device-timing.md": "411061489661a325939476348559d80df773a32cc19be2aef216e4d4a5b0b554",
+      "knowledge/hardware/transport-and-rdma.md": "72bcf1d8948eae41c243e422f6b0370462dcc4bf33ef86f5664a09b4e46d3ba2",
+      "references/S-TORCH-CUDA/fulltext.txt": "4756fc37be9c52d4128b5f4b46f996fddb8b136a9ef51183a6f0e1c7d49b18df",
+      "tools/check_k_fw_003_full.py": "84e5ff6cf3840d71740a9f02a74819a53f6e368094b86f13a7da918abfb1bbbc"
+    },
+    "criteria": {
+      "definition": {
+        "assessment": "sufficient",
+        "reason": "明确限定单进程、单设备、主机串行账务范围，以存储身份和代次处理别名，定义分配、访问、释放及未来授权；区分已安排内容与设备完成，输入输出和状态足以恢复本章模型。",
+        "evidence": [
+          {
+            "path": "knowledge/frameworks/streams-allocator.md",
+            "quote": "一个存储对象记为 X=(device,address,bytes,epoch)。bytes 以字节计，epoch 每次把同一物理槽交给新对象时递增。"
+          },
+          {
+            "path": "knowledge/frameworks/streams-allocator.md",
+            "quote": "内容版本可以在提交时登记为“将由某操作生成”，不能把这个登记解释成设备已经完成。"
+          }
+        ]
+      },
+      "legality": {
+        "assessment": "sufficient",
+        "reason": "分配生效、生产消费、冲突访问和释放分别具有明确偏序要求；record_stream、持有引用和执行等待的职责没有混淆。普通与异步 free 的混用、默认 stream 差异和图未来访问权均与所供文档相符，保守槽回收被正确标为方案选择。",
+        "evidence": [
+          {
+            "path": "knowledge/frameworks/streams-allocator.md",
+            "quote": "合法性至少要求：对每个 u∈U_X，A_X≺s(u)，且 e(u)≺F_X；读取依赖的最后生产写入必须先于读取；同一范围内至少一方写入的访问必须有明确次序，或采用本章范围之外、经证明的并发协议。"
+          },
+          {
+            "path": "knowledge/frameworks/streams-allocator.md",
+            "quote": "`record_stream` 不是等待生产者，也不是读写锁。"
+          }
+        ]
+      },
+      "algorithm": {
+        "assessment": "sufficient",
+        "reason": "伪代码覆盖初始化、访问授权与模式合并、过去前沿收集、等待与提交、完成登记、关闭和回收。W/R 压缩的传递覆盖论证成立，多对象统一更新避免自依赖；未初始化、空工作及部分提交失败有明确处理。取消保留物理责任，旧代通知不能改变新代账务。",
+        "evidence": [
+          {
+            "path": "knowledge/frameworks/streams-allocator.md",
+            "quote": "多对象操作应先收集所有旧前沿，再提交并统一更新。"
+          },
+          {
+            "path": "knowledge/frameworks/streams-allocator.md",
+            "quote": "正确性不变量是：W 覆盖最近写入；R 覆盖 W 之后所有尚未被后继写入汇合的读取。"
+          },
+          {
+            "path": "knowledge/frameworks/streams-allocator.md",
+            "quote": "例如 kernel 已成功入队、随后事件记录失败，不能删除该访问并立即回收。"
+          }
+        ]
+      },
+      "cost": {
+        "assessment": "sufficient",
+        "reason": "六类成本均与具体机制连接，区分关键路径、实际流量和物理驻留。独立复算得到 X/W/H 槽数为 2/1/2，设备与 pinned 容量为 144/128 MiB，64 MiB/4 ms 为 15.625 GiB/s；共享资源带宽条件和 workspace 容量交换的前提清楚。O(S) 对应前沿状态规模，不应外推为全部拥有者及事件资源的总量。",
+        "evidence": [
+          {
+            "path": "knowledge/frameworks/streams-allocator.md",
+            "quote": "按关键路径分析，不能累加所有并发等待区间"
+          },
+          {
+            "path": "knowledge/frameworks/streams-allocator.md",
+            "quote": "对应设备缓冲为 2×64+16=144 MiB，pinned 主机缓冲为 2×64=128 MiB。"
+          },
+          {
+            "path": "knowledge/frameworks/streams-allocator.md",
+            "quote": "共享资源 r 每批承担 Q_r 字节、可持续带宽 B_r 时，还要求 P≥Q_r/B_r"
+          }
+        ]
+      },
+      "adaptation": {
+        "assessment": "sufficient",
+        "reason": "条件变化表保留分配、内容和最后使用不变量，并具体解释单 stream、长尾读者、容量紧张、小对象、图绑定、别名和后端变化时的调整与放弃条件；没有把更多缓冲或独立 workspace 等同于性能收益。",
+        "evidence": [
+          {
+            "path": "knowledge/frameworks/streams-allocator.md",
+            "quote": "降低在途深度、共享 workspace 并串行、等待或分块；额外缓冲挤出 KV 时可能反转收益"
+          },
+          {
+            "path": "knowledge/frameworks/streams-allocator.md",
+            "quote": "保守全存储前沿，或在可证明范围后细分；只按 tensor 身份建账应放弃"
+          }
+        ]
+      },
+      "diagnosis": {
+        "assessment": "sufficient",
+        "reason": "对旧值、压力错误、双消费者、共享 workspace、显存保留、取消回收和无加速分别给出竞争解释、可控干预及反证后的修正。交付检查具有独立全历史冲突参考、执行状态不变量和实际检出的负对照；正文正确限制 CPU 模型与设备结论的关系。",
+        "evidence": [
+          {
+            "path": "knowledge/frameworks/streams-allocator.md",
+            "quote": "全设备同步使错误消失，只能说明时序相关，不能定位生产边、回收边还是 workspace 冲突。"
+          },
+          {
+            "path": "knowledge/frameworks/streams-allocator.md",
+            "quote": "分别拉长 B、C，交换提交与结束顺序"
+          },
+          {
+            "path": "knowledge/frameworks/streams-allocator.md",
+            "quote": "错误对照要实际删除一条保护或错误合并一个责任，确认独立参考确实能发现它。"
+          }
+        ]
+      }
+    },
+    "findings": [],
+    "limitations": [
+      "结论限于所供固定文档和明确摘录；CUDA 指南完整原文、上游源码及未提供的内部依赖复用规则未被完整核验。",
+      "CPU 检查不证明真实 CUDA 可见性、库内部 stream 覆盖、DMA、图重放、驱动池复用、硬件重叠、性能、设备故障恢复或 Agent 使用效果。",
+      "图枚举使用单对象、固定初始生产者及 R/W 操作；未动态测试多对象别名合并、UPDATE 的数值语义、未初始化即关闭、部分提交失败和 QUARANTINED 恢复。这些路径通过正文保守规则审阅，不计作测试通过。",
+      "作者阶段仅执行 JavaScript 模型；Python 的执行证据来自所供协调者 preflight。本审阅读取并分析该记录，没有另行执行脚本。",
+      "离线链接的目标身份与语义通过所供材料核对；未执行落盘文件存在性、冻结读取或发布登记检查。"
+    ],
+    "checks": [
+      {
+        "script": "tools/check_k_fw_003_full.py",
+        "args": []
+      }
+    ],
+    "no_checks_reason": "",
+    "reading_scope": "完整阅读所供 AGENTS.md [0,567)、docs/knowledge-method.md [0,2251)、docs/knowledge-review.md [0,3016)、正文 [0,12875)、S-TORCH-CUDA 来源说明 [0,1468)、S-CUDA-ASYNC 来源说明 [0,1610)、S-CUDA-ALLOC 来源说明 [0,498)、cancellation-resource-completion.md [0,3782)、shared-memory-paths.md [0,3129)、kv-offload-prefetch.md [0,3710)、memory-allocators.md [0,4191)、host-device-transfer.md [0,6485)、host-device-timing.md [0,3827)、transport-and-rdma.md [0,4088)，以及标为完整提供的 references/S-TORCH-CUDA/fulltext.txt [0,80851)。完整阅读 candidate.test_script 和 actual_preflight 的输出、执行参数及脚本哈希。相关章节仅阅读所供摘录：async-scheduling.md [0,1143)、[8000,13940)；cuda-graph-buffers.md [0,4000)、[12000,15083)；gpu-kernel-pipelines.md [0,1005)、[8000,14078)；attention-backends.md [0,3083)、[16000,20000)；host-runtime.md [0,3524)、[4000,7559)。两个 CUDA fulltext 路径均只阅读相同的所供摘录：[48000,56000)、[84000,100000)、[104000,108000)、[152000,160000)、[640000,644000)、[684000,691138)、[700000,704000)、[744000,748000)、[756000,764000)、[768000,772000)、[780000,784000)、[792000,800000)、[1076000,1084000)。范围均为材料声明的提取文本零基半开字符区间；摘录文件未列入 documents，不宣称完整阅读 CUDA 指南或源码归档。",
+    "test_assessment": "检查不是仅复述前沿实现：reference 分支直接连接全部历史冲突和所有访问结束到释放的关系，不使用 W/R 压缩；expected_versions 从串行操作序列独立推导版本，validate_prefix 检查分配、初始化、活动冲突、读取内容及释放条件。所有权参考按不可变授权列表减去已完成集合计算剩余责任；容量检查以半开占用区间扫描对照 ceil(L/P)，并核对组合案例。所供实际执行记录的脚本 SHA256 与绑定一致，使用 Python 3.12 的 -I -S -B -X utf8，在 remote_bwrap 隔离环境返回 0、stderr 为空且未超时；结果为 1555 个图案例、1255 条 n≤3 的完整拓扑执行、20 个所有权案例，容量为 144/128 MiB。六个图缺陷和旧 epoch 缺陷均实际触发 Failure；例如 ignore_readers 检出 writer overlaps a prior access，last_reader 和 free_writer_only 检出 free during active access，early_event 检出访问尚未结束就释放。它们直接测试本章生产边、读者汇合、最后使用及代次机制，具备有效反证能力。作者声明的 JavaScript 检查与协调者后来实际执行的 Python 检查分别计量；没有把未执行设备检查记为 PASS。模型遗漏已列为 limitations，不以有限枚举推出完整设备实现正确。上一轮非严格 JSON 属于交付格式失败，当前材料以结构化候选提供完整正文和脚本，本审阅重新评估了全候选，未沿用该失败作为当前技术缺口。"
+  },
+  "format_status": "strict_json",
+  "format_error": null,
+  "output_text": "{\n  \"entry_id\": \"K-FW-003\",\n  \"body_sha256\": \"cd6a3f20b72a017afe63af8d1d071f345048b79c8697b504482977539f40b4c3\",\n  \"reviewer\": \"sol-reviewer:K-FW-003:round-2\",\n  \"decision\": \"accept\",\n  \"documents\": {\n    \"AGENTS.md\": \"b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a\",\n    \"docs/knowledge-method.md\": \"69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb\",\n    \"docs/knowledge-review.md\": \"f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21\",\n    \"knowledge/frameworks/streams-allocator.md\": \"cd6a3f20b72a017afe63af8d1d071f345048b79c8697b504482977539f40b4c3\",\n    \"knowledge/sources/S-TORCH-CUDA.md\": \"8ee61677a1e35d475d9bb122b2c7fa824ccf054acefbe2f12345d72c1fb1b00e\",\n    \"knowledge/sources/S-CUDA-ASYNC.md\": \"40df9287d0648a8ef55a046ceb1c18dd402619ede6e57ca33d3f90e4ace3da05\",\n    \"knowledge/sources/S-CUDA-ALLOC.md\": \"3ba021c941f2ed8f048be34d1ba0110f37675a3460013f24a239cc43a1e8630a\",\n    \"knowledge/system-semantics/cancellation-resource-completion.md\": \"919052c77f65a13c9dc09aad03341ed31f0820dbbdcb2750b5789f349f9e86c1\",\n    \"knowledge/hardware/shared-memory-paths.md\": \"9471f29d33a5821b00e11b6d08fb69fe31288087d558f05c5f9234350efe8b0d\",\n    \"knowledge/algorithms/kv-offload-prefetch.md\": \"a7088eba5c78cd9e96cf011d61946ad7dec4ecb6378ac16e7f2fc3820af38301\",\n    \"knowledge/system-semantics/memory-allocators.md\": \"2e7258787b94ad142c7c236541e8718803ad30b273d08e6c398dff673a1df838\",\n    \"knowledge/hardware/host-device-transfer.md\": \"e4921a0714af21f7ab1a336f40af662f716f2c64a42dd598eb2cede548c858d2\",\n    \"knowledge/system-semantics/host-device-timing.md\": \"411061489661a325939476348559d80df773a32cc19be2aef216e4d4a5b0b554\",\n    \"knowledge/hardware/transport-and-rdma.md\": \"72bcf1d8948eae41c243e422f6b0370462dcc4bf33ef86f5664a09b4e46d3ba2\",\n    \"references/S-TORCH-CUDA/fulltext.txt\": \"4756fc37be9c52d4128b5f4b46f996fddb8b136a9ef51183a6f0e1c7d49b18df\",\n    \"tools/check_k_fw_003_full.py\": \"84e5ff6cf3840d71740a9f02a74819a53f6e368094b86f13a7da918abfb1bbbc\"\n  },\n  \"criteria\": {\n    \"definition\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"明确限定单进程、单设备、主机串行账务范围，以存储身份和代次处理别名，定义分配、访问、释放及未来授权；区分已安排内容与设备完成，输入输出和状态足以恢复本章模型。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/frameworks/streams-allocator.md\",\n          \"quote\": \"一个存储对象记为 X=(device,address,bytes,epoch)。bytes 以字节计，epoch 每次把同一物理槽交给新对象时递增。\"\n        },\n        {\n          \"path\": \"knowledge/frameworks/streams-allocator.md\",\n          \"quote\": \"内容版本可以在提交时登记为“将由某操作生成”，不能把这个登记解释成设备已经完成。\"\n        }\n      ]\n    },\n    \"legality\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"分配生效、生产消费、冲突访问和释放分别具有明确偏序要求；record_stream、持有引用和执行等待的职责没有混淆。普通与异步 free 的混用、默认 stream 差异和图未来访问权均与所供文档相符，保守槽回收被正确标为方案选择。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/frameworks/streams-allocator.md\",\n          \"quote\": \"合法性至少要求：对每个 u∈U_X，A_X≺s(u)，且 e(u)≺F_X；读取依赖的最后生产写入必须先于读取；同一范围内至少一方写入的访问必须有明确次序，或采用本章范围之外、经证明的并发协议。\"\n        },\n        {\n          \"path\": \"knowledge/frameworks/streams-allocator.md\",\n          \"quote\": \"`record_stream` 不是等待生产者，也不是读写锁。\"\n        }\n      ]\n    },\n    \"algorithm\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"伪代码覆盖初始化、访问授权与模式合并、过去前沿收集、等待与提交、完成登记、关闭和回收。W/R 压缩的传递覆盖论证成立，多对象统一更新避免自依赖；未初始化、空工作及部分提交失败有明确处理。取消保留物理责任，旧代通知不能改变新代账务。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/frameworks/streams-allocator.md\",\n          \"quote\": \"多对象操作应先收集所有旧前沿，再提交并统一更新。\"\n        },\n        {\n          \"path\": \"knowledge/frameworks/streams-allocator.md\",\n          \"quote\": \"正确性不变量是：W 覆盖最近写入；R 覆盖 W 之后所有尚未被后继写入汇合的读取。\"\n        },\n        {\n          \"path\": \"knowledge/frameworks/streams-allocator.md\",\n          \"quote\": \"例如 kernel 已成功入队、随后事件记录失败，不能删除该访问并立即回收。\"\n        }\n      ]\n    },\n    \"cost\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"六类成本均与具体机制连接，区分关键路径、实际流量和物理驻留。独立复算得到 X/W/H 槽数为 2/1/2，设备与 pinned 容量为 144/128 MiB，64 MiB/4 ms 为 15.625 GiB/s；共享资源带宽条件和 workspace 容量交换的前提清楚。O(S) 对应前沿状态规模，不应外推为全部拥有者及事件资源的总量。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/frameworks/streams-allocator.md\",\n          \"quote\": \"按关键路径分析，不能累加所有并发等待区间\"\n        },\n        {\n          \"path\": \"knowledge/frameworks/streams-allocator.md\",\n          \"quote\": \"对应设备缓冲为 2×64+16=144 MiB，pinned 主机缓冲为 2×64=128 MiB。\"\n        },\n        {\n          \"path\": \"knowledge/frameworks/streams-allocator.md\",\n          \"quote\": \"共享资源 r 每批承担 Q_r 字节、可持续带宽 B_r 时，还要求 P≥Q_r/B_r\"\n        }\n      ]\n    },\n    \"adaptation\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"条件变化表保留分配、内容和最后使用不变量，并具体解释单 stream、长尾读者、容量紧张、小对象、图绑定、别名和后端变化时的调整与放弃条件；没有把更多缓冲或独立 workspace 等同于性能收益。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/frameworks/streams-allocator.md\",\n          \"quote\": \"降低在途深度、共享 workspace 并串行、等待或分块；额外缓冲挤出 KV 时可能反转收益\"\n        },\n        {\n          \"path\": \"knowledge/frameworks/streams-allocator.md\",\n          \"quote\": \"保守全存储前沿，或在可证明范围后细分；只按 tensor 身份建账应放弃\"\n        }\n      ]\n    },\n    \"diagnosis\": {\n      \"assessment\": \"sufficient\",\n      \"reason\": \"对旧值、压力错误、双消费者、共享 workspace、显存保留、取消回收和无加速分别给出竞争解释、可控干预及反证后的修正。交付检查具有独立全历史冲突参考、执行状态不变量和实际检出的负对照；正文正确限制 CPU 模型与设备结论的关系。\",\n      \"evidence\": [\n        {\n          \"path\": \"knowledge/frameworks/streams-allocator.md\",\n          \"quote\": \"全设备同步使错误消失，只能说明时序相关，不能定位生产边、回收边还是 workspace 冲突。\"\n        },\n        {\n          \"path\": \"knowledge/frameworks/streams-allocator.md\",\n          \"quote\": \"分别拉长 B、C，交换提交与结束顺序\"\n        },\n        {\n          \"path\": \"knowledge/frameworks/streams-allocator.md\",\n          \"quote\": \"错误对照要实际删除一条保护或错误合并一个责任，确认独立参考确实能发现它。\"\n        }\n      ]\n    }\n  },\n  \"findings\": [],\n  \"limitations\": [\n    \"结论限于所供固定文档和明确摘录；CUDA 指南完整原文、上游源码及未提供的内部依赖复用规则未被完整核验。\",\n    \"CPU 检查不证明真实 CUDA 可见性、库内部 stream 覆盖、DMA、图重放、驱动池复用、硬件重叠、性能、设备故障恢复或 Agent 使用效果。\",\n    \"图枚举使用单对象、固定初始生产者及 R/W 操作；未动态测试多对象别名合并、UPDATE 的数值语义、未初始化即关闭、部分提交失败和 QUARANTINED 恢复。这些路径通过正文保守规则审阅，不计作测试通过。\",\n    \"作者阶段仅执行 JavaScript 模型；Python 的执行证据来自所供协调者 preflight。本审阅读取并分析该记录，没有另行执行脚本。\",\n    \"离线链接的目标身份与语义通过所供材料核对；未执行落盘文件存在性、冻结读取或发布登记检查。\"\n  ],\n  \"checks\": [\n    {\n      \"script\": \"tools/check_k_fw_003_full.py\",\n      \"args\": []\n    }\n  ],\n  \"no_checks_reason\": \"\",\n  \"reading_scope\": \"完整阅读所供 AGENTS.md [0,567)、docs/knowledge-method.md [0,2251)、docs/knowledge-review.md [0,3016)、正文 [0,12875)、S-TORCH-CUDA 来源说明 [0,1468)、S-CUDA-ASYNC 来源说明 [0,1610)、S-CUDA-ALLOC 来源说明 [0,498)、cancellation-resource-completion.md [0,3782)、shared-memory-paths.md [0,3129)、kv-offload-prefetch.md [0,3710)、memory-allocators.md [0,4191)、host-device-transfer.md [0,6485)、host-device-timing.md [0,3827)、transport-and-rdma.md [0,4088)，以及标为完整提供的 references/S-TORCH-CUDA/fulltext.txt [0,80851)。完整阅读 candidate.test_script 和 actual_preflight 的输出、执行参数及脚本哈希。相关章节仅阅读所供摘录：async-scheduling.md [0,1143)、[8000,13940)；cuda-graph-buffers.md [0,4000)、[12000,15083)；gpu-kernel-pipelines.md [0,1005)、[8000,14078)；attention-backends.md [0,3083)、[16000,20000)；host-runtime.md [0,3524)、[4000,7559)。两个 CUDA fulltext 路径均只阅读相同的所供摘录：[48000,56000)、[84000,100000)、[104000,108000)、[152000,160000)、[640000,644000)、[684000,691138)、[700000,704000)、[744000,748000)、[756000,764000)、[768000,772000)、[780000,784000)、[792000,800000)、[1076000,1084000)。范围均为材料声明的提取文本零基半开字符区间；摘录文件未列入 documents，不宣称完整阅读 CUDA 指南或源码归档。\",\n  \"test_assessment\": \"检查不是仅复述前沿实现：reference 分支直接连接全部历史冲突和所有访问结束到释放的关系，不使用 W/R 压缩；expected_versions 从串行操作序列独立推导版本，validate_prefix 检查分配、初始化、活动冲突、读取内容及释放条件。所有权参考按不可变授权列表减去已完成集合计算剩余责任；容量检查以半开占用区间扫描对照 ceil(L/P)，并核对组合案例。所供实际执行记录的脚本 SHA256 与绑定一致，使用 Python 3.12 的 -I -S -B -X utf8，在 remote_bwrap 隔离环境返回 0、stderr 为空且未超时；结果为 1555 个图案例、1255 条 n≤3 的完整拓扑执行、20 个所有权案例，容量为 144/128 MiB。六个图缺陷和旧 epoch 缺陷均实际触发 Failure；例如 ignore_readers 检出 writer overlaps a prior access，last_reader 和 free_writer_only 检出 free during active access，early_event 检出访问尚未结束就释放。它们直接测试本章生产边、读者汇合、最后使用及代次机制，具备有效反证能力。作者声明的 JavaScript 检查与协调者后来实际执行的 Python 检查分别计量；没有把未执行设备检查记为 PASS。模型遗漏已列为 limitations，不以有限枚举推出完整设备实现正确。上一轮非严格 JSON 属于交付格式失败，当前材料以结构化候选提供完整正文和脚本，本审阅重新评估了全候选，未沿用该失败作为当前技术缺口。\"\n}",
+  "elapsed_seconds": 130.703
+}

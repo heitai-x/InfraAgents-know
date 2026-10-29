@@ -1,0 +1,76 @@
+{
+  "id": "K-ALG-001",
+  "path": "algorithms/iteration-batching.md",
+  "category": "algorithms",
+  "title": "连续批处理：从自回归依赖到迭代调度",
+  "summary": "从已知token与连续KV边界推导就绪性，完整预算/执行视图/采样提交算法连接混合调度、取消、资源与SLO成本。",
+  "revision": 4,
+  "status": "seed",
+  "tags": [
+    "continuous batching",
+    "连续批处理",
+    "迭代",
+    "scheduler",
+    "FCFS",
+    "公平调度",
+    "deadline",
+    "抢占",
+    "未知输出长度",
+    "执行快照",
+    "预算预留",
+    "采样边界",
+    "结果提交"
+  ],
+  "scope": {
+    "model_families": [
+      "transformer"
+    ],
+    "platforms": [],
+    "runtimes": [],
+    "workloads": [
+      "text-generation"
+    ]
+  },
+  "source_ids": [
+    "S-ORCA",
+    "S-SARATHI",
+    "S-VLLM-SCHED"
+  ],
+  "related": [
+    "K-ALG-007",
+    "K-ALG-008",
+    "K-SYS-002",
+    "K-WORK-002",
+    "K-SYS-012",
+    "K-WORK-005",
+    "K-WORK-010",
+    "K-SYS-015",
+    "K-ALG-014",
+    "K-ENGINE-001",
+    "K-ENGINE-004",
+    "K-SYS-010",
+    "K-WORK-007"
+  ],
+  "evidence": [],
+  "updated_at": "2026-10-28",
+  "sha256": "08f5ebb413f0a054e97302e5b080df44005de6c5704d0a24747085a5246e647a",
+  "questions": [
+    "为什么一轮调度不能只用一个长度描述请求，已确认、已计算、本轮 token 数和分配容量各自回答什么？",
+    "token 预算、页预算和最长历史分别限制一轮的哪部分成本，为什么同样 256 tokens 不是相同成本？",
+    "按到达顺序、估计剩余工作、deadline 和公平份额排序时，各自还缺哪些约束才能避免饥饿？",
+    "暂停保留页、换出状态和丢弃重算三种抢占方式的代价分别由什么决定，怎样比较它们？",
+    "输出长度未知时，如何在逐轮修正预留的同时保证不越过硬容量上限？",
+    "已知token、已完成KV与可采样位置怎样分别推进，为什么采到的下一token还没有自己的KV？",
+    "怎样在token、页和时间预算同时受限时预留与回滚，再把packed结果按原请求身份提交？"
+  ],
+  "symptoms": [
+    "持续到达的短请求使等待中的长请求长期得不到服务",
+    "高优先级请求占据队首却因状态未就绪无法推进，阻塞其他请求",
+    "平均吞吐上升但已有请求的 ITL 分布变差"
+  ],
+  "assumes": [
+    "自回归 decoder 模型",
+    "单实例内的迭代级调度",
+    "KV 以页或块为单位分配"
+  ]
+}

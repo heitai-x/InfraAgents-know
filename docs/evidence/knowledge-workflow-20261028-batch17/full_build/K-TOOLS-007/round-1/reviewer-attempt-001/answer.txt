@@ -1,0 +1,200 @@
+{
+  "entry_id": "K-TOOLS-007",
+  "body_sha256": "08dad844344d407d72618662d89de3bb450fdcc295a7119803bce67265b3b2da",
+  "reviewer": "sol-reviewer:K-TOOLS-007:round-1",
+  "decision": "revise",
+  "documents": {
+    "AGENTS.md": "b395db677de0398c8aeefd1c021bcfeb89deec3f1a10865fb829f3ba433f861a",
+    "docs/knowledge-method.md": "69ca2cedd9eb17a946062a430fe9efc511335a6df8657f0c24e3b070ae6e88fb",
+    "docs/knowledge-review.md": "f4f639157a1a9726854434b1fe1628a32b57aab37cb61cf21b679f654c2b7e21",
+    "knowledge/tools/statistical-experiments.md": "08dad844344d407d72618662d89de3bb450fdcc295a7119803bce67265b3b2da",
+    "knowledge/sources/S-STATS.md": "70aaa597c5ab44b118296fe0527f0b510b7c8e4fb2e62170ce6547c0f7457f8e",
+    "knowledge/sources/S-MLPERF-SCENARIOS.md": "e210de2929034d4a6e25a31ee72b81a184412a7e637c979210f91ae02a261b04",
+    "knowledge/sources/S-GENAI-PERF.md": "1db17462a3ae4cd41dcb58a78f3f9fa9e71ff3a51614e56855be07bcb95618e0",
+    "knowledge/sources/S-TORCH-REPRO.md": "05f2b5b9819f01363fadadf41987482edfebb130bc134c36c44a00138fd5eb28",
+    "references/S-MLPERF-SCENARIOS/upstream/loadgen/README.md": "074479dbeb369205ccc8800450c647893b4901c247e0e4ee7f321f05254e9305",
+    "references/S-GENAI-PERF/fulltext.txt": "357d6fcaafc41f2954ea87da567cd2b41ec8a146f8e4f19cb976acf39f539ddc",
+    "references/S-TORCH-REPRO/fulltext.txt": "4f6b1deb38f7f174a2e340674680aaa0484e02a1d18cccd1bb94618df512cc2a",
+    "tools/check_k_tools_007_full.py": "f34137612fc68d7e6da16dce9e8aabebd4c43c8b9383d9ef88e4f4b2aaded819"
+  },
+  "criteria": {
+    "definition": {
+      "assessment": "sufficient",
+      "reason": "说明了增加内层计时不能替代外层独立重复的动机，定义比较合同、指标身份、差值与比值、输入输出及未知状态；明确了不同聚合顺序对应不同估计量。",
+      "evidence": [
+        {
+          "path": "knowledge/tools/statistical-experiments.md",
+          "quote": "输入是 C、候选集合、预算、层级结构和决策阈值 δ；输出是逐请求事件、效应量区间、尾部分位数、失败账、停止决策及未验证边界。"
+        },
+        {
+          "path": "knowledge/tools/statistical-experiments.md",
+          "quote": "均值比、逐请求比值平均与分位数比不是同一估计量。"
+        }
+      ]
+    },
+    "legality": {
+      "assessment": "sufficient",
+      "reason": "比较人口、事件边界、质量、失败保留、独立单位、分母与统计假设均有条件说明；独立保留验证及序贯停止限制清楚。S-STATS 的配对、固定效应及非平稳尾部限制得到正确区分。区间计算的估计量分支缺口另列于 algorithm。",
+      "evidence": [
+        {
+          "path": "knowledge/tools/statistical-experiments.md",
+          "quote": "配对单位是独立运行或区组，而不是同一运行内强相关的 token"
+        },
+        {
+          "path": "knowledge/tools/statistical-experiments.md",
+          "quote": "序贯停止必须预先设计；持续查看直到恰好显著再停止会改变统计含义。"
+        }
+      ]
+    },
+    "algorithm": {
+      "assessment": "partial",
+      "reason": "分层执行、事件保留、差值 t 区间、经验分位数及零超限上界已有可复算机制。但总算法对差值和比值统一进入 t 区间分支，正文只展开差值公式，未交付比值在该分支的计算方法。检查覆盖说明还多报了未实际执行的分母为零边界。",
+      "evidence": [
+        {
+          "path": "knowledge/tools/statistical-experiments.md",
+          "quote": "2 定义估计量：差值或比值；声明均值、分位数或逐对比值的聚合顺序"
+        },
+        {
+          "path": "knowledge/tools/statistical-experiments.md",
+          "quote": "10 若条件成立：计算 t 区间；否则用层级 bootstrap 保留层级，或报告区间未决"
+        },
+        {
+          "path": "knowledge/tools/statistical-experiments.md",
+          "quote": "n<2、s_D=0 和分母为零的边界"
+        }
+      ]
+    },
+    "cost": {
+      "assessment": "sufficient",
+      "reason": "实际检查了统计计算复杂度、事件驻留、通信校准、构建预热、排空同步和实例占用。247 与遗漏构建后的 47 算术正确；总式限定为可加成本单位，另外说明共享环境只计一次、墙钟时间沿依赖关键路径计算，没有将模型账冒充设备测量。",
+      "evidence": [
+        {
+          "path": "knowledge/tools/statistical-experiments.md",
+          "quote": "bootstrap 若每次重采样 O(N) 则总计 O(B N)"
+        },
+        {
+          "path": "knowledge/tools/statistical-experiments.md",
+          "quote": "其中配对区组的共同环境成本只计一次。若阶段可以重叠，应沿真实依赖取关键路径，不能把所有累计时长直接相加。"
+        }
+      ]
+    },
+    "adaptation": {
+      "assessment": "sufficient",
+      "reason": "条件变化表将候选搜索、到达率、长度、硬件、缓存、失败、质量、重复层级和工具变化连接到需要重建的估计量、预算与适用域；没有承诺更换重采样方法即可修复所有假设失败。",
+      "evidence": [
+        {
+          "path": "knowledge/tools/statistical-experiments.md",
+          "quote": "| 硬件、版本或配额改变 | 比较合同与估计量定义 | 重建基线、区间和适用域；不能外推旧结果 |"
+        },
+        {
+          "path": "knowledge/tools/statistical-experiments.md",
+          "quote": "少量独立块、强漂移和极端长尾会限制区间可信度，无论用解析方法还是重采样都要说明独立性、平稳性与样本范围。"
+        }
+      ]
+    },
+    "diagnosis": {
+      "assessment": "sufficient",
+      "reason": "给出了运行间变异、尾部删失、选择偏差、质量失格、工具扰动和队列积压的竞争解释及干预、撤回条件。离散长尾反例的均值、方差和覆盖率上界正确，能够反驳 iid 自动保证小样本 t 覆盖率的判断。",
+      "evidence": [
+        {
+          "path": "knowledge/tools/statistical-experiments.md",
+          "quote": "| 搜索后收益消失 | 选择偏差或探索集泄漏 | 冻结候选后在独立保留集重测；若区间跨决策边界，不能声称胜出 |"
+        },
+        {
+          "path": "knowledge/tools/statistical-experiments.md",
+          "quote": "反证后修正判断，而不是删除不利样本或放宽质量门槛。"
+        }
+      ]
+    }
+  },
+  "findings": [
+    {
+      "id": "K-TOOLS-007-R1-F01",
+      "criterion": "algorithm",
+      "evidence": "10 若条件成立：计算 t 区间；否则用层级 bootstrap 保留层级，或报告区间未决",
+      "impact": "第 2 步允许选择均值比，第 9 步检查分母后仍进入同一 t 分支，但后文交付的是配对均值差的区间。差值区间不能直接作为均值比区间；分别计算候选均值的 t 区间也没有定义如何得到比值区间。一般读者无法依照这条完整算法实现声明支持的比值输出，或可能忽略分母不确定性。",
+      "blocking": true,
+      "required_revision": "按估计量拆开第 10 步。可将已展开的 t 公式明确限于配对差值，将均值比明确交给现有层级 bootstrap，并声明每次重采样如何计算两个均值及其比值、保持配对，以及分母为零或不稳定时如何返回未决；也可另行展开合法的比值区间方法。不得将差值 t 公式直接用于比值。"
+    },
+    {
+      "id": "K-TOOLS-007-R1-F02",
+      "criterion": "algorithm",
+      "evidence": "它核对：配对 t 区间的摘要公式与已知数值；n<2、s_D=0 和分母为零的边界",
+      "impact": "脚本没有比值计算函数，也没有执行分母为零用例。validate_contract 只读取 denominator_positive 布尔声明，check_legality 始终将其设为 True，未测试 False。所附执行记录的 PASS 因而不支持正文声称的这个边界覆盖。",
+      "blocking": true,
+      "required_revision": "删除检查覆盖说明中未执行的分母为零声明并明确其未验证范围，或补充实际消费数值分母的检查及零分母负对照，并保存新脚本绑定的真实执行记录。只增加一个未被调用的条件或布尔字段不能算完成该检查。"
+    }
+  ],
+  "limitations": [
+    "审查依据消息中提供的候选全文、材料内容、脚本全文和预检执行记录；当前工具未提供本地文件读取能力，未打开本地技能文件、重新计算磁盘文件哈希或验证链接目标实际存在。",
+    "S-STATS 原文仅按 reviewer 材料中的摘录范围核对，未声明通读整份论文或视觉核对原始 PDF；LoadGen 三个图像资产未供给。",
+    "LoadGen 的具体场景注释通过所供来源说明使用；已供 README 指向 test_settings.h，但本次没有该实现材料，未独立核验其源码。",
+    "现有脚本没有实现或执行层级 bootstrap、保留集隔离、序贯停止协议及真实事件账归约，现有 PASS 不支持这些机制已被动态验证。",
+    "CPU 算术检查不证明真实服务统计覆盖率、目标设备性能、真实质量评价、生产到达轨迹或知识改善 Agent 构建能力；正文对此保留边界是合理的。"
+  ],
+  "checks": [
+    {
+      "script": "tools/check_k_tools_007_full.py",
+      "args": [],
+      "execution_source": "用户提供的 actual_preflight；本审阅调用没有重新执行",
+      "script_sha256": "f34137612fc68d7e6da16dce9e8aabebd4c43c8b9383d9ef88e4f4b2aaded819",
+      "backend": "remote_bwrap",
+      "returncode": 0,
+      "reported_result": "PASS",
+      "assessment": "执行记录与所供脚本的七组检查相容；通过范围限于实际断言，不包括分母为零边界或完整实验算法。"
+    }
+  ],
+  "reading_scope": {
+    "basis": "完整阅读所供候选正文与脚本，并阅读材料包中的全文或明确摘录。以下字符范围均为零基、左闭右开，沿用供应记录；excerpt 不等于全文。",
+    "full_supplied": [
+      "AGENTS.md",
+      "docs/knowledge-method.md",
+      "docs/knowledge-review.md",
+      "knowledge/tools/statistical-experiments.md",
+      "knowledge/sources/S-STATS.md",
+      "knowledge/sources/S-MLPERF-SCENARIOS.md",
+      "knowledge/sources/S-GENAI-PERF.md",
+      "knowledge/sources/S-TORCH-REPRO.md",
+      "references/S-MLPERF-SCENARIOS/upstream/loadgen/README.md",
+      "references/S-GENAI-PERF/fulltext.txt",
+      "references/S-TORCH-REPRO/fulltext.txt",
+      "tools/check_k_tools_007_full.py"
+    ],
+    "excerpts": {
+      "references/S-STATS/fulltext.txt": [[0, 72000], [76000, 107922], [112000, 175763]],
+      "knowledge/workloads/measurement-comparability.md": [[4000, 6741]],
+      "knowledge/workloads/slo-goodput.md": [[0, 2741]],
+      "knowledge/tools/correctness-oracles.md": [[8000, 10741]],
+      "knowledge/system-semantics/evidence-and-independent-checks.md": [[0, 2741]],
+      "knowledge/tools/timeline-attribution.md": [[0, 2741]],
+      "knowledge/algorithms/quantization-contract.md": [[0, 2741]],
+      "knowledge/algorithms/speculation-budget.md": [[8000, 9304], [16000, 17437]],
+      "knowledge/algorithms/chunked-prefill.md": [[8000, 9045], [12000, 13696]],
+      "knowledge/algorithms/batched-sampling.md": [[12000, 12617], [20000, 22124]],
+      "knowledge/algorithms/lora-serving.md": [[0, 2741]],
+      "knowledge/algorithms/parallelism.md": [[8000, 10741]],
+      "knowledge/frameworks/numerical-reference.md": [[4000, 6741]],
+      "knowledge/frameworks/triton-kernels.md": [[8000, 10741]],
+      "knowledge/hardware/memory-and-roofline.md": [[8000, 10741]],
+      "knowledge/hardware/cuda-execution.md": [[16000, 18741]],
+      "knowledge/models/encoder-decoder-streaming.md": [[0, 2741]],
+      "knowledge/models/image-diffusion.md": [[4000, 5557], [16000, 17184]],
+      "knowledge/system-semantics/host-device-timing.md": [[0, 2741]],
+      "knowledge/system-semantics/design-synthesis.md": [[0, 2741]],
+      "knowledge/tools/trace-observability.md": [[12000, 12034], [16000, 18707]],
+      "knowledge/tools/framework-profiler-scope.md": [[0, 2741]],
+      "knowledge/tools/failure-evidence.md": [[4000, 6741]],
+      "knowledge/workloads/metric-events.md": [[4000, 6741]],
+      "knowledge/workloads/arrival-and-concurrency.md": [[0, 2741]],
+      "knowledge/workloads/input-distribution.md": [[0, 2741]],
+      "knowledge/workloads/capacity-planning.md": [[16000, 18741]],
+      "knowledge/algorithms/kv-compression.md": [[4000, 6741]],
+      "knowledge/workloads/cost-and-energy.md": [[8000, 10741]],
+      "knowledge/system-semantics/retrieval-pipeline.md": [[0, 2741]],
+      "knowledge/models/graph-inference.md": [[0, 2741]],
+      "knowledge/tools/gpu-characterization.md": [[0, 2741]]
+    },
+    "author_scope_assessment": "单独使用 author_material_scopes 判断作者材料供应。作者得到的 S-STATS 范围为 [0,74560)、[76000,175763)，不同于本审阅范围；相关章节同样是摘录，且未供给源码归档。作者账本中的正文哈希 908b3588a6fa20bb1f2aed9f5db51c4b462953d79f8944cdbcfea7141c74644f 对应其输入正文，本次判断绑定修订候选 08dad844344d407d72618662d89de3bb450fdcc295a7119803bce67265b3b2da。供应账本不证明认知阅读。作者明确未执行脚本，协调阶段所供预检记录不能改记为作者自行执行。"
+  },
+  "test_assessment": "检查具有有效但有限的独立参考：t 摘要公式对照已知数值及中心、宽度不变量；运行层方差对照两个常数运行的闭式结果；零超限界对照二项式零事件概率；nearest-rank 对照有序样本的已知秩；搜索偏差以全部 16 种噪声组合枚举对照解析期望；成本对照逐项账；合同检查拒绝实际传入的缺质量和丢失败声明。错误分位数索引确实生成错误结果并与参考不符。平铺标准误、遗漏构建和选择后无偏等负对照能区分对应算例，但部分只是错误数值或改动输入后的比较，没有经过通用实验结果审查器，不能称为完整错误轨迹识别。零方差反例验证了一个不覆盖事件及其概率上界，没有测量任意分布的实际覆盖率。n<2、R<2、空分位数、单元素分位数和零超限样本数为零均有实际调用；分母为零没有调用或数值实现。层级重采样与配对保持没有动态检查，也没有检查均值比区间分支，因此成功执行不能关闭 F01 或 F02。"
+}

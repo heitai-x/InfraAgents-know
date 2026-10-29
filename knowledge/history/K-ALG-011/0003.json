@@ -1,0 +1,56 @@
+{
+  "id": "K-ALG-011",
+  "path": "algorithms/batched-sampling.md",
+  "category": "algorithms",
+  "title": "批量采样：概率变换、请求随机性与行映射",
+  "summary": "采样器消费每个请求自己的条件分布；向量化改变执行形态，不能改变参数、随机状态或输出归属。",
+  "revision": 3,
+  "status": "seed",
+  "tags": [
+    "sampling",
+    "top-p",
+    "top-k",
+    "RNG",
+    "采样"
+  ],
+  "scope": {
+    "model_families": [],
+    "platforms": [],
+    "runtimes": [],
+    "workloads": []
+  },
+  "source_ids": [
+    "S-FI-SAMPLE",
+    "S-TORCH-REPRO",
+    "S-SPEC"
+  ],
+  "related": [
+    "K-SYS-002",
+    "K-ALG-012",
+    "K-ALG-006",
+    "K-ALG-024",
+    "K-SYS-014",
+    "K-TOOLS-007",
+    "K-ENGINE-003",
+    "K-SYS-007"
+  ],
+  "evidence": [],
+  "updated_at": "2026-10-27",
+  "sha256": "eedef73ece886112211c643f263add7644e5bd2018f2043c1716a172368aa6f2",
+  "questions": [
+    "prefill、投机验证和并行候选下，请求与 logits 行的映射如何先于采样参数确定？",
+    "temperature、grammar mask、top-k 和 top-p 的顺序为何不可交换，空合法集合如何处理？",
+    "按 batch 行连续消耗随机流会带来什么问题，调度无关的可复现性需要把随机流绑定到什么？",
+    "词表沿设备分片时，argmax、top-k 和归一化为何不能在各片独立完成后拼接？",
+    "greedy 与随机采样各自的验证目标是什么，相同 seed 文本不同能否证明分布错误？"
+  ],
+  "symptoms": [
+    "同一请求的输出随其他请求加入或取消而改变",
+    "分支重排后 token 行更新了但采样参数仍对应旧分支",
+    "约束采样下抽出了非法 token 或概率质量丢失"
+  ],
+  "assumes": [
+    "自回归模型每步输出完整词表 logits",
+    "多个请求在同一轮合批采样"
+  ]
+}

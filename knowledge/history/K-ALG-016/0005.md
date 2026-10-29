@@ -1,0 +1,143 @@
+# K-ALG-016：基础算子：从张量契约到合法融合
+
+完整 forward 是张量变换和状态更新的组合。实现一个名字相同的算子并不充分：轴含义、广播、布局、累加精度、特殊值和原地写入关系共同定义它是否可替代参考。
+
+## 线性、索引与布局
+
+令 X 为 M×K，W 为 K×N，Y=XW+b 为 M×N；M 可以是一个 decode token、一批请求的有效 token，或 prefill 的 token 展平。乘加算作两次浮点运算时，主项是 2MKN。忽略重复搬运，至少涉及输入、权重与输出 s(MK+KN+MN) 字节；已有输出参与累加时还要读它。实际流量由分块和 cache 重用决定，不能用这条理想下界直接代替带宽测量。
+
+矩阵转置的逻辑视图可以只改变 stride，但下游内核若只接受连续布局，仍会发生重排。预打包、QKV 合并和输出投影融合应从布局消费关系推导；同一个张量的两类消费者可能要求不同布局，局部减少一次写出却造成另一处完整转换。
+
+对普通 strided 张量，设存储基址为 A、每元素 b 字节、存储偏移 o 与各轴 stride sⱼ 均以元素计，逻辑下标 i 的地址为
+
+\[
+\operatorname{addr}(i)=A+b\left(o+\sum_j i_j s_j\right).
+\]
+
+设连续 B×L×H×D 张量的大小为 2×3×2×4，stride 为 (24,8,4,1)。交换 L/H 轴得到 B×H×L×D 视图时，stride 为 (24,4,8,1)；相同 shape 的连续新缓冲则为 (24,12,4,1)。同一逻辑位置 (0,1,0,0) 分别对应各自存储基址之后 4 与 12 个元素。正确重排可以保持逻辑值；只改 shape 后按连续偏移读取则会混淆 token/head。具体函数是否接受这个视图，还取决于它支持的 stride、对齐与偏移条件。
+
+广播视图的某一维 stride 可以为零，多个逻辑读者因而访问同一元素。若消费者把这些位置当作独立输出并行写入，就出现重叠写。独立输出存储、明确的归约或合适的写入顺序是不同实现选择；仅看输入输出 shape 相同无法判断别名是否合法。
+
+Embedding 是按 token ID 从 V×H 表中取行，M 个 token 的有效输出为 M×H，不是把整个词表做一次矩阵乘。重复 ID 可复用数据，但输出仍保留输入顺序；词表边界、padding 行和模型定义的缩放不能省略。gather 需要说明索引轴和越界行为；scatter 需要说明重叠索引是赋值还是归约。并发 scatter 的数学和确定性契约取决于这些定义。
+
+词表投影（lm_head）是反方向的 H×V 矩阵乘，每个需要 logits 的位置读取整份 V×H 权重。decode 每步只有最后一个位置需要 logits，prefill 则只有被采样或被评分的位置需要；对整段输入物化 L×V 的 logits 既浪费 2LHV 的乘加，也产生 L×V×b 字节的临时量。设定 V=131,072、H=4096、2 字节，lm_head 权重为 1 GiB；若 decoder 层总权重为 6 GiB，则该矩阵在每步权重流量中占约 14%，模型越小占比越高。tied embedding 与 lm_head 共用权重时节省的是容量，不是每步读取；只物化需要的位置、分块计算 softmax/argmax 以避免完整 logits 写回，是两条互不排斥的轴。
+
+## 归一化与位置旋转
+
+沿 hidden 轴的 LayerNorm 使用均值 μ 与方差 v，输出为 γ(x−μ)/√(v+ε)+β。采用常见带稳定项约定的 RMSNorm 为 γx/√(mean(x²)+ε)，不减均值。[RMSNorm 原文](../sources/S-RMSNORM.md) §3–4 给出两者的定义与区别；ε 的位置、是否有 bias、统计精度和转换顺序以具体模型为准。不能因为两者都叫 norm 就互换。
+
+一次归约需要整条归约域的统计量。单遍保留行、分段归约后合并、两遍读取再应用统计量是不同实现：大行使保留策略耗费寄存器，小行可能由启动与线程协调主导。归约顺序改变舍入，方差很小时 ε 与累加精度尤其敏感。原地融合 residual 与 norm 之前，还要确认旧 residual 是否仍被其他分支使用。
+
+RoPE 对一对分量 (a,b) 在位置 p 作旋转：(a cos(pθ)−b sin(pθ), a sin(pθ)+b cos(pθ))。同一频率下 R(p)ᵀR(q)=R(q−p)，解释了相对位置如何进入 QK 内积。[RoFormer 固定版本](../sources/S-ROPE.md) §3.2 给出这一构造。实际模型还要固定配对方式、旋转维度和频率；改变配对约定需要配套的权重或中间张量排列变换，使旋转前后的逻辑分量关系仍与参考一致；不能只更换一个 kernel 而忽略布局契约。
+
+把旋转融合到 Q/K 写出可减少中间流量，但缓存应明确保存旋转前还是旋转后的 K。分块 prefill、前缀命中和窗口移动改变的是本次工作范围，不能随意把逻辑位置重置为零。测试可以先检验旋转保持范数，再检验两个位置旋转后的内积关系；这些代数性质不能替代具体模型参考。
+
+## 激活、softmax 与融合边界
+
+门控 FFN 可写为 U=XWᵤ，G=φ(XW𝗀)，输出为 (G⊙U)W𝒹；门函数、bias 和参数顺序属于模型定义。SiLU、精确 GELU 与 GELU 的近似形式产生不同函数。把门控乘法与激活融合可减少 U/G 的往返写读，但可能提高寄存器压力，或限制可用矩阵内核。
+
+softmax 使用 m=max(z)，pᵢ=exp(zᵢ−m)/Σⱼexp(zⱼ−m)。减最大值限制指数溢出；并不自动定义全 mask 行、NaN、Inf 的行为。padding 元素应根据参考的可见集合处理，不能把错误 token 混入归约后再清零。分段 softmax 必须合并各段最大值与归一化质量，不能把每段独立归一化后直接拼接；详细合并关系见 [attention IO](attention-io.md)。
+
+融合改变执行边界，也可能改变舍入点。线性、bias、激活、量化若在参考中有中间截断，融合必须保留任务要求的数值关系。整数 accumulator、浮点 residual 和输出 scale 不能无条件合并；跨设备归约也不能省略恢复完整结果所需的通信。融合的候选同时受数据依赖、别名与资源成本影响：GEMM 的输出 tile 若覆盖其他 block 尚未读取的输入，会产生读写竞争；只读取对应位置的逐元素函数则可能允许一一对应的原地写入。暂存、改变写回次序或重新组织消费者可以改变这些依赖，所需字节、启动成本与资源占用应一并比较。
+
+## 可复算比较与定位
+
+设定 X 为 32×4096、W 为 4096×4096，输入权重输出均用 2 字节。线性主项为 1,073,741,824 FLOP，理想流量为 32 MiB 权重加 0.25 MiB 输入和 0.25 MiB 输出，约 31.51 FLOP/byte。M=1 时强度约为 1 FLOP/byte。算式只改变 M 就显著改变重用机会，因此不能按同一 tile 和线程数处理两者；softmax、norm 等归约又有不同的上界。
+
+建立逐算子参考时覆盖非连续 stride、非整除尾维、重复索引、极端数值和别名。完整 forward 逐层定位首次分歧，再区分参数加载、轴排列、位置/mask、有限精度重排和近似误差。若融合后小矩阵变快、大矩阵变慢，应检查内核选择、spill、转置与额外工作区，不能仅凭 kernel 数变少断言端到端改善。
+
+## 把线性投影接到真实权重与后端
+
+数学约定 W∈ℝᴷˣᴺ 与框架的 weight 参数未必具有相同轴顺序：常见框架把二维 weight 存为 N×K 并在线性层内转置（固定接口的约定见 [S-SDPA 来源说明](../sources/S-SDPA.md)）。把 checkpoint 中的 N×K 权重解释成 K×N，或把只改 stride 的转置视图当作已完成物理预打包，都会使实现偏离模型。是否需要转置缓冲、专用打包或量化 scale 重排，要沿所选 GEMM 的实际消费方式判断。
+
+QKV 合并投影也必须从真实 head 结构计算宽度。设 hidden=4096、Hq=32、Hkv=8、每 head 的 d=128，则 Q 宽 4096，K/V 各宽 1024，拼接宽度为 6144，而非三个 4096。M=32、FP16 时，拼接输出共 32×6144×2=384 KiB，其中 Q 为 256 KiB，K/V 各为 64 KiB。对应合并权重为 4096×6144，FP16 存储为 48 MiB；这些是设定结构下的尺寸推导。
+
+合并投影减少独立调用并可能复用 X，却没有消除全部输出布局问题。若拼接结果以 token 为行，Q 的 view 虽然每行只有 4096 个有效值，下一 token 的起点仍相距 6144 个元素；K/V 也沿同一完整行 stride 前进。能直接消费这种 stride 的 backend 可以避免复制；若消费者要求紧密排列，则重排成本必须计入 QKV 路径。把后端所需布局直接作为投影输出目标，可能减少中间搬运，也可能限制 GEMM 的有效实现，需一起比较。
+
+M=1 时每个输出主要是一次向量点积，权重复用方式不同于大 M。GEMV、窄 M GEMM、跨请求合批或 split-K 都是候选。split-K 把同一输出的归约分给多个工作块，需要部分和及后续合并；它增加并行度，也增加流量、工作区和舍入顺序变化。输出投影、FFN 和 QKV 不必共享同一种选择，应按它们在真实 token 数与布局下的完整成本决定。
+
+## 归一化融合需要保留统计域和活跃 residual
+
+对一行 hidden 长度 H 的 RMSNorm，统计量为 q=(1/H)Σⱼxⱼ²。实现为对齐 tile 处理 P≥H 个槽时，可以令无效元素对平方和贡献零，但分母仍是 H。若误用 P，则在真实均方远大于 ε 且输出非零时，输出会多出约 √(P/H) 的尺度。设 H=3072、P=4096，该因子约为 1.1547；这不是可忽略的尾部误差，而是改变了整行函数。LayerNorm 的均值、方差及任何分段统计的样本数也必须只计真实元素。
+
+一行的数据是否能在统计量完成前留在寄存器，决定一次加载后直接归一化，还是统计之后再次读取。较小 H 可以比较每行一个 program 的驻留方案，较大 H 则要考虑分段统计、合并开销和 spill。增加线程并不能消除所有约束：跨线程归约、每线程持有值数量和并行行数一起决定资源效率。固定来源只支持这些机制关系，不给任意 H 的最优配置。
+
+residual 与 norm 融合还要回答更新后的 residual 是否继续使用。设 u=x+r，y=RMSNorm(u)，共有 N=M×H 个元素，忽略各方案共有的 γ 读取。若独立两步在 norm 中只读一次 u，则先读 x/r、写 u，再读 u、写 y，共 5N 次元素读写。若融合后仍要保留 u 给后续残差路径，最低为读 x/r、写 u/y，共 4N；只省去一次 u 的读取。只有当 u 不再是外部活跃结果时，才可连它的写出一起省去，降为 3N。
+
+M=32、H=4096、每元素 2 字节时，一份 u 为 256 KiB。上述理想比较分别减少 256 KiB 或 512 KiB 有效流量；是否实际到达 HBM、是否发生多次归约读取、融合是否增加 spill，仍需观测。不能把“融合 residual+norm”统一记成省掉一读一写，也不能为了得到这个数字覆盖仍在被另一个分支读取的 residual。
+
+归一化函数的细节还包括 ε 的值和位置、γ/bias 的表示、统计与输出精度。将整行先转 FP32 再求平方和、仅以 FP32 累加低精度平方，以及中途截断部分和，具有不同误差。RMSNorm 原文中的理想重缩放关系也不能替代含 ε 和有限精度的模型定义。
+
+## RoPE 的融合目标是当前位置的合法状态更新
+
+RoPE 的配对、频率和位置来自模型语义，输出布局来自后端消费。固定 FlashAttention KV-cache 文档同时提供相邻维配对与半区配对选项；切换该选项需要保持权重和逻辑分量解释一致。若只旋转 R≤d 个通道，其余通道应保持原关系，不能因为某个内核适合整个 head 就扩大旋转域。
+
+缓存若保存已经旋转的 K，则每次 append 只需旋转新增 K 并写入对应逻辑位置。把完整缓存重新旋转，既增加随历史长度增长的读写，又重复施加位置变换。相反，某些执行设计保存未旋转状态并在消费时处理，必须把这条路径及代价明确交给后端；“缓存 K”本身没有说明旋转处于哪一侧。
+
+位置索引也不是 batch 中的行号。一次 chunk 起于位置 p₀，其第 j 个有效 query 使用 p₀+j；前缀命中、压缩 batch、请求退出或物理页搬迁，都不改变剩余 token 的逻辑位置。角度 pθ 的计算、sin/cos 表的精度、读取和输出转换构成完整数值路径。可用较长位置和跨 chunk 输入区分索引错误与舍入差异，不能只测试从位置零开始的短序列。
+
+从流量看，融合投影后的 Q/K 变换或融合 K 的缓存写入，减少的是本次新 token 的中间表示。其收益与新增 token 数成比例；它不会自动减少 attention 对合法历史的读取。适用性需要同时考虑下游要求的布局、写入槽所有权、缓存是否共享以及图重放时的 metadata 更新。
+
+## softmax 的稳定性、mask 与数值输出不能分开
+
+max 平移对有限 logits 保持实数域的 softmax，并使最大指数为 1；归一化域仍必须是当前行的合法元素集合。用极大负常数代替不可见位置，只有在预先限定的数值域与误差要求下才可能给出可接受近似。若全部位置不可见、合法 logits 比该常数更小，或输入含无穷值，直接套用普通 max/exp/sum 可能得到错误质量或未定义结果，需遵循模型和具体接口的规定。
+
+分块 softmax 需同时携带最大值和归一化质量。若中间使用以 2 为底的指数来计算自然指数，score 必须乘以 1/ln2；若持久化的是 log₂ 归一化量，消费者不能把它当作自然对数 LSE。这个差别在连接 attention 分区、跨 backend 合并或复用中间统计时会出现，详细接口例子见 [Triton kernel](../frameworks/triton-kernels.md)。
+
+输出 dtype 不是唯一精度开关。固定 functional.softmax 的 dtype 参数会在计算前转换输入；SDPA math 路径与 fused 路径也可能使用不同中间精度。把 softmax 与后续 V 乘法融合时，是否保留概率矩阵原有的舍入点会改变数值。概率很小不表示可以无条件删除该项；若做截断、稀疏近似或改变非线性近似，必须按任务允许的算法变更验证。
+
+## 把局部内核收益连接到完整 forward
+
+一个有区分力的比较应同时保留算子、适配和真实消费边界。对 norm 可以比较独立与融合路径在相同统计域、dtype 和 residual 活跃条件下的读写；对 QKV 比较包含切片、重排和缓存写入的时间；对 RoPE 区分计算三角值、查表、旋转和状态写入；对 GEMM 则包含有效权重布局、输出布局与必要工作区。
+
+固定同一输入与数值策略的对照可以定位逐组件首次分歧；真实模型层用于检查输入生产者与输出消费者的组合；prefill/decode 及混合服务路径则反映这些改动在实际执行组织中的结果。在上一层已经发生不同结果时，不能把后续误差归因给当前算子。换 batch 大小、合法 stride、尾维或输入尺度能够区分索引、归约与精度问题，重复普通随机张量不能替代这些边界。
+
+性能分析也沿同一链条推进。以设定场景说明：某算子占无重叠关键路径的 10%，即使其成本减半，总时间也仅从 1 降至 0.95，整体加速约 1.053 倍。若同时增加一次 layout copy 或减少 KV 可用容量，服务收益还会进一步改变。这个解析上限可以决定是否值得投入自定义内核；实际重叠、调度和并发争用必须回到运行证据。
+
+<!-- infraagents:provenance -->
+
+## 来源与推导
+
+- [S-TRANSFORMER：Attention Is All You Need](../sources/S-TRANSFORMER.md)：Transformer 的 attention 用 query 与 keys 的分数生成归一化权重，再对 values 加权；encoder-decoder attention 的 Q 来自 decoder，K/V 来自 encoder 表示。
+  [完整原文](../../references/S-TRANSFORMER/reader.html) · [全文文本](../../references/S-TRANSFORMER/fulltext.txt)
+
+- [S-RMSNORM：Root Mean Square Layer Normalization](../sources/S-RMSNORM.md)：§3–4 比较 LayerNorm 与 RMSNorm，给出不减均值的 RMS 归一化关系及其不变性边界。
+  [完整原文](../../references/S-RMSNORM/reader.html) · [全文文本](../../references/S-RMSNORM/fulltext.txt)
+
+- [S-ROPE：RoFormer: Enhanced Transformer with Rotary Position Embedding](../sources/S-ROPE.md)：§3.1–3.3 以二维旋转及分量对推广建立位置编码和相对位置内积关系。
+  [完整原文](../../references/S-ROPE/reader.html) · [全文文本](../../references/S-ROPE/fulltext.txt)
+
+- [S-TORCH-NUMERIC：PyTorch — Numerical accuracy](../sources/S-TORCH-NUMERIC.md)：浮点运算不满足实数运算的全部结合性质，批量方式、归约顺序和平台路径可以产生数值差异。数值格式、累加精度和极端输入影响误差。
+  [完整原文](../../references/S-TORCH-NUMERIC/reader.html) · [全文文本](../../references/S-TORCH-NUMERIC/fulltext.txt)
+
+- [S-FLASH：FlashAttention: Fast and Memory-Efficient Exact Attention with IO-Awareness](../sources/S-FLASH.md)：FlashAttention 通过片上分块和在线 softmax，避免将完整 attention 分数与概率矩阵写入设备主存；目标函数仍是精确 attention 的数学形式。
+  [完整原文](../../references/S-FLASH/reader.html) · [全文文本](../../references/S-FLASH/fulltext.txt)
+
+- [S-CPU-TUNING：PyTorch Performance Tuning Guide](../sources/S-CPU-TUNING.md)：PyTorch CPU 调优资料涉及线程组织、NUMA、向量化与执行配置；线程数和内存归属影响真实可用资源。
+  [算法与机制说明](../sources/S-CPU-TUNING.md)
+
+正文中的设定算例、资源账和机制组合是基于上述资料的推导，未作为 InfraAgents 实测结果。来源版本上限为 2026-04-30；本次编辑日期不改变来源时间。
+
+### 张量接口扩写的补充依据
+
+- [S-SDPA：PyTorch functional 接口](../sources/S-SDPA.md)：同一固定提交 647b6a2 的 torch/nn/functional.py 中，linear 明确 weight 的 N×K 排列，softmax 明确 dtype 在运算前转换输入；layer_norm/rms_norm 入口与 SDPA 文档共同限定本章的接口比较范围。
+  [算法与机制说明](../sources/S-SDPA.md)
+- [S-FA-IMPL：FlashAttention 官方实现说明](../sources/S-FA-IMPL.md)：固定提交 c5f6ff4 的 flash_attn_with_kvcache 文档给出 rotary_interleaved、增量 K/V 原地更新及 cache_seqlens 的位置关系。
+  [完整原文](../../references/S-FA-IMPL/reader.html) · [全文文本](../../references/S-FA-IMPL/fulltext.txt)
+- [S-CUDA-BEST：CUDA C++ Best Practices Guide](../sources/S-CUDA-BEST.md)：CUDA 12.8.0 §8.2 说明有效读写流量与实际内存事务的区别，§9.2.4 与 §10.1–10.3 说明局部存储、寄存器、驻留与执行配置的关系。
+  [完整原文](../../references/S-CUDA-BEST/reader.html) · [全文文本](../../references/S-CUDA-BEST/fulltext.txt)
+
+- [S-TRITON：Triton Fused Attention](../sources/S-TRITON.md)：固定提交 042b2cd 的 forward 使用 exp2 和 log2 中间统计，支持本章对跨内核归一化量底数的具体区分。
+  [算法与机制说明](../sources/S-TRITON.md)
+
+本次加入的 strided 地址式与轴交换反例、QKV 尺寸、填充归约反例、residual 流量账和关键路径上限为本库解析推导，所有常数均为明确设定，未声明 GPU 性能或模型质量的实测结果。
+
+## 延伸阅读
+
+- [从模型计算图推导 Prefill、Decode 与持久状态](../models/prefill-decode-state.md)。
+- [Attention 的 IO、在线 softmax 与分块归约](../algorithms/attention-io.md)。
+- [数值参考：误差尺度、条件数与首次分歧](../frameworks/numerical-reference.md)。
+- [CPU GEMM/GEMV：寄存器、缓存与线程划分](../hardware/cpu-linear-kernels.md)。
+- [权重加载：从制品身份到可执行布局](../frameworks/checkpoint-loading.md)。
+
+- [Attention Backend：语义、布局与执行契约的交集](../frameworks/attention-backends.md)。

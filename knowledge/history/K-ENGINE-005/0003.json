@@ -1,0 +1,59 @@
+{
+  "id": "K-ENGINE-005",
+  "path": "engine-index/tensorrt-llm.md",
+  "category": "engine-index",
+  "title": "异步执行决策：结果确认、在途状态与回收",
+  "summary": "主机准备、设备计算、采样与外部状态传输可以部分重叠，但自回归依赖与存储生存期不会因异步提交而消失。设计需要区分业务完成、输出提交、设备完成和各个外部消费者结束。",
+  "revision": 3,
+  "status": "seed",
+  "tags": [
+    "TensorRT-LLM",
+    "PyExecutor",
+    "overlap",
+    "KV transfer",
+    "async-ownership",
+    "transfer-boundary"
+  ],
+  "scope": {
+    "model_families": [],
+    "platforms": [
+      "cuda"
+    ],
+    "runtimes": [
+      "tensorrt-llm"
+    ],
+    "workloads": []
+  },
+  "source_ids": [
+    "S-TRTLLM",
+    "S-TRTLLM-CODE"
+  ],
+  "related": [
+    "K-ALG-008",
+    "K-ALG-013",
+    "K-FW-005",
+    "K-SYS-004",
+    "K-ALG-017",
+    "K-ALG-019",
+    "K-HW-014",
+    "K-SYS-014",
+    "K-SYS-012"
+  ],
+  "evidence": [],
+  "updated_at": "2026-10-27",
+  "sha256": "6ade1253f3747041bef4a816d82387c3771bff3459a153719cfbd571c2454c0b",
+  "questions": [
+    "为什么会出现异步执行决策的问题，输入与状态如何定义？",
+    "哪些依赖与资源条件决定合法性，哪些表示或策略可以更换？",
+    "不同选择怎样改变数据流、状态更新、准备与驻留成本？",
+    "怎样用反例、完成证据和区分实验判断收益与失效？"
+  ],
+  "symptoms": [
+    "overlap 开启后偶发读到上一轮状态",
+    "传输完成但接收方仍无法消费 KV"
+  ],
+  "assumes": [
+    "固定提交的 TensorRT-LLM 源码",
+    "异步执行器与传输解耦"
+  ]
+}
