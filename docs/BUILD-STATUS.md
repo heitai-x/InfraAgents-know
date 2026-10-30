@@ -1,4 +1,10 @@
-# 当前状态：知识库全量构建
+# 当前维护入口
+
+当前内容身份和数量见 [VERSION.json](../VERSION.json)，逐篇正文与审查绑定见[扩展状态](expansion-status.json)。构建、恢复与状态查看使用[构建 workflow](knowledge-build-workflow.md)说明的项目级 `knowledge-workflow`；实际状态在所选配置的 `state_dir`，队列与登记记录在知识库 `docs/evidence/<run>/workflow.json`。旧 dated ops 执行器只保留历史证据。
+
+2026-10-30 核查：全量构建已在[最终批次](evidence/knowledge-workflow-20261028-batch24/workflow.json)收口，后续[评测模块四项](evidence/evaluation-module-20261029/workflow.json)已登记验证。截至已登记的draft30，111篇均有对应正文的接受记录。此结论是内容与登记状态，不代表目标GPU或受控Agent构建收益已经得到证明。当前[定点优化](evidence/knowledge-optimization-20261030/workflow.json)处理入口、表达与使用验证；进行中的正文修改尚不继承旧版接受结论，以该记录的实际状态区分进行中和完成。
+
+## 2026-10-28：全量构建启动时记录
 
 2026-10-28，按 DS 作者、Sol 独立审查、实际隔离检查与分批登记推进全部剩余条目。当前已登记版本与数量以 [VERSION.json](../VERSION.json) 为准，逐篇建设范围见[扩展状态](expansion-status.json)，尚在编写或返修的候选不计为完成。执行入口与实际 PID、heartbeat、阶段、未完成数位于项目目录 `ops/knowledge-full-build-20261028/`；协调者已接通真实模型与失败保留机制，不能将启动循环写成全库已完成。
 
